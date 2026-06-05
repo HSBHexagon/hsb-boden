@@ -9,8 +9,51 @@ import { getPublicReferences } from "../../lib/content";
 const references = getPublicReferences();
 ---
 
-<BaseLayout title="Referenzen für Industrieböden & Säureschutz | HSB Hexagon Säurebau" description="Ausgewählte freigegebene und anonymisierte Referenzen für Industrieböden, Säureschutz, Keramik, Entwässerung und Sanierung." path="/referenzen/">
-  <PageHero eyebrow="Referenzen" title="Referenzen aus produktionskritischen Bereichen" text="Die Referenzdarstellung trennt freigegebene Kundenlogos sauber von anonymisierten Projektregionen. So entsteht Vertrauen ohne unnötige Freigabe- oder Standortprobleme." />
+<BaseLayout title="Referenzen Industrieböden & Säureschutz | HSB Hexagon Säurebau" description="Referenzen für keramische Industrieböden, Säureschutz, Entwässerung und Industrieboden-Sanierung. Lebensmittelproduktion, Molkerei, Brauerei, Chemie — NRW." path="/referenzen/">
+  <PageHero eyebrow="Referenzen" title="Ausgeführte Industrieböden für produktionskritische Bereiche" text="Freigegebene und anonymisierte Referenzen zeigen, welche Belastungen, Systeme und Branchen Hexagon Säurebau kennt — ohne überzogene Claims oder erfundene Erfolgszahlen." />
+
+  <!-- Fotogalerie: echte Referenzflächen -->
+  <section class="section-tight border-b border-hsb-line bg-hsb-mist">
+    <div class="container">
+      <p class="eyebrow mb-6">Ausgeführte Flächen</p>
+      <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {[
+          {
+            src: "/media/hsb/current/referenzflaeche-1.png",
+            alt: "Keramischer Industrieboden mit Entwässerungsrinne — Referenz Hexagon Säurebau",
+            label: "Keramik & Entwässerungsrinne",
+          },
+          {
+            src: "/media/hsb/current/referenzflaeche-2.png",
+            alt: "Hygienische Industrieverfliesung für Lebensmittelproduktion",
+            label: "Hygienische Verfliesung",
+          },
+          {
+            src: "/media/hsb/current/referenzflaeche-3.png",
+            alt: "Säurebeständige Bodenfläche in Industrieumgebung — Hexagon Säurebau",
+            label: "Säureschutz & Anschlussdetails",
+          },
+        ].map((img) => (
+          <figure class="overflow-hidden rounded-[10px] border border-hsb-line bg-white">
+            <div class="aspect-[4/3] overflow-hidden">
+              <img
+                src={img.src}
+                alt={img.alt}
+                class="h-full w-full object-cover object-center transition-transform duration-500 hover:scale-[1.025]"
+                loading="lazy"
+                width="480"
+                height="360"
+              />
+            </div>
+            <figcaption class="px-4 py-3 text-xs font-bold uppercase tracking-[0.14em] text-hsb-red">
+              {img.label}
+            </figcaption>
+          </figure>
+        ))}
+      </div>
+    </div>
+  </section>
+
   <section class="section">
     <div class="container grid gap-8 lg:grid-cols-[0.92fr_1.08fr] lg:items-start">
       <ReferenceMap references={references} />
@@ -19,5 +62,5 @@ const references = getPublicReferences();
       </div>
     </div>
   </section>
-  <CTASection title="Eine eigene Referenz sauber aufbereiten" text="Bestehende Projekte können mit Freigabestatus, Branche, Region und Systemdaten in das Referenzmodell aufgenommen werden — ohne ungeklärte Kundendetails öffentlich zu machen." />
+  <CTASection title="Industriebodenprojekt anfragen" text="HSB plant keramische Industrieböden, Säureschutz, PU-Beton, Entwässerung und Sanierungen für Lebensmittel-, Getränke-, Pharma- und Chemiebetriebe in NRW und bundesweit." />
 </BaseLayout>

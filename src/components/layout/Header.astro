@@ -2,20 +2,60 @@
 import { navigation } from "../../data/navigation";
 ---
 
-<header id="site-header" class="sticky top-0 z-40 border-b border-white/10 bg-hsb-black text-white shadow-[0_10px_35px_rgba(15,17,20,0.18)]">
-  <div class="container flex min-h-[78px] items-center justify-between gap-6">
+<style>
+  #site-header {
+    transition: background 200ms ease, border-color 200ms ease, box-shadow 200ms ease, color 200ms ease;
+  }
+  /* At top: light header, dark text */
+  #site-header:not(.scrolled) {
+    background: rgba(255, 255, 255, 0.97);
+    border-bottom: 1px solid rgba(15, 17, 20, 0.08);
+    box-shadow: none;
+    color: #0f1114;
+  }
+  #site-header:not(.scrolled) .nav-links a {
+    color: rgba(15, 17, 20, 0.65);
+  }
+  #site-header:not(.scrolled) .nav-links a:hover {
+    color: #0f1114;
+  }
+  #site-header:not(.scrolled) #mobile-menu-toggle {
+    border-color: rgba(15, 17, 20, 0.18);
+    color: #0f1114;
+  }
+  /* Scrolled: dark header, white text */
+  #site-header.scrolled {
+    background: rgba(15, 17, 20, 0.97);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.32);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    color: white;
+  }
+  #site-header.scrolled .nav-links a {
+    color: rgba(255, 255, 255, 0.72);
+  }
+  #site-header.scrolled .nav-links a:hover {
+    color: white;
+  }
+  #site-header.scrolled #mobile-menu-toggle {
+    border-color: rgba(255, 255, 255, 0.2);
+    color: white;
+  }
+</style>
+
+<header id="site-header" class="sticky top-0 z-40">
+  <div class="container flex min-h-[72px] items-center justify-between gap-6">
 
     <!-- Logo -->
-    <a href="/" class="flex shrink-0 items-center gap-3 no-underline" aria-label="HSB Hexagon Säurebau Startseite">
-      <span class="flex h-14 w-[158px] items-center justify-start overflow-hidden">
-        <img src="/brand/hsb-boden-logo.png" alt="Hexagon Säurebau GmbH" class="h-14 w-auto object-contain" />
-      </span>
+    <a href="/" class="flex shrink-0 items-center no-underline" aria-label="HSB Hexagon Säurebau Startseite">
+      <img src="/brand/hsb-boden-logo.png" alt="Hexagon Säurebau GmbH" class="h-11 w-auto object-contain" width="140" height="44" />
     </a>
 
     <!-- Desktop nav -->
-    <nav class="hidden items-center gap-6 text-sm font-bold text-white/72 lg:flex" aria-label="Hauptnavigation">
+    <nav class="nav-links hidden items-center gap-6 text-sm font-bold lg:flex" aria-label="Hauptnavigation">
       {navigation.filter(n => n.href !== "/kontakt/").map((item) => (
-        <a class="transition-colors hover:text-white" href={item.href}>{item.label}</a>
+        <a class="transition-colors" href={item.href}>{item.label}</a>
       ))}
     </nav>
 
@@ -25,10 +65,9 @@ import { navigation } from "../../data/navigation";
         <a class="button-primary" href="/kontakt/">Ersteinschätzung</a>
       </div>
 
-      <!-- Mobile hamburger -->
       <button
         id="mobile-menu-toggle"
-        class="flex size-10 items-center justify-center rounded border border-white/20 text-white lg:hidden"
+        class="flex size-10 items-center justify-center rounded border lg:hidden"
         aria-label="Navigation öffnen"
         aria-expanded="false"
         aria-controls="mobile-menu"
@@ -67,15 +106,27 @@ import { navigation } from "../../data/navigation";
 </header>
 
 <script>
+  const header = document.getElementById("site-header") as HTMLElement | null;
   const toggle = document.getElementById("mobile-menu-toggle");
   const menu = document.getElementById("mobile-menu");
   const iconMenu = document.getElementById("icon-menu");
   const iconClose = document.getElementById("icon-close");
+
+  function updateHeader() {
+    if (!header) return;
+    header.classList.toggle("scrolled", window.scrollY > 72);
+  }
+
+  window.addEventListener("scroll", updateHeader, { passive: true });
+  updateHeader();
 
   toggle?.addEventListener("click", () => {
     const open = menu?.classList.toggle("hidden") === false;
     toggle.setAttribute("aria-expanded", String(open));
     iconMenu?.classList.toggle("hidden", open);
     iconClose?.classList.toggle("hidden", !open);
+    // Keep dark when menu open
+    if (open && header) header.classList.add("scrolled");
+    else updateHeader();
   });
 </script>

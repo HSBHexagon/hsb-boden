@@ -2,26 +2,29 @@
 const mediaPanels = [
   {
     image: "/media/hsb/current/referenzflaeche-1.png",
+    alt: "Keramischer Industrieboden mit Entwässerungsrinne — Referenzfläche Hexagon Säurebau",
     eyebrow: "Keramischer Industrieboden",
-    title: "Reinigbare Flächen, Gefälle und Entwässerung zusammen denken",
+    title: "Hygienische Verfliesung für Lebensmittel- und Produktionsbereiche",
     text:
-      "Die übernommenen Motive zeigen reale Flächenlogik: Fugenbild, Rinnen, Übergänge und belastbare Oberflächen statt austauschbarer Stock-Fotografie.",
+      "Fugenarme keramische Systeme mit Gefälle, Rinnenkante und Säureschutzbeschichtung — ausgeführt nach HACCP-relevanten Hygieneanforderungen.",
     tone: "dark",
   },
   {
     image: "/media/hsb/current/referenzflaeche-2.png",
+    alt: "Hygienische Industrieverfliesung für Produktionsbereich — Hexagon Säurebau",
     eyebrow: "Beschichtung & Sanierung",
-    title: "Oberflächen müssen zum Betriebsfenster passen",
+    title: "Oberflächen nach Belastungsprofil, nicht nach Standard",
     text:
-      "Bei Sanierungen zählt nicht nur das Material, sondern auch Sperrzeit, Untergrundzustand, Rutschhemmung und Wiederinbetriebnahme.",
+      "Bei Sanierungen zählt nicht nur das Material — auch Sperrzeit, Untergrundzustand, Rutschhemmung und Wiederinbetriebnahme müssen von Anfang an geplant werden.",
     tone: "light",
   },
   {
     image: "/media/hsb/current/referenzflaeche-3.png",
-    eyebrow: "Rinnenanschluss",
+    alt: "Säurebeständige Bodenfläche in Industrieumgebung — Hexagon Säurebau Ausführung",
+    eyebrow: "Entwässerung & Anschluss",
     title: "Entwässerung ist Teil des Bodensystems",
     text:
-      "Gefälle, Rinnenkante, Fliesenbild und Anschlussdetails entscheiden darüber, ob Flächen dauerhaft reinigbar bleiben.",
+      "Gefälle, Rinnenkante, Fliesenbild und Anschlussdetails entscheiden darüber, ob Flächen dauerhaft reinigbar bleiben und Audits standhalten.",
     tone: "light",
   },
 ];
@@ -29,31 +32,35 @@ const mediaPanels = [
 
 <section class="section border-b border-hsb-line">
   <div class="container">
-    <div class="mb-12 max-w-3xl">
-      <p class="eyebrow">Bildsprache</p>
-      <h2 class="h2 mt-4">Die Website muss wie ein belastbares System auftreten</h2>
-      <p class="lead mt-4">
-        Nicht verspielt, nicht austauschbar. Die visuelle Sprache folgt derselben Logik wie das Angebot:
-        klare Geometrie, kontrollierte Materialien, wenig Farben und sichtbar technische Präzision.
-      </p>
+    <div class="mb-12 grid gap-6 lg:grid-cols-[1fr_auto] lg:items-end">
+      <div class="max-w-3xl">
+        <p class="eyebrow">Ausgeführte Referenzen</p>
+        <h2 class="h2 mt-4">Vertrauen durch sichtbare Ausführungsqualität</h2>
+        <p class="lead mt-4">
+          Keine Stockfotos. Die abgebildeten Flächen wurden von Hexagon Säurebau geplant und ausgeführt.
+        </p>
+      </div>
+      <a class="button-secondary-dark shrink-0" href="/referenzen/">Alle Referenzen ansehen</a>
     </div>
 
     <div class="grid gap-6 lg:grid-cols-3">
       {mediaPanels.map((panel) => (
         <article class:list={[
           "overflow-hidden rounded-[10px] border",
-          panel.tone === "dark" ? "border-hsb-black bg-hsb-black text-white" : "border-hsb-line bg-hsb-mist text-hsb-black",
+          panel.tone === "dark" ? "border-hsb-black bg-hsb-black text-white" : "border-hsb-line bg-white text-hsb-black",
         ]}>
-          <div class="aspect-[4/3] overflow-hidden border-b border-white/10">
+          <div class:list={["aspect-[4/3] overflow-hidden border-b", panel.tone === "dark" ? "border-white/10" : "border-hsb-line"]}>
             <img
               src={panel.image}
-              alt={panel.title}
-              class="h-full w-full object-cover object-center"
+              alt={panel.alt}
+              class="h-full w-full object-cover object-center transition-transform duration-500 hover:scale-[1.025]"
               loading="lazy"
+              width="480"
+              height="360"
             />
           </div>
-          <div class="grid gap-4 p-6 lg:p-8">
-            <p class:list={["text-xs font-bold uppercase tracking-[0.18em]", panel.tone === "dark" ? "text-white/45" : "text-hsb-red"]}>
+          <div class="grid gap-3 p-6">
+            <p class:list={["text-xs font-bold uppercase tracking-[0.16em]", panel.tone === "dark" ? "text-white/45" : "text-hsb-red"]}>
               {panel.eyebrow}
             </p>
             <h3 class:list={["h3", panel.tone === "dark" ? "text-white" : "text-hsb-black"]}>{panel.title}</h3>

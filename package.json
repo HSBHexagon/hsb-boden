@@ -8,8 +8,10 @@
     "preview": "astro preview",
     "check": "astro check --js-only",
     "test:run": "vitest run",
-    "deploy": "npm run build && wrangler deploy",
-    "deploy:dry-run": "npm run build && wrangler deploy --dry-run"
+    "deploy": "npm run build && wrangler deploy --env=\"\"",
+    "deploy:preview": "npm run deploy",
+    "deploy:production": "npm run build && wrangler deploy --env production",
+    "deploy:dry-run": "npm run build && wrangler deploy --env=\"\" --dry-run"
   },
   "dependencies": {
     "@astrojs/check": "^0.9.9",

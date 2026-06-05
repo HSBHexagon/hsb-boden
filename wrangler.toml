@@ -1,8 +1,35 @@
-name = "hsb-boden"
+name = "hsb-boden-preview"
 main = "./dist/_worker.js/index.js"
-compatibility_date = "2026-06-03"
+compatibility_date = "2026-06-05"
 compatibility_flags = ["nodejs_compat"]
+workers_dev = true
+preview_urls = true
 
 [assets]
 directory = "./dist"
 binding = "ASSETS"
+
+[observability]
+enabled = true
+
+[vars]
+ENVIRONMENT = "preview"
+
+[env.production]
+name = "hsb-boden"
+workers_dev = false
+preview_urls = false
+routes = [
+  { pattern = "hsb-boden.de/*", zone_name = "hsb-boden.de" },
+  { pattern = "www.hsb-boden.de/*", zone_name = "hsb-boden.de" }
+]
+
+[env.production.assets]
+directory = "./dist"
+binding = "ASSETS"
+
+[env.production.observability]
+enabled = true
+
+[env.production.vars]
+ENVIRONMENT = "production"

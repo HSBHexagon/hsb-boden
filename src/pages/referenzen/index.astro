@@ -9,15 +9,15 @@ import { getPublicReferences } from "../../lib/content";
 const references = getPublicReferences();
 ---
 
-<BaseLayout title="Referenzen für Industrieböden & Säureschutz | Hexagon Säurebau" description="Ausgewählte freigegebene und anonymisierte Referenzen für Industrieböden, Säureschutz, Keramik, Entwässerung und Sanierung." path="/referenzen/">
-  <PageHero eyebrow="Referenzen" title="Referenzen aus produktionskritischen Bereichen" text="Die Referenzdarstellung trennt freigegebene Kundenlogos von anonymisierten Projektregionen. So entsteht Vertrauen ohne unnötige Standort- oder Freigaberisiken." />
+<BaseLayout title="Referenzen für Industrieböden & Säureschutz | HSB Hexagon Säurebau" description="Ausgewählte freigegebene und anonymisierte Referenzen für Industrieböden, Säureschutz, Keramik, Entwässerung und Sanierung." path="/referenzen/">
+  <PageHero eyebrow="Referenzen" title="Referenzen aus produktionskritischen Bereichen" text="Die Referenzdarstellung trennt freigegebene Kundenlogos sauber von anonymisierten Projektregionen. So entsteht Vertrauen ohne unnötige Freigabe- oder Standortprobleme." />
   <section class="section">
-    <div class="container grid gap-8 lg:grid-cols-[0.9fr_1.1fr]">
+    <div class="container grid gap-8 lg:grid-cols-[0.92fr_1.08fr] lg:items-start">
       <ReferenceMap references={references} />
       <div class="grid gap-4">
         {references.map((reference) => <ReferenceCard reference={reference} />)}
       </div>
     </div>
   </section>
-  <CTASection title="Eine eigene Referenz prüfen lassen" text="Bestehende Projekte können mit Freigabestatus, Branche, Region und Systemdaten in das Referenzmodell aufgenommen werden." />
+  <CTASection title="Eine eigene Referenz sauber aufbereiten" text="Bestehende Projekte können mit Freigabestatus, Branche, Region und Systemdaten in das Referenzmodell aufgenommen werden — ohne ungeklärte Kundendetails öffentlich zu machen." />
 </BaseLayout>

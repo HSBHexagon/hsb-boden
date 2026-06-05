@@ -20,12 +20,12 @@ const points = references.map((reference) => ({
 }));
 ---
 
-<div class="surface overflow-hidden bg-white">
+<div class="h-full overflow-hidden bg-white">
   <div class="border-b border-hsb-line p-5">
     <p class="eyebrow">Referenzkarte</p>
     <h2 class="h3 mt-2">Freigegebene und anonymisierte Projektregionen</h2>
   </div>
-  <svg viewBox="0 0 100 100" role="img" aria-label="Schematische Referenzkarte Deutschland" class="h-[360px] w-full bg-hsb-mist">
+  <svg viewBox="0 0 100 100" role="img" aria-label="Schematische Referenzkarte Deutschland" class="h-[360px] w-full bg-hsb-mist lg:h-[420px]">
     <path d="M45 8 L58 10 L65 21 L72 28 L70 42 L78 55 L67 72 L58 90 L43 86 L33 78 L27 62 L20 48 L27 36 L25 20 Z" fill="#fff" stroke="#d8dde3" stroke-width="1.5" />
     {points.map((point) => (
       <g>
@@ -34,5 +34,5 @@ const points = references.map((reference) => ({
       </g>
     ))}
   </svg>
-  <p class="p-5 text-sm leading-6 text-hsb-steel">Die Karte ist bewusst schematisch und zeigt bei nicht freigegebenen Projekten nur grobe Regionen.</p>
+  <p class="p-5 text-sm leading-6 text-hsb-steel">Die Karte bleibt bewusst schematisch und zeigt bei nicht freigegebenen Projekten nur Regionen statt exakter Standorte.</p>
 </div>

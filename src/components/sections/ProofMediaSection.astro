@@ -1,0 +1,58 @@
+---
+const mediaPanels = [
+  {
+    image: "/media/hsb/concept-cover.jpg",
+    eyebrow: "Markenbild",
+    title: "Klare Industrieform statt generischer Handwerkeroptik",
+    text:
+      "Die vorhandenen Gestaltungsunterlagen zeigen bereits die richtige Richtung: technische Härte, klare Kontraste, Hexagon-Sprache und ein kontrollierter Rotakzent.",
+    tone: "dark",
+  },
+  {
+    image: "/media/hsb/flyer-cover.jpg",
+    eyebrow: "Produktionsrealität",
+    title: "Hygienische Flächen als kritische Infrastruktur",
+    text:
+      "HSB arbeitet dort, wo Reinigbarkeit, Chemikalien, Feuchte, Auditfähigkeit und Produktionssicherheit direkt zusammenhängen.",
+    tone: "light",
+  },
+];
+---
+
+<section class="section border-b border-hsb-line">
+  <div class="container">
+    <div class="mb-12 max-w-3xl">
+      <p class="eyebrow">Bildsprache</p>
+      <h2 class="h2 mt-4">Die Website muss wie ein belastbares System auftreten</h2>
+      <p class="lead mt-4">
+        Nicht verspielt, nicht austauschbar. Die visuelle Sprache folgt derselben Logik wie das Angebot:
+        klare Geometrie, kontrollierte Materialien, wenig Farben und sichtbar technische Präzision.
+      </p>
+    </div>
+
+    <div class="grid gap-6 lg:grid-cols-[1.05fr_0.95fr]">
+      {mediaPanels.map((panel) => (
+        <article class:list={[
+          "overflow-hidden rounded-[10px] border",
+          panel.tone === "dark" ? "border-hsb-black bg-hsb-black text-white" : "border-hsb-line bg-hsb-mist text-hsb-black",
+        ]}>
+          <div class="aspect-[5/4] overflow-hidden border-b border-white/10">
+            <img
+              src={panel.image}
+              alt={panel.title}
+              class="h-full w-full object-cover object-center"
+              loading="lazy"
+            />
+          </div>
+          <div class="grid gap-4 p-6 lg:p-8">
+            <p class:list={["text-xs font-bold uppercase tracking-[0.18em]", panel.tone === "dark" ? "text-white/45" : "text-hsb-red"]}>
+              {panel.eyebrow}
+            </p>
+            <h3 class:list={["h3", panel.tone === "dark" ? "text-white" : "text-hsb-black"]}>{panel.title}</h3>
+            <p class:list={["text-sm leading-7", panel.tone === "dark" ? "text-white/65" : "text-hsb-steel"]}>{panel.text}</p>
+          </div>
+        </article>
+      ))}
+    </div>
+  </div>
+</section>

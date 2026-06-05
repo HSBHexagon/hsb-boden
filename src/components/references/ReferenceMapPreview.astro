@@ -7,16 +7,41 @@ const references = getPublicReferences().slice(0, 3);
 ---
 
 <section class="section bg-hsb-mist">
-  <div class="container grid gap-8 lg:grid-cols-[0.95fr_1.05fr]">
-    <ReferenceMap references={getPublicReferences()} />
+  <div class="container grid gap-8 lg:grid-cols-[1.05fr_0.95fr] lg:items-start">
+    <div class="overflow-hidden rounded-[10px] border border-hsb-line bg-white">
+      <div class="grid gap-0 border-b border-hsb-line lg:grid-cols-[0.72fr_1.28fr]">
+        <div class="border-b border-hsb-line bg-hsb-black p-8 text-white lg:border-b-0 lg:border-r lg:border-white/10">
+          <p class="eyebrow-light">Freigegebene Referenzen</p>
+          <h2 class="h2 mt-4 text-white">Vertrauen durch konkrete Projektlogik</h2>
+          <p class="mt-4 text-sm leading-7 text-white/65">
+            Freigegebene Kunden, anonymisierte Regionen und belastbare Systembeschreibungen. Keine überzogenen Claims, keine erfundenen Erfolgszahlen.
+          </p>
+          <div class="mt-8 grid gap-3 border-t border-white/10 pt-6 text-sm text-white/75">
+            <div class="flex items-center justify-between gap-4">
+              <span>Sichtbare Freigabe</span>
+              <strong class="text-white">Südzucker AG</strong>
+            </div>
+            <div class="flex items-center justify-between gap-4">
+              <span>Schwerpunkte</span>
+              <strong class="text-white">Keramik · PU-Beton · Säureschutz</strong>
+            </div>
+            <div class="flex items-center justify-between gap-4">
+              <span>Fokus</span>
+              <strong class="text-white">Auditfähigkeit · Sanierung · Hygiene</strong>
+            </div>
+          </div>
+        </div>
+        <ReferenceMap references={getPublicReferences()} />
+      </div>
+    </div>
     <div>
-      <p class="eyebrow">Referenzen</p>
-      <h2 class="h2 mt-3">Vertrauen durch konkrete Projektlogik</h2>
-      <p class="lead mt-4">Referenzen werden kuratiert, freigegeben oder anonymisiert dargestellt. Keine fremden Wettbewerberkunden werden öffentlich als HSB-Akquisequelle verwendet.</p>
+      <p class="eyebrow">Referenzmodule</p>
+      <h2 class="h2 mt-3">Kuratiert, nicht aufgeblasen</h2>
+      <p class="lead mt-4">Jede Referenz beantwortet drei Fragen: Wo lag die Belastung, wie wurde das System geplant, und was wurde dadurch betriebsseitig besser?</p>
       <div class="mt-6 grid gap-4">
         {references.map((reference) => <ReferenceCard reference={reference} />)}
       </div>
-      <a class="button-secondary mt-6" href="/referenzen/">Alle Referenzen ansehen</a>
+      <a class="button-secondary-dark mt-6" href="/referenzen/">Alle Referenzen ansehen</a>
     </div>
   </div>
 </section>

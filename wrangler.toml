@@ -1,4 +1,4 @@
-name = "hsb-boden-preview"
+name = "hsb-boden"
 main = "./dist/_worker.js/index.js"
 compatibility_date = "2026-06-03"
 compatibility_flags = ["nodejs_compat"]

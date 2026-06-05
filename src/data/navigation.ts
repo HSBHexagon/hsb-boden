@@ -41,4 +41,11 @@ export const footerGroups = [
       { label: "Kontakt", href: "/kontakt/" },
     ],
   },
+  {
+    title: "Rechtliches",
+    links: [
+      { label: "Impressum", href: "/impressum/" },
+      { label: "Datenschutz", href: "/datenschutz/" },
+    ],
+  },
 ];

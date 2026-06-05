@@ -167,56 +167,56 @@ export function getAllPublicPages() {
   return [
     {
       h1: "Industrieböden und Säureschutzsysteme für produktionskritische Bereiche",
-      seoTitle: "Industrieböden & Säureschutz für Produktion | Hexagon Säurebau",
+      seoTitle: "Industrieböden & Säureschutz für Produktion | HSB Hexagon Säurebau",
       description:
-        "Industrieböden, Säureschutz, Keramik, PU-Beton, Entwässerung und Sanierung für Lebensmittel-, Getränke-, Pharma- und Chemieproduktion. Jetzt Belastungsprofil prüfen lassen.",
+        "Industrieböden, Säureschutz, Keramik, PU-Beton, Entwässerung und Sanierung für Lebensmittel-, Getränke-, Pharma- und Chemieproduktion. Jetzt kostenlose Ersteinschätzung anfordern.",
       canonicalPath: "/",
     },
     {
       h1: "Leistungen für Industrieböden und Säureschutz",
-      seoTitle: "Leistungen für Industrieböden & Säureschutz | Hexagon Säurebau",
+      seoTitle: "Leistungen für Industrieböden & Säureschutz | HSB Hexagon Säurebau",
       description:
         "Keramische Industrieböden, Säureschutz, PU-Beton, Epoxidharz, Entwässerung, Abdichtung und Sanierung für produktionskritische Bereiche.",
       canonicalPath: "/leistungen/",
     },
     {
       h1: "Branchenspezifische Industrieböden",
-      seoTitle: "Industrieböden nach Branche | Hexagon Säurebau",
+      seoTitle: "Industrieböden nach Branche | HSB Hexagon Säurebau",
       description:
         "Industrieböden für Lebensmittelindustrie, Molkereien, Brauereien, Chemie, Pharma, Backwarenproduktion und Großküchen.",
       canonicalPath: "/branchen/",
     },
     {
       h1: "Referenzen aus produktionskritischen Bereichen",
-      seoTitle: "Referenzen für Industrieböden & Säureschutz | Hexagon Säurebau",
+      seoTitle: "Referenzen für Industrieböden & Säureschutz | HSB Hexagon Säurebau",
       description:
         "Ausgewählte freigegebene und anonymisierte Referenzen für Industrieböden, Säureschutz, Keramik, Entwässerung und Sanierung.",
       canonicalPath: "/referenzen/",
     },
     {
       h1: "Wissen zu Industrieböden, Säureschutz und Sanierung",
-      seoTitle: "Wissen zu Industrieböden & Säureschutz | Hexagon Säurebau",
+      seoTitle: "Wissen zu Industrieböden & Säureschutz | HSB Hexagon Säurebau",
       description:
         "Praxisnahes Wissen zu PU-Beton, keramischen Industrieböden, Molkereiböden, säurefesten Fliesen, Entwässerung und Sanierung.",
       canonicalPath: "/wissen/",
     },
     {
       h1: "Projektanfrage für Industrieböden",
-      seoTitle: "Kontakt & Projektanfrage | Hexagon Säurebau",
+      seoTitle: "Kontakt & Projektanfrage | HSB Hexagon Säurebau",
       description:
-        "Belastungsprofil prüfen lassen: Anfrageformular für Industrieböden, Säureschutz, Sanierung, Entwässerung und Branchenlösungen.",
+        "Kostenlose Ersteinschätzung anfordern: Anfrageformular für Industrieböden, Säureschutz, Sanierung, Entwässerung und Branchenlösungen.",
       canonicalPath: "/kontakt/",
     },
     {
       h1: "Danke für Ihre Projektanfrage",
-      seoTitle: "Danke für Ihre Projektanfrage | Hexagon Säurebau",
+      seoTitle: "Danke für Ihre Projektanfrage | HSB Hexagon Säurebau",
       description:
         "Ihre Anfrage wurde vorbereitet. HSB meldet sich zur technischen Bewertung von Industrieboden, Säureschutz oder Sanierung.",
       canonicalPath: "/danke-projektanfrage/",
     },
     {
-      h1: "Karriere bei Hexagon Säurebau",
-      seoTitle: "Karriere bei Hexagon Säurebau | Industrieboden-Projekte",
+      h1: "Karriere bei HSB Hexagon Säurebau",
+      seoTitle: "Karriere bei HSB Hexagon Säurebau | Industrieboden-Projekte",
       description:
         "Karriere bei HSB: Arbeiten an anspruchsvollen Industrieböden, Säureschutzsystemen und Sanierungsprojekten in Produktionsbetrieben.",
       canonicalPath: "/karriere/",

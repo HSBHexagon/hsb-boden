@@ -5,7 +5,7 @@ export function buildOrganizationJsonLd() {
   return {
     "@context": "https://schema.org",
     "@type": "Organization",
-    name: "Hexagon Säurebau",
+    name: "HSB Hexagon Säurebau GmbH",
     alternateName: "HSB",
     url: site.domain,
     email: site.email,
@@ -28,7 +28,7 @@ export function buildLocalBusinessJsonLd() {
   return {
     "@context": "https://schema.org",
     "@type": "LocalBusiness",
-    name: "Hexagon Säurebau",
+    name: "HSB Hexagon Säurebau GmbH",
     url: site.domain,
     telephone: site.phone,
     email: site.email,

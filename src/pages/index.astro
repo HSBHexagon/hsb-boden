@@ -2,8 +2,10 @@
 import LeadFormSection from "../components/forms/LeadFormSection.astro";
 import ReferenceMapPreview from "../components/references/ReferenceMapPreview.astro";
 import CTASection from "../components/sections/CTASection.astro";
+import HomepageFAQSection from "../components/sections/HomepageFAQSection.astro";
 import IndustryGrid from "../components/sections/IndustryGrid.astro";
 import ManufacturerProof from "../components/sections/ManufacturerProof.astro";
+import SchmerzpunkteSection from "../components/sections/SchmerzpunkteSection.astro";
 import ServiceGrid from "../components/sections/ServiceGrid.astro";
 import BaseLayout from "../layouts/BaseLayout.astro";
 import { site } from "../data/site";
@@ -69,6 +71,9 @@ import { buildLocalBusinessJsonLd } from "../lib/schema";
     <div class="h-1 w-full bg-hsb-red mt-1"></div>
   </section>
 
+  <!-- SCHMERZPUNKTE -->
+  <SchmerzpunkteSection />
+
   <!-- LEISTUNGEN -->
   <ServiceGrid />
 
@@ -108,6 +113,9 @@ import { buildLocalBusinessJsonLd } from "../lib/schema";
 
   <!-- KONTAKTFORMULAR -->
   <LeadFormSection />
+
+  <!-- FAQ -->
+  <HomepageFAQSection />
 
   <!-- FINAL CTA -->
   <CTASection />

@@ -1,0 +1,58 @@
+---
+const problems = [
+  {
+    number: "01",
+    title: "Rissbildung & Ablösungen",
+    text: "Falsches Verlegebett, ungeeignete Fuge oder fehlende Dehnung — Böden brechen dort, wo die Planung aufgehört hat.",
+    consequence: "Folge: Schmutz- und Keimeinschlüsse, kostspielige Notflicken, ungeplante Stillstände.",
+  },
+  {
+    number: "02",
+    title: "Keimnester in Fugen",
+    text: "Offene oder gerissene Fugen sammeln Feuchtigkeit, Fett und Reinigungsrückstände. Kein Hochdruckreiniger kommt dort dauerhaft ran.",
+    consequence: "Folge: Audit-Mängel, Produktrückruf-Risiko, Hygienenachweise werden schwierig.",
+  },
+  {
+    number: "03",
+    title: "Produktionsausfälle durch Bodenschaden",
+    text: "Schäden, die früh erkannt wurden, lassen sich in Bauabschnitten sanieren. Ungeplante Ausfälle kosten das Vielfache.",
+    consequence: "Folge: Produktionsstopp, Mehrkosten durch Notmaßnahmen, Lieferkettenprobleme.",
+  },
+  {
+    number: "04",
+    title: "Standardlösungen unter Extrembelastung",
+    text: "Böden für Büro und Lager versagen in Produktionsbereichen mit Säuren, Hochdruck, Temperaturwechseln und Staplerverkehr binnen Monaten.",
+    consequence: "Folge: Wiederholsanierungen, steigende Instandhaltungskosten, nie ein dauerhafter Zustand.",
+  },
+];
+---
+
+<section class="section border-b border-hsb-line bg-hsb-black text-white">
+  <div class="container">
+    <div class="mb-14 grid gap-4 lg:grid-cols-[1fr_auto] lg:items-end">
+      <div>
+        <p class="eyebrow-light">Warum Böden versagen</p>
+        <h2 class="h2 mt-4 max-w-2xl text-white">
+          Vier Ursachen, die in Produktionsbetrieben<br class="hidden lg:block" />
+          immer wieder auftreten
+        </h2>
+      </div>
+      <p class="max-w-xs text-sm leading-7 text-white/45 lg:text-right">
+        Nicht der Boden ist das Problem — sondern die Lücke zwischen Anforderung und Planung.
+      </p>
+    </div>
+
+    <div class="grid gap-px bg-white/10 sm:grid-cols-2">
+      {problems.map((item) => (
+        <article class="flex flex-col gap-5 bg-hsb-black p-8">
+          <span class="font-black text-5xl text-hsb-red/25 tabular-nums leading-none">{item.number}</span>
+          <div>
+            <h3 class="h3 text-white">{item.title}</h3>
+            <p class="mt-3 text-sm leading-7 text-white/55">{item.text}</p>
+          </div>
+          <p class="border-t border-white/10 pt-4 text-xs font-bold text-hsb-red/80 leading-6">{item.consequence}</p>
+        </article>
+      ))}
+    </div>
+  </div>
+</section>

@@ -1,0 +1,66 @@
+---
+const faqs = [
+  {
+    question: "Was kostet eine Ersteinschätzung durch HSB?",
+    answer:
+      "Die Ersteinschätzung vor Ort ist kostenlos und unverbindlich. HSB nimmt Belastungsprofil, Untergrund und Betriebsablauf auf und bewertet, welche nächste Maßnahme technisch und organisatorisch sinnvoll ist — ohne Kaufverpflichtung.",
+  },
+  {
+    question: "Kann eine Sanierung im laufenden Betrieb erfolgen?",
+    answer:
+      "Teilweise ja. Wenn Bauabschnitte, Materialwahl und Betriebslogistik früh geplant werden, lassen sich Sperrzeiten minimieren. Ob eine vollständig unterbrechungsfreie Sanierung möglich ist, hängt vom Schadensbild und der Nutzung ab — das wird vor Ort bewertet.",
+  },
+  {
+    question: "Keramik oder PU-Beton — was ist besser für meinen Betrieb?",
+    answer:
+      "Weder noch als Standardantwort. Keramische Systeme sind stark bei langfristiger mechanischer und chemischer Dauerbelastung. PU-Beton eignet sich besser für fugenarme Anforderungen und kurze Sanierungsfenster. Die Entscheidung folgt dem Belastungsprofil, nicht dem Preis.",
+  },
+  {
+    question: "Welche Böden sind auditrelevant in Lebensmittelbetrieben?",
+    answer:
+      "Böden in Lebensmittelbereichen müssen reinigbar, fugenarm und chemikalienbeständig sein. Auditrelevant sind vor allem dichte Fugen, stehendes Wasser, Rutschhemmung und die Nachvollziehbarkeit des Aufbaus. HSB dokumentiert Ausführung und Materialien für genau diesen Zweck.",
+  },
+  {
+    question: "Wie verhält sich HSB gegenüber Herstellern wie Argelith oder Zahna?",
+    answer:
+      "HSB nutzt technische Informationen von Herstellern wie Argelith und Zahna als Planungsgrundlage — ohne unbelegte Partnerschaftsclaims oder Zertifizierungsbehauptungen. Die Systemempfehlung folgt dem Belastungsprofil des Betriebs, nicht der Herstellerlogik.",
+  },
+  {
+    question: "Was muss ich für eine erste Anfrage bereithalten?",
+    answer:
+      "Drei Angaben genügen: Branche und Nutzung des Bereichs, Fläche und aktueller Zustand (Neubau oder Sanierung), und ein ungefähres Zeitfenster für den Eingriff. Den Rest klärt HSB im Gespräch oder bei der Besichtigung vor Ort.",
+  },
+];
+---
+
+<section class="section bg-hsb-mist border-b border-hsb-line">
+  <div class="container grid gap-12 lg:grid-cols-[0.85fr_1.15fr] lg:items-start">
+    <div class="lg:sticky lg:top-24">
+      <p class="eyebrow">Häufige Fragen</p>
+      <h2 class="h2 mt-4 max-w-sm">Was Entscheider vor der Anfrage wissen wollen</h2>
+      <p class="mt-5 text-sm leading-7 text-hsb-steel max-w-xs">
+        Keine Angebote ohne Grundlage, keine Systemempfehlung ohne Analyse — das sind die meistgestellten Fragen dazu.
+      </p>
+      <div class="mt-8">
+        <a class="button-primary" href="/kontakt/">Jetzt Ersteinschätzung anfordern</a>
+      </div>
+    </div>
+
+    <div class="divide-y divide-hsb-line">
+      {faqs.map((faq) => (
+        <details class="group py-5">
+          <summary class="flex cursor-pointer list-none items-start justify-between gap-4 text-base font-black">
+            <span>{faq.question}</span>
+            <svg
+              class="mt-0.5 size-5 shrink-0 text-hsb-red transition-transform group-open:rotate-45"
+              viewBox="0 0 20 20" fill="none" aria-hidden="true"
+            >
+              <path d="M10 4v12M4 10h12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+          </summary>
+          <p class="mt-4 text-sm leading-7 text-hsb-steel">{faq.answer}</p>
+        </details>
+      ))}
+    </div>
+  </div>
+</section>

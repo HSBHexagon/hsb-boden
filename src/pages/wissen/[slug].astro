@@ -19,7 +19,7 @@ const path = `/wissen/${article.slug}/`;
 ---
 
 <BaseLayout title={article.seoTitle} description={article.description} path={path} jsonLd={[buildBreadcrumbJsonLd([{ name: "Start", path: "/" }, { name: "Wissen", path: "/wissen/" }, { name: article.title, path }])]}>
-  <PageHero eyebrow={article.category} title={article.h1} text={article.description} ctaLabel="Belastungsprofil besprechen" />
+  <PageHero eyebrow={article.category} title={article.h1} text={article.description} ctaLabel="Ersteinschätzung anfordern" />
   <article class="section">
     <div class="container max-w-3xl">
       <p class="lead">{article.intro}</p>
@@ -28,9 +28,12 @@ const path = `/wissen/${article.slug}/`;
           <section>
             <h2>{section}</h2>
             <p>
-              Dieser Abschnitt dient als fachliches Content-Briefing für die finale redaktionelle Ausarbeitung. Er verbindet Suchintention, technische Entscheidungskriterien und die passenden HSB-Leistungsseiten.
+              {index === 0
+                ? `Dieser Abschnitt ordnet ${article.title.toLowerCase()} technisch ein und zeigt, welche Anforderungen in produktionskritischen Bereichen tatsächlich entscheidend sind.`
+                : index === article.sections.length - 1
+                  ? `Für Entscheider zählt am Ende, welche Systemwahl dauerhaft tragfähig ist, welche Risiken vermieden werden und wie sich die Maßnahme organisatorisch in den Betrieb einfügt.`
+                  : `Hier geht es um die konkreten Entscheidungskriterien, die bei ${article.category.toLowerCase()}-Themen über Dauerhaftigkeit, Reinigbarkeit und wirtschaftliche Sanierung entscheiden.`}
             </p>
-            {index === 0 && <p>Die finale Version sollte mit echten Projektbildern, Herstellerquellen und internen Referenzen ergänzt werden.</p>}
           </section>
         ))}
       </div>

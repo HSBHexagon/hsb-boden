@@ -20,6 +20,6 @@ const allJsonLd = [buildOrganizationJsonLd(), ...jsonLd];
 <meta property="og:title" content={pageTitle(title)} />
 <meta property="og:description" content={description} />
 <meta property="og:url" content={canonical(path)} />
-<meta property="og:site_name" content="Hexagon Säurebau" />
+<meta property="og:site_name" content="HSB Hexagon Säurebau" />
 <meta name="twitter:card" content="summary_large_image" />
 {allJsonLd.map((item) => <script is:inline type="application/ld+json" set:html={JSON.stringify(item)} />)}

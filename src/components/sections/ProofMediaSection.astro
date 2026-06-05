@@ -1,19 +1,27 @@
 ---
 const mediaPanels = [
   {
-    image: "/media/hsb/concept-cover.jpg",
-    eyebrow: "Markenbild",
-    title: "Klare Industrieform statt generischer Handwerkeroptik",
+    image: "/media/hsb/current/referenzflaeche-1.png",
+    eyebrow: "Keramischer Industrieboden",
+    title: "Reinigbare Flächen, Gefälle und Entwässerung zusammen denken",
     text:
-      "Die vorhandenen Gestaltungsunterlagen zeigen bereits die richtige Richtung: technische Härte, klare Kontraste, Hexagon-Sprache und ein kontrollierter Rotakzent.",
+      "Die übernommenen Motive zeigen reale Flächenlogik: Fugenbild, Rinnen, Übergänge und belastbare Oberflächen statt austauschbarer Stock-Fotografie.",
     tone: "dark",
   },
   {
-    image: "/media/hsb/flyer-cover.jpg",
-    eyebrow: "Produktionsrealität",
-    title: "Hygienische Flächen als kritische Infrastruktur",
+    image: "/media/hsb/current/referenzflaeche-2.png",
+    eyebrow: "Beschichtung & Sanierung",
+    title: "Oberflächen müssen zum Betriebsfenster passen",
     text:
-      "HSB arbeitet dort, wo Reinigbarkeit, Chemikalien, Feuchte, Auditfähigkeit und Produktionssicherheit direkt zusammenhängen.",
+      "Bei Sanierungen zählt nicht nur das Material, sondern auch Sperrzeit, Untergrundzustand, Rutschhemmung und Wiederinbetriebnahme.",
+    tone: "light",
+  },
+  {
+    image: "/media/hsb/current/referenzflaeche-3.png",
+    eyebrow: "Rinnenanschluss",
+    title: "Entwässerung ist Teil des Bodensystems",
+    text:
+      "Gefälle, Rinnenkante, Fliesenbild und Anschlussdetails entscheiden darüber, ob Flächen dauerhaft reinigbar bleiben.",
     tone: "light",
   },
 ];
@@ -30,13 +38,13 @@ const mediaPanels = [
       </p>
     </div>
 
-    <div class="grid gap-6 lg:grid-cols-[1.05fr_0.95fr]">
+    <div class="grid gap-6 lg:grid-cols-3">
       {mediaPanels.map((panel) => (
         <article class:list={[
           "overflow-hidden rounded-[10px] border",
           panel.tone === "dark" ? "border-hsb-black bg-hsb-black text-white" : "border-hsb-line bg-hsb-mist text-hsb-black",
         ]}>
-          <div class="aspect-[5/4] overflow-hidden border-b border-white/10">
+          <div class="aspect-[4/3] overflow-hidden border-b border-white/10">
             <img
               src={panel.image}
               alt={panel.title}

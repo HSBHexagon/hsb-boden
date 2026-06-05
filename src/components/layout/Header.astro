@@ -2,30 +2,33 @@
 import { navigation } from "../../data/navigation";
 ---
 
-<header class="sticky top-0 z-40 border-b border-hsb-line bg-white/97 backdrop-blur-sm">
-  <div class="container flex min-h-[68px] items-center justify-between gap-6">
+<header id="site-header" class="sticky top-0 z-40 border-b border-white/10 bg-hsb-black text-white shadow-[0_10px_35px_rgba(15,17,20,0.18)]">
+  <div class="container flex min-h-[78px] items-center justify-between gap-6">
 
     <!-- Logo -->
-    <a href="/" class="flex shrink-0 items-center gap-3 font-black no-underline" aria-label="HSB Hexagon Säurebau Startseite">
-      <span class="grid size-9 place-items-center rounded bg-hsb-red text-sm font-black text-white tracking-tight">HSB</span>
-      <span class="hidden text-sm font-black sm:block">HSB Hexagon Säurebau</span>
+    <a href="/" class="flex shrink-0 items-center gap-3 no-underline" aria-label="HSB Hexagon Säurebau Startseite">
+      <span class="flex h-14 w-[158px] items-center justify-start overflow-hidden">
+        <img src="/brand/hsb-boden-logo.png" alt="Hexagon Säurebau GmbH" class="h-14 w-auto object-contain" />
+      </span>
     </a>
 
     <!-- Desktop nav -->
-    <nav class="hidden items-center gap-6 text-sm font-bold text-hsb-steel lg:flex" aria-label="Hauptnavigation">
+    <nav class="hidden items-center gap-6 text-sm font-bold text-white/72 lg:flex" aria-label="Hauptnavigation">
       {navigation.filter(n => n.href !== "/kontakt/").map((item) => (
-        <a class="transition-colors hover:text-hsb-black" href={item.href}>{item.label}</a>
+        <a class="transition-colors hover:text-white" href={item.href}>{item.label}</a>
       ))}
     </nav>
 
     <!-- CTA + Mobile button -->
     <div class="flex items-center gap-3">
-      <a class="button-primary hidden sm:inline-flex" href="/kontakt/">Ersteinschätzung</a>
+      <div class="hidden lg:block">
+        <a class="button-primary" href="/kontakt/">Ersteinschätzung</a>
+      </div>
 
       <!-- Mobile hamburger -->
       <button
         id="mobile-menu-toggle"
-        class="flex size-10 items-center justify-center rounded border border-hsb-line text-hsb-steel lg:hidden"
+        class="flex size-10 items-center justify-center rounded border border-white/20 text-white lg:hidden"
         aria-label="Navigation öffnen"
         aria-expanded="false"
         aria-controls="mobile-menu"
@@ -44,14 +47,14 @@ import { navigation } from "../../data/navigation";
   <!-- Mobile menu -->
   <nav
     id="mobile-menu"
-    class="hidden border-t border-hsb-line bg-white"
+    class="hidden border-t border-white/10 bg-hsb-black"
     aria-label="Mobile Navigation"
   >
     <div class="container py-4">
       {navigation.map((item) => (
         <a
           href={item.href}
-          class="flex items-center py-3.5 text-sm font-bold text-hsb-steel border-b border-hsb-line last:border-0 hover:text-hsb-black"
+          class="flex items-center border-b border-white/10 py-3.5 text-sm font-bold text-white/78 last:border-0 hover:text-white"
         >
           {item.label}
         </a>

@@ -2,15 +2,77 @@
 import { navigation } from "../../data/navigation";
 ---
 
-<header class="sticky top-0 z-40 border-b border-hsb-line bg-white/95 backdrop-blur">
-  <div class="container flex min-h-16 items-center justify-between gap-6">
-    <a href="/" class="flex items-center gap-3 font-black no-underline" aria-label="Hexagon Säurebau Startseite">
-      <span class="grid size-10 place-items-center rounded bg-hsb-red text-white">HSB</span>
-      <span class="hidden sm:block">Hexagon Säurebau</span>
+<header class="sticky top-0 z-40 border-b border-hsb-line bg-white/97 backdrop-blur-sm">
+  <div class="container flex min-h-[68px] items-center justify-between gap-6">
+
+    <!-- Logo -->
+    <a href="/" class="flex shrink-0 items-center gap-3 font-black no-underline" aria-label="Hexagon Säurebau Startseite">
+      <span class="grid size-9 place-items-center rounded bg-hsb-red text-sm font-black text-white tracking-tight">HSB</span>
+      <span class="hidden text-sm font-black sm:block">Hexagon Säurebau</span>
     </a>
-    <nav class="hidden items-center gap-5 text-sm font-bold text-hsb-steel lg:flex" aria-label="Hauptnavigation">
-      {navigation.map((item) => <a class="hover:text-hsb-red" href={item.href}>{item.label}</a>)}
+
+    <!-- Desktop nav -->
+    <nav class="hidden items-center gap-6 text-sm font-bold text-hsb-steel lg:flex" aria-label="Hauptnavigation">
+      {navigation.filter(n => n.href !== "/kontakt/").map((item) => (
+        <a class="transition-colors hover:text-hsb-black" href={item.href}>{item.label}</a>
+      ))}
     </nav>
-    <a class="button-primary hidden sm:inline-flex" href="/kontakt/">Anfrage</a>
+
+    <!-- CTA + Mobile button -->
+    <div class="flex items-center gap-3">
+      <a class="button-primary hidden sm:inline-flex" href="/kontakt/">Anfrage</a>
+
+      <!-- Mobile hamburger -->
+      <button
+        id="mobile-menu-toggle"
+        class="flex size-10 items-center justify-center rounded border border-hsb-line text-hsb-steel lg:hidden"
+        aria-label="Navigation offnen"
+        aria-expanded="false"
+        aria-controls="mobile-menu"
+      >
+        <svg id="icon-menu" width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true">
+          <path d="M2 4.5h14M2 9h14M2 13.5h14" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
+        </svg>
+        <svg id="icon-close" class="hidden" width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true">
+          <path d="M3 3l12 12M15 3L3 15" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
+        </svg>
+      </button>
+    </div>
+
   </div>
+
+  <!-- Mobile menu -->
+  <nav
+    id="mobile-menu"
+    class="hidden border-t border-hsb-line bg-white"
+    aria-label="Mobile Navigation"
+  >
+    <div class="container py-4">
+      {navigation.map((item) => (
+        <a
+          href={item.href}
+          class="flex items-center py-3.5 text-sm font-bold text-hsb-steel border-b border-hsb-line last:border-0 hover:text-hsb-black"
+        >
+          {item.label}
+        </a>
+      ))}
+      <div class="pt-4">
+        <a class="button-primary w-full text-center" href="/kontakt/">Belastungsprofil prüfen lassen</a>
+      </div>
+    </div>
+  </nav>
 </header>
+
+<script>
+  const toggle = document.getElementById("mobile-menu-toggle");
+  const menu = document.getElementById("mobile-menu");
+  const iconMenu = document.getElementById("icon-menu");
+  const iconClose = document.getElementById("icon-close");
+
+  toggle?.addEventListener("click", () => {
+    const open = menu?.classList.toggle("hidden") === false;
+    toggle.setAttribute("aria-expanded", String(open));
+    iconMenu?.classList.toggle("hidden", open);
+    iconClose?.classList.toggle("hidden", !open);
+  });
+</script>

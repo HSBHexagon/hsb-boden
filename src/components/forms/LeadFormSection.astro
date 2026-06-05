@@ -2,12 +2,28 @@
 import { LeadForm } from "./LeadForm";
 ---
 
-<section class="section" id="kontaktformular">
-  <div class="container grid gap-10 lg:grid-cols-[0.9fr_1.1fr]">
+<section class="section border-b border-hsb-line" id="kontaktformular">
+  <div class="container grid gap-12 lg:grid-cols-[0.9fr_1.1fr] lg:items-start">
     <div>
-      <p class="eyebrow">Lead-System</p>
-      <h2 class="h2 mt-3">Qualifizierte Anfrage statt generischem Kontakt</h2>
-      <p class="lead mt-4">Das Formular fragt die Informationen ab, die für eine technische Ersteinschätzung wirklich relevant sind: Branche, Projektart, Belastungen, Fläche und Betriebssituation.</p>
+      <h2 class="h2">Anfrage mit konkreten Angaben</h2>
+      <p class="lead mt-4">
+        Je praziser Branche, Flache, Belastungen und Zeitfenster beschrieben werden, desto besser kann HSB den sinnvollen nachsten Schritt einschatzen.
+      </p>
+      <div class="mt-8 space-y-4 border-t border-hsb-line pt-8">
+        {[
+          ["Branche und Nutzung", "Welche Belastungen sind relevant?"],
+          ["Flache und Situation", "Neubau oder Sanierung?"],
+          ["Zeitfenster", "Wann ist der Eingriff moglich?"],
+        ].map(([label, hint]) => (
+          <div class="flex items-start gap-3">
+            <span class="mt-1 size-1.5 shrink-0 rounded-full bg-hsb-red"></span>
+            <div>
+              <p class="text-sm font-bold">{label}</p>
+              <p class="text-xs text-hsb-steel">{hint}</p>
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
     <LeadForm client:load />
   </div>

@@ -2,23 +2,33 @@
 import { manufacturers } from "../../data/manufacturers";
 ---
 
-<section class="section">
-  <div class="container grid gap-10 lg:grid-cols-[0.9fr_1.1fr] lg:items-start">
+<section class="section bg-hsb-mist border-b border-hsb-line">
+  <div class="container grid gap-12 lg:grid-cols-[1fr_1.1fr] lg:items-start">
     <div>
-      <p class="eyebrow">Hersteller- und Fachquellen</p>
-      <h2 class="h2 mt-3">Bewährte Systembasis sauber eingeordnet</h2>
-      <p class="lead mt-4">Argelith und Zahna werden als technische Informations- und Herstellerquellen genutzt. Die Webseite behauptet keine Partnerschaft oder Zertifizierung, wenn diese nicht belegbar freigegeben ist.</p>
+      <h2 class="h2 max-w-sm">Technische Grundlage, ehrlich eingeordnet</h2>
+      <p class="lead mt-4">
+        HSB nutzt anerkannte Herstellersysteme als technische Planungsgrundlage. Keine unbelegten Partnerschaftsclaims, keine Zertifizierungsbehauptungen ohne Freigabe.
+      </p>
     </div>
     <div class="grid gap-4">
       {manufacturers.map((manufacturer) => (
         <article class="surface p-6">
           <h3 class="h3">{manufacturer.name}</h3>
-          <p class="mt-2 text-sm font-bold text-hsb-steel">{manufacturer.role}</p>
-          <ul class="mt-4 space-y-2 text-sm leading-6 text-hsb-steel">
-            {manufacturer.proofPoints.map((point) => <li>• {point}</li>)}
+          <p class="mt-1.5 text-xs font-bold uppercase tracking-wide text-hsb-steel">{manufacturer.role}</p>
+          <ul class="mt-4 space-y-2">
+            {manufacturer.proofPoints.map((point) => (
+              <li class="flex items-start gap-2 text-sm leading-6 text-hsb-steel">
+                <span class="mt-2 size-1 shrink-0 rounded-full bg-hsb-red"></span>
+                {point}
+              </li>
+            ))}
           </ul>
-          <div class="mt-5 flex flex-wrap gap-3">
-            {manufacturer.links.map((link) => <a class="text-sm font-black text-hsb-red" href={link.href}>{link.label}</a>)}
+          <div class="mt-5 flex flex-wrap gap-4">
+            {manufacturer.links.map((link) => (
+              <a class="text-sm font-bold text-hsb-red underline-offset-2 hover:underline" href={link.href} rel="noopener noreferrer" target="_blank">
+                {link.label}
+              </a>
+            ))}
           </div>
         </article>
       ))}

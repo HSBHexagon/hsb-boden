@@ -14,7 +14,7 @@ export default {
         },
       },
       fontFamily: {
-        sans: ["Inter", "ui-sans-serif", "system-ui", "sans-serif"],
+        sans: ["Outfit", "ui-sans-serif", "system-ui", "sans-serif"],
       },
       boxShadow: {
         industrial: "0 18px 50px rgba(15, 17, 20, 0.12)",

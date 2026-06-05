@@ -4,19 +4,37 @@ import { getIndustries } from "../../lib/content";
 const industries = getIndustries();
 ---
 
-<section class="section bg-hsb-mist">
+<section class="section bg-hsb-mist border-b border-hsb-line">
   <div class="container">
-    <div class="mb-10 max-w-3xl">
-      <p class="eyebrow">Branchen</p>
-      <h2 class="h2 mt-3">Jede Produktion hat ein eigenes Belastungsprofil</h2>
-      <p class="lead mt-4">Die neue HSB-Struktur schafft eigene Einstiegspunkte für Suchanfragen aus Lebensmittel, Molkerei, Getränke, Chemie, Pharma und Großküchen.</p>
+    <div class="mb-12 max-w-2xl">
+      <h2 class="h2">Jede Produktion hat ein anderes Belastungsprofil</h2>
+      <p class="lead mt-4">HSB kennt die unterschiedlichen Anforderungen aus Lebensmittel, Molkerei, Getranke, Chemie, Pharma und Grosskuchen.</p>
     </div>
-    <div class="grid-auto">
-      {industries.map((industry) => (
-        <a class="surface p-6 no-underline" href={`/branchen/${industry.slug}/`}>
-          <h3 class="h3">{industry.title}</h3>
-          <p class="mt-3 text-sm leading-7 text-hsb-steel">{industry.searchIntent}</p>
-          <span class="mt-5 inline-block text-sm font-black text-hsb-red">{industry.ctaLabel}</span>
+
+    <!-- Asymmetric: first one large, rest grid -->
+    <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      {industries.map((industry, i) => (
+        <a
+          href={`/branchen/${industry.slug}/`}
+          class={[
+            "group flex flex-col justify-between gap-8 rounded border no-underline transition hover:-translate-y-0.5",
+            i === 0
+              ? "border-hsb-black bg-hsb-black p-8 text-white sm:col-span-2 lg:col-span-1"
+              : "border-hsb-line bg-white p-6 hover:shadow-industrial",
+          ].join(" ")}
+        >
+          <div>
+            <h3 class={`h3 ${i === 0 ? "text-white" : ""}`}>{industry.title}</h3>
+            <p class={`mt-3 text-sm leading-7 ${i === 0 ? "text-white/55" : "text-hsb-steel"}`}>
+              {industry.searchIntent}
+            </p>
+          </div>
+          <span class={`text-sm font-bold ${i === 0 ? "text-hsb-red" : "text-hsb-red"} inline-flex items-center gap-2`}>
+            {industry.ctaLabel}
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+              <path d="M2 7h10M8 3l4 4-4 4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </span>
         </a>
       ))}
     </div>

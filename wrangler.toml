@@ -1,0 +1,8 @@
+name = "hsb-boden-preview"
+main = "./dist/_worker.js/index.js"
+compatibility_date = "2026-06-03"
+compatibility_flags = ["nodejs_compat"]
+
+[assets]
+directory = "./dist"
+binding = "ASSETS"

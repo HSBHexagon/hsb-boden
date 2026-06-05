@@ -1,0 +1,22 @@
+---
+import { getPublicReferences } from "../../lib/content";
+import ReferenceCard from "./ReferenceCard.astro";
+import ReferenceMap from "./ReferenceMap.astro";
+
+const references = getPublicReferences().slice(0, 3);
+---
+
+<section class="section bg-hsb-mist">
+  <div class="container grid gap-8 lg:grid-cols-[0.95fr_1.05fr]">
+    <ReferenceMap references={getPublicReferences()} />
+    <div>
+      <p class="eyebrow">Referenzen</p>
+      <h2 class="h2 mt-3">Vertrauen durch konkrete Projektlogik</h2>
+      <p class="lead mt-4">Referenzen werden kuratiert, freigegeben oder anonymisiert dargestellt. Keine fremden Wettbewerberkunden werden öffentlich als HSB-Akquisequelle verwendet.</p>
+      <div class="mt-6 grid gap-4">
+        {references.map((reference) => <ReferenceCard reference={reference} />)}
+      </div>
+      <a class="button-secondary mt-6" href="/referenzen/">Alle Referenzen ansehen</a>
+    </div>
+  </div>
+</section>

@@ -1,0 +1,67 @@
+export const articles = [
+  {
+    slug: "pu-beton-oder-keramischer-industrieboden",
+    title: "PU-Beton oder keramischer Industrieboden?",
+    seoTitle: "PU-Beton oder keramischer Industrieboden? | HSB Wissen",
+    description:
+      "Entscheidungshilfe für Produktionsbetriebe: Wann PU-Beton sinnvoll ist, wann Keramik stärker ist und welche Kriterien wirklich zählen.",
+    h1: "PU-Beton oder keramischer Industrieboden: Welche Lösung passt?",
+    category: "Systemvergleich",
+    readTime: "7 Minuten",
+    intro: "Die richtige Entscheidung entsteht nicht aus Materialvorlieben, sondern aus Belastungsprofil, Hygieneanforderung und Sanierungsfenster.",
+    sections: [
+      "Nutzung und Belastungsprofil zuerst klären",
+      "Lebensdauer, Fugen und Reinigbarkeit vergleichen",
+      "Sanierungsfenster und Aushärtezeiten berücksichtigen",
+      "Entwässerung und Anschlüsse als System betrachten",
+    ],
+  },
+  {
+    slug: "warum-industrieboeden-in-molkereien-versagen",
+    title: "Warum Industrieböden in Molkereien versagen",
+    seoTitle: "Warum Industrieböden in Molkereien versagen | HSB Wissen",
+    description:
+      "Milchsäure, Feuchte, Fugen, Heißwasser und Reinigung: die häufigsten Ursachen für Bodenschäden in Molkereien und was dagegen hilft.",
+    h1: "Warum Industrieböden in Molkereien versagen",
+    category: "Molkerei",
+    readTime: "6 Minuten",
+    intro: "Molkereiböden scheitern meist an Details: Fugen, Rinnen, Gefälle und falsche Systemwahl tragen mehr Risiko als die Fläche selbst.",
+    sections: ["Milchsäure und Reinigungschemie", "Fugen als Schwachstelle", "stehendes Wasser durch falsches Gefälle", "Sanierung in Bauabschnitten"],
+  },
+  {
+    slug: "saeurefeste-fliesen-industrieboden",
+    title: "Säurefeste Fliesen im Industrieboden",
+    seoTitle: "Säurefeste Fliesen im Industrieboden | HSB Wissen",
+    description:
+      "Was säurefeste Fliesen leisten können, warum Fugen entscheidend sind und welche Rolle Feinsteinzeug, Verlegebett und Entwässerung spielen.",
+    h1: "Säurefeste Fliesen im Industrieboden richtig einordnen",
+    category: "Keramik",
+    readTime: "5 Minuten",
+    intro: "Die Fliese allein macht keinen Säureschutz. Entscheidend ist der vollständige Aufbau aus Untergrund, Abdichtung, Fuge und Detailplanung.",
+    sections: ["Feinsteinzeug als technische Basis", "Fugen und Verlegebett", "Rutschhemmung und Reinigung", "Herstellerinformationen richtig nutzen"],
+  },
+  {
+    slug: "entwaesserung-gefaelle-produktionsbereiche",
+    title: "Entwässerung und Gefälle in Produktionsbereichen",
+    seoTitle: "Entwässerung und Gefälle im Industrieboden | HSB Wissen",
+    description:
+      "Warum Gefälle, Rinnen, Abläufe und Anschlussdetails über Hygiene, Sicherheit und Lebensdauer von Industrieböden entscheiden.",
+    h1: "Entwässerung und Gefälle in Produktionsbereichen",
+    category: "Entwässerung",
+    readTime: "6 Minuten",
+    intro: "Stehendes Wasser ist kein Schönheitsfehler. Es belastet Fugen, erhöht Rutschrisiken und erschwert hygienische Reinigung.",
+    sections: ["Wassermengen und Reinigungsprozess", "Rinnen und Abläufe", "Anschlussdetails", "Sanierung vorhandener Gefällefehler"],
+  },
+  {
+    slug: "sanierung-ohne-produktionsstillstand",
+    title: "Sanierung ohne Produktionsstillstand",
+    seoTitle: "Industrieboden-Sanierung ohne Produktionsstillstand | HSB Wissen",
+    description:
+      "Wie Produktionsbetriebe Industrieboden-Sanierungen mit Bauabschnitten, Zeitfenstern und passender Systemwahl besser planbar machen.",
+    h1: "Industrieboden-Sanierung ohne Produktionsstillstand planen",
+    category: "Sanierung",
+    readTime: "7 Minuten",
+    intro: "Nicht jede Sanierung kann ohne Stillstand erfolgen. Aber fast jede Sanierung kann besser geplant werden, wenn technische und organisatorische Zwänge früh sichtbar sind.",
+    sections: ["Schadensbild erfassen", "Bauabschnitte planen", "Materialwahl nach Zeitfenster", "Übergabe und Wiederinbetriebnahme"],
+  },
+];

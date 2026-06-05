@@ -1,0 +1,23 @@
+---
+import ReferenceCard from "../../components/references/ReferenceCard.astro";
+import ReferenceMap from "../../components/references/ReferenceMap.astro";
+import CTASection from "../../components/sections/CTASection.astro";
+import PageHero from "../../components/sections/PageHero.astro";
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import { getPublicReferences } from "../../lib/content";
+
+const references = getPublicReferences();
+---
+
+<BaseLayout title="Referenzen für Industrieböden & Säureschutz | Hexagon Säurebau" description="Ausgewählte freigegebene und anonymisierte Referenzen für Industrieböden, Säureschutz, Keramik, Entwässerung und Sanierung." path="/referenzen/">
+  <PageHero eyebrow="Referenzen" title="Referenzen aus produktionskritischen Bereichen" text="Die Referenzdarstellung trennt freigegebene Kundenlogos von anonymisierten Projektregionen. So entsteht Vertrauen ohne unnötige Standort- oder Freigaberisiken." />
+  <section class="section">
+    <div class="container grid gap-8 lg:grid-cols-[0.9fr_1.1fr]">
+      <ReferenceMap references={references} />
+      <div class="grid gap-4">
+        {references.map((reference) => <ReferenceCard reference={reference} />)}
+      </div>
+    </div>
+  </section>
+  <CTASection title="Eine eigene Referenz prüfen lassen" text="Bestehende Projekte können mit Freigabestatus, Branche, Region und Systemdaten in das Referenzmodell aufgenommen werden." />
+</BaseLayout>

@@ -1,0 +1,23 @@
+---
+interface Props {
+  eyebrow?: string;
+  title: string;
+  text: string;
+  ctaLabel?: string;
+  ctaHref?: string;
+}
+
+const { eyebrow = "Hexagon Säurebau", title, text, ctaLabel = "Belastungsprofil prüfen lassen", ctaHref = "/kontakt/" } = Astro.props;
+---
+
+<section class="section bg-hsb-mist">
+  <div class="container max-w-5xl">
+    <p class="eyebrow">{eyebrow}</p>
+    <h1 class="h1 mt-4">{title}</h1>
+    <p class="lead mt-6 max-w-3xl">{text}</p>
+    <div class="mt-8 flex flex-wrap gap-3">
+      <a class="button-primary" href={ctaHref}>{ctaLabel}</a>
+      <a class="button-secondary" href="/referenzen/">Referenzen ansehen</a>
+    </div>
+  </div>
+</section>

@@ -1,0 +1,71 @@
+---
+import LeadFormSection from "../components/forms/LeadFormSection.astro";
+import ReferenceMapPreview from "../components/references/ReferenceMapPreview.astro";
+import CTASection from "../components/sections/CTASection.astro";
+import IndustryGrid from "../components/sections/IndustryGrid.astro";
+import ManufacturerProof from "../components/sections/ManufacturerProof.astro";
+import ServiceGrid from "../components/sections/ServiceGrid.astro";
+import BaseLayout from "../layouts/BaseLayout.astro";
+import { site } from "../data/site";
+import { buildLocalBusinessJsonLd } from "../lib/schema";
+---
+
+<BaseLayout title={site.defaultTitle} description={site.defaultDescription} path="/" jsonLd={[buildLocalBusinessJsonLd()]}>
+  <section class="section bg-hsb-black text-white">
+    <div class="container grid gap-10 lg:grid-cols-[1.08fr_0.92fr] lg:items-center">
+      <div>
+        <p class="eyebrow">Hexagon Säurebau</p>
+        <h1 class="h1 mt-4">Industrieböden und Säureschutzsysteme für produktionskritische Bereiche</h1>
+        <p class="mt-6 max-w-3xl text-lg leading-8 text-white/75">Keramik, PU-Beton, Epoxidharz, Entwässerung, Abdichtung und Sanierung für Betriebe, in denen Hygiene, Chemie, Feuchte und Stillstand echte Geschäftsrisiken sind.</p>
+        <div class="mt-8 flex flex-wrap gap-3">
+          <a class="button-primary" href="/kontakt/">Belastungsprofil prüfen lassen</a>
+          <a class="button-secondary border-white/30 text-white hover:border-white" href="/referenzen/">Referenzen ansehen</a>
+        </div>
+      </div>
+      <div class="surface border-white/10 bg-white/5 p-6">
+        <p class="eyebrow">System statt Standardlösung</p>
+        <div class="mt-5 grid gap-4">
+          {["Säuren/Laugen", "Hochdruckreinigung", "Temperaturwechsel", "Staplerverkehr", "Nassbereiche", "Fugen & Entwässerung"].map((item) => (
+            <div class="flex items-center gap-3 border-b border-white/10 pb-3 last:border-0 last:pb-0">
+              <span class="size-2 rounded-full bg-hsb-red"></span>
+              <span class="font-bold">{item}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  </section>
+  <section class="section-tight border-b border-hsb-line">
+    <div class="container grid gap-4 sm:grid-cols-3">
+      <div><strong class="text-3xl">8+</strong><p class="text-sm text-hsb-steel">SEO-Leistungsbereiche in V1</p></div>
+      <div><strong class="text-3xl">6</strong><p class="text-sm text-hsb-steel">Branchenseiten für organische Leads</p></div>
+      <div><strong class="text-3xl">0</strong><p class="text-sm text-hsb-steel">unbelegte Nummer-1-Claims</p></div>
+    </div>
+  </section>
+  <ServiceGrid />
+  <IndustryGrid />
+  <ReferenceMapPreview />
+  <section class="section" id="projektablauf">
+    <div class="container">
+      <p class="eyebrow">Projektablauf</p>
+      <h2 class="h2 mt-3 max-w-3xl">Von Belastungsprofil zu belastbarer Umsetzung</h2>
+      <div class="mt-10 grid-auto">
+        {[
+          ["1", "Analyse vor Ort", "Untergrund, Schäden, Chemie, Reinigung, Gefälle und Betriebssituation werden technisch aufgenommen."],
+          ["2", "Systementscheidung", "Keramik, PU-Beton, Epoxidharz, Abdichtung und Entwässerung werden nach Belastungsprofil bewertet."],
+          ["3", "Sanierungsfenster", "Bauabschnitte, Sperrzeiten, Logistik und Wiederinbetriebnahme werden planbar gemacht."],
+          ["4", "Umsetzung & Wartung", "Ausführung mit Blick auf Details, Fugen, Rinnen, Übergaben und langfristige Betreuung."],
+        ].map(([number, title, text]) => (
+          <article class="surface p-6">
+            <span class="grid size-10 place-items-center rounded bg-hsb-red font-black text-white">{number}</span>
+            <h3 class="h3 mt-5">{title}</h3>
+            <p class="mt-3 text-sm leading-7 text-hsb-steel">{text}</p>
+          </article>
+        ))}
+      </div>
+    </div>
+  </section>
+  <ManufacturerProof />
+  <LeadFormSection />
+  <CTASection />
+</BaseLayout>

@@ -1,0 +1,66 @@
+import { site } from "../data/site";
+import { absoluteUrl } from "./seo";
+
+export function buildOrganizationJsonLd() {
+  return {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    name: "Hexagon Säurebau",
+    alternateName: "HSB",
+    url: site.domain,
+    email: site.email,
+    telephone: site.phone,
+    description: site.description,
+    areaServed: "Deutschland",
+    knowsAbout: [
+      "Industrieböden",
+      "Säureschutz",
+      "Keramische Industrieböden",
+      "PU-Beton",
+      "Epoxidharz",
+      "Entwässerung",
+      "Bodensanierung",
+    ],
+  };
+}
+
+export function buildLocalBusinessJsonLd() {
+  return {
+    "@context": "https://schema.org",
+    "@type": "LocalBusiness",
+    name: "Hexagon Säurebau",
+    url: site.domain,
+    telephone: site.phone,
+    email: site.email,
+    priceRange: "$$$",
+    areaServed: ["Deutschland", "DACH"],
+  };
+}
+
+export function buildFaqJsonLd(faqs: Array<{ question: string; answer: string }>) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: faqs.map((faq) => ({
+      "@type": "Question",
+      name: faq.question,
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: faq.answer,
+      },
+    })),
+  };
+}
+
+export function buildBreadcrumbJsonLd(items: Array<{ name: string; path: string }>) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: items.map((item, index) => ({
+      "@type": "ListItem",
+      position: index + 1,
+      name: item.name,
+      item: absoluteUrl(item.path),
+    })),
+  };
+}

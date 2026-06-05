@@ -1,0 +1,25 @@
+---
+import { canonical, pageTitle } from "../../lib/seo";
+import { buildOrganizationJsonLd } from "../../lib/schema";
+
+interface Props {
+  title?: string;
+  description?: string;
+  path?: string;
+  jsonLd?: unknown[];
+}
+
+const { title, description, path = "/", jsonLd = [] } = Astro.props;
+const allJsonLd = [buildOrganizationJsonLd(), ...jsonLd];
+---
+
+<title>{pageTitle(title)}</title>
+<meta name="description" content={description} />
+<link rel="canonical" href={canonical(path)} />
+<meta property="og:type" content="website" />
+<meta property="og:title" content={pageTitle(title)} />
+<meta property="og:description" content={description} />
+<meta property="og:url" content={canonical(path)} />
+<meta property="og:site_name" content="Hexagon Säurebau" />
+<meta name="twitter:card" content="summary_large_image" />
+{allJsonLd.map((item) => <script is:inline type="application/ld+json" set:html={JSON.stringify(item)} />)}

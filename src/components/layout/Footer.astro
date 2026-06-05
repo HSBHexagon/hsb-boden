@@ -1,0 +1,29 @@
+---
+import { footerGroups } from "../../data/navigation";
+import { site } from "../../data/site";
+---
+
+<footer class="border-t border-hsb-line bg-hsb-black text-white">
+  <div class="container grid gap-10 py-14 lg:grid-cols-[1.2fr_2fr]">
+    <div>
+      <div class="mb-4 flex items-center gap-3 font-black">
+        <span class="grid size-10 place-items-center rounded bg-hsb-red">HSB</span>
+        <span>Hexagon Säurebau</span>
+      </div>
+      <p class="max-w-md text-sm leading-7 text-white/70">{site.description}</p>
+      <p class="mt-6 text-sm text-white/60">WordPress bleibt bis zum finalen Cloudflare-Switch unverändert live.</p>
+    </div>
+    <div class="grid gap-8 sm:grid-cols-3">
+      {footerGroups.map((group) => (
+        <div>
+          <h2 class="mb-4 text-sm font-black uppercase tracking-wide text-white">{group.title}</h2>
+          <ul class="space-y-3 text-sm text-white/70">
+            {group.links.map((link) => (
+              <li><a class="hover:text-white" href={link.href}>{link.label}</a></li>
+            ))}
+          </ul>
+        </div>
+      ))}
+    </div>
+  </div>
+</footer>

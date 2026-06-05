@@ -1,0 +1,40 @@
+---
+import CTASection from "../../components/sections/CTASection.astro";
+import PageHero from "../../components/sections/PageHero.astro";
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import { getArticles } from "../../lib/content";
+import { buildBreadcrumbJsonLd } from "../../lib/schema";
+
+export const prerender = true;
+
+export function getStaticPaths() {
+  return getArticles().map((article) => ({
+    params: { slug: article.slug },
+    props: { article },
+  }));
+}
+
+const { article } = Astro.props;
+const path = `/wissen/${article.slug}/`;
+---
+
+<BaseLayout title={article.seoTitle} description={article.description} path={path} jsonLd={[buildBreadcrumbJsonLd([{ name: "Start", path: "/" }, { name: "Wissen", path: "/wissen/" }, { name: article.title, path }])]}>
+  <PageHero eyebrow={article.category} title={article.h1} text={article.description} ctaLabel="Belastungsprofil besprechen" />
+  <article class="section">
+    <div class="container max-w-3xl">
+      <p class="lead">{article.intro}</p>
+      <div class="prose prose-lg mt-10 max-w-none">
+        {article.sections.map((section, index) => (
+          <section>
+            <h2>{section}</h2>
+            <p>
+              Dieser Abschnitt dient als fachliches Content-Briefing für die finale redaktionelle Ausarbeitung. Er verbindet Suchintention, technische Entscheidungskriterien und die passenden HSB-Leistungsseiten.
+            </p>
+            {index === 0 && <p>Die finale Version sollte mit echten Projektbildern, Herstellerquellen und internen Referenzen ergänzt werden.</p>}
+          </section>
+        ))}
+      </div>
+    </div>
+  </article>
+  <CTASection title="Aus Wissen eine Projektentscheidung machen" text="HSB übersetzt die fachlichen Kriterien in eine konkrete Systementscheidung für Ihre Produktionsfläche." />
+</BaseLayout>

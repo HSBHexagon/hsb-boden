@@ -1,0 +1,40 @@
+---
+interface ReferenceItem {
+  id: string;
+  displayName: string;
+  displayLocation: string;
+  industry: string;
+  systems: readonly string[];
+  projectType: string;
+  challenge: string;
+  solution: string;
+  result: string;
+  approvalStatus: string;
+  logo?: string;
+}
+
+interface Props {
+  reference: ReferenceItem;
+}
+
+const { reference } = Astro.props;
+---
+
+<article class="surface p-6">
+  <div class="flex items-start justify-between gap-4">
+    <div>
+      <p class="text-xs font-black uppercase tracking-wide text-hsb-red">{reference.projectType}</p>
+      <h3 class="h3 mt-2">{reference.displayName}</h3>
+      <p class="mt-1 text-sm font-bold text-hsb-steel">{reference.displayLocation}</p>
+    </div>
+    <span class="rounded border border-hsb-line px-2 py-1 text-xs font-bold text-hsb-steel">{reference.approvalStatus === "approved" ? "freigegeben" : "anonymisiert"}</span>
+  </div>
+  <dl class="mt-5 grid gap-4 text-sm leading-6 text-hsb-steel">
+    <div><dt class="font-black text-hsb-black">Herausforderung</dt><dd>{reference.challenge}</dd></div>
+    <div><dt class="font-black text-hsb-black">Lösung</dt><dd>{reference.solution}</dd></div>
+    <div><dt class="font-black text-hsb-black">Ergebnis</dt><dd>{reference.result}</dd></div>
+  </dl>
+  <div class="mt-5 flex flex-wrap gap-2">
+    {reference.systems.map((system) => <span class="rounded bg-hsb-mist px-2 py-1 text-xs font-bold text-hsb-steel">{system}</span>)}
+  </div>
+</article>

@@ -1,0 +1,78 @@
+---
+import ReferenceCard from "../../components/references/ReferenceCard.astro";
+import CTASection from "../../components/sections/CTASection.astro";
+import FAQAccordion from "../../components/sections/FAQAccordion.astro";
+import ManufacturerProof from "../../components/sections/ManufacturerProof.astro";
+import PageHero from "../../components/sections/PageHero.astro";
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import { getReferencesForSlugs, getServices } from "../../lib/content";
+import { buildBreadcrumbJsonLd, buildFaqJsonLd } from "../../lib/schema";
+
+export const prerender = true;
+
+export function getStaticPaths() {
+  return getServices().map((service) => ({
+    params: { slug: service.slug },
+    props: { service },
+  }));
+}
+
+const { service } = Astro.props;
+const relatedReferences = getReferencesForSlugs(service.relatedReferences);
+const path = `/leistungen/${service.slug}/`;
+---
+
+<BaseLayout title={service.seoTitle} description={service.description} path={path} jsonLd={[buildFaqJsonLd(service.faqs), buildBreadcrumbJsonLd([{ name: "Start", path: "/" }, { name: "Leistungen", path: "/leistungen/" }, { name: service.title, path }])]}>
+  <PageHero eyebrow="Leistung" title={service.h1} text={service.description} ctaLabel={service.ctaLabel} />
+  <section class="section">
+    <div class="container grid gap-8 lg:grid-cols-[0.9fr_1.1fr]">
+      <div>
+        <p class="eyebrow">Problem</p>
+        <h2 class="h2 mt-3">Warum diese Leistung relevant ist</h2>
+        <p class="lead mt-4">{service.problem}</p>
+      </div>
+      <div class="grid gap-4">
+        <article class="surface p-6">
+          <h3 class="h3">Systemlösung</h3>
+          <p class="mt-3 text-sm leading-7 text-hsb-steel">{service.systemSolution}</p>
+        </article>
+        <article class="surface p-6">
+          <h3 class="h3">Technische Anforderungen</h3>
+          <div class="mt-4 flex flex-wrap gap-2">
+            {service.technicalRequirements.map((item) => <span class="rounded bg-hsb-mist px-3 py-2 text-sm font-bold text-hsb-steel">{item}</span>)}
+          </div>
+        </article>
+      </div>
+    </div>
+  </section>
+  <section class="section-tight bg-hsb-mist">
+    <div class="container grid gap-6 lg:grid-cols-2">
+      <div class="surface p-6">
+        <h2 class="h3">Vorteile</h2>
+        <ul class="mt-4 space-y-2 text-sm leading-6 text-hsb-steel">
+          {service.benefits.map((item) => <li>• {item}</li>)}
+        </ul>
+      </div>
+      <div class="surface p-6">
+        <h2 class="h3">Entscheidungskriterien</h2>
+        <ul class="mt-4 space-y-2 text-sm leading-6 text-hsb-steel">
+          {service.decisionCriteria.map((item) => <li>• {item}</li>)}
+        </ul>
+      </div>
+    </div>
+  </section>
+  {service.slug.includes("keramische") || service.slug.includes("saeureschutz") ? <ManufacturerProof /> : null}
+  {relatedReferences.length > 0 && (
+    <section class="section">
+      <div class="container">
+        <p class="eyebrow">Passende Referenzen</p>
+        <h2 class="h2 mt-3">Projektbeispiele mit Freigabelogik</h2>
+        <div class="mt-8 grid-auto">
+          {relatedReferences.map((reference) => <ReferenceCard reference={reference} />)}
+        </div>
+      </div>
+    </section>
+  )}
+  <FAQAccordion faqs={service.faqs} />
+  <CTASection title={service.ctaLabel} text="Die technische Ersteinschätzung startet mit Belastung, Fläche, Nutzung, Untergrund und Zeitfenster." label="Anfrage starten" />
+</BaseLayout>

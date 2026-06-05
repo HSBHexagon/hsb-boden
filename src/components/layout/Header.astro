@@ -1,0 +1,16 @@
+---
+import { navigation } from "../../data/navigation";
+---
+
+<header class="sticky top-0 z-40 border-b border-hsb-line bg-white/95 backdrop-blur">
+  <div class="container flex min-h-16 items-center justify-between gap-6">
+    <a href="/" class="flex items-center gap-3 font-black no-underline" aria-label="Hexagon Säurebau Startseite">
+      <span class="grid size-10 place-items-center rounded bg-hsb-red text-white">HSB</span>
+      <span class="hidden sm:block">Hexagon Säurebau</span>
+    </a>
+    <nav class="hidden items-center gap-5 text-sm font-bold text-hsb-steel lg:flex" aria-label="Hauptnavigation">
+      {navigation.map((item) => <a class="hover:text-hsb-red" href={item.href}>{item.label}</a>)}
+    </nav>
+    <a class="button-primary hidden sm:inline-flex" href="/kontakt/">Anfrage</a>
+  </div>
+</header>

@@ -13,48 +13,31 @@ import { navigation } from "../../data/navigation";
   #site-header {
     transition: background 200ms ease, border-color 200ms ease, box-shadow 200ms ease, color 200ms ease;
   }
-  /* At top: light header, dark text */
-  #site-header:not(.scrolled) {
-    background: rgba(255, 255, 255, 0.97);
-    border-bottom: 1px solid rgba(15, 17, 20, 0.08);
-    box-shadow: none;
-    color: #0f1114;
+  /* Durchgehend dunkler Header (industrieller Charakter).
+     Oben: deckungsgleich mit dem dunklen Hero (#0f1114) -> nahtloser Top-Fold.
+     Auf hellen Unterseiten-Heros bleibt es eine klare dunkle Leiste. */
+  #site-header {
+    background: #0f1114;
+    color: #ffffff;
+    border-bottom: 1px solid transparent;
   }
-  #site-header:not(.scrolled) .nav-links a {
-    color: rgba(15, 17, 20, 0.65);
+  #site-header .nav-links a {
+    color: rgba(255, 255, 255, 0.72);
   }
-  #site-header:not(.scrolled) .nav-links a:hover {
-    color: #0f1114;
+  #site-header .nav-links a:hover {
+    color: #ffffff;
   }
-  #site-header:not(.scrolled) #mobile-menu-toggle {
-    border-color: rgba(15, 17, 20, 0.18);
-    color: #0f1114;
+  #site-header #mobile-menu-toggle {
+    border-color: rgba(255, 255, 255, 0.22);
+    color: #ffffff;
   }
-  #site-header .logo-plate {
-    transition: background 200ms ease, border-color 200ms ease;
-  }
-  #site-header.scrolled .logo-plate {
-    background: #ffffff;
-    border-color: rgba(255, 255, 255, 0.86);
-  }
-  /* Scrolled: dark header, white text */
+  /* Scrolled: leichte Transluzenz + Elevation als Scroll-Hinweis ueber hellem Content. */
   #site-header.scrolled {
-    background: rgba(15, 17, 20, 0.97);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(15, 17, 20, 0.92);
+    border-bottom-color: rgba(255, 255, 255, 0.08);
     box-shadow: 0 4px 24px rgba(0, 0, 0, 0.32);
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
-    color: white;
-  }
-  #site-header.scrolled .nav-links a {
-    color: rgba(255, 255, 255, 0.72);
-  }
-  #site-header.scrolled .nav-links a:hover {
-    color: white;
-  }
-  #site-header.scrolled #mobile-menu-toggle {
-    border-color: rgba(255, 255, 255, 0.2);
-    color: white;
   }
 </style>
 
@@ -62,9 +45,9 @@ import { navigation } from "../../data/navigation";
 <header id="site-header" class="sticky top-0 z-40">
   <div class="container flex min-h-[72px] items-center justify-between gap-6">
 
-    <!-- Logo -->
-    <a href="/" class="logo-plate flex shrink-0 items-center rounded border border-transparent bg-transparent px-2 py-1 no-underline" aria-label="HSB Hexagon Säurebau Startseite">
-      <img src="/brand/hsb-boden-logo.png" alt="Hexagon Säurebau GmbH" class="h-11 w-auto object-contain" width="140" height="44" />
+    <!-- Logo: helle Marken-Variante, fuer den durchgehend dunklen Header gebaut (transparenter PNG-Hintergrund) -->
+    <a href="/" class="logo-lockup flex shrink-0 items-center no-underline" aria-label="HSB Hexagon Säurebau Startseite">
+      <img src="/brand/hsb-boden-logo-dark.png" alt="HSB Hexagon Säurebau GmbH" class="h-11 w-auto object-contain" width="60" height="44" />
     </a>
 
     <!-- Desktop nav -->

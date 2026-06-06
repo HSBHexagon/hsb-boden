@@ -66,6 +66,9 @@ a {
   line-height: 0.94;
   letter-spacing: -0.02em;
   font-weight: 900;
+  /* Lange deutsche Komposita (z.B. "produktionskritische") sonst horizontaler Overflow auf Mobile */
+  overflow-wrap: break-word;
+  hyphens: auto;
 }
 
 .h2 {
@@ -73,6 +76,8 @@ a {
   line-height: 1.0;
   letter-spacing: -0.02em;
   font-weight: 900;
+  overflow-wrap: break-word;
+  hyphens: auto;
 }
 
 .h3 {

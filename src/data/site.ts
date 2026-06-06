@@ -15,7 +15,7 @@ export const site = {
   // CRM-Form-Endpoints, der Anfragen zuverlässig an info@hsb-boden.de zustellt.
   // Leer = Online-Versand inaktiv -> Formular zeigt direkten Kontaktweg statt PII zu leaken.
   // Best Practice: NICHT selbst-gehosteter Mailer, sondern Provider/CRM mit Zustellgarantie.
-  leadEndpoint: "",
+  leadEndpoint: import.meta.env.PUBLIC_LEAD_ENDPOINT ?? "",
   // Optionaler Access-Key, falls der Provider ihn im Payload erwartet (z.B. Web3Forms).
-  leadAccessKey: "",
+  leadAccessKey: import.meta.env.PUBLIC_LEAD_ACCESS_KEY ?? "",
 };

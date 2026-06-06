@@ -6,6 +6,7 @@ export default {
       colors: {
         hsb: {
           red: "#cb0000",
+          "red-light": "#ff8a7d",
           black: "#0f1114",
           steel: "#3d4652",
           mist: "#f3f5f7",

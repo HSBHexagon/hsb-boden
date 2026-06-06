@@ -37,7 +37,7 @@ const problems = [
           immer wieder auftreten
         </h2>
       </div>
-      <p class="max-w-xs text-sm leading-7 text-white/45 lg:text-right">
+      <p class="max-w-xs text-sm leading-7 text-white/72 lg:text-right">
         Nicht der Boden ist das Problem — sondern die Lücke zwischen Anforderung und Planung.
       </p>
     </div>
@@ -45,12 +45,12 @@ const problems = [
     <div class="grid gap-px bg-white/10 sm:grid-cols-2">
       {problems.map((item) => (
         <article class="flex flex-col gap-5 bg-hsb-black p-8">
-          <span class="font-black text-5xl text-hsb-red/25 tabular-nums leading-none">{item.number}</span>
+          <span class="font-black text-5xl text-hsb-red-light tabular-nums leading-none">{item.number}</span>
           <div>
             <h3 class="h3 text-white">{item.title}</h3>
             <p class="mt-3 text-sm leading-7 text-white/55">{item.text}</p>
           </div>
-          <p class="border-t border-white/10 pt-4 text-xs font-bold text-hsb-red/80 leading-6">{item.consequence}</p>
+          <p class="border-t border-white/10 pt-4 text-xs font-bold text-hsb-red-light leading-6">{item.consequence}</p>
         </article>
       ))}
     </div>

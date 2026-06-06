@@ -2,25 +2,25 @@
 const mediaPanels = [
   {
     image: "/media/hsb/current/referenzflaeche-1.webp",
-    alt: "Keramischer Industrieboden mit Entwässerungsrinne — Referenzfläche Hexagon Säurebau",
+    alt: "Keramischer Industrieboden mit Entwässerungsrinne als Referenzfläche von Hexagon Säurebau",
     eyebrow: "Keramischer Industrieboden",
     title: "Hygienische Verfliesung für Lebensmittel- und Produktionsbereiche",
     text:
-      "Fugenarme keramische Systeme mit Gefälle, Rinnenkante und Säureschutzbeschichtung — ausgelegt für die Hygieneanforderungen von Lebensmittelbetrieben.",
+      "Fugenarme keramische Systeme mit Gefälle, Rinnenkante und Säureschutzbeschichtung. Ausgelegt für die Hygieneanforderungen von Lebensmittelbetrieben.",
     tone: "dark",
   },
   {
     image: "/media/hsb/current/referenzflaeche-2.webp",
-    alt: "Hygienische Industrieverfliesung für Produktionsbereich — Hexagon Säurebau",
+    alt: "Hygienische Industrieverfliesung für einen Produktionsbereich von Hexagon Säurebau",
     eyebrow: "Beschichtung & Sanierung",
     title: "Oberflächen nach Belastungsprofil, nicht nach Standard",
     text:
-      "Bei Sanierungen zählt nicht nur das Material — auch Sperrzeit, Untergrundzustand, Rutschhemmung und Wiederinbetriebnahme müssen von Anfang an geplant werden.",
+      "Bei Sanierungen zählt nicht nur das Material. Auch Sperrzeit, Untergrundzustand, Rutschhemmung und Wiederinbetriebnahme müssen von Anfang an geplant werden.",
     tone: "light",
   },
   {
     image: "/media/hsb/current/referenzflaeche-3.webp",
-    alt: "Säurebeständige Bodenfläche in Industrieumgebung — Hexagon Säurebau Ausführung",
+    alt: "Säurebeständige Bodenfläche in Industrieumgebung als Ausführung von Hexagon Säurebau",
     eyebrow: "Entwässerung & Anschluss",
     title: "Entwässerung ist Teil des Bodensystems",
     text:
@@ -43,23 +43,23 @@ const mediaPanels = [
       <a class="button-secondary-dark shrink-0" href="/referenzen/">Alle Referenzen ansehen</a>
     </div>
 
-    <div class="grid gap-6 lg:grid-cols-3">
-      {mediaPanels.map((panel) => (
+    <div class="grid gap-5 lg:grid-cols-[1.35fr_0.65fr] lg:items-stretch">
+      {mediaPanels.slice(0, 1).map((panel) => (
         <article class:list={[
-          "overflow-hidden rounded-[10px] border",
+          "overflow-hidden rounded-[8px] border",
           panel.tone === "dark" ? "border-hsb-black bg-hsb-black text-white" : "border-hsb-line bg-white text-hsb-black",
         ]}>
-          <div class:list={["aspect-[4/3] overflow-hidden border-b", panel.tone === "dark" ? "border-white/10" : "border-hsb-line"]}>
+          <div class:list={["aspect-[16/10] overflow-hidden border-b lg:aspect-[16/9]", panel.tone === "dark" ? "border-white/10" : "border-hsb-line"]}>
             <img
               src={panel.image}
               alt={panel.alt}
-              class="h-full w-full object-cover object-center transition-transform duration-500 hover:scale-[1.025]"
+              class="h-full w-full object-cover object-center transition-transform duration-500 hover:scale-[1.015]"
               loading="lazy"
-              width="480"
-              height="360"
+              width="554"
+              height="361"
             />
           </div>
-          <div class="grid gap-3 p-6">
+          <div class="grid gap-3 p-6 lg:p-8">
             <p class:list={["text-xs font-bold uppercase tracking-[0.16em]", panel.tone === "dark" ? "text-white/45" : "text-hsb-red"]}>
               {panel.eyebrow}
             </p>
@@ -68,6 +68,27 @@ const mediaPanels = [
           </div>
         </article>
       ))}
+      <div class="grid gap-5">
+        {mediaPanels.slice(1).map((panel) => (
+          <article class="grid overflow-hidden rounded-[8px] border border-hsb-line bg-white text-hsb-black sm:grid-cols-[190px_1fr] lg:grid-cols-1">
+            <div class="aspect-[4/3] overflow-hidden border-b border-hsb-line sm:aspect-auto sm:border-b-0 sm:border-r lg:aspect-[4/3] lg:border-b lg:border-r-0">
+              <img
+                src={panel.image}
+                alt={panel.alt}
+                class="h-full w-full object-cover object-center transition-transform duration-500 hover:scale-[1.015]"
+                loading="lazy"
+                width="562"
+                height="369"
+              />
+            </div>
+            <div class="grid gap-2 p-5">
+              <p class="text-xs font-bold uppercase tracking-[0.14em] text-hsb-red">{panel.eyebrow}</p>
+              <h3 class="text-lg font-black leading-tight text-hsb-black">{panel.title}</h3>
+              <p class="text-sm leading-6 text-hsb-steel">{panel.text}</p>
+            </div>
+          </article>
+        ))}
+      </div>
     </div>
   </div>
 </section>

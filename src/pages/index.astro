@@ -28,43 +28,31 @@ import { buildLocalBusinessJsonLd } from "../lib/schema";
             Getränke- und <span class="text-hsb-red">Chemiebetriebe</span>
           </h1>
           <p class="mt-8 max-w-2xl text-lg leading-8 text-white/65">
-            Keramische Industrieböden, Säureschutzbau, PU-Beton, Entwässerung und Sanierung — geplant nach Belastungsprofil, nicht nach Katalog.
+            Keramische Industrieböden, Säureschutzbau, Entwässerung und Sanierung für produktionskritische Bereiche.
           </p>
           <div class="mt-10 flex flex-wrap items-center gap-4">
             <a class="button-primary" href="/kontakt/">Projekt anfragen</a>
             <a class="button-secondary" href="/referenzen/">Referenzen ansehen</a>
           </div>
-
-          <!-- Proof strip -->
-          <div class="mt-14 flex flex-wrap gap-x-10 gap-y-3 border-t border-white/10 pt-8">
-            {[
-              ["Analyse vor Ort", "Untergrund, Chemie und Betrieb werden technisch aufgenommen"],
-              ["System, nicht Produkt", "Belag, Fuge, Abdichtung und Entwässerung als Einheit geplant"],
-              ["Sanierung planbar", "Bauabschnitte und Stillstandsfenster von Anfang an eingeplant"],
-            ].map(([label, desc]) => (
-              <div class="min-w-[180px]">
-                <p class="text-sm font-bold text-white">{label}</p>
-                <p class="mt-1 text-xs leading-5 text-white/45 max-w-[200px]">{desc}</p>
-              </div>
-            ))}
-          </div>
         </div>
 
         <!-- Right: Visual proof -->
         <div class="grid gap-4 self-stretch lg:grid-rows-[1fr_auto]">
-          <div class="relative overflow-hidden rounded-[10px] border border-white/10 bg-black min-h-[320px]">
+          <div class="relative min-h-[360px] overflow-hidden rounded-[8px] border border-white/10 bg-black lg:min-h-[560px]">
             <img
               src="/media/hsb/current/industrieboden-baustelle.webp"
               alt="Keramischer Industrieboden mit Entwässerungsrinne und Hexagon-Verlegung in Produktionshalle"
               class="absolute inset-0 h-full w-full object-cover object-center"
               style="opacity:0.72"
               fetchpriority="high"
+              width="1024"
+              height="768"
             />
-            <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
+            <div class="absolute inset-0 bg-black/35"></div>
             <div class="relative z-10 flex h-full flex-col justify-end p-6 lg:p-8">
               <p class="eyebrow-light">Ausgeführte Referenz</p>
               <h2 class="mt-3 text-2xl font-black leading-tight text-white lg:text-[1.85rem]">
-                Keramik, Entwässerung und Gefälle — aus einem System.
+                Keramik, Entwässerung und Gefälle aus einem System.
               </h2>
               <p class="mt-3 max-w-md text-sm leading-7 text-white/65">
                 Industrieböden für Lebensmittelbetriebe müssen Säurebelastung, Reinigungsdruck und Auditanforderungen dauerhaft bestehen.
@@ -91,6 +79,21 @@ import { buildLocalBusinessJsonLd } from "../lib/schema";
 
     <!-- Red bottom bar -->
     <div class="h-1 w-full bg-hsb-red mt-1"></div>
+  </section>
+
+  <section class="border-b border-hsb-line bg-white">
+    <div class="container grid gap-0 divide-y divide-hsb-line py-0 lg:grid-cols-3 lg:divide-x lg:divide-y-0">
+      {[
+        ["Analyse vor Ort", "Untergrund, Chemie und Betrieb werden technisch aufgenommen."],
+        ["System, nicht Produkt", "Belag, Fuge, Abdichtung und Entwässerung werden als Einheit geplant."],
+        ["Sanierung planbar", "Bauabschnitte und Stillstandsfenster werden von Anfang an eingeplant."],
+      ].map(([label, desc]) => (
+        <div class="py-6 lg:px-8">
+          <p class="text-sm font-black text-hsb-black">{label}</p>
+          <p class="mt-2 max-w-sm text-sm leading-6 text-hsb-steel">{desc}</p>
+        </div>
+      ))}
+    </div>
   </section>
 
   <!-- SCHMERZPUNKTE -->
@@ -121,7 +124,7 @@ import { buildLocalBusinessJsonLd } from "../lib/schema";
           ["01", "Analyse vor Ort", "Untergrund, Schäden, Chemiebelastung, Reinigungsprozesse, Gefälle und Betriebsablauf werden technisch aufgenommen. Keine Systemempfehlung ohne diesen Schritt."],
           ["02", "Systementscheidung", "Keramik, PU-Beton, Epoxidharz, Abdichtung und Entwässerung werden nach Belastungsprofil bewertet und nicht nach dem einfachsten Weg."],
           ["03", "Sanierungsfenster planen", "Bauabschnitte, Sperrzeiten, Materialaushärtung und Wiederinbetriebnahme werden von Anfang an mit der Produktionsplanung abgestimmt."],
-          ["04", "Dokumentation & Abnahme", "Jede Ausführung wird technisch dokumentiert - für interne Nachvollziehbarkeit, Audit-Vorbereitung und als Grundlage für Wartung und spätere Sanierungsplanung."],
+          ["04", "Dokumentation und Abnahme", "Jede Ausführung wird technisch dokumentiert - für interne Nachvollziehbarkeit, Audit-Vorbereitung und als Grundlage für Wartung und spätere Sanierungsplanung."],
         ].map(([number, title, text]) => (
           <article class="grid gap-6 py-8 sm:grid-cols-[80px_1fr_1.5fr]">
             <span class="text-4xl font-black text-hsb-line tabular-nums">{number}</span>

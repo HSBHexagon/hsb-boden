@@ -3,6 +3,13 @@ import { navigation } from "../../data/navigation";
 ---
 
 <style>
+  #header-scroll-sentinel {
+    position: absolute;
+    inset-block-start: 0;
+    height: 1px;
+    width: 1px;
+    pointer-events: none;
+  }
   #site-header {
     transition: background 200ms ease, border-color 200ms ease, box-shadow 200ms ease, color 200ms ease;
   }
@@ -22,6 +29,13 @@ import { navigation } from "../../data/navigation";
   #site-header:not(.scrolled) #mobile-menu-toggle {
     border-color: rgba(15, 17, 20, 0.18);
     color: #0f1114;
+  }
+  #site-header .logo-plate {
+    transition: background 200ms ease, border-color 200ms ease;
+  }
+  #site-header.scrolled .logo-plate {
+    background: #ffffff;
+    border-color: rgba(255, 255, 255, 0.86);
   }
   /* Scrolled: dark header, white text */
   #site-header.scrolled {
@@ -44,11 +58,12 @@ import { navigation } from "../../data/navigation";
   }
 </style>
 
+<div id="header-scroll-sentinel" aria-hidden="true"></div>
 <header id="site-header" class="sticky top-0 z-40">
   <div class="container flex min-h-[72px] items-center justify-between gap-6">
 
     <!-- Logo -->
-    <a href="/" class="flex shrink-0 items-center no-underline" aria-label="HSB Hexagon Säurebau Startseite">
+    <a href="/" class="logo-plate flex shrink-0 items-center rounded border border-transparent bg-transparent px-2 py-1 no-underline" aria-label="HSB Hexagon Säurebau Startseite">
       <img src="/brand/hsb-boden-logo.png" alt="Hexagon Säurebau GmbH" class="h-11 w-auto object-contain" width="140" height="44" />
     </a>
 
@@ -107,26 +122,36 @@ import { navigation } from "../../data/navigation";
 
 <script>
   const header = document.getElementById("site-header") as HTMLElement | null;
+  const sentinel = document.getElementById("header-scroll-sentinel");
   const toggle = document.getElementById("mobile-menu-toggle");
   const menu = document.getElementById("mobile-menu");
   const iconMenu = document.getElementById("icon-menu");
   const iconClose = document.getElementById("icon-close");
+  let pastHeaderSentinel = false;
 
-  function updateHeader() {
+  function syncHeaderState() {
     if (!header) return;
-    header.classList.toggle("scrolled", window.scrollY > 72);
+    const menuOpen = toggle?.getAttribute("aria-expanded") === "true";
+    header.classList.toggle("scrolled", pastHeaderSentinel || menuOpen);
   }
 
-  window.addEventListener("scroll", updateHeader, { passive: true });
-  updateHeader();
+  if (header && sentinel && "IntersectionObserver" in window) {
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        pastHeaderSentinel = !entry.isIntersecting;
+        syncHeaderState();
+      },
+      { rootMargin: "-72px 0px 0px 0px", threshold: 0 },
+    );
+    observer.observe(sentinel);
+  }
+  syncHeaderState();
 
   toggle?.addEventListener("click", () => {
     const open = menu?.classList.toggle("hidden") === false;
     toggle.setAttribute("aria-expanded", String(open));
     iconMenu?.classList.toggle("hidden", open);
     iconClose?.classList.toggle("hidden", !open);
-    // Keep dark when menu open
-    if (open && header) header.classList.add("scrolled");
-    else updateHeader();
+    syncHeaderState();
   });
 </script>

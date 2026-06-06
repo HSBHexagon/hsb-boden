@@ -1,8 +1,15 @@
 import { useState } from "react";
 import { loadOptions } from "../../lib/validation";
+import { site } from "../../data/site";
+
+type Status = "idle" | "submitting" | "error";
+
+// Online-Versand nur aktiv, wenn ein Zustell-Endpoint (Provider/CRM) konfiguriert ist.
+const deliveryConfigured = Boolean(site.leadEndpoint);
 
 export function LeadForm() {
   const [started, setStarted] = useState(false);
+  const [status, setStatus] = useState<Status>("idle");
 
   function onFocus() {
     if (!started) {
@@ -11,8 +18,62 @@ export function LeadForm() {
     }
   }
 
+  async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!deliveryConfigured) return;
+
+    const form = event.currentTarget;
+    const fd = new FormData(form);
+    const payload: Record<string, unknown> = {
+      source: "website",
+      legalBasis: "inquiry",
+      firstName: fd.get("firstName"),
+      lastName: fd.get("lastName"),
+      company: fd.get("company"),
+      email: fd.get("email"),
+      phone: fd.get("phone"),
+      industry: fd.get("industry"),
+      projectType: fd.get("projectType"),
+      areaSize: fd.get("areaSize") ?? "",
+      liveOperation: fd.get("liveOperation"),
+      loads: fd.getAll("loads"),
+      message: fd.get("message"),
+      privacyConsent: fd.get("privacyConsent") === "on",
+    };
+    // Manche Provider (z.B. Web3Forms) erwarten den Access-Key im Payload.
+    if (site.leadAccessKey) payload.access_key = site.leadAccessKey;
+
+    setStatus("submitting");
+    try {
+      const res = await fetch(site.leadEndpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Accept: "application/json" },
+        body: JSON.stringify(payload),
+      });
+      if (!res.ok) throw new Error(`Status ${res.status}`);
+      window.dispatchEvent(new CustomEvent("hsb:tracking", { detail: { event: "lead_form_submit" } }));
+      window.location.href = "/danke-projektanfrage/";
+    } catch {
+      setStatus("error");
+    }
+  }
+
   return (
-    <form className="surface grid gap-4 p-5" action="/danke-projektanfrage/" method="get" onFocus={onFocus}>
+    <form className="surface grid gap-4 p-5" onSubmit={onSubmit} onFocus={onFocus}>
+      {!deliveryConfigured ? (
+        <div className="rounded border border-hsb-red/30 bg-hsb-red/5 p-4 text-sm leading-6 text-hsb-black">
+          <p className="font-black">Direkter Draht ins Projektgeschäft</p>
+          <p className="mt-1 text-hsb-steel">
+            Für eine schnelle Ersteinschätzung erreichen Sie HSB direkt:
+          </p>
+          <p className="mt-2 font-bold">
+            <a className="text-hsb-red hover:underline" href={`tel:${site.phone.replace(/[^+\d]/g, "")}`}>{site.phone}</a>
+            <span className="mx-2 text-hsb-line">·</span>
+            <a className="text-hsb-red hover:underline" href={`mailto:${site.email}`}>{site.email}</a>
+          </p>
+        </div>
+      ) : null}
+
       <div className="grid gap-4 sm:grid-cols-2">
         <label className="grid gap-2 text-sm font-bold">
           Vorname
@@ -93,7 +154,24 @@ export function LeadForm() {
         <input required type="checkbox" name="privacyConsent" className="mt-1" />
         Ich stimme zu, dass meine Angaben zur Bearbeitung der Anfrage verarbeitet werden.
       </label>
-      <button className="button-primary" type="submit">Projektanfrage senden</button>
+
+      {status === "error" ? (
+        <p className="rounded border border-hsb-red/40 bg-hsb-red/5 px-3 py-2 text-sm text-hsb-red">
+          Senden fehlgeschlagen. Bitte kontaktieren Sie uns direkt unter {site.phone} oder {site.email}.
+        </p>
+      ) : null}
+
+      <button
+        className="button-primary disabled:cursor-not-allowed disabled:opacity-60"
+        type="submit"
+        disabled={!deliveryConfigured || status === "submitting"}
+      >
+        {!deliveryConfigured
+          ? "Bitte direkt anrufen oder mailen"
+          : status === "submitting"
+            ? "Wird gesendet …"
+            : "Projektanfrage senden"}
+      </button>
     </form>
   );
 }

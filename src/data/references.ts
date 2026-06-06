@@ -19,7 +19,10 @@ export const references = [
     images: [],
     logo: "/logos/suedzucker.svg",
     year: "2026",
-    approvalStatus: "approved",
+    // Konservativ anonymisiert (2026-06-06): keine belegte schriftliche Logo-/Namens-Freigabe.
+    // Bei nachgereichter Freigabe wieder auf "approved" setzen (git revert).
+    // Union-Annotation hält "approved" im inferierten Typ, solange kein Eintrag freigegeben ist.
+    approvalStatus: "anonymous" as "approved" | "anonymous" | "internal",
   },
   {
     id: "molkerei-sued",

@@ -6,7 +6,7 @@ import ManufacturerProof from "../../components/sections/ManufacturerProof.astro
 import PageHero from "../../components/sections/PageHero.astro";
 import BaseLayout from "../../layouts/BaseLayout.astro";
 import { getReferencesForSlugs, getServices } from "../../lib/content";
-import { buildBreadcrumbJsonLd, buildFaqJsonLd } from "../../lib/schema";
+import { buildBreadcrumbJsonLd, buildFaqJsonLd, buildServiceJsonLd } from "../../lib/schema";
 
 export const prerender = true;
 
@@ -22,7 +22,7 @@ const relatedReferences = getReferencesForSlugs(service.relatedReferences);
 const path = `/leistungen/${service.slug}/`;
 ---
 
-<BaseLayout title={service.seoTitle} description={service.description} path={path} jsonLd={[buildFaqJsonLd(service.faqs), buildBreadcrumbJsonLd([{ name: "Start", path: "/" }, { name: "Leistungen", path: "/leistungen/" }, { name: service.title, path }])]}>
+<BaseLayout title={service.seoTitle} description={service.description} path={path} jsonLd={[buildServiceJsonLd({ name: service.title, description: service.description, path }), buildFaqJsonLd(service.faqs), buildBreadcrumbJsonLd([{ name: "Start", path: "/" }, { name: "Leistungen", path: "/leistungen/" }, { name: service.title, path }])]}>
   <PageHero eyebrow="Leistung" title={service.h1} text={service.description} ctaLabel={service.ctaLabel} />
   <section class="section">
     <div class="container grid gap-8 lg:grid-cols-[0.9fr_1.1fr]">

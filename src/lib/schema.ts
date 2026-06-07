@@ -52,6 +52,23 @@ export function buildFaqJsonLd(faqs: Array<{ question: string; answer: string }>
   };
 }
 
+export function buildServiceJsonLd(service: { name: string; description: string; path: string }) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "Service",
+    name: service.name,
+    description: service.description,
+    url: absoluteUrl(service.path),
+    serviceType: service.name,
+    areaServed: ["Deutschland", "DACH"],
+    provider: {
+      "@type": "Organization",
+      name: "HSB Hexagon Säurebau GmbH",
+      url: site.domain,
+    },
+  };
+}
+
 export function buildBreadcrumbJsonLd(items: Array<{ name: string; path: string }>) {
   return {
     "@context": "https://schema.org",

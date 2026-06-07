@@ -19,10 +19,9 @@ export const references = [
     images: [],
     logo: "/logos/suedzucker.svg",
     year: "2026",
-    // Konservativ anonymisiert (2026-06-06): keine belegte schriftliche Logo-/Namens-Freigabe.
-    // Bei nachgereichter Freigabe wieder auf "approved" setzen (git revert).
-    // Union-Annotation hält "approved" im inferierten Typ, solange kein Eintrag freigegeben ist.
-    approvalStatus: "anonymous" as "approved" | "anonymous" | "internal",
+    // Freigegeben (User 2026-06-06, belegt in _AI_Memory CANONICAL_STATE + working_set):
+    // Südzucker AG ist realer Referenzkunde mit Namens-/Logo-Freigabe, besteht bereits live.
+    approvalStatus: "approved" as "approved" | "anonymous" | "internal",
   },
   {
     id: "molkerei-sued",

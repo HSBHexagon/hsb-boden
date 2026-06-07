@@ -50,15 +50,16 @@ import { navigation } from "../../data/navigation";
       <img src="/brand/hsb-boden-logo-dark.png" alt="HSB Hexagon Säurebau GmbH" class="h-11 w-auto object-contain" width="60" height="44" />
     </a>
 
-    <!-- Desktop nav -->
-    <nav class="nav-links hidden items-center gap-6 text-sm font-bold lg:flex" aria-label="Hauptnavigation">
-      {navigation.filter(n => n.href !== "/kontakt/").map((item) => (
-        <a class="transition-colors" href={item.href}>{item.label}</a>
-      ))}
-    </nav>
+    <!-- Rechter Cluster: Navigation und CTA bilden eine bewusste Gruppe,
+         damit der Header als Ganzes wirkt (Logo links, Aktionen rechts) und
+         die Navigation nicht isoliert in der Mitte schwebt. -->
+    <div class="flex items-center gap-3 lg:gap-8">
+      <nav class="nav-links hidden items-center gap-6 text-sm font-bold lg:flex" aria-label="Hauptnavigation">
+        {navigation.filter(n => n.href !== "/kontakt/").map((item) => (
+          <a class="transition-colors" href={item.href}>{item.label}</a>
+        ))}
+      </nav>
 
-    <!-- CTA + Mobile button -->
-    <div class="flex items-center gap-3">
       <div class="hidden lg:block">
         <a class="button-primary" href="/kontakt/">Ersteinschätzung</a>
       </div>

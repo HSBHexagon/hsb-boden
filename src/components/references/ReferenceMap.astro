@@ -3,6 +3,8 @@ interface ReferenceItem {
   id: string;
   displayName: string;
   displayLocation: string;
+  region: string;
+  canShowExactLocation: boolean;
   lat: number;
   lng: number;
 }
@@ -18,21 +20,45 @@ const points = references.map((reference) => ({
   x: 8 + ((reference.lng - 5.5) / 9) * 84,
   y: 82 - ((reference.lat - 47) / 8.5) * 68,
 }));
+
+// Regionen deduplizieren: kollidierende Inline-Labels auf der Karte ersetzen wir
+// durch eine saubere Chip-Liste. Freigegebene exakte Standorte zuerst.
+const seen = new Set<string>();
+const regions: { label: string; exact: boolean }[] = [];
+for (const reference of [...references].sort((a, b) => Number(b.canShowExactLocation) - Number(a.canShowExactLocation))) {
+  if (seen.has(reference.displayLocation)) continue;
+  seen.add(reference.displayLocation);
+  regions.push({ label: reference.displayLocation, exact: reference.canShowExactLocation });
+}
 ---
 
-<div class="h-full overflow-hidden bg-white">
-  <div class="border-b border-hsb-line p-5">
+<div class="flex h-full flex-col bg-white">
+  <div class="border-b border-hsb-line p-6 lg:p-8">
     <p class="eyebrow">Referenzkarte</p>
-    <h2 class="h3 mt-2">Freigegebene und anonymisierte Projektregionen</h2>
+    <h3 class="h3 mt-2">Freigegebene und anonymisierte Projektregionen</h3>
   </div>
-  <svg viewBox="0 0 100 100" role="img" aria-label="Schematische Referenzkarte Deutschland" class="h-[360px] w-full bg-hsb-mist lg:h-[420px]">
-    <path d="M45 8 L58 10 L65 21 L72 28 L70 42 L78 55 L67 72 L58 90 L43 86 L33 78 L27 62 L20 48 L27 36 L25 20 Z" fill="#fff" stroke="#d8dde3" stroke-width="1.5" />
-    {points.map((point) => (
-      <g>
-        <circle cx={point.x} cy={point.y} r="2.2" fill="#cb0000" />
-        <text x={point.x + 3} y={point.y + 1} font-size="3.2" fill="#0f1114">{point.displayLocation}</text>
-      </g>
-    ))}
-  </svg>
-  <p class="p-5 text-sm leading-6 text-hsb-steel">Die Karte bleibt bewusst schematisch und zeigt bei nicht freigegebenen Projekten nur Regionen statt exakter Standorte.</p>
+  <div class="flex flex-1 items-center justify-center bg-hsb-mist px-6 py-8">
+    <svg viewBox="0 0 100 100" role="img" aria-label="Schematische Referenzkarte Deutschland mit Projektregionen" class="h-full max-h-[300px] w-auto">
+      <path d="M45 8 L58 10 L65 21 L72 28 L70 42 L78 55 L67 72 L58 90 L43 86 L33 78 L27 62 L20 48 L27 36 L25 20 Z" fill="#fff" stroke="#d8dde3" stroke-width="1.4" />
+      {points.map((point) => (
+        <g>
+          <circle cx={point.x} cy={point.y} r="3.4" fill="#cb0000" opacity="0.14" />
+          <circle cx={point.x} cy={point.y} r="1.9" fill="#cb0000" />
+        </g>
+      ))}
+    </svg>
+  </div>
+  <div class="border-t border-hsb-line p-6 lg:p-8">
+    <ul class="flex flex-wrap gap-2">
+      {regions.map((region) => (
+        <li class="inline-flex items-center gap-2 rounded border border-hsb-line bg-white px-2.5 py-1.5 text-xs font-bold text-hsb-steel">
+          <span class="size-1.5 shrink-0 rounded-full bg-hsb-red"></span>
+          {region.label}
+        </li>
+      ))}
+    </ul>
+    <p class="mt-4 text-sm leading-6 text-hsb-steel">
+      Die Karte bleibt bewusst schematisch und zeigt bei nicht freigegebenen Projekten nur Regionen statt exakter Standorte.
+    </p>
+  </div>
 </div>

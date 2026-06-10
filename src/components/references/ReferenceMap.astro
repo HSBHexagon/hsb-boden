@@ -9,16 +9,35 @@ interface ReferenceItem {
   lng: number;
 }
 
-interface Props {
-  references: ReferenceItem[];
+interface ClientLocation {
+  name: string;
+  city: string;
+  region: string;
+  lat: number;
+  lng: number;
+  branche: string;
 }
 
-const { references } = Astro.props;
+interface Props {
+  references: ReferenceItem[];
+  clients?: readonly ClientLocation[];
+}
+
+const { references, clients = [] } = Astro.props;
+
+const project = (lat: number, lng: number) => ({
+  x: 8 + ((lng - 5.5) / 9) * 84,
+  y: 82 - ((lat - 47) / 8.5) * 68,
+});
 
 const points = references.map((reference) => ({
   ...reference,
-  x: 8 + ((reference.lng - 5.5) / 9) * 84,
-  y: 82 - ((reference.lat - 47) / 8.5) * 68,
+  ...project(reference.lat, reference.lng),
+}));
+
+const clientPoints = clients.map((client) => ({
+  ...client,
+  ...project(client.lat, client.lng),
 }));
 
 // Regionen deduplizieren: kollidierende Inline-Labels auf der Karte ersetzen wir
@@ -38,8 +57,14 @@ for (const reference of [...references].sort((a, b) => Number(b.canShowExactLoca
     <h3 class="h3 mt-2">Freigegebene und anonymisierte Projektregionen</h3>
   </div>
   <div class="flex flex-1 items-center justify-center bg-hsb-mist px-6 py-8">
-    <svg viewBox="0 0 100 100" role="img" aria-label="Schematische Referenzkarte Deutschland mit Projektregionen" class="h-full max-h-[300px] w-auto">
+    <svg viewBox="0 0 100 100" role="img" aria-label="Schematische Referenzkarte Deutschland mit Projekt- und Kundenstandorten" class="h-full max-h-[300px] w-auto">
       <path d="M45 8 L58 10 L65 21 L72 28 L70 42 L78 55 L67 72 L58 90 L43 86 L33 78 L27 62 L20 48 L27 36 L25 20 Z" fill="#fff" stroke="#d8dde3" stroke-width="1.4" />
+      {clientPoints.map((point) => (
+        <g>
+          <circle cx={point.x} cy={point.y} r="2.4" fill="#0f1114" opacity="0.1" />
+          <circle cx={point.x} cy={point.y} r="1.1" fill="#0f1114" opacity="0.45" />
+        </g>
+      ))}
       {points.map((point) => (
         <g>
           <circle cx={point.x} cy={point.y} r="3.4" fill="#cb0000" opacity="0.14" />
@@ -60,5 +85,18 @@ for (const reference of [...references].sort((a, b) => Number(b.canShowExactLoca
     <p class="mt-4 text-sm leading-6 text-hsb-steel">
       Die Karte bleibt bewusst schematisch und zeigt bei nicht freigegebenen Projekten nur Regionen statt exakter Standorte.
     </p>
+    {clientPoints.length > 0 && (
+      <div class="mt-6 border-t border-hsb-line pt-6">
+        <p class="text-xs font-black uppercase tracking-[0.14em] text-hsb-steel">Weitere Kundenstandorte in Deutschland</p>
+        <ul class="mt-3 grid gap-x-6 gap-y-1.5 text-sm leading-6 text-hsb-steel sm:grid-cols-2">
+          {clientPoints.map((client) => (
+            <li class="flex items-center gap-2">
+              <span class="size-1.5 shrink-0 rounded-full bg-hsb-black/45"></span>
+              <span><span class="font-bold text-hsb-black">{client.name}</span> · {client.city}</span>
+            </li>
+          ))}
+        </ul>
+      </div>
+    )}
   </div>
 </div>

@@ -1,4 +1,5 @@
 ---
+import { clientLocations } from "../../data/clientLocations";
 import { getPublicReferences } from "../../lib/content";
 import ReferenceCard from "./ReferenceCard.astro";
 import ReferenceMap from "./ReferenceMap.astro";
@@ -17,7 +18,7 @@ const references = getPublicReferences().slice(0, 3);
         </p>
         <dl class="mt-8 grid gap-px overflow-hidden rounded border border-white/10 bg-white/10 sm:grid-cols-3">
           {[
-            ["Sichtbare Freigabe", "Südzucker AG"],
+            ["Namentliche Referenzen", "5 Kunden, bundesweit"],
             ["Schwerpunkte", "Keramik · PU-Beton · Säureschutz"],
             ["Fokus", "Audit · Sanierung · Hygiene"],
           ].map(([term, value]) => (
@@ -28,7 +29,7 @@ const references = getPublicReferences().slice(0, 3);
           ))}
         </dl>
       </div>
-      <ReferenceMap references={getPublicReferences()} />
+      <ReferenceMap references={getPublicReferences()} clients={clientLocations} />
     </div>
     <div>
       <p class="eyebrow">Referenzmodule</p>

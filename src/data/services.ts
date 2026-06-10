@@ -39,7 +39,7 @@ export const services = [
     seoTitle: "Keramische Industrieböden für Produktion | Hexagon Säurebau",
     description:
       "Keramische Industrieböden und Feinsteinzeug-Systeme für Nassbereiche, Hygienezonen, Säurebelastung, schwere Lasten und dauerhafte Produktionsnutzung.",
-    h1: "Keramische Industrieböden für extreme Dauerbelastung",
+    h1: "Keramische Industrieböden für hohe mechanische und chemische Belastung",
     primaryKeyword: "keramischer Industrieboden",
     secondaryKeywords: ["Industriefliesen Lebensmittelindustrie", "Feinsteinzeug Industrieboden", "säurefeste Fliesen Industrie"],
     problem:

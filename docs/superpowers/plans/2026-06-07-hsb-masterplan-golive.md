@@ -11,6 +11,24 @@
 
 ---
 
+## 🚦 ARBEITSZUSTAND 2026-06-10 (verbindliche Entscheidung)
+
+**Die Website bleibt vorerst auf der Preview-/Entwurfsumgebung** (`https://hsb-boden-preview.cherinojoel.workers.dev/`). hsb-boden.de wird NICHT übernommen, bis alle Voraussetzungen erfüllt und freigegeben sind.
+
+- **PR #2 (Cloudflare-Bot: Worker-Name `hsb-boden-preview` → `hsb-boden`) wird NICHT gemerged.** Begründung: Die Umbenennung ist der erste Schritt der Produktionsübernahme und damit verfrüht. Der PR bleibt offen als Marker für den späteren Go-Live-Schritt (Phase 5).
+- **Absolute Sperren bis zur Freigabe:** kein Produktions-Deploy, kein Domain-Switch, keine DNS-Änderung, keine Wrangler-Namensänderung Richtung Produktion.
+- **Go-Live-Voraussetzungen (alle offen, blockieren Phase 5):** GA4-ID · SMTP/Formularversand · n8n-Follow-up · juristische Prüfung der Rechtsseiten · finale Sichtprüfung/Freigabe durch den Inhaber.
+- **Abgleich mit dem operativen HEXAFLOOR-Abarbeitungsplan:** siehe `docs/superpowers/plans/2026-06-10-hexafloor-abgleich.md` (Akquise-System: Flyer, CRM-Light, n8n-Workflows, Compliance-SOP — größtenteils außerhalb dieses Repos, dort mit Repo-Status abgeglichen).
+
+**Seit 2026-06-07 zusätzlich erledigt (PR #1 + PR #3, beide gemerged):**
+- [x] Phase 2 komplett: `public/_redirects` mit 301-Map WordPress→Astro (12 Einträge), gegen Preview verifiziert
+- [x] Phase 3.1: Service-JSON-LD auf Leistungsseiten (TDD, Tests grün)
+- [x] Phase 3.2: seo-content-reviewer-Durchlauf; unbelegte Superlative + interne Disclaimer-Tonalität entfernt
+- [x] Design-/Content-Perfektionierung der Preview (Playwright Desktop 1440 + Mobile 390): Umlaute, Halbgeviertstriche, fehlende Branchen-Optionen im Leadformular, keine Self-Link-CTAs im PageHero, Wissensartikel-Fließtext repariert, Referenz-Disclaimer-Ton korrigiert
+- [x] Südzucker als einzige namentlich freigegebene Referenz; alle übrigen anonymisiert (`approvalStatus`-Feld in `src/data/references.ts`) — entspricht P0 „Referenzen freigeben/anonymisieren" aus dem HEXAFLOOR-Plan
+
+---
+
 ## ✅ BEREITS ERREICHT (verifiziert 2026-06-07)
 
 - [x] Astro/Cloudflare-Stack steht; vollständige Seitenstruktur (index, leistungen, branchen, wissen, referenzen, kontakt, impressum, datenschutz, karriere, sitemap, robots, danke)
@@ -166,7 +184,7 @@ Expected: Service-JSON-LD im gerenderten HTML.
 
 ---
 
-## Phase 5 — Production Go-Live (Gate + User-Entscheidungen)
+## Phase 5 — Production Go-Live (⛔ GESPERRT bis Freigabe, siehe Arbeitszustand 2026-06-10)
 
 ### Task 5.1: Pre-Production-Gate (ADR-003)
 - [ ] **Step 1:** `npm run check && npm run test:run && npm run build` → grün

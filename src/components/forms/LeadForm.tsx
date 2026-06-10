@@ -108,6 +108,8 @@ export function LeadForm() {
             <option value="brauerei-getraenkeindustrie">Brauerei/Getränke</option>
             <option value="chemieindustrie">Chemie</option>
             <option value="pharmaindustrie">Pharma</option>
+            <option value="backwarenproduktion-grosskueche">Backwaren/Großküche</option>
+            <option value="sonstige">Sonstige</option>
           </select>
         </label>
         <label className="grid gap-2 text-sm font-bold">

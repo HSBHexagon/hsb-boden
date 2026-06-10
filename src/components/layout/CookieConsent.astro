@@ -1,0 +1,110 @@
+---
+// DSGVO-Consent: Statistik-Cookies (GA4) werden erst nach aktiver Einwilligung
+// geladen. Auswahl liegt in localStorage ("hsb-consent-v1"); `hsb:consent`-Event
+// informiert Tracking-Code, `hsb:open-consent` öffnet den Banner erneut (Footer).
+import { cookieTexts, type Lang } from "../../lib/i18n";
+
+interface Props {
+  lang?: Lang;
+}
+
+const { lang = "de" } = Astro.props;
+const t = cookieTexts[lang];
+---
+
+<div
+  id="cookie-consent"
+  class="fixed inset-x-0 bottom-0 z-50 hidden border-t border-white/10 bg-hsb-black text-white shadow-[0_-8px_32px_rgba(0,0,0,0.4)]"
+  role="dialog"
+  aria-modal="false"
+  aria-labelledby="cookie-consent-title"
+>
+  <div class="container py-5 lg:py-6">
+    <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between lg:gap-8">
+      <div class="max-w-2xl">
+        <p id="cookie-consent-title" class="text-sm font-black uppercase tracking-wide">{t.title}</p>
+        <p class="mt-2 text-sm leading-6 text-white/70">
+          {t.intro}
+          <a class="ml-1 underline hover:text-white" href="/datenschutz/">{t.privacyLink}</a>
+        </p>
+      </div>
+      <div class="flex shrink-0 flex-wrap items-center gap-3">
+        <button id="cookie-settings-toggle" class="text-sm font-bold text-white/70 underline hover:text-white" aria-expanded="false" aria-controls="cookie-categories">{t.settings}</button>
+        <button id="cookie-necessary" class="button-secondary-dark !border-white/30 !text-white hover:!border-white">{t.necessaryOnly}</button>
+        <button id="cookie-accept-all" class="button-primary">{t.acceptAll}</button>
+      </div>
+    </div>
+
+    <div id="cookie-categories" class="mt-5 hidden gap-4 border-t border-white/10 pt-5 sm:grid-cols-2 lg:max-w-4xl">
+      <div class="rounded border border-white/15 p-4">
+        <div class="flex items-center justify-between gap-3">
+          <p class="text-sm font-black">{t.necessaryTitle}</p>
+          <span class="rounded bg-white/10 px-2 py-1 text-xs font-bold uppercase tracking-wide text-white/60">{t.alwaysOn}</span>
+        </div>
+        <p class="mt-2 text-xs leading-5 text-white/65">{t.necessaryDesc}</p>
+      </div>
+      <div class="rounded border border-white/15 p-4">
+        <div class="flex items-center justify-between gap-3">
+          <label class="text-sm font-black" for="cookie-analytics-toggle">{t.analyticsTitle}</label>
+          <input id="cookie-analytics-toggle" type="checkbox" class="size-5 accent-hsb-red" />
+        </div>
+        <p class="mt-2 text-xs leading-5 text-white/65">{t.analyticsDesc}</p>
+      </div>
+      <div class="sm:col-span-2">
+        <button id="cookie-save" class="button-secondary-dark !border-white/30 !text-white hover:!border-white">{t.save}</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  const STORAGE_KEY = "hsb-consent-v1";
+
+  type Consent = { necessary: true; analytics: boolean; ts: string };
+
+  const banner = document.getElementById("cookie-consent");
+  const categories = document.getElementById("cookie-categories");
+  const settingsToggle = document.getElementById("cookie-settings-toggle");
+  const analyticsToggle = document.getElementById("cookie-analytics-toggle") as HTMLInputElement | null;
+
+  function readConsent(): Consent | null {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      return raw ? (JSON.parse(raw) as Consent) : null;
+    } catch {
+      return null;
+    }
+  }
+
+  function saveConsent(analytics: boolean) {
+    const consent: Consent = { necessary: true, analytics, ts: new Date().toISOString() };
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(consent));
+    } catch {
+      /* Storage blockiert -> Banner erscheint beim nächsten Aufruf erneut */
+    }
+    window.dispatchEvent(new CustomEvent("hsb:consent", { detail: consent }));
+    banner?.classList.add("hidden");
+  }
+
+  function openBanner() {
+    const current = readConsent();
+    if (analyticsToggle) analyticsToggle.checked = current?.analytics ?? false;
+    banner?.classList.remove("hidden");
+  }
+
+  settingsToggle?.addEventListener("click", () => {
+    const open = categories?.classList.toggle("hidden") === false;
+    categories?.classList.toggle("grid", open);
+    settingsToggle.setAttribute("aria-expanded", String(open));
+  });
+
+  document.getElementById("cookie-accept-all")?.addEventListener("click", () => saveConsent(true));
+  document.getElementById("cookie-necessary")?.addEventListener("click", () => saveConsent(false));
+  document.getElementById("cookie-save")?.addEventListener("click", () => saveConsent(analyticsToggle?.checked ?? false));
+
+  window.addEventListener("hsb:open-consent", openBanner);
+  document.getElementById("footer-cookie-settings")?.addEventListener("click", openBanner);
+
+  if (!readConsent()) openBanner();
+</script>

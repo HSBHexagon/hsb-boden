@@ -3,6 +3,7 @@ import { articles } from "../data/articles";
 import { industries } from "../data/industries";
 import { references } from "../data/references";
 import { services } from "../data/services";
+import { landing } from "./i18n";
 
 const faqSchema = z.object({
   question: z.string().min(10),
@@ -238,6 +239,12 @@ export function getAllPublicPages() {
       seoTitle: article.seoTitle,
       description: article.description,
       canonicalPath: `/wissen/${article.slug}/`,
+    })),
+    ...Object.entries(landing).map(([lang, content]) => ({
+      h1: content.hero.h1,
+      seoTitle: content.meta.seoTitle,
+      description: content.meta.description,
+      canonicalPath: `/${lang}/`,
     })),
   ];
 }

@@ -7,15 +7,18 @@ interface Props {
   description?: string;
   path?: string;
   jsonLd?: unknown[];
+  alternates?: { lang: string; path: string }[];
 }
 
-const { title, description, path = "/", jsonLd = [] } = Astro.props;
+const { title, description, path = "/", jsonLd = [], alternates = [] } = Astro.props;
 const allJsonLd = [buildOrganizationJsonLd(), ...jsonLd];
 ---
 
 <title>{pageTitle(title)}</title>
 <meta name="description" content={description} />
 <link rel="canonical" href={canonical(path)} />
+{alternates.map((alt) => <link rel="alternate" hreflang={alt.lang} href={canonical(alt.path)} />)}
+{alternates.length > 0 && <link rel="alternate" hreflang="x-default" href={canonical(alternates.find((alt) => alt.lang === "de")?.path ?? "/")} />}
 <link rel="icon" href="/brand/hsb-hexagon-mark.svg" type="image/svg+xml" />
 <link rel="alternate icon" href="/brand/hsb-boden-logo.png" type="image/png" />
 <link rel="apple-touch-icon" href="/brand/hsb-boden-logo.png" />

@@ -1,0 +1,105 @@
+---
+// Sprachangebot: Auf deutschen Seiten wird Besuchern mit nicht-deutscher
+// Browsersprache die passende Sprachversion angeboten (en/tr/nl/pl/fr direkt,
+// alle übrigen Sprachen -> Englisch). Entscheidung in localStorage.
+import type { Lang } from "../../lib/i18n";
+
+interface Props {
+  lang?: Lang;
+}
+
+const { lang = "de" } = Astro.props;
+---
+
+{lang === "de" && (
+  <div
+    id="lang-suggest"
+    class="fixed inset-x-0 top-[72px] z-40 hidden border-b border-hsb-line bg-white shadow-[0_8px_24px_rgba(0,0,0,0.12)]"
+    role="region"
+    aria-label="Language suggestion"
+  >
+    <div class="container flex flex-wrap items-center justify-between gap-3 py-3">
+      <p class="text-sm font-bold text-hsb-black"><span id="lang-suggest-text"></span></p>
+      <div class="flex items-center gap-3">
+        <a id="lang-suggest-link" class="button-primary !px-4 !py-2 text-sm" href="/en/"></a>
+        <button id="lang-suggest-dismiss" class="text-sm font-bold text-hsb-steel underline hover:text-hsb-black"></button>
+      </div>
+    </div>
+  </div>
+)}
+
+<script>
+  const STORAGE_KEY = "hsb-lang-suggest-v1";
+  const banner = document.getElementById("lang-suggest");
+
+  const variants: Record<string, { text: string; cta: string; href: string; dismiss: string }> = {
+    en: {
+      text: "This page is in German. Would you like to view it in English?",
+      cta: "View in English",
+      href: "/en/",
+      dismiss: "Continue in German",
+    },
+    tr: {
+      text: "Bu sayfa Almanca. İçeriği Türkçe görüntülemek ister misiniz?",
+      cta: "Türkçe görüntüle",
+      href: "/tr/",
+      dismiss: "Almanca devam et",
+    },
+    nl: {
+      text: "Deze pagina is in het Duits. Wilt u de inhoud in het Nederlands bekijken?",
+      cta: "Bekijk in het Nederlands",
+      href: "/nl/",
+      dismiss: "Doorgaan in het Duits",
+    },
+    pl: {
+      text: "Ta strona jest po niemiecku. Czy chcesz zobaczyć treść po polsku?",
+      cta: "Zobacz po polsku",
+      href: "/pl/",
+      dismiss: "Kontynuuj po niemiecku",
+    },
+    fr: {
+      text: "Cette page est en allemand. Souhaitez-vous l'afficher en français ?",
+      cta: "Afficher en français",
+      href: "/fr/",
+      dismiss: "Continuer en allemand",
+    },
+  };
+
+  function init() {
+    if (!banner) return;
+    let dismissed = false;
+    try {
+      dismissed = localStorage.getItem(STORAGE_KEY) === "dismissed";
+    } catch {
+      dismissed = false;
+    }
+    if (dismissed) return;
+
+    const browserLang = (navigator.languages?.[0] ?? navigator.language ?? "de").slice(0, 2).toLowerCase();
+    if (browserLang === "de") return;
+
+    const variant = variants[browserLang] ?? variants.en;
+    const text = document.getElementById("lang-suggest-text");
+    const link = document.getElementById("lang-suggest-link") as HTMLAnchorElement | null;
+    const dismiss = document.getElementById("lang-suggest-dismiss");
+    if (!text || !link || !dismiss) return;
+
+    text.textContent = variant.text;
+    link.textContent = variant.cta;
+    link.href = variant.href;
+    dismiss.textContent = variant.dismiss;
+
+    dismiss.addEventListener("click", () => {
+      try {
+        localStorage.setItem(STORAGE_KEY, "dismissed");
+      } catch {
+        /* ohne Storage nur für diese Seite ausblenden */
+      }
+      banner.classList.add("hidden");
+    });
+
+    banner.classList.remove("hidden");
+  }
+
+  init();
+</script>

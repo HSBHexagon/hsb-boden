@@ -10,10 +10,11 @@ import SchmerzpunkteSection from "../components/sections/SchmerzpunkteSection.as
 import ServiceGrid from "../components/sections/ServiceGrid.astro";
 import BaseLayout from "../layouts/BaseLayout.astro";
 import { site } from "../data/site";
+import { homeAlternates } from "../lib/i18n";
 import { buildLocalBusinessJsonLd } from "../lib/schema";
 ---
 
-<BaseLayout title={site.defaultTitle} description={site.defaultDescription} path="/" jsonLd={[buildLocalBusinessJsonLd()]}>
+<BaseLayout title={site.defaultTitle} description={site.defaultDescription} path="/" jsonLd={[buildLocalBusinessJsonLd()]} alternates={homeAlternates}>
 
   <!-- HERO -->
   <section class="bg-hsb-black text-white overflow-hidden">

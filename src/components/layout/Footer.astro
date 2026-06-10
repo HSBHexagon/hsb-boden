@@ -1,6 +1,14 @@
 ---
 import { footerGroups } from "../../data/navigation";
 import { site } from "../../data/site";
+import { ui, type Lang } from "../../lib/i18n";
+
+interface Props {
+  lang?: Lang;
+}
+
+const { lang = "de" } = Astro.props;
+const cookieSettingsLabel = ui[lang].cookieSettings;
 ---
 
 <footer class="border-t border-hsb-line bg-hsb-black text-white">
@@ -20,6 +28,11 @@ import { site } from "../../data/site";
             {group.links.map((link) => (
               <li><a class="hover:text-white" href={link.href}>{link.label}</a></li>
             ))}
+            {group.title === "Rechtliches" && (
+              <li>
+                <button id="footer-cookie-settings" class="underline-offset-2 hover:text-white hover:underline">{cookieSettingsLabel}</button>
+              </li>
+            )}
           </ul>
         </div>
       ))}

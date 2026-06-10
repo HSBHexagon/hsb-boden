@@ -1,5 +1,12 @@
 ---
 import { navigation } from "../../data/navigation";
+import { languages, type Lang } from "../../lib/i18n";
+
+interface Props {
+  lang?: Lang;
+}
+
+const { lang = "de" } = Astro.props;
 ---
 
 <style>
@@ -14,10 +21,10 @@ import { navigation } from "../../data/navigation";
     transition: background 200ms ease, border-color 200ms ease, box-shadow 200ms ease, color 200ms ease;
   }
   /* Durchgehend dunkler Header (industrieller Charakter).
-     Oben: deckungsgleich mit dem dunklen Hero (#0f1114) -> nahtloser Top-Fold.
+     Oben: deckungsgleich mit dem dunklen Hero (#161a20) -> nahtloser Top-Fold.
      Auf hellen Unterseiten-Heros bleibt es eine klare dunkle Leiste. */
   #site-header {
-    background: #0f1114;
+    background: #161a20;
     color: #ffffff;
     border-bottom: 1px solid transparent;
   }
@@ -33,7 +40,7 @@ import { navigation } from "../../data/navigation";
   }
   /* Scrolled: leichte Transluzenz + Elevation als Scroll-Hinweis ueber hellem Content. */
   #site-header.scrolled {
-    background: rgba(15, 17, 20, 0.92);
+    background: rgba(22, 26, 32, 0.92);
     border-bottom-color: rgba(255, 255, 255, 0.08);
     box-shadow: 0 4px 24px rgba(0, 0, 0, 0.32);
     backdrop-filter: blur(8px);
@@ -59,6 +66,22 @@ import { navigation } from "../../data/navigation";
           <a class="transition-colors" href={item.href}>{item.label}</a>
         ))}
       </nav>
+
+      <div class="hidden items-center gap-1 text-xs font-black lg:flex" aria-label="Sprache wählen">
+        {languages.map((language, index) => (
+          <>
+            {index > 0 && <span class="text-white/30" aria-hidden="true">·</span>}
+            <a
+              href={language.href}
+              title={language.title}
+              aria-current={language.code === lang ? "page" : undefined}
+              class={language.code === lang ? "text-white underline underline-offset-4" : "text-white/55 transition-colors hover:text-white"}
+            >
+              {language.label}
+            </a>
+          </>
+        ))}
+      </div>
 
       <div class="hidden lg:block">
         <a class="button-primary" href="/kontakt/">Ersteinschätzung</a>
@@ -97,6 +120,18 @@ import { navigation } from "../../data/navigation";
           {item.label}
         </a>
       ))}
+      <div class="flex items-center gap-4 py-3.5 text-sm font-black" aria-label="Sprache wählen">
+        {languages.map((language) => (
+          <a
+            href={language.href}
+            title={language.title}
+            aria-current={language.code === lang ? "page" : undefined}
+            class={language.code === lang ? "text-white underline underline-offset-4" : "text-white/55 hover:text-white"}
+          >
+            {language.label}
+          </a>
+        ))}
+      </div>
       <div class="pt-4">
         <a class="button-primary w-full text-center" href="/kontakt/">Ersteinschätzung anfordern</a>
       </div>

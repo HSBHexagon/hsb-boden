@@ -22,7 +22,7 @@ body {
   background:
     radial-gradient(circle at top left, rgba(203, 0, 0, 0.04), transparent 28%),
     #ffffff;
-  color: #0f1114;
+  color: #161a20;
   font-family: Outfit, ui-sans-serif, system-ui, sans-serif;
   letter-spacing: 0;
   font-feature-settings: "cv01", "cv02";
@@ -164,13 +164,13 @@ a {
   letter-spacing: 0.02em;
   text-decoration: none;
   border: 1.5px solid #c5cdd6;
-  color: #0f1114;
+  color: #161a20;
   transition: border-color 140ms ease, transform 140ms ease;
   white-space: nowrap;
 }
 
 .button-secondary-dark:hover {
-  border-color: #0f1114;
+  border-color: #161a20;
   transform: translateY(-1px);
 }
 
@@ -182,7 +182,7 @@ a {
 }
 
 .surface-dark {
-  background: #0f1114;
+  background: #161a20;
   color: #ffffff;
 }
 
@@ -197,7 +197,7 @@ a {
   left: -999px;
   top: 12px;
   z-index: 100;
-  background: #0f1114;
+  background: #161a20;
   color: #fff;
   padding: 10px 14px;
 }

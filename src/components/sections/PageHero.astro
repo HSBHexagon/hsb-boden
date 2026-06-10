@@ -8,6 +8,8 @@ interface Props {
 }
 
 const { eyebrow = "HSB Hexagon Säurebau", title, text, ctaLabel = "Ersteinschätzung anfordern", ctaHref = "/kontakt/" } = Astro.props;
+
+const currentPath = Astro.url.pathname;
 ---
 
 <section class="section bg-hsb-mist">
@@ -16,8 +18,8 @@ const { eyebrow = "HSB Hexagon Säurebau", title, text, ctaLabel = "Ersteinschä
     <h1 class="h1 mt-4">{title}</h1>
     <p class="lead mt-6 max-w-3xl">{text}</p>
     <div class="mt-8 flex flex-wrap gap-3">
-      <a class="button-primary" href={ctaHref}>{ctaLabel}</a>
-      <a class="button-secondary-dark" href="/referenzen/">Referenzen ansehen</a>
+      {currentPath !== ctaHref && <a class="button-primary" href={ctaHref}>{ctaLabel}</a>}
+      {currentPath !== "/referenzen/" && <a class="button-secondary-dark" href="/referenzen/">Referenzen ansehen</a>}
     </div>
   </div>
 </section>

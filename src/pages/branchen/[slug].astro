@@ -20,10 +20,41 @@ const { industry } = Astro.props;
 const services = getServices().filter((service) => industry.relatedServices.includes(service.slug));
 const relatedReferences = getReferencesForSlugs(industry.relatedReferences);
 const path = `/branchen/${industry.slug}/`;
+
+// Reale Projektfotos aus dem HSB-Arbeitsumfeld (keine Stockfotos) für Branchen,
+// zu denen ein passendes, freigegebenes Motiv vorliegt.
+const industryImages: Record<string, { src: string; alt: string }> = {
+  "brauerei-getraenkeindustrie": {
+    src: "/media/hsb/projekte/brauerei-tanks-keramik.webp",
+    alt: "Gärtanks einer Brauerei auf keramischem Sechskant-Industrieboden mit Bodenablauf",
+  },
+  lebensmittelindustrie: {
+    src: "/media/hsb/projekte/keramik-halle-rinnen.webp",
+    alt: "Keramischer Industrieboden mit Sechskantfliesen und integrierten Entwässerungsrinnen in einer Produktionshalle",
+  },
+  molkerei: {
+    src: "/media/hsb/projekte/hexagon-rinne-detail.webp",
+    alt: "Edelstahl-Entwässerungsrinne eingefasst in Sechskant-Keramikfliesen, Detail einer Produktionsfläche",
+  },
+};
+
+const industryImage = industryImages[industry.slug];
 ---
 
 <BaseLayout title={industry.seoTitle} description={industry.description} path={path} jsonLd={[buildFaqJsonLd(industry.faqs), buildBreadcrumbJsonLd([{ name: "Start", path: "/" }, { name: "Branchen", path: "/branchen/" }, { name: industry.title, path }])]}>
   <PageHero eyebrow="Branche" title={industry.h1} text={industry.description} ctaLabel={industry.ctaLabel} />
+  {industryImage && (
+    <section class="section-tight">
+      <div class="container">
+        <figure class="overflow-hidden rounded-[10px] border border-hsb-line">
+          <img src={industryImage.src} alt={industryImage.alt} class="max-h-[480px] w-full object-cover object-center" loading="lazy" width="1200" height="480" />
+          <figcaption class="border-t border-hsb-line bg-white px-5 py-3 text-xs font-bold text-hsb-steel">
+            Reale Projektfläche aus dem HSB-Arbeitsumfeld – keine Stockfotos.
+          </figcaption>
+        </figure>
+      </div>
+    </section>
+  )}
   <section class="section">
     <div class="container grid gap-8 lg:grid-cols-[0.9fr_1.1fr]">
       <div>

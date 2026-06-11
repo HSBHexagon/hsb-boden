@@ -11,9 +11,9 @@ export const services = [
     problem:
       "Säuren, Laugen, Fette und aggressive Reinigungschemie greifen schwache Fugen, Beschichtungen und Anschlussdetails zuerst an.",
     applications: ["Chemie", "Lebensmittel", "Molkerei", "Getränkeproduktion", "Pharma"],
-    technicalRequirements: ["Chemikalienbeständigkeit", "dichte Fugen", "Abdichtung", "Gefälle", "Edelstahl-Entwässerung"],
+    technicalRequirements: ["Chemikalienbeständigkeit", "dichte Fugen", "Abdichtung", "Gefälle", "Edelstahl-Entwässerung", "WHG-Konformität", "säurefeste Vinylester-Verfugung"],
     systemSolution:
-      "HSB plant den Säureschutz als vollständigen Aufbau aus Untergrundbewertung, Abdichtung, Belag, Fuge, Gefälle und Rinnenanschluss.",
+      "HSB plant den Säureschutz als WHG-geprüftes Gesamtsystem: von der Untergrundvorbehandlung über chemisch hochresistente Abdichtungen bis zur spezialisierten Vinylester-Verfugung für pH-Bereiche von 0–14.",
     benefits: ["weniger ungeplante Stillstände", "bessere Reinigbarkeit", "längere Nutzungsdauer", "sauberere Audit-Vorbereitung"],
     decisionCriteria: ["Belastungsmedium", "Temperatur", "Reinigung", "Nutzungsfenster", "Untergrundzustand"],
     relatedIndustries: ["chemieindustrie", "lebensmittelindustrie", "molkerei"],
@@ -42,13 +42,13 @@ export const services = [
       "Keramische Industrieböden und Feinsteinzeug-Systeme für Nassbereiche, Hygienezonen, Säurebelastung, schwere Lasten und dauerhafte Produktionsnutzung.",
     h1: "Keramische Industrieböden für hohe mechanische und chemische Belastung",
     primaryKeyword: "keramischer Industrieboden",
-    secondaryKeywords: ["Industriefliesen Lebensmittelindustrie", "Feinsteinzeug Industrieboden", "säurefeste Fliesen Industrie"],
+    secondaryKeywords: ["Industriefliesen Lebensmittelindustrie", "Feinsteinzeug Industrieboden", "säurefeste Fliesen Industrie", "Rüttelverlegetechnik Industrieboden", "DIN EN 14411 Feinsteinzeug"],
     problem:
       "Standardfliesen, falsche Fugen oder ungeeignete Untergründe führen in Nass- und Chemiebereichen zu Rissen, Undichtigkeiten und Hygieneproblemen.",
     applications: ["Molkerei", "Brauerei", "Lebensmittel", "Mineralbrunnen", "Großküche"],
     technicalRequirements: ["Rutschhemmung", "Fugenbeständigkeit", "Wasserführung", "mechanische Tragfähigkeit", "Reinigbarkeit"],
     systemSolution:
-      "Keramische Systeme werden mit passender Fliese, Verlegebett, Fuge, Gefälle und Entwässerung auf den Betrieb abgestimmt.",
+      "Wir setzen auf die hochbelastbare Rüttelverlegetechnik nach DIN EN 14411. In Kombination mit Feinsteinzeug-Platten entsteht eine monolithische Verbindung mit dem Untergrund, die extremen Punktlasten und dynamischen Verkehrsbelastungen standhält.",
     benefits: ["robuste Oberfläche", "hohe Reinigbarkeit", "einzelne Fliesen austauschbar", "stark in Nassbereichen"],
     decisionCriteria: ["Rutschklasse", "Fliesengeometrie", "Fugenmaterial", "Gefälle", "Reinigungschemie"],
     relatedIndustries: ["molkerei", "brauerei-getraenkeindustrie", "lebensmittelindustrie"],

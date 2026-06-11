@@ -43,8 +43,8 @@ const problems = [
     </div>
 
     <div class="grid gap-px bg-white/10 sm:grid-cols-2">
-      {problems.map((item) => (
-        <article class="flex flex-col gap-5 bg-hsb-black p-8">
+      {problems.map((item, i) => (
+        <article class="reveal flex flex-col gap-5 bg-hsb-black p-8" style={`--reveal-delay:${i * 60}ms`}>
           <span class="font-black text-5xl text-hsb-red-light tabular-nums leading-none">{item.number}</span>
           <div>
             <h3 class="h3 text-white">{item.title}</h3>

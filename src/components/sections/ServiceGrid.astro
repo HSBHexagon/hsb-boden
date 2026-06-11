@@ -18,10 +18,11 @@ const services = getServices();
 
       <!-- Featured: first 2 services large -->
       <div class="flex flex-col gap-4">
-        {services.slice(0, 2).map((service) => (
+        {services.slice(0, 2).map((service, i) => (
           <a
             href={`/leistungen/${service.slug}/`}
-            class="group flex flex-col justify-between gap-6 rounded bg-hsb-black p-8 text-white no-underline transition hover:-translate-y-0.5 hover:shadow-industrial"
+            class="reveal group flex flex-col justify-between gap-6 rounded bg-hsb-black p-8 text-white no-underline transition hover:-translate-y-0.5 hover:shadow-industrial"
+            style={`--reveal-delay:${i * 60}ms`}
           >
             <div>
               <h3 class="h3 text-white">{service.title}</h3>
@@ -39,10 +40,11 @@ const services = getServices();
 
       <!-- Right: remaining 6 as compact list -->
       <div class="flex flex-col divide-y divide-hsb-line rounded border border-hsb-line">
-        {services.slice(2).map((service) => (
+        {services.slice(2).map((service, i) => (
           <a
             href={`/leistungen/${service.slug}/`}
-            class="group flex items-center justify-between gap-4 px-6 py-5 no-underline transition hover:bg-hsb-mist"
+            class="reveal group flex items-center justify-between gap-4 px-6 py-5 no-underline transition hover:bg-hsb-mist"
+            style={`--reveal-delay:${i * 60}ms`}
           >
             <div>
               <p class="font-bold group-hover:text-hsb-red transition-colors">{service.title}</p>

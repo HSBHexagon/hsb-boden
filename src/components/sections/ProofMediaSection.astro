@@ -64,7 +64,7 @@ const mediaPanels = [
     <div class="grid gap-5 lg:grid-cols-[1.35fr_0.65fr] lg:items-stretch">
       {mediaPanels.slice(0, 1).map((panel) => (
         <article class:list={[
-          "overflow-hidden rounded-[8px] border",
+          "reveal overflow-hidden rounded-[8px] border",
           panel.tone === "dark" ? "border-hsb-black bg-hsb-black text-white" : "border-hsb-line bg-white text-hsb-black",
         ]}>
           <div class:list={["aspect-[16/10] overflow-hidden border-b lg:aspect-[16/9]", panel.tone === "dark" ? "border-white/10" : "border-hsb-line"]}>
@@ -87,8 +87,8 @@ const mediaPanels = [
         </article>
       ))}
       <div class="grid gap-5">
-        {mediaPanels.slice(1).map((panel) => (
-          <article class="grid overflow-hidden rounded-[8px] border border-hsb-line bg-white text-hsb-black sm:grid-cols-[190px_1fr] lg:grid-cols-1">
+        {mediaPanels.slice(1).map((panel, i) => (
+          <article class="reveal grid overflow-hidden rounded-[8px] border border-hsb-line bg-white text-hsb-black sm:grid-cols-[190px_1fr] lg:grid-cols-1" style={`--reveal-delay:${i * 60}ms`}>
             <div class="aspect-[4/3] overflow-hidden border-b border-hsb-line sm:aspect-auto sm:border-b-0 sm:border-r lg:aspect-[4/3] lg:border-b lg:border-r-0">
               <img
                 src={panel.image}

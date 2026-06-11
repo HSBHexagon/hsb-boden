@@ -16,8 +16,9 @@ const industries = getIndustries();
       {industries.map((industry, i) => (
         <a
           href={`/branchen/${industry.slug}/`}
+          style={`--reveal-delay:${i * 60}ms`}
           class={[
-            "group flex flex-col justify-between gap-8 rounded border no-underline transition hover:-translate-y-0.5",
+            "reveal group flex flex-col justify-between gap-8 rounded border no-underline transition hover:-translate-y-0.5",
             i === 0
               ? "border-hsb-black bg-hsb-black p-8 text-white sm:col-span-2 lg:col-span-1"
               : "border-hsb-line bg-white p-6 hover:shadow-industrial",

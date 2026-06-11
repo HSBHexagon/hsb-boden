@@ -127,9 +127,32 @@ Einordnung der Abweichungen vom dokumentierten Stand (Desktop 100/100/100/100, M
 | Hero-Kontrastklasse | PASS: Hero-Highlight rendert lokal als `rgb(255, 138, 125)` |
 | Lighthouse lokal (`/`, `/branchen/molkerei/`, `/referenzen/`) | A11y/Best Practices/SEO jeweils 100; Performance im lokalen Dev-Server 63/67/65 und daher nicht mit Cloudflare-Preview vergleichbar |
 
-**Bewusst zurückgestellt:**
+**Bewusst zurückgestellt (Stand Codex-Runde):**
 
 - `LanguageSuggest.astro`: Mobile-H1-Überdeckung bleibt der nächste UI-Fix.
 - Interne Link-Erweiterungen in Datenmodellen und Leistungs-Bildslots bleiben eigene Content-/Medienphase.
 - Sitemap-Aufnahme von `/impressum/` und `/datenschutz/` bleibt SEO-Feinschliff mit niedriger Priorität.
 - Korrektur der älteren `referenzen-freigabe.md`-Zahl von 21 auf 22 Kundenstandorte bleibt Dokumentationsnachzug; der aktuelle Datenstand ist in `src/data/clientLocations.ts` eindeutig 22.
+
+---
+
+**Abschlussrunde Claude (2026-06-11, nach User-Freigabe „zum Ende bringen") — Endergebnis je Backlog-Punkt:**
+
+| Punkt | Status | Detail |
+|---|---|---|
+| Sprachhinweis-Banner überdeckt Mobile-H1 | ✅ **erledigt** | `LanguageSuggest.astro`: `fixed top-[72px]`-Overlay → normaler Dokumentfluss (Banner schiebt Content statt ihn zu verdecken). Visuell verifiziert auf /kontakt/ 390px: H1 „Projektanfrage für Industrieböden" vollständig sichtbar |
+| Hero `loading="eager"` + `decoding="async"` | ✅ **erledigt** | `src/pages/index.astro` (srcset/fetchpriority/width/height waren bereits vorhanden) |
+| Hero-H1-Kontrast | ✅ erledigt (Codex) | `text-hsb-red-light` (#ff8a7d), bestehende Brand-Klasse |
+| Cookie-Banner mobil kompakter (CLS) | ✅ erledigt (Codex) | Layout-only, DSGVO-Mechanik unverändert |
+| OG-Image | ✅ **verifiziert, keine Lücke** | `public/brand/og-image.png` existiert (1200×630), liefert HTTP 200, in `SEOHead.astro:30` korrekt absolut referenziert |
+| Interne Cross-Links Branchen→Leistungen/Wissen | ✅ **erledigt** | `industries.ts`: Lebensmittel +Entwässerung (Service+Artikel), Molkerei +Säureschutz/+Sanierungs-Artikel, Chemie +Keramik/+PU-Vergleich, Pharma +Keramik/+Sanierungs-Artikel, Backwaren +Entwässerung/+PU-Vergleich. Brauerei-Befund war False Positive (Links vorhanden). Review: PASS (Slugs existieren, sachlich belegt u. a. durch eingebundene Chemie-/Pharma-Keramik-Projektfotos, keine Duplikate) |
+| Service↔Service-Linkfeld | ⏸ zurückgestellt | Neues Datenmodell = Over-Engineering für diese Runde (Leitplanke 5), bestätigt |
+| Leistungs-Bildslot | ✅ **erledigt** | `leistungen/[slug].astro`: `serviceImages`-Slot 1:1 analog `industryImages`. Befüllt mit den 2 designierten Reserve-Fotos aus referenzen-freigabe.md §3: `saeulen-anschluss-keramik.webp` → industrieboden-saeureschutz, `verlegung-keramik.webp` → keramische-industrieboeden. Beide Fotos vor Einbau visuell auf Fremdlogos geprüft (keine — KLINGER-Regel eingehalten) |
+| pharma-hessen Re-Check | ✅ **geprüft, bleibt anonymisiert** | `clientLocations.ts` (22 Einträge): KEIN Pharma-Eintrag (nur Brauerei 5/Chemie 1/Getränke 6/Lebensmittel 6/Molkerei 4); einziger Hessen-Eintrag ist eine Weinkellerei (Getränke). Weiterhin kein eindeutiger Treffer → Status unverändert (Default referenzen-freigabe.md §1) |
+| Sitemap/robots final | ✅ **verifiziert** | Build-Output: 32 `<loc>`-URLs inkl. 5 Sprachvarianten, robots.txt valide mit Sitemap-Verweis. Impressum/Datenschutz-Aufnahme bleibt zurückgestellt (Entscheidung Codex-Runde bestätigt) |
+| Wissensartikel-Fließtext | ⏸ zurückgestellt | Inhalt kommt aus Gemini-Deep-Research-Auftrag; KEINE generierten Fachzahlen (mistakes.md) |
+| Footer-Lokalisierung Sprachseiten | ⏸ zurückgestellt | Größerer i18n-Umbau; ehrlicher EN-Hinweis vorhanden |
+| Echte Markenlogos | ⛔ blockiert | Externe Lieferung durch Kunden erforderlich |
+| GA4 / SMTP / n8n / juristische Prüfung | ⛔ out of scope | Masterplan Phase 1/4/5, User-Inputs erforderlich |
+
+**Hinweis für parallele Sessions:** Das Haupt-Repo (`projects/hsb-boden`, Branch `main`) hat uncommittete Änderungen einer anderen Session; ein Review-Agent meldete dort mögliche Merge-Konflikt-Marker in `articles.ts`/`content.ts`. Dieser Worktree (`hsb-boden-review`) ist davon NICHT betroffen (grep + Build verifiziert).

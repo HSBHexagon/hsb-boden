@@ -46,12 +46,26 @@ Quelle: `src/lib/content.ts` → `getAllPublicPages()` (von `sitemap.xml.ts` kon
 - Sitemap enthält: 8 Kernseiten (ohne impressum/datenschutz) + 8 Leistungen + 6 Branchen + 5 Wissen + 5 Sprach-Landings = **32 URLs**.
 - ⚠️ Befund: `/impressum/` und `/datenschutz/` sind NICHT in `getAllPublicPages()` und damit nicht in der Sitemap. Schweregrad: niedrig (Rechtsseiten in Sitemap optional, Seiten sind verlinkt und crawlbar) — Entscheidung in Task 5.
 
-## 3. Pro-Seite-Findings (Task 3)
+## 3. Pro-Seite-Findings (Task 3, 4 parallele Read-only-Agents, 2026-06-11)
+
+**Gesamtbild:** 34 Seiten geprüft. H1/seoTitle/description auf ALLEN Seiten vorhanden, einzigartig und inhaltlich sinnvoll. Keine erfundenen Zahlen/Claims gefunden. Alle Bild-alt-Texte vorhanden und beschreibend. hreflang vollständig (6 Sprachen + x-default). Referenz-Freigaben in `references.ts` deckungsgleich mit `referenzen-freigabe.md`.
 
 | Seite | Befund | Schweregrad | Vorschlag |
 |---|---|---|---|
+| wissen/* (alle 5 Artikel) | Artikel-Sections enthalten nur Überschriften; das Template rendert generische Einordnungssätze statt fachlichem Fließtext | mittel (bekannt) | **Zurückgestellt:** Fließtext kommt aus dem Gemini-Deep-Research-Auftrag (`GEMINI_DEEP_RESEARCH_PROMPT_WISSENSARTIKEL.md`). KEINE generierten Fachzahlen einsetzen (mistakes.md: keine erfundenen Zahlen) |
+| branchen/lebensmittelindustrie | `relatedServices` ohne `entwaesserung-industrieboden` (obwohl „stehendes Wasser" als Problem genannt); `relatedArticles` ohne `entwaesserung-gefaelle-produktionsbereiche` | mittel | Felder ergänzen (Task 8) |
+| branchen/molkerei | `relatedServices` ohne `industrieboden-saeureschutz` (Milchsäure in description); `relatedArticles` ohne `sanierung-ohne-produktionsstillstand` | mittel | Felder ergänzen (Task 8) |
+| branchen/brauerei-getraenkeindustrie | `relatedServices` ohne `industrieboden-saeureschutz` (Säureschutz in description) | mittel | Feld ergänzen (Task 8) |
+| branchen/backwarenproduktion-grosskueche | `relatedServices` ohne `entwaesserung-industrieboden` (Nassbereiche zentral); `relatedArticles` mit nur 1 Eintrag | mittel | Felder ergänzen (Task 8) |
+| branchen/chemieindustrie, pharmaindustrie | `relatedArticles`/`relatedServices` dünn (je 1 Artikel); Keramik-Bezug nicht verlinkt obwohl `applications` ihn nennt | niedrig | Punktuell ergänzen (Task 8) |
+| leistungen/* (alle 8) | Kein Service↔Service-Linkfeld (`relatedServices` existiert in services.ts nicht); Querbezüge laufen nur indirekt über Branchen/Artikel | mittel | In Task 5 entscheiden: Feld analog bestehender related-Patterns ergänzen oder zurückstellen (Leitplanke 5: kein Over-Engineering) |
+| leistungen/* (alle 8) | Keine Bilder auf Leistungsseiten (kein Bildfeld in services.ts) — Branchen haben `industryImages`-Äquivalent | mittel | Kandidat Task 10 (nur mit ungenutzten, logo-freien Fotos) |
+| lib/i18n.ts (NL) | Agent meldete „farma-" als Tippfehler — **manuell verifiziert: FALSE POSITIVE.** „voedings-, dranken-, farma- en chemieproductie" ist korrekte niederländische Samentrekking (Ergänzungsstrich auf „-productie") | — | Keine Änderung |
+| Sprachvarianten en/fr/nl/pl/tr | Übersetzungen vollständig und idiomatisch, Diakritika korrekt (ą/ć/ę…, ü/ş/ç…, è/é/ç…) — KEINE Platzhalter-Stummel | — | Keine Änderung |
+| data/clientLocations.ts | 22 Einträge statt der dokumentierten 21 (referenzen-freigabe.md §0.3) — kein funktionaler Fehler, reine Doku-Diskrepanz | niedrig | Doku-Zahl bei nächster Gelegenheit korrigieren (kein eigener Commit nötig) |
+| Sitemap | `/impressum/` + `/datenschutz/` fehlen (siehe Abschnitt 2) | niedrig | Entscheidung Task 5 |
 
-_(wird in Task 3 befüllt)_
+Sammelzeilen der Agents: Branchen 6/6 geprüft (0 ohne Befund, alle Befunde = Link-Lücken) · Leistungen 8/8 (Texte/SEO sauber, Befunde = Links/Bilder) · Wissen 5/5 (Struktur sauber, Fließtext fehlt) · Sonstige 16 Seiten/Komponenten (15 ohne Befund).
 
 ## 4. Visuelle QA (Task 4)
 

@@ -7,39 +7,49 @@ import ReferenceMap from "./ReferenceMap.astro";
 const references = getPublicReferences().slice(0, 3);
 ---
 
-<section class="section bg-hsb-mist">
-  <div class="container grid gap-8 lg:grid-cols-[1.05fr_0.95fr] lg:items-start">
-    <div class="overflow-hidden rounded-[10px] border border-hsb-line bg-white">
-      <div class="bg-hsb-black p-8 text-white lg:p-10">
-        <p class="eyebrow-light">Projektkarte Deutschland</p>
-        <h2 class="h2 mt-4 text-white [hyphens:none] [text-wrap:balance]">Vertrauen durch konkrete Projektlogik</h2>
-        <p class="mt-5 max-w-xl text-sm leading-7 text-white/65">
+<section class="section border-b border-hsb-line bg-[#f8f9fb]">
+  <div class="container grid gap-12 lg:grid-cols-[1.1fr_0.9fr] lg:items-start">
+    <div class="relative overflow-hidden rounded-[4px] border border-hsb-line bg-white shadow-industrial">
+      <div class="relative overflow-hidden bg-hsb-black p-8 text-white lg:p-12">
+        <p class="eyebrow-light mb-6 flex items-center gap-2">
+          <span class="size-1.5 bg-hsb-red"></span>
+          Projektkarte Deutschland
+        </p>
+        <h2 class="h2 text-white [hyphens:none] [text-wrap:balance]">Geografische & technische Reichweite</h2>
+        <p class="mt-6 max-w-xl text-base leading-relaxed text-white/50">
           Referenzen nur mit Kundenfreigabe – namentlich oder anonymisiert – und belastbaren Systembeschreibungen, konkret nach Herausforderung, System und Ergebnis.
           Die Karte zeigt auf einen Blick, wo Hexagon Säurebau bundesweit Kunden und Projektstandorte hat.
         </p>
-        <dl class="mt-8 grid gap-px overflow-hidden rounded border border-white/10 bg-white/10 sm:grid-cols-3">
+        <dl class="mt-10 grid gap-px overflow-hidden rounded-[2px] border border-white/10 bg-white/10 sm:grid-cols-3">
           {[
             ["Namentliche Referenzen", "5 Kunden, bundesweit"],
-            ["Schwerpunkte", "Keramik · PU-Beton · Säureschutz"],
-            ["Fokus", "Audit · Sanierung · Hygiene"],
+            ["Regionen", "Bundesweit"],
+            ["Fokus", "Hygiene & Sanierung"],
           ].map(([term, value]) => (
-            <div class="bg-hsb-black p-4 lg:p-5">
-              <dt class="text-xs font-bold uppercase tracking-wide text-white/60">{term}</dt>
-              <dd class="mt-2 text-sm font-black leading-snug text-white">{value}</dd>
+            <div class="bg-hsb-black p-5">
+              <dt class="mb-1.5 text-[0.6rem] font-black uppercase tracking-[0.2em] text-white/40">{term}</dt>
+              <dd class="text-[0.85rem] font-black leading-snug text-white">{value}</dd>
             </div>
           ))}
         </dl>
       </div>
-      <ReferenceMap references={getPublicReferences()} clients={clientLocations} />
+      <div class="bg-[#f1f3f6] p-1">
+        <ReferenceMap references={getPublicReferences()} clients={clientLocations} />
+      </div>
     </div>
-    <div>
-      <p class="eyebrow">Referenzmodule</p>
-      <h2 class="h2 mt-3 [hyphens:none]">Kuratiert, nicht aufgeblasen</h2>
-      <p class="lead mt-4">Jede Referenz beantwortet drei Fragen: Wo lag die Belastung, wie wurde das System geplant, und was wurde dadurch betriebsseitig besser?</p>
-      <div class="mt-6 grid gap-4">
+    <div class="lg:pt-6">
+      <div class="eyebrow mb-6 flex items-center gap-3">
+        <span class="size-1.5 bg-hsb-red"></span>
+        <span>Case Studies</span>
+      </div>
+      <h2 class="h2 [hyphens:none]">Kuratiert. Konkret. Belastbar.</h2>
+      <p class="lead mt-6 text-hsb-steel/80">Jede Referenz beantwortet drei Fragen: Wo lag die Belastung, wie wurde das System geplant, und was wurde dadurch betriebsseitig besser?</p>
+      <div class="mt-10 grid gap-6">
         {references.map((reference) => <ReferenceCard reference={reference} />)}
       </div>
-      <a class="button-secondary-dark mt-6" href="/referenzen/">Alle Referenzen ansehen</a>
+      <div class="mt-10">
+        <a class="button-secondary-dark w-full px-10 text-center lg:w-auto" href="/referenzen/">Alle Referenzen ansehen</a>
+      </div>
     </div>
   </div>
 </section>

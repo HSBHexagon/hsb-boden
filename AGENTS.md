@@ -24,6 +24,37 @@ npm run build
 
 For frontend changes, verify desktop and mobile rendering before launch.
 
+## Execution Stack
+
+For multi-step implementation, deploy, launch, or integration work on this
+project:
+
+- Use `system-governor` first to recover shared state before acting from chat.
+- Run `scripts/skill-preflight.sh "<task>"` when the task spans multiple areas
+  and the relevant skill stack is not obvious from the first read.
+- Prefer an isolated git worktree for anything larger than a tiny one-file fix.
+  Project-local path is `.worktrees/<branch-name>`.
+- Use `cloudflare:wrangler` before changing deploy commands, Wrangler config,
+  bindings, or production/preview flow.
+- For Astro, Wrangler, Cloudflare, or SDK syntax questions, prefer official
+  docs first and use `context7` when it has a direct library match.
+- If `context7` has no direct match, say so briefly and fall back to official
+  Cloudflare or framework docs instead of guessing.
+- For debugging, do not patch first. Reproduce, isolate, then fix.
+
+## Deploy Gate
+
+For preview or production work, verify in this order:
+
+1. `npm run test:run`
+2. `npm run check`
+3. `npm run build`
+4. `npm run deploy:dry-run`
+5. browser or HTTP verification of one real user path
+
+Production deploys remain blocked until the lead pipeline is live and the
+WordPress site is intentionally cut over.
+
 ## Content Model
 
 Structured content lives under `src/data`. Add new service, industry, reference, or article entries there and let routes generate pages.

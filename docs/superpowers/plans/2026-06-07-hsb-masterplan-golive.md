@@ -84,20 +84,23 @@ Expected: `main -> main`, danach `git status -sb` zeigt `## main...origin/main` 
 
 ---
 
-## Phase 2 — Ranking-Schutz: 301-Redirect-Map (KRITISCH, größter offener Posten)
+## Phase 2 — Ranking-Schutz: 301-Redirect-Map (HERABGESTUFT — Befund 2026-06-07)
 
-**Problem:** Es gibt KEIN `public/_redirects`. Ohne 301 von den alten WordPress-URLs verliert die Migration Ranking-Autorität (Cloudflare-Default kann 307 sein).
+**Befund (verifiziert):** Die Live-WordPress-Seite (Yoast `sitemap_index.xml` → `page-sitemap.xml`) hat **nur EINE indexierte URL: die Homepage `https://hsb-boden.de/`**. Es gibt keine tiefen Unterseiten mit Ranking-Autorität. Damit ist die Migration ranking-seitig unkritisch — `/` → `/` ist 1:1, kein Redirect nötig.
 
-### Task 2.1: WordPress-URL-Inventar beschaffen
-**Files:** keine (Daten-Beschaffung)
+### Task 2.1: Inventar bestätigt — minimaler Redirect-Bedarf
+**Files:** keine
 
-- [ ] **Step 1:** Alte URLs sammeln — aus WordPress-Sitemap der Live-Seite.
+- [ ] **Step 1: Inventar gegenchecken** (ob seit heute neue URLs dazukamen)
 
-Run: `curl -s https://hsb-boden.de/sitemap.xml | grep -oE '<loc>[^<]+' | sed 's/<loc>//' | sort -u`
-Expected: Liste aller indexierten WordPress-Pfade (Basis fürs Mapping).
-> Falls WordPress eine Sitemap-Index-Datei liefert, den Sub-Sitemaps folgen.
+Run: `for s in $(curl -s https://hsb-boden.de/sitemap_index.xml | grep -oE '<loc>[^<]+' | sed 's/<loc>//'); do curl -s "$s" | grep -oE '<loc>[^<]+' | sed 's/<loc>//'; done | grep -v '\.xml$' | sort -u`
+Expected: nur `https://hsb-boden.de/` (Stand 2026-06-07). Bei mehr URLs → Task 2.2 ausführen.
 
-- [ ] **Step 2:** Mapping-Tabelle alt→neu erstellen (manuell, je URL den passenden Astro-Pfad).
+### Task 2.2: `_redirects` NUR falls Inventar > Homepage
+**Files:**
+- Create (bedingt): `public/_redirects`
+
+- [ ] **Step 1:** Nur wenn Task 2.1 zusätzliche alte Pfade zeigt: pro Pfad einen 301-Eintrag (`/alt /neu 301`) anlegen. Bei reinem Homepage-Inventar: **diese Phase entfällt**, kurz im Memory vermerken.
 
 ### Task 2.2: `_redirects` schreiben
 **Files:**

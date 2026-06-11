@@ -48,65 +48,67 @@ const mediaPanels = [
 ];
 ---
 
-<section class="section border-b border-hsb-line">
+<section class="section border-b border-hsb-line bg-white">
   <div class="container">
-    <div class="mb-12 grid gap-6 lg:grid-cols-[1fr_auto] lg:items-end">
-      <div class="max-w-3xl">
-        <p class="eyebrow">Ausgeführte Referenzen</p>
-        <h2 class="h2 mt-4">Vertrauen durch sichtbare Ausführungsqualität</h2>
-        <p class="lead mt-4">
-          Keine Stockfotos, sondern reale Industrieboden-Flächen aus dem HSB-Arbeitsumfeld.
-        </p>
+    <div class="mb-16 max-w-4xl">
+      <div class="eyebrow mb-6 flex items-center gap-3">
+        <span class="size-2 bg-hsb-red"></span>
+        <span>Ausführung im Bild</span>
       </div>
-      <a class="button-secondary-dark shrink-0" href="/referenzen/">Alle Referenzen ansehen</a>
+      <h2 class="h2">Reale Flächen, saubere Details, nachvollziehbare Systeme</h2>
+      <p class="lead mt-8 max-w-2xl text-hsb-steel/80">
+        Jedes Bild zeigt eine reale Industrieboden-Fläche aus dem HSB-Arbeitsumfeld. Relevant sind hier nicht Effekte, sondern Verfliesung, Entwässerung, Anschlussdetails und Reinigbarkeit.
+      </p>
     </div>
 
-    <div class="grid gap-5 lg:grid-cols-[1.35fr_0.65fr] lg:items-stretch">
+    <div class="grid gap-8 lg:grid-cols-[1.4fr_0.6fr]">
       {mediaPanels.slice(0, 1).map((panel) => (
-        <article class:list={[
-          "reveal overflow-hidden rounded-[8px] border",
-          panel.tone === "dark" ? "border-hsb-black bg-hsb-black text-white" : "border-hsb-line bg-white text-hsb-black",
-        ]}>
-          <div class:list={["aspect-[16/10] overflow-hidden border-b lg:aspect-[16/9]", panel.tone === "dark" ? "border-white/10" : "border-hsb-line"]}>
+        <article class="reveal group relative overflow-hidden rounded-[4px] border border-hsb-line bg-hsb-black text-white shadow-industrial lg:min-h-[600px]">
+          <div class="absolute inset-0 overflow-hidden">
             <img
               src={panel.image}
               alt={panel.alt}
-              class="h-full w-full object-cover object-center transition-transform duration-500 hover:scale-[1.015]"
+              class="h-full w-full object-cover object-center transition-transform ease-out group-hover:scale-105"
+              style="transition-duration: 1500ms"
               loading="lazy"
-              width="554"
-              height="361"
+              width="1024"
+              height="640"
             />
           </div>
-          <div class="grid gap-3 p-6 lg:p-8">
-            <p class:list={["text-xs font-bold uppercase tracking-[0.16em]", panel.tone === "dark" ? "text-white/72" : "text-hsb-red"]}>
-              {panel.eyebrow}
-            </p>
-            <h3 class:list={["h3", panel.tone === "dark" ? "text-white" : "text-hsb-black"]}>{panel.title}</h3>
-            <p class:list={["text-sm leading-7", panel.tone === "dark" ? "text-white/65" : "text-hsb-steel"]}>{panel.text}</p>
+          <div class="absolute inset-0 bg-gradient-to-t from-black via-black/30 to-transparent"></div>
+          <div class="relative z-10 flex h-full flex-col justify-end p-8 lg:p-12">
+            <p class="mb-4 text-xs font-black uppercase tracking-[0.2em] text-hsb-red">{panel.eyebrow}</p>
+            <h3 class="max-w-2xl text-2xl font-black leading-tight text-white lg:text-[2rem]">{panel.title}</h3>
+            <div class="mt-6 h-px w-24 bg-hsb-red/50"></div>
+            <p class="mt-6 max-w-xl text-sm leading-relaxed text-white/60 lg:text-base">{panel.text}</p>
           </div>
         </article>
       ))}
-      <div class="grid gap-5">
+      <div class="grid gap-8">
         {mediaPanels.slice(1).map((panel, i) => (
-          <article class="reveal grid overflow-hidden rounded-[8px] border border-hsb-line bg-white text-hsb-black sm:grid-cols-[190px_1fr] lg:grid-cols-1" style={`--reveal-delay:${i * 60}ms`}>
-            <div class="aspect-[4/3] overflow-hidden border-b border-hsb-line sm:aspect-auto sm:border-b-0 sm:border-r lg:aspect-[4/3] lg:border-b lg:border-r-0">
+          <article class="reveal group relative flex flex-col overflow-hidden rounded-[4px] border border-hsb-line bg-white text-hsb-black" style={`--reveal-delay:${i * 60}ms`}>
+            <div class="aspect-[16/10] overflow-hidden border-b border-hsb-line">
               <img
                 src={panel.image}
                 alt={panel.alt}
-                class="h-full w-full object-cover object-center transition-transform duration-500 hover:scale-[1.015]"
+                class="h-full w-full object-cover object-center transition-transform duration-1000 group-hover:scale-105"
                 loading="lazy"
                 width="562"
-                height="369"
+                height="351"
               />
             </div>
-            <div class="grid gap-2 p-5">
-              <p class="text-xs font-bold uppercase tracking-[0.14em] text-hsb-red">{panel.eyebrow}</p>
-              <h3 class="text-lg font-black leading-tight text-hsb-black">{panel.title}</h3>
-              <p class="text-sm leading-6 text-hsb-steel">{panel.text}</p>
+            <div class="p-6 lg:p-8">
+              <p class="mb-3 text-[0.65rem] font-black uppercase tracking-[0.18em] text-hsb-red">{panel.eyebrow}</p>
+              <h3 class="text-xl font-black leading-tight text-hsb-black transition-colors group-hover:text-hsb-red">{panel.title}</h3>
+              <p class="mt-4 text-sm leading-7 text-hsb-steel">{panel.text}</p>
             </div>
           </article>
         ))}
       </div>
+    </div>
+
+    <div class="mt-12 flex justify-center lg:justify-start">
+      <a class="button-secondary-dark px-12" href="/referenzen/">Mehr Referenzen ansehen</a>
     </div>
   </div>
 </section>

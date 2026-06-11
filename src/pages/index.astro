@@ -18,23 +18,23 @@ import { buildLocalBusinessJsonLd } from "../lib/schema";
 <BaseLayout title={site.defaultTitle} description={site.defaultDescription} path="/" jsonLd={[buildLocalBusinessJsonLd()]} alternates={homeAlternates}>
 
   <!-- HERO -->
-  <section class="bg-hsb-black text-white overflow-hidden">
-    <div class="container pb-0 pt-16 lg:pt-20">
-      <div class="grid gap-12 lg:grid-cols-[1.04fr_0.96fr] lg:items-stretch">
+  <section class="relative overflow-hidden border-b-4 border-hsb-red bg-hsb-black text-white">
+    <div class="container relative z-10 pb-0 pt-16 lg:pt-24">
+      <div class="grid gap-14 lg:grid-cols-[1.05fr_0.95fr] lg:items-stretch">
 
         <!-- Left: Copy -->
-        <div class="pb-14 lg:pb-20">
-          <p class="eyebrow-light mb-6 flex items-center gap-2.5">
+        <div class="pb-16 lg:pb-24">
+          <p class="eyebrow-light mb-7 flex items-center gap-2.5">
             <svg width="11" height="12.7" viewBox="0 0 26 30" fill="none" aria-hidden="true" class="shrink-0">
               <path d="M12.9904 0L25.9808 7.5V22.5L12.9904 30L0 22.5V7.5L12.9904 0Z" fill="#cb0000" />
             </svg>
             Industrieböden · Gronau · NRW
           </p>
-          <h1 class="hero-h1 max-w-[15ch]">
+          <h1 class="hero-h1 max-w-[16ch]">
             Hygienische Industrieböden für Lebensmittel-, Getränke- und <span class="text-hsb-red-light">Chemiebetriebe</span>
           </h1>
-          <p class="mt-7 max-w-xl text-lg leading-8 text-white/65">
-            Keramische Industrieböden, Säureschutzbau, Entwässerung und Sanierung für produktionskritische Bereiche.
+          <p class="mt-7 max-w-xl text-lg leading-8 text-white/62">
+            Keramische Industrieböden, Säureschutzbau, Entwässerung und Sanierung für produktionskritische Bereiche. <span class="font-bold text-white/90">Technisch präzise. Dauerhaft belastbar.</span>
           </p>
           <div class="mt-10 flex flex-wrap items-center gap-4">
             <a class="button-primary" href="/kontakt/">Projekt anfragen</a>
@@ -43,42 +43,45 @@ import { buildLocalBusinessJsonLd } from "../lib/schema";
         </div>
 
         <!-- Right: Visual proof -->
-        <div class="grid gap-4 self-stretch lg:grid-rows-[1fr_auto]">
-          <div class="relative min-h-[360px] overflow-hidden rounded-[8px] border border-white/10 bg-black lg:min-h-[560px]">
+        <div class="grid self-stretch gap-5 pb-12 lg:grid-rows-[1fr_auto] lg:pb-0">
+          <div class="group relative min-h-[400px] overflow-hidden rounded-[4px] border border-white/10 bg-black lg:min-h-[580px]">
             <img
               src="/media/hsb/current/industrieboden-baustelle.webp"
               srcset="/media/hsb/current/industrieboden-baustelle-640.webp 640w, /media/hsb/current/industrieboden-baustelle.webp 1024w"
               sizes="(min-width: 1024px) 50vw, 100vw"
               alt="Keramischer Industrieboden mit Entwässerungsrinne und Hexagon-Verlegung in Produktionshalle"
-              class="absolute inset-0 h-full w-full object-cover object-center"
-              style="opacity:0.72"
+              class="absolute inset-0 h-full w-full object-cover object-center transition-transform duration-700 group-hover:scale-105"
+              style="opacity:0.75"
               fetchpriority="high"
               loading="eager"
               decoding="async"
               width="1024"
               height="768"
             />
-            <div class="absolute inset-0 bg-black/35"></div>
-            <div class="relative z-10 flex h-full flex-col justify-end p-6 lg:p-8">
-              <p class="eyebrow-light">Ausgeführte Referenz</p>
-              <h2 class="mt-3 text-2xl font-black leading-tight text-white lg:text-[1.85rem]">
+            <div class="absolute inset-0 bg-gradient-to-t from-black via-black/45 to-transparent"></div>
+            <div class="relative z-10 flex h-full flex-col justify-end p-8 lg:p-10">
+              <div class="eyebrow-light mb-4 flex items-center gap-2">
+                <span class="size-1 bg-hsb-red"></span>
+                <span>Referenz-Projekt</span>
+              </div>
+              <h2 class="text-2xl font-black leading-tight text-white lg:text-[2rem]">
                 Keramik, Entwässerung und Gefälle aus einem System.
               </h2>
-              <p class="mt-3 max-w-md text-sm leading-7 text-white/65">
+              <p class="mt-4 max-w-md text-sm leading-7 text-white/72">
                 Industrieböden für Lebensmittelbetriebe müssen Säurebelastung, Reinigungsdruck und Auditanforderungen dauerhaft bestehen.
               </p>
             </div>
           </div>
-          <div class="grid gap-0 overflow-hidden rounded-[10px] border border-white/10 bg-white/5 sm:grid-cols-2">
+          <div class="grid gap-0 overflow-hidden rounded-[4px] border border-white/10 bg-white/5 sm:grid-cols-2">
             {[
               ["Lebensmittelproduktion", "Reinigbarkeit, Hygiene, Säureschutz"],
               ["Molkerei & Brauerei", "Milchsäure, Feuchtigkeit, Gefälle"],
               ["Chemie & Pharma", "Chemikalienbeständigkeit, WHG"],
               ["Sanierung im Betrieb", "Bauabschnitte, kurze Sperrzeiten"],
             ].map(([title, sub], i) => (
-              <div class={`border-white/10 p-5 ${i < 2 ? "border-b sm:border-b-0 sm:border-r" : ""} ${i === 2 ? "sm:border-r" : ""} ${i === 3 ? "" : "border-b sm:border-b-0"}`}>
-                <p class="text-sm font-bold text-white/90">{title}</p>
-                <p class="mt-1.5 text-xs leading-5 text-white/72">{sub}</p>
+              <div class={`border-white/10 p-6 ${i < 2 ? "border-b sm:border-b-0 sm:border-r" : ""} ${i === 2 ? "sm:border-r" : ""} ${i === 3 ? "" : "border-b sm:border-b-0"}`}>
+                <p class="mb-1.5 text-[0.75rem] font-black uppercase tracking-[0.16em] text-hsb-red">{title}</p>
+                <p class="text-xs leading-5 text-white/62">{sub}</p>
               </div>
             ))}
           </div>
@@ -87,8 +90,6 @@ import { buildLocalBusinessJsonLd } from "../lib/schema";
       </div>
     </div>
 
-    <!-- Red bottom bar -->
-    <div class="h-1 w-full bg-hsb-red mt-1"></div>
   </section>
 
   <!-- LOGO CLOUD -->
@@ -106,7 +107,7 @@ import { buildLocalBusinessJsonLd } from "../lib/schema";
         ["Sanierung planbar", "Bauabschnitte und Stillstandsfenster werden von Anfang an eingeplant."],
       ].map(([label, desc]) => (
         <div class="py-6 lg:px-8">
-          <p class="text-sm font-black text-hsb-black">{label}</p>
+          <p class="text-[0.72rem] font-black uppercase tracking-[0.16em] text-hsb-red">{label}</p>
           <p class="mt-2 max-w-sm text-sm leading-6 text-hsb-steel">{desc}</p>
         </div>
       ))}
@@ -129,24 +130,28 @@ import { buildLocalBusinessJsonLd } from "../lib/schema";
   <ReferenceMapPreview />
 
   <!-- PROJEKTABLAUF -->
-  <section class="section" id="projektablauf">
+  <section class="section bg-[#f8f9fb]" id="projektablauf">
     <div class="container">
-      <div class="mb-12 max-w-2xl">
+      <div class="mb-14 max-w-2xl">
+        <p class="eyebrow mb-4">Planung & Realisierung</p>
         <h2 class="h2">Von Belastungsprofil zu belastbarer Umsetzung</h2>
-        <p class="lead mt-4">Jede Entscheidung beginnt mit der Analyse des Ist-Zustands – nicht mit dem Katalog.</p>
+        <p class="lead mt-5">Jede Entscheidung beginnt mit der Analyse des Ist-Zustands. Nicht mit dem Katalog.</p>
       </div>
 
-      <div class="grid gap-0 divide-y divide-hsb-line">
+      <div class="grid gap-0 border-t border-hsb-line">
         {[
           ["01", "Analyse vor Ort", "Untergrund, Schäden, Chemiebelastung, Reinigungsprozesse, Gefälle und Betriebsablauf werden technisch aufgenommen. Keine Systemempfehlung ohne diesen Schritt."],
           ["02", "Systementscheidung", "Keramik, PU-Beton, Epoxidharz, Abdichtung und Entwässerung werden nach Belastungsprofil bewertet und nicht nach dem einfachsten Weg."],
           ["03", "Sanierungsfenster planen", "Bauabschnitte, Sperrzeiten, Materialaushärtung und Wiederinbetriebnahme werden von Anfang an mit der Produktionsplanung abgestimmt."],
-          ["04", "Dokumentation und Abnahme", "Jede Ausführung wird technisch dokumentiert – für interne Nachvollziehbarkeit, Audit-Vorbereitung und als Grundlage für Wartung und spätere Sanierungsplanung."],
+          ["04", "Dokumentation und Abnahme", "Jede Ausführung wird technisch dokumentiert: für interne Nachvollziehbarkeit, Audit-Vorbereitung und als Grundlage für Wartung und spätere Sanierungsplanung."],
         ].map(([number, title, text]) => (
-          <article class="grid gap-6 py-8 sm:grid-cols-[80px_1fr_1.5fr]">
-            <span class="text-4xl font-black text-hsb-line tabular-nums">{number}</span>
-            <h3 class="h3 self-start">{title}</h3>
-            <p class="text-sm leading-7 text-hsb-steel">{text}</p>
+          <article class="group grid items-baseline gap-7 border-b border-hsb-line px-4 py-10 transition-colors duration-300 hover:bg-white lg:-mx-4 lg:grid-cols-[112px_1fr_1.5fr]">
+            <div class="flex items-center gap-4">
+              <span class="font-mono text-[0.65rem] font-black tracking-[0.24em] text-hsb-red">STEP</span>
+              <span class="text-4xl font-black text-hsb-black tabular-nums">{number}</span>
+            </div>
+            <h3 class="text-xl font-black leading-tight text-hsb-black transition-colors group-hover:text-hsb-red">{title}</h3>
+            <p class="max-w-xl text-[0.95rem] leading-7 text-hsb-steel">{text}</p>
           </article>
         ))}
       </div>

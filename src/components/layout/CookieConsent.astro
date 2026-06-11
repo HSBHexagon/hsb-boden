@@ -19,39 +19,39 @@ const t = cookieTexts[lang];
   aria-modal="false"
   aria-labelledby="cookie-consent-title"
 >
-  <div class="container py-5 lg:py-6">
-    <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between lg:gap-8">
+  <div class="container py-3 sm:py-4 lg:py-5">
+    <div class="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between lg:gap-8">
       <div class="max-w-2xl">
-        <p id="cookie-consent-title" class="text-sm font-black uppercase tracking-wide">{t.title}</p>
-        <p class="mt-2 text-sm leading-6 text-white/70">
+        <p id="cookie-consent-title" class="text-xs font-black uppercase tracking-wide sm:text-sm">{t.title}</p>
+        <p class="mt-1.5 text-xs leading-5 text-white/70 sm:text-sm sm:leading-6">
           {t.intro}
           <a class="ml-1 underline hover:text-white" href="/datenschutz/">{t.privacyLink}</a>
         </p>
       </div>
-      <div class="flex shrink-0 flex-wrap items-center gap-3">
-        <button id="cookie-settings-toggle" class="text-sm font-bold text-white/70 underline hover:text-white" aria-expanded="false" aria-controls="cookie-categories">{t.settings}</button>
-        <button id="cookie-necessary" class="button-secondary-dark !border-white/30 !text-white hover:!border-white">{t.necessaryOnly}</button>
-        <button id="cookie-accept-all" class="button-primary">{t.acceptAll}</button>
+      <div class="grid shrink-0 grid-cols-2 items-center gap-2 sm:flex sm:flex-wrap sm:gap-3 lg:justify-end">
+        <button id="cookie-settings-toggle" class="col-span-2 justify-self-start text-xs font-bold text-white/70 underline hover:text-white sm:col-span-1 sm:text-sm" aria-expanded="false" aria-controls="cookie-categories">{t.settings}</button>
+        <button id="cookie-necessary" class="button-secondary-dark !min-h-10 !border-white/30 !px-3 !text-xs !text-white hover:!border-white sm:!min-h-[44px] sm:!px-4 sm:!text-sm">{t.necessaryOnly}</button>
+        <button id="cookie-accept-all" class="button-primary !min-h-10 !px-3 !text-xs sm:!min-h-[44px] sm:!px-4 sm:!text-sm">{t.acceptAll}</button>
       </div>
     </div>
 
-    <div id="cookie-categories" class="mt-5 hidden gap-4 border-t border-white/10 pt-5 sm:grid-cols-2 lg:max-w-4xl">
-      <div class="rounded border border-white/15 p-4">
+    <div id="cookie-categories" class="mt-3 hidden gap-3 border-t border-white/10 pt-3 sm:grid-cols-2 lg:max-w-4xl">
+      <div class="rounded border border-white/15 p-3 sm:p-4">
         <div class="flex items-center justify-between gap-3">
           <p class="text-sm font-black">{t.necessaryTitle}</p>
           <span class="rounded bg-white/10 px-2 py-1 text-xs font-bold uppercase tracking-wide text-white/60">{t.alwaysOn}</span>
         </div>
-        <p class="mt-2 text-xs leading-5 text-white/65">{t.necessaryDesc}</p>
+        <p class="mt-1.5 text-xs leading-5 text-white/65">{t.necessaryDesc}</p>
       </div>
-      <div class="rounded border border-white/15 p-4">
+      <div class="rounded border border-white/15 p-3 sm:p-4">
         <div class="flex items-center justify-between gap-3">
           <label class="text-sm font-black" for="cookie-analytics-toggle">{t.analyticsTitle}</label>
           <input id="cookie-analytics-toggle" type="checkbox" class="size-5 accent-hsb-red" />
         </div>
-        <p class="mt-2 text-xs leading-5 text-white/65">{t.analyticsDesc}</p>
+        <p class="mt-1.5 text-xs leading-5 text-white/65">{t.analyticsDesc}</p>
       </div>
       <div class="sm:col-span-2">
-        <button id="cookie-save" class="button-secondary-dark !border-white/30 !text-white hover:!border-white">{t.save}</button>
+        <button id="cookie-save" class="button-secondary-dark !min-h-10 !border-white/30 !px-3 !text-xs !text-white hover:!border-white sm:!min-h-[44px] sm:!px-4 sm:!text-sm">{t.save}</button>
       </div>
     </div>
   </div>

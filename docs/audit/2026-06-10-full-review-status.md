@@ -95,8 +95,41 @@ Einordnung der Abweichungen vom dokumentierten Stand (Desktop 100/100/100/100, M
 
 ## 5. Optimierungsbacklog (Task 5)
 
-_(wird in Task 5 befüllt)_
+| Kandidat | Entscheidung | Umsetzung / Begründung |
+|---|---|---|
+| Mobiles Cookie-Consent-Banner kompakter gestalten | **Umgesetzt** | Layout-only-Fix in `src/components/layout/CookieConsent.astro`: reduzierte Mobile-Abstände, kompaktere Typografie, platzsparende Button-Anordnung. Consent-Speicherung, Events, Kategorie-Toggle und Footer-Reopen bleiben unverändert. |
+| CLS-Befund `#cookie-consent` reduzieren | **Umgesetzt** | Der Banner bleibt `fixed bottom-0`, nimmt aber auf 360-430px deutlich weniger vertikalen Raum ein. Ziel ist ein kleinerer visueller Eingriff im First View ohne Änderung der DSGVO-Mechanik. |
+| Hero-H1-Kontrast auf `/` verbessern | **Umgesetzt** | `src/pages/index.astro`: Highlight im Hero von `text-hsb-red` auf die bestehende hellere Brand-Klasse `text-hsb-red-light` geändert. Keine Textänderung, nur Kontrastkorrektur. |
+| Sprachhinweis-Banner überdeckt Mobile-H1 | **Zurückgestellt** | Relevanter Befund, aber nicht Teil dieses Takeovers. Empfehlung: nächster UI-Fix an `src/components/layout/LanguageSuggest.astro`, ohne i18n-Logik zu ändern. |
+| Interne Links Branchen↔Leistungen↔Wissen ergänzen | **Zurückgestellt** | Inhaltlich sinnvoll, aber Content-/Datenänderung mit größerer Verlinkungswirkung. Sollte separat mit seo-content-reviewer laufen. |
+| Service↔Service-Linkfeld für Leistungsseiten | **Zurückgestellt** | Neues Datenmodell wäre Over-Engineering für diesen kurzen Fix. Bestehende Patterns nicht ohne gesonderte Freigabe erweitern. |
+| Leistungs-Bildslot analog Branchenbilder | **Zurückgestellt** | Nur sinnvoll nach erneuter Fotoinventur; keine neuen Bildzuordnungen ohne KLINGER-/Logo-Prüfung und klare Motiventscheidung. |
+| Sitemap: `/impressum/` und `/datenschutz/` aufnehmen | **Zurückgestellt** | Niedrige Priorität; Rechtsseiten sind intern verlinkt und crawlbar. Änderung kann später zusammen mit SEO-Feinschliff erfolgen. |
+| Kundenstandorte 21/22 | **Dokumentiert** | `src/data/clientLocations.ts` enthält 22 Einträge. Der Audit verwendet ab jetzt 22; die ältere Freigabe-Doku nennt noch 21 und sollte bei der nächsten Dokumentationsrunde angepasst werden. |
 
 ## 6. Endergebnis (Task 12)
 
-_(wird in Task 12 befüllt)_
+**Umgesetzt in der Codex-Takeover-Runde nach Claude-Limit:**
+
+- `src/components/layout/CookieConsent.astro`: Mobile-Layout kompakter gemacht; DSGVO-Mechanik unverändert.
+- `src/pages/index.astro`: Hero-H1-Highlight auf `text-hsb-red-light` umgestellt, um den Lighthouse-Kontrastbefund zu beheben.
+- Dieser Audit-Report: Optimierungsbacklog ergänzt und zurückgestellte Punkte explizit abgegrenzt.
+
+**Verifikation:**
+
+| Prüfung | Ergebnis |
+|---|---|
+| seo-content-reviewer | PASS für `CookieConsent.astro`, `index.astro`, diesen Audit-Report |
+| `npm run check` | PASS: 0 Fehler, 0 Warnungen, 0 Hinweise |
+| `npm run test:run` | PASS: 3 Testdateien, 9/9 Tests |
+| `npm run build` | PASS: Astro/Cloudflare-Build erfolgreich |
+| Mobile Visual-Check 390px | PASS: Cookie-Banner 203px hoch bei 844px Viewport (= 24,1%); kein horizontaler Overflow; Screenshot `/tmp/hsb-cookie-mobile-after.png` |
+| Hero-Kontrastklasse | PASS: Hero-Highlight rendert lokal als `rgb(255, 138, 125)` |
+| Lighthouse lokal (`/`, `/branchen/molkerei/`, `/referenzen/`) | A11y/Best Practices/SEO jeweils 100; Performance im lokalen Dev-Server 63/67/65 und daher nicht mit Cloudflare-Preview vergleichbar |
+
+**Bewusst zurückgestellt:**
+
+- `LanguageSuggest.astro`: Mobile-H1-Überdeckung bleibt der nächste UI-Fix.
+- Interne Link-Erweiterungen in Datenmodellen und Leistungs-Bildslots bleiben eigene Content-/Medienphase.
+- Sitemap-Aufnahme von `/impressum/` und `/datenschutz/` bleibt SEO-Feinschliff mit niedriger Priorität.
+- Korrektur der älteren `referenzen-freigabe.md`-Zahl von 21 auf 22 Kundenstandorte bleibt Dokumentationsnachzug; der aktuelle Datenstand ist in `src/data/clientLocations.ts` eindeutig 22.

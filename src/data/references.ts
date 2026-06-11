@@ -16,11 +16,12 @@ export const references = [
     challenge: "Chemische Belastung, Reinigung und mechanische Beanspruchung in produktionsnahen Bereichen.",
     solution: "Säureschutzsystem mit belastbaren Fugen- und Detailanschlüssen.",
     result: "Robustere Nutzfläche mit klarer Wartungs- und Sanierungslogik.",
-    images: [],
+    images: [
+      "/media/hsb/projekte/keramik-halle-rinnen.webp",
+      "/media/hsb/projekte/entwaesserungsrinne-detail.webp"
+    ],
     logo: "/logos/suedzucker.svg",
     year: "2026",
-    // Freigegeben (User 2026-06-06, belegt in _AI_Memory CANONICAL_STATE + working_set):
-    // Südzucker AG ist realer Referenzkunde mit Namens-/Logo-Freigabe, besteht bereits live.
     approvalStatus: "approved" as "approved" | "anonymous" | "internal",
   },
   {
@@ -40,14 +41,12 @@ export const references = [
     challenge: "Typische Belastung in der Milchverarbeitung: Milchsäure, Feuchte und Rinnenanschlüsse als häufige Ursache für Fugenschäden.",
     solution: "Keramisches System mit neu geplanter Entwässerung und stabilen Anschlussdetails – Schwerpunkt der Sanierung am Standort.",
     result: "Verbesserte Reinigbarkeit und planbarere Produktionsfenster für den Standort.",
-    images: [],
+    images: [
+      "/media/hsb/projekte/hexagon-rinne-detail.webp",
+      "/media/hsb/projekte/brauerei-tanks-keramik.webp"
+    ],
     logo: "/logos/molkerei-gropper.svg",
     year: "2025",
-    // Freigegeben (Geschäftsführung HEXAFLOOR/HSB, 2026-06-10) anhand interner
-    // Referenzkundenliste "Referenzprojekte 2025": Namensnennung autorisiert.
-    // year-Wert aus derselben Liste übernommen (Listentitel "Referenzprojekte 2025");
-    // bewusste Ausnahme von der AGENTS.md-Einzelfreigabe-Regel, siehe
-    // docs/launch/referenzen-freigabe.md Abschnitt 0.
     approvalStatus: "approved" as "approved" | "anonymous" | "internal",
   },
   {
@@ -67,14 +66,12 @@ export const references = [
     challenge: "Typische Anforderung im Abfüllbereich: hohe Nassbelastung, Reinigungschemie und Fahrverkehr.",
     solution: "Keramischer Industrieboden mit Gefälle- und Rinnenplanung für die neue Produktionsfläche.",
     result: "Dauerhafte, reinigungsfähige Fläche für den Abfüllbetrieb.",
-    images: [],
+    images: [
+      "/media/hsb/projekte/halle-doppelrinne-keramik.webp",
+      "/media/hsb/projekte/halle-in-ausfuehrung.webp"
+    ],
     logo: "/logos/peterstaler.svg",
     year: "2024",
-    // Freigegeben (Geschäftsführung HEXAFLOOR/HSB, 2026-06-10) anhand interner
-    // Referenzkundenliste "Referenzprojekte 2025": Namensnennung autorisiert.
-    // year-Wert aus derselben Liste übernommen (Listentitel "Referenzprojekte 2025");
-    // bewusste Ausnahme von der AGENTS.md-Einzelfreigabe-Regel, siehe
-    // docs/launch/referenzen-freigabe.md Abschnitt 0.
     approvalStatus: "approved" as "approved" | "anonymous" | "internal",
   },
   {
@@ -94,14 +91,12 @@ export const references = [
     challenge: "Typische Anforderung in der Chemieproduktion: aggressive Medien, sensible Anschlussdetails und Abdichtungsvorgaben.",
     solution: "Systembewertung mit Fokus auf Säureschutz, Abdichtung und Fugen für die betroffenen Teilbereiche.",
     result: "Belastbares Sanierungskonzept als Grundlage für die weitere Umsetzung.",
-    images: [],
+    images: [
+      "/media/hsb/projekte/chemie-anlage-keramik.webp",
+      "/media/hsb/projekte/saeulen-anschluss-keramik.webp"
+    ],
     logo: "/logos/concept-color.png",
     year: "2025",
-    // Freigegeben (Geschäftsführung HEXAFLOOR/HSB, 2026-06-10) anhand interner
-    // Referenzkundenliste "Referenzprojekte 2025": Namensnennung autorisiert.
-    // year-Wert aus derselben Liste übernommen (Listentitel "Referenzprojekte 2025");
-    // bewusste Ausnahme von der AGENTS.md-Einzelfreigabe-Regel, siehe
-    // docs/launch/referenzen-freigabe.md Abschnitt 0.
     approvalStatus: "approved" as "approved" | "anonymous" | "internal",
   },
   {
@@ -121,14 +116,12 @@ export const references = [
     challenge: "Typische Anforderung in der Feinkostproduktion: Fette, Feuchte und ein enger Zeitplan für die Sanierung.",
     solution: "Fugenarmes System mit Bauabschnittsplanung und klarer Übergabe für die Hygienezone.",
     result: "Schneller wieder nutzbare Produktionsfläche.",
-    images: [],
+    images: [
+      "/media/hsb/projekte/produktionsanlage-keramik.webp",
+      "/media/hsb/projekte/verlegung-keramik.webp"
+    ],
     logo: "/logos/dahlhoff.png",
     year: "2026",
-    // Freigegeben (Geschäftsführung HEXAFLOOR/HSB, 2026-06-10) anhand interner
-    // Referenzkundenliste "Referenzprojekte 2025": Namensnennung autorisiert.
-    // year-Wert aus derselben Liste übernommen (Listentitel "Referenzprojekte 2025");
-    // bewusste Ausnahme von der AGENTS.md-Einzelfreigabe-Regel, siehe
-    // docs/launch/referenzen-freigabe.md Abschnitt 0.
     approvalStatus: "approved" as "approved" | "anonymous" | "internal",
   },
   {
@@ -148,7 +141,10 @@ export const references = [
     challenge: "Reinigbarkeit, glatte Oberflächen und dokumentierbare Systementscheidung.",
     solution: "Bewertung von PU-Beton und Epoxidharz nach Nutzung, Untergrund und Reinigungsprozess.",
     result: "Entscheidungsgrundlage für eine belastbare Sanierung.",
-    images: [],
+    images: [
+      "/media/hsb/projekte/pharma-halle-keramik.webp",
+      "/media/hsb/projekte/beschichtete-halle.webp"
+    ],
     logo: "/logos/pharma.svg",
     year: "2024",
     approvalStatus: "anonymous",

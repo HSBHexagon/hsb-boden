@@ -1,0 +1,32 @@
+---
+import { getPublicReferences } from "../../lib/content";
+
+const references = getPublicReferences().filter(r => r.canShowLogo);
+---
+
+<section class="section border-b border-hsb-line bg-white">
+  <div class="container">
+    <div class="mb-10 text-center lg:mb-12">
+      <p class="text-xs font-black uppercase tracking-[0.2em] text-hsb-red">Vertrauen durch reale Umsetzung</p>
+      <h2 class="h2 mt-4">Referenzkunden (Auszug)</h2>
+    </div>
+    
+    <div class="flex flex-wrap items-center justify-center gap-8 md:gap-12 lg:gap-16 opacity-85">
+      {references.map((reference) => (
+        <div class="group flex flex-col items-center gap-3">
+          <div class="h-12 w-32 grayscale transition-all group-hover:grayscale-0 md:h-14 md:w-40">
+            <img 
+              src={reference.logo} 
+              alt={`${reference.publicName} Logo`}
+              class="h-full w-full object-contain"
+              loading="lazy"
+            />
+          </div>
+          <span class="text-[10px] font-bold uppercase tracking-widest text-hsb-steel transition-colors group-hover:text-hsb-red">
+            {reference.publicName}
+          </span>
+        </div>
+      ))}
+    </div>
+  </div>
+</section>

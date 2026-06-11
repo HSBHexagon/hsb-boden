@@ -47,10 +47,10 @@ const serviceTitleMap = Object.fromEntries(services.map((service) => [service.sl
     </div>
   </div>
   <div class="grid gap-6 p-6 lg:p-7 text-[0.9rem] leading-7 text-hsb-steel">
-    <div><p class="text-[0.65rem] font-black uppercase tracking-widest text-hsb-black mb-1 opacity-50">Anforderung</p><p class="font-medium text-hsb-black/80">{reference.challenge}</p></div>
-    <div class="grid gap-1"><p class="text-[0.65rem] font-black uppercase tracking-widest text-hsb-black mb-1 opacity-50">Lösung & Ergebnis</p><p>{reference.solution} {reference.result}</p></div>
+    <div><p class="text-[0.65rem] font-black uppercase tracking-widest text-hsb-black mb-1 opacity-75">Anforderung</p><p class="font-medium text-hsb-black/80">{reference.challenge}</p></div>
+    <div class="grid gap-1"><p class="text-[0.65rem] font-black uppercase tracking-widest text-hsb-black mb-1 opacity-75">Lösung & Ergebnis</p><p>{reference.solution} {reference.result}</p></div>
   </div>
   <div class="flex flex-wrap gap-2 border-t border-hsb-line/50 bg-[#fbfcfd] p-5">
-    {reference.systems.map((system) => <span class="rounded-[2px] border border-hsb-line/60 px-2 py-1 text-[0.65rem] font-bold uppercase tracking-wide text-hsb-steel/70">{serviceTitleMap[system] ?? system}</span>)}
+    {reference.systems.map((system) => <span class="rounded-[2px] border border-hsb-line/60 px-2 py-1 text-[0.65rem] font-bold uppercase tracking-wide text-hsb-steel/90">{serviceTitleMap[system] ?? system}</span>)}
   </div>
 </article>

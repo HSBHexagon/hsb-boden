@@ -28,16 +28,16 @@ import { buildLocalBusinessJsonLd } from "../lib/schema";
             <svg width="11" height="12.7" viewBox="0 0 26 30" fill="none" aria-hidden="true" class="shrink-0">
               <path d="M12.9904 0L25.9808 7.5V22.5L12.9904 30L0 22.5V7.5L12.9904 0Z" fill="#cb0000" />
             </svg>
-            Industrieböden · Gronau · NRW
+            Zertifizierter WHG-Fachbetrieb · Industrieböden & Säureschutz
           </p>
-          <h1 class="hero-h1 max-w-[16ch]">
-            Hygienische Industrieböden für Lebensmittel-, Getränke- und <span class="text-hsb-red-light">Chemiebetriebe</span>
+          <h1 class="hero-h1 max-w-[18ch]">
+            Spezialisierte Industrieböden für Lebensmittel-, Pharma- und <span class="text-hsb-red-light">Chemieproduktion</span>
           </h1>
           <p class="mt-7 max-w-xl text-lg leading-8 text-white/62">
-            Keramische Industrieböden, Säureschutzbau, Entwässerung und Sanierung für produktionskritische Bereiche. <span class="font-bold text-white/90">Technisch präzise. Dauerhaft belastbar.</span>
+            Technische Fachplanung und bundesweite Ausführung. <span class="font-bold text-white/90">Sanierung ohne Stillstand</span> durch optimierte Taktung und Wochenend-Montage.
           </p>
           <div class="mt-10 flex flex-wrap items-center gap-4">
-            <a class="button-primary" href="/kontakt/">Projekt anfragen</a>
+            <a class="button-primary" href="/kontakt/">Analyse vor Ort anfragen</a>
             <a class="button-secondary" href="/referenzen/">Referenzen ansehen</a>
           </div>
         </div>
@@ -80,7 +80,7 @@ import { buildLocalBusinessJsonLd } from "../lib/schema";
               ["Sanierung im Betrieb", "Bauabschnitte, kurze Sperrzeiten"],
             ].map(([title, sub], i) => (
               <div class={`border-white/10 p-6 ${i < 2 ? "border-b sm:border-b-0 sm:border-r" : ""} ${i === 2 ? "sm:border-r" : ""} ${i === 3 ? "" : "border-b sm:border-b-0"}`}>
-                <p class="mb-1.5 text-[0.75rem] font-black uppercase tracking-[0.16em] text-hsb-red">{title}</p>
+                <p class="mb-1.5 text-[0.75rem] font-black uppercase tracking-[0.16em] text-hsb-red-light">{title}</p>
                 <p class="text-xs leading-5 text-white/62">{sub}</p>
               </div>
             ))}

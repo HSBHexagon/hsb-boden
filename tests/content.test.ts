@@ -6,6 +6,7 @@ import {
 } from "../src/lib/content";
 import { services } from "../src/data/services";
 import { industries } from "../src/data/industries";
+import { articles } from "../src/data/articles";
 
 describe("site content contract", () => {
   it("validates the complete dateibasiert content model", () => {
@@ -68,5 +69,15 @@ describe("content hardening (Phase 1)", () => {
     const blob = JSON.stringify(p);
     expect(blob).toMatch(/14644/);
     expect(blob).toMatch(/GMP/);
+  });
+
+  it("artikel-sections sind objekte mit title", () => {
+    for (const a of articles)
+      for (const s of a.sections) expect(typeof s.title).toBe("string");
+  });
+
+  it("molkerei-artikel nennt Epoxidharz gegen Milchsäure", () => {
+    const a = articles.find((x) => x.slug === "warum-industrieboeden-in-molkereien-versagen")!;
+    expect(JSON.stringify(a.sections)).toMatch(/Epoxidharz/);
   });
 });

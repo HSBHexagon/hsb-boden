@@ -29,13 +29,15 @@ const relatedIndustries = getIndustries().filter((industry) => article.relatedIn
       <div class="prose prose-lg mt-10 max-w-none">
         {article.sections.map((section, index) => (
           <section>
-            <h2>{section}</h2>
+            <h2>{section.title}</h2>
             <p>
-              {index === 0
-                ? `Dieser Abschnitt ordnet ${titleLower} technisch ein und zeigt, welche Anforderungen in produktionskritischen Bereichen tatsächlich entscheidend sind.`
-                : index === article.sections.length - 1
-                  ? `Für Entscheider zählt am Ende, welche Systemwahl dauerhaft tragfähig ist, welche Risiken vermieden werden und wie sich die Maßnahme organisatorisch in den Betrieb einfügt.`
-                  : `Im Bereich „${section}“ geht es um die Entscheidungskriterien, die bei ${article.category}-Themen über Dauerhaftigkeit, Reinigbarkeit und wirtschaftliche Sanierung entscheiden.`}
+              {section.body
+                ? section.body
+                : index === 0
+                  ? `Dieser Abschnitt ordnet ${titleLower} technisch ein und zeigt, welche Anforderungen in produktionskritischen Bereichen tatsächlich entscheidend sind.`
+                  : index === article.sections.length - 1
+                    ? `Für Entscheider zählt am Ende, welche Systemwahl dauerhaft tragfähig ist, welche Risiken vermieden werden und wie sich die Maßnahme organisatorisch in den Betrieb einfügt.`
+                    : `Im Bereich „${section.title}“ geht es um die Entscheidungskriterien, die bei ${article.category}-Themen über Dauerhaftigkeit, Reinigbarkeit und wirtschaftliche Sanierung entscheiden.`}
             </p>
           </section>
         ))}

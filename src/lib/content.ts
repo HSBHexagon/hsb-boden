@@ -82,7 +82,7 @@ const articleSchema = z.object({
   category: z.string().min(3),
   readTime: z.string().min(3),
   intro: z.string().min(50),
-  sections: z.array(z.string()).min(3),
+  sections: z.array(z.object({ title: z.string().min(3), body: z.string().min(20).optional() })).min(3),
   relatedServices: z.array(z.string()).default([]),
   relatedIndustries: z.array(z.string()).default([]),
 });

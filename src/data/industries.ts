@@ -12,9 +12,9 @@ export const industries = [
     floorRequirements: ["Rutschhemmung", "Reinigbarkeit", "Gefälle", "chemische Beständigkeit", "dichte Anschlüsse"],
     recommendedSystems: ["keramische-industrieboeden", "pu-beton-industrieboden", "entwaesserung-industrieboden"],
     proofPoints: ["Referenzen aus Lebensmittel- und Getränkeproduktion", "Planung nach Belastungsprofil", "Sanierung in Bauabschnitten möglich"],
-    relatedServices: ["industrieboden-saeureschutz", "keramische-industrieboeden", "bodensanierung-laufender-betrieb"],
+    relatedServices: ["industrieboden-saeureschutz", "keramische-industrieboeden", "entwaesserung-industrieboden", "bodensanierung-laufender-betrieb"],
     relatedReferences: ["suedzucker-zeitz", "feinkost-nrw"],
-    relatedArticles: ["pu-beton-oder-keramischer-industrieboden", "saeurefeste-fliesen-industrieboden"],
+    relatedArticles: ["pu-beton-oder-keramischer-industrieboden", "saeurefeste-fliesen-industrieboden", "entwaesserung-gefaelle-produktionsbereiche"],
     faqs: [
       {
         question: "Welche Bodeneigenschaften sind in der Lebensmittelproduktion entscheidend?",
@@ -36,9 +36,9 @@ export const industries = [
     floorRequirements: ["säurebeständige Fugen", "Rutschhemmung", "hygienische Oberfläche", "Gefälle", "Edelstahlrinnen"],
     recommendedSystems: ["keramische-industrieboeden", "entwaesserung-industrieboden", "industrieboden-saeureschutz"],
     proofPoints: ["keramische Systeme für Nassbereiche", "Fokus auf Rinnen und Gefälle", "Sanierungsplanung mit Produktionsfenstern"],
-    relatedServices: ["keramische-industrieboeden", "entwaesserung-industrieboden", "bodensanierung-laufender-betrieb"],
+    relatedServices: ["keramische-industrieboeden", "industrieboden-saeureschutz", "entwaesserung-industrieboden", "bodensanierung-laufender-betrieb"],
     relatedReferences: ["molkerei-sued"],
-    relatedArticles: ["warum-industrieboeden-in-molkereien-versagen", "entwaesserung-gefaelle-produktionsbereiche"],
+    relatedArticles: ["warum-industrieboeden-in-molkereien-versagen", "entwaesserung-gefaelle-produktionsbereiche", "sanierung-ohne-produktionsstillstand"],
     faqs: [
       {
         question: "Warum versagen Böden in Molkereien häufig zuerst an Fugen?",
@@ -84,9 +84,9 @@ export const industries = [
     floorRequirements: ["Stoffbeständigkeit", "Abdichtung", "dichte Details", "mechanische Belastbarkeit", "Wartbarkeit"],
     recommendedSystems: ["industrieboden-saeureschutz", "whg-abdichtung-industrieboden", "epoxidharz-bodenbeschichtung"],
     proofPoints: ["technische Systembewertung", "Säureschutz und Abdichtung kombiniert", "keine unbelegten Rechtsversprechen"],
-    relatedServices: ["industrieboden-saeureschutz", "whg-abdichtung-industrieboden", "epoxidharz-bodenbeschichtung"],
+    relatedServices: ["industrieboden-saeureschutz", "keramische-industrieboeden", "whg-abdichtung-industrieboden", "epoxidharz-bodenbeschichtung"],
     relatedReferences: ["chemie-region-west"],
-    relatedArticles: ["saeurefeste-fliesen-industrieboden"],
+    relatedArticles: ["saeurefeste-fliesen-industrieboden", "pu-beton-oder-keramischer-industrieboden"],
     faqs: [
       {
         question: "Welche Informationen werden für chemisch belastete Böden benötigt?",
@@ -108,9 +108,9 @@ export const industries = [
     floorRequirements: ["Reinigbarkeit", "dichte Oberfläche", "saubere Anschlüsse", "Dokumentation", "Systemkompatibilität"],
     recommendedSystems: ["pu-beton-industrieboden", "epoxidharz-bodenbeschichtung", "whg-abdichtung-industrieboden"],
     proofPoints: ["strukturierte Entscheidungslogik", "Systemvergleich Keramik/PU/Epoxidharz", "Fokus auf Betriebssicherheit"],
-    relatedServices: ["pu-beton-industrieboden", "epoxidharz-bodenbeschichtung", "whg-abdichtung-industrieboden"],
+    relatedServices: ["pu-beton-industrieboden", "keramische-industrieboeden", "epoxidharz-bodenbeschichtung", "whg-abdichtung-industrieboden"],
     relatedReferences: ["pharma-hessen"],
-    relatedArticles: ["pu-beton-oder-keramischer-industrieboden"],
+    relatedArticles: ["pu-beton-oder-keramischer-industrieboden", "sanierung-ohne-produktionsstillstand"],
     faqs: [
       {
         question: "Sind fugenlose Systeme in der Pharmaindustrie immer Pflicht?",
@@ -132,9 +132,9 @@ export const industries = [
     floorRequirements: ["Rutschhemmung", "Fettbeständigkeit", "Reinigbarkeit", "mechanische Belastbarkeit", "sichere Anschlüsse"],
     recommendedSystems: ["pu-beton-industrieboden", "keramische-industrieboeden", "entwaesserung-industrieboden"],
     proofPoints: ["geeignet für hygienekritische Nass- und Küchenbereiche", "Systemwahl nach Reinigung und Nutzung", "Planung mit Betriebsfenstern"],
-    relatedServices: ["pu-beton-industrieboden", "keramische-industrieboeden", "bodensanierung-laufender-betrieb"],
+    relatedServices: ["pu-beton-industrieboden", "keramische-industrieboeden", "entwaesserung-industrieboden", "bodensanierung-laufender-betrieb"],
     relatedReferences: ["feinkost-nrw"],
-    relatedArticles: ["sanierung-ohne-produktionsstillstand"],
+    relatedArticles: ["sanierung-ohne-produktionsstillstand", "pu-beton-oder-keramischer-industrieboden"],
     faqs: [
       {
         question: "Was ist bei Böden in Großküchen besonders wichtig?",

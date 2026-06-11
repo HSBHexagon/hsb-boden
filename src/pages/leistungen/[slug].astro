@@ -22,10 +22,37 @@ const relatedReferences = getReferencesForSlugs(service.relatedReferences);
 const relatedIndustries = getIndustries().filter((industry) => service.relatedIndustries.includes(industry.slug));
 const relatedArticles = getArticles().filter((article) => service.relatedArticles.includes(article.slug));
 const path = `/leistungen/${service.slug}/`;
+
+// Reale Projektfotos aus dem HSB-Arbeitsumfeld (keine Stockfotos) für Leistungen,
+// zu denen ein passendes, freigegebenes Motiv vorliegt.
+const serviceImages: Record<string, { src: string; alt: string }> = {
+  "industrieboden-saeureschutz": {
+    src: "/media/hsb/projekte/saeulen-anschluss-keramik.webp",
+    alt: "Dicht ausgeführter Säulen- und Sockelanschluss in Sechskant-Keramik, Detail einer Produktionsfläche",
+  },
+  "keramische-industrieboeden": {
+    src: "/media/hsb/projekte/verlegung-keramik.webp",
+    alt: "Verlegung eines keramischen Sechskant-Industriebodens während der Ausführung",
+  },
+};
+
+const serviceImage = serviceImages[service.slug];
 ---
 
 <BaseLayout title={service.seoTitle} description={service.description} path={path} jsonLd={[buildServiceJsonLd({ name: service.title, description: service.description, path }), buildFaqJsonLd(service.faqs), buildBreadcrumbJsonLd([{ name: "Start", path: "/" }, { name: "Leistungen", path: "/leistungen/" }, { name: service.title, path }])]}>
   <PageHero eyebrow="Leistung" title={service.h1} text={service.description} ctaLabel={service.ctaLabel} />
+  {serviceImage && (
+    <section class="section-tight">
+      <div class="container">
+        <figure class="overflow-hidden rounded-[10px] border border-hsb-line">
+          <img src={serviceImage.src} alt={serviceImage.alt} class="max-h-[480px] w-full object-cover object-center" loading="lazy" width="1200" height="480" />
+          <figcaption class="border-t border-hsb-line bg-white px-5 py-3 text-xs font-bold text-hsb-steel">
+            Reale Projektfläche aus dem HSB-Arbeitsumfeld – keine Stockfotos.
+          </figcaption>
+        </figure>
+      </div>
+    </section>
+  )}
   <section class="section">
     <div class="container grid gap-8 lg:grid-cols-[0.9fr_1.1fr]">
       <div>

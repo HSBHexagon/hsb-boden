@@ -26,6 +26,7 @@ const serviceSchema = z.object({
   decisionCriteria: z.array(z.string()).min(3),
   relatedIndustries: z.array(z.string()),
   relatedReferences: z.array(z.string()),
+  relatedArticles: z.array(z.string()).default([]),
   faqs: z.array(faqSchema).min(1),
   ctaLabel: z.string().min(5),
   ctaTarget: z.string().startsWith("/"),
@@ -44,6 +45,7 @@ const industrySchema = z.object({
   proofPoints: z.array(z.string()).min(2),
   relatedServices: z.array(z.string()).min(1),
   relatedReferences: z.array(z.string()),
+  relatedArticles: z.array(z.string()).default([]),
   faqs: z.array(faqSchema).min(1),
   ctaLabel: z.string().min(5),
 });
@@ -81,6 +83,8 @@ const articleSchema = z.object({
   readTime: z.string().min(3),
   intro: z.string().min(50),
   sections: z.array(z.string()).min(3),
+  relatedServices: z.array(z.string()).default([]),
+  relatedIndustries: z.array(z.string()).default([]),
 });
 
 export type Service = (typeof services)[number];

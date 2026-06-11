@@ -18,6 +18,7 @@ export const services = [
     decisionCriteria: ["Belastungsmedium", "Temperatur", "Reinigung", "Nutzungsfenster", "Untergrundzustand"],
     relatedIndustries: ["chemieindustrie", "lebensmittelindustrie", "molkerei"],
     relatedReferences: ["suedzucker-zeitz", "chemie-region-west"],
+    relatedArticles: ["saeurefeste-fliesen-industrieboden"],
     faqs: [
       {
         question: "Wann braucht ein Industrieboden Säureschutz?",
@@ -52,6 +53,7 @@ export const services = [
     decisionCriteria: ["Rutschklasse", "Fliesengeometrie", "Fugenmaterial", "Gefälle", "Reinigungschemie"],
     relatedIndustries: ["molkerei", "brauerei-getraenkeindustrie", "lebensmittelindustrie"],
     relatedReferences: ["molkerei-sued", "mineralbrunnen-schwarzwald"],
+    relatedArticles: ["pu-beton-oder-keramischer-industrieboden", "saeurefeste-fliesen-industrieboden", "warum-industrieboeden-in-molkereien-versagen"],
     faqs: [
       {
         question: "Warum Keramik im Industrieboden?",
@@ -86,6 +88,7 @@ export const services = [
     decisionCriteria: ["Sanierungsfenster", "mechanische Punktlast", "Chemikalien", "Lebensdauerziel", "Reinigung"],
     relatedIndustries: ["lebensmittelindustrie", "pharmaindustrie", "backwarenproduktion-grosskueche"],
     relatedReferences: ["feinkost-nrw"],
+    relatedArticles: ["pu-beton-oder-keramischer-industrieboden"],
     faqs: [
       {
         question: "Ist PU-Beton immer besser als Keramik?",
@@ -115,6 +118,7 @@ export const services = [
     decisionCriteria: ["Nutzung", "Untergrund", "Aushärtezeit", "Chemie", "mechanische Last"],
     relatedIndustries: ["chemieindustrie", "pharmaindustrie"],
     relatedReferences: ["chemie-region-west"],
+    relatedArticles: ["pu-beton-oder-keramischer-industrieboden"],
     faqs: [
       {
         question: "Wann ist Epoxidharz sinnvoll?",
@@ -144,6 +148,7 @@ export const services = [
     decisionCriteria: ["Wassermenge", "Reinigungsprozess", "Fahrverkehr", "Belag", "Einbauhöhe"],
     relatedIndustries: ["molkerei", "brauerei-getraenkeindustrie", "lebensmittelindustrie"],
     relatedReferences: ["molkerei-sued"],
+    relatedArticles: ["entwaesserung-gefaelle-produktionsbereiche", "warum-industrieboeden-in-molkereien-versagen"],
     faqs: [
       {
         question: "Warum ist Gefälle so wichtig?",
@@ -173,6 +178,7 @@ export const services = [
     decisionCriteria: ["Stoffe", "Nutzung", "Untergrund", "Detailpunkte", "Prüfanforderungen"],
     relatedIndustries: ["chemieindustrie", "pharmaindustrie"],
     relatedReferences: ["chemie-region-west"],
+    relatedArticles: ["saeurefeste-fliesen-industrieboden"],
     faqs: [
       {
         question: "Ersetzt HSB eine rechtliche WHG-Prüfung?",
@@ -202,6 +208,7 @@ export const services = [
     decisionCriteria: ["Produktionsfenster", "Schadensbild", "Materialwahl", "Zugänglichkeit", "Hygiene"],
     relatedIndustries: ["lebensmittelindustrie", "molkerei", "brauerei-getraenkeindustrie"],
     relatedReferences: ["feinkost-nrw", "molkerei-sued"],
+    relatedArticles: ["sanierung-ohne-produktionsstillstand", "warum-industrieboeden-in-molkereien-versagen"],
     faqs: [
       {
         question: "Kann eine Sanierung ohne Stillstand erfolgen?",
@@ -231,6 +238,7 @@ export const services = [
     decisionCriteria: ["Fahrverkehr", "Temperatur", "Fugenbreite", "Reinigung", "Stoßbelastung"],
     relatedIndustries: ["lebensmittelindustrie", "chemieindustrie"],
     relatedReferences: ["suedzucker-zeitz"],
+    relatedArticles: ["entwaesserung-gefaelle-produktionsbereiche"],
     faqs: [
       {
         question: "Warum sind Fugen so kritisch?",

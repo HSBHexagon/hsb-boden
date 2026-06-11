@@ -15,6 +15,8 @@ export const articles = [
       "Sanierungsfenster und Aushärtezeiten berücksichtigen",
       "Entwässerung und Anschlüsse als System betrachten",
     ],
+    relatedServices: ["keramische-industrieboeden", "pu-beton-industrieboden"],
+    relatedIndustries: ["lebensmittelindustrie", "molkerei"],
   },
   {
     slug: "warum-industrieboeden-in-molkereien-versagen",
@@ -27,6 +29,8 @@ export const articles = [
     readTime: "6 Minuten",
     intro: "Molkereiböden scheitern meist an Details: Fugen, Rinnen, Gefälle und falsche Systemwahl tragen mehr Risiko als die Fläche selbst.",
     sections: ["Milchsäure und Reinigungschemie", "Fugen als Schwachstelle", "stehendes Wasser durch falsches Gefälle", "Sanierung in Bauabschnitten"],
+    relatedServices: ["keramische-industrieboeden", "entwaesserung-industrieboden", "bodensanierung-laufender-betrieb"],
+    relatedIndustries: ["molkerei"],
   },
   {
     slug: "saeurefeste-fliesen-industrieboden",
@@ -39,6 +43,8 @@ export const articles = [
     readTime: "5 Minuten",
     intro: "Die Fliese allein macht keinen Säureschutz. Entscheidend ist der vollständige Aufbau aus Untergrund, Abdichtung, Fuge und Detailplanung.",
     sections: ["Feinsteinzeug als technische Basis", "Fugen und Verlegebett", "Rutschhemmung und Reinigung", "Herstellerinformationen richtig nutzen"],
+    relatedServices: ["keramische-industrieboeden", "industrieboden-saeureschutz"],
+    relatedIndustries: ["chemieindustrie", "lebensmittelindustrie"],
   },
   {
     slug: "entwaesserung-gefaelle-produktionsbereiche",
@@ -51,6 +57,8 @@ export const articles = [
     readTime: "6 Minuten",
     intro: "Stehendes Wasser ist kein Schönheitsfehler. Es belastet Fugen, erhöht Rutschrisiken und erschwert hygienische Reinigung.",
     sections: ["Wassermengen und Reinigungsprozess", "Rinnen und Abläufe", "Anschlussdetails", "Sanierung vorhandener Gefällefehler"],
+    relatedServices: ["entwaesserung-industrieboden"],
+    relatedIndustries: ["molkerei", "brauerei-getraenkeindustrie", "lebensmittelindustrie"],
   },
   {
     slug: "sanierung-ohne-produktionsstillstand",
@@ -63,5 +71,7 @@ export const articles = [
     readTime: "7 Minuten",
     intro: "Nicht jede Sanierung kann ohne Stillstand erfolgen. Aber fast jede Sanierung kann besser geplant werden, wenn technische und organisatorische Zwänge früh sichtbar sind.",
     sections: ["Schadensbild erfassen", "Bauabschnitte planen", "Materialwahl nach Zeitfenster", "Übergabe und Wiederinbetriebnahme"],
+    relatedServices: ["bodensanierung-laufender-betrieb"],
+    relatedIndustries: ["lebensmittelindustrie", "molkerei", "brauerei-getraenkeindustrie"],
   },
 ];

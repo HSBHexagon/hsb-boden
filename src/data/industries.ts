@@ -14,6 +14,7 @@ export const industries = [
     proofPoints: ["Referenzen aus Lebensmittel- und Getränkeproduktion", "Planung nach Belastungsprofil", "Sanierung in Bauabschnitten möglich"],
     relatedServices: ["industrieboden-saeureschutz", "keramische-industrieboeden", "bodensanierung-laufender-betrieb"],
     relatedReferences: ["suedzucker-zeitz", "feinkost-nrw"],
+    relatedArticles: ["pu-beton-oder-keramischer-industrieboden", "saeurefeste-fliesen-industrieboden"],
     faqs: [
       {
         question: "Welche Bodeneigenschaften sind in der Lebensmittelproduktion entscheidend?",
@@ -37,6 +38,7 @@ export const industries = [
     proofPoints: ["keramische Systeme für Nassbereiche", "Fokus auf Rinnen und Gefälle", "Sanierungsplanung mit Produktionsfenstern"],
     relatedServices: ["keramische-industrieboeden", "entwaesserung-industrieboden", "bodensanierung-laufender-betrieb"],
     relatedReferences: ["molkerei-sued"],
+    relatedArticles: ["warum-industrieboeden-in-molkereien-versagen", "entwaesserung-gefaelle-produktionsbereiche"],
     faqs: [
       {
         question: "Warum versagen Böden in Molkereien häufig zuerst an Fugen?",
@@ -60,6 +62,7 @@ export const industries = [
     proofPoints: ["geeignet für Nass- und Abfüllbereiche", "Referenzen aus Getränkeproduktion", "Fokus auf Produktionssicherheit"],
     relatedServices: ["keramische-industrieboeden", "industrieboden-saeureschutz", "entwaesserung-industrieboden"],
     relatedReferences: ["mineralbrunnen-schwarzwald"],
+    relatedArticles: ["entwaesserung-gefaelle-produktionsbereiche", "sanierung-ohne-produktionsstillstand"],
     faqs: [
       {
         question: "Welche Bereiche in Brauereien sind besonders kritisch?",
@@ -83,6 +86,7 @@ export const industries = [
     proofPoints: ["technische Systembewertung", "Säureschutz und Abdichtung kombiniert", "keine unbelegten Rechtsversprechen"],
     relatedServices: ["industrieboden-saeureschutz", "whg-abdichtung-industrieboden", "epoxidharz-bodenbeschichtung"],
     relatedReferences: ["chemie-region-west"],
+    relatedArticles: ["saeurefeste-fliesen-industrieboden"],
     faqs: [
       {
         question: "Welche Informationen werden für chemisch belastete Böden benötigt?",
@@ -106,6 +110,7 @@ export const industries = [
     proofPoints: ["strukturierte Entscheidungslogik", "Systemvergleich Keramik/PU/Epoxidharz", "Fokus auf Betriebssicherheit"],
     relatedServices: ["pu-beton-industrieboden", "epoxidharz-bodenbeschichtung", "whg-abdichtung-industrieboden"],
     relatedReferences: ["pharma-hessen"],
+    relatedArticles: ["pu-beton-oder-keramischer-industrieboden"],
     faqs: [
       {
         question: "Sind fugenlose Systeme in der Pharmaindustrie immer Pflicht?",
@@ -129,6 +134,7 @@ export const industries = [
     proofPoints: ["geeignet für hygienekritische Nass- und Küchenbereiche", "Systemwahl nach Reinigung und Nutzung", "Planung mit Betriebsfenstern"],
     relatedServices: ["pu-beton-industrieboden", "keramische-industrieboeden", "bodensanierung-laufender-betrieb"],
     relatedReferences: ["feinkost-nrw"],
+    relatedArticles: ["sanierung-ohne-produktionsstillstand"],
     faqs: [
       {
         question: "Was ist bei Böden in Großküchen besonders wichtig?",

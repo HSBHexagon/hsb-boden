@@ -4,7 +4,7 @@ import CTASection from "../../components/sections/CTASection.astro";
 import FAQAccordion from "../../components/sections/FAQAccordion.astro";
 import PageHero from "../../components/sections/PageHero.astro";
 import BaseLayout from "../../layouts/BaseLayout.astro";
-import { getIndustries, getReferencesForSlugs, getServices } from "../../lib/content";
+import { getArticles, getIndustries, getReferencesForSlugs, getServices } from "../../lib/content";
 import { buildBreadcrumbJsonLd, buildFaqJsonLd } from "../../lib/schema";
 
 export const prerender = true;
@@ -19,6 +19,7 @@ export function getStaticPaths() {
 const { industry } = Astro.props;
 const services = getServices().filter((service) => industry.relatedServices.includes(service.slug));
 const relatedReferences = getReferencesForSlugs(industry.relatedReferences);
+const relatedArticles = getArticles().filter((article) => industry.relatedArticles.includes(article.slug));
 const path = `/branchen/${industry.slug}/`;
 
 // Reale Projektfotos aus dem HSB-Arbeitsumfeld (keine Stockfotos) für Branchen,
@@ -111,6 +112,23 @@ const industryImage = industryImages[industry.slug];
         <h2 class="h2 mt-3">Projektbeispiele aus ähnlichen Bereichen</h2>
         <div class="mt-8 grid-auto">
           {relatedReferences.map((reference) => <ReferenceCard reference={reference} />)}
+        </div>
+      </div>
+    </section>
+  )}
+  {relatedArticles.length > 0 && (
+    <section class="section-tight bg-hsb-mist">
+      <div class="container">
+        <p class="eyebrow">Wissen</p>
+        <h2 class="h2 mt-3">Fachwissen zu dieser Branche</h2>
+        <div class="mt-8 grid-auto">
+          {relatedArticles.map((article) => (
+            <a class="surface p-6 no-underline" href={`/wissen/${article.slug}/`}>
+              <p class="eyebrow">{article.category}</p>
+              <h3 class="h3 mt-2">{article.title}</h3>
+              <p class="mt-3 text-sm leading-7 text-hsb-steel">{article.intro}</p>
+            </a>
+          ))}
         </div>
       </div>
     </section>

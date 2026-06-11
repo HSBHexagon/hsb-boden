@@ -81,7 +81,7 @@ export const industries = [
     searchIntent:
       "Chemiebetriebe suchen technisch belastbare Bodensysteme mit Fokus auf Chemikalienbeständigkeit, Abdichtung und sichere Anschlussdetails.",
     typicalProblems: ["Chemikalienangriff", "Undichtigkeiten", "Fugenschäden", "Abdichtungsrisiken", "Dokumentationsbedarf"],
-    floorRequirements: ["Stoffbeständigkeit", "Abdichtung", "dichte Details", "mechanische Belastbarkeit", "Wartbarkeit"],
+    floorRequirements: ["Stoffbeständigkeit", "Abdichtung", "dichte Details", "mechanische Belastbarkeit", "Wartbarkeit", "WHG-Konformität (§ 62/63)", "Beständigkeit gegen Säuren, Laugen, Lösemittel", "ESD-Ableitfähigkeit"],
     recommendedSystems: ["industrieboden-saeureschutz", "whg-abdichtung-industrieboden", "epoxidharz-bodenbeschichtung"],
     proofPoints: ["technische Systembewertung", "Säureschutz und Abdichtung kombiniert", "keine unbelegten Rechtsversprechen"],
     relatedServices: ["industrieboden-saeureschutz", "keramische-industrieboeden", "whg-abdichtung-industrieboden", "epoxidharz-bodenbeschichtung"],
@@ -104,8 +104,8 @@ export const industries = [
     h1: "Industrieböden für Pharma- und Hygienezonen",
     searchIntent:
       "Pharma- und Hygieneproduktionen suchen reinigungsfähige, dauerhaft stabile und nachvollziehbar geplante Böden.",
-    typicalProblems: ["Reinigungsanforderungen", "Detailanschlüsse", "Beschichtungsschäden", "Feuchte", "Auditdruck"],
-    floorRequirements: ["Reinigbarkeit", "dichte Oberfläche", "saubere Anschlüsse", "Dokumentation", "Systemkompatibilität"],
+    typicalProblems: ["Reinigungsanforderungen", "Detailanschlüsse", "Beschichtungsschäden", "Feuchte", "Auditdruck", "CIP-Reinigungsvalidierung", "Kreuzkontamination"],
+    floorRequirements: ["Reinigbarkeit", "dichte Oberfläche", "saubere Anschlüsse", "Dokumentation", "Systemkompatibilität", "Reinraum-Konformität ISO 14644", "GMP-/FDA-gerechte Oberfläche", "porenfreie Versiegelung"],
     recommendedSystems: ["pu-beton-industrieboden", "epoxidharz-bodenbeschichtung", "whg-abdichtung-industrieboden"],
     proofPoints: ["strukturierte Entscheidungslogik", "Systemvergleich Keramik/PU/Epoxidharz", "Fokus auf Betriebssicherheit"],
     relatedServices: ["pu-beton-industrieboden", "keramische-industrieboeden", "epoxidharz-bodenbeschichtung", "whg-abdichtung-industrieboden"],

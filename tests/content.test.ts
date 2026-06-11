@@ -5,6 +5,7 @@ import {
   validateSiteContent,
 } from "../src/lib/content";
 import { services } from "../src/data/services";
+import { industries } from "../src/data/industries";
 
 describe("site content contract", () => {
   it("validates the complete dateibasiert content model", () => {
@@ -53,5 +54,19 @@ describe("content hardening (Phase 1)", () => {
     const s = services.find((x) => x.slug === "keramische-industrieboeden")!;
     expect(s.systemSolution).toMatch(/Rüttelverlege/);
     expect(s.secondaryKeywords.some((k) => /14411/.test(k))).toBe(true);
+  });
+
+  it("chemie nennt WHG-Paragrafen und ESD", () => {
+    const c = industries.find((x) => x.slug === "chemieindustrie")!;
+    const blob = JSON.stringify(c);
+    expect(blob).toMatch(/§\s?62/);
+    expect(blob).toMatch(/ESD/);
+  });
+
+  it("pharma nennt ISO 14644 und GMP/FDA", () => {
+    const p = industries.find((x) => x.slug === "pharmaindustrie")!;
+    const blob = JSON.stringify(p);
+    expect(blob).toMatch(/14644/);
+    expect(blob).toMatch(/GMP/);
   });
 });

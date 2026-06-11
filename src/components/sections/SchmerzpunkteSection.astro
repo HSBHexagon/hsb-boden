@@ -3,7 +3,7 @@ const problems = [
   {
     number: "01",
     title: "Rissbildung & Ablösungen",
-    text: "Falsches Verlegebett, ungeeignete Fuge oder fehlende Dehnung — Böden brechen dort, wo die Planung aufgehört hat.",
+    text: "Falsches Verlegebett, ungeeignete Fuge oder fehlende Dehnung: Böden brechen dort, wo die Planung aufgehört hat.",
     consequence: "Folge: Schmutz- und Keimeinschlüsse, kostspielige Notflicken, ungeplante Stillstände.",
   },
   {
@@ -38,19 +38,28 @@ const problems = [
         </h2>
       </div>
       <p class="max-w-xs text-sm leading-7 text-white/72 lg:text-right">
-        Nicht der Boden ist das Problem — sondern die Lücke zwischen Anforderung und Planung.
+        Nicht der Boden ist das Problem, sondern die Lücke zwischen Anforderung und Planung.
       </p>
     </div>
 
-    <div class="grid gap-px bg-white/10 sm:grid-cols-2">
+    <div class="grid gap-px border border-white/5 bg-white/5 sm:grid-cols-2">
       {problems.map((item) => (
-        <article class="flex flex-col gap-5 bg-hsb-black p-8">
-          <span class="font-black text-5xl text-hsb-red-light tabular-nums leading-none">{item.number}</span>
-          <div>
-            <h3 class="h3 text-white">{item.title}</h3>
-            <p class="mt-3 text-sm leading-7 text-white/55">{item.text}</p>
+        <article class="flex flex-col gap-6 bg-hsb-black p-8 lg:p-10">
+          <div class="flex items-center gap-4">
+            <span class="rounded-[2px] border border-white/10 px-2.5 py-1 font-mono text-[0.65rem] font-black uppercase tracking-[0.2em] text-white/52">
+              Ursache {item.number}
+            </span>
           </div>
-          <p class="border-t border-white/10 pt-4 text-xs font-bold text-hsb-red-light leading-6">{item.consequence}</p>
+          <div>
+            <h3 class="h3 text-white leading-tight">{item.title}</h3>
+            <p class="mt-4 text-[0.925rem] leading-7 text-white/54">{item.text}</p>
+          </div>
+          <div class="mt-auto pt-6">
+            <p class="flex items-start gap-2 text-[0.8rem] font-bold leading-6 text-hsb-red-light">
+              <span class="mt-1 size-1.5 shrink-0 bg-hsb-red"></span>
+              <span>{item.consequence}</span>
+            </p>
+          </div>
         </article>
       ))}
     </div>

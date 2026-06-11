@@ -1,5 +1,6 @@
 ---
 import { navigation } from "../../data/navigation";
+import { supportedLanguages } from "../../data/localization";
 ---
 
 <style>
@@ -13,13 +14,12 @@ import { navigation } from "../../data/navigation";
   #site-header {
     transition: background 200ms ease, border-color 200ms ease, box-shadow 200ms ease, color 200ms ease;
   }
-  /* Durchgehend dunkler Header (industrieller Charakter).
-     Oben: deckungsgleich mit dem dunklen Hero (#0f1114) -> nahtloser Top-Fold.
-     Auf hellen Unterseiten-Heros bleibt es eine klare dunkle Leiste. */
+  /* Durchgehend dunkler, aber gegenueber dem Hero leicht aufgehellter Header.
+     So bleibt der industrielle Charakter erhalten, ohne dass Mobile oben zu schwer wird. */
   #site-header {
-    background: #0f1114;
+    background: #171b22;
     color: #ffffff;
-    border-bottom: 1px solid transparent;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
   }
   #site-header .nav-links a {
     color: rgba(255, 255, 255, 0.72);
@@ -33,9 +33,9 @@ import { navigation } from "../../data/navigation";
   }
   /* Scrolled: leichte Transluzenz + Elevation als Scroll-Hinweis ueber hellem Content. */
   #site-header.scrolled {
-    background: rgba(15, 17, 20, 0.92);
-    border-bottom-color: rgba(255, 255, 255, 0.08);
-    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.32);
+    background: rgba(23, 27, 34, 0.94);
+    border-bottom-color: rgba(255, 255, 255, 0.12);
+    box-shadow: 0 4px 22px rgba(0, 0, 0, 0.26);
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
   }
@@ -50,18 +50,32 @@ import { navigation } from "../../data/navigation";
       <img src="/brand/hsb-boden-logo-dark.png" alt="HSB Hexagon Säurebau GmbH" class="h-11 w-auto object-contain" width="60" height="44" />
     </a>
 
-    <!-- Rechter Cluster: Navigation und CTA bilden eine bewusste Gruppe,
-         damit der Header als Ganzes wirkt (Logo links, Aktionen rechts) und
-         die Navigation nicht isoliert in der Mitte schwebt. -->
-    <div class="flex items-center gap-3 lg:gap-8">
-      <nav class="nav-links hidden items-center gap-6 text-sm font-bold lg:flex" aria-label="Hauptnavigation">
+    <!-- Rechter Cluster: Navigation und CTA bilden eine bewusste Gruppe -->
+    <div class="flex items-center gap-4 lg:gap-10">
+      <nav class="nav-links hidden items-center gap-8 text-[0.825rem] font-black uppercase tracking-widest lg:flex" aria-label="Hauptnavigation">
         {navigation.filter(n => n.href !== "/kontakt/").map((item) => (
-          <a class="transition-colors" href={item.href}>{item.label}</a>
+          <a class="relative py-2 transition-colors hover:text-white group" href={item.href}>
+            <span>{item.label}</span>
+            <span class="absolute bottom-0 left-0 h-0.5 w-0 bg-hsb-red transition-all duration-300 group-hover:w-full"></span>
+          </a>
         ))}
       </nav>
 
+      <div class="hidden items-center gap-1 rounded-[4px] border border-white/10 p-1 xl:flex" aria-label="Sprachauswahl">
+        {supportedLanguages.map((language) => (
+          <a
+            href={`?lang=${language.code}`}
+            class="language-choice flex h-8 min-w-8 items-center justify-center rounded-[2px] px-2 text-[0.68rem] font-black uppercase text-white/60 transition hover:bg-white/10 hover:text-white"
+            data-language-choice={language.code}
+            title={language.label}
+          >
+            {language.code}
+          </a>
+        ))}
+      </div>
+
       <div class="hidden lg:block">
-        <a class="button-primary" href="/kontakt/">Ersteinschätzung</a>
+        <a class="button-primary px-8" href="/kontakt/">Ersteinschätzung</a>
       </div>
 
       <button
@@ -85,7 +99,7 @@ import { navigation } from "../../data/navigation";
   <!-- Mobile menu -->
   <nav
     id="mobile-menu"
-    class="hidden border-t border-white/10 bg-hsb-black"
+    class="hidden border-t border-white/10 bg-[#171b22]"
     aria-label="Mobile Navigation"
   >
     <div class="container py-4">
@@ -97,6 +111,18 @@ import { navigation } from "../../data/navigation";
           {item.label}
         </a>
       ))}
+      <div class="mt-4 grid grid-cols-6 gap-2" aria-label="Sprachauswahl">
+        {supportedLanguages.map((language) => (
+          <a
+            href={`?lang=${language.code}`}
+            class="language-choice flex h-10 items-center justify-center rounded-[2px] border border-white/10 text-xs font-black uppercase text-white/70 hover:border-white/30 hover:text-white"
+            data-language-choice={language.code}
+            title={language.label}
+          >
+            {language.code}
+          </a>
+        ))}
+      </div>
       <div class="pt-4">
         <a class="button-primary w-full text-center" href="/kontakt/">Ersteinschätzung anfordern</a>
       </div>
@@ -137,5 +163,32 @@ import { navigation } from "../../data/navigation";
     iconMenu?.classList.toggle("hidden", open);
     iconClose?.classList.toggle("hidden", !open);
     syncHeaderState();
+  });
+
+  function markLanguageChoice(code: string | null) {
+    document.querySelectorAll<HTMLElement>("[data-language-choice]").forEach((item) => {
+      const active = item.dataset.languageChoice === code;
+      item.classList.toggle("bg-white/10", active);
+      item.classList.toggle("text-white", active);
+      item.setAttribute("aria-current", active ? "true" : "false");
+    });
+  }
+
+  const languageStorageKey = "hsb_language_offer_v1";
+  const currentLanguage = new URLSearchParams(window.location.search).get("lang") ?? window.localStorage.getItem(languageStorageKey) ?? "de";
+  markLanguageChoice(currentLanguage);
+
+  document.querySelectorAll<HTMLAnchorElement>("[data-language-choice]").forEach((item) => {
+    item.addEventListener("click", (event) => {
+      const code = item.dataset.languageChoice;
+      if (!code) return;
+      event.preventDefault();
+      const url = new URL(window.location.href);
+      url.searchParams.set("lang", code);
+      window.history.replaceState({}, "", url);
+      window.localStorage.setItem(languageStorageKey, code);
+      window.dispatchEvent(new CustomEvent("hsb:language-choice", { detail: { code } }));
+      markLanguageChoice(code);
+    });
   });
 </script>

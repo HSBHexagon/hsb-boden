@@ -16,7 +16,6 @@ export function getStaticPaths() {
 
 const { article } = Astro.props;
 const path = `/wissen/${article.slug}/`;
-const titleLower = article.title.replace(/[?!.]+$/, "").toLowerCase();
 ---
 
 <BaseLayout title={article.seoTitle} description={article.description} path={path} jsonLd={[buildBreadcrumbJsonLd([{ name: "Start", path: "/" }, { name: "Wissen", path: "/wissen/" }, { name: article.title, path }])]}>
@@ -25,16 +24,10 @@ const titleLower = article.title.replace(/[?!.]+$/, "").toLowerCase();
     <div class="container max-w-3xl">
       <p class="lead">{article.intro}</p>
       <div class="prose prose-lg mt-10 max-w-none">
-        {article.sections.map((section, index) => (
+        {article.sections.map((section) => (
           <section>
-            <h2>{section}</h2>
-            <p>
-              {index === 0
-                ? `Dieser Abschnitt ordnet ${titleLower} technisch ein und zeigt, welche Anforderungen in produktionskritischen Bereichen tatsächlich entscheidend sind.`
-                : index === article.sections.length - 1
-                  ? `Für Entscheider zählt am Ende, welche Systemwahl dauerhaft tragfähig ist, welche Risiken vermieden werden und wie sich die Maßnahme organisatorisch in den Betrieb einfügt.`
-                  : `Im Bereich „${section}“ geht es um die Entscheidungskriterien, die bei ${article.category}-Themen über Dauerhaftigkeit, Reinigbarkeit und wirtschaftliche Sanierung entscheiden.`}
-            </p>
+            <h2>{section.title}</h2>
+            <p>{section.content}</p>
           </section>
         ))}
       </div>

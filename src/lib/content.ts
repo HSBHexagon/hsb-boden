@@ -79,7 +79,10 @@ const articleSchema = z.object({
   category: z.string().min(3),
   readTime: z.string().min(3),
   intro: z.string().min(50),
-  sections: z.array(z.string()).min(3),
+  sections: z.array(z.object({
+    title: z.string().min(10),
+    content: z.string().min(50),
+  })).min(3),
 });
 
 export type Service = (typeof services)[number];

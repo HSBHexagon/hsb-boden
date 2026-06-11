@@ -2,31 +2,45 @@
 import { manufacturers } from "../../data/manufacturers";
 ---
 
-<section class="section bg-hsb-mist border-b border-hsb-line">
-  <div class="container grid gap-12 lg:grid-cols-[1fr_1.1fr] lg:items-start">
-    <div>
-      <h2 class="h2 max-w-sm">Technische Grundlage, ehrlich eingeordnet</h2>
-      <p class="lead mt-4">
-        HSB nutzt anerkannte Herstellersysteme als technische Planungsgrundlage. Keine unbelegten Partnerschaftsclaims, keine Zertifizierungsbehauptungen ohne Freigabe.
-      </p>
+<section class="section bg-white border-b border-hsb-line">
+  <div class="container">
+    <div class="mb-16 grid gap-8 lg:grid-cols-[1fr_auto] lg:items-end">
+      <div class="max-w-3xl">
+        <div class="flex items-center gap-3 eyebrow mb-6">
+          <span class="size-1.5 bg-hsb-red"></span>
+          <span>Material- & Planungsgrundlage</span>
+        </div>
+        <h2 class="h2">Technische Systeme, ehrlich eingeordnet</h2>
+        <p class="lead mt-8 text-hsb-steel/80">
+          HSB nutzt anerkannte Herstellersysteme als technische Basis. Wir kommunizieren keine exklusiven Partnerschafts-Claims, sondern die belastbare Anwendung von Industriestandards.
+        </p>
+      </div>
     </div>
-    <div class="grid gap-4">
+
+    <div class="grid gap-8 lg:grid-cols-2">
       {manufacturers.map((manufacturer) => (
-        <article class="surface p-6">
-          <h3 class="h3">{manufacturer.name}</h3>
-          <p class="mt-1.5 text-xs font-bold uppercase tracking-wide text-hsb-steel">{manufacturer.role}</p>
-          <ul class="mt-4 space-y-2">
+        <article class="relative flex flex-col p-8 lg:p-10 border border-hsb-line rounded-[2px] bg-[#fbfcfd] hover:bg-white transition-all duration-300 group">
+          <div class="flex flex-col gap-1 mb-8">
+            <h3 class="text-2xl font-black text-hsb-black group-hover:text-hsb-red transition-colors">{manufacturer.name}</h3>
+            <p class="text-[0.65rem] font-black uppercase tracking-[0.2em] text-hsb-steel/50">{manufacturer.role}</p>
+          </div>
+
+          <div class="grid gap-3">
             {manufacturer.proofPoints.map((point) => (
-              <li class="flex items-start gap-2 text-sm leading-6 text-hsb-steel">
-                <span class="mt-2 size-1 shrink-0 rounded-full bg-hsb-red"></span>
-                {point}
-              </li>
+              <div class="flex items-start gap-4 text-[0.9rem] leading-6 text-hsb-steel">
+                <span class="mt-2.5 size-1 shrink-0 bg-hsb-red/40"></span>
+                <span class="font-medium">{point}</span>
+              </div>
             ))}
-          </ul>
-          <div class="mt-5 flex flex-wrap gap-4">
+          </div>
+
+          <div class="mt-10 pt-8 border-t border-hsb-line/40 flex flex-wrap gap-6">
             {manufacturer.links.map((link) => (
-              <a class="text-sm font-bold text-hsb-red underline-offset-2 hover:underline" href={link.href} rel="noopener noreferrer" target="_blank">
-                {link.label}
+              <a class="flex items-center gap-2 text-[0.75rem] font-black uppercase tracking-widest text-hsb-black hover:text-hsb-red transition-colors" href={link.href} rel="noopener noreferrer" target="_blank">
+                <span>{link.label}</span>
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M3.5 1.5H10.5M10.5 1.5V8.5M10.5 1.5L1.5 10.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
               </a>
             ))}
           </div>

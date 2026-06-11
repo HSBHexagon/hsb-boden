@@ -21,7 +21,7 @@ const services = getServices();
         {services.slice(0, 2).map((service, i) => (
           <a
             href={`/leistungen/${service.slug}/`}
-            class="reveal group flex flex-col justify-between gap-6 rounded bg-hsb-black p-8 text-white no-underline transition hover:-translate-y-0.5 hover:shadow-industrial"
+            class="reveal group flex flex-col justify-between gap-6 rounded bg-hsb-black p-8 text-white no-underline transition hover:-translate-y-0.5 hover:shadow-industrial active:scale-[0.99]"
             style={`--reveal-delay:${i * 60}ms`}
           >
             <div>
@@ -43,7 +43,7 @@ const services = getServices();
         {services.slice(2).map((service, i) => (
           <a
             href={`/leistungen/${service.slug}/`}
-            class="reveal group flex items-center justify-between gap-4 px-6 py-5 no-underline transition hover:bg-hsb-mist"
+            class="reveal group flex items-center justify-between gap-4 px-6 py-5 no-underline transition hover:bg-hsb-mist active:scale-[0.99]"
             style={`--reveal-delay:${i * 60}ms`}
           >
             <div>

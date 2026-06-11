@@ -222,6 +222,12 @@ a {
   transform: none;
 }
 
+/* Reveal-Eingang bleibt langsam (560ms); Interaktion danach snappy (Hover/Active-Lift, taktiles Feedback) */
+.reveal.is-visible:hover,
+.reveal.is-visible:active {
+  transition-duration: 200ms;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .reveal {
     opacity: 1 !important;

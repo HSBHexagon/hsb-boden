@@ -28,7 +28,23 @@
 
 ## 2. Routenliste (Task 2)
 
-_(wird in Task 2 befüllt)_
+Quelle: `src/lib/content.ts` → `getAllPublicPages()` (von `sitemap.xml.ts` konsumiert) + `src/pages/`-Baum. **34 HTML-Seiten** gesamt.
+
+**DE-Kernseiten (10):** `/` · `/leistungen/` · `/branchen/` · `/referenzen/` · `/wissen/` · `/kontakt/` · `/danke-projektanfrage/` · `/karriere/` · `/impressum/` · `/datenschutz/`
+
+**Leistungen (8):** `industrieboden-saeureschutz` · `keramische-industrieboeden` · `pu-beton-industrieboden` · `epoxidharz-bodenbeschichtung` · `entwaesserung-industrieboden` · `whg-abdichtung-industrieboden` · `bodensanierung-laufender-betrieb` · `dehnungsfugen-rammschutz-industrieboden` (alle unter `/leistungen/<slug>/`)
+
+**Branchen (6):** `lebensmittelindustrie` · `molkerei` · `brauerei-getraenkeindustrie` · `chemieindustrie` · `pharmaindustrie` · `backwarenproduktion-grosskueche` (alle unter `/branchen/<slug>/`)
+
+**Wissen (5):** `pu-beton-oder-keramischer-industrieboden` · `warum-industrieboeden-in-molkereien-versagen` · `saeurefeste-fliesen-industrieboden` · `entwaesserung-gefaelle-produktionsbereiche` · `sanierung-ohne-produktionsstillstand` (alle unter `/wissen/<slug>/`)
+
+**Sprachvarianten (5):** `/en/` · `/fr/` · `/nl/` · `/pl/` · `/tr/` — jeweils nur eine Landingpage (`index.astro` via `InternationalLanding.astro`), KEINE übersetzten Unterseiten.
+
+**Technisch:** `/robots.txt` · `/sitemap.xml` (SSR-Routen)
+
+**Sitemap-Abgleich:**
+- Sitemap enthält: 8 Kernseiten (ohne impressum/datenschutz) + 8 Leistungen + 6 Branchen + 5 Wissen + 5 Sprach-Landings = **32 URLs**.
+- ⚠️ Befund: `/impressum/` und `/datenschutz/` sind NICHT in `getAllPublicPages()` und damit nicht in der Sitemap. Schweregrad: niedrig (Rechtsseiten in Sitemap optional, Seiten sind verlinkt und crawlbar) — Entscheidung in Task 5.
 
 ## 3. Pro-Seite-Findings (Task 3)
 

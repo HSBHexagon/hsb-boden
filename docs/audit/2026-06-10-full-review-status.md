@@ -67,9 +67,31 @@ Quelle: `src/lib/content.ts` → `getAllPublicPages()` (von `sitemap.xml.ts` kon
 
 Sammelzeilen der Agents: Branchen 6/6 geprüft (0 ohne Befund, alle Befunde = Link-Lücken) · Leistungen 8/8 (Texte/SEO sauber, Befunde = Links/Bilder) · Wissen 5/5 (Struktur sauber, Fließtext fehlt) · Sonstige 16 Seiten/Komponenten (15 ohne Befund).
 
-## 4. Visuelle QA (Task 4)
+## 4. Visuelle QA (Task 4, 2026-06-11)
 
-_(wird in Task 4 befüllt)_
+**Geprüfte URL:** `https://claude-hsb-boden-architecture-o2479f-hsb-boden.cherinojoel.workers.dev` (Branch-Alias PR #5, verifiziert auf PR-#5-Stand: 6 hreflang-Sprachen + neue Referenzen-Galerie). 14 Full-Page-Screenshots (7 Seiten × 1440px/390px) unter `/tmp/hsb-review/`.
+
+**Screenshot-Befunde:**
+
+| Befund | Schweregrad | Detail |
+|---|---|---|
+| Sprachhinweis-Banner überdeckt H1 auf Mobile | **mittel-hoch** | `LanguageSuggest.astro:17` nutzt `fixed top-[72px]` — auf 390px verdeckt der (umbrochene) Banner die erste H1-Zeile (verifiziert auf /kontakt/: „Projektanfrage" unsichtbar). Betrifft genau die internationalen Besucher, auf die PR #5 zielt. → Quick Win Task 5/D |
+| Footer auf Sprachseiten (/en/ etc.) bleibt deutsch | niedrig | Spaltenüberschriften/Links (LEISTUNGEN/BRANCHEN/…) nicht lokalisiert; ehrlicher Hinweis „Detailed technical pages are currently available in German" ist vorhanden. → zurückstellen (größerer i18n-Umbau) |
+| Referenzkarte + 22 Kundenstandorte + Foto-Galerie auf /referenzen/ | ✅ ok | Drei Galerie-Motive + Karte mit Markern + Namensliste rendern sauber (Desktop + Mobile) |
+| Layout/Typografie/Abstände über Seitentypen | ✅ ok | Keine Layoutbrüche, keine abgeschnittenen Bilder/Texte (außer Banner-Befund oben) |
+
+**Lighthouse (mobile-emuliert, gegen Branch-Preview, 2026-06-11):**
+
+| Seite | Performance | Accessibility | Best Practices | SEO |
+|---|---|---|---|---|
+| `/` | 93 | 97 | 100 | 61 |
+| `/branchen/molkerei/` | 93 | 100 | 100 | 69 |
+| `/referenzen/` | 100 | 100 | 100 | 69 |
+
+Einordnung der Abweichungen vom dokumentierten Stand (Desktop 100/100/100/100, Mobile 99/100/100/100 vom 2026-06-07):
+1. **SEO 61–69 = reines Preview-Artefakt:** Der Branch-Alias liefert `x-robots-tag: noindex` (Cloudflare-Automatik für Versions-Aliase); `hsb-boden-preview.cherinojoel.workers.dev` sendet diesen Header NICHT (gegengeprüft). Kein Handlungsbedarf — auf Produktions-/Preview-Worker nicht vorhanden.
+2. **A11y 97 nur auf `/`:** `span.text-hsb-red` im Hero-H1 (#cb0000 auf #161a20) = Kontrast 2.94:1, unter 3:1 für große Schrift. → Quick Win Task 5/D.
+3. **Performance 93 auf `/` und Branchenseiten:** CLS 0.113, Verursacher `#cookie-consent` (Banner schiebt Layout beim Einblenden); Speed Index 4.3 s (throttled). → Quick Win: Consent-Banner ohne Layout-Shift positionieren (Task 5/D).
 
 ## 5. Optimierungsbacklog (Task 5)
 

@@ -95,7 +95,7 @@ export const references = [
     solution: "Systembewertung mit Fokus auf Säureschutz, Abdichtung und Fugen für die betroffenen Teilbereiche.",
     result: "Belastbares Sanierungskonzept als Grundlage für die weitere Umsetzung.",
     images: [],
-    logo: "/logos/concept-color.svg",
+    logo: "/logos/concept-color.png",
     year: "2025",
     // Freigegeben (Geschäftsführung HEXAFLOOR/HSB, 2026-06-10) anhand interner
     // Referenzkundenliste "Referenzprojekte 2025": Namensnennung autorisiert.
@@ -122,7 +122,7 @@ export const references = [
     solution: "Fugenarmes System mit Bauabschnittsplanung und klarer Übergabe für die Hygienezone.",
     result: "Schneller wieder nutzbare Produktionsfläche.",
     images: [],
-    logo: "/logos/dahlhoff.svg",
+    logo: "/logos/dahlhoff.png",
     year: "2026",
     // Freigegeben (Geschäftsführung HEXAFLOOR/HSB, 2026-06-10) anhand interner
     // Referenzkundenliste "Referenzprojekte 2025": Namensnennung autorisiert.

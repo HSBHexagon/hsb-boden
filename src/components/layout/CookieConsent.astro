@@ -19,19 +19,19 @@ const t = cookieTexts[lang];
   aria-modal="false"
   aria-labelledby="cookie-consent-title"
 >
-  <div class="container py-3 sm:py-4 lg:py-5">
-    <div class="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between lg:gap-8">
+  <div class="container py-2 sm:py-4 lg:py-5">
+    <div class="flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between lg:gap-8">
       <div class="max-w-2xl">
-        <p id="cookie-consent-title" class="text-xs font-black uppercase tracking-wide sm:text-sm">{t.title}</p>
-        <p class="mt-1.5 text-xs leading-5 text-white/70 sm:text-sm sm:leading-6">
+        <p id="cookie-consent-title" class="text-[10px] font-black uppercase tracking-wide sm:text-sm">{t.title}</p>
+        <p class="mt-1 text-[11px] leading-4 text-white/70 sm:mt-1.5 sm:text-sm sm:leading-6">
           {t.intro}
           <a class="ml-1 underline hover:text-white" href="/datenschutz/">{t.privacyLink}</a>
         </p>
       </div>
-      <div class="grid shrink-0 grid-cols-2 items-center gap-2 sm:flex sm:flex-wrap sm:gap-3 lg:justify-end">
-        <button id="cookie-settings-toggle" class="col-span-2 justify-self-start text-xs font-bold text-white/70 underline hover:text-white sm:col-span-1 sm:text-sm" aria-expanded="false" aria-controls="cookie-categories">{t.settings}</button>
-        <button id="cookie-necessary" class="button-secondary-dark !min-h-10 !border-white/30 !px-3 !text-xs !text-white hover:!border-white sm:!min-h-[44px] sm:!px-4 sm:!text-sm">{t.necessaryOnly}</button>
-        <button id="cookie-accept-all" class="button-primary !min-h-10 !px-3 !text-xs sm:!min-h-[44px] sm:!px-4 sm:!text-sm">{t.acceptAll}</button>
+      <div class="flex flex-wrap items-center gap-2 sm:gap-3 lg:justify-end">
+        <button id="cookie-settings-toggle" class="mr-auto text-[11px] font-bold text-white/70 underline hover:text-white sm:mr-0 sm:text-sm" aria-expanded="false" aria-controls="cookie-categories">{t.settings}</button>
+        <button id="cookie-necessary" class="button-secondary-dark !min-h-9 !border-white/30 !px-3 !text-[11px] !text-white hover:!border-white sm:!min-h-[44px] sm:!px-4 sm:!text-sm">{t.necessaryOnly}</button>
+        <button id="cookie-accept-all" class="button-primary !min-h-9 !px-3 !text-[11px] sm:!min-h-[44px] sm:!px-4 sm:!text-sm">{t.acceptAll}</button>
       </div>
     </div>
 

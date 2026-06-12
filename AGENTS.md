@@ -62,3 +62,9 @@ Structured content lives under `src/data`. Add new service, industry, reference,
 ## Design Direction
 
 Technical, industrial, robust, quiet B2B interface. Avoid generic agency visuals, decorative hero gimmicks, or unsupported trust claims.
+
+## Optimized for GitHub Copilot, Claude Code, Gemini CLI, and Codex
+
+* **GitHub Copilot**: Use the `.github/copilot-instructions.md` file for context-specific prompt tuning. Provide specific component files (e.g., `Header.astro`) in your prompt when asking for layout adjustments.
+* **Claude Code / Gemini CLI**: When undertaking tasks, prioritize `npm run test:run` and `npm run check` before generating final diffs. Avoid deleting state files or existing project `md` documents. Use `read_file` explicitly on `src/data/*.ts` files to understand the data model.
+* **Codex**: Keep context windows focused. If modifying styling, provide both the component and `tailwind.config.mjs` context.

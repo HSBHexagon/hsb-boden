@@ -1,2 +1,8 @@
 node_modules/
 assets/_preview_*.png
+
+# Unreferenzierte Zwischen-Assets aus der Flyer-Erzeugung (HTML nutzt .jpg/.svg)
+assets/hero.webp
+assets/detail.webp
+assets/logo-light.png
+assets/logo-dark.png

@@ -126,9 +126,6 @@ export function getArticles() {
   return articles;
 }
 
-export function getServiceBySlug(slug: string) {
-  return services.find((service) => service.slug === slug);
-}
 
 export function getIndustryBySlug(slug: string) {
   return industries.find((industry) => industry.slug === slug);

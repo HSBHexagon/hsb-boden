@@ -26,8 +26,22 @@ const skipLabel = ui[lang].skip;
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <SEOHead title={title} description={description} path={path} jsonLd={jsonLd} alternates={alternates} />
+    {import.meta.env.PUBLIC_GTM_ID && (
+      <script is:inline define:vars={{ gtmId: import.meta.env.PUBLIC_GTM_ID }}>
+        (function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+        new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+        j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+        'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+        })(window,document,'script','dataLayer',gtmId);
+      </script>
+    )}
   </head>
   <body>
+    {import.meta.env.PUBLIC_GTM_ID && (
+      <noscript>
+        <iframe src={`https://www.googletagmanager.com/ns.html?id=${import.meta.env.PUBLIC_GTM_ID}`} height="0" width="0" style="display:none;visibility:hidden"></iframe>
+      </noscript>
+    )}
     <a class="skip-link" href="#main">{skipLabel}</a>
     <Header lang={lang} />
     <LanguageSuggest lang={lang} />
@@ -55,6 +69,19 @@ const skipLabel = ui[lang].skip;
         );
         els.forEach((el) => io.observe(el));
       }
+
+      // HSB Tracking Bridge
+      window.addEventListener("hsb:tracking", (e: any) => {
+        const detail = e.detail;
+        const dataLayer = (window as any).dataLayer || [];
+        dataLayer.push({
+          event: detail.event,
+          ...detail,
+        });
+        if (import.meta.env.DEV) {
+          console.log("[HSB Tracking]", detail);
+        }
+      });
     </script>
   </body>
 </html>

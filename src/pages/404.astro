@@ -1,0 +1,23 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+---
+
+<BaseLayout
+  title="Seite nicht gefunden | HSB Hexagon Säurebau"
+  description="Die gesuchte Seite konnte leider nicht gefunden werden."
+  path="/404/"
+>
+  <section class="section flex min-h-[60vh] items-center justify-center bg-hsb-mist">
+    <div class="container max-w-xl text-center">
+      <p class="font-mono text-[0.65rem] font-black tracking-[0.24em] text-hsb-red">ERROR 404</p>
+      <h1 class="h2 mt-4">Seite nicht gefunden</h1>
+      <p class="lead mt-6">
+        Die von Ihnen gesuchte Seite existiert nicht oder wurde verschoben.
+      </p>
+      <div class="mt-10 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
+        <a href="/" class="button-primary">Zur Startseite</a>
+        <a href="/kontakt/" class="button-secondary-dark">Kontakt aufnehmen</a>
+      </div>
+    </div>
+  </section>
+</BaseLayout>

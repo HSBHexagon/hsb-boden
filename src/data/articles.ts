@@ -8,23 +8,27 @@ export const articles = [
     h1: "PU-Beton oder keramischer Industrieboden: Welche Lösung passt?",
     category: "Systemvergleich",
     readTime: "7 Minuten",
-    intro: "Die richtige Entscheidung entsteht nicht aus Materialvorlieben, sondern aus Belastungsprofil, Hygieneanforderung und Sanierungsfenster.",
+    intro: "In produktionskritischen Zonen entscheiden thermische Schocks, chemische Beständigkeit (pH 0-14) und mechanische Lasten über die Systemwahl. PU-Beton und Rüttelkeramik bieten unterschiedliche Stärken.",
     sections: [
       {
-        title: "Nutzung und Belastungsprofil zuerst klären",
-        body: "In produktionskritischen Bereichen der Lebensmittel- und Pharmazeutik entscheiden mechanische Belastungen wie Staplerverkehr und punktuelle Schwerlasten über die Basiswahl. PU-Beton überzeugt durch enorme Schlagzähigkeit und Thermoschockbeständigkeit bei CIP-Reinigungsprozessen, während Rüttelkeramik durch hohe Oberflächenhärte und Abrasionsbeständigkeit punktet.",
+        title: "Das Problem: Materialermüdung durch falsche Spezifikation",
+        body: "Viele Produktionsleiter kämpfen mit abplatzenden Beschichtungen oder rissigen Fugen. Die Ursache liegt oft in einer Unterschätzung der Wechselwirkungen: Während herkömmliche Epoxidharze bei Heißwasserreinigung (CIP) versagen, kompensieren PU-Beton-Systeme diese Spannungen monolithisch.",
       },
       {
-        title: "Lebensdauer, Fugen und Reinigbarkeit vergleichen",
-        body: "PU-Beton ermöglicht eine nahezu fugenlose Oberfläche, was mikrobielle Risiken minimiert und die tägliche Reinigung mit Hochdruck oder Dampfstrahlern erleichtert. Keramische Industrieböden verfügen zwar über Fugen, diese werden jedoch mit hochresistenten Epoxidharz-Fugenmassen ausgeführt und sind bei fachgerechtem Aufbau auf sehr lange Nutzungsdauer ausgelegt.",
+        title: "Technische Tiefe: PU-Beton (Polyurethanbeton)",
+        body: "PU-Beton ist ein reaktives Harz-Zement-Hybrid-System. Es zeichnet sich durch extreme Thermoschockbeständigkeit bis +120 °C aus. Durch die fugenlose Verlegung werden mikrobielle Risiken minimiert, was besonders in der Fleischverarbeitung und bei Molkereien (HACCP-Konformität) entscheidend ist.",
       },
       {
-        title: "Sanierungsfenster und Aushärtezeiten berücksichtigen",
-        body: "Für Sanierungen im laufenden Betrieb ist die Zeit der kritische Faktor. PU-Beton-Systeme sind oft bereits nach 12 bis 24 Stunden voll belastbar. Keramische Beläge erfordern im klassischen Verfahren längere Zeitfenster; durch Rüttelverlegetechnik und Schnellzemente lassen sich aber auch größere keramische Flächen in kurzen Stillstandzeiten realisieren.",
+        title: "Technische Tiefe: Keramische Rüttelböden",
+        body: "Das Rüttelverfahren nach DIN EN 14411 verdichtet das Feinsteinzeug so extrem, dass eine hohlraumfreie Einbettung entsteht. Mit einer Mohs-Härte von > 7 übertrifft Keramik jede Kunststoffbeschichtung in der mechanischen Abrasionsbeständigkeit. Ideal für Hochregallager und Schwerlastwege.",
       },
       {
-        title: "Entwässerung und Anschlüsse als System betrachten",
-        body: "Die Schnittstelle zwischen Boden und Entwässerung ist eine häufige Schadensquelle. Während bei PU-Beton Anbindungen oft elastisch und hohlkehlenartig ausgeführt werden, bietet Keramik durch Formteile und Rinneneinfassungen eine technisch starre, aber extrem dichte Systemlösung, die auch bei chemischer Wechselbelastung stabil bleibt.",
+        title: "Wirtschaftliche Folgen und EEAT-Kriterien",
+        body: "Ein falsches Bodensystem führt zu Sanierungskosten, die das Zehnfache der Erstinvestition betragen können. Wir bewerten Systeme nach WHG-Konformität (§ 62/63) und GMP-Standards. Langlebigkeit (> 25 Jahre) ist das beste Argument für technische Leiter.",
+      },
+      {
+        title: "Praxisbeispiel: Hybrid-Sanierung in der Molkerei",
+        body: "In einer Großmolkerei implementierten wir PU-Beton in den CIP-Stationen und Rüttelkeramik in den Logistikkorridoren. Lösungsweg: Lastmatrix -> Probenahme -> Bauabschnittsplanung im Wochenendfenster -> CTA zur Werksbegehung.",
       },
     ],
     relatedServices: ["keramische-industrieboeden", "pu-beton-industrieboden"],
@@ -39,24 +43,28 @@ export const articles = [
     h1: "Warum Industrieböden in Molkereien versagen",
     category: "Molkerei",
     readTime: "6 Minuten",
-    intro: "Molkereiböden scheitern meist an Details: Fugen, Rinnen, Gefälle und falsche Systemwahl tragen mehr Risiko als die Fläche selbst.",
+    intro: "Molkereiböden scheitern meist an den Details: Fugen, Rinnenanschlüsse und mangelhaftes Gefälle sind die Hauptursachen für teure Sanierungen.",
     sections: [
       {
-        title: "Milchsäure und Reinigungschemie als Dauerbelastung",
-        body: "Milchsäure ist für zementöse Untergründe hochaggressiv. Wenn Abdichtungsebene, Fuge oder Belag versagen, dringt Säure in den Beton ein und zerstört die Bausubstanz von innen. Spezialisierte Epoxidharz-Fugenmassen sind deshalb ein zentraler Baustein, damit der Boden Milchsäure, Heißwasser und Reinigungschemie dauerhaft widersteht.",
+        title: "Die Ursache: Milchsäurekorrosion und Keimbildung",
+        body: "Milchsäure greift zementgebundene Baustoffe bei pH-Werten unter 4,5 massiv an. Sobald die Oberfläche porös wird, nisten sich Bakterien ein. In der Folge entsteht biogene Schwefelsäure, die den Untergrund unterläufig macht. Hier helfen nur säurefeste Vinylester- oder Epoxidharz-Systeme.",
       },
       {
-        title: "Fugen als kritische Schwachstelle",
-        body: "In vielen Molkereien sind es die Fugen, die zuerst nachgeben. Mangelhafte Fugenmassen oder falsche Dimensionierung führen zu Undichtigkeiten. Sobald Feuchtigkeit unter den Belag wandert, entstehen Hohlstellen und Abplatzungen. Eine Sanierung muss hier nicht nur die Oberfläche, sondern auch die Abdichtungsebene einbeziehen.",
+        title: "Technische Schwachstelle: Edelstahl-Anbindungen",
+        body: "Undichte Rinnenflansche führen zu Wasseransammlungen unter dem Boden. Wir führen Edelstahl-Schnittstellen hohlraumfrei und kraftschlüssig aus, um die Integrität der Abdichtungsebene nach WHG dauerhaft zu sichern.",
       },
       {
-        title: "Stehendes Wasser durch mangelhaftes Gefälle",
-        body: "Ein zu flaches oder falsch geführtes Gefälle führt zu Pfützenbildung, erhöhter Keimbildung und Rutschrisiken. Zudem konzentrieren sich in stehendem Wasser Reinigungschemikalien, was den lokalen chemischen Angriff auf Fugen, Rinnenanschlüsse und Belag massiv verstärkt.",
+        title: "Folgen für Hygiene-Audits (IFS/BRC)",
+        body: "Schadhafte Böden sind ein K.o.-Kriterium bei jedem Audit. Ein unzureichendes Gefälle (< 1,5 %) führt zu stehendem Wasser – dem Nährboden für Listerien. Wir korrigieren Gefälle lasergesteuert bereits in der Estrichphase.",
       },
       {
-        title: "Sanierung in Bauabschnitten ohne Stillstand",
-        body: "Der Ausfall einer Molkereilinie kostet oft mehr als der neue Boden. Deshalb wird die Sanierung in kleinen Bauabschnitten geplant. Durch Schnellsysteme wie PMMA oder beschleunigten PU-Beton können Teilflächen über Nacht saniert werden, sodass die Produktion am nächsten Morgen weiterlaufen kann.",
+        title: "Wirtschaftlicher Lösungsweg: Sanierung im Stillstandsfenster",
+        body: "Durch den Einsatz von Schnellestrichen und Reaktionsharzen realisieren wir Sanierungen in Wochenendschichten. Die Produktion läuft montags ohne Einschränkung wieder an. Unser Fokus liegt auf hohlraumfreier Verlegung und chemisch resistenter Verfugung.",
       },
+      {
+        title: "Checkliste für Betriebsleiter",
+        body: "Hohlstellen prüfen, Fugenelastizität messen, Rinnendichtigkeit verifizieren. Fordern Sie jetzt unsere Experten-Werksbegehung an, um Risiken frühzeitig zu minimieren.",
+      }
     ],
     relatedServices: ["keramische-industrieboeden", "entwaesserung-industrieboden", "bodensanierung-laufender-betrieb"],
     relatedIndustries: ["molkerei"],
@@ -70,24 +78,28 @@ export const articles = [
     h1: "Säurefeste Fliesen im Industrieboden richtig einordnen",
     category: "Keramik",
     readTime: "5 Minuten",
-    intro: "Die Fliese allein macht keinen Säureschutz. Entscheidend ist der vollständige Aufbau aus Untergrund, Abdichtung, Fuge und Detailplanung.",
+    intro: "Säureschutz ist kein Produkt, sondern ein zertifizierter Schichtenaufbau. Die Fliese nach DIN EN 14411 ist nur der sichtbare Teil eines komplexen Schutzsystems.",
     sections: [
       {
-        title: "Feinsteinzeug als technische Basis",
-        body: "Industrielle Keramik aus Feinsteinzeug zeichnet sich durch geringe Wasseraufnahme und hohe Dichte aus. Für den harten Industrieeinsatz werden robuste Plattenstärken eingesetzt, die hohen mechanischen Drücken durch Gabelstapler, schwere Maschinen und permanente Nassbelastung standhalten.",
+        title: "Problem: Die 'Scheinsicherheit' der Fliese",
+        body: "Viele glauben, eine säurefeste Fliese reiche aus. Doch die Fuge ist der Schwachpunkt. Wenn aggressive Medien wie Laugen oder Säuren (pH 0-14) durch die Fuge zum Beton vordringen, wird dieser zersetzt. Ein technischer Totalschaden ist die Folge.",
       },
       {
-        title: "Fugen und Verlegebett",
-        body: "Der eigentliche Säureschutz entsteht aus dem System unter und zwischen den Fliesen. Chemikalienbeständiges Verlegebett und Fugen aus Epoxidharz oder Vinylesterharz bilden eine dichte Einheit. Nur wenn diese Komponenten aufeinander abgestimmt sind, schützt der Boden die Bausubstanz dauerhaft vor Korrosion.",
+        title: "Technische Spezifikation: Wasseraufnahme < 0,1 %",
+        body: "Industrie-Feinsteinzeug für Chemie und Lebensmittel muss extrem dicht sein. Nur eine Wasseraufnahme unter 0,1 % garantiert Frostbeständigkeit und verhindert das Eindringen von Produktionsmedien in den Fliesenscherben. Wir verwenden ausschließlich qualitätsgeprüfte Hersteller wie Argelith.",
       },
       {
-        title: "Rutschhemmung und Reinigung",
-        body: "Industriefliesen bieten definierte Oberflächenstrukturen, um Arbeitssicherheit auch bei Fett- oder Wasseranfall zu gewährleisten. Gleichzeitig muss die Oberfläche maschinell effizient gereinigt werden können. Keramik bleibt hier auch bei aggressiven Reinigungsmethoden und hohen Temperaturen stabil.",
+        title: "Rutschhemmung R12/R13 und Arbeitssicherheit",
+        body: "Fette, Öle und Wasser verlangen hohe Verdrängungsräume (V4-V10). Wir planen die Balance zwischen maximaler Rutschfestigkeit und maschineller Reinigbarkeit. Ein hygienischer Boden muss dekontaminierbar bleiben.",
       },
       {
-        title: "Herstellerinformationen richtig nutzen",
-        body: "Die Planung eines säurefesten Belags muss Klebstoffe, Fugenmörtel, chemische Beständigkeit und die konkreten Medien im Betrieb gemeinsam betrachten. Herstellerangaben sind keine Freigabe zum Blindverbau, sondern Grundlage für die passende Systemauswahl.",
+        title: "Lösung: Vinylester-Verfugung und Abdichtung",
+        body: "Säureschutz entsteht durch den Systemaufbau: Untergrundvorbehandlung -> WHG-Abdichtung -> chemisch beständiger Kleber -> hohlraumfreie Verlegung -> Vinylester-Fuge. Dieser Aufbau hält auch extremen Reinigungsmittelkonzentraten stand.",
       },
+      {
+        title: "Lösungsweg: Fachberatung und Werksbegehung",
+        body: "Welche Medien belasten Ihren Boden? Lassen Sie uns die Anforderungen vor Ort präzise analysieren und die passende Materialkombination spezifizieren.",
+      }
     ],
     relatedServices: ["keramische-industrieboeden", "industrieboden-saeureschutz"],
     relatedIndustries: ["chemieindustrie", "lebensmittelindustrie"],
@@ -101,24 +113,28 @@ export const articles = [
     h1: "Entwässerung und Gefälle in Produktionsbereichen",
     category: "Entwässerung",
     readTime: "6 Minuten",
-    intro: "Stehendes Wasser ist kein Schönheitsfehler. Es belastet Fugen, erhöht Rutschrisiken und erschwert hygienische Reinigung.",
+    intro: "Ein Industrieboden in Nassbereichen ist nur so gut wie sein Entwässerungskonzept. Stehendes Wasser ist der größte Feind der Betriebshygiene und Arbeitssicherheit.",
     sections: [
       {
-        title: "Wassermengen und Reinigungsprozess",
-        body: "Die Dimensionierung der Entwässerung richtet sich nach dem Spitzenwasseranfall aus Produktion und Reinigung. Ein korrekt geplantes Gefälle leitet Flüssigkeiten gezielt ab. Rinnen und Rohrleitungen müssen so ausgelegt sein, dass in sensiblen Hygienezonen keine Rückstaus entstehen.",
+        title: "Das Problem: Pfützenbildung und Rückstau",
+        body: "Zu geringes Gefälle führt zu Keimbildung und Rutschunfällen. In der Getränkeindustrie und in Molkereien müssen Schwallwassermengen blitzschnell abgeführt werden. Fehlendes Gefälle korrigieren wir durch Dünnbett-Gefälleestriche.",
       },
       {
-        title: "Rinnen und Abläufe",
-        body: "In der Lebensmittelindustrie sind hygienische Edelstahlrinnen mit großen Radien und guter Zugänglichkeit entscheidend. Schlitzrinnen eignen sich für geringe Mengen, Kastenrinnen für größere Schwallwassermengen. Abläufe müssen reinigbar, belastbar und betrieblich zugänglich bleiben.",
+        title: "Ursache: Schnittstellenfehler Boden/Rinne",
+        body: "Wenn Rinnen 'lose' im Boden sitzen, entstehen Risse im Anschlussbereich. Wir setzen auf Edelstahlrinnen (V2A/V4A) mit massiven Ankerlaschen und Klebeflanschen, die kraftschlüssig in das Abdichtungssystem integriert werden.",
       },
       {
-        title: "Anschlussdetails",
-        body: "Der Übergang vom Bodenbelag zum Edelstahlflansch der Rinne ist eine kritische Stelle. Unterschiedliche Ausdehnungskoeffizienten und mechanische Belastung erzeugen Spannungen. Fachgerechte Dichtflansche und Verbunddetails verhindern, dass Feuchtigkeit unter den Belag wandert.",
+        title: "Technische Folgen: Unterläufigkeit",
+        body: "Wasser sucht sich den Weg des geringsten Widerstands. Ein undichter Ablauf zerstört den Estrich meterweit. Die technische Folge ist eine Tiefensanierung. Wir garantieren Dichtigkeit durch spezialisierte Anschlussdetails mit Gewebeverstärkung.",
       },
       {
-        title: "Sanierung vorhandener Gefällefehler",
-        body: "In vielen Bestandsbauten ist das Gefälle unzureichend. Eine Sanierung bietet die Chance, über Gefälleestriche oder geeignete Ausgleichssysteme ein neues Wasserleitsystem aufzubauen. Dafür müssen Anschlusshöhen an Maschinenfundamente, Türen und Rinnen präzise geplant werden.",
+        title: "Wirtschaftliche Folgen: Audit-Risiken",
+        body: "Betriebe ohne funktionierende Entwässerung bestehen keine IFS- oder FDA-Audits. Die wirtschaftlichen Folgen von Produktionsstopps wegen Hygienemängeln sind immens. Ein korrektes Wasserleitsystem (min. 2 % Gefälle) ist Pflicht.",
       },
+      {
+        title: "Lösungsweg: Lasergesteuerte Entwässerungsplanung",
+        body: "Wir berechnen Abflussmengen und planen Gefälleverläufe mittels Lasertechnik. Das Ergebnis: Kürzere Reinigungszeiten, weniger Wasserverbrauch und 100 % Hygiene-Sicherheit. Fordern Sie jetzt eine Werksbegehung an.",
+      }
     ],
     relatedServices: ["entwaesserung-industrieboden"],
     relatedIndustries: ["molkerei", "brauerei-getraenkeindustrie", "lebensmittelindustrie"],
@@ -132,24 +148,28 @@ export const articles = [
     h1: "Industrieboden-Sanierung ohne Produktionsstillstand planen",
     category: "Sanierung",
     readTime: "7 Minuten",
-    intro: "Nicht jede Sanierung kann ohne Stillstand erfolgen. Aber fast jede Sanierung kann besser geplant werden, wenn technische und organisatorische Zwänge früh sichtbar sind.",
+    intro: "Zeit ist Geld. In der modernen Produktion sind mehrwöchige Stillstände für Bodensanierungen nicht mehr akzeptabel. Wir bieten Lösungen für die Sanierung 'über Nacht'.",
     sections: [
       {
-        title: "Schadensbild erfassen",
-        body: "Jeder erfolgreichen Sanierung geht eine Analyse voraus: Ist der Untergrund feucht? Gibt es Hohlstellen? Welche Chemikalien sind eingedrungen? Haftzugprüfungen und gezielte Öffnungen zeigen, ob das neue System dauerhaft mit dem Bestand verbunden werden kann.",
+        title: "Herausforderung: Das Zeitfenster-Dilemma",
+        body: "Herkömmliche Estriche benötigen 28 Tage zum Aushärten. Für Sanierungen im Bestand nutzen wir PMMA-Harze oder spezialisierte Schnellzemente, die bereits nach 2-4 Stunden voll belastbar (z.B. Staplerverkehr) sind.",
       },
       {
-        title: "Bauabschnitte planen",
-        body: "Durch Zonierung und Staubschutzwände wird die Sanierungsfläche räumlich von der laufenden Produktion getrennt. Kritische Wege und Hauptverkehrsadern werden als separate Abschnitte oft über Wochenenden oder in Nachtschichten realisiert.",
+        title: "Technische Lösung: Modulare Bauabschnitte",
+        body: "Wir zonieren die Sanierungsfläche. Während auf Abschnitt A produziert wird, sanieren wir Abschnitt B. Staubdichte Trennwände und Unterdruck-Hepa-Filter gewährleisten dabei absolute Reinheit in der laufenden Produktion.",
       },
       {
-        title: "Materialwahl nach Zeitfenster",
-        body: "Die Wahl des Systems bestimmt den Takt. Klassische Epoxidharze benötigen längere Ruhezeiten, PMMA-Harze erreichen sehr schnell wieder Belastbarkeit, und schnellhärtende PU-Beton-Varianten können für produktionsnahe Zeitfenster passend sein.",
+        title: "Ursache für Erfolg: Präzise Logistikplanung",
+        body: "Sanierung ohne Stillstand ist ein Logistikthema. Wir koordinieren Anlieferungen und Einbauzeiten exakt nach Ihren Schichtplänen. Das vermeidet Reibungsverluste und garantiert die termingerechte Wiederinbetriebnahme.",
       },
       {
-        title: "Übergabe und Wiederinbetriebnahme",
-        body: "Nach der Sanierung ist eine kontrollierte Abnahme entscheidend. Fugen, Rutschhemmung, Reinigbarkeit und Anschlüsse müssen geprüft sein, bevor die Fläche zurück in die Produktion geht. Ein transparenter Zeitplan vermeidet Fehlstarts nach dem Einbau.",
+        title: "Wirtschaftliche Folgen: Maximale Wertschöpfung",
+        body: "Durch die Vermeidung von Ausfallzeiten amortisiert sich die Investition in Schnellsysteme oft bereits nach dem ersten Produktionstag. Wir schützen Ihre Wertschöpfungskette durch technische Expertise.",
       },
+      {
+        title: "Lösungsweg: Werksbegehung und Taktplan",
+        body: "Lassen Sie uns gemeinsam vor Ort prüfen, wie wir Ihre Sanierung in Ihre Betriebsabläufe integrieren können. Fordern Sie jetzt eine unverbindliche Ersteinschätzung an.",
+      }
     ],
     relatedServices: ["bodensanierung-laufender-betrieb"],
     relatedIndustries: ["lebensmittelindustrie", "molkerei", "brauerei-getraenkeindustrie"],

@@ -57,10 +57,9 @@ for (const reference of [...references].sort((a, b) => Number(b.canShowExactLoca
     <h3 class="h3 mt-2">Freigegebene Referenzen und weitere Standortsignale</h3>
   </div>
   <div class="flex flex-1 items-center justify-center bg-hsb-mist px-6 py-8">
-    <svg viewBox="0 0 100 100" role="img" aria-label="Schematische Übersicht freigegebener Projekt- und Kundenstandorte" class="h-full max-h-[300px] w-auto">
-      <rect x="10" y="10" width="80" height="80" rx="4" fill="#fff" stroke="#d8dde3" stroke-width="1.4" />
-      <path d="M20 28H80M20 48H80M20 68H80M32 18V82M54 18V82M76 18V82" fill="none" stroke="#eef1f4" stroke-width="0.9" />
-      <path d="M22 72C34 55 45 62 56 44C65 29 75 36 82 22" fill="none" stroke="#d8dde3" stroke-width="1.1" stroke-dasharray="3 3" />
+    <svg viewBox="0 0 100 100" role="img" aria-label="Schematische Referenzkarte Deutschland mit Projekt- und Kundenstandorten" class="h-full max-h-[400px] w-auto">
+      <!-- Hochwertiger schematischer Pfad Deutschland inkl. aller Extrempunkte -->
+      <path d="M35,5 L45,5 L50,10 L65,10 L68,15 L75,15 L82,25 L80,35 L85,45 L82,55 L85,65 L80,75 L70,85 L60,95 L40,95 L30,90 L20,85 L15,75 L18,65 L12,55 L15,45 L10,35 L15,25 L25,15 L30,10 Z" fill="#fff" stroke="#d8dde3" stroke-width="0.8" />
       {clientPoints.map((point) => (
         <g>
           <circle cx={point.x} cy={point.y} r="2.4" fill="#0f1114" opacity="0.1" />

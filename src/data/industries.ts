@@ -1,4 +1,6 @@
-export const industries = [
+import type { Industry } from "../lib/types";
+
+export const industries: Industry[] = [
   {
     slug: "lebensmittelindustrie",
     title: "Lebensmittelindustrie",
@@ -22,19 +24,33 @@ export const industries = [
       "Hohe chemische Beständigkeit gegen Fette und organische Säuren",
       "Zertifizierte Verbundabdichtung unter dem Belag",
     ],
-    recommendedSystems: ["keramische-industrieboeden", "pu-beton-industrieboden", "entwaesserung-industrieboden"],
+    recommendedSystems: [
+      "keramische-industrieboeden",
+      "pu-beton-industrieboden",
+      "entwaesserung-industrieboden",
+    ],
     proofPoints: [
       "Engineering-first: Analyse vor Systemwahl",
       "Erfahrung mit IFS- und BRC-Auditanforderungen",
       "Realisierung in produktionsfreien Zeitfenstern (Wochenende)",
     ],
-    relatedServices: ["industrieboden-saeureschutz", "keramische-industrieboeden", "entwaesserung-industrieboden", "bodensanierung-laufender-betrieb"],
+    relatedServices: [
+      "industrieboden-saeureschutz",
+      "keramische-industrieboeden",
+      "entwaesserung-industrieboden",
+      "bodensanierung-laufender-betrieb",
+    ],
     relatedReferences: ["suedzucker-zeitz", "feinkost-nrw"],
-    relatedArticles: ["pu-beton-oder-keramischer-industrieboden", "saeurefeste-fliesen-industrieboden", "entwaesserung-gefaelle-produktionsbereiche"],
+    relatedArticles: [
+      "pu-beton-oder-keramischer-industrieboden",
+      "saeurefeste-fliesen-industrieboden",
+      "entwaesserung-gefaelle-produktionsbereiche",
+    ],
     faqs: [
       {
         question: "Welches System erfüllt die HACCP-Vorgaben am besten?",
-        answer: "Sowohl PU-Beton als auch fachgerecht verfugte Rüttelkeramik erfüllen HACCP-Kriterien. Entscheidend ist die porenfreie Oberfläche und die dichte Anbindung an Entwässerungsrinnen.",
+        answer:
+          "Sowohl PU-Beton als auch fachgerecht verfugte Rüttelkeramik erfüllen HACCP-Kriterien. Entscheidend ist die porenfreie Oberfläche und die dichte Anbindung an Entwässerungsrinnen.",
       },
     ],
     ctaLabel: "Hygiene-Audit für Ihren Boden anfragen",
@@ -62,19 +78,34 @@ export const industries = [
       "Großzügiges Gefälle (> 2%) zur Keimvermeidung",
       "Integration von hygienischen Edelstahl-Kastenrinnen",
     ],
-    recommendedSystems: ["keramische-industrieboeden", "entwaesserung-industrieboden", "industrieboden-saeureschutz"],
+    recommendedSystems: [
+      "keramische-industrieboeden",
+      "entwaesserung-industrieboden",
+      "industrieboden-saeureschutz",
+    ],
     proofPoints: [
       "Spezialist für Milchsäure-beständige Systeme",
       "Staubfreie Sanierung durch autarke Bauabschnitte",
       "Wochenend-Montage für minimale Stillstandszeiten",
     ],
-    relatedServices: ["keramische-industrieboeden", "industrieboden-saeureschutz", "entwaesserung-industrieboden", "bodensanierung-laufender-betrieb"],
+    relatedServices: [
+      "keramische-industrieboeden",
+      "industrieboden-saeureschutz",
+      "entwaesserung-industrieboden",
+      "bodensanierung-laufender-betrieb",
+    ],
     relatedReferences: ["molkerei-sued"],
-    relatedArticles: ["warum-industrieboeden-in-molkereien-versagen", "entwaesserung-gefaelle-produktionsbereiche", "sanierung-ohne-produktionsstillstand"],
+    relatedArticles: [
+      "warum-industrieboeden-in-molkereien-versagen",
+      "entwaesserung-gefaelle-produktionsbereiche",
+      "sanierung-ohne-produktionsstillstand",
+    ],
     faqs: [
       {
-        question: "Warum reicht eine normale Epoxidharz-Fuge in Molkereien oft nicht aus?",
-        answer: "Bei permanenter Einwirkung von Milchsäure und Heißwasser können Standard-EP-Fugen verspröden. Wir empfehlen Vinylester- oder Furanharzsysteme für maximale Standzeiten.",
+        question:
+          "Warum reicht eine normale Epoxidharz-Fuge in Molkereien oft nicht aus?",
+        answer:
+          "Bei permanenter Einwirkung von Milchsäure und Heißwasser können Standard-EP-Fugen verspröden. Wir empfehlen Vinylester- oder Furanharzsysteme für maximale Standzeiten.",
       },
     ],
     ctaLabel: "Milchsäure-Check vereinbaren",
@@ -82,7 +113,8 @@ export const industries = [
   {
     slug: "brauerei-getraenkeindustrie",
     title: "Brauerei und Getränkeindustrie",
-    seoTitle: "Industrieboden für Brauereien & Getränkeindustrie | Hexagon Säurebau",
+    seoTitle:
+      "Industrieboden für Brauereien & Getränkeindustrie | Hexagon Säurebau",
     description:
       "Hochbelastbare Böden für Abfüllung und Lager. Beständig gegen Zucker, Laugen und massive mechanische Lasten durch Gabelstapler.",
     h1: "Industrieböden für Brauereien und Getränkeproduktion",
@@ -100,19 +132,31 @@ export const industries = [
       "Sichere Anbindung an Hochleistungsentwässerung",
       "Vibrationsfeste Fugenprofile für Gabelstapler-Wege",
     ],
-    recommendedSystems: ["keramische-industrieboeden", "entwaesserung-industrieboden", "dehnungsfugen-rammschutz-industrieboden"],
+    recommendedSystems: [
+      "keramische-industrieboeden",
+      "entwaesserung-industrieboden",
+      "dehnungsfugen-rammschutz-industrieboden",
+    ],
     proofPoints: [
       "Referenzen führender Mineralbrunnen und Brauereien",
       "Taktgenaue Sanierung von Abfülllinien am Wochenende",
       "Systemlösungen inkl. Edelstahl-Entwässerungstechnik",
     ],
-    relatedServices: ["keramische-industrieboeden", "industrieboden-saeureschutz", "entwaesserung-industrieboden"],
+    relatedServices: [
+      "keramische-industrieboeden",
+      "industrieboden-saeureschutz",
+      "entwaesserung-industrieboden",
+    ],
     relatedReferences: ["mineralbrunnen-schwarzwald"],
-    relatedArticles: ["entwaesserung-gefaelle-produktionsbereiche", "sanierung-ohne-produktionsstillstand"],
+    relatedArticles: [
+      "entwaesserung-gefaelle-produktionsbereiche",
+      "sanierung-ohne-produktionsstillstand",
+    ],
     faqs: [
       {
         question: "Wie wird die Rutschfestigkeit dauerhaft erhalten?",
-        answer: "Wir setzen auf keramische Beläge mit Mineralkorn-Struktur, die mechanisch kaum verschleißen. Im Gegensatz zu eingestreuten Beschichtungen bleibt die R-Klasse über Jahrzehnte stabil.",
+        answer:
+          "Wir setzen auf keramische Beläge mit Mineralkorn-Struktur, die mechanisch kaum verschleißen. Im Gegensatz zu eingestreuten Beschichtungen bleibt die R-Klasse über Jahrzehnte stabil.",
       },
     ],
     ctaLabel: "Abfüllbereich technisch bewerten",
@@ -139,19 +183,32 @@ export const industries = [
       "Diffusionsdichte Kombinationsbeläge",
       "Säurefeste Ausmauerung für Auffangwannen",
     ],
-    recommendedSystems: ["industrieboden-saeureschutz", "whg-abdichtung-industrieboden", "epoxidharz-bodenbeschichtung"],
+    recommendedSystems: [
+      "industrieboden-saeureschutz",
+      "whg-abdichtung-industrieboden",
+      "epoxidharz-bodenbeschichtung",
+    ],
     proofPoints: [
       "Zertifizierter WHG-Fachbetrieb",
       "Detaillierte Beständigkeitsprüfungen nach Medienliste",
       "Dokumentation für Behörden und Sachverständige",
     ],
-    relatedServices: ["industrieboden-saeureschutz", "keramische-industrieboeden", "whg-abdichtung-industrieboden", "epoxidharz-bodenbeschichtung"],
+    relatedServices: [
+      "industrieboden-saeureschutz",
+      "keramische-industrieboeden",
+      "whg-abdichtung-industrieboden",
+      "epoxidharz-bodenbeschichtung",
+    ],
     relatedReferences: ["chemie-region-west"],
-    relatedArticles: ["saeurefeste-fliesen-industrieboden", "pu-beton-oder-keramischer-industrieboden"],
+    relatedArticles: [
+      "saeurefeste-fliesen-industrieboden",
+      "pu-beton-oder-keramischer-industrieboden",
+    ],
     faqs: [
       {
         question: "Welche Beständigkeiten deckt Hexagon Säurebau ab?",
-        answer: "Wir bieten Systeme für das gesamte Spektrum von pH 0 bis 14 sowie für organische Lösungsmittel. Die Auswahl erfolgt strikt nach Ihrer spezifischen Medienliste.",
+        answer:
+          "Wir bieten Systeme für das gesamte Spektrum von pH 0 bis 14 sowie für organische Lösungsmittel. Die Auswahl erfolgt strikt nach Ihrer spezifischen Medienliste.",
       },
     ],
     ctaLabel: "Chemische Beständigkeit prüfen lassen",
@@ -178,19 +235,32 @@ export const industries = [
       "Beständigkeit gegen VHP-Desinfektion (Wasserstoffperoxid)",
       "Lückenlose Dokumentation der Material-Chargen",
     ],
-    recommendedSystems: ["pu-beton-industrieboden", "epoxidharz-bodenbeschichtung", "whg-abdichtung-industrieboden"],
+    recommendedSystems: [
+      "pu-beton-industrieboden",
+      "epoxidharz-bodenbeschichtung",
+      "whg-abdichtung-industrieboden",
+    ],
     proofPoints: [
       "Erfahrung mit GMP-Reinigungsprotokollen",
       "Systeme mit Reinraum-Zertifizierung",
       "Kurze Aushärtezeiten für schnelle Wiederinbetriebnahme",
     ],
-    relatedServices: ["pu-beton-industrieboden", "keramische-industrieboeden", "epoxidharz-bodenbeschichtung", "whg-abdichtung-industrieboden"],
+    relatedServices: [
+      "pu-beton-industrieboden",
+      "keramische-industrieboeden",
+      "epoxidharz-bodenbeschichtung",
+      "whg-abdichtung-industrieboden",
+    ],
     relatedReferences: ["pharma-hessen"],
-    relatedArticles: ["pu-beton-oder-keramischer-industrieboden", "sanierung-ohne-produktionsstillstand"],
+    relatedArticles: [
+      "pu-beton-oder-keramischer-industrieboden",
+      "sanierung-ohne-produktionsstillstand",
+    ],
     faqs: [
       {
         question: "Sind Ihre Böden für Reinräume der Klasse A/B geeignet?",
-        answer: "Ja, wir bieten spezielle Epoxidharz- und PU-Systeme, die für hohe Reinraumklassen zertifiziert sind und die Anforderungen an geringste Partikelemission erfüllen.",
+        answer:
+          "Ja, wir bieten spezielle Epoxidharz- und PU-Systeme, die für hohe Reinraumklassen zertifiziert sind und die Anforderungen an geringste Partikelemission erfüllen.",
       },
     ],
     ctaLabel: "Pharma-Systemlösung anfragen",
@@ -217,19 +287,32 @@ export const industries = [
       "Einfache mechanische Reinigbarkeit",
       "Nahtlose Integration von Bodenabläufen",
     ],
-    recommendedSystems: ["pu-beton-industrieboden", "keramische-industrieboeden", "entwaesserung-industrieboden"],
+    recommendedSystems: [
+      "pu-beton-industrieboden",
+      "keramische-industrieboeden",
+      "entwaesserung-industrieboden",
+    ],
     proofPoints: [
       "Spezielle Lösungen für Heißbereiche",
       "Fachplanung von Entwässerung und Gefälle",
       "Einbau in nächtlichen Produktionspausen möglich",
     ],
-    relatedServices: ["pu-beton-industrieboden", "keramische-industrieboeden", "entwaesserung-industrieboden", "bodensanierung-laufender-betrieb"],
+    relatedServices: [
+      "pu-beton-industrieboden",
+      "keramische-industrieboeden",
+      "entwaesserung-industrieboden",
+      "bodensanierung-laufender-betrieb",
+    ],
     relatedReferences: ["feinkost-nrw"],
-    relatedArticles: ["sanierung-ohne-produktionsstillstand", "pu-beton-oder-keramischer-industrieboden"],
+    relatedArticles: [
+      "sanierung-ohne-produktionsstillstand",
+      "pu-beton-oder-keramischer-industrieboden",
+    ],
     faqs: [
       {
         question: "Wie gehen Sie mit der extremen Hitze vor Backöfen um?",
-        answer: "Hier setzen wir auf thermisch träge Keramik oder spezialisierten PU-Beton, der die Spannungen aus der Hitzeabstrahlung der Öfen schadlos aufnimmt.",
+        answer:
+          "Hier setzen wir auf thermisch träge Keramik oder spezialisierten PU-Beton, der die Spannungen aus der Hitzeabstrahlung der Öfen schadlos aufnimmt.",
       },
     ],
     ctaLabel: "Küche oder Backstube prüfen lassen",

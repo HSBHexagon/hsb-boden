@@ -1,114 +1,40 @@
-import { z } from "zod";
 import { articles } from "../data/articles";
 import { industries } from "../data/industries";
 import { references } from "../data/references";
 import { services } from "../data/services";
 import { landing } from "./i18n";
-
-const faqSchema = z.object({
-  question: z.string().min(10),
-  answer: z.string().min(25),
-});
-
-const serviceSchema = z.object({
-  slug: z.string().min(3),
-  title: z.string().min(3),
-  seoTitle: z.string().min(20),
-  description: z.string().min(70),
-  h1: z.string().min(10),
-  primaryKeyword: z.string().min(3),
-  secondaryKeywords: z.array(z.string()).min(1),
-  problem: z.string().min(40),
-  applications: z.array(z.string()).min(1),
-  technicalRequirements: z.array(z.string()).min(3),
-  systemSolution: z.string().min(40),
-  benefits: z.array(z.string()).min(3),
-  decisionCriteria: z.array(z.string()).min(3),
-  relatedIndustries: z.array(z.string()),
-  relatedReferences: z.array(z.string()),
-  relatedArticles: z.array(z.string()).default([]),
-  faqs: z.array(faqSchema).min(1),
-  ctaLabel: z.string().min(5),
-  ctaTarget: z.string().startsWith("/"),
-});
-
-const industrySchema = z.object({
-  slug: z.string().min(3),
-  title: z.string().min(3),
-  seoTitle: z.string().min(20),
-  description: z.string().min(70),
-  h1: z.string().min(10),
-  searchIntent: z.string().min(40),
-  typicalProblems: z.array(z.string()).min(3),
-  floorRequirements: z.array(z.string()).min(3),
-  recommendedSystems: z.array(z.string()).min(1),
-  proofPoints: z.array(z.string()).min(2),
-  relatedServices: z.array(z.string()).min(1),
-  relatedReferences: z.array(z.string()),
-  relatedArticles: z.array(z.string()).default([]),
-  faqs: z.array(faqSchema).min(1),
-  ctaLabel: z.string().min(5),
-});
-
-const referenceSchema = z.object({
-  id: z.string().min(3),
-  publicName: z.string().min(3),
-  anonymousName: z.string().min(3),
-  canShowLogo: z.boolean(),
-  canShowExactLocation: z.boolean(),
-  industry: z.string().min(3),
-  city: z.string().min(2),
-  region: z.string().min(2),
-  country: z.string().min(2),
-  lat: z.number(),
-  lng: z.number(),
-  systems: z.array(z.string()).min(1),
-  projectType: z.string().min(3),
-  challenge: z.string().min(20),
-  solution: z.string().min(20),
-  result: z.string().min(20),
-  images: z.array(z.string()),
-  logo: z.string().optional(),
-  year: z.string().min(4),
-  approvalStatus: z.enum(["approved", "anonymous", "internal"]),
-});
-
-const articleSchema = z.object({
-  slug: z.string().min(3),
-  title: z.string().min(3),
-  seoTitle: z.string().min(20),
-  description: z.string().min(70),
-  h1: z.string().min(10),
-  category: z.string().min(3),
-  readTime: z.string().min(3),
-  intro: z.string().min(50),
-  sections: z.array(z.object({ title: z.string().min(3), body: z.string().min(20).optional() })).min(3),
-  relatedServices: z.array(z.string()).default([]),
-  relatedIndustries: z.array(z.string()).default([]),
-});
-
-export type Service = (typeof services)[number];
-export type Industry = (typeof industries)[number];
-export type Article = (typeof articles)[number];
-export type ReferenceRecord = (typeof references)[number];
+import {
+  serviceSchema,
+  industrySchema,
+  referenceSchema,
+  articleSchema,
+  type ReferenceRecord,
+  type Service,
+  type Industry,
+  type Article,
+} from "./types";
 
 export function validateSiteContent() {
   const errors: string[] = [];
   for (const service of services) {
     const result = serviceSchema.safeParse(service);
-    if (!result.success) errors.push(`service:${service.slug}:${result.error.message}`);
+    if (!result.success)
+      errors.push(`service:${service.slug}:${result.error.message}`);
   }
   for (const industry of industries) {
     const result = industrySchema.safeParse(industry);
-    if (!result.success) errors.push(`industry:${industry.slug}:${result.error.message}`);
+    if (!result.success)
+      errors.push(`industry:${industry.slug}:${result.error.message}`);
   }
   for (const reference of references) {
     const result = referenceSchema.safeParse(reference);
-    if (!result.success) errors.push(`reference:${reference.id}:${result.error.message}`);
+    if (!result.success)
+      errors.push(`reference:${reference.id}:${result.error.message}`);
   }
   for (const article of articles) {
     const result = articleSchema.safeParse(article);
-    if (!result.success) errors.push(`article:${article.slug}:${result.error.message}`);
+    if (!result.success)
+      errors.push(`article:${article.slug}:${result.error.message}`);
   }
 
   return { success: errors.length === 0, errors };
@@ -126,32 +52,40 @@ export function getArticles() {
   return articles;
 }
 
-const servicesMap = new Map(services.map(s => [s.slug, s]));
+const servicesMap = new Map<string, Service>(
+  services.map((s) => [s.slug, s as unknown as Service]),
+);
 
 export function getServiceBySlug(slug: string) {
   return servicesMap.get(slug);
 }
 
-const industriesMap = new Map(industries.map(i => [i.slug, i]));
+const industriesMap = new Map<string, Industry>(
+  industries.map((i) => [i.slug, i as unknown as Industry]),
+);
 
 export function getIndustryBySlug(slug: string) {
   return industriesMap.get(slug);
 }
 
-const articlesMap = new Map(articles.map(a => [a.slug, a]));
+const articlesMap = new Map<string, Article>(
+  articles.map((a) => [a.slug, a as unknown as Article]),
+);
 
 export function getArticleBySlug(slug: string) {
   return articlesMap.get(slug);
 }
 
-const referencesMap = new Map(references.map(r => [r.id, r]));
+const referencesMap = new Map<string, ReferenceRecord>(
+  references.map((r) => [r.id, r as unknown as ReferenceRecord]),
+);
 
 export function getReferenceById(id: any) {
   return referencesMap.get(id);
 }
 
 export function getPublicReferences() {
-  return (references as readonly ReferenceRecord[])
+  return references
     .filter((reference) => {
       const approvalStatus: string = reference.approvalStatus;
       return approvalStatus !== "internal";
@@ -164,7 +98,9 @@ export function getPublicReferences() {
       return {
         ...reference,
         displayName: approved ? reference.publicName : reference.anonymousName,
-        displayLocation: canShowExactLocation ? `${reference.city}, ${reference.region}` : reference.region,
+        displayLocation: canShowExactLocation
+          ? `${reference.city}, ${reference.region}`
+          : reference.region,
         canShowExactLocation,
         logo: canShowLogo ? reference.logo : undefined,
       };
@@ -180,14 +116,16 @@ export function getAllPublicPages() {
   return [
     {
       h1: "Industrieböden und Säureschutzsysteme für produktionskritische Bereiche",
-      seoTitle: "Industrieböden & Säureschutz für Produktion | HSB Hexagon Säurebau",
+      seoTitle:
+        "Industrieböden & Säureschutz für Produktion | HSB Hexagon Säurebau",
       description:
         "Industrieböden, Säureschutz, Keramik, PU-Beton, Entwässerung und Sanierung für Lebensmittel-, Getränke-, Pharma- und Chemieproduktion. Jetzt kostenlose Ersteinschätzung anfordern.",
       canonicalPath: "/",
     },
     {
       h1: "Leistungen für Industrieböden und Säureschutz",
-      seoTitle: "Leistungen für Industrieböden & Säureschutz | HSB Hexagon Säurebau",
+      seoTitle:
+        "Leistungen für Industrieböden & Säureschutz | HSB Hexagon Säurebau",
       description:
         "Keramische Industrieböden, Säureschutz, PU-Beton, Epoxidharz, Entwässerung, Abdichtung und Sanierung für produktionskritische Bereiche.",
       canonicalPath: "/leistungen/",
@@ -201,7 +139,8 @@ export function getAllPublicPages() {
     },
     {
       h1: "Referenzen aus produktionskritischen Bereichen",
-      seoTitle: "Referenzen für Industrieböden & Säureschutz | HSB Hexagon Säurebau",
+      seoTitle:
+        "Referenzen für Industrieböden & Säureschutz | HSB Hexagon Säurebau",
       description:
         "Ausgewählte freigegebene und anonymisierte Referenzen für Industrieböden, Säureschutz, Keramik, Entwässerung und Sanierung.",
       canonicalPath: "/referenzen/",

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { loadOptions } from "../../lib/validation";
 import { site } from "../../data/site";
+import { trackEvent, TrackingEvent } from "../../lib/tracking";
 
 type Status = "idle" | "submitting" | "error";
 
@@ -14,7 +15,7 @@ export function LeadForm() {
   function onFocus() {
     if (!started) {
       setStarted(true);
-      window.dispatchEvent(new CustomEvent("hsb:tracking", { detail: { event: "lead_form_start" } }));
+      trackEvent(TrackingEvent.LeadFormStart);
     }
   }
 
@@ -51,7 +52,7 @@ export function LeadForm() {
         body: JSON.stringify(payload),
       });
       if (!res.ok) throw new Error(`Status ${res.status}`);
-      window.dispatchEvent(new CustomEvent("hsb:tracking", { detail: { event: "lead_form_submit" } }));
+      trackEvent(TrackingEvent.LeadFormSubmit);
       window.location.href = "/danke-projektanfrage/";
     } catch {
       setStatus("error");

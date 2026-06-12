@@ -1,10 +1,50 @@
-# GitHub Copilot Instructions
+# Copilot Instructions — hsb-boden
 
-When working in this repository (HSB-Boden), please adhere strictly to the following rules:
+This is an **Astro 5** project deployed to **Cloudflare Workers** (SSR adapter `@astrojs/cloudflare`, `output: server`). It is the public website for HSB Bodenbeschichtungen — B2B lead generation for industrial floor coating services.
 
-1. **Non-Negotiables**:
-   - Do not mutate or replace the live WordPress site from this repo.
-   - Do not claim Argelith/Zahna certification without documentation.
-   - Do not publish exact customer locations or logos without approval.
-2. **Architecture**: This is an Astro application utilizing React, Tailwind CSS, and Vitest. Output is targeted for Cloudflare Workers.
-3. **Execution**: Always favor TypeScript and Astro component syntax. Run `npm run check` and `npm run test:run` frequently.
+For full project rules, non-negotiables, and the deploy gate, see `AGENTS.md` in the repository root. This file summarizes the points most relevant to Copilot's code-completion and chat suggestions.
+
+## Non-negotiables (see `AGENTS.md` for full list)
+
+- Do not mutate or replace the live WordPress site (`hsb-boden.de`) from this repo.
+- Do not claim Argelith/Zahna certification, partnership, or endorsement unless documented and approved.
+- Do not publish exact customer locations, logos, or names without explicit approval.
+
+## Critical priorities
+
+- **SEO is critical.** This site relies on organic search traffic for lead generation.
+- **Accessibility is critical.** Do not suggest changes that remove ARIA attributes, semantic HTML, alt text, or keyboard navigation.
+
+## Never remove or break
+
+- Sitemap generation (`@astrojs/sitemap` / `sitemap.xml` output)
+- `robots.txt` generation
+- Structured data / JSON-LD (`SEOHead.astro` and per-service `Service` schema)
+- The Germany map / service-area visualization functionality
+- Lead capture forms and their submission handling
+
+If a suggested change would touch any of the above, prefer the smallest possible diff and flag it for explicit review rather than silently altering behavior.
+
+## Working style
+
+- **Prefer incremental changes** over large rewrites. Small, reviewable diffs.
+- **Create PRs instead of direct modifications** to `main`. Do not suggest committing directly to `main`.
+- **Verify the build before proposing changes are complete.** Required local gate (see `AGENTS.md`):
+  ```bash
+  npm run check
+  npm run test:run
+  npm run build
+  ```
+- **Production deploys remain blocked** until the lead pipeline is live and the WordPress site (`hsb-boden.de`) is intentionally cut over (see `AGENTS.md` → Deploy Gate). Do not suggest enabling automatic production deploys (`wrangler deploy --env production`) on push to `main`.
+
+## Tech stack quick reference
+
+- Framework: Astro 5, TypeScript
+- Styling: project design tokens — follow existing component conventions, do not introduce new design systems
+- Deployment: Cloudflare Workers via `wrangler`, config in `wrangler.toml`
+- Tests: `npm run test:run`
+- Type/lint check: `npm run check`
+
+## Multi-agent context
+
+This repository is worked on by multiple AI coding agents (Claude Code, GitHub Copilot, Gemini CLI, Codex). All agents follow the same `AGENTS.md`. If you notice a conflict between this file and `AGENTS.md`, `AGENTS.md` wins.

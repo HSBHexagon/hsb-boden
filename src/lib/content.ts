@@ -138,10 +138,6 @@ export function getArticleBySlug(slug: string) {
   return articles.find((article) => article.slug === slug);
 }
 
-export function getReferenceById(id: string) {
-  return references.find((reference) => reference.id === id);
-}
-
 export function getPublicReferences() {
   return (references as readonly ReferenceRecord[])
     .filter((reference) => {

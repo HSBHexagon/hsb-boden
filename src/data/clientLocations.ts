@@ -1,4 +1,4 @@
-// Weitere Kundenstandorte in Deutschland (Quelle: interne Referenzkundenliste
+// Weitere Kundenstandorte (Quelle: interne Referenzkundenliste
 // "Referenzprojekte 2025", Geschäftsführungsfreigabe 2026-06-10).
 // Bewusst ohne Fallbeschreibung/Logo: dient nur der erweiterten Kartendarstellung
 // und der Kundenliste, nicht als ausführliche Fallstudie.

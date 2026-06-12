@@ -134,9 +134,6 @@ export function getIndustryBySlug(slug: string) {
   return industries.find((industry) => industry.slug === slug);
 }
 
-export function getArticleBySlug(slug: string) {
-  return articles.find((article) => article.slug === slug);
-}
 
 export function getReferenceById(id: string) {
   return references.find((reference) => reference.id === id);

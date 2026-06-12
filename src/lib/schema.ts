@@ -8,6 +8,13 @@ export function buildOrganizationJsonLd() {
     name: "HSB Hexagon Säurebau GmbH",
     alternateName: "HSB",
     url: site.domain,
+    address: {
+      "@type": "PostalAddress",
+      streetAddress: "Benzstraße 6",
+      postalCode: "48599",
+      addressLocality: "Gronau",
+      addressCountry: "DE",
+    },
     email: site.email,
     telephone: site.phone,
     description: site.description,
@@ -30,6 +37,13 @@ export function buildLocalBusinessJsonLd() {
     "@type": "LocalBusiness",
     name: "HSB Hexagon Säurebau GmbH",
     url: site.domain,
+    address: {
+      "@type": "PostalAddress",
+      streetAddress: "Benzstraße 6",
+      postalCode: "48599",
+      addressLocality: "Gronau",
+      addressCountry: "DE",
+    },
     telephone: site.phone,
     email: site.email,
     priceRange: "$$$",
@@ -37,7 +51,9 @@ export function buildLocalBusinessJsonLd() {
   };
 }
 
-export function buildFaqJsonLd(faqs: Array<{ question: string; answer: string }>) {
+export function buildFaqJsonLd(
+  faqs: Array<{ question: string; answer: string }>,
+) {
   return {
     "@context": "https://schema.org",
     "@type": "FAQPage",
@@ -52,7 +68,11 @@ export function buildFaqJsonLd(faqs: Array<{ question: string; answer: string }>
   };
 }
 
-export function buildServiceJsonLd(service: { name: string; description: string; path: string }) {
+export function buildServiceJsonLd(service: {
+  name: string;
+  description: string;
+  path: string;
+}) {
   return {
     "@context": "https://schema.org",
     "@type": "Service",
@@ -65,11 +85,20 @@ export function buildServiceJsonLd(service: { name: string; description: string;
       "@type": "Organization",
       name: "HSB Hexagon Säurebau GmbH",
       url: site.domain,
+      address: {
+        "@type": "PostalAddress",
+        streetAddress: "Benzstraße 6",
+        postalCode: "48599",
+        addressLocality: "Gronau",
+        addressCountry: "DE",
+      },
     },
   };
 }
 
-export function buildBreadcrumbJsonLd(items: Array<{ name: string; path: string }>) {
+export function buildBreadcrumbJsonLd(
+  items: Array<{ name: string; path: string }>,
+) {
   return {
     "@context": "https://schema.org",
     "@type": "BreadcrumbList",

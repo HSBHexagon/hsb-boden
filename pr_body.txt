@@ -1,0 +1,3 @@
+🎯 **What:** Missing `rel="noreferrer"` on an external link to Cloudflare's privacy policy.
+⚠️ **Risk:** Missing `noreferrer` on `target="_blank"` links can potentially leak referral information to external sites, which is a common security/privacy hygiene issue.
+🛡️ **Solution:** Added `noreferrer` to the `rel` attribute alongside the existing `noopener`.

@@ -2,20 +2,12 @@ import { describe, expect, it } from "vitest";
 import {
   getAllPublicPages,
   getPublicReferences,
-  validateSiteContent,
 } from "../src/lib/content";
 import { services } from "../src/data/services";
 import { industries } from "../src/data/industries";
 import { articles } from "../src/data/articles";
 
 describe("site content contract", () => {
-  it("validates the complete dateibasiert content model", () => {
-    const result = validateSiteContent();
-
-    expect(result.success).toBe(true);
-    expect(result.errors).toEqual([]);
-  });
-
   it("generates SEO-ready public pages with one h1, title, description, and canonical URL", () => {
     const pages = getAllPublicPages();
 

@@ -30,8 +30,12 @@ jobs:
       uses: github/codeql-action/init@v3
       with:
         languages: ${{ matrix.language }}
-        # Exclude generated code and artifacts which could confuse CodeQL
-        queries: security-extended,security-and-quality
+        # Exclude node_modules and dist artifacts which could confuse CodeQL
+        config: |
+          paths-ignore:
+            - "dist/**"
+            - "node_modules/**"
+            - ".github/**"
 
     - name: Perform CodeQL Analysis
       uses: github/codeql-action/analyze@v3

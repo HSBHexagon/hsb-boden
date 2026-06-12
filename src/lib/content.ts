@@ -138,8 +138,13 @@ export function getArticleBySlug(slug: string) {
   return articles.find((article) => article.slug === slug);
 }
 
+
+const referenceMap = new Map<string, ReferenceRecord>(
+  references.map((r) => [r.id, r])
+);
+
 export function getReferenceById(id: string) {
-  return references.find((reference) => reference.id === id);
+  return referenceMap.get(id);
 }
 
 export function getPublicReferences() {

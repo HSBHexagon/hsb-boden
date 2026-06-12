@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildBreadcrumbJsonLd, buildOrganizationJsonLd, buildServiceJsonLd } from "../src/lib/schema";
+import { buildBreadcrumbJsonLd, buildOrganizationJsonLd, buildServiceJsonLd, buildLocalBusinessJsonLd } from "../src/lib/schema";
 
 describe("json-ld generation", () => {
   it("returns valid organization json-ld without unsupported partner claims", () => {
@@ -8,6 +8,19 @@ describe("json-ld generation", () => {
     expect(() => JSON.stringify(graph)).not.toThrow();
     expect(graph["@type"]).toBe("Organization");
     expect(JSON.stringify(graph)).not.toContain("zertifizierter Partner");
+  });
+
+  it("returns valid local business json-ld", () => {
+    const graph = buildLocalBusinessJsonLd();
+
+    expect(() => JSON.stringify(graph)).not.toThrow();
+    expect(graph["@type"]).toBe("LocalBusiness");
+    expect(graph.name).toBe("HSB Hexagon Säurebau GmbH");
+    expect(graph.priceRange).toBe("$$$");
+    expect(graph.areaServed).toContain("Deutschland");
+    // Also verify some basic structure for telephone/url depending on configuration
+    expect(graph).toHaveProperty("url");
+    expect(graph).toHaveProperty("telephone");
   });
 
   it("builds service json-ld with organization provider", () => {

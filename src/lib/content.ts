@@ -126,20 +126,28 @@ export function getArticles() {
   return articles;
 }
 
+const servicesMap = new Map(services.map(s => [s.slug, s]));
+
 export function getServiceBySlug(slug: string) {
-  return services.find((service) => service.slug === slug);
+  return servicesMap.get(slug);
 }
+
+const industriesMap = new Map(industries.map(i => [i.slug, i]));
 
 export function getIndustryBySlug(slug: string) {
-  return industries.find((industry) => industry.slug === slug);
+  return industriesMap.get(slug);
 }
+
+const articlesMap = new Map(articles.map(a => [a.slug, a]));
 
 export function getArticleBySlug(slug: string) {
-  return articles.find((article) => article.slug === slug);
+  return articlesMap.get(slug);
 }
 
+const referencesMap = new Map(references.map(r => [r.id, r]));
+
 export function getReferenceById(id: string) {
-  return references.find((reference) => reference.id === id);
+  return referencesMap.get(id);
 }
 
 export function getPublicReferences() {

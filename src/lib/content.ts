@@ -8,10 +8,7 @@ import {
   industrySchema,
   referenceSchema,
   articleSchema,
-  type ReferenceRecord,
   type Service,
-  type Industry,
-  type Article,
 } from "./types";
 
 export function validateSiteContent() {
@@ -58,30 +55,6 @@ const servicesMap = new Map<string, Service>(
 
 export function getServiceBySlug(slug: string) {
   return servicesMap.get(slug);
-}
-
-const industriesMap = new Map<string, Industry>(
-  industries.map((i) => [i.slug, i as unknown as Industry]),
-);
-
-export function getIndustryBySlug(slug: string) {
-  return industriesMap.get(slug);
-}
-
-const articlesMap = new Map<string, Article>(
-  articles.map((a) => [a.slug, a as unknown as Article]),
-);
-
-export function getArticleBySlug(slug: string) {
-  return articlesMap.get(slug);
-}
-
-const referencesMap = new Map<string, ReferenceRecord>(
-  references.map((r) => [r.id, r as unknown as ReferenceRecord]),
-);
-
-export function getReferenceById(id: any) {
-  return referencesMap.get(id);
 }
 
 export function getPublicReferences() {

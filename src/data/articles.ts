@@ -1,4 +1,6 @@
-export const articles = [
+import type { Article } from "../lib/types";
+
+export const articles: Article[] = [
   {
     slug: "pu-beton-oder-keramischer-industrieboden",
     title: "PU-Beton oder keramischer Industrieboden?",
@@ -8,7 +10,8 @@ export const articles = [
     h1: "PU-Beton oder keramischer Industrieboden: Ein technischer Systemvergleich",
     category: "Systemvergleich",
     readTime: "12 Minuten",
-    intro: "Die Wahl des richtigen Industriebodens ist eine Entscheidung über Jahrzehnte. In hygienekritischen Produktionsbereichen stehen sich oft zwei Hochleistungssysteme gegenüber: PU-Beton und keramische Industrieböden. Beide haben ihre Daseinsberechtigung, doch die falsche Wahl führt zu kostspieligen Sanierungen nach wenigen Jahren. Dieser Artikel ordnet beide Systeme technisch ein und zeigt, welche Kriterien in der Praxis wirklich zählen.",
+    intro:
+      "Die Wahl des richtigen Industriebodens ist eine Entscheidung über Jahrzehnte. In hygienekritischen Produktionsbereichen stehen sich oft zwei Hochleistungssysteme gegenüber: PU-Beton und keramische Industrieböden. Beide haben ihre Daseinsberechtigung, doch die falsche Wahl führt zu kostspieligen Sanierungen nach wenigen Jahren. Dieser Artikel ordnet beide Systeme technisch ein und zeigt, welche Kriterien in der Praxis wirklich zählen.",
     sections: [
       {
         title: "Das Problem: Materialversagen durch falsche Spezifikation",
@@ -59,7 +62,8 @@ export const articles = [
     h1: "Schwachstellenanalyse: Warum Industrieböden in Molkereien versagen",
     category: "Molkerei",
     readTime: "10 Minuten",
-    intro: "In Molkereien herrscht für Bodenbeläge das 'Worst-Case-Szenario'. Die Kombination aus aggressiver Milchsäure, extremen Temperatursprüngen bei der Reinigung und permanenter Feuchtigkeit stellt Anforderungen, die herkömmliche Industrieböden oft überfordern. Dieser Artikel beleuchtet die technischen Hintergründe des Versagens und zeigt nachhaltige Lösungswege auf.",
+    intro:
+      "In Molkereien herrscht für Bodenbeläge das 'Worst-Case-Szenario'. Die Kombination aus aggressiver Milchsäure, extremen Temperatursprüngen bei der Reinigung und permanenter Feuchtigkeit stellt Anforderungen, die herkömmliche Industrieböden oft überfordern. Dieser Artikel beleuchtet die technischen Hintergründe des Versagens und zeigt nachhaltige Lösungswege auf.",
     sections: [
       {
         title: "Das Problem: Zerstörung der Bausubstanz durch Milchsäure",
@@ -94,19 +98,25 @@ export const articles = [
         body: "Haben Sie bereits Risse in den Fugen oder lose Fliesen in Ihrer Produktion? Warten Sie nicht, bis die Behörden eingreifen oder ein Keimbefall Ihre Produktion stoppt. Nutzen Sie unsere Fachkompetenz für eine detaillierte Schwachstellenanalyse Ihres Bodens. Wir erstellen Ihnen ein Sanierungskonzept, das exakt in Ihre Produktionsfenster passt. Fordern Sie jetzt einen Experten-Check an.",
       },
     ],
-    relatedServices: ["keramische-industrieboeden", "entwaesserung-industrieboden", "bodensanierung-laufender-betrieb"],
+    relatedServices: [
+      "keramische-industrieboeden",
+      "entwaesserung-industrieboden",
+      "bodensanierung-laufender-betrieb",
+    ],
     relatedIndustries: ["molkerei"],
   },
   {
     slug: "saeurefeste-fliesen-industrieboden",
     title: "Säurefeste Fliesen im Industrieboden",
-    seoTitle: "Säurefeste Fliesen im Industrieboden richtig planen | HSB Wissen",
+    seoTitle:
+      "Säurefeste Fliesen im Industrieboden richtig planen | HSB Wissen",
     description:
       "Alles über säurefeste Fliesen: Materialwahl, Verlegetechniken, chemische Beständigkeit und warum die Fuge das wichtigste Bauteil ist.",
     h1: "Säurefeste Fliesen: Hochleistungskeramik für extreme Bedingungen",
     category: "Keramik",
     readTime: "9 Minuten",
-    intro: "Der Begriff 'Säurefliese' wird oft fälschlicherweise als Synonym für jede robuste Fliese verwendet. Doch echter Säureschutz ist eine komplexe Systemleistung, bei der die Keramik nur der sichtbare Teil ist. In diesem Artikel erfahren Sie, worauf es bei der Planung und Ausführung von säurefesten Belägen in der Chemie- und Lebensmittelindustrie wirklich ankommt.",
+    intro:
+      "Der Begriff 'Säurefliese' wird oft fälschlicherweise als Synonym für jede robuste Fliese verwendet. Doch echter Säureschutz ist eine komplexe Systemleistung, bei der die Keramik nur der sichtbare Teil ist. In diesem Artikel erfahren Sie, worauf es bei der Planung und Ausführung von säurefesten Belägen in der Chemie- und Lebensmittelindustrie wirklich ankommt.",
     sections: [
       {
         title: "Das Problem: Unterschätzung der chemischen Wechselwirkung",
@@ -141,7 +151,10 @@ export const articles = [
         body: "Planen Sie einen Neubau oder eine Sanierung in einem chemisch sensiblen Bereich? Nutzen Sie unsere jahrzehntelange Expertise im Säureschutzbau. Wir unterstützen Sie bereits in der Planungsphase bei der Erstellung von Leistungsverzeichnissen und der technischen Systemwahl. Kontaktieren Sie uns für ein Fachgespräch oder eine Begutachtung vor Ort.",
       },
     ],
-    relatedServices: ["keramische-industrieboeden", "industrieboden-saeureschutz"],
+    relatedServices: [
+      "keramische-industrieboeden",
+      "industrieboden-saeureschutz",
+    ],
     relatedIndustries: ["chemieindustrie", "lebensmittelindustrie"],
   },
   {
@@ -153,7 +166,8 @@ export const articles = [
     h1: "Entwässerung und Gefälle: Das Wasserleitsystem der Produktion",
     category: "Entwässerung",
     readTime: "8 Minuten",
-    intro: "Ein Industrieboden ohne funktionierendes Gefälle ist ein permanentes Hygienerisiko. Stehendes Wasser fördert Keimbildung, verursacht Rutschunfälle und belastet die Bodenkonstruktion chemisch weit über das notwendige Maß hinaus. In diesem Artikel erfahren Sie, warum die Entwässerung oft die wichtigste Komponente eines Industriebodens ist.",
+    intro:
+      "Ein Industrieboden ohne funktionierendes Gefälle ist ein permanentes Hygienerisiko. Stehendes Wasser fördert Keimbildung, verursacht Rutschunfälle und belastet die Bodenkonstruktion chemisch weit über das notwendige Maß hinaus. In diesem Artikel erfahren Sie, warum die Entwässerung oft die wichtigste Komponente eines Industriebodens ist.",
     sections: [
       {
         title: "Das Problem: Pfützenbildung und schlechte Hygiene",
@@ -189,7 +203,11 @@ export const articles = [
       },
     ],
     relatedServices: ["entwaesserung-industrieboden"],
-    relatedIndustries: ["molkerei", "brauerei-getraenkeindustrie", "lebensmittelindustrie"],
+    relatedIndustries: [
+      "molkerei",
+      "brauerei-getraenkeindustrie",
+      "lebensmittelindustrie",
+    ],
   },
   {
     slug: "sanierung-ohne-produktionsstillstand",
@@ -200,7 +218,8 @@ export const articles = [
     h1: "Punktlandung: Industrieboden-Sanierung ohne Produktionsstillstand",
     category: "Sanierung",
     readTime: "11 Minuten",
-    intro: "Der größte Kostenfaktor einer Sanierung ist heute nicht mehr das Material oder der Lohn, sondern der Produktionsausfall. Jede Stunde Stillstand kostet bares Geld. Moderne Sanierungskonzepte ermöglichen den Austausch von Industrieböden, während in der Nachbarhalle die Produktion auf Hochtouren weiterläuft. Dieser Artikel zeigt, wie wir diese logistische Herausforderung meistern.",
+    intro:
+      "Der größte Kostenfaktor einer Sanierung ist heute nicht mehr das Material oder der Lohn, sondern der Produktionsausfall. Jede Stunde Stillstand kostet bares Geld. Moderne Sanierungskonzepte ermöglichen den Austausch von Industrieböden, während in der Nachbarhalle die Produktion auf Hochtouren weiterläuft. Dieser Artikel zeigt, wie wir diese logistische Herausforderung meistern.",
     sections: [
       {
         title: "Herausforderung: Logistik, Staub und Zeitdruck",
@@ -211,7 +230,8 @@ export const articles = [
         body: "Die meisten Sanierungen scheitern nicht an der Ausführung, sondern an unvorhergesehenen Überraschungen im Untergrund. Öl-Kontaminationen im Beton, unerkannte Restfeuchte oder mangelhafte Haftzugwerte des Altuntergrunds führen dazu, dass neue Systeme nicht haften. Ohne vorherige technische Analyse (Kernbohrungen, Laboranalysen) ist jeder Sanierungsplan ein Glücksspiel mit hohem Einsatz. Viele Anbieter kalkulieren 'ins Blaue hinein', was zu Nachträgen und Zeitverzug führt.",
       },
       {
-        title: "Strategie 1: Schnellhärtende Systeme (PMMA & beschleunigter PU-Beton)",
+        title:
+          "Strategie 1: Schnellhärtende Systeme (PMMA & beschleunigter PU-Beton)",
         body: "Durch den Einsatz von reaktiven Harzen (PMMA) oder spezialisierten, schnellhärtenden PU-Beton-Systemen erreichen wir die volle mechanische und chemische Belastbarkeit oft schon nach wenigen Stunden. PMMA-Harze sind beispielsweise bereits 60 Minuten nach dem Auftrag voll belastbar. Dies ermöglicht 'Nacht-Sanierungen': Abends wird der Altbelag rückgebaut und vorbereitet, in der Nacht wird das neue System appliziert, und am nächsten Morgen kann die Produktion wie gewohnt starten.",
       },
       {
@@ -232,6 +252,10 @@ export const articles = [
       },
     ],
     relatedServices: ["bodensanierung-laufender-betrieb"],
-    relatedIndustries: ["lebensmittelindustrie", "molkerei", "brauerei-getraenkeindustrie"],
+    relatedIndustries: [
+      "lebensmittelindustrie",
+      "molkerei",
+      "brauerei-getraenkeindustrie",
+    ],
   },
 ];

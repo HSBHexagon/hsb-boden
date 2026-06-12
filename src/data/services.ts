@@ -1,4 +1,6 @@
-export const services = [
+import type { Service } from "../lib/types";
+
+export const services: Service[] = [
   {
     slug: "industrieboden-saeureschutz",
     title: "Industrieboden-Säureschutz",
@@ -7,10 +9,21 @@ export const services = [
       "Säurebeständige Industriebodensysteme für Lebensmittel-, Getränke-, Pharma- und Chemieproduktion mit Fokus auf Fugen, Abdichtung, Entwässerung und Lebensdauer.",
     h1: "Säureschutz für chemisch belastete Industrieböden",
     primaryKeyword: "Säureschutz Industrieboden",
-    secondaryKeywords: ["säurebeständiger Industrieboden", "säurefeste Fliesen", "Säurebau Boden", "Kombinationsbelag WHG"],
+    secondaryKeywords: [
+      "säurebeständiger Industrieboden",
+      "säurefeste Fliesen",
+      "Säurebau Boden",
+      "Kombinationsbelag WHG",
+    ],
     problem:
       "Aggressive Medien wie Schwefelsäure, Salpetersäure oder Laugen zersetzen herkömmliche Beläge und greifen die Bausubstanz an. Undichte Fugen führen zu Unterläufigkeit.",
-    applications: ["Chemische Reaktoren", "Abfülllinien", "Galvanik", "Lager für wassergefährdende Stoffe", "Zentralküchen"],
+    applications: [
+      "Chemische Reaktoren",
+      "Abfülllinien",
+      "Galvanik",
+      "Lager für wassergefährdende Stoffe",
+      "Zentralküchen",
+    ],
     technicalRequirements: [
       "Chemikalienbeständigkeit pH 0–14",
       "Flüssigkeitsdichte Verbundabdichtung",
@@ -34,11 +47,15 @@ export const services = [
     ],
     relatedIndustries: ["chemieindustrie", "lebensmittelindustrie", "molkerei"],
     relatedReferences: ["suedzucker-zeitz", "chemie-region-west"],
-    relatedArticles: ["saeurefeste-fliesen-industrieboden", "pu-beton-oder-keramischer-industrieboden"],
+    relatedArticles: [
+      "saeurefeste-fliesen-industrieboden",
+      "pu-beton-oder-keramischer-industrieboden",
+    ],
     faqs: [
       {
         question: "Bieten Sie auch WHG-geprüfte Auffangwannen an?",
-        answer: "Ja, wir realisieren sowohl die flächige Abdichtung als auch spezialisierte Auffangwannen und Havarieflächen mit chemisch hochresistenten Kombinationsbelägen.",
+        answer:
+          "Ja, wir realisieren sowohl die flächige Abdichtung als auch spezialisierte Auffangwannen und Havarieflächen mit chemisch hochresistenten Kombinationsbelägen.",
       },
     ],
     ctaLabel: "Säurebelastung prüfen lassen",
@@ -52,10 +69,22 @@ export const services = [
       "Hochbelastbare keramische Industrieböden im Rüttelverfahren. Ideal für Lebensmittelindustrie, Brauereien und Chemie mit Fokus auf mechanische Härte.",
     h1: "Keramische Industrieböden: Die mechanische Festung",
     primaryKeyword: "keramischer Industrieboden",
-    secondaryKeywords: ["Rüttelkeramik", "Industriefliesen", "Feinsteinzeug Produktion", "säurefeste Klinker", "DIN EN 14411"],
+    secondaryKeywords: [
+      "Rüttelkeramik",
+      "Industriefliesen",
+      "Feinsteinzeug Produktion",
+      "säurefeste Klinker",
+      "DIN EN 14411",
+    ],
     problem:
       "Punktuelle Schwerlasten, permanenter Gabelstaplerverkehr und Nässe zerstören Standardbeläge. Fugen platzen aus, Fliesen lösen sich.",
-    applications: ["Abfüllhallen", "Molkereien", "Brauereien", "Logistikzentren", "Werkstätten"],
+    applications: [
+      "Abfüllhallen",
+      "Molkereien",
+      "Brauereien",
+      "Logistikzentren",
+      "Werkstätten",
+    ],
     technicalRequirements: [
       "Rüttelverlegung nach DIN EN 14411",
       "Extrem hohe Druckfestigkeit (> 70 N/mm²)",
@@ -77,13 +106,22 @@ export const services = [
       "Chemische Belastung der Fuge",
       "Untergrundbeschaffenheit (Altbeton vs. Neubau)",
     ],
-    relatedIndustries: ["molkerei", "brauerei-getraenkeindustrie", "lebensmittelindustrie"],
+    relatedIndustries: [
+      "molkerei",
+      "brauerei-getraenkeindustrie",
+      "lebensmittelindustrie",
+    ],
     relatedReferences: ["molkerei-sued", "mineralbrunnen-schwarzwald"],
-    relatedArticles: ["pu-beton-oder-keramischer-industrieboden", "saeurefeste-fliesen-industrieboden", "warum-industrieboeden-in-molkereien-versagen"],
+    relatedArticles: [
+      "pu-beton-oder-keramischer-industrieboden",
+      "saeurefeste-fliesen-industrieboden",
+      "warum-industrieboeden-in-molkereien-versagen",
+    ],
     faqs: [
       {
         question: "Wie schnell ist ein Rüttelboden befahrbar?",
-        answer: "Dank moderner Schnellzemente und Epoxidharz-Fugen können Teilflächen oft schon nach 48-72 Stunden wieder voll mit Gabelstaplern befahren werden.",
+        answer:
+          "Dank moderner Schnellzemente und Epoxidharz-Fugen können Teilflächen oft schon nach 48-72 Stunden wieder voll mit Gabelstaplern befahren werden.",
       },
     ],
     ctaLabel: "Rüttelkeramik-System planen",
@@ -97,10 +135,21 @@ export const services = [
       "Fugenlose Hochleistungsböden für Lebensmittel und Pharma. Extrem thermoschockbeständig, hygienisch und schnell belastbar.",
     h1: "PU-Beton: Der fugenlose Spezialist für Extrembelastung",
     primaryKeyword: "PU-Beton Industrieboden",
-    secondaryKeywords: ["Polyurethanbeton", "Ucrete Alternative", "fugenloser Industrieboden", "hygienische Beschichtung"],
+    secondaryKeywords: [
+      "Polyurethanbeton",
+      "Ucrete Alternative",
+      "fugenloser Industrieboden",
+      "hygienische Beschichtung",
+    ],
     problem:
       "Extreme Temperatursprünge (z.B. Reinigung mit 90°C heißem Wasser) führen bei starren Belägen zu Rissen und Ablösungen. Fugenlose Hygiene ist oft zwingend vorgeschrieben.",
-    applications: ["Zentralküchen", "Fleischereien", "Kühlhäuser", "Pharmaproduktion", "Hygienezonen"],
+    applications: [
+      "Zentralküchen",
+      "Fleischereien",
+      "Kühlhäuser",
+      "Pharmaproduktion",
+      "Hygienezonen",
+    ],
     technicalRequirements: [
       "Schichtstärken von 6mm bis 12mm",
       "Thermoschockbeständig bis 130°C",
@@ -122,13 +171,18 @@ export const services = [
       "Zustand und Feuchte des Untergrunds",
       "Verfügbares Sanierungszeitfenster",
     ],
-    relatedIndustries: ["lebensmittelindustrie", "pharmaindustrie", "backwarenproduktion-grosskueche"],
+    relatedIndustries: [
+      "lebensmittelindustrie",
+      "pharmaindustrie",
+      "backwarenproduktion-grosskueche",
+    ],
     relatedReferences: ["feinkost-nrw"],
     relatedArticles: ["pu-beton-oder-keramischer-industrieboden"],
     faqs: [
       {
         question: "Ist PU-Beton dampfstrahlfest?",
-        answer: "Ja, ab einer Schichtdicke von 9mm ist PU-Beton dauerhaft beständig gegen Heißwasserreinigung und Dampfstrahler bis 130°C.",
+        answer:
+          "Ja, ab einer Schichtdicke von 9mm ist PU-Beton dauerhaft beständig gegen Heißwasserreinigung und Dampfstrahler bis 130°C.",
       },
     ],
     ctaLabel: "PU-Beton Fachberatung anfragen",
@@ -142,10 +196,21 @@ export const services = [
       "Industrielle Beschichtungssysteme für Lager, Technik und Produktion. Wirtschaftlich, chemisch beständig und individuell konfigurierbar.",
     h1: "Epoxidharz-Systeme für industrielle Anforderungen",
     primaryKeyword: "Epoxidharz Bodenbeschichtung Industrie",
-    secondaryKeywords: ["EP-Beschichtung", "Bodenversiegelung Industrie", "rutschfeste Beschichtung", "WHG-Beschichtung"],
+    secondaryKeywords: [
+      "EP-Beschichtung",
+      "Bodenversiegelung Industrie",
+      "rutschfeste Beschichtung",
+      "WHG-Beschichtung",
+    ],
     problem:
       "Staubende Betonoberflächen, fehlende Chemikalienresistenz oder unzureichende Arbeitssicherheit in Nebenbereichen oder Technikräumen.",
-    applications: ["Technikräume", "Lagerhallen", "Produktionswege", "ESD-Zonen", "Auffangwannen"],
+    applications: [
+      "Technikräume",
+      "Lagerhallen",
+      "Produktionswege",
+      "ESD-Zonen",
+      "Auffangwannen",
+    ],
     technicalRequirements: [
       "Untergrundvorbereitung durch Kugelstrahlen/Fräsen",
       "Haftzugfestigkeit > 1,5 N/mm²",
@@ -172,7 +237,8 @@ export const services = [
     faqs: [
       {
         question: "Kann man Epoxidharz auf alten Fliesen verlegen?",
-        answer: "Unter bestimmten technischen Voraussetzungen (Haftzug, Sauberkeit) ist dies möglich, erfordert aber eine intensive mechanische Vorbereitung der Keramik.",
+        answer:
+          "Unter bestimmten technischen Voraussetzungen (Haftzug, Sauberkeit) ist dies möglich, erfordert aber eine intensive mechanische Vorbereitung der Keramik.",
       },
     ],
     ctaLabel: "Beschichtungs-Check anfordern",
@@ -186,10 +252,21 @@ export const services = [
       "Hygienische Edelstahlrinnen und Gefälleplanung. Wir liefern Rinnen und Boden als ein integriertes, dichtes Gesamtsystem.",
     h1: "Integrierte Entwässerung und Gefälleplanung",
     primaryKeyword: "Entwässerung Industrieboden",
-    secondaryKeywords: ["Edelstahlrinnen", "Bodenabläufe Industrie", "Gefälleestrich", "HACCP Entwässerung"],
+    secondaryKeywords: [
+      "Edelstahlrinnen",
+      "Bodenabläufe Industrie",
+      "Gefälleestrich",
+      "HACCP Entwässerung",
+    ],
     problem:
       "Stehendes Wasser fördert Keimbildung, verursacht Rutschunfälle und führt zu Unterläufigkeit an den Schnittstellen zwischen Belag und Rinne.",
-    applications: ["Molkereien", "Brauereien", "Zentralküchen", "Chemische Produktion", "Nassreinigung"],
+    applications: [
+      "Molkereien",
+      "Brauereien",
+      "Zentralküchen",
+      "Chemische Produktion",
+      "Nassreinigung",
+    ],
     technicalRequirements: [
       "Edelstahlqualitäten V2A/V4A",
       "Hygienische Rinnengeometrie (R > 10mm)",
@@ -211,9 +288,16 @@ export const services = [
       "Reinigungszyklen und Chemie",
       "Einbautiefe und Bestandsleitungen",
     ],
-    relatedIndustries: ["molkerei", "brauerei-getraenkeindustrie", "lebensmittelindustrie"],
+    relatedIndustries: [
+      "molkerei",
+      "brauerei-getraenkeindustrie",
+      "lebensmittelindustrie",
+    ],
     relatedReferences: ["molkerei-sued"],
-    relatedArticles: ["entwaesserung-gefaelle-produktionsbereiche", "warum-industrieboeden-in-molkereien-versagen"],
+    relatedArticles: [
+      "entwaesserung-gefaelle-produktionsbereiche",
+      "warum-industrieboeden-in-molkereien-versagen",
+    ],
     faqs: [
       {
         question: "Warum ist Gefälle so wichtig?",
@@ -232,10 +316,21 @@ export const services = [
       "Zertifizierte Abdichtung nach § 62/63 WHG. Wir sichern Ihre Anlagen gegen wassergefährdende Stoffe ab – technisch belegt und rechtssicher.",
     h1: "WHG-konforme Abdichtungssysteme für die Industrie",
     primaryKeyword: "WHG Abdichtung Industrieboden",
-    secondaryKeywords: ["Gewässerschutz Boden", "Auffangwanne WHG", "chemisch beständige Abdichtung", "Anlagensicherheit"],
+    secondaryKeywords: [
+      "Gewässerschutz Boden",
+      "Auffangwanne WHG",
+      "chemisch beständige Abdichtung",
+      "Anlagensicherheit",
+    ],
     problem:
       "Austretende Chemikalien können das Grundwasser gefährden. Undichte Fugen oder fehlende zertifizierte Abdichtungen führen zu behördlichen Stilllegungen und massiven Haftungsrisiken.",
-    applications: ["Tankläger", "Abfüllplätze", "Chemie-Produktion", "Umschlagflächen", "Transformatorstationen"],
+    applications: [
+      "Tankläger",
+      "Abfüllplätze",
+      "Chemie-Produktion",
+      "Umschlagflächen",
+      "Transformatorstationen",
+    ],
     technicalRequirements: [
       "Fachbetriebsnachweis nach WHG",
       "Bauaufsichtlich zugelassene Systeme (DIBt)",
@@ -262,7 +357,8 @@ export const services = [
     faqs: [
       {
         question: "Muss jede chemisch belastete Fläche WHG-konform sein?",
-        answer: "Maßgeblich ist die Einstufung der Anlage und der verwendeten Stoffe. Wir unterstützen Sie bei der technischen Umsetzung der behördlichen Auflagen.",
+        answer:
+          "Maßgeblich ist die Einstufung der Anlage und der verwendeten Stoffe. Wir unterstützen Sie bei der technischen Umsetzung der behördlichen Auflagen.",
       },
     ],
     ctaLabel: "WHG-Bedarf technisch klären",
@@ -276,10 +372,20 @@ export const services = [
       "Wir sanieren Ihren Industrieboden ohne Stillstand. Taktgenaue Planung, Staubschutzwände und Schnellsysteme für minimale Ausfallzeiten.",
     h1: "Professionelle Bodensanierung ohne Produktionsstillstand",
     primaryKeyword: "Bodensanierung laufender Betrieb",
-    secondaryKeywords: ["Sanierung Wochenende", "staubfreies Fräsen", "Schnellbeton Industrie", "Produktionsschutz"],
+    secondaryKeywords: [
+      "Sanierung Wochenende",
+      "staubfreies Fräsen",
+      "Schnellbeton Industrie",
+      "Produktionsschutz",
+    ],
     problem:
       "Eine Sanierung stoppt oft die gesamte Produktion. Staubbelastung gefährdet offene Lebensmittel oder sensible Elektronik. Unklare Zeitpläne verursachen Lieferverzug.",
-    applications: ["Bestandshallen", "Erweiterungen", "Instandsetzung bei Auditmängeln", "Fugensanierung"],
+    applications: [
+      "Bestandshallen",
+      "Erweiterungen",
+      "Instandsetzung bei Auditmängeln",
+      "Fugensanierung",
+    ],
     technicalRequirements: [
       "Staubfreie Untergrundbearbeitung",
       "Unterdruck- und Staubschutzsysteme",
@@ -300,13 +406,21 @@ export const services = [
       "Anforderungen an den Staubschutz",
       "Tiefe der erforderlichen Sanierung",
     ],
-    relatedIndustries: ["lebensmittelindustrie", "molkerei", "brauerei-getraenkeindustrie"],
+    relatedIndustries: [
+      "lebensmittelindustrie",
+      "molkerei",
+      "brauerei-getraenkeindustrie",
+    ],
     relatedReferences: ["feinkost-nrw", "molkerei-sued"],
-    relatedArticles: ["sanierung-ohne-produktionsstillstand", "warum-industrieboeden-in-molkereien-versagen"],
+    relatedArticles: [
+      "sanierung-ohne-produktionsstillstand",
+      "warum-industrieboeden-in-molkereien-versagen",
+    ],
     faqs: [
       {
         question: "Wie vermeiden Sie Staub in der Nachbarproduktion?",
-        answer: "Wir setzen mobile Trennwandsysteme, Absauganlagen und staubfrei arbeitende Fräs- und Schleifmaschinen ein.",
+        answer:
+          "Wir setzen mobile Trennwandsysteme, Absauganlagen und staubfrei arbeitende Fräs- und Schleifmaschinen ein.",
       },
     ],
     ctaLabel: "Sanierungsfenster analysieren",
@@ -315,15 +429,26 @@ export const services = [
   {
     slug: "dehnungsfugen-rammschutz-industrieboden",
     title: "Dehnungsfugen und Rammschutz",
-    seoTitle: "Dehnungsfugen & Rammschutz für Industrieböden | Hexagon Säurebau",
+    seoTitle:
+      "Dehnungsfugen & Rammschutz für Industrieböden | Hexagon Säurebau",
     description:
       "Schutz der kritischen Details. Wir planen und bauen wartungsarme Fugenprofile und robusten Rammschutz für langlebige Böden.",
     h1: "Dehnungsfugen und Rammschutz: Schutz für Details",
     primaryKeyword: "Dehnungsfugen Industrieboden",
-    secondaryKeywords: ["Fugenprofile Edelstahl", "Anprallschutz Produktion", "Kantenschutz", "wartungsfreie Fugen"],
+    secondaryKeywords: [
+      "Fugenprofile Edelstahl",
+      "Anprallschutz Produktion",
+      "Kantenschutz",
+      "wartungsfreie Fugen",
+    ],
     problem:
       "Viele Schäden beginnen an Fugen und Kanten. Harte Rollen von Hubwagen zertrümmern ungeschützte Kanten. Anfahrschäden an Wänden verursachen Hygienerisiken.",
-    applications: ["Hauptverkehrswege", "Tor-Durchfahrten", "Rinneneinfassungen", "Sockelbereiche"],
+    applications: [
+      "Hauptverkehrswege",
+      "Tor-Durchfahrten",
+      "Rinneneinfassungen",
+      "Sockelbereiche",
+    ],
     technicalRequirements: [
       "Edelstahl-Schwerlastprofile",
       "Vibrationsfreie Fugenübergänge",
@@ -350,7 +475,8 @@ export const services = [
     faqs: [
       {
         question: "Können Fugenprofile auch nachträglich eingebaut werden?",
-        answer: "Ja, im Rahmen einer Fugensanierung können wir defekte Weichfugen durch langlebige Edelstahl-Profile ersetzen.",
+        answer:
+          "Ja, im Rahmen einer Fugensanierung können wir defekte Weichfugen durch langlebige Edelstahl-Profile ersetzen.",
       },
     ],
     ctaLabel: "Gefahrenpunkte prüfen lassen",
@@ -359,5 +485,5 @@ export const services = [
 ];
 
 export const serviceTitleMap = Object.fromEntries(
-  services.map((service) => [service.slug, service.title])
+  services.map((service) => [service.slug, service.title]),
 );

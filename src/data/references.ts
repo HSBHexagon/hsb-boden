@@ -1,4 +1,6 @@
-export const references = [
+import type { ReferenceRecord } from "../lib/types";
+
+export const references: ReferenceRecord[] = [
   {
     id: "suedzucker-zeitz",
     publicName: "Südzucker AG",
@@ -11,14 +13,18 @@ export const references = [
     country: "Deutschland",
     lat: 51.049,
     lng: 12.141,
-    systems: ["industrieboden-saeureschutz", "dehnungsfugen-rammschutz-industrieboden"],
+    systems: [
+      "industrieboden-saeureschutz",
+      "dehnungsfugen-rammschutz-industrieboden",
+    ],
     projectType: "Sanierung und Detailausbildung",
-    challenge: "Chemische Belastung, Reinigung und mechanische Beanspruchung in produktionsnahen Bereichen.",
+    challenge:
+      "Chemische Belastung, Reinigung und mechanische Beanspruchung in produktionsnahen Bereichen.",
     solution: "Säureschutzsystem mit belastbaren Fugen- und Detailanschlüssen.",
     result: "Robustere Nutzfläche mit klarer Wartungs- und Sanierungslogik.",
     images: [
       "/media/hsb/projekte/keramik-halle-rinnen.webp",
-      "/media/hsb/projekte/entwaesserungsrinne-detail.webp"
+      "/media/hsb/projekte/entwaesserungsrinne-detail.webp",
     ],
     logo: "/logos/suedzucker.svg",
     year: "2026",
@@ -38,12 +44,15 @@ export const references = [
     lng: 10.41,
     systems: ["keramische-industrieboeden", "entwaesserung-industrieboden"],
     projectType: "Sanierung im laufenden Betrieb",
-    challenge: "Typische Belastung in der Milchverarbeitung: Milchsäure, Feuchte und Rinnenanschlüsse als häufige Ursache für Fugenschäden.",
-    solution: "Keramisches System mit neu geplanter Entwässerung und stabilen Anschlussdetails – Schwerpunkt der Sanierung am Standort.",
-    result: "Verbesserte Reinigbarkeit und planbarere Produktionsfenster für den Standort.",
+    challenge:
+      "Typische Belastung in der Milchverarbeitung: Milchsäure, Feuchte und Rinnenanschlüsse als häufige Ursache für Fugenschäden.",
+    solution:
+      "Keramisches System mit neu geplanter Entwässerung und stabilen Anschlussdetails – Schwerpunkt der Sanierung am Standort.",
+    result:
+      "Verbesserte Reinigbarkeit und planbarere Produktionsfenster für den Standort.",
     images: [
       "/media/hsb/projekte/hexagon-rinne-detail.webp",
-      "/media/hsb/projekte/brauerei-tanks-keramik.webp"
+      "/media/hsb/projekte/brauerei-tanks-keramik.webp",
     ],
     logo: "/logos/molkerei-gropper.svg",
     year: "2025",
@@ -63,12 +72,14 @@ export const references = [
     lng: 8.23,
     systems: ["keramische-industrieboeden", "entwaesserung-industrieboden"],
     projectType: "Neubau Produktionsfläche",
-    challenge: "Typische Anforderung im Abfüllbereich: hohe Nassbelastung, Reinigungschemie und Fahrverkehr.",
-    solution: "Keramischer Industrieboden mit Gefälle- und Rinnenplanung für die neue Produktionsfläche.",
+    challenge:
+      "Typische Anforderung im Abfüllbereich: hohe Nassbelastung, Reinigungschemie und Fahrverkehr.",
+    solution:
+      "Keramischer Industrieboden mit Gefälle- und Rinnenplanung für die neue Produktionsfläche.",
     result: "Dauerhafte, reinigungsfähige Fläche für den Abfüllbetrieb.",
     images: [
       "/media/hsb/projekte/halle-doppelrinne-keramik.webp",
-      "/media/hsb/projekte/halle-in-ausfuehrung.webp"
+      "/media/hsb/projekte/halle-in-ausfuehrung.webp",
     ],
     logo: "/logos/peterstaler.svg",
     year: "2024",
@@ -86,14 +97,21 @@ export const references = [
     country: "Deutschland",
     lat: 52.06,
     lng: 7.25,
-    systems: ["industrieboden-saeureschutz", "whg-abdichtung-industrieboden", "epoxidharz-bodenbeschichtung"],
+    systems: [
+      "industrieboden-saeureschutz",
+      "whg-abdichtung-industrieboden",
+      "epoxidharz-bodenbeschichtung",
+    ],
     projectType: "Technische Bewertung und Sanierung",
-    challenge: "Typische Anforderung in der Chemieproduktion: aggressive Medien, sensible Anschlussdetails und Abdichtungsvorgaben.",
-    solution: "Systembewertung mit Fokus auf Säureschutz, Abdichtung und Fugen für die betroffenen Teilbereiche.",
-    result: "Belastbares Sanierungskonzept als Grundlage für die weitere Umsetzung.",
+    challenge:
+      "Typische Anforderung in der Chemieproduktion: aggressive Medien, sensible Anschlussdetails und Abdichtungsvorgaben.",
+    solution:
+      "Systembewertung mit Fokus auf Säureschutz, Abdichtung und Fugen für die betroffenen Teilbereiche.",
+    result:
+      "Belastbares Sanierungskonzept als Grundlage für die weitere Umsetzung.",
     images: [
       "/media/hsb/projekte/chemie-anlage-keramik.webp",
-      "/media/hsb/projekte/saeulen-anschluss-keramik.webp"
+      "/media/hsb/projekte/saeulen-anschluss-keramik.webp",
     ],
     logo: "/logos/concept-color.png",
     year: "2025",
@@ -113,12 +131,14 @@ export const references = [
     lng: 7.18,
     systems: ["pu-beton-industrieboden", "bodensanierung-laufender-betrieb"],
     projectType: "Sanierung im Produktionsfenster",
-    challenge: "Typische Anforderung in der Feinkostproduktion: Fette, Feuchte und ein enger Zeitplan für die Sanierung.",
-    solution: "Fugenarmes System mit Bauabschnittsplanung und klarer Übergabe für die Hygienezone.",
+    challenge:
+      "Typische Anforderung in der Feinkostproduktion: Fette, Feuchte und ein enger Zeitplan für die Sanierung.",
+    solution:
+      "Fugenarmes System mit Bauabschnittsplanung und klarer Übergabe für die Hygienezone.",
     result: "Schneller wieder nutzbare Produktionsfläche.",
     images: [
       "/media/hsb/projekte/produktionsanlage-keramik.webp",
-      "/media/hsb/projekte/verlegung-keramik.webp"
+      "/media/hsb/projekte/verlegung-keramik.webp",
     ],
     logo: "/logos/dahlhoff.png",
     year: "2026",
@@ -138,12 +158,14 @@ export const references = [
     lng: 8.78,
     systems: ["epoxidharz-bodenbeschichtung", "pu-beton-industrieboden"],
     projectType: "Systemvergleich",
-    challenge: "Reinigbarkeit, glatte Oberflächen und dokumentierbare Systementscheidung.",
-    solution: "Bewertung von PU-Beton und Epoxidharz nach Nutzung, Untergrund und Reinigungsprozess.",
+    challenge:
+      "Reinigbarkeit, glatte Oberflächen und dokumentierbare Systementscheidung.",
+    solution:
+      "Bewertung von PU-Beton und Epoxidharz nach Nutzung, Untergrund und Reinigungsprozess.",
     result: "Entscheidungsgrundlage für eine belastbare Sanierung.",
     images: [
       "/media/hsb/projekte/pharma-halle-keramik.webp",
-      "/media/hsb/projekte/beschichtete-halle.webp"
+      "/media/hsb/projekte/beschichtete-halle.webp",
     ],
     logo: "/logos/pharma.svg",
     year: "2024",

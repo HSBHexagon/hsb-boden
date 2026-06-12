@@ -146,7 +146,7 @@ export function getArticleBySlug(slug: string) {
 
 const referencesMap = new Map(references.map(r => [r.id, r]));
 
-export function getReferenceById(id: string) {
+export function getReferenceById(id: any) {
   return referencesMap.get(id);
 }
 

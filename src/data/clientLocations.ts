@@ -1,4 +1,4 @@
-// Weitere Kundenstandorte in Deutschland (Quelle: interne Referenzkundenliste
+// Weitere Kundenstandorte (Quelle: interne Referenzkundenliste
 // "Referenzprojekte 2025", Geschäftsführungsfreigabe 2026-06-10).
 // Bewusst ohne Fallbeschreibung/Logo: dient nur der erweiterten Kartendarstellung
 // und der Kundenliste, nicht als ausführliche Fallstudie.
@@ -19,10 +19,10 @@ export const clientLocations = [
   { name: "Griesson - de Beukelaer GmbH & Co. KG", city: "Polch", region: "Rheinland-Pfalz", lat: 50.30, lng: 7.31, branche: "Lebensmittel" },
   { name: "Homann Feinkost GmbH", city: "Bad Essen", region: "Niedersachsen", lat: 52.28, lng: 8.48, branche: "Lebensmittel" },
   { name: "Bäckerei Schrunz GmbH & Co. KG", city: "Münster", region: "Nordrhein-Westfalen", lat: 51.96, lng: 7.63, branche: "Lebensmittel" },
-  { name: "Biovegan GmbH", city: "Bonefeld", region: "Rheinland-Pfalz", lat: 50.42, lng: 7.49, branche: "Lebensmittel" },
+  { name: "Biovegan GmbH", city: "Bonefeld", region: "Rheinland-Pfalz", lat: 50.42, lng: 7.49, branche: "Lebensmittel", logo: "/logos/biovegan.svg" },
   { name: "Saalfelder Brauhaus", city: "Saalfeld", region: "Thüringen", lat: 50.65, lng: 11.37, branche: "Brauerei" },
   { name: "Albers Brauhaus", city: "Weilheim an der Teck", region: "Baden-Württemberg", lat: 48.63, lng: 9.55, branche: "Brauerei" },
-  { name: "Meggle", city: "Gebesee", region: "Thüringen", lat: 51.10, lng: 10.90, branche: "Molkerei" },
+  { name: "Meggle", city: "Gebesee", region: "Thüringen", lat: 51.10, lng: 10.90, branche: "Molkerei", logo: "/logos/meggle.svg" },
   { name: "Wildbräu", city: "München", region: "Bayern", lat: 48.14, lng: 11.58, branche: "Brauerei" },
   { name: "Goldmilch", city: "Ingolstadt", region: "Bayern", lat: 48.76, lng: 11.42, branche: "Molkerei" },
 ] as const;

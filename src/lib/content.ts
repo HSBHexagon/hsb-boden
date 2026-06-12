@@ -144,9 +144,9 @@ export function getArticleBySlug(slug: string) {
   return articlesMap.get(slug);
 }
 
-const referencesMap = new Map(references.map(r => [r.id, r]));
+const referencesMap = new Map<string, typeof references[number]>(references.map(r => [r.id, r]));
 
-export function getReferenceById(id: string) {
+export function getReferenceById(id: string): typeof references[number] | undefined {
   return referencesMap.get(id);
 }
 

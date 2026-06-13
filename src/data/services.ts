@@ -67,7 +67,7 @@ export const services: Service[] = [
     seoTitle: "Keramische Industrieböden & Rüttelkeramik | Hexagon Säurebau",
     description:
       "Hochbelastbare keramische Industrieböden im Rüttelverfahren. Ideal für Lebensmittelindustrie, Brauereien und Chemie mit Fokus auf mechanische Härte.",
-    h1: "Keramische Industrieböden: Die mechanische Festung",
+    h1: "Keramische Industrieböden für mechanische Höchstlasten",
     primaryKeyword: "keramischer Industrieboden",
     secondaryKeywords: [
       "Rüttelkeramik",
@@ -133,7 +133,7 @@ export const services: Service[] = [
     seoTitle: "PU-Beton & Polyurethan-Zement-Estrich | Hexagon Säurebau",
     description:
       "Fugenlose Hochleistungsböden für Lebensmittel und Pharma. Extrem thermoschockbeständig, hygienisch und schnell belastbar.",
-    h1: "PU-Beton: Der fugenlose Spezialist für Extrembelastung",
+    h1: "PU-Beton: fugenloser Hochleistungsboden für Thermoschock-Belastung",
     primaryKeyword: "PU-Beton Industrieboden",
     secondaryKeywords: [
       "Polyurethanbeton",
@@ -155,7 +155,7 @@ export const services: Service[] = [
       "Thermoschockbeständig bis 130°C",
       "Chemische Resistenz gegen organische Säuren",
       "Rutschhemmung einstellbar (R9 bis R13)",
-      "Aushärtung binnen weiniger Stunden",
+      "Aushärtung binnen weniger Stunden",
     ],
     systemSolution:
       "PU-Beton verbindet die Flexibilität von Harzen mit der Härte von Zement. Er ist das einzige System, das permanente Heißwasserbelastung und Frostwechsel ohne Delamination übersteht.",
@@ -221,7 +221,7 @@ export const services: Service[] = [
       "Wir setzen hochwertige, lösemittelfreie Epoxidharze ein, die exakt auf die mechanische und chemische Belastung abgestimmt sind. Wir grenzen diese Systeme klar gegen PU-Beton ab, wo thermische Lasten auftreten.",
     benefits: [
       "Wirtschaftliche Lösung für große Flächen",
-      "Flüssigkeitsdicht and staubbindend",
+      "Flüssigkeitsdicht und staubbindend",
       "Leicht zu reinigen und optisch ansprechend",
       "Individuelle Farbgestaltung möglich",
     ],

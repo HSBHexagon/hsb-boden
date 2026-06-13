@@ -35,18 +35,18 @@ export const articles: Article[] = [
       },
       {
         title: "Wirtschaftliche Folgen: Der 'Eisberg' der Sanierungskosten",
-        body: "Die Anschaffungskosten eines hochwertigen Bodensystems machen oft nur 20% der Lebenszykluskosten aus. Die wirtschaftlichen Folgen eines Fehlkaufs sind immens: Ungeplante Produktionsstopps kosten oft mehr als 10.000 EUR pro Stunde. Notfall-Sanierungen sind teurer als geplante Maßnahmen, da sie unter Zeitdruck und oft am Wochenende oder an Feiertagen durchgeführt werden müssen. Ein billiger Boden, der alle 5 Jahre saniert werden muss, ist über einen Zeitraum von 20 Jahren dreimal so teuer wie ein Profi-System von Hexagon Säurebau, das über die gesamte Laufzeit wartungsarm bleibt.",
+        body: "Die Anschaffungskosten eines Bodensystems sind nur ein Teil der Lebenszykluskosten. Die wirtschaftlichen Folgen eines Fehlkaufs sind erheblich: Ungeplante Produktionsstopps sind teuer, und Notfall-Sanierungen unter Zeitdruck – oft am Wochenende oder an Feiertagen – kosten mehr als geplante Maßnahmen. Ein günstiges System, das wiederholt nachsaniert werden muss, kann über die Nutzungsdauer die Lebenszykluskosten eines einmal richtig geplanten, wartungsarmen Systems deutlich übersteigen.",
       },
       {
         title: "Praxisbeispiel: Sanierung einer Großküche in NRW",
-        body: "In einer Zentralküche wurde ein Standard-Epoxidharzbelag durch PU-Beton ersetzt. Der Grund: Die tägliche Reinigung mit 90°C heißem Wasser und aggressiven Fettlösern zerstörte den EP-Belag binnen 24 Monaten großflächig. Risse zogen sich durch die gesamte Fläche, Wasser drang in den Unterbeton ein. Hexagon Säurebau realisierte die Sanierung in drei Bauabschnitten über verlängerte Wochenenden. Zum Einsatz kam ein 9mm starkes PU-Beton-System mit integrierter Hohlkehle. Ergebnis: Seit 8 Jahren hält der Boden den täglichen Thermoschocks ohne jede Rissbildung stand. Die Reinigungskosten sanken um 15%, da die fugenlose Fläche deutlich schneller maschinell gesäubert werden kann.",
+        body: "In einer Zentralküche wurde ein Standard-Epoxidharzbelag durch PU-Beton ersetzt. Der Grund: Die tägliche Reinigung mit rund 90 °C heißem Wasser und aggressiven Fettlösern zerstörte den EP-Belag großflächig. Risse zogen sich durch die Fläche, Wasser drang in den Unterbeton ein. Die Sanierung erfolgte in drei Bauabschnitten über verlängerte Wochenenden. Zum Einsatz kam ein PU-Beton-System mit integrierter Hohlkehle. Ergebnis: Das fugenlose System nimmt die täglichen Thermoschocks ohne Rissbildung auf; die glatte, fugenlose Fläche lässt sich maschinell schneller und gründlicher reinigen.",
       },
       {
         title: "Der Lösungsweg: Von der Analyse zum Gesamtsystem",
         body: "Hexagon Säurebau setzt auf eine strukturierte 4-Stufen-Analyse, um Fehlentscheidungen auszuschließen: 1. Erfassung der mechanischen (Staplergewicht, Radmaterial), thermischen (Dampfstrahler, Frostraum) und chemischen Lasten (Säuren, Konzentrationen). 2. Prüfung des Untergrunds mittels Haftzugprüfung und CM-Messung zur Bestimmung der Restfeuchte. 3. Systemauswahl: Wir beraten herstellerunabhängig zwischen PU-Beton und Keramik. 4. Fachgerechte Ausführung inklusive der kritischen Detailanschlüsse an Rinnen, Abläufe und Wandaufbordungen (Hohlkehlen). Nur wenn alle Komponenten aufeinander abgestimmt sind, entsteht ein dauerhaft sicheres System.",
       },
       {
-        title: "CTA: Kostenlose Werksbegehung und Bedarfsanalyse",
+        title: "Kostenlose Werksbegehung und Bedarfsanalyse",
         body: "Sind Sie unsicher, welches System für Ihre nächste Sanierung oder Ihren Neubau geeignet ist? Vermeiden Sie kostspielige Fehlinvestitionen durch fachfremde Planung. Unsere Experten bieten Ihnen eine kostenlose Werksbegehung und eine technische Bestandsaufnahme direkt vor Ort an. Wir identifizieren Schwachstellen, bevor sie zum Produktionsstopp führen. Kontaktieren Sie uns für ein unverbindliches Erstgespräch.",
       },
     ],
@@ -91,10 +91,10 @@ export const articles: Article[] = [
       },
       {
         title: "Praxisbeispiel: Käsefertigung in Süddeutschland",
-        body: "Ein führender Käseproduzent hatte mit ständigem Fugenversagen in den Reiferäumen zu kämpfen. Herkömmliche Epoxidharz-Fugen hielten der Kombination aus Salzlake und Milchsäure nur etwa 3 Jahre stand. Nach der Analyse durch Hexagon Säurebau wurde der Boden komplett saniert. Wir installierten säurefeste Spaltplatten im Rüttelverfahren, verfugt mit einem hochresistenten Vinylester-System. Die Sanierung erfolgte in Bauabschnitten bei laufender Produktion durch Staubschutzwände. Ergebnis: Der Boden ist nun seit über 12 Jahren wartungsfrei und besteht jedes jährliche Audit ohne Beanstandungen.",
+        body: "Ein führender Käseproduzent hatte mit ständigem Fugenversagen in den Reiferäumen zu kämpfen. Herkömmliche Epoxidharz-Fugen hielten der Kombination aus Salzlake und Milchsäure nur etwa 3 Jahre stand. Nach der Analyse durch Hexagon Säurebau wurde der Boden komplett saniert. Wir installierten säurefeste Spaltplatten im Rüttelverfahren, verfugt mit einem hochresistenten Vinylester-System. Die Sanierung erfolgte in Bauabschnitten bei laufender Produktion durch Staubschutzwände. Ergebnis: Der Boden ist dauerhaft beständig gegen die Kombination aus Salzlake und Milchsäure und auf die wiederkehrenden Hygiene-Audits ausgelegt.",
       },
       {
-        title: "CTA: Analyse Ihres Molkereibodens anfordern",
+        title: "Analyse Ihres Molkereibodens anfordern",
         body: "Haben Sie bereits Risse in den Fugen oder lose Fliesen in Ihrer Produktion? Warten Sie nicht, bis die Behörden eingreifen oder ein Keimbefall Ihre Produktion stoppt. Nutzen Sie unsere Fachkompetenz für eine detaillierte Schwachstellenanalyse Ihres Bodens. Wir erstellen Ihnen ein Sanierungskonzept, das exakt in Ihre Produktionsfenster passt. Fordern Sie jetzt einen Experten-Check an.",
       },
     ],
@@ -147,7 +147,7 @@ export const articles: Article[] = [
         body: "Wir betrachten Säureschutz als Ganzheit: 1. Chemische Lastanalyse (Medienliste). 2. Auswahl der passenden Abdichtungsebene (Kombinationsbeläge). 3. Dimensionierung der Keramik (Materialstärke und Format). 4. Festlegung des optimalen Fugensystems. Durch die Ausführung aus einer Hand minimieren wir Schnittstellenrisiken. Unsere Dokumentation dient Ihnen als belastbarer Nachweis gegenüber Behörden und Auditoren. Wir garantieren Systeme, die halten, was die Planung verspricht.",
       },
       {
-        title: "CTA: Technische Fachberatung anfordern",
+        title: "Technische Fachberatung anfordern",
         body: "Planen Sie einen Neubau oder eine Sanierung in einem chemisch sensiblen Bereich? Nutzen Sie unsere jahrzehntelange Expertise im Säureschutzbau. Wir unterstützen Sie bereits in der Planungsphase bei der Erstellung von Leistungsverzeichnissen und der technischen Systemwahl. Kontaktieren Sie uns für ein Fachgespräch oder eine Begutachtung vor Ort.",
       },
     ],
@@ -191,14 +191,14 @@ export const articles: Article[] = [
       },
       {
         title: "Praxisbeispiel: Getränkeabfüllung in Südwestdeutschland",
-        body: "In einer Brauerei wurde durch Korrektur des Gefälles und den Einbau neuer Kastenrinnen die Trocknungszeit des Bodens nach der Reinigung von 4 Stunden auf 30 Minuten reduziert. Zuvor gab es massive Probleme mit Schimmelbildung an den Wandanschlüssen durch hohe Luftfeuchtigkeit aufgrund stehenden Wassers. Hexagon Säurebau installierte ein System aus Gefälleestrich, Verbundabdichtung und säurefesten Klinkern. Das Ergebnis ist eine signifikante Verbesserung der Hygiene-Werte und eine höhere Mitarbeiterzufriedenheit durch trockene Arbeitswege.",
+        body: "In einer Brauerei wurde durch Korrektur des Gefälles und den Einbau neuer Kastenrinnen die Trocknungszeit des Bodens nach der Reinigung deutlich verkürzt, weil das Wasser gezielt und schnell zur Rinne abfließt. Zuvor gab es Probleme mit Schimmelbildung an den Wandanschlüssen durch hohe Luftfeuchtigkeit aufgrund stehenden Wassers. Hexagon Säurebau installierte ein System aus Gefälleestrich, Verbundabdichtung und säurefesten Klinkern. Das Ergebnis ist eine signifikante Verbesserung der Hygiene-Werte und eine höhere Mitarbeiterzufriedenheit durch trockene Arbeitswege.",
       },
       {
         title: "Lösungsweg: Integrierte Entwässerungsplanung",
         body: "Wir planen Industrieböden 'vom Ablauf her'. 1. Festlegung der Entwässerungspunkte basierend auf dem Maschinenlayout. 2. Berechnung des notwendigen Gefälles. 3. Auswahl der Rinnentypen (Schlitz- vs. Kastenrinnen). 4. Fachgerechte Abdichtung und Anbindung. Unser Ziel ist ein Wasserleitsystem, das die Reinigung unterstützt und die Belastung für den Boden minimiert. Wir liefern Rinnen und Boden als geprüftes Gesamtsystem.",
       },
       {
-        title: "CTA: Entwässerungs-Audit für Ihre Produktion",
+        title: "Entwässerungs-Audit für Ihre Produktion",
         body: "Haben Sie Probleme mit stehendem Wasser oder undichten Rinnenanschlüssen? Nutzen Sie unser Entwässerungs-Audit. Wir analysieren vor Ort die Wasserwege, prüfen die Dichtigkeit der Anschlüsse und schlagen Ihnen optimierte Lösungen zur Gefällekorrektur vor. Sichern Sie Ihre Produktion technisch ab – kontaktieren Sie uns für eine Begutachtung.",
       },
     ],
@@ -240,14 +240,14 @@ export const articles: Article[] = [
       },
       {
         title: "Wirtschaftliche Folgen: Reduzierung der Gesamtkosten",
-        body: "Durch intelligente Taktung reduzieren wir den produktionsrelevanten Stillstand um bis zu 80%. Ein Praxisbeispiel zeigt: Ein Fleischwerk konnte durch unsere Wochenend-Schichten eine 500m² Fläche ohne einen einzigen Tag realen Produktionsverlust sanieren. Die höheren Lohnkosten für Wochenendarbeit werden durch die Vermeidung von Ausfallkosten bereits nach wenigen Stunden amortisiert. Zudem entfällt das Risiko von Pönalen durch Lieferverzug gegenüber dem Handel.",
+        body: "Durch Bauabschnitte, Wochenend- und Nachtschichten sowie schnellhärtende Systeme lässt sich der produktionsrelevante Stillstand erheblich reduzieren – in geeigneten Fällen bis hin zur Sanierung ohne realen Produktionsverlust. Die höheren Lohnkosten für Wochenendarbeit werden durch die Vermeidung von Ausfallkosten häufig schnell amortisiert. Zudem sinkt das Risiko von Pönalen durch Lieferverzug gegenüber dem Handel.",
       },
       {
         title: "Lösungsweg Hexagon Säurebau: Der Taktplan",
         body: "Unser Sanierungs-Management umfasst: 1. Vorab-Untergrundanalyse (technisch belegt). 2. Erstellung eines detaillierten Taktplans für alle Gewerke. 3. Einsatz von staubfreier Frästechnik. 4. Fachgerechte Verlegung durch eingespielte Teams. Wir koordinieren alles aus einer Hand – vom Rückbau bis zur Abnahme. Sie erhalten eine Festpreisgarantie und eine verbindliche Zusage über den Zeitpunkt der Wiederinbetriebnahme.",
       },
       {
-        title: "CTA: Jetzt Sanierungs-Konzept für Ihre Produktion anfordern",
+        title: "Jetzt Sanierungs-Konzept für Ihre Produktion anfordern",
         body: "Planen Sie eine Sanierung für die nächste Instandhaltungsperiode? Lassen Sie uns frühzeitig über die technische und zeitliche Gestaltung sprechen. Wir begutachten Ihren Bestand und erstellen Ihnen ein Konzept, das Ihren Produktionsfluss maximal schont. Sichern Sie sich rechtzeitig Ihre Sanierungs-Slots – kontaktieren Sie unsere Projektingenieure für eine Erstberatung.",
       },
     ],

@@ -138,7 +138,7 @@ export const industries: Industry[] = [
       "dehnungsfugen-rammschutz-industrieboden",
     ],
     proofPoints: [
-      "Referenzen führender Mineralbrunnen und Brauereien",
+      "Erfahrung mit Abfüll-, Gär- und Reinigungsbereichen der Getränkeproduktion",
       "Taktgenaue Sanierung von Abfülllinien am Wochenende",
       "Systemlösungen inkl. Edelstahl-Entwässerungstechnik",
     ],

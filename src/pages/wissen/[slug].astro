@@ -3,7 +3,7 @@ import CTASection from "../../components/sections/CTASection.astro";
 import PageHero from "../../components/sections/PageHero.astro";
 import BaseLayout from "../../layouts/BaseLayout.astro";
 import { getArticles, getIndustries, getServices } from "../../lib/content";
-import { buildBreadcrumbJsonLd } from "../../lib/schema";
+import { buildArticleJsonLd, buildBreadcrumbJsonLd } from "../../lib/schema";
 
 export const prerender = true;
 
@@ -21,7 +21,7 @@ const relatedServices = getServices().filter((service) => article.relatedService
 const relatedIndustries = getIndustries().filter((industry) => article.relatedIndustries.includes(industry.slug));
 ---
 
-<BaseLayout title={article.seoTitle} description={article.description} path={path} jsonLd={[buildBreadcrumbJsonLd([{ name: "Start", path: "/" }, { name: "Wissen", path: "/wissen/" }, { name: article.title, path }])]}>
+<BaseLayout title={article.seoTitle} description={article.description} path={path} jsonLd={[buildBreadcrumbJsonLd([{ name: "Start", path: "/" }, { name: "Wissen", path: "/wissen/" }, { name: article.title, path }]), buildArticleJsonLd({ headline: article.h1, description: article.description, path })]}>
   <PageHero eyebrow={article.category} title={article.h1} text={article.description} ctaLabel="Werksbegehung anfragen" />
   <article class="section">
     <div class="container max-w-3xl">

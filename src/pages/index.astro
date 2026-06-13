@@ -12,10 +12,11 @@ import ServiceGrid from "../components/sections/ServiceGrid.astro";
 import BaseLayout from "../layouts/BaseLayout.astro";
 import { site } from "../data/site";
 import { homeAlternates } from "../lib/i18n";
-import { buildLocalBusinessJsonLd } from "../lib/schema";
+import { buildFaqJsonLd, buildLocalBusinessJsonLd } from "../lib/schema";
+import { homepageFaqs } from "../data/homepageFaqs";
 ---
 
-<BaseLayout title={site.defaultTitle} description={site.defaultDescription} path="/" jsonLd={[buildLocalBusinessJsonLd()]} alternates={homeAlternates}>
+<BaseLayout title={site.defaultTitle} description={site.defaultDescription} path="/" jsonLd={[buildLocalBusinessJsonLd(), buildFaqJsonLd(homepageFaqs)]} alternates={homeAlternates}>
 
   <!-- HERO -->
   <section class="relative overflow-hidden border-b-4 border-hsb-red bg-hsb-black text-white">

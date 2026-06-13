@@ -4,7 +4,9 @@ import { getPublicReferences } from "../../lib/content";
 import ReferenceCard from "./ReferenceCard.astro";
 import ReferenceMap from "./ReferenceMap.astro";
 
-const references = getPublicReferences().slice(0, 3);
+const allPublic = getPublicReferences();
+const references = allPublic.slice(0, 3);
+const approvedCount = allPublic.filter((r) => r.approvalStatus === "approved").length;
 ---
 
 <section class="section border-b border-hsb-line bg-[#f8f9fb]">
@@ -13,7 +15,7 @@ const references = getPublicReferences().slice(0, 3);
       <div class="relative overflow-hidden bg-hsb-black p-8 text-white lg:p-12">
         <p class="eyebrow-light mb-6 flex items-center gap-2">
           <span class="size-1.5 bg-hsb-red"></span>
-          Deutschlandweite Referenzen
+          Referenzen in Deutschland & Europa
         </p>
         <h2 class="h2 text-white [hyphens:none] [text-wrap:balance]">Geografische & technische Reichweite</h2>
         <p class="mt-6 max-w-xl text-base leading-relaxed text-white/75">
@@ -22,7 +24,7 @@ const references = getPublicReferences().slice(0, 3);
         </p>
         <dl class="mt-10 grid gap-px overflow-hidden rounded-[2px] border border-white/10 bg-white/10 sm:grid-cols-3">
           {[
-            ["Namentliche Referenzen", "5 freigegeben"],
+            ["Namentliche Referenzen", `${approvedCount} freigegeben`],
             ["Bundesländer", "16 sichtbar"],
             ["Reichweite", "DE & Europa"],
           ].map(([term, value]) => (

@@ -80,7 +80,7 @@ export function buildServiceJsonLd(service: {
     description: service.description,
     url: absoluteUrl(service.path),
     serviceType: service.name,
-    areaServed: ["Deutschland", "DACH"],
+    areaServed: ["Deutschland", "Europa"],
     provider: {
       "@type": "Organization",
       name: "HSB Hexagon Säurebau GmbH",
@@ -108,5 +108,29 @@ export function buildBreadcrumbJsonLd(
       name: item.name,
       item: absoluteUrl(item.path),
     })),
+  };
+}
+
+export function buildArticleJsonLd(article: {
+  headline: string;
+  description: string;
+  path: string;
+}) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "TechArticle",
+    headline: article.headline,
+    description: article.description,
+    mainEntityOfPage: absoluteUrl(article.path),
+    author: {
+      "@type": "Organization",
+      name: "HSB Hexagon Säurebau GmbH",
+      url: site.domain,
+    },
+    publisher: {
+      "@type": "Organization",
+      name: "HSB Hexagon Säurebau GmbH",
+      url: site.domain,
+    },
   };
 }

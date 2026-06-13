@@ -19,6 +19,7 @@ export const footerGroups = [
       { label: "Entwässerung", href: "/leistungen/entwaesserung-industrieboden/" },
       { label: "WHG-Abdichtung", href: "/leistungen/whg-abdichtung-industrieboden/" },
       { label: "Sanierung", href: "/leistungen/bodensanierung-laufender-betrieb/" },
+      { label: "Reparatur & Instandsetzung", href: "/leistungen/boden-reparatur-instandsetzung/" },
     ],
   },
   {

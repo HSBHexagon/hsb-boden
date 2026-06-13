@@ -9,17 +9,17 @@ import { LeadForm } from "./LeadForm";
       <p class="lead mt-4">
         HSB bewertet Belastungsprofil, Untergrund und Sanierungsoptionen vor Ort: kostenlos und ohne Kaufverpflichtung. Drei Angaben genügen für eine erste Einschätzung:
       </p>
-      <div class="mt-8 space-y-4 border-t border-hsb-line pt-8">
+      <div class="mt-8 space-y-6 border-t border-hsb-line pt-8">
         {[
           ["Branche und Nutzung", "Welche Belastungen sind relevant?"],
-          ["Fläche und Situation", "Neubau oder Sanierung?"],
+          ["Fläche und Situation", "Neubau, Sanierung oder Reparatur?"],
           ["Zeitfenster", "Wann ist der Eingriff möglich?"],
         ].map(([label, hint]) => (
-          <div class="flex items-start gap-3">
-            <span class="mt-1 size-1.5 shrink-0 rounded-full bg-hsb-red"></span>
+          <div class="flex items-start gap-3.5">
+            <span class="mt-2 size-2 shrink-0 rounded-full bg-hsb-red"></span>
             <div>
-              <p class="text-sm font-bold">{label}</p>
-              <p class="text-xs text-hsb-steel">{hint}</p>
+              <p class="text-lg font-bold leading-snug">{label}</p>
+              <p class="mt-1 text-sm leading-6 text-hsb-steel">{hint}</p>
             </div>
           </div>
         ))}

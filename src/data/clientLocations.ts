@@ -25,4 +25,6 @@ export const clientLocations = [
   { name: "Meggle", city: "Gebesee", region: "Thüringen", lat: 51.10, lng: 10.90, branche: "Molkerei", logo: "/logos/meggle.svg" },
   { name: "Wildbräu", city: "München", region: "Bayern", lat: 48.14, lng: 11.58, branche: "Brauerei" },
   { name: "Goldmilch", city: "Ingolstadt", region: "Bayern", lat: 48.76, lng: 11.42, branche: "Molkerei" },
+  // Kyritzer Fruchtsäfte (Mosterei/Getränke), Pritzwalker Straße 25, 16866 Kyritz – kyritzer-fruchtsaefte.de
+  { name: "Kyritzer Fruchtsäfte", city: "Kyritz", region: "Brandenburg", lat: 52.94, lng: 12.40, branche: "Getränke", logo: "/logos/kyritzer-fruchtsaefte.png" },
 ] as const;

@@ -89,7 +89,7 @@ for (const label of otherRegions) {
 <div class="flex flex-col bg-white" data-testid="reference-map">
   <div class="border-b border-hsb-line p-6 lg:p-8">
     <p class="eyebrow">Deutschlandkarte</p>
-    <h3 class="h3 mt-2">Bundesweite Referenzen und Kundenstandorte</h3>
+    <h3 class="h3 mt-2">Referenzen und Kundenstandorte – Deutschland und europaweit</h3>
   </div>
   <div class="flex min-h-[390px] items-center justify-center bg-[linear-gradient(135deg,#f3f5f7_0%,#ffffff_48%,#eef1f4_100%)] px-4 py-7 sm:min-h-[430px] sm:px-6 lg:py-8">
     <svg viewBox={`0 0 ${germanyMapViewBox.width} ${germanyMapViewBox.height}`} role="img" aria-label="Deutschlandkarte mit allen 16 Bundesländern und markierten Referenzstandorten" class="h-auto w-full max-w-[420px] overflow-visible" data-testid="germany-reference-map">
@@ -161,9 +161,6 @@ for (const label of otherRegions) {
         <span class="inline-flex items-center gap-2"><span class="size-2 rounded-full border border-hsb-red bg-white"></span> Reichweitenmarker</span>
       </div>
     </div>
-    <p class="mt-4 text-sm leading-6 text-hsb-steel">
-      Nicht freigegebene Projekte bleiben bewusst auf Regionen beschränkt.
-    </p>
     {clientPoints.length > 0 && (
       <div class="mt-6 border-t border-hsb-line pt-6">
         <p class="text-xs font-black uppercase tracking-[0.14em] text-hsb-steel">Weitere Kundenstandorte</p>

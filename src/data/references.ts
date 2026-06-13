@@ -15,12 +15,13 @@ export const references: ReferenceRecord[] = [
     lng: 12.141,
     systems: [
       "industrieboden-saeureschutz",
+      "whg-abdichtung-industrieboden",
       "dehnungsfugen-rammschutz-industrieboden",
     ],
     projectType: "Sanierung und Detailausbildung",
     challenge:
       "Chemische Belastung, Reinigung und mechanische Beanspruchung in produktionsnahen Bereichen.",
-    solution: "Säureschutzsystem mit belastbaren Fugen- und Detailanschlüssen.",
+    solution: "Säureschutzsystem mit belastbaren Fugen- und Detailanschlüssen sowie WHG-konforme Abdichtung.",
     result: "Robustere Nutzfläche mit klarer Wartungs- und Sanierungslogik.",
     images: [
       "/media/hsb/projekte/keramik-halle-rinnen.webp",

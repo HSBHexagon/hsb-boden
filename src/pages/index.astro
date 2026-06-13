@@ -34,7 +34,7 @@ import { buildLocalBusinessJsonLd } from "../lib/schema";
             Spezialisierte Industrieböden für Lebensmittel-, Pharma- und <span class="text-hsb-red-light">Chemieproduktion</span>
           </h1>
           <p class="mt-7 max-w-xl text-lg leading-8 text-white/62">
-            Technische Fachplanung und bundesweite Ausführung. <span class="font-bold text-white/90">Sanierung ohne Stillstand</span> durch optimierte Taktung und Wochenend-Montage.
+            Technische Fachplanung und Ausführung in Deutschland und europaweit. <span class="font-bold text-white/90">Sanierung ohne Stillstand</span> durch optimierte Taktung und Wochenend-Montage.
           </p>
           <div class="mt-10 flex flex-wrap items-center gap-4">
             <a class="button-primary" href="/kontakt/">Analyse vor Ort anfragen</a>
@@ -59,12 +59,12 @@ import { buildLocalBusinessJsonLd } from "../lib/schema";
               height="768"
             />
             <div class="absolute inset-0 bg-gradient-to-t from-black via-black/45 to-transparent"></div>
-            <div class="relative z-10 flex h-full flex-col justify-end p-8 lg:p-10">
+            <div class="relative z-10 flex h-full flex-col justify-end p-8 lg:p-12">
               <div class="eyebrow-light mb-4 flex items-center gap-2">
                 <span class="size-1 bg-hsb-red"></span>
                 <span>Referenz-Projekt</span>
               </div>
-              <h2 class="text-2xl font-black leading-tight text-white lg:text-[2rem]">
+              <h2 class="max-w-md text-2xl font-black leading-tight text-white lg:text-[2rem]">
                 Keramik, Entwässerung und Gefälle aus einem System.
               </h2>
               <p class="mt-4 max-w-md text-sm leading-7 text-white/72">
@@ -96,11 +96,12 @@ import { buildLocalBusinessJsonLd } from "../lib/schema";
   <LogoCloud />
 
   <section class="border-b border-hsb-line bg-white">
-    <div class="container py-10 lg:py-12">
+    <div class="container pt-12 pb-8 lg:pt-16 lg:pb-10">
       <h2 class="h2 max-w-2xl">Planung und Ausführung aus einer Hand</h2>
-      <p class="lead mt-3 max-w-2xl">Vom ersten Vor-Ort-Termin bis zur Abnahme: Keramik, Säureschutz, Entwässerung und Sanierung laufen über einen Ansprechpartner – ohne Schnittstellenverlust zwischen Planung und Gewerk.</p>
+      <p class="lead mt-5 max-w-2xl">Von der Analyse vor Ort bis zur Abnahme bleibt alles in einer Hand: Keramik, Säureschutz, Abdichtung, Entwässerung und Sanierung werden als ein abgestimmtes Bodensystem geplant und ausgeführt – ohne Schnittstellenverlust zwischen Planung und Gewerk.</p>
+      <p class="mt-5 max-w-2xl leading-7 text-hsb-steel">Neben Neubau und Sanierung gehört auch die technische Instandsetzung von Schadstellen, Fugen, Anschlüssen und Teilbereichen im laufenden Betrieb zum Tagesgeschäft.</p>
     </div>
-    <div class="container grid gap-0 divide-y divide-hsb-line py-0 lg:grid-cols-3 lg:divide-x lg:divide-y-0">
+    <div class="container grid gap-0 divide-y divide-hsb-line pb-12 lg:grid-cols-3 lg:divide-x lg:divide-y-0 lg:pb-16">
       {[
         ["Analyse vor Ort", "Untergrund, Chemie und Betrieb werden technisch aufgenommen."],
         ["System, nicht Produkt", "Belag, Fuge, Abdichtung und Entwässerung werden als Einheit geplant."],
@@ -140,10 +141,10 @@ import { buildLocalBusinessJsonLd } from "../lib/schema";
 
       <div class="grid gap-0 border-t border-hsb-line">
         {[
-          ["01", "Analyse vor Ort", "Untergrund, Schäden, Chemiebelastung, Reinigungsprozesse, Gefälle und Betriebsablauf werden technisch aufgenommen. Keine Systemempfehlung ohne diesen Schritt."],
-          ["02", "Systementscheidung", "Keramik, PU-Beton, Epoxidharz, Abdichtung und Entwässerung werden nach Belastungsprofil bewertet und nicht nach dem einfachsten Weg."],
-          ["03", "Sanierungsfenster planen", "Bauabschnitte, Sperrzeiten, Materialaushärtung und Wiederinbetriebnahme werden von Anfang an mit der Produktionsplanung abgestimmt."],
-          ["04", "Dokumentation und Abnahme", "Jede Ausführung wird technisch dokumentiert: für interne Nachvollziehbarkeit, Audit-Vorbereitung und als Grundlage für Wartung und spätere Sanierungsplanung."],
+          ["01", "Analyse vor Ort", "Untergrund, Schadensbild, Säure- und Reinigungschemie, Nassbelastung, Gefälle, Rinnenführung und Produktionsablauf werden direkt in der Halle aufgenommen. Ohne dieses Belastungsprofil keine Systemempfehlung."],
+          ["02", "Systementscheidung", "Keramik, PU-Beton, Epoxidharz, WHG-Abdichtung und Entwässerung werden nach Säure-, Hygiene- und Lastprofil bewertet – Sechskant-Industriekeramik dort, wo Reinigbarkeit und Chemiebeständigkeit dauerhaft zählen."],
+          ["03", "Sanierungsfenster planen", "Bauabschnitte, Sperrzeiten, Aushärtung von keramischer Verlegung und Verfugung sowie die Wiederinbetriebnahme werden mit der Produktions- und Reinigungsplanung abgestimmt – inklusive Wochenend- und Schichtmontage."],
+          ["04", "Dokumentation und Abnahme", "Gefälle, Rinnenanschlüsse, Fugen und Detailpunkte werden dokumentiert: als Grundlage für Hygiene- und WHG-Nachweise, Wartung und spätere Sanierungsplanung."],
         ].map(([number, title, text]) => (
           <article class="group grid items-baseline gap-7 border-b border-hsb-line px-4 py-10 transition-colors duration-300 hover:bg-white lg:-mx-4 lg:grid-cols-[112px_1fr_1.5fr]">
             <div class="flex items-center gap-4">
@@ -160,6 +161,35 @@ import { buildLocalBusinessJsonLd } from "../lib/schema";
 
   <!-- HERSTELLER -->
   <ManufacturerProof />
+
+  <!-- ÜBER UNS / UNTERNEHMEN & TEAM -->
+  <section class="section border-b border-hsb-line bg-white" id="ueber-uns">
+    <div class="container">
+      <div class="mb-12 max-w-3xl">
+        <p class="eyebrow mb-4">Unternehmen & Team</p>
+        <h2 class="h2">Spezialisierter Fachbetrieb mit eigenem, eingespieltem Team</h2>
+        <p class="lead mt-6 text-hsb-steel">
+          HSB ist ein spezialisierter Fachbetrieb für Industrieböden, Säureschutz und keramische Bodensysteme in produktionskritischen Bereichen. Ausgeführt wird mit eigenem, festangestelltem Personal aus dem gleichen Betrieb – nicht über wechselnde Subunternehmer. Das Team ist eingespielt, branchenspezialisiert, mehrsprachig und in der Ausführung aufeinander abgestimmt.
+        </p>
+        <p class="mt-5 max-w-2xl leading-7 text-hsb-steel">
+          Mehrere Mitarbeitende bringen jahrzehntelange Erfahrung mit, einzelne Fachkräfte rund 30 Jahre Berufserfahrung in diesem speziellen Gewerk. Die Verlegung von Sechskant-Industriefliesen und vergleichbaren keramischen Systemen ist seit mehr als 40 Jahren bewährt; HSB ist in diesem spezialisierten Umfeld von Anfang an dabei und bringt die entsprechende Praxis in Sanierung, Reparatur, Neubau und Detailausbildung mit.
+        </p>
+      </div>
+      <dl class="grid gap-px overflow-hidden rounded-[4px] border border-hsb-line bg-hsb-line sm:grid-cols-2 lg:grid-cols-4">
+        {[
+          ["Eigenes Fachpersonal", "Festangestelltes, eingespieltes Team – keine wechselnden Subunternehmer in der laufenden Ausführung."],
+          ["Jahrzehnte Erfahrung", "Mitarbeiter mit bis zu rund 30 Jahren Berufserfahrung; Sechskantfliesen-Technik seit über 40 Jahren bewährt."],
+          ["Mehrsprachig & spezialisiert", "National einsetzbar, branchenspezialisiert und in der Baustellenpraxis aufeinander abgestimmt."],
+          ["Qualifiziert & abgesichert", "Angeschlossen an SOKA-BAU, mit Erste-Hilfe-Schulung und VCA/SCC-bezogenen Sicherheitsstandards."],
+        ].map(([t, d]) => (
+          <div class="bg-white p-6 lg:p-7">
+            <dt class="text-[0.72rem] font-black uppercase tracking-[0.16em] text-hsb-red">{t}</dt>
+            <dd class="mt-3 text-sm leading-6 text-hsb-steel">{d}</dd>
+          </div>
+        ))}
+      </dl>
+    </div>
+  </section>
 
   <!-- KONTAKTFORMULAR -->
   <LeadFormSection />

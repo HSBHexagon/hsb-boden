@@ -46,3 +46,8 @@ Ohne diese Dateien darf keine Projektarbeit starten.
 Der kanonische Repo-Pfad wird ausschließlich über `~/KI-System/08_System/config/canonical-projects.json` und `resolve_project_path.sh` bestimmt.
 Bei Widerspruch zwischen Dateien:
 STOP. Keine eigenmächtige Strukturentscheidung.
+
+## Pflichtstart HSB / HEXAFLOOR (Garantie-Struktur)
+Vor jeder Arbeit lesen: `MASTER_EXECUTION_RULES.md`, `STARTUP_PROTOCOL.md`, `CHECKPOINT_STATE.json`, `PROJECT_TRUTH.md`, `AI_EXECUTION_PLAYBOOK.md`, `PHASED_EXECUTION_PLAN.md`, `~/KI-System/ObsidianVault/brain/CURRENT_HANDOFF.md`.
+Dann: `resolve_project_path.sh hsb-boden` → `cd` → `assert_canonical_project_path.sh hsb-boden` → `git status --short`.
+**Pflichtabschluss:** `CHECKPOINT_STATE.json` + `CURRENT_HANDOFF.md` + `SESSION_LOG.md` aktualisieren, Report schreiben, Website-Code-Diff prüfen, Push/Deploy dokumentieren.

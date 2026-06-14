@@ -1,0 +1,47 @@
+{
+  "project": "HSB / HEXAFLOOR",
+  "last_updated": "2026-06-14T18:18:43+0200",
+  "active_model": "Claude Code",
+  "active_phase": "P0B-FREIGABE VORBEREITEN",
+  "active_task": "Garantie-Struktur speichern",
+  "repo_path": "/Users/joelcherinodiaz/KI-System/01_Wahrheitsquelle/_MERGED_20260613/AI-Memory-Hub/projects/hsb-boden",
+  "canonical_registry": "/Users/joelcherinodiaz/KI-System/08_System/config/canonical-projects.json",
+  "handoff_path": "/Users/joelcherinodiaz/KI-System/ObsidianVault/brain/CURRENT_HANDOFF.md",
+  "last_commit": "904685619d56c28e534a8c382b49772341b660ea",
+  "last_known_commits": {
+    "flyer_assets": "9ac994a75b71d3ccfe1a4b204c12d1c98fc3efcc",
+    "plan_files": "3308d91",
+    "docs_consistency_fix": "9f1d211877027b8edc8030720bb3f56631742681",
+    "p0a": "7c38d7ba8f3e6cc9d38ae23c30e7ec1c27d9a24a",
+    "master_rules_p0b_plan": "904685619d56c28e534a8c382b49772341b660ea"
+  },
+  "website_code_diff_lines": 0,
+  "modified_files": [".astro/data-store.json (uncommitted, do not touch)"],
+  "push_done": false,
+  "deploy_done": false,
+  "current_permissions": {
+    "push": false,
+    "deploy": false,
+    "p0b_implementation": false,
+    "website_code_changes": false
+  },
+  "completed_steps": [
+    "P0A specification completed",
+    "P0A review passed",
+    "master execution rules + P0B approval plan saved",
+    "guaranteed execution/recovery system saved"
+  ],
+  "open_steps": [
+    "wait for explicit user approval before P0B"
+  ],
+  "blocked_by": [
+    "explicit P0B user approval",
+    "n8n hosting decision",
+    "Service Account vs OAuth decision",
+    "rate-limit values",
+    "push/deploy approval"
+  ],
+  "next_step": "User decides P0B_USER_APPROVAL_REQUEST.md",
+  "handoff_required": true,
+  "safe_to_continue": true
+}

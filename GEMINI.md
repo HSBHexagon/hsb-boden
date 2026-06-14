@@ -16,5 +16,8 @@ Der kanonische Repo-Pfad wird ausschließlich über `~/KI-System/08_System/confi
 Bei Widerspruch zwischen Dateien:
 STOP. Keine eigenmächtige Strukturentscheidung.
 
+## Pflichtstart HSB / HEXAFLOOR (Garantie-Struktur)
+Vor jeder Arbeit lesen: `MASTER_EXECUTION_RULES.md`, `STARTUP_PROTOCOL.md`, `CHECKPOINT_STATE.json`, `PROJECT_TRUTH.md`, `AI_EXECUTION_PLAYBOOK.md`, `PHASED_EXECUTION_PLAN.md`, `~/KI-System/ObsidianVault/brain/CURRENT_HANDOFF.md`. Pflichtabschluss: `CHECKPOINT_STATE.json` + `CURRENT_HANDOFF.md` + `SESSION_LOG.md` aktualisieren.
+
 ## Harte Verbote
 Kein Push, kein Deploy, kein Production-Cutover, keine Secrets im Repo, keine Website-Code-Änderung ohne Freigabe.

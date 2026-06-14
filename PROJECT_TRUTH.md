@@ -21,13 +21,15 @@ Registry: `~/KI-System/08_System/config/canonical-projects.json`.
 `main`
 
 ## 4. Aktueller Commit
-- Lokaler HEAD: `9ac994a` — „chore(marketing): add finalized HSB flyer assets" (2026-06-14 12:26)
-- Vorheriger Menschen-HEAD: `697cce6` — „feat(hsb): Reparatur-Leistungsseite + P2-SEO-Finalisierung" (2026-06-13 21:19 UTC)
+- Letzte verifizierte Review-Baseline: `3308d91` — `docs(hsb): add project truth and execution playbooks`
+- Vorheriger lokaler Flyer-Asset-Commit: `9ac994a` — `chore(marketing): add finalized HSB flyer assets`
+- Vorheriger menschlicher Website-Stand: `697cce6` — `feat(hsb): Reparatur-Leistungsseite + P2-SEO-Finalisierung`
+- Nachfolgende Doku-Konsistenzkorrektur siehe Handoff/Report; kein selbstreferenzieller zukünftiger Commit-SHA in dieser Datei.
 
 ## 5. GitHub Remote
 - `https://github.com/cherinojoel-lang/hsb-boden.git`
 - Remote-HEAD bei Entscheidung: `f94ac19` (2026-06-14 09:10 UTC, „ci: enable Jules auto-merge policy + Dependabot automation #43") — reiner Automations-Commit.
-- Beziehung: lokaler Stand ist ggü. stale origin-Tracking 1 Commit voraus (Doku-/Asset-Commit), Remote enthält zusätzlich den Jules-CI-Commit. **Kein Push erfolgt.**
+- Beziehung: Die lokale Review-Baseline `3308d91` liegt nach dem Flyer-Asset-Commit `9ac994a` und dokumentiert den verifizierten Doku-Stand vor dieser Korrektur. Remote `f94ac19` beschreibt weiterhin nur den Jules/CI/Dependabot-Automationsstand. **Kein Push erfolgt. Kein Deploy erfolgt.**
 
 ## 6. Lokaler Arbeitsbaumstatus
 - Nur `.astro/data-store.json` (Build-Cache) ist modified und bewusst NICHT committed.
@@ -67,26 +69,49 @@ Registry: `~/KI-System/08_System/config/canonical-projects.json`.
 - Webhook (`PUBLIC_LEAD_ENDPOINT`) + SMTP **inaktiv** (BLOCKER). n8n-Hosting-Entscheidung offen → siehe `N8N_AUTOMATION_PLAN.md`.
 
 ## 14. Offene P0-Aufgaben
-- Lead-Pipeline aktivieren: `PUBLIC_LEAD_ENDPOINT` setzen + Test-Lead.
+- Lead-Pipeline vorbereiten und Freigabevoraussetzungen dokumentieren: `PUBLIC_LEAD_ENDPOINT` erst nach ausdrücklicher Freigabe setzen, danach kontrollierter Test-Lead.
 - n8n-Hosting-Entscheidung (Cloud vs. lokal).
+
+Dieser Schritt ist eine Planung. Keine Live-Aktivierung, kein Endpoint, kein Deploy, kein Push, kein Production-Cutover ohne ausdrückliche Freigabe.
 
 ## 15. Offene P1-Aufgaben
 - Flyer-/Mail-Konsistenz gegen aktuelle Website prüfen.
 - Finale Rechtstext-Abnahme (Impressum/DSGVO) durch Inhaber.
 - Repo-Sync-Strategie: Verhältnis `_MERGED`-Repo ↔ GitHub (Push-Freigabe) klären.
 
-## 16. Offene P2/P3-Aufgaben
-- Re-Build + Re-Audit (Lighthouse/SEO) nach 697cce6.
-- Production-Cutover-Plan WordPress → Cloudflare.
-- GA4/GTM/Consent-Finalisierung.
+## 16. Offene P2-Aufgaben
+- Search Console vorbereiten.
+- GA4/GTM vorbereiten.
+- Cookie-/Consent-Prüfung finalisieren.
+- Sitemap/robots/canonical prüfen.
+- Structured Data prüfen.
+- Cloudflare Preview validieren.
+- Core Web Vitals prüfen.
+- Go-live-Checkliste vollständig machen.
 
-## 17. Offene menschliche Entscheidungen
+Diese Schritte sind Vorbereitung ohne Live-Cutover. Keine Live-Aktivierung, kein Endpoint, kein Deploy, kein Push, kein Production-Cutover ohne ausdrückliche Freigabe.
+
+## 17. Offene P3-Aufgaben
+- `hsb-boden.de` Cutover.
+- Production Route / Custom Domain aktivieren.
+- Cloudflare Production Deployment.
+- Tracking produktiv aktivieren.
+- Live-Formular aktivieren.
+- n8n produktiv anbinden.
+- Push/Deploy/Go-live.
+
+Diese Schritte sind reine Live-/Production-Schritte und bleiben bis zur ausdrücklichen Freigabe blockiert.
+
+## 18. Offene menschliche Entscheidungen
 - Push-Freigabe für lokale Commits (`9ac994a` + Doku-Commit).
 - Soll `_MERGED_20260613` der dauerhafte kanonische Ort sein oder relokiert werden (nur mit Freigabe)?
 - n8n-Hosting, SMTP-Anbieter, Go-Live-Zeitpunkt.
 
-## 18. Nächster sicherer Schritt
+## 19. Nächster sicherer Schritt
 Codex-Review dieser Inventur + Plan-Dateien; danach P0 (Lead-Pipeline) nach Freigabe. Keine Website-Code-Änderung, kein Push/Deploy ohne Freigabe.
 
-## 19. Codex-Review-Bereitschaft
+## 20. Doku-Konsistenzkorrektur
+Doku-Konsistenzkorrektur wird im anschließenden Commit + Report dokumentiert.
+
+## 21. Codex-Review-Bereitschaft
 Bereit: Inventur + Plan-Dokumente liegen vor, Website-Code unverändert, Guardrails aktiv.

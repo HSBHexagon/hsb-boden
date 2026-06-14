@@ -13,7 +13,7 @@
 
 ## Tracking & Consent
 - [ ] Google Search Console — ⬜ Property + Verifizierung (Domain-Stand offen).
-- [ ] GA4 / GTM — ❓ Einbindung prüfen.
+- [ ] GA4 / GTM — ❓ Einbindung vorbereiten; keine produktive Aktivierung ohne ausdrückliche Freigabe.
 - [ ] Cookie-/Consent — ✅ CookieConsent + LocalStorage laut Docs; DSGVO-Konformität final prüfen.
 
 ## Performance
@@ -26,8 +26,10 @@
 - [ ] Custom Domain / Route (`hsb-boden.de`) — ❓ Stand offen.
 
 ## Go-Live-Freigabepunkte (Reihenfolge)
-1. P0: Lead-Pipeline aktiv (`PUBLIC_LEAD_ENDPOINT` + Test-Lead).
+1. P0: Lead-Pipeline nur planen und Freigabe vorbereiten (`PUBLIC_LEAD_ENDPOINT`, n8n Webhook, Test-Lead erst nach ausdrücklicher Freigabe).
 2. P1: Flyer/Mail-Konsistenz + Rechtstext-Abnahme.
 3. P1: Re-Build + Re-Audit.
-4. P2: GSC/GA4/Consent final.
-5. P2/P3: WordPress-Cutover-Plan + Production-Deploy (nur mit Freigabe).
+4. P2: Search Console vorbereiten, GA4/GTM vorbereiten, Cookie-/Consent prüfen, Sitemap/robots/canonical prüfen, Structured Data prüfen, Cloudflare Preview validieren, Core Web Vitals prüfen, Go-live-Checkliste vollständig machen.
+5. P3: `hsb-boden.de` Cutover, Production Route / Custom Domain aktivieren, Cloudflare Production Deployment, Tracking produktiv aktivieren, Live-Formular aktivieren, n8n produktiv anbinden, Push/Deploy/Go-live nur mit ausdrücklicher Freigabe.
+
+Dieser Schritt ist eine Planung. Keine Live-Aktivierung, kein Endpoint, kein Deploy, kein Push, kein Production-Cutover ohne ausdrückliche Freigabe.

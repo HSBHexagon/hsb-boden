@@ -99,3 +99,22 @@ Shared rules for all agents:
   Lighthouse, build output), not estimates.
 - **Codex**: keep context windows focused — if modifying styling, provide
   both the component and `tailwind.config.mjs` context.
+
+### Google Jules
+
+- Jules (`google-labs-jules[bot]`) may create branches, commits, and pull
+  requests, and may fix failing CI/workflows — same as any other agent in
+  this file.
+- Jules may **auto-merge** its own PRs into `main` once all required status
+  checks are green (`validate`, `build-and-test`, `Dependency Review`,
+  `Secret Scanning`, `lighthouse`, `deploy`, `Analyze (javascript-typescript)`,
+  `Analyze (actions)` — enforced by the "Protect Main" ruleset). This is a
+  deliberate policy: Jules is registered as a `pull_request`-scoped bypass
+  actor on that ruleset, so its PRs do not require a separate human approval
+  once CI is green.
+- This does **not** change the non-negotiables: `deploy-production.yml`
+  remains `workflow_dispatch`-only and off-limits for Jules and all other
+  agents; WordPress (`hsb-boden.de`), Argelith/Zahna claims, and customer
+  data rules apply unconditionally to Jules as well.
+- Jules must not push directly to `main` — only via pull request, so that CI
+  and required status checks always run before the change lands.

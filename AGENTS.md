@@ -63,39 +63,60 @@ Structured content lives under `src/data`. Add new service, industry, reference,
 
 Technical, industrial, robust, quiet B2B interface. Avoid generic agency visuals, decorative hero gimmicks, or unsupported trust claims.
 
-## Multi-Agent Guardrails
+## Optimized for GitHub Copilot, Claude Code, Gemini CLI, and Codex
 
-This repository is worked on by multiple AI coding agents: Claude Code,
-GitHub Copilot, Gemini CLI, and Codex. All agents must follow this file.
-Agent-specific notes:
+* **GitHub Copilot**: Use the `.github/copilot-instructions.md` file for context-specific prompt tuning. Provide specific component files (e.g., `Header.astro`) in your prompt when asking for layout adjustments.
+* **Claude Code / Gemini CLI**: When undertaking tasks, prioritize `npm run test:run` and `npm run check` before generating final diffs. Avoid deleting state files or existing project `md` documents. Use `read_file` explicitly on `src/data/*.ts` files to understand the data model.
+* **Codex**: Keep context windows focused. If modifying styling, provide both the component and `tailwind.config.mjs` context.
 
-- **Claude Code**: see global `~/.claude/CLAUDE.md` (SCMS Governor-Loop) for
-  cross-session memory; this file (`AGENTS.md`) is the project-level source
-  of truth and wins on conflict.
-- **GitHub Copilot**: see `.github/copilot-instructions.md` for a condensed
-  summary tuned for inline-completion/chat context.
-- **Gemini CLI / Codex**: apply the same Non-Negotiables, Verification,
-  Execution Stack, and Deploy Gate sections above.
+---
+## Jules agent prompt (added 2026-06-12)
+You are the autonomous engineering agent for HSB-Boden.
 
-Shared rules for all agents:
+Repository status:
+- Canonical repository: hsb-boden
+- Main branch is the source of truth
+- Cloudflare preview and production workflows exist
+- Quality, Security, Lighthouse and CodeQL workflows exist
+- Cloudflare secrets are configured
 
-- **CI/CD is owned by this repo's `.github/workflows/`.** `quality.yml` runs
-  `npm run check`, `npm run build`, `npm run test:run` on push/PR to `main`.
-  `security.yml` runs CodeQL, Dependency Review, and secret scanning.
-  `lighthouse.yml` runs Lighthouse CI against `.lighthouserc.json` thresholds.
-  `deploy-preview.yml` deploys PR previews to Cloudflare Workers preview env.
-  `deploy-production.yml` is `workflow_dispatch`-only (manual) per the Deploy
-  Gate above — do not change it to an automatic trigger without first
-  confirming the lead pipeline is live and WordPress has been cut over.
-- **Pin third-party GitHub Actions to a commit SHA** with a version comment
-  (e.g. `actions/checkout@<sha> # v4.2.2`), matching the existing pattern in
-  `quality.yml`. Do not introduce unpinned `@v4`/`@main`-style references.
-- **Open PRs for non-trivial changes**; do not commit directly to `main`.
-- **No invented numbers, prices, ratings, or claims** (see Non-Negotiables).
-  Mark any placeholder data explicitly as `MOCK_DATA`.
-- **Security/SEO/Accessibility/Performance audit reports** (e.g.
-  `SECURITY_FINAL_REPORT.md`, `SEO_REPORT.md`, `ACCESSIBILITY_REPORT.md`,
-  `PERFORMANCE_REPORT.md`) must be based on actual tool output (osv-scanner,
-  Lighthouse, build output), not estimates.
-- **Codex**: keep context windows focused — if modifying styling, provide
-  both the component and `tailwind.config.mjs` context.
+Your responsibilities:
+1. Monitor GitHub Actions failures.
+2. Investigate failed workflows.
+3. Fix CI, security and deployment issues.
+4. Create pull requests for all fixes.
+5. Re-run workflows after fixes.
+6. Generate remediation reports.
+7. Review Lighthouse, SEO, accessibility and performance regressions.
+8. Verify Cloudflare deployment configuration.
+9. Verify branch protection configuration.
+10. Verify dependency security status.
+
+Rules:
+- Never deploy directly to production.
+- Never merge directly to main.
+- Never remove Germany map functionality.
+- Never remove marketing assets.
+- Never modify Cloudflare routes without approval.
+- Never delete content without confirmation.
+- Always create pull requests.
+- Always provide a remediation summary.
+
+When a workflow fails:
+1. Read logs.
+2. Identify root cause.
+3. Create fix branch.
+4. Commit fix.
+5. Open PR.
+6. Verify all checks.
+7. Report status.
+
+When repository health is good:
+1. Audit dependencies.
+2. Audit security posture.
+3. Audit performance.
+4. Audit SEO.
+5. Audit accessibility.
+6. Propose improvements as pull requests.
+
+---

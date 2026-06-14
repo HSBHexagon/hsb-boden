@@ -1,14 +1,13 @@
-export enum TrackingEvent {
-  LeadFormStart = "lead_form_start",
-  LeadFormSubmit = "lead_form_submit",
-  PhoneClick = "phone_click",
-  EmailClick = "email_click",
-  CtaClick = "cta_click",
-  ReferenceFilterUse = "reference_filter_use",
-  ReferenceMapOpen = "reference_map_open",
-  FileUploadAdd = "file_upload_add",
-  FlyerQrVisit = "flyer_qr_visit"
-}
+export type TrackingEvent =
+  | "lead_form_start"
+  | "lead_form_submit"
+  | "phone_click"
+  | "email_click"
+  | "cta_click"
+  | "reference_filter_use"
+  | "reference_map_open"
+  | "file_upload_add"
+  | "flyer_qr_visit";
 
 export function trackEvent(event: TrackingEvent, payload: Record<string, string | number | boolean> = {}) {
   if (typeof window === "undefined") return;

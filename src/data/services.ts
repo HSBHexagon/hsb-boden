@@ -357,7 +357,3 @@ export const services = [
     ctaTarget: "/kontakt/",
   },
 ];
-
-export const serviceTitleMap = Object.fromEntries(
-  services.map((service) => [service.slug, service.title])
-);

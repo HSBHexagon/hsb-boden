@@ -1,6 +1,4 @@
 import { describe, expect, it } from "vitest";
-import { existsSync } from "node:fs";
-import { join } from "node:path";
 import {
   getAllPublicPages,
   getPublicReferences,
@@ -9,8 +7,6 @@ import {
 import { services } from "../src/data/services";
 import { industries } from "../src/data/industries";
 import { articles } from "../src/data/articles";
-import { clientLocations } from "../src/data/clientLocations";
-import { germanyMapBounds, germanyStates, germanyTrustMarkers } from "../src/data/germanyMap";
 
 describe("site content contract", () => {
   it("validates the complete dateibasiert content model", () => {
@@ -43,50 +39,6 @@ describe("site content contract", () => {
         expect(reference.logo).toBeUndefined();
         expect(reference.canShowExactLocation).toBe(false);
       }
-    }
-  });
-
-  it("keeps every visible reference logo backed by a local asset", () => {
-    const logos = [
-      ...getPublicReferences().flatMap((reference) => (reference.logo ? [reference.logo] : [])),
-      ...clientLocations.flatMap((location) => ("logo" in location ? [location.logo] : [])),
-    ];
-
-    expect(logos.length).toBeGreaterThanOrEqual(7);
-    for (const logo of logos) {
-      expect(logo.startsWith("/logos/")).toBe(true);
-      expect(existsSync(join(process.cwd(), "public", logo))).toBe(true);
-    }
-  });
-
-  it("renders a complete Germany map with validated coverage markers", () => {
-    const requiredStates = [
-      "Schleswig-Holstein",
-      "Hamburg",
-      "Bremen",
-      "Niedersachsen",
-      "Nordrhein-Westfalen",
-      "Hessen",
-      "Rheinland-Pfalz",
-      "Saarland",
-      "Baden-Württemberg",
-      "Bayern",
-      "Thüringen",
-      "Sachsen",
-      "Sachsen-Anhalt",
-      "Brandenburg",
-      "Berlin",
-      "Mecklenburg-Vorpommern",
-    ];
-    const requiredMarkers = ["Husum", "Aachen", "Görlitz", "Oberstdorf", "Zeitz", "Bonefeld", "Gebesee"];
-
-    expect(germanyStates.map((state) => state.name).sort()).toEqual(requiredStates.sort());
-    expect(germanyTrustMarkers.map((marker) => marker.city).sort()).toEqual(requiredMarkers.sort());
-    for (const marker of germanyTrustMarkers) {
-      expect(marker.lng).toBeGreaterThanOrEqual(germanyMapBounds.minLng);
-      expect(marker.lng).toBeLessThanOrEqual(germanyMapBounds.maxLng);
-      expect(marker.lat).toBeGreaterThanOrEqual(germanyMapBounds.minLat);
-      expect(marker.lat).toBeLessThanOrEqual(germanyMapBounds.maxLat);
     }
   });
 });

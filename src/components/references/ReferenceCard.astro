@@ -1,5 +1,5 @@
 ---
-import { serviceTitleMap } from "../../data/services";
+import { services } from "../../data/services";
 
 interface ReferenceItem {
   id: string;
@@ -21,6 +21,7 @@ interface Props {
 }
 
 const { reference } = Astro.props;
+const serviceTitleMap = Object.fromEntries(services.map((service) => [service.slug, service.title]));
 ---
 
 <article class="surface group overflow-hidden p-0 border-hsb-line/60 hover:border-hsb-red/40 transition-colors duration-300">

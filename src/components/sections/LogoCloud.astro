@@ -1,24 +1,7 @@
 ---
-import { clientLocations } from "../../data/clientLocations";
 import { getPublicReferences } from "../../lib/content";
 
-const referenceLogos = getPublicReferences()
-  .filter((reference) => reference.canShowLogo && reference.logo)
-  .map((reference) => ({
-    name: reference.publicName,
-    logo: reference.logo,
-    meta: "Freigegebene Referenz",
-  }));
-
-const locationLogos = clientLocations
-  .filter((location) => "logo" in location)
-  .map((location) => ({
-    name: location.name,
-    logo: location.logo,
-    meta: location.branche,
-  }));
-
-const logos = [...referenceLogos, ...locationLogos];
+const references = getPublicReferences().filter(r => r.canShowLogo);
 ---
 
 <section class="section border-b border-hsb-line bg-white">
@@ -28,24 +11,21 @@ const logos = [...referenceLogos, ...locationLogos];
       <h2 class="h2 mt-4">Referenzkunden (Auszug)</h2>
     </div>
     
-    <div class="mx-auto grid max-w-6xl grid-cols-2 overflow-hidden rounded-[4px] border border-hsb-line bg-hsb-line sm:grid-cols-3 lg:grid-cols-7">
-      {logos.map((reference) => (
-        <figure class="group grid min-h-[124px] content-between justify-items-center gap-4 bg-white px-4 py-5 transition-colors hover:bg-[#fbfcfd]">
-          <div class="grid h-14 w-full max-w-[150px] place-items-center grayscale opacity-75 contrast-125 transition-all group-hover:grayscale-0 group-hover:opacity-100">
+    <div class="flex flex-wrap items-center justify-center gap-8 md:gap-12 lg:gap-16 opacity-85">
+      {references.map((reference) => (
+        <div class="group flex flex-col items-center gap-3">
+          <div class="h-12 w-32 grayscale transition-all group-hover:grayscale-0 md:h-14 md:w-40">
             <img 
               src={reference.logo} 
-              alt={`${reference.name} Logo`}
-              class="max-h-11 w-full object-contain"
+              alt={`${reference.publicName} Logo`}
+              class="h-full w-full object-contain"
               loading="lazy"
             />
           </div>
-          <figcaption class="grid gap-1 text-center">
-            <span class="text-[10px] font-black uppercase tracking-widest text-hsb-black transition-colors group-hover:text-hsb-red">
-              {reference.name}
-            </span>
-            <span class="text-[9px] font-bold uppercase tracking-[0.14em] text-hsb-steel">{reference.meta}</span>
-          </figcaption>
-        </figure>
+          <span class="text-[10px] font-bold uppercase tracking-widest text-hsb-steel transition-colors group-hover:text-hsb-red">
+            {reference.publicName}
+          </span>
+        </div>
       ))}
     </div>
   </div>

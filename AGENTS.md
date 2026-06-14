@@ -99,3 +99,25 @@ Shared rules for all agents:
   Lighthouse, build output), not estimates.
 - **Codex**: keep context windows focused — if modifying styling, provide
   both the component and `tailwind.config.mjs` context.
+
+## KI-System Pflichtstart (Shared-Memory-Governance)
+
+Vor jeder Arbeit an diesem Repo:
+
+1. Lies `~/KI-System/00_INDEX.md`.
+2. Führe aus: `~/KI-System/tools/handoff.sh read`.
+3. Lies die Registry: `~/KI-System/08_System/config/canonical-projects.json`.
+4. Verifiziere den Pfad:
+   `cd "$(~/KI-System/08_System/scripts/resolve_project_path.sh hsb-boden)" && ~/KI-System/08_System/scripts/assert_canonical_project_path.sh hsb-boden`
+
+Niemals in diesen Pfaden arbeiten:
+
+- Backup-Pfade (`*KI-System-Backup*`, `*Backup*`, `*.Trash*`)
+- `/Users/joelcherinodiaz/Projects/hsb-boden` (älterer Klon, NICHT kanonisch)
+- Rohimporte unter `brain/07_imported/`
+- leere brain-Projektordner (z. B. `brain/03_projects/hexafloor`)
+
+Kanonischer Arbeitsrepo-Pfad (Stand 2026-06-14, belegt durch letzte Claude-Code-Session + git log + GitHub-Remote):
+`/Users/joelcherinodiaz/KI-System/01_Wahrheitsquelle/_MERGED_20260613/AI-Memory-Hub/projects/hsb-boden`
+
+Keine Website-Code-Änderung ohne Freigabe. Kein Push, kein Production-Deploy ohne Freigabe.

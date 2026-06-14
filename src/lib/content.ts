@@ -126,28 +126,40 @@ export function getArticles() {
   return articles;
 }
 
-const servicesMap = new Map(services.map(s => [s.slug, s]));
+const servicesLookup = services.reduce((acc, service) => {
+  acc[service.slug] = service;
+  return acc;
+}, {} as Record<string, Service>);
 
 export function getServiceBySlug(slug: string) {
-  return servicesMap.get(slug);
+  return servicesLookup[slug];
 }
 
-const industriesMap = new Map(industries.map(i => [i.slug, i]));
+const industriesLookup = industries.reduce((acc, industry) => {
+  acc[industry.slug] = industry;
+  return acc;
+}, {} as Record<string, Industry>);
 
 export function getIndustryBySlug(slug: string) {
-  return industriesMap.get(slug);
+  return industriesLookup[slug];
 }
 
-const articlesMap = new Map(articles.map(a => [a.slug, a]));
+const articlesLookup = articles.reduce((acc, article) => {
+  acc[article.slug] = article;
+  return acc;
+}, {} as Record<string, Article>);
 
 export function getArticleBySlug(slug: string) {
-  return articlesMap.get(slug);
+  return articlesLookup[slug];
 }
 
-const referencesMap = new Map(references.map(r => [r.id, r]));
+const referencesLookup = references.reduce((acc, reference) => {
+  acc[reference.id] = reference;
+  return acc;
+}, {} as Record<string, ReferenceRecord>);
 
 export function getReferenceById(id: string) {
-  return referencesMap.get(id);
+  return referencesLookup[id];
 }
 
 export function getPublicReferences() {

@@ -147,10 +147,12 @@ export function getArticleBySlug(slug: string) {
 const referencesMap = new Map(references.map(r => [r.id, r]));
 
 export function getReferenceById(id: string) {
-  return referencesMap.get(id);
+  return referencesMap.get(id as any);
 }
 
-export function getPublicReferences() {
+let cachedPublicReferences: ReturnType<typeof getPublicReferencesInternal> | null = null;
+
+function getPublicReferencesInternal() {
   return (references as readonly ReferenceRecord[])
     .filter((reference) => {
       const approvalStatus: string = reference.approvalStatus;
@@ -169,6 +171,13 @@ export function getPublicReferences() {
         logo: canShowLogo ? reference.logo : undefined,
       };
     });
+}
+
+export function getPublicReferences() {
+  if (cachedPublicReferences === null) {
+    cachedPublicReferences = getPublicReferencesInternal();
+  }
+  return cachedPublicReferences;
 }
 
 export function getReferencesForSlugs(referenceIds: string[]) {

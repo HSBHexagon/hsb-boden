@@ -118,3 +118,12 @@ Shared rules for all agents:
   data rules apply unconditionally to Jules as well.
 - Jules must not push directly to `main` — only via pull request, so that CI
   and required status checks always run before the change lands.
+
+## Kanonischer Arbeitsrepo-Pfad
+
+`/Users/joelcherinodiaz/KI-System/02_Projects/active/hsb-boden` (Registry:
+`~/KI-System/08_System/config/canonical-projects.json`). Der frühere
+`_MERGED_20260613`-Pfad ist archiviert und nicht kanonisch.
+
+Keine Website-Code-Änderung ohne Freigabe. Kein Push, kein Production-Deploy
+ohne Freigabe.

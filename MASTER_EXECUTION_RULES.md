@@ -12,6 +12,18 @@ Ziel:
 - Cloudflare-Go-live erst nach Freigabe
 - kein Neustart von vorne bei jedem Modellwechsel
 
+## 1a. Garantie-Struktur
+Kein KI-System darf ohne diese Dateien arbeiten:
+1. `MASTER_EXECUTION_RULES.md`
+2. `SKILLS_MASTER_PROMPT.md`
+3. `PHASED_EXECUTION_PLAN.md`
+4. `PROJECT_TRUTH.md`
+5. `AI_EXECUTION_PLAYBOOK.md`
+6. `CURRENT_HANDOFF.md`
+7. `CHECKPOINT_STATE.json`
+
+Start-/Stop-/Crash-Verhalten: siehe `STARTUP_PROTOCOL.md`, `STOP_PROTOCOL.md`, `CRASH_RECOVERY_PROTOCOL.md`. Fortlaufendes Log: `SESSION_LOG.md`. Rollen: `AI_SYSTEM_ROLES.md`.
+
 ## 2. Kanonische Pfade
 System Root: `~/KI-System`
 

@@ -30,8 +30,6 @@ export const leadFormSchema = z.object({
   privacyConsent: z.literal(true),
 });
 
-export type LeadPayload = z.input<typeof leadFormSchema>;
-
 export function serializeLeadPayload(payload: unknown) {
   const parsed = leadFormSchema.parse(payload);
   return {

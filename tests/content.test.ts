@@ -5,6 +5,7 @@ import {
   getAllPublicPages,
   getPublicReferences,
   validateSiteContent,
+  getReferencesForSlugs,
 } from "../src/lib/content";
 import { services } from "../src/data/services";
 import { industries } from "../src/data/industries";
@@ -127,5 +128,38 @@ describe("content hardening (Phase 1)", () => {
   it("molkerei-artikel nennt Epoxidharz gegen Milchsäure", () => {
     const a = articles.find((x) => x.slug === "warum-industrieboeden-in-molkereien-versagen")!;
     expect(JSON.stringify(a.sections)).toMatch(/Epoxidharz/);
+  });
+});
+
+describe("getReferencesForSlugs", () => {
+  it("returns matching public references for valid slugs", () => {
+    // Determine which are public first, assuming at least one is public
+    const publicRefs = getPublicReferences();
+    if (publicRefs.length > 0) {
+      const slug = publicRefs[0].id;
+      const result = getReferencesForSlugs([slug]);
+      expect(result.length).toBe(1);
+      expect(result[0].id).toBe(slug);
+    }
+  });
+
+  it("returns an empty array when given empty input", () => {
+    const result = getReferencesForSlugs([]);
+    expect(result).toEqual([]);
+  });
+
+  it("ignores non-existent slugs", () => {
+    const result = getReferencesForSlugs(["does-not-exist", "also-invalid"]);
+    expect(result).toEqual([]);
+  });
+
+  it("deduplicates requests for the same slug", () => {
+    const publicRefs = getPublicReferences();
+    if (publicRefs.length > 0) {
+      const slug = publicRefs[0].id;
+      const result = getReferencesForSlugs([slug, slug, slug]);
+      expect(result.length).toBe(1);
+      expect(result[0].id).toBe(slug);
+    }
   });
 });

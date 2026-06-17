@@ -4,6 +4,7 @@ import { join } from "node:path";
 import {
   getAllPublicPages,
   getPublicReferences,
+  getReferencesForSlugs,
   validateSiteContent,
 } from "../src/lib/content";
 import { services } from "../src/data/services";
@@ -88,6 +89,29 @@ describe("site content contract", () => {
       expect(marker.lat).toBeGreaterThanOrEqual(germanyMapBounds.minLat);
       expect(marker.lat).toBeLessThanOrEqual(germanyMapBounds.maxLat);
     }
+  });
+
+  it("filters references by slug via getReferencesForSlugs", () => {
+    const pub = getPublicReferences();
+    expect(pub.length).toBeGreaterThanOrEqual(2);
+
+    // Pick first two public reference IDs
+    const id1 = pub[0].id;
+    const id2 = pub[1].id;
+
+    // Test valid ids
+    const result1 = getReferencesForSlugs([id1, id2]);
+    expect(result1.length).toBe(2);
+    expect(result1.map(r => r.id)).toEqual([id1, id2]);
+
+    // Test mix of valid and invalid
+    const result2 = getReferencesForSlugs([id1, "not-a-real-id"]);
+    expect(result2.length).toBe(1);
+    expect(result2[0].id).toBe(id1);
+
+    // Test empty
+    const result3 = getReferencesForSlugs([]);
+    expect(result3.length).toBe(0);
   });
 });
 

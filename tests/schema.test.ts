@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildBreadcrumbJsonLd, buildOrganizationJsonLd, buildServiceJsonLd, buildLocalBusinessJsonLd } from "../src/lib/schema";
+import { buildBreadcrumbJsonLd, buildOrganizationJsonLd, buildServiceJsonLd, buildLocalBusinessJsonLd, buildFaqJsonLd } from "../src/lib/schema";
 
 describe("json-ld generation", () => {
   it("returns valid organization json-ld without unsupported partner claims", () => {
@@ -45,5 +45,27 @@ describe("json-ld generation", () => {
 
     expect(graph.itemListElement).toHaveLength(3);
     expect(graph.itemListElement[2].position).toBe(3);
+  });
+
+  it("builds faq json-ld with correct structure", () => {
+    const graph = buildFaqJsonLd([
+      { question: "What is your main service?", answer: "We provide acid-resistant industrial flooring." },
+      { question: "Where do you operate?", answer: "We operate in Germany." }
+    ]);
+
+    expect(() => JSON.stringify(graph)).not.toThrow();
+    expect(graph["@type"]).toBe("FAQPage");
+    expect(graph.mainEntity).toHaveLength(2);
+    expect(graph.mainEntity[0]["@type"]).toBe("Question");
+    expect(graph.mainEntity[0].name).toBe("What is your main service?");
+    expect(graph.mainEntity[0].acceptedAnswer["@type"]).toBe("Answer");
+    expect(graph.mainEntity[0].acceptedAnswer.text).toBe("We provide acid-resistant industrial flooring.");
+  });
+
+  it("builds faq json-ld with empty faqs array", () => {
+    const graph = buildFaqJsonLd([]);
+    expect(() => JSON.stringify(graph)).not.toThrow();
+    expect(graph["@type"]).toBe("FAQPage");
+    expect(graph.mainEntity).toHaveLength(0);
   });
 });

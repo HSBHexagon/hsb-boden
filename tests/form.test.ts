@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { leadFormSchema, serializeLeadPayload } from "../src/lib/validation";
+import { leadFormSchema } from "../src/lib/validation";
 
 describe("lead form validation", () => {
   const validPayload = {
@@ -34,11 +34,4 @@ describe("lead form validation", () => {
     expect(result.success).toBe(false);
   });
 
-  it("serializes CRM-compatible payload fields", () => {
-    const serialized = serializeLeadPayload(validPayload);
-
-    expect(serialized.source).toBe("website");
-    expect(serialized.systemInterest).toContain("Säuren/Laugen");
-    expect(serialized.legalBasis).toBe("inquiry");
-  });
 });

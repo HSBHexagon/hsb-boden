@@ -31,25 +31,3 @@ export const leadFormSchema = z.object({
 });
 
 export type LeadPayload = z.input<typeof leadFormSchema>;
-
-export function serializeLeadPayload(payload: unknown) {
-  const parsed = leadFormSchema.parse(payload);
-  return {
-    source: "website",
-    legalBasis: "inquiry",
-    optOutStatus: "not_applicable",
-    firstName: parsed.firstName,
-    lastName: parsed.lastName,
-    company: parsed.company,
-    email: parsed.email,
-    phone: parsed.phone,
-    industry: parsed.industry,
-    projectType: parsed.projectType,
-    areaSize: parsed.areaSize ?? "",
-    currentFloor: parsed.currentFloor ?? "",
-    systemInterest: parsed.loads.join(", "),
-    liveOperation: parsed.liveOperation,
-    timeframe: parsed.timeframe ?? "",
-    message: parsed.message,
-  };
-}

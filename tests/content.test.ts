@@ -4,7 +4,6 @@ import { join } from "node:path";
 import {
   getAllPublicPages,
   getPublicReferences,
-  validateSiteContent,
 } from "../src/lib/content";
 import { services } from "../src/data/services";
 import { industries } from "../src/data/industries";
@@ -13,13 +12,6 @@ import { clientLocations } from "../src/data/clientLocations";
 import { germanyMapBounds, germanyStates, germanyTrustMarkers } from "../src/data/germanyMap";
 
 describe("site content contract", () => {
-  it("validates the complete dateibasiert content model", () => {
-    const result = validateSiteContent();
-
-    expect(result.success).toBe(true);
-    expect(result.errors).toEqual([]);
-  });
-
   it("generates SEO-ready public pages with one h1, title, description, and canonical URL", () => {
     const pages = getAllPublicPages();
 

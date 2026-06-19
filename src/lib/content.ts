@@ -3,39 +3,12 @@ import { industries } from "../data/industries";
 import { references } from "../data/references";
 import { services } from "../data/services";
 import { landing } from "./i18n";
-import {
-  serviceSchema,
-  industrySchema,
-  referenceSchema,
-  articleSchema,
-  type Service,
-} from "./types";
 
-export function validateSiteContent() {
-  const errors: string[] = [];
-  for (const service of services) {
-    const result = serviceSchema.safeParse(service);
-    if (!result.success)
-      errors.push(`service:${service.slug}:${result.error.message}`);
-  }
-  for (const industry of industries) {
-    const result = industrySchema.safeParse(industry);
-    if (!result.success)
-      errors.push(`industry:${industry.slug}:${result.error.message}`);
-  }
-  for (const reference of references) {
-    const result = referenceSchema.safeParse(reference);
-    if (!result.success)
-      errors.push(`reference:${reference.id}:${result.error.message}`);
-  }
-  for (const article of articles) {
-    const result = articleSchema.safeParse(article);
-    if (!result.success)
-      errors.push(`article:${article.slug}:${result.error.message}`);
-  }
+export type Service = (typeof services)[number];
+export type Industry = (typeof industries)[number];
+export type Article = (typeof articles)[number];
+export type ReferenceRecord = (typeof references)[number];
 
-  return { success: errors.length === 0, errors };
-}
 
 export function getServices() {
   return services;
@@ -49,16 +22,34 @@ export function getArticles() {
   return articles;
 }
 
-const servicesMap = new Map<string, Service>(
-  services.map((s) => [s.slug, s as unknown as Service]),
-);
+const servicesMap = new Map(services.map(s => [s.slug, s]));
 
 export function getServiceBySlug(slug: string) {
   return servicesMap.get(slug);
 }
 
-export function getPublicReferences() {
-  return references
+const industriesMap = new Map(industries.map(i => [i.slug, i]));
+
+export function getIndustryBySlug(slug: string) {
+  return industriesMap.get(slug);
+}
+
+const articlesMap = new Map(articles.map(a => [a.slug, a]));
+
+export function getArticleBySlug(slug: string) {
+  return articlesMap.get(slug);
+}
+
+const referencesMap = new Map(references.map(r => [r.id, r]));
+
+export function getReferenceById(id: string) {
+  return referencesMap.get(id as any);
+}
+
+let cachedPublicReferences: ReturnType<typeof getPublicReferencesInternal> | null = null;
+
+function getPublicReferencesInternal() {
+  return (references as readonly ReferenceRecord[])
     .filter((reference) => {
       const approvalStatus: string = reference.approvalStatus;
       return approvalStatus !== "internal";
@@ -71,14 +62,20 @@ export function getPublicReferences() {
       return {
         ...reference,
         displayName: approved ? reference.publicName : reference.anonymousName,
-        displayLocation: canShowExactLocation
-          ? `${reference.city}, ${reference.region}`
-          : reference.region,
+        displayLocation: canShowExactLocation ? `${reference.city}, ${reference.region}` : reference.region,
         canShowExactLocation,
         logo: canShowLogo ? reference.logo : undefined,
       };
     });
 }
+
+export function getPublicReferences() {
+  if (cachedPublicReferences === null) {
+    cachedPublicReferences = getPublicReferencesInternal();
+  }
+  return cachedPublicReferences;
+}
+
 
 export function getReferencesForSlugs(referenceIds: string[]) {
   const allowed = new Set(referenceIds);

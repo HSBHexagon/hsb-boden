@@ -36,7 +36,7 @@ const approvedCount = allPublic.filter((r) => r.approvalStatus === "approved").l
         </dl>
       </div>
       <div class="bg-[#f1f3f6] p-1">
-        <ReferenceMap references={getPublicReferences()} clients={clientLocations} />
+        <ReferenceMap references={allPublic} clients={clientLocations} />
       </div>
     </div>
     <div class="lg:pt-6">

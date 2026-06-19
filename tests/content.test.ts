@@ -4,9 +4,10 @@ import { join } from "node:path";
 import {
   getAllPublicPages,
   getPublicReferences,
-  validateSiteContent,
 } from "../src/lib/content";
 import { services } from "../src/data/services";
+import { serviceSchema, industrySchema, referenceSchema, articleSchema } from "../src/lib/types";
+import { references } from "../src/data/references";
 import { industries } from "../src/data/industries";
 import { articles } from "../src/data/articles";
 import { clientLocations } from "../src/data/clientLocations";
@@ -14,10 +15,25 @@ import { germanyMapBounds, germanyStates, germanyTrustMarkers } from "../src/dat
 
 describe("site content contract", () => {
   it("validates the complete dateibasiert content model", () => {
-    const result = validateSiteContent();
+    const errors: string[] = [];
+    for (const service of services) {
+      const result = serviceSchema.safeParse(service);
+      if (!result.success) errors.push(`service:${service.slug}:${result.error.message}`);
+    }
+    for (const industry of industries) {
+      const result = industrySchema.safeParse(industry);
+      if (!result.success) errors.push(`industry:${industry.slug}:${result.error.message}`);
+    }
+    for (const reference of references) {
+      const result = referenceSchema.safeParse(reference);
+      if (!result.success) errors.push(`reference:${reference.id}:${result.error.message}`);
+    }
+    for (const article of articles) {
+      const result = articleSchema.safeParse(article);
+      if (!result.success) errors.push(`article:${article.slug}:${result.error.message}`);
+    }
 
-    expect(result.success).toBe(true);
-    expect(result.errors).toEqual([]);
+    expect(errors).toEqual([]);
   });
 
   it("generates SEO-ready public pages with one h1, title, description, and canonical URL", () => {

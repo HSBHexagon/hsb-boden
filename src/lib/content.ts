@@ -4,38 +4,8 @@ import { references } from "../data/references";
 import { services } from "../data/services";
 import { landing } from "./i18n";
 import {
-  serviceSchema,
-  industrySchema,
-  referenceSchema,
-  articleSchema,
-  type Service,
+  type Service
 } from "./types";
-
-export function validateSiteContent() {
-  const errors: string[] = [];
-  for (const service of services) {
-    const result = serviceSchema.safeParse(service);
-    if (!result.success)
-      errors.push(`service:${service.slug}:${result.error.message}`);
-  }
-  for (const industry of industries) {
-    const result = industrySchema.safeParse(industry);
-    if (!result.success)
-      errors.push(`industry:${industry.slug}:${result.error.message}`);
-  }
-  for (const reference of references) {
-    const result = referenceSchema.safeParse(reference);
-    if (!result.success)
-      errors.push(`reference:${reference.id}:${result.error.message}`);
-  }
-  for (const article of articles) {
-    const result = articleSchema.safeParse(article);
-    if (!result.success)
-      errors.push(`article:${article.slug}:${result.error.message}`);
-  }
-
-  return { success: errors.length === 0, errors };
-}
 
 export function getServices() {
   return services;

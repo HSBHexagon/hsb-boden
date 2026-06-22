@@ -1,6 +1,6 @@
 # ACQUISITION_SYSTEM_PLAN — HSB-Boden / HEXAFLOOR
 
-> Stand: 2026-06-14. Akquise-Gesamtsystem (Plan). Lead-Liste vorhanden: `hsb_lead_list_2026_06_11.csv` (30 qualifizierte Leads, laut Docs).
+> Stand: 2026-06-20. Akquise-Gesamtsystem (Plan). Eine Lead-Liste `hsb_lead_list_2026_06_11.csv` wird in älteren Docs erwähnt, ist im aktuellen Repo aber nicht vorhanden.
 
 ## 1. Zielgruppen / ICP
 - B2B-Industrie mit anspruchsvollen Bodenanforderungen: Lebensmittel/Getränke, Chemie/Pharma, Logistik/Lager, Produktion.
@@ -12,6 +12,7 @@
 - **B**: guter Fit, Bedarf mittelfristig.
 - **C**: passender Fit, niedrige Priorität / Beobachtung.
 - Pflege im CRM-Light (`CRM_LIGHT_SCHEMA.md`).
+- Aktueller Repo-Check 2026-06-20: keine CSV-Leadliste im Arbeitsbaum gefunden. Für Versand heute muss die Empfängerliste außerhalb des Repos separat verifiziert werden.
 
 ## 3. Lead-Scoring (0–100, Start-Heuristik)
 - Branche-Fit, Flächenpotenzial, Belastungsart, Entscheider-Erreichbarkeit, Timing/Sanierungsfenster.
@@ -43,3 +44,5 @@
 
 ## Offene Punkte
 - Webhook/SMTP aktivieren (P0), n8n-Hosting (P0), Rechts-Review Outreach (P1), Go-Live-Zeitpunkt.
+- Heute verwendbar: einzelne vorbereitete Mails mit geprüftem PDF-Anhang und manueller Antwortbearbeitung.
+- Heute blockiert: Serienversand, CRM-Automation, n8n-Livebetrieb und Formularzustellung ohne Freigabe/Secrets.

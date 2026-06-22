@@ -5,7 +5,9 @@ Stand: 2026-06-12 · QA-Skill: `hsb-digital-flyer-design-review`
 ## Artefakte
 | Datei | Status |
 |---|---|
-| `HSB-Industrieboden-Flyer.pdf` | **248 KB**, **2 Seiten** ✓ |
+| `public/HSB-Flyer-Joel-Cherino.pdf` | **253679 Bytes**, **2 Seiten** ✓ |
+| `public/HSB-Flyer-Jordie-Post.pdf` | **253428 Bytes**, **2 Seiten** ✓ |
+| `public/HSB-Flyer-Geschaeftsfuehrer.pdf` | **253428 Bytes**, **2 Seiten** ✓ |
 | `flyer.html` / `flyer.css` / `render-flyer.mjs` | erstellt ✓ |
 | `akquise-email.md` (Hauptmail) | erstellt ✓ |
 | `akquise-email-varianten.md` (Kurz + 3 Branchen + 2 Follow-ups + 5 Betreff) | erstellt ✓ |

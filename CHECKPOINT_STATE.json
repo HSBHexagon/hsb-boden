@@ -1,13 +1,13 @@
 {
   "project": "HSB / HEXAFLOOR",
-  "last_updated": "2026-06-14T18:18:43+0200",
-  "active_model": "Claude Code",
+  "last_updated": "2026-06-20T06:30:00+0200",
+  "active_model": "Codex",
   "active_phase": "P0B-FREIGABE VORBEREITEN",
-  "active_task": "Garantie-Struktur speichern",
-  "repo_path": "/Users/joelcherinodiaz/KI-System/01_Wahrheitsquelle/_MERGED_20260613/AI-Memory-Hub/projects/hsb-boden",
+  "active_task": "Praesentations- und Versandvorbereitung aktualisiert",
+  "repo_path": "/Users/joelcherinodiaz/KI-System/02_Projects/active/hsb-boden",
   "canonical_registry": "/Users/joelcherinodiaz/KI-System/08_System/config/canonical-projects.json",
   "handoff_path": "/Users/joelcherinodiaz/KI-System/ObsidianVault/brain/CURRENT_HANDOFF.md",
-  "last_commit": "68b34f40872a9a3db98e58ac091d3734c69011e1",
+  "last_commit": "652702e24131c9ca8e368a2c418ff6b32008ba7f",
   "last_known_commits": {
     "flyer_assets": "9ac994a75b71d3ccfe1a4b204c12d1c98fc3efcc",
     "plan_files": "3308d91",
@@ -15,8 +15,25 @@
     "p0a": "7c38d7ba8f3e6cc9d38ae23c30e7ec1c27d9a24a",
     "master_rules_p0b_plan": "904685619d56c28e534a8c382b49772341b660ea"
   },
-  "website_code_diff_lines": 0,
-  "modified_files": [".astro/data-store.json (uncommitted, do not touch)"],
+  "website_code_diff_lines": 573,
+  "modified_files": [
+    ".astro/data-store.json (pre-existing uncommitted cache, do not touch)",
+    "AGENTS.md",
+    "AI_EXECUTION_PLAYBOOK.md",
+    "AI_SYSTEM_ROLES.md",
+    "CLAUDE.md",
+    "PROJECT_TRUTH.md",
+    "CURRENT_EXECUTION_STATE.md",
+    "ACQUISITION_SYSTEM_PLAN.md",
+    "PUBLIC_LEAD_ENDPOINT_SPEC.md",
+    "marketing/flyer/akquise-email.md",
+    "marketing/flyer/akquise-email-varianten.md",
+    "marketing/flyer/validation.md",
+    "docs/ops/TODAY_READINESS_2026-06-20.md",
+    "PROJECT_AUDIT.md",
+    "docs/ops/*",
+    "docs/brain/OBSIDIAN_EXPORT.md"
+  ],
   "push_done": false,
   "deploy_done": false,
   "current_permissions": {
@@ -29,10 +46,19 @@
     "P0A specification completed",
     "P0A review passed",
     "master execution rules + P0B approval plan saved",
-    "guaranteed execution/recovery system saved"
+    "guaranteed execution/recovery system saved",
+    "Codex audit docs and tool routing updated",
+    "Gemini deprioritization documented",
+    "test/check/build/deploy dry-run passed",
+    "today readiness, mail attachment, lead spec and acquisition drift updated"
   ],
   "open_steps": [
-    "wait for explicit user approval before P0B"
+    "wait for explicit user approval before P0B",
+    "align PUBLIC_LEAD_ENDPOINT_SPEC.md with actual form fields",
+    "define rate-limit values",
+    "prepare CRM-Light and test campaign rules",
+    "verify external recipient list before any email send",
+    "decide whether existing service modularization should be committed"
   ],
   "blocked_by": [
     "explicit P0B user approval",
@@ -41,7 +67,7 @@
     "rate-limit values",
     "push/deploy approval"
   ],
-  "next_step": "User decides P0B_USER_APPROVAL_REQUEST.md",
+  "next_step": "Present using current website/flyer docs; prepare only manual/approved emails; P0B remains blocked until explicit approval",
   "handoff_required": true,
   "safe_to_continue": true
 }

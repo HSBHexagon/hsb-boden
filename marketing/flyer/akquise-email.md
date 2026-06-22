@@ -1,6 +1,6 @@
 # HSB Akquise — Hauptmail
 
-**Anhang:** `HSB-Industrieboden-Flyer.pdf` (PDF, ~0,24 MB)
+**Anhang:** `public/HSB-Flyer-Joel-Cherino.pdf` (PDF, ~0,25 MB)
 **Absender:** Joel Cherino Diaz · j-cherino@hsb-boden.de
 **Länge Body:** ≤ ~90 Wörter · **eine** CTA · binäre Abschlussfrage · mobil-scannbar
 
@@ -16,7 +16,7 @@ Sehr geehrte Damen und Herren,
 
 in Produktions- und Nassbereichen entscheidet der Boden über Stillstand oder Betrieb — offene Fugen, stehendes Wasser und angegriffene Oberflächen führen zu Notreparaturen und Audit-Risiken.
 
-HSB plant und saniert säurebeständige, hygienische Industrieböden (Keramik, PU-Beton, Säureschutz, Entwässerung), auf Wunsch im laufenden Betrieb. Referenzen u. a. Südzucker, Meggle, Biovegan; Details im beigefügten Flyer.
+HSB plant und saniert säurebeständige, hygienische Industrieböden (Keramik, PU-Beton, Säureschutz, Entwässerung), auf Wunsch im laufenden Betrieb. Referenzen u. a. Südzucker, Meggle und Biovegan; Details im beigefügten Flyer.
 
 Soll ich Ihnen 2–3 Terminvorschläge für eine kurze, kostenlose Ersteinschätzung Ihrer Flächen senden?
 
@@ -29,4 +29,4 @@ j-cherino@hsb-boden.de · hsb-boden.de
 
 ---
 
-**Vor echtem Versand:** Mail an ein eigenes Seed-/Test-Postfach senden und kurz im Spam-Filter gegenprüfen (Anhang < 1 MB → geringes Zustellrisiko).
+**Vor echtem Versand:** Mail an ein eigenes Seed-/Test-Postfach senden und kurz im Spam-Filter gegenprüfen (Anhang < 1 MB → geringes Zustellrisiko). Kein Serienversand ohne Recht-/Opt-out-Prüfung.

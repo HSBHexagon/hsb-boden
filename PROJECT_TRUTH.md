@@ -1,15 +1,16 @@
 # PROJECT_TRUTH — HSB-Boden / HEXAFLOOR
 
-> Single Source of Truth für den Projektstand. Stand: 2026-06-14.
+> Single Source of Truth für den Projektstand. Stand: 2026-06-17.
 > Unklare Punkte sind als `unklar / zu prüfen` markiert. Keine Vermutung als Wahrheit.
 
 ## 1. Kanonischer Repo-Pfad
-`/Users/joelcherinodiaz/KI-System/01_Wahrheitsquelle/_MERGED_20260613/AI-Memory-Hub/projects/hsb-boden`
+`/Users/joelcherinodiaz/KI-System/02_Projects/active/hsb-boden`
 
-Belegt durch: letzte Claude-Code-Session `754c6082` (2026-06-13) + lokales git log + GitHub-Remote-Lineage.
-Registry: `~/KI-System/08_System/config/canonical-projects.json`.
+Belegt durch: Registry `~/KI-System/08_System/config/canonical-projects.json` und `~/KI-System/08_System/scripts/assert_canonical_project_path.sh hsb-boden`.
+Die alte `_MERGED_20260613`-Angabe ist seit der 2026-06-15-Registry-Umstellung nicht mehr Schreibwahrheit.
 
 ## 2. Ausgeschlossene falsche Pfade
+- `/Users/joelcherinodiaz/KI-System/01_Wahrheitsquelle/_MERGED_20260613/AI-Memory-Hub/projects/hsb-boden` — alte Merge-/Import-Quelle, NICHT kanonisch.
 - `/Users/joelcherinodiaz/Projects/hsb-boden` — älterer Klon (HEAD `359ffc2`, 2026-06-12), NICHT kanonisch.
 - `/Users/joelcherinodiaz/AI-Memory-Hub/projects/hsb-boden` — fehlt.
 - `/Users/joelcherinodiaz/KI-System-Backup-*` — Backups, keine Wahrheit.
@@ -18,9 +19,10 @@ Registry: `~/KI-System/08_System/config/canonical-projects.json`.
 - `brain/03_projects/hexafloor` — leerer Platzhalter.
 
 ## 3. Aktueller Branch
-`main`
+`agent/hexafloor-codex-superpower-audit` für den Auditlauf. Vorheriger Arbeitsstand: `main...origin/main [ahead 7, behind 1]`.
 
 ## 4. Aktueller Commit
+- Aktueller HEAD beim Auditstart: `652702e24131c9ca8e368a2c418ff6b32008ba7f` — `chore(hsb): point checkpoint at current head for clean recovery`
 - Letzte verifizierte Review-Baseline: `3308d91` — `docs(hsb): add project truth and execution playbooks`
 - Vorheriger lokaler Flyer-Asset-Commit: `9ac994a` — `chore(marketing): add finalized HSB flyer assets`
 - Vorheriger menschlicher Website-Stand: `697cce6` — `feat(hsb): Reparatur-Leistungsseite + P2-SEO-Finalisierung`
@@ -33,6 +35,7 @@ Registry: `~/KI-System/08_System/config/canonical-projects.json`.
 
 ## 6. Lokaler Arbeitsbaumstatus
 - Nur `.astro/data-store.json` (Build-Cache) ist modified und bewusst NICHT committed.
+- `.claude/worktrees/` ist untracked und wird in diesem Lauf nicht angefasst.
 - Website-Code-Diff = 0.
 
 ## 7. Website-Stand
@@ -103,9 +106,14 @@ Diese Schritte sind Vorbereitung ohne Live-Cutover. Keine Live-Aktivierung, kein
 Diese Schritte sind reine Live-/Production-Schritte und bleiben bis zur ausdrücklichen Freigabe blockiert.
 
 ## 18. Offene menschliche Entscheidungen
-- Push-Freigabe für lokale Commits (`9ac994a` + Doku-Commit).
-- Soll `_MERGED_20260613` der dauerhafte kanonische Ort sein oder relokiert werden (nur mit Freigabe)?
+- Push-Freigabe für lokale Commits bleibt offen.
+- `02_Projects/active/hsb-boden` ist der kanonische Arbeitsort; alte `_MERGED_20260613`-Pfade bleiben ausgeschlossen.
 - n8n-Hosting, SMTP-Anbieter, Go-Live-Zeitpunkt.
+
+## 22. Gemini-Status
+- Gemini Account 1/2 bleiben als ergänzende Research-/Gegenprüfungsrollen dokumentiert.
+- Gemini CLI und Gemini Code Assist sind wegen Nutzerbeobachtung langsam/nicht zuverlässig und wegen Googles angekündigtem Stopp für Individuals/Google AI Pro/Ultra ab 2026-06-18 nicht mehr operativer kritischer Pfad.
+- Antigravity ist nur Migrationshinweis, kein eingeführter Projektbestandteil.
 
 ## 19. Nächster sicherer Schritt
 Codex-Review dieser Inventur + Plan-Dateien; danach P0 (Lead-Pipeline) nach Freigabe. Keine Website-Code-Änderung, kein Push/Deploy ohne Freigabe.

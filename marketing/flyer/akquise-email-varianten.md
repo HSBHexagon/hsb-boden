@@ -1,13 +1,15 @@
 # HSB Akquise — Mail-Varianten
 
 Alle Varianten: ≤ ~90 Wörter, **eine** binäre CTA, Flyer als Anhang, Signatur Joel Cherino Diaz.
-Personalisierungs-Satz [in Klammern] vor Versand füllen. Anhang: `HSB-Industrieboden-Flyer.pdf`.
+Personalisierungs-Satz [in Klammern] vor Versand füllen. Anhang: `public/HSB-Flyer-Joel-Cherino.pdf`.
 
 **Signatur (für alle Mails):**
 > Joel Cherino Diaz
 > HSB Hexagon Säurebau GmbH · Benzstrasse 6 · 48599 Gronau (Westf.)
 > Tel. 02562 9463030 · Mobil 0151 21886891
 > j-cherino@hsb-boden.de · hsb-boden.de
+
+**Versandregel:** Heute nur vorbereiten oder einzeln nach Freigabe senden. Kein Serienversand ohne Recht-/Opt-out-/Antwortmanagement.
 
 ---
 

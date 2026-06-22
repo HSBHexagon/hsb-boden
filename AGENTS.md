@@ -74,8 +74,12 @@ Agent-specific notes:
   of truth and wins on conflict.
 - **GitHub Copilot**: see `.github/copilot-instructions.md` for a condensed
   summary tuned for inline-completion/chat context.
-- **Gemini CLI / Codex**: apply the same Non-Negotiables, Verification,
-  Execution Stack, and Deploy Gate sections above.
+- **Gemini CLI**: only optional research/review assistance. Because Google has
+  announced the June 18, 2026 stop for Gemini CLI / Gemini Code Assist requests
+  in the Individuals / Google AI Pro / Ultra context, Gemini is not an
+  operational critical path for this repo.
+- **Codex**: apply the same Non-Negotiables, Verification, Execution Stack,
+  and Deploy Gate sections above.
 
 Shared rules for all agents:
 
@@ -100,6 +104,12 @@ Shared rules for all agents:
 - **Codex**: keep context windows focused — if modifying styling, provide
   both the component and `tailwind.config.mjs` context.
 
+### Modularity Mandate
+
+- **File Size Limit:** No source file (TS/JS) may exceed **500 lines**.
+- **Data Modularization:** Large data arrays (e.g., services, industries, references) must be split into individual files under `src/data/<domain>/`.
+- **Refactoring Requirement:** If a file grows near the 500-line limit during a task, the agent MUST plan and execute its modularization as part of the completion.
+
 ## KI-System Pflichtstart (Shared-Memory-Governance)
 
 Vor jeder Arbeit an diesem Repo:
@@ -117,8 +127,8 @@ Niemals in diesen Pfaden arbeiten:
 - Rohimporte unter `brain/07_imported/`
 - leere brain-Projektordner (z. B. `brain/03_projects/hexafloor`)
 
-Kanonischer Arbeitsrepo-Pfad (Stand 2026-06-14, belegt durch letzte Claude-Code-Session + git log + GitHub-Remote):
-`/Users/joelcherinodiaz/KI-System/01_Wahrheitsquelle/_MERGED_20260613/AI-Memory-Hub/projects/hsb-boden`
+Kanonischer Arbeitsrepo-Pfad (Stand 2026-06-17, belegt durch Registry + Guard-Script):
+`/Users/joelcherinodiaz/KI-System/02_Projects/active/hsb-boden`
 
 Keine Website-Code-Änderung ohne Freigabe. Kein Push, kein Production-Deploy ohne Freigabe.
 

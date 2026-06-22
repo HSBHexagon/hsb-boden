@@ -1,5 +1,7 @@
 # n8n Workflow: hsb-boden-lead-intake
 
+> **Deprecated (2026-06-22):** n8n wurde als Lead-Zustellweg verworfen (Abo-Kosten widersprechen der Vorgabe "kostenlos und bleibt kostenlos"). Aktueller Weg: Google Apps Script Web App, siehe `../../GOOGLE_SHEETS_CRM_SETUP.md` §4 und `../../N8N_HOSTING_DECISION.md` §9b. Diese Datei bleibt nur als Referenz/Historie erhalten, nicht aktiv verwenden.
+
 ## Zweck
 
 Dieser Workflow verarbeitet Projektanfragen vom `hsb-boden` Kontaktformular.

@@ -3,11 +3,11 @@
 > P0A/P0B-Spezifikation. Stand: 2026-06-20. Nur Spezifikation. Kein Endpoint-Code, kein Webhook-Livebetrieb, keine Live-Aktivierung in diesem Dokument.
 
 ## 1. Zweck
-Serverseitiger Annahmepunkt für Website-Formular-Leads, der validierte Daten an den n8n-Webhook weiterreicht. Frontend hält keine Secrets.
+Serverseitiger Annahmepunkt für Website-Formular-Leads, der validierte Daten an den konfigurierten Lead-Webhook weiterreicht. Frontend hält keine Secrets.
 
 ## 2. Zielroute
-- Vorgeschlagen: `POST /api/lead` (Astro/Cloudflare Worker, serverseitig).
-- Der bestehende Frontend-Fallback bleibt: Wenn `PUBLIC_LEAD_ENDPOINT` leer ist, wird nichts versendet und das Formular zeigt Telefon/E-Mail.
+- Implementiert: `POST /api/lead` (Astro/Cloudflare Worker, serverseitig).
+- Frontend-Fallback: Wenn `PUBLIC_LEAD_FORM_ENABLED` nicht `"true"` ist, wird nichts versendet und das Formular zeigt Telefon/E-Mail.
 
 ## 3. Erlaubte Methoden
 
@@ -62,10 +62,10 @@ Serverseitiger Annahmepunkt für Website-Formular-Leads, der validierte Daten an
 - `consent_text_version` (string, optional) zur Nachweisführung.
 - Speicherung minimaler personenbezogener Daten; Zweckbindung Lead-Kontakt.
 
-## 8. Weiterleitung an n8n Webhook
-- Server ruft n8n-Webhook serverseitig auf (URL als Secret/Env, nicht im Frontend).
-- n8n-Workflow-Pfad laut Repo: `POST /webhook/hsb-boden-lead-intake`.
-- Workflow-Status laut JSON: `active: false`.
+## 8. Weiterleitung an den Lead-Webhook
+> Revidiert 2026-06-22: n8n entfällt (Abo-Kosten). Ziel ist jetzt eine kostenlose Google-Apps-Script-Web-App, siehe `N8N_HOSTING_DECISION.md` §9b und `GOOGLE_SHEETS_CRM_SETUP.md`.
+- Server ruft die in `LEAD_WEBHOOK_URL` konfigurierte Ziel-URL serverseitig auf (Secret/Env, nicht im Frontend).
+- Ziel: Google Apps Script Web App, gebunden an das CRM-Light-Sheet (`doPost(e)`).
 - Payload: validierte, normalisierte Felder mit den Namen aus Abschnitt 4.
 - Timeout: 6 Sekunden. Retry: keine automatische Mehrfachsendung aus dem Browser; serverseitig höchstens 1 Retry oder Queue in P0B.
 
@@ -76,7 +76,7 @@ Serverseitiger Annahmepunkt für Website-Formular-Leads, der validierte Daten an
 | Validierung fehlgeschlagen | 400 + Feldfehler (ohne interne Details) |
 | Methode unzulässig | 405 |
 | Rate Limit | 429 |
-| n8n nicht erreichbar | 502 + keine Erfolgsmeldung; Persistenz/Queue nur nach P0B-Entscheidung |
+| Webhook nicht erreichbar | 502 + keine Erfolgsmeldung; Persistenz/Queue nur nach P0B-Entscheidung |
 | interner Fehler | 500 (generisch) |
 
 ## 10. Logging ohne Secrets
@@ -85,7 +85,7 @@ Serverseitiger Annahmepunkt für Website-Formular-Leads, der validierte Daten an
 
 ## 11. Teststrategie
 - Unit: Schema-Validierung (gültig/ungültig, `privacyConsent` fehlt, Honeypot gefüllt).
-- Integration: Mock-n8n-Webhook (kein Live-Endpoint).
+- Integration: Mock-Webhook (kein Live-Endpoint).
 - Negativtests: 400/405/429.
 - E2E erst in P0B nach Freigabe (Mock vor Live).
 
@@ -98,4 +98,4 @@ Implementierung erst nach Freigabe in `P0B_USER_APPROVAL_REQUEST.md`.
 - Kein Webhook-Livebetrieb in P0A.
 
 ## 14. Nächster Entscheidungspunkt
-Freigabe Route + Rate-Limit-Werte + n8n-Webhook-Ziel → P0B-Implementierung. Ohne angekreuzte P0B-Freigabe bleibt `PUBLIC_LEAD_ENDPOINT` leer.
+Freigabe Route + Rate-Limit-Werte + Webhook-Ziel → P0B-Implementierung. Ohne angekreuzte P0B-Freigabe bleibt `LEAD_WEBHOOK_URL` leer und `PUBLIC_LEAD_FORM_ENABLED` auf `false`.

@@ -132,7 +132,7 @@ export async function POST(context: APIContext) {
     return jsonResponse(429, { ok: false, error: "rate_limited" }, origin);
   }
 
-  const webhookUrl = locals.runtime?.env?.N8N_WEBHOOK_URL;
+  const webhookUrl = locals.runtime?.env?.LEAD_WEBHOOK_URL;
 
   try {
     const controller = new AbortController();

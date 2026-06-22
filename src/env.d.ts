@@ -4,7 +4,7 @@
 import type { Runtime } from "@astrojs/cloudflare";
 
 type CloudflareEnv = {
-  N8N_WEBHOOK_URL?: string;
+  LEAD_WEBHOOK_URL?: string;
 };
 
 declare global {

@@ -11,10 +11,10 @@
 | 1 | P0B technische Implementierung starten | ☑ (Nutzer, 2026-06-22) |
 | 2 | `PUBLIC_LEAD_ENDPOINT` implementieren | ☑ |
 | 3 | Feldnamen an reales Formular angleichen | ☑ |
-| 4 | Endpoint-n8n-Mapping gegen `ops/n8n/hsb-boden-lead-intake.json` abgleichen | ☑ |
+| 4 | Endpoint-Payload-Mapping gegen `PUBLIC_LEAD_ENDPOINT_SPEC.md` §4 abgleichen | ☑ |
 | 5 | Rate-Limit-Werte festlegen | ☑ (5 POSTs/10min pro IP, 2/30min pro E-Mail — siehe `PUBLIC_LEAD_ENDPOINT_SPEC.md` §6) |
-| 6 | n8n Webhook anbinden | ☐ blockiert: `N8N_WEBHOOK_URL` fehlt |
-| 7 | Google Sheets CRM-Light anbinden | ☐ blockiert: `GOOGLE_SHEETS_ID` + Service-Account-Credential fehlen |
+| 6 | Lead-Webhook (Google Apps Script Web App) anbinden | ☐ blockiert: `LEAD_WEBHOOK_URL` fehlt |
+| 7 | Google Sheets CRM-Light einrichten (Apps-Script-Web-App, kein Service Account) | ☐ blockiert: Sheet + Apps-Script-Deployment fehlen |
 | 8 | Testlead senden | ☐ blockiert: erfordert #6 |
 | 9 | Build/Test ausführen | ☑ |
 | 10 | **Push erlauben** (separat) | ☐ nicht angefragt |
@@ -27,6 +27,5 @@
 - Abbruchkriterien gemäß `P0B_IMPLEMENTATION_PLAN.md` gelten jederzeit.
 
 ## Offene Nutzerentscheidungen (Voraussetzung)
-- n8n-Hosting (Cloud/VPS/Docker) — `N8N_HOSTING_DECISION.md`.
-- Service Account vs OAuth — `GOOGLE_API_SETUP.md`.
-- Endpoint-Route + konkrete Rate-Limit-Werte.
+- ~~n8n-Hosting~~ — verworfen 2026-06-22 (Abo-Kosten), siehe `N8N_HOSTING_DECISION.md` §9b. Ersetzt durch kostenlose Apps-Script-Web-App, siehe `GOOGLE_SHEETS_CRM_SETUP.md`.
+- Endpoint-Route + konkrete Rate-Limit-Werte — erledigt (#4/#5).

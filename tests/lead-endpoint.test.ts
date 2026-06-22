@@ -36,7 +36,7 @@ function makeContext(request: Request) {
     request,
     locals: {
       runtime: {
-        env: { N8N_WEBHOOK_URL: "https://example.n8n.cloud/webhook/hsb-boden-lead-intake" },
+        env: { LEAD_WEBHOOK_URL: "https://script.google.com/macros/s/EXAMPLE/exec" },
       },
     },
   } as any;
@@ -51,7 +51,7 @@ describe("POST /api/lead", () => {
     vi.restoreAllMocks();
   });
 
-  it("forwards a valid lead to the n8n webhook and returns 200", async () => {
+  it("forwards a valid lead to the configured webhook and returns 200", async () => {
     const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response("{}", { status: 200 }));
     const res = await POST(makeContext(makeRequest(validBody)));
     expect(res.status).toBe(200);
@@ -84,7 +84,7 @@ describe("POST /api/lead", () => {
     expect(res.status).toBe(413);
   });
 
-  it("returns 502 when the n8n webhook is unreachable", async () => {
+  it("returns 502 when the lead webhook is unreachable", async () => {
     vi.spyOn(globalThis, "fetch").mockRejectedValue(new Error("network down"));
     const res = await POST(makeContext(makeRequest(validBody)));
     expect(res.status).toBe(502);

@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { absoluteUrl, canonical, pageTitle } from "../src/lib/seo";
 import { site } from "../src/data/site";
 
-describe("seo functions", () => {
+describe("seo module", () => {
   describe("absoluteUrl", () => {
     it("should return the path unchanged if it starts with http", () => {
       expect(absoluteUrl("https://example.com/path")).toBe("https://example.com/path");

@@ -9,6 +9,9 @@ import {
   referenceSchema,
   articleSchema,
   type Service,
+  type Industry,
+  type Article,
+  type ReferenceRecord,
 } from "./types";
 
 export function validateSiteContent() {
@@ -38,15 +41,15 @@ export function validateSiteContent() {
 }
 
 export function getServices() {
-  return services;
+  return services as unknown as Service[];
 }
 
 export function getIndustries() {
-  return industries;
+  return industries as unknown as Industry[];
 }
 
 export function getArticles() {
-  return articles;
+  return articles as unknown as Article[];
 }
 
 const servicesMap = new Map<string, Service>(
@@ -57,8 +60,34 @@ export function getServiceBySlug(slug: string) {
   return servicesMap.get(slug);
 }
 
-export function getPublicReferences() {
-  return references
+const industriesMap = new Map<string, Industry>(
+  industries.map((i) => [i.slug, i as unknown as Industry]),
+);
+
+export function getIndustryBySlug(slug: string) {
+  return industriesMap.get(slug);
+}
+
+const articlesMap = new Map<string, Article>(
+  articles.map((a) => [a.slug, a as unknown as Article]),
+);
+
+export function getArticleBySlug(slug: string) {
+  return articlesMap.get(slug);
+}
+
+const referencesMap = new Map<string, ReferenceRecord>(
+  references.map((r) => [r.id, r as unknown as ReferenceRecord]),
+);
+
+export function getReferenceById(id: string) {
+  return referencesMap.get(id);
+}
+
+let cachedPublicReferences: any[] | null = null;
+
+function getPublicReferencesInternal() {
+  return (references as readonly ReferenceRecord[])
     .filter((reference) => {
       const approvalStatus: string = reference.approvalStatus;
       return approvalStatus !== "internal";
@@ -78,6 +107,13 @@ export function getPublicReferences() {
         logo: canShowLogo ? reference.logo : undefined,
       };
     });
+}
+
+export function getPublicReferences() {
+  if (cachedPublicReferences === null) {
+    cachedPublicReferences = getPublicReferencesInternal();
+  }
+  return cachedPublicReferences;
 }
 
 export function getReferencesForSlugs(referenceIds: string[]) {
@@ -107,7 +143,7 @@ export function getAllPublicPages() {
       h1: "Branchenspezifische Industrieböden",
       seoTitle: "Industrieböden nach Branche | HSB Hexagon Säurebau",
       description:
-        "Industrieböden für Lebensmittelindustrie, Molkereien, Brauereien, Chemie, Pharma, Backwarenproduktion und Großküchen.",
+        "Industrieböden für Lebensmittelindustrie, Molkereien, Brauereien, Chemie, Pharma, Backwarenproduktion and Großküchen.",
       canonicalPath: "/branchen/",
     },
     {
@@ -119,7 +155,7 @@ export function getAllPublicPages() {
       canonicalPath: "/referenzen/",
     },
     {
-      h1: "Wissen zu Industrieböden, Säureschutz und Sanierung",
+      h1: "Wissen zu Industrieböden, Säureschutz and Sanierung",
       seoTitle: "Wissen zu Industrieböden & Säureschutz | HSB Hexagon Säurebau",
       description:
         "Praxisnahes Wissen zu PU-Beton, keramischen Industrieböden, Molkereiböden, säurefesten Fliesen, Entwässerung und Sanierung.",

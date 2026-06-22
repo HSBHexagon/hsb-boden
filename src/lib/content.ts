@@ -129,25 +129,25 @@ export function getArticles() {
 const servicesMap = new Map(services.map(s => [s.slug, s]));
 
 export function getServiceBySlug(slug: string) {
-  return servicesMap.get(slug);
+  return servicesMap.get(slug as any);
 }
 
 const industriesMap = new Map(industries.map(i => [i.slug, i]));
 
 export function getIndustryBySlug(slug: string) {
-  return industriesMap.get(slug);
+  return industriesMap.get(slug as any);
 }
 
 const articlesMap = new Map(articles.map(a => [a.slug, a]));
 
 export function getArticleBySlug(slug: string) {
-  return articlesMap.get(slug);
+  return articlesMap.get(slug as any);
 }
 
 const referencesMap = new Map(references.map(r => [r.id, r]));
 
 export function getReferenceById(id: string) {
-  return referencesMap.get(id);
+  return referencesMap.get(id as any);
 }
 
 export function getPublicReferences() {

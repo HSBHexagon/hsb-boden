@@ -7,3 +7,12 @@ dist/
 *.log
 .wrangler/
 .worktrees/
+
+# Local AI / agent artifacts
+.agents/
+.claude/
+.codex/
+docs/brain/
+docs/ops/
+PROJECT_AUDIT.md
+src/OPTIMIZATION.md

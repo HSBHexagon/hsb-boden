@@ -1,43 +1,42 @@
 # CURRENT_EXECUTION_STATE.md
 
-Stand: 2026-06-11
+Stand: 2026-06-20
 Projekt: HEXAFLOOR / HSB-Boden
-Phase: **FINALISIERUNG & GO-LIVE READINESS**
+Phase: **PRÄSENTATIONS- UND VERSANDVORBEREITUNG**
 
-## 1. Aktuelle Phase: EXECUTION (Finaler Schliff)
-Nach erfolgreicher Recovery (UX/Mobile-Fixes) befindet sich das Projekt in der Phase der betrieblichen Einsatzbereitschaft. Der Fokus liegt nun auf der Konsistenz zwischen Website und Vertriebsmaterialien sowie der Aktivierung der Lead-Pipeline.
+## 1. Aktuelle Phase: kontrollierte Vorbereitung
+Der aktuelle Repo-Stand ist technisch prüfbar und als Präsentationsgrundlage nutzbar. Live-Akquise, n8n, SMTP, CRM-Light, Push und Deploy bleiben blockiert, bis die zugehörigen Freigaben und externen Systeme real geprüft sind.
 
 ## 2. Fertigstellungsgrad
-*   **Website-Technik:** 98% (Build ✅, Lighthouse 100/100 ✅, Mobile-UX ✅)
-*   **Content & Referenzen:** 95% (Referenzen mit Klarnamen & Logos freigegeben und implementiert)
-*   **Rechtliches:** 90% (Texte vorhanden, warten auf finale User-Abnahme)
-*   **Lead-System:** 60% (Formular & n8n-Workflow fertig, Webhook & SMTP inaktiv)
-*   **Vertriebs-Assets:** 40% (Kundenliste vorhanden, Flyer/Mail-Konsistenzprüfung ausstehend)
+*   **Website-Technik:** lokal verifiziert (`test:run`, `check`, `build` am 2026-06-20 grün); kein Deploy in diesem Lauf.
+*   **Content & Referenzen:** im Repo vorhanden; öffentliche Claims/Logos bleiben freigabepflichtig.
+*   **Rechtliches:** Texte vorhanden, finale fachliche/rechtliche Abnahme offen.
+*   **Lead-System:** Formular und n8n-Workflow vorhanden; Zustellung, Webhook, SMTP und CRM-Light nicht live.
+*   **Vertriebs-Assets:** Flyer-PDFs und Mailtexte vorhanden; Leadliste im aktuellen Repo nicht gefunden.
 
 ## 3. Offene Aufgaben (Status-Check)
 
 | Bereich | Status | Details |
 |---|---|---|
-| **Logos sichtbar?** | ✅ JA | 5 Kundenlogos als Text-SVGs implementiert (`public/logos/`). |
-| **Referenzen sichtbar?** | ✅ JA | 5 reale Fallstudien (Südzucker, Gropper etc.) + 21 Karten-Marker aktiv. |
-| **Design vertrauenswürdig?** | ✅ JA | "Excellence"-Level, technischer Fokus, klare Projektabläufe. |
-| **Flyer konsistent?** | ⬜ OFFEN | Abgleich des Bestands-Flyers mit neuen Logos/Referenzen nötig. |
-| **Akquise-Mail konsistent?** | ⬜ OFFEN | Templates an neue Website-Struktur (Leistungen/Branchen) anpassen. |
-| **Lead-Prozess vollständig?** | ⚠️ TEILWEISE | Technik steht, braucht `PUBLIC_LEAD_ENDPOINT` und SMTP-Daten. |
+| **Logos/Referenzen sichtbar?** | vorhanden | Website-Daten enthalten freigegebene und anonymisierte Referenzen; finale öffentliche Nutzung bleibt prüfpflichtig. |
+| **Präsentation heute?** | ja | Website-Build, Flyer-PDFs und Projektstory sind lokal verwendbar. |
+| **Flyer konsistent?** | teilweise | PDF-Dateien vorhanden; Mail-Anhang wurde auf den echten Repo-Dateinamen korrigiert. |
+| **Akquise-Mail konsistent?** | vorbereitet | Mailtexte sind nutzbar, aber nur mit manuellem Personalisierungssatz und Freigabe. |
+| **Lead-Prozess vollständig?** | nein | `PUBLIC_LEAD_ENDPOINT` leer, n8n inactive, SMTP-Platzhalter, CRM-Light nicht live. |
+| **Leadliste vorhanden?** | nicht im Repo | Ältere Docs erwähnen CSV mit 30 Leads; aktueller Arbeitsbaum enthält sie nicht. |
 
 ## 4. Nächster kritischer Pfad
 
-1.  **Lead-Aktivierung (BLOCKER):** Webhook-URL in `.env` eintragen. Ohne diesen Schritt ist die Website für Akquise wertlos.
-2.  **Asset-Synchronisation:** Bestehende Flyer und Mail-Entwürfe gegen den Stand der Website (neue Namen/Logos) prüfen.
-3.  **Rechtliche Freigabe:** Kurzes Review von Impressum/DSGVO durch den Nutzer.
+1.  **Heute zwingend:** Präsentations- und Versandunterlagen ohne falsche Behauptungen nutzen.
+2.  **Heute sinnvoll:** Test-/Seed-Mail manuell vorbereiten, aber keinen Serienversand starten.
+3.  **Blocker:** Webhook, SMTP, n8n-Publish, CRM-Light, Empfängerliste und Recht-/Opt-out-Prozess sind nicht live verifiziert.
 
 ## 5. Reihenfolge bis zum Versand
 
-1.  **Konfiguration:** `PUBLIC_LEAD_ENDPOINT` setzen + Test-Lead absenden.
-2.  **Audit:** Abgleich Flyer/Mail mit der Website (Namen, Leistungen, CTAs).
-3.  **Deployment:** Merge PR #5 und Go-Live auf Ziel-Domain.
-4.  **Test:** End-to-End Test (Klick auf Flyer-QR -> Formular -> n8n -> E-Mail-Eingang).
-5.  **Start:** Erstversand der Akquise-Mails an die 30 qualifizierten Leads.
+1.  **Präsentation:** Lokalen oder bestehenden Preview-Stand zeigen, Flyer `public/HSB-Flyer-Joel-Cherino.pdf` verwenden.
+2.  **Versandvorbereitung:** Empfängerliste extern verifizieren, Personalisierungssatz füllen, Seed-Mail senden, Opt-out/Antwortbearbeitung klären.
+3.  **Nächster Change-Block:** P0B-Freigabe einholen, dann Endpoint/Rate-Limit/n8n/CRM-Light als eigenen technischen Block umsetzen.
+4.  **Nicht heute ohne Freigabe:** Push, Deploy, Production-Cutover, n8n-Livebetrieb, SMTP-Credentials, Serienkampagne.
 
 ---
 *Dokumentation der Execution Phase beendet. Stoppe wie angewiesen.*

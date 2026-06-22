@@ -110,40 +110,30 @@ Shared rules for all agents:
 - **Data Modularization:** Large data arrays (e.g., services, industries, references) must be split into individual files under `src/data/<domain>/`.
 - **Refactoring Requirement:** If a file grows near the 500-line limit during a task, the agent MUST plan and execute its modularization as part of the completion.
 
-## KI-System Pflichtstart (Shared-Memory-Governance)
+### Google Jules
 
-Vor jeder Arbeit an diesem Repo:
+- Jules (`google-labs-jules[bot]`) may create branches, commits, and pull
+  requests, and may fix failing CI/workflows — same as any other agent in
+  this file.
+- Jules may **auto-merge** its own PRs into `main` once all required status
+  checks are green (`validate`, `build-and-test`, `Dependency Review`,
+  `Secret Scanning`, `lighthouse`, `deploy`, `Analyze (javascript-typescript)`,
+  `Analyze (actions)` — enforced by the "Protect Main" ruleset). This is a
+  deliberate policy: Jules is registered as a `pull_request`-scoped bypass
+  actor on that ruleset, so its PRs do not require a separate human approval
+  once CI is green.
+- This does **not** change the non-negotiables: `deploy-production.yml`
+  remains `workflow_dispatch`-only and off-limits for Jules and all other
+  agents; WordPress (`hsb-boden.de`), Argelith/Zahna claims, and customer
+  data rules apply unconditionally to Jules as well.
+- Jules must not push directly to `main` — only via pull request, so that CI
+  and required status checks always run before the change lands.
 
-1. Lies `~/KI-System/00_INDEX.md`.
-2. Führe aus: `~/KI-System/tools/handoff.sh read`.
-3. Lies die Registry: `~/KI-System/08_System/config/canonical-projects.json`.
-4. Verifiziere den Pfad:
-   `cd "$(~/KI-System/08_System/scripts/resolve_project_path.sh hsb-boden)" && ~/KI-System/08_System/scripts/assert_canonical_project_path.sh hsb-boden`
+## Kanonischer Arbeitsrepo-Pfad
 
-Niemals in diesen Pfaden arbeiten:
+`/Users/joelcherinodiaz/KI-System/02_Projects/active/hsb-boden` (Registry:
+`~/KI-System/08_System/config/canonical-projects.json`). Der frühere
+`_MERGED_20260613`-Pfad ist archiviert und nicht kanonisch.
 
-- Backup-Pfade (`*KI-System-Backup*`, `*Backup*`, `*.Trash*`)
-- `/Users/joelcherinodiaz/Projects/hsb-boden` (älterer Klon, NICHT kanonisch)
-- Rohimporte unter `brain/07_imported/`
-- leere brain-Projektordner (z. B. `brain/03_projects/hexafloor`)
-
-Kanonischer Arbeitsrepo-Pfad (Stand 2026-06-17, belegt durch Registry + Guard-Script):
-`/Users/joelcherinodiaz/KI-System/02_Projects/active/hsb-boden`
-
-Keine Website-Code-Änderung ohne Freigabe. Kein Push, kein Production-Deploy ohne Freigabe.
-
-## MASTER_EXECUTION_RULES Pflicht
-Vor jeder Arbeit im Projekt HSB/HEXAFLOOR muss zuerst gelesen werden:
-1. `MASTER_EXECUTION_RULES.md`
-2. `PROJECT_TRUTH.md`
-3. `AI_EXECUTION_PLAYBOOK.md`
-4. `~/KI-System/ObsidianVault/brain/CURRENT_HANDOFF.md`
-Ohne diese Dateien darf keine Projektarbeit starten.
-Der kanonische Repo-Pfad wird ausschließlich über `~/KI-System/08_System/config/canonical-projects.json` und `resolve_project_path.sh` bestimmt.
-Bei Widerspruch zwischen Dateien:
-STOP. Keine eigenmächtige Strukturentscheidung.
-
-## Pflichtstart HSB / HEXAFLOOR (Garantie-Struktur)
-Vor jeder Arbeit lesen: `MASTER_EXECUTION_RULES.md`, `STARTUP_PROTOCOL.md`, `CHECKPOINT_STATE.json`, `PROJECT_TRUTH.md`, `AI_EXECUTION_PLAYBOOK.md`, `PHASED_EXECUTION_PLAN.md`, `~/KI-System/ObsidianVault/brain/CURRENT_HANDOFF.md`.
-Dann: `resolve_project_path.sh hsb-boden` → `cd` → `assert_canonical_project_path.sh hsb-boden` → `git status --short`.
-**Pflichtabschluss:** `CHECKPOINT_STATE.json` + `CURRENT_HANDOFF.md` + `SESSION_LOG.md` aktualisieren, Report schreiben, Website-Code-Diff prüfen, Push/Deploy dokumentieren. Ohne Checkpoint gilt Arbeit als nicht sauber abgeschlossen.
+Keine Website-Code-Änderung ohne Freigabe. Kein Push, kein Production-Deploy
+ohne Freigabe.

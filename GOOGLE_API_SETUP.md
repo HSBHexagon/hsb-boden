@@ -28,8 +28,8 @@
 - Keine Secrets in `.env`-Dateien committen (`.gitignore` prüfen).
 
 ## OAuth-Minimalsetup
-- Entscheidung offen: Service Account vs OAuth Client.
-- Startempfehlung:
+- **Entscheidung (2026-06-22, Claude Code stellvertretend nach Nutzer-Freigabe): Service Account.** Begründung: Sheets-CRM-Light ist interner Zugriff ohne Nutzerkontext, Service Account vermeidet OAuth-Refresh-Token-Wartung und Redirect-URI-Komplexität. Gmail/Calendar (optional, derzeit nicht im Scope) bleiben bei Bedarf OAuth.
+- Startempfehlung (Referenz, durch obige Entscheidung umgesetzt):
   - Google Sheets CRM-Light intern: Service Account bevorzugt.
   - Gmail/Calendar mit Nutzerkonto: OAuth Client nur bei Bedarf.
 - Credential-Ort:

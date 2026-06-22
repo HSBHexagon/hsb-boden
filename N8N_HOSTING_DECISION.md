@@ -47,3 +47,6 @@ Kein Live-Webhook und keine produktive n8n-Anbindung ohne ausdrückliche Freigab
 
 ## 8. Nächster Entscheidungspunkt
 Nutzer wählt Hosting-Option (A/B/C) + bestätigt Credential-Ablageort → Voraussetzung für P0B.
+
+## 9. Entscheidung (2026-06-22, Claude Code stellvertretend nach Nutzer-Freigabe)
+**Option A: n8n Cloud.** Begründung: niedrigster Aufwand, kein Server-Härtungsaufwand, Anbieter-SLA passt zu einem niedrigvolumigen B2B-Lead-Formular. Migration zu B/C bleibt offen, ist aber nicht durch belegten Bedarf gerechtfertigt. Credential-Ablageort: `~/KI-System/05_Secrets/` bzw. n8n-Credential-Store — keine Secrets im Repo. Live-Webhook bleibt trotzdem gesperrt, bis `N8N_WEBHOOK_URL` real vorliegt (siehe `P0B_SECRET_REQUIREMENTS.md`).

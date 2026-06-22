@@ -14,9 +14,9 @@ Vor jeder Arbeit:
 
 ## Kanonischer Pfad
 
-`/Users/joelcherinodiaz/KI-System/01_Wahrheitsquelle/_MERGED_20260613/AI-Memory-Hub/projects/hsb-boden`
+`/Users/joelcherinodiaz/KI-System/02_Projects/active/hsb-boden`
 
-Niemals arbeiten in: Backup-Pfaden, `/Users/joelcherinodiaz/Projects/hsb-boden`, Rohimporten, leeren brain-Projektordnern.
+Niemals arbeiten in: Backup-Pfaden, `/Users/joelcherinodiaz/Projects/hsb-boden`, Rohimporten, leeren brain-Projektordnern oder alten `_MERGED_20260613`-Pfaden.
 
 ## Harte Regeln
 
@@ -51,3 +51,6 @@ STOP. Keine eigenmächtige Strukturentscheidung.
 Vor jeder Arbeit lesen: `MASTER_EXECUTION_RULES.md`, `STARTUP_PROTOCOL.md`, `CHECKPOINT_STATE.json`, `PROJECT_TRUTH.md`, `AI_EXECUTION_PLAYBOOK.md`, `PHASED_EXECUTION_PLAN.md`, `~/KI-System/ObsidianVault/brain/CURRENT_HANDOFF.md`.
 Dann: `resolve_project_path.sh hsb-boden` → `cd` → `assert_canonical_project_path.sh hsb-boden` → `git status --short`.
 **Pflichtabschluss:** `CHECKPOINT_STATE.json` + `CURRENT_HANDOFF.md` + `SESSION_LOG.md` aktualisieren, Report schreiben, Website-Code-Diff prüfen, Push/Deploy dokumentieren.
+
+## Gemini-/Code-Assist-Hinweis
+Gemini CLI und Gemini Code Assist sind ab 2026-06-18 im Individuals/Google-AI-Pro/Ultra-Kontext nicht mehr als operative Hauptschiene einzuplanen. Gemini bleibt höchstens ergänzend für Research/Gegenprüfung; Codex/Claude/Jules/Perplexity übernehmen die belastbaren Arbeitswege.

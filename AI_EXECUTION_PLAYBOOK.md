@@ -1,6 +1,6 @@
 # AI_EXECUTION_PLAYBOOK — HSB-Boden / HEXAFLOOR
 
-> Wie KI-Systeme an diesem Projekt zusammenarbeiten. Stand: 2026-06-14.
+> Wie KI-Systeme an diesem Projekt zusammenarbeiten. Stand: 2026-06-17.
 
 ## Ziel
 Die Website als Premium-Vertrauensanker **und** Akquise-System für organische B2B-Leads (Industrieboden/Sanierung). Parallele Astro/Cloudflare-Lösung neben der bestehenden WordPress-Live-Site, bis zur finalen Freigabe.
@@ -31,3 +31,6 @@ Die Website als Premium-Vertrauensanker **und** Akquise-System für organische B
 
 ## Verweise
 - `PROJECT_TRUTH.md`, `SEO_GO_LIVE_CHECKLIST.md`, `CRM_LIGHT_SCHEMA.md`, `N8N_AUTOMATION_PLAN.md`, `CLOUDFLARE_AI_GATEWAY_PLAN.md`, `GOOGLE_API_SETUP.md`, `ACQUISITION_SYSTEM_PLAN.md`.
+
+## Update 2026-06-17 — Gemini-Depriorisierung
+Gemini Account 1/2 bleiben ergänzend für Deep Research und Gegenprüfung. Gemini CLI und Gemini Code Assist sind wegen Nutzerbeobachtung langsam/nicht zuverlässig und wegen Googles angekündigtem Stopp für Individuals/Google AI Pro/Ultra ab 2026-06-18 nicht mehr Teil des operativen kritischen Pfads. Siehe `docs/ops/AI_TOOL_STACK.md`, `docs/ops/AI_MODEL_ROUTING.md`, `docs/ops/GEMINI_DEEP_RESEARCH_TASKS.md` und `docs/ops/GEMINI_CODE_ASSIST_SETUP.md`.

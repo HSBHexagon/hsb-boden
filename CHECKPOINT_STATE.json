@@ -1,47 +1,54 @@
 {
   "project": "HSB / HEXAFLOOR",
-  "last_updated": "2026-06-14T18:18:43+0200",
-  "active_model": "Claude Code",
-  "active_phase": "P0B-FREIGABE VORBEREITEN",
-  "active_task": "Garantie-Struktur speichern",
-  "repo_path": "/Users/joelcherinodiaz/KI-System/01_Wahrheitsquelle/_MERGED_20260613/AI-Memory-Hub/projects/hsb-boden",
+  "last_updated": "2026-06-22T05:40:00+0200",
+  "active_model": "Claude Code (Sonnet 4.6)",
+  "active_phase": "P0B IMPLEMENTIERT, WARTET AUF SECRETS",
+  "active_task": "main/origin-main-Divergenz aufgelöst, Jules-PR-Kollision aufgelöst, n8n wegen Kosten verworfen und durch kostenlose Apps-Script-Lösung ersetzt",
+  "repo_path": "/Users/joelcherinodiaz/KI-System/02_Projects/active/hsb-boden",
   "canonical_registry": "/Users/joelcherinodiaz/KI-System/08_System/config/canonical-projects.json",
   "handoff_path": "/Users/joelcherinodiaz/KI-System/ObsidianVault/brain/CURRENT_HANDOFF.md",
-  "last_commit": "68b34f40872a9a3db98e58ac091d3734c69011e1",
+  "last_commit": "60ff5e9",
   "last_known_commits": {
-    "flyer_assets": "9ac994a75b71d3ccfe1a4b204c12d1c98fc3efcc",
-    "plan_files": "3308d91",
-    "docs_consistency_fix": "9f1d211877027b8edc8030720bb3f56631742681",
-    "p0a": "7c38d7ba8f3e6cc9d38ae23c30e7ec1c27d9a24a",
-    "master_rules_p0b_plan": "904685619d56c28e534a8c382b49772341b660ea"
+    "image_fix": "f578320",
+    "services_refactor": "f4ece9c",
+    "p0b_endpoint": "9df0355",
+    "p0b_cloudflare_fixes": "cf79b35",
+    "main_agents_md_rebase_fix": "6000dbf (on main)",
+    "n8n_to_apps_script_pivot": "6203095",
+    "main_merge": "60ff5e9"
   },
   "website_code_diff_lines": 0,
-  "modified_files": [".astro/data-store.json (uncommitted, do not touch)"],
-  "push_done": false,
+  "modified_files": [".astro/content.d.ts (generated, not committed)", ".astro/data-store.json (pre-existing uncommitted cache, do not touch)"],
+  "push_done": true,
   "deploy_done": false,
   "current_permissions": {
-    "push": false,
+    "push": true,
     "deploy": false,
-    "p0b_implementation": false,
-    "website_code_changes": false
+    "p0b_implementation": true,
+    "website_code_changes": true
   },
   "completed_steps": [
-    "P0A specification completed",
-    "P0A review passed",
-    "master execution rules + P0B approval plan saved",
-    "guaranteed execution/recovery system saved"
+    "main rebased onto origin/main (was 7 ahead/2 behind, now in sync); AGENTS.md conflict resolved by keeping the Jules auto-merge policy and dropping the dead _MERGED_20260613 KI-System-Pflichtstart procedure",
+    "P0B lead endpoint implemented: src/lib/leadSchema.ts + src/pages/api/lead.ts (Zod validation, rate-limit, honeypot, origin-check, payload-size guard), 20 tests",
+    "applied cloudflare:workers-best-practices to the endpoint (bounded body read, typed Locals.runtime instead of unsafe cast)",
+    "discovered and resolved collision: Jules PR #69 had created its own simpler src/pages/api/lead.ts (Web3Forms-style proxy) on the same path -> closed #69 as superseded, credited the real security catch, adopted its frontend-wiring pattern",
+    "REVISED the n8n decision (N8N_HOSTING_DECISION.md was 'n8n Cloud' = subscription) per explicit user instruction 'die nehmen die gratis ist und bleibt' -> n8n dropped entirely, replaced with a free Google Apps Script Web App bound to the CRM-Light sheet (no service account, no OAuth, Workspace free-tier quotas)",
+    "renamed N8N_WEBHOOK_URL -> LEAD_WEBHOOK_URL (server-only secret), wired LeadForm.tsx -> POST /api/lead, added PUBLIC_LEAD_FORM_ENABLED flag replacing the old PUBLIC_LEAD_ENDPOINT/PUBLIC_LEAD_ACCESS_KEY pair",
+    "updated all directly-affected docs: N8N_HOSTING_DECISION.md, GOOGLE_API_SETUP.md, GOOGLE_SHEETS_CRM_SETUP.md, P0B_SECRET_REQUIREMENTS.md, PUBLIC_LEAD_ENDPOINT_SPEC.md, P0B_USER_APPROVAL_REQUEST.md, ops/n8n/README.md (marked deprecated)",
+    "merged origin/main into this branch (14 add/add + content conflicts resolved, mostly by keeping this branch's later/more accurate docs; AGENTS.md hand-merged to keep Jules policy + Modularity Mandate + Gemini-deprioritization)",
+    "pushed agent/hexafloor-codex-superpower-audit; PR #77 is now MERGEABLE (was CONFLICTING)"
   ],
   "open_steps": [
-    "wait for explicit user approval before P0B"
+    "user must create the Google Apps Script Web App (GOOGLE_SHEETS_CRM_SETUP.md §4) and provide LEAD_WEBHOOK_URL as a Cloudflare Worker secret before #6-#8 in P0B_USER_APPROVAL_REQUEST.md can be checked",
+    "decide on untracked planning docs not part of any audit so far (PROJECT_AUDIT.md, docs/ops/*, docs/brain/*, src/OPTIMIZATION.md, .agents/, .codex/, .claude/worktrees/)",
+    "decide whether/how to merge PR #77 into main, and whether to enable PUBLIC_LEAD_FORM_ENABLED + a real LEAD_WEBHOOK_URL"
   ],
   "blocked_by": [
-    "explicit P0B user approval",
-    "n8n hosting decision",
-    "Service Account vs OAuth decision",
-    "rate-limit values",
-    "push/deploy approval"
+    "LEAD_WEBHOOK_URL (Apps Script deployment) does not exist yet",
+    "explicit push-to-main / deploy approval beyond the agent branch"
   ],
-  "next_step": "User decides P0B_USER_APPROVAL_REQUEST.md",
+  "known_unrelated_problem": "origin/main's already-merged PR #73 (astro 5.18.2 -> 6.4.6) is incompatible with the pinned @astrojs/cloudflare@^12.5.5 (needs astro ^5.7.0) and with @astrojs/tailwind (no astro 6 support at all). `npm install` fails without --legacy-peer-deps on main as of this checkpoint. This predates this session's work and was not introduced or fixed here; it needs its own dedicated migration (likely via PR #76's bundled major-version bumps: React 19, Tailwind 4, Zod 4, @astrojs/cloudflare 13, etc.) rather than a quick patch.",
+  "next_step": "User decides: (1) provide Apps-Script Web App URL to actually activate lead delivery, (2) decide on PR #77 merge, (3) decide on the separate broken-dependency-graph problem on main.",
   "handoff_required": true,
   "safe_to_continue": true
 }

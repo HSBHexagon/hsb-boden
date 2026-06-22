@@ -11,11 +11,8 @@ export const site = {
     "Industrieböden, Säureschutz, Keramik, PU-Beton, Entwässerung und Sanierung für Lebensmittel-, Getränke-, Pharma- und Chemieproduktion. Jetzt kostenlose Ersteinschätzung anfordern.",
   ctaLabel: "Ersteinschätzung anfordern",
   ctaTarget: "/kontakt/",
-  // Lead-Zustellung: URL eines Form-Providers (z.B. Web3Forms/Formspark) ODER eines
-  // CRM-Form-Endpoints, der Anfragen zuverlässig an info@hsb-boden.de zustellt.
-  // Leer = Online-Versand inaktiv -> Formular zeigt direkten Kontaktweg statt PII zu leaken.
-  // Best Practice: NICHT selbst-gehosteter Mailer, sondern Provider/CRM mit Zustellgarantie.
-  leadEndpoint: import.meta.env.PUBLIC_LEAD_ENDPOINT ?? "",
-  // Optionaler Access-Key, falls der Provider ihn im Payload erwartet (z.B. Web3Forms).
-  leadAccessKey: import.meta.env.PUBLIC_LEAD_ACCESS_KEY ?? "",
+  // Lead-Zustellung läuft serverseitig über /api/lead (kein Secret im Bundle).
+  // false = Online-Versand inaktiv -> Formular zeigt direkten Kontaktweg statt PII zu leaken.
+  // Wird erst auf "true" gesetzt, wenn LEAD_WEBHOOK_URL serverseitig konfiguriert ist.
+  hasLeadEndpoint: import.meta.env.PUBLIC_LEAD_FORM_ENABLED === "true",
 };

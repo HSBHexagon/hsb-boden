@@ -5,8 +5,8 @@ import { trackEvent, TrackingEvent } from "../../lib/tracking";
 
 type Status = "idle" | "submitting" | "error";
 
-// Online-Versand nur aktiv, wenn ein Zustell-Endpoint (Provider/CRM) konfiguriert ist.
-const deliveryConfigured = Boolean(site.leadEndpoint);
+// Online-Versand nur aktiv, wenn der serverseitige Lead-Endpoint konfiguriert ist.
+const deliveryConfigured = Boolean(site.hasLeadEndpoint);
 
 export function LeadForm() {
   const [started, setStarted] = useState(false);
@@ -41,12 +41,10 @@ export function LeadForm() {
       message: fd.get("message"),
       privacyConsent: fd.get("privacyConsent") === "on",
     };
-    // Manche Provider (z.B. Web3Forms) erwarten den Access-Key im Payload.
-    if (site.leadAccessKey) payload.access_key = site.leadAccessKey;
 
     setStatus("submitting");
     try {
-      const res = await fetch(site.leadEndpoint, {
+      const res = await fetch("/api/lead", {
         method: "POST",
         headers: { "Content-Type": "application/json", Accept: "application/json" },
         body: JSON.stringify(payload),

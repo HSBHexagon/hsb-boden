@@ -1,39 +1,25 @@
 {
   "project": "HSB / HEXAFLOOR",
-  "last_updated": "2026-06-20T06:30:00+0200",
-  "active_model": "Codex",
+  "last_updated": "2026-06-22T04:30:00+0200",
+  "active_model": "Claude Code (Sonnet 4.6)",
   "active_phase": "P0B-FREIGABE VORBEREITEN",
-  "active_task": "Praesentations- und Versandvorbereitung aktualisiert",
+  "active_task": "Codex-Handoff-Audit abgeschlossen: Bildfix, services.ts-Refactor verifiziert+committed, Codex-Doku verifiziert+committed",
   "repo_path": "/Users/joelcherinodiaz/KI-System/02_Projects/active/hsb-boden",
   "canonical_registry": "/Users/joelcherinodiaz/KI-System/08_System/config/canonical-projects.json",
   "handoff_path": "/Users/joelcherinodiaz/KI-System/ObsidianVault/brain/CURRENT_HANDOFF.md",
-  "last_commit": "652702e24131c9ca8e368a2c418ff6b32008ba7f",
+  "last_commit": "e0360ae",
   "last_known_commits": {
     "flyer_assets": "9ac994a75b71d3ccfe1a4b204c12d1c98fc3efcc",
     "plan_files": "3308d91",
     "docs_consistency_fix": "9f1d211877027b8edc8030720bb3f56631742681",
     "p0a": "7c38d7ba8f3e6cc9d38ae23c30e7ec1c27d9a24a",
-    "master_rules_p0b_plan": "904685619d56c28e534a8c382b49772341b660ea"
+    "master_rules_p0b_plan": "904685619d56c28e534a8c382b49772341b660ea",
+    "image_fix": "f578320",
+    "services_refactor": "f4ece9c",
+    "docs_audit_commit": "e0360ae"
   },
-  "website_code_diff_lines": 573,
-  "modified_files": [
-    ".astro/data-store.json (pre-existing uncommitted cache, do not touch)",
-    "AGENTS.md",
-    "AI_EXECUTION_PLAYBOOK.md",
-    "AI_SYSTEM_ROLES.md",
-    "CLAUDE.md",
-    "PROJECT_TRUTH.md",
-    "CURRENT_EXECUTION_STATE.md",
-    "ACQUISITION_SYSTEM_PLAN.md",
-    "PUBLIC_LEAD_ENDPOINT_SPEC.md",
-    "marketing/flyer/akquise-email.md",
-    "marketing/flyer/akquise-email-varianten.md",
-    "marketing/flyer/validation.md",
-    "docs/ops/TODAY_READINESS_2026-06-20.md",
-    "PROJECT_AUDIT.md",
-    "docs/ops/*",
-    "docs/brain/OBSIDIAN_EXPORT.md"
-  ],
+  "website_code_diff_lines": 0,
+  "modified_files": [".astro/data-store.json (pre-existing uncommitted cache, do not touch)"],
   "push_done": false,
   "deploy_done": false,
   "current_permissions": {
@@ -50,7 +36,12 @@
     "Codex audit docs and tool routing updated",
     "Gemini deprioritization documented",
     "test/check/build/deploy dry-run passed",
-    "today readiness, mail attachment, lead spec and acquisition drift updated"
+    "today readiness, mail attachment, lead spec and acquisition drift updated",
+    "fixed skewed Edelstahlrost reference photo (commit f578320)",
+    "multi-agent audit of Codex handoff: services.ts refactor parity (2 agents + adversarial verify) + docs consistency check",
+    "found and fixed 2 confirmed 'und'->'and' content regressions from the refactor",
+    "deterministic string-set diff confirms full content parity post-fix (only import path differs)",
+    "committed services.ts modularization (f4ece9c) and Codex presentation/versand docs (e0360ae)"
   ],
   "open_steps": [
     "wait for explicit user approval before P0B",
@@ -58,7 +49,7 @@
     "define rate-limit values",
     "prepare CRM-Light and test campaign rules",
     "verify external recipient list before any email send",
-    "decide whether existing service modularization should be committed"
+    "decide on untracked planning docs not part of this audit (PROJECT_AUDIT.md, docs/ops/*, docs/brain/*, src/OPTIMIZATION.md, .agents/, .codex/, .claude/worktrees/)"
   ],
   "blocked_by": [
     "explicit P0B user approval",

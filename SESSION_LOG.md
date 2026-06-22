@@ -44,3 +44,21 @@ Fortlaufendes Log jeder KI-Session. Jeder Eintrag: Zeit · Modell · Phase · Au
 - **Push:** nein
 - **Deploy:** nein
 - **Nächster Schritt:** Präsentation mit vorhandenem Website-/Flyer-Stand; E-Mails nur vorbereitet bzw. manuell nach Freigabe; P0B bleibt blockiert bis explizite Freigabe
+
+---
+
+## 2026-06-22 04:30 CEST — Claude Code (Sonnet 4.6)
+- **Phase:** CODEX-HANDOFF-AUDIT (einmaliger Abschluss-Lauf)
+- **Aufgabe:** Schiefes Referenzfoto fixen; uncommitteten Codex-Stand (services.ts-Refactor + Doku) per Multi-Agent-Audit prüfen, fixen, verifizieren, committen
+- **Schritte:**
+  1. Schräges Rinnenfoto auf `/referenzen/` ersetzt (`entwaesserungsrinne-detail.webp` → `hexagon-rinne-detail.webp`) — Commit `f578320`
+  2. Brainstorming-Skill: Design für Audit-Workflow erstellt, committed (`165f74a`)
+  3. Workflow-Tool: 2 Audit-Agenten parallel (Refactor-Paritäts-Check, Docs-Konsistenz-Check) + adversarial Verify pro Fund (pipeline)
+  4. Ergebnis: `parityOk=false`, 2 bestätigte Funde (beide "und"→"and"-Verstümmelung durch den Refactor in `pu-beton-industrieboden.ts:8` und `entwaesserung-industrieboden.ts:45`), 0 Doku-Funde, 0 Secrets
+  5. Beide Funde gefixt; zusätzlich auf Advisor-Empfehlung ein deterministischer String-Set-Diff (`git show f4ece9c^:src/data/services.ts` vs. `src/data/services/*.ts`) gefahren — einziger Unterschied: Import-Pfad. Parität damit nachgewiesen, nicht nur vom LLM behauptet.
+- **Verifikation:** `npm run check` PASS (0/0/0), `npm run test:run` PASS (62/62), `npm run build` PASS
+- **Commits:** `f578320` (Bildfix), `165f74a` (Audit-Design-Spec), `f4ece9c` (services.ts-Refactor inkl. Fixes), `e0360ae` (geprüfte Codex-Doku-Updates)
+- **Nicht angefasst (bewusst, außerhalb Audit-Scope):** `PROJECT_AUDIT.md`, `docs/ops/*`, `docs/brain/*`, `src/OPTIMIZATION.md`, `.agents/`, `.codex/`, `.claude/worktrees/` — diese wurden nicht geprüft und sind weiterhin untracked
+- **Push:** nein
+- **Deploy:** nein
+- **Nächster Schritt:** P0B-Freigabeentscheidung (`P0B_USER_APPROVAL_REQUEST.md`) bleibt offen; danach Entscheidung über die oben genannten ungeprüften untracked Dateien

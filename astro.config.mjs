@@ -2,16 +2,15 @@
 import { defineConfig } from "astro/config";
 import cloudflare from "@astrojs/cloudflare";
 import react from "@astrojs/react";
-import tailwind from "@astrojs/tailwind";
+import tailwindcss from "@tailwindcss/vite";
 
 export default defineConfig({
   site: "https://hsb-boden.de",
   output: "server",
   adapter: cloudflare({
-    platformProxy: { enabled: true },
     imageService: "passthrough",
   }),
-  integrations: [tailwind(), react()],
+  integrations: [react()],
   devToolbar: { enabled: false },
   server: {
     allowedHosts: true,
@@ -19,6 +18,7 @@ export default defineConfig({
   },
   vite: {
     cacheDir: "node_modules/.cache/.vite",
+    plugins: [tailwindcss()],
     optimizeDeps: {
       include: ["react", "react-dom", "zod", "clsx", "tailwind-merge", "lucide-react"],
     },

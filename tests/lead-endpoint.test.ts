@@ -32,14 +32,7 @@ function makeRequest(body: unknown, opts: { ip?: string; origin?: string; method
 }
 
 function makeContext(request: Request) {
-  return {
-    request,
-    locals: {
-      runtime: {
-        env: { LEAD_WEBHOOK_URL: "https://script.google.com/macros/s/EXAMPLE/exec" },
-      },
-    },
-  } as any;
+  return { request } as any;
 }
 
 describe("POST /api/lead", () => {

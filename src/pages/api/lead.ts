@@ -1,4 +1,5 @@
 import type { APIContext } from "astro";
+import { env } from "cloudflare:workers";
 import { leadEndpointSchema } from "../../lib/leadSchema";
 
 export const prerender = false;
@@ -91,7 +92,7 @@ export const PUT = GET;
 export const DELETE = GET;
 
 export async function POST(context: APIContext) {
-  const { request, locals } = context;
+  const { request } = context;
   const origin = request.headers.get("Origin");
 
   if (origin && !ALLOWED_ORIGINS.has(origin)) {
@@ -132,7 +133,7 @@ export async function POST(context: APIContext) {
     return jsonResponse(429, { ok: false, error: "rate_limited" }, origin);
   }
 
-  const webhookUrl = locals.runtime?.env?.LEAD_WEBHOOK_URL;
+  const webhookUrl = (env as { LEAD_WEBHOOK_URL?: string }).LEAD_WEBHOOK_URL;
 
   try {
     const controller = new AbortController();

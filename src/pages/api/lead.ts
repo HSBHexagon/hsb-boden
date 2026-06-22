@@ -43,6 +43,39 @@ function jsonResponse(status: number, body: unknown, origin: string | null) {
   return new Response(JSON.stringify(body), { status, headers: corsHeaders(origin) });
 }
 
+class PayloadTooLargeError extends Error {}
+
+// Liest den Body in begrenzten Chunks, statt unbegrenzt zu puffern (vermeidet
+// Memory-Exhaustion bei einem Request ohne/mit gefaelschtem Content-Length).
+async function readBodyWithLimit(request: Request, limitBytes: number): Promise<string> {
+  const reader = request.body?.getReader();
+  if (!reader) return "";
+  const chunks: Uint8Array[] = [];
+  let received = 0;
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    received += value.byteLength;
+    if (received > limitBytes) {
+      await reader.cancel();
+      throw new PayloadTooLargeError();
+    }
+    chunks.push(value);
+  }
+  return new TextDecoder().decode(concatChunks(chunks));
+}
+
+function concatChunks(chunks: Uint8Array[]): Uint8Array {
+  const total = chunks.reduce((sum, c) => sum + c.byteLength, 0);
+  const out = new Uint8Array(total);
+  let offset = 0;
+  for (const chunk of chunks) {
+    out.set(chunk, offset);
+    offset += chunk.byteLength;
+  }
+  return out;
+}
+
 export async function OPTIONS({ request }: APIContext) {
   const origin = request.headers.get("Origin");
   const headers = corsHeaders(origin);
@@ -65,10 +98,19 @@ export async function POST(context: APIContext) {
     return jsonResponse(403, { ok: false, error: "forbidden_origin" }, origin);
   }
 
-  const contentLength = Number(request.headers.get("Content-Length") ?? "0");
-  const rawBody = await request.text();
-  if (contentLength > MAX_PAYLOAD_BYTES || new TextEncoder().encode(rawBody).length > MAX_PAYLOAD_BYTES) {
+  const declaredLength = Number(request.headers.get("Content-Length") ?? "0");
+  if (declaredLength > MAX_PAYLOAD_BYTES) {
     return jsonResponse(413, { ok: false, error: "payload_too_large" }, origin);
+  }
+
+  let rawBody: string;
+  try {
+    rawBody = await readBodyWithLimit(request, MAX_PAYLOAD_BYTES);
+  } catch (err) {
+    if (err instanceof PayloadTooLargeError) {
+      return jsonResponse(413, { ok: false, error: "payload_too_large" }, origin);
+    }
+    return jsonResponse(400, { ok: false, error: "invalid_body" }, origin);
   }
 
   let parsedBody: unknown;
@@ -90,7 +132,7 @@ export async function POST(context: APIContext) {
     return jsonResponse(429, { ok: false, error: "rate_limited" }, origin);
   }
 
-  const webhookUrl = (locals as { runtime?: { env?: Record<string, string> } }).runtime?.env?.N8N_WEBHOOK_URL;
+  const webhookUrl = locals.runtime?.env?.N8N_WEBHOOK_URL;
 
   try {
     const controller = new AbortController();

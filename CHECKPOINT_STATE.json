@@ -1,8 +1,8 @@
 {
   "project": "HSB / HEXAFLOOR",
-  "last_updated": "2026-06-23T10:10:00+0200",
+  "last_updated": "2026-06-23T20:20:00+0200",
   "active_model": "Claude Code (Opus 4.8)",
-  "active_phase": "PHASE A/B — LEAD-PIPELINE AUF PREVIEW LIVE + RE-VERIFIZIERT; EINZIGER ABSCHLUSS-BLOCKER = PRODUCTION-CUTOVER (FREIGABEPFLICHTIG)",
+  "active_phase": "PHASE A/B ABGESCHLOSSEN + HEUTE NACH main GEPUSHT; PRODUCTION-CUTOVER (PHASE C) BEWUSST AUF MORGEN VERTAGT (DNS-/NS-Switch durch Domain-Admin morgen frueh)",
   "active_task": "Abschlusswelle (Opus 4.8): Ist-Stand re-verifiziert (Preview-Lead-Pipeline end-to-end live: GET ok:true/hsb-lead-intake, server-seitiger POST 200/ok:true, echte Zeile im Sheet 'HSB CRM Light', Testzeile danach geleert). Repo-Wahrheit angeglichen. Production-Cutover (Worker hsb-boden, Prod-Secret, DNS/Routes) wartet bewusst auf separate Freigabe; DNS wird aktuell vom Domain-Admin beim Anbieter geaendert. Arbeit isoliert im bg-Worktree 'hsb-finish-wave', Diff wird vor Commit/main-Uebernahme vorgelegt.",
   "repo_path": "/Users/joelcherinodiaz/KI-System/02_Projects/active/hsb-boden",
   "canonical_registry": "/Users/joelcherinodiaz/KI-System/08_System/config/canonical-projects.json",
@@ -54,10 +54,13 @@
     "deliberately left PR #76 (Dependabot major bump: React 19, Tailwind 4, Zod 4, TypeScript 6, Vite 8) untouched - still contains real pending work beyond today's targeted fix, too risky to merge or close blindly",
     "fixed 4 CodeQL Medium findings (missing permissions: block) in ci.yml, quality.yml, deploy-production.yml, deploy-preview.yml by adding permissions: contents: read",
     "2026-06-22 22:12 (Opus 4.8): Apps Script Web App (Projekt HSBBODEN, cherinojoel@gmail.com) deployed + an Sheet 'HSB CRM Light' gebunden; LEAD_WEBHOOK_URL als Secret auf PREVIEW-Worker hsb-boden-preview gesetzt; Pipeline end-to-end auf Preview verifiziert",
-    "2026-06-23 (Opus 4.8, Abschlusswelle): Preview-Lead-Pipeline live RE-verifiziert (Webhook GET ok:true; server-seitiger POST an /api/lead -> 200 ok:true; echte Zeile im CRM-Sheet; Testzeile wieder geleert)"
+    "2026-06-23 (Opus 4.8, Abschlusswelle): Preview-Lead-Pipeline live RE-verifiziert (Webhook GET ok:true; server-seitiger POST an /api/lead -> 200 ok:true; echte Zeile im CRM-Sheet; Testzeile wieder geleert)",
+    "2026-06-23 abend (Opus 4.8): Cloudflare-Zone-Wahrheit verifiziert via API -> Zone hsb-boden.de liegt im SELBEN Account cherinojoel@gmail.com/043ec... (NICHT bc3a wie alter Handoff vermutete), Status 'pending' (NS-Switch durch Domain-Admin morgen frueh), Typ 'full'. Zone bereits vorkonfiguriert: A @/www/* -> 85.13.130.17 proxied (orange) = nach NS-Switch wuerde Traffic ohne Worker-Route weiter zum alten WordPress; Mail = Outlook (MX/SPF/DMARC/autodiscover, NICHT anfassen); KEINE Worker-Routes, KEINE Custom-Domains, KEIN Worker hsb-boden vorhanden.",
+    "2026-06-23 abend (Opus 4.8) WICHTIGER FUND: 'wrangler deploy --env production' (npm run deploy:production) ist mit dem Astro-6-Cloudflare-Adapter faktisch KAPUTT -> der Adapter schreibt .wrangler/deploy/config.json als Redirect auf die generierte dist/server/wrangler.json, die aus dem TOP-LEVEL (=preview) geflattet wird; --env production wird dadurch still IGNORIERT und es landet auf hsb-boden-preview (per dry-run bestaetigt: ENVIRONMENT=preview, SESSION-KV-Binding das gar nicht in wrangler.toml steht). Folge: der dokumentierte Phase-C-Schritt 'wrangler deploy --env production erzeugt Worker hsb-boden' funktioniert so NICHT; echter Prod-Deploy braucht anderen Weg (z.B. wrangler deploy --name hsb-boden --var ENVIRONMENT:production + Routes via API, oder Env-Handling reparieren). Beim Test versehentlich hsb-boden-preview neu deployed (harmlos, gleicher Code, Version 08d121ed).",
+    "2026-06-23 abend (Opus 4.8): Nutzer-Entscheidung = HEUTE nur mit Vorhandenem abschliessen, NICHTS Neues bauen (kein Prod-Worker, keine Routes, kein DNS-Eingriff); Production-Cutover bewusst auf morgen vertagt (Domain/NS kommt morgen frueh). package-lock.json-Drift aus npm install --legacy-peer-deps wieder verworfen (kein ungewollter CI-Drift). DNS-Watch-Wakeup-Loop auf Nutzerwunsch beendet."
   ],
   "open_steps": [
-    "FREIGABEPFLICHTIG (Phase C / Production-Cutover): wrangler deploy --env production (erzeugt Worker hsb-boden), LEAD_WEBHOOK_URL als Secret auf env.production setzen, wrangler.toml-Routes (Z.22-25) aktivieren, Live-Formular auf hsb-boden.de verifizieren. DNS wird aktuell vom Domain-Admin beim Anbieter geaendert.",
+    "FREIGABEPFLICHTIG (Phase C / Production-Cutover, MORGEN nach NS-Switch): ACHTUNG 'wrangler deploy --env production' funktioniert mit dem Astro-6-Adapter NICHT (s. completed_steps WICHTIGER FUND) -> stattdessen 'wrangler deploy --name hsb-boden --var ENVIRONMENT:production' (oder Env-Handling reparieren), dann 'wrangler secret put LEAD_WEBHOOK_URL --name hsb-boden' (Wert = bestehende Apps-Script-URL), dann die zwei Worker-Routes hsb-boden.de/* + www.hsb-boden.de/* -> script hsb-boden via API/Dashboard auf Zone 2aefa04f69a2339b2f9f3f2876d7e35c, dann Live-Formular auf hsb-boden.de verifizieren. WICHTIG: nach NS-Switch greift die Route sofort -> Worker MUSS vorher verifiziert sein, sonst Seite down statt Fallback aufs alte WordPress.",
     "Phase D (Governance): Dependabot-Security-/Action-PRs zuerst triagieren (#46/#47/#48/#74/#81/#82); Branch-Protection-Ruleset 'Protect Main' nachschaerfen; restliche ~27 Jules-Test/Perf-PRs als Sammelentscheidung",
     "PR #76 (Major-Bump React 19/Zod 4/TS 6/Vite 8) bleibt eigene dedizierte Migration, weiterhin nicht anfassen",
     "untracked Planungsdocs entscheiden (PROJECT_AUDIT.md, docs/ops/*, docs/brain/*, src/OPTIMIZATION.md, .agents/, .codex/)"
@@ -67,7 +70,7 @@
     "Hinweis: LEAD_WEBHOOK_URL existiert und ist auf PREVIEW live — fehlt nur noch auf env.production"
   ],
   "known_unrelated_problem": "RESOLVED 2026-06-22 (see completed_steps: dependency_migration_astro6_tailwind4_cloudflare13, commit 5030504). Was: origin/main's already-merged PR #73 (astro 5.18.2 -> 6.4.6) was incompatible with the pinned @astrojs/cloudflare@^12.5.5 and @astrojs/tailwind (no astro 6 support at all), breaking both `npm ci` on the GitHub Actions runners and Cloudflare's own native Workers Build.",
-  "next_step": "STOP am Freigabe-Gate Phase C: Nutzer gibt Production-Deploy + DNS frei (DNS-Admin aendert gerade die Domain). Danach: Prod-Worker hsb-boden deployen, Prod-Secret setzen, Routes aktivieren, Live-Verify. Parallel vorbereitet: Phase D PR-Triage (Security/Deps zuerst) + Branch-Protection.",
+  "next_step": "MORGEN FRUEH nach NS-Switch (Domain-Admin stellt Nameserver auf Cloudflare, Zone wird dann 'active'): Phase-C-Cutover ausfuehren (siehe open_steps[0] mit dem --name-Workaround statt --env), Worker hsb-boden VOR Live-Schaltung verifizieren, dann Routes setzen. Heute bewusst NICHT ausgefuehrt. Parallel offen: Phase D PR-Triage (Security/Deps zuerst) + Branch-Protection-Ruleset nachschaerfen.",
   "handoff_required": true,
   "safe_to_continue": true
 }

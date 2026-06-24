@@ -127,3 +127,26 @@ Fortlaufendes Log jeder KI-Session. Jeder Eintrag: Zeit · Modell · Phase · Au
 - **Verifikation:** Diff dieser Welle = nur Doku (`CHECKPOINT_STATE.json` + dieser Log); **kein `src/`-Code** → grüne CI auf `8ad29cd` bleibt gültig.
 - **Push:** Worktree-Stand nach `origin/main` (Fast-Forward) — siehe Commit unten.
 - **Nächster Schritt (morgen):** Nach NS-Switch Phase-C-Cutover mit dem `--name`-Workaround, Worker **vor** Live-Schaltung verifizieren, dann Routes. Cutover selbst bleibt freigabepflichtig.
+
+---
+
+## 2026-06-24 ~02:30 CEST — Claude Code (Opus 4.8)
+- **Phase:** Abschluss-Prep — alles Nicht-DNS-blockierte erledigen, damit morgen DNS+Cutover das reine Finale ist.
+- **Auftrag:** Nutzer: „DNS kann erst morgen früh erfolgen. Nutze die vorherigen Skills, beende alles, was sowieso notwendig ist, so dass wir DNS als Finale machen." (Skill-Kette: finishing-a-development-branch, verification-before-completion, systematic-debugging, subagent-driven-development.)
+- **Branch-Status:** `worktree-hsb-finish-wave` == `origin/main` == `633735f` (Diff leer, vollständig integriert). Tests **51/51 grün** (vitest), `npm run build` **grün**.
+- **systematic-debugging — Cutover-Bug empirisch RE-bestätigt:** `wrangler deploy --env production --dry-run` → `ENVIRONMENT("preview")`; generierte `dist/server/wrangler.json` = `name: hsb-boden-preview`, `vars: {ENVIRONMENT: preview}`, `env: {}`; `.wrangler/deploy/config.json` redirectet auf die geflattete Top-Level-Config. **Workaround verifiziert:** `wrangler deploy --name hsb-boden --var ENVIRONMENT:production --dry-run` → `ENVIRONMENT("(hidden)")` = CLI-Override greift.
+- **Lead-Endpoint-Fakten (Quellcode):** `ALLOWED_ORIGINS` hart = hsb-boden.de/www (`src/pages/api/lead.ts:7-9`); Origin-Check 403 nur bei fremdem *vorhandenem* Origin (Z.98) → server-/no-origin-POST passiert; Webhook aus `env.LEAD_WEBHOOK_URL` (Z.136). → Route-loser Prod-Worker ist heute server-seitig voll verifizierbar; Prod-Secret zwingend.
+- **Geschrieben:** `docs/ops/PHASE_C_CUTOVER_RUNBOOK.md` (verifizierter Schritt-für-Schritt-Cutover) + `docs/ops/PR_TRIAGE_2026-06-24.md` (35 offene PRs synthetisiert).
+- **PR-Triage:** alle 35 bot-generiert (Jules + Dependabot); keine autonom mergebar (Code/Deps/CI = freigabepflichtig). Empfehlung: Repo vor Cutover einfrieren; nur 4 obsolete Jules-Konsolidierungs-Drafts (#84/#70/#68/#54) jetzt schließbar.
+- **Geänderte Dateien:** `docs/ops/PHASE_C_CUTOVER_RUNBOOK.md` (neu), `docs/ops/PR_TRIAGE_2026-06-24.md` (neu), `CHECKPOINT_STATE.json`, `SESSION_LOG.md`.
+- **Website-Code-Diff:** 0 (nur Doku, kein `src/`). **Commit:** noch offen (Diff wird vor main-Übernahme vorgelegt). **Push:** nein. **Deploy:** nein.
+- **Offene Gate-Entscheidung (an Nutzer gestellt):** (a) route-losen Prod-Worker heute schon deployen+verifizieren? (b) PR-Ausführungs-Scope? (c) Doku-Diff jetzt nach main?
+- **Nächster Schritt:** morgen nach NS-Switch + Freigabe → Cutover strikt nach Runbook.
+
+### 2026-06-24 ~03:00 CEST — AUSFÜHRUNG nach Nutzer-Freigabe (Opus 4.8)
+- **Prod-Worker vorgezogen (route-los):** `wrangler deploy --name hsb-boden --var ENVIRONMENT:production` → Worker `hsb-boden` live, Version `27f7a6a0-4460-44c5-aff4-3cec86a8ee4b`, `https://hsb-boden.cherinojoel.workers.dev`, ENVIRONMENT=production, SESSION-KV `hsb-boden-session` auto-provisioniert. Secret `LEAD_WEBHOOK_URL` gesetzt. **Keine Routes, kein DNS** → Seite bleibt offline am alten WordPress.
+- **End-to-End verifiziert (echt):** server-seitiger POST → `{"ok":true}`; echte Zeile `WEB-20260624-023525` im Sheet „HSB CRM Light" (27 Spalten korrekt, Telefon als Text, Status `neu`); Testzeile geleert; GET → 405.
+- **PRs:** 4 obsolete Jules-Drafts #84/#70/#68/#54 geschlossen (35→31 offen). Rest bleibt bis nach Go-Live (Repo eingefroren).
+- **Doku:** Runbook + Triage nach getracktem `docs/` verschoben; `docs/PHASE_C_CUTOVER_RUNBOOK.md` mit Status-Banner (Schritte 1–4 erledigt).
+- **Geänderte Dateien (committet):** `docs/PHASE_C_CUTOVER_RUNBOOK.md` (neu), `docs/PR_TRIAGE_2026-06-24.md` (neu), `CHECKPOINT_STATE.json`, `SESSION_LOG.md`. **Website-Code-Diff: 0.**
+- **Finale morgen:** NS-Switch (Domain-Admin) → nur noch Routes setzen (Schritt 5) + Live-Verify (Schritt 6).

@@ -129,6 +129,13 @@ Shared rules for all agents:
 - Jules must not push directly to `main` — only via pull request, so that CI
   and required status checks always run before the change lands.
 
+## Kanonische Ausführungs-Roadmap
+
+Die einzige kanonische Projekt-Roadmap ist:
+**`docs/MASTER_EXECUTION_PLAN.md`**
+
+Alle anderen Phasendokumente (`PHASED_EXECUTION_PLAN.md`, `docs/ops/PHASE_STATUS.md`) sind veraltet und verweisen auf diese Datei.
+
 ## Kanonischer Arbeitsrepo-Pfad
 
 `/Users/joelcherinodiaz/KI-System/02_Projects/active/hsb-boden` (Registry:

@@ -150,3 +150,19 @@ Fortlaufendes Log jeder KI-Session. Jeder Eintrag: Zeit · Modell · Phase · Au
 - **Doku:** Runbook + Triage nach getracktem `docs/` verschoben; `docs/PHASE_C_CUTOVER_RUNBOOK.md` mit Status-Banner (Schritte 1–4 erledigt).
 - **Geänderte Dateien (committet):** `docs/PHASE_C_CUTOVER_RUNBOOK.md` (neu), `docs/PR_TRIAGE_2026-06-24.md` (neu), `CHECKPOINT_STATE.json`, `SESSION_LOG.md`. **Website-Code-Diff: 0.**
 - **Finale morgen:** NS-Switch (Domain-Admin) → nur noch Routes setzen (Schritt 5) + Live-Verify (Schritt 6).
+
+---
+
+## 2026-06-26 — Claude Code (Opus 4.8)
+- **Phase:** Stand-Verifikation + Truth-Refresh. **STOP vor Production-Cutover** (externer Blocker).
+- **Auftrag:** Nächste echte Implementierungsaufgabe ausführen; bei externem Blocker (DNS/Domain/Cloudflare Production Route/Approval) sofort vor jeder Production-Änderung stoppen, alles übrige sicher vorbereiten.
+- **Gelesen (nur die 5 Pflichtdateien):** CLAUDE.md, PROJECT_TRUTH.md, CHECKPOINT_STATE.json, brain/CURRENT_HANDOFF.md, SESSION_LOG.md. Lokaler `main` per Fast-Forward auf `origin/main` `92bda23` gebracht (nur Doku-Commits, kein lokaler Vorlauf).
+- **Bestimmte höchstprioritäre offene Aufgabe:** Phase-C-Finale = die zwei Worker-Routes `hsb-boden.de/*` + `www.hsb-boden.de/*` → script `hsb-boden` setzen. Das ist exakt die Stop-Bedingung (Cloudflare Production Route + DNS).
+- **Read-only Live-Verifikation (echt, keine Mutation):**
+  - Cloudflare-API: Zone `hsb-boden.de` Status **`pending`** (NS-Switch trotz 2 Tagen NOCH NICHT erfolgt), `worker_routes=[]`, Prod-Worker `hsb-boden` existiert (200), Secret-Liste = `[LEAD_WEBHOOK_URL]`.
+  - curl: `GET https://hsb-boden.cherinojoel.workers.dev/` → 200 (Assets), `GET …/api/lead` → 405 (Methoden-Guard) ⇒ route-loser Prod-Worker live und einsatzbereit.
+  - `wrangler.toml`: Production-Routes weiterhin auskommentiert (route-los, korrekt).
+- **Schlussfolgerung / STOP:** Der NS-/DNS-Switch (extern, Domain-Admin) steht weiterhin aus. Das Routen-Setzen ist zusätzlich freigabepflichtig (Production-Cutover). ⇒ **Keine Production-Änderung gemacht.** Keine sichere, nicht-blockierte *Code*-Implementierungsaufgabe verbleibt (alle offenen Schritte sind DNS-blockiert oder approval-gated).
+- **Sicher vorbereitet (Doku-only, kein `src/`):** `PROJECT_TRUTH.md` war Stand 2026-06-17 und stark veraltet (Lead-Pipeline als „inaktiv/BLOCKER", n8n unentschieden, Branch=Auditbranch, Route „unklar"). Auf Realstand 2026-06-26 gezogen: Branch=main/HEAD `92bda23`, Astro-6-Migration, route-loser Prod-Worker + Secret live, Lead-Pipeline live & verifiziert, CRM „HSB CRM Light" aktiv, n8n→Apps-Script-Pivot, P0 abgeschlossen, P3-Cutover als einziges Finale (DNS-blockiert). `CHECKPOINT_STATE.json` (Datum/Modell/Verifikations-Step/blocked_by/next_step, JSON valide), `SESSION_LOG.md` (dieser Eintrag), brain `CURRENT_HANDOFF.md` aktualisiert.
+- **Isolation:** Doku-Edits im bg-Worktree `worktree-hsb-truth-refresh` (von `92bda23`). **Kein Commit, kein Push, kein Deploy.** Diff wird zur main-Übernahme vorgelegt (freigabepflichtig).
+- **Verbleibende nächste Aufgabe:** Nach erfolgtem NS-Switch (Zone `pending`→`active`) **und** Freigabe → Cutover strikt nach `docs/PHASE_C_CUTOVER_RUNBOOK.md` Schritte 5–6 (Routes setzen, Worker vorher re-prüfen, Live-Verify). Danach Phase D (PR-Triage/Branch-Protection).

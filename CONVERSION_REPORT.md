@@ -1,7 +1,11 @@
 # Phase 8: Marketing Readiness / Conversion Report
+
+> Historical snapshot from 2026-06-12. Superseded by `PROJECT_TRUTH.md`, `ACQUISITION_SYSTEM_PLAN.md`, and `docs/MASTER_EXECUTION_PLAN.md`.
+> The n8n and `PUBLIC_LEAD_ENDPOINT` blocker wording below is no longer current project truth.
+
 **Project:** hsb-boden
 **Date:** 2026-06-12
-**Status:** BLOCKED (lead pipeline not live — matches AGENTS.md Deploy Gate)
+**Historical status (2026-06-12):** BLOCKED (lead pipeline not live — matches the then-current AGENTS.md Deploy Gate)
 
 ---
 

@@ -1,5 +1,8 @@
 # FINAL_WEBSITE_COMPLETION_TASKS.md
 
+> Historical task list from 2026-06-11. Superseded by `PROJECT_TRUTH.md`, `docs/MASTER_EXECUTION_PLAN.md`, and `docs/FINAL_OPERATOR_HANDOFF.md`.
+> Open items below do not describe the current verified project state.
+
 Stand: 2026-06-11
 Fokus: Herstellung der 100%igen Vertriebsreife
 

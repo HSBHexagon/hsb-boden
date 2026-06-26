@@ -13,7 +13,7 @@
 ## 2. Aktueller Repo-Zustand
 - Branch: `main`
 - Lokaler Stand: entspricht `origin/main`
-- Aktueller HEAD: `296d757`
+- Aktueller HEAD: `17479a3`
 - Website-Code-Diff: `0`
 - Lokale bekannte Nicht-Commit-Datei: keine
 
@@ -66,6 +66,7 @@
 ## 7a. Operator-Handoff
 - Finaler Freeze-/Trigger-Stand: `docs/FINAL_OPERATOR_HANDOFF.md`
 - Finaler Abschlussbericht: `docs/FINAL_COMPLETION_REPORT.md`
+- Finaler adversarial audit: `docs/FINAL_ADVERSARIAL_AUDIT.md`
 - Phase-12-Cutover-Pfad: `docs/PHASE_C_CUTOVER_RUNBOOK.md`
 - Lead-Import-Pfad: `docs/launch/LEAD_IMPORT_5000_CHECKLIST.md`
 

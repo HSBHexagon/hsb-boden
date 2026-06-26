@@ -4,7 +4,7 @@
 `internal-base-ready-awaiting-dns-and-leads`
 
 ## Latest verified main
-- Commit: `296d757`
+- Commit: `17479a3`
 - GitHub Actions: `CI`, `Quality Assurance`, `Deploy Preview`, `Security Analysis`, `CodeQL` zuletzt beobachtet `success` auf `main`
 - Working tree: lokale Dokumentationsänderungen aus diesem Completion Sweep; keine untracked Dateien; `stash@{0}` bleibt unverändert erhalten
 
@@ -44,5 +44,6 @@ Start with:
 2. `PROJECT_TRUTH.md`
 3. `CHECKPOINT_STATE.json`
 4. `docs/MASTER_EXECUTION_PLAN.md`
+5. `docs/FINAL_ADVERSARIAL_AUDIT.md`
 
 If neither external input exists, stop.

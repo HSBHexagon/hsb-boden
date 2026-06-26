@@ -1,8 +1,11 @@
 # NEXT_CRITICAL_PATH.md
 
+> Historical snapshot from 2026-06-11. Superseded by `PROJECT_TRUTH.md`, `docs/MASTER_EXECUTION_PLAN.md`, `docs/FINAL_OPERATOR_HANDOFF.md`, and `docs/FINAL_COMPLETION_REPORT.md`.
+> The n8n and `PUBLIC_LEAD_ENDPOINT` blockers below are no longer current project truth.
+
 Stand: 2026-06-11
 Projekt: HSB-Boden / HEXAFLOOR
-Status: Fokus auf Finalisierung & Go-Live Readiness
+Status: Historical snapshot of the 2026-06-11 blocker view
 
 ## 1. Verbleibende Aufgaben bis zum Geschäftsziel
 

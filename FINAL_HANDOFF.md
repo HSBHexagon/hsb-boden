@@ -1,10 +1,13 @@
 # FINAL_HANDOFF.md
 
+> Historical snapshot from 2026-06-11. Superseded by `PROJECT_TRUTH.md`, `docs/FINAL_OPERATOR_HANDOFF.md`, and `docs/FINAL_COMPLETION_REPORT.md`.
+> The `.env` / `PUBLIC_LEAD_ENDPOINT` / n8n blocker wording below is no longer current project truth.
+
 Stand: 2026-06-11
 Projekt: HSB-Boden / HEXAFLOOR
 Lead-Agent: Gemini CLI
 
-## 1. Aktueller Status: ✅ EINSATZBEREIT (PREVIEW)
+## 1. Historischer Status 2026-06-11: ✅ EINSATZBEREIT (PREVIEW)
 
 Die Website ist technisch und inhaltlich auf einem "Excellence"-Niveau. Alle kritischen UX-Blocker auf Mobilgeräten wurden beseitigt.
 

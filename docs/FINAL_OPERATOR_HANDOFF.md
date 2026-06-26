@@ -2,8 +2,8 @@
 
 ## Status
 - Overall: `internal-base-ready-awaiting-dns-and-leads`
-- Remote main: `296d757`
-- CI/QA/Deploy Preview/Security/CodeQL: latest observed `success` on `main` for commit `296d757`
+- Remote main: `17479a3`
+- CI/QA/Deploy Preview/Security/CodeQL: latest observed `success` on `main` for commit `17479a3`
 - Master plan: aligned
 - Website: prepared
 - CRM-Light: `template-ready-awaiting-lead-data`

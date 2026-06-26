@@ -16,7 +16,7 @@
 | **Nächste geplante Phase** | DNS/NS-Switch abwarten + spätere 5.000-Lead-Dateneinfügung; danach erst kontrolliertes Phase-7-Testbatch |
 | **Gesamt-Fortschritt** | Website ~95% · Go-live-Readiness ~90% · Akquise-System ~50% |
 | **Operativer Blocker** | Externer NS-/DNS-Switch (Zone `hsb-boden.de` = `pending`, Domain-Admin) |
-| **Letzter Commit `main`** | `296d757` — `docs(hsb): add final operator handoff freeze` |
+| **Letzter Commit `main`** | `17479a3` — `docs(hsb): add final completion report` |
 
 ---
 

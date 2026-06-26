@@ -10,7 +10,7 @@
     "test:run": "vitest run",
     "deploy": "npm run build && wrangler deploy --env=\"\"",
     "deploy:preview": "npm run deploy",
-    "deploy:production": "npm run build && wrangler deploy --env production",
+    "deploy:production": "echo 'BLOCKED: Production cutover is freigabepflichtig. Use docs/PHASE_C_CUTOVER_RUNBOOK.md after DNS/NS trigger.' && exit 1",
     "deploy:dry-run": "npm run build && wrangler deploy --env=\"\" --dry-run"
   },
   "dependencies": {

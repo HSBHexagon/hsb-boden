@@ -14,7 +14,7 @@
 
 ## Zweck
 
-Den fertigen Astro-/Cloudflare-Worker als **Production-Worker `hsb-boden`** live auf `hsb-boden.de` schalten, sobald der **NS-/DNS-Switch** durch den Domain-Admin erfolgt ist. Bis dahin läuft die Lead-Pipeline nur auf dem **Preview-Worker `hsb-boden-preview`**.
+Den fertigen Astro-/Cloudflare-Worker als **Production-Worker `hsb-boden`** live auf `hsb-boden.de` schalten, sobald der **NS-/DNS-Switch** durch den Domain-Admin erfolgt ist. Bis dahin bleibt die Domain auf dem alten Live-Pfad; der route-lose Production-Worker ist bereits separat vorbereitet und verifiziert.
 
 ## Fakten (verifiziert)
 

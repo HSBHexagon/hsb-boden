@@ -1,5 +1,7 @@
 # Lead Import 5000 Checklist
 
+Status: `prepared-awaiting-data`
+
 ## Purpose
 
 Prepare future acquisition contacts for CRM-Light import or paste.

@@ -13,9 +13,9 @@
 ## 2. Aktueller Repo-Zustand
 - Branch: `main`
 - Lokaler Stand: entspricht `origin/main`
-- Aktueller HEAD: `fcd6412`
+- Aktueller HEAD: `2dc4444`
 - Website-Code-Diff: `0`
-- Lokale bekannte Nicht-Commit-Datei: `.astro/data-store.json`
+- Lokale bekannte Nicht-Commit-Datei: keine
 
 ## 3. Aktueller Projektzustand
 - Die Lead-Pipeline ist end-to-end live und verifiziert.
@@ -41,9 +41,7 @@
 - Der kuenftige 5.000-Lead-Paste/Import ist `prepared-awaiting-data`.
 
 ## 6. Aktuelle offene Punkte
-- NS-/DNS-Switch der Domain durch den Domain-Admin
-- Danach: zwei Worker-Routes fuer `hsb-boden.de/*` und `www.hsb-boden.de/*` setzen
-- Danach: Live-Verifikation auf der echten Domain
+- Externer NS-/DNS-Switch der Domain `hsb-boden.de` durch den Domain-Admin
 - Zukunftsinput ausserhalb des Repos: spaetere Einfuegung oder Import der 5.000 Akquise-Leads
 
 ## 6a. Verifizierte Phasenlage
@@ -66,4 +64,4 @@
 - Kein Dispatch ohne `docs/launch/PHASE_7_COMPLIANCE_GATE.md` und `docs/launch/LEAD_IMPORT_5000_CHECKLIST.md` mit realen Daten und Batch-Freigabe.
 
 ## 8. Naechster sichere Schritt
-DNS/NS-Switch fuer `hsb-boden.de` abwarten und spaetere Einfuegung der realen 5.000 Lead-Daten abwarten. Bis dahin kein Versand.
+DNS/NS-Switch fuer `hsb-boden.de` und spaetere Einfuegung der realen 5.000 Lead-Daten abwarten. Import bleibt CRM-Datenvorbereitung, kein Versand.

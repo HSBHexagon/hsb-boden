@@ -6,11 +6,9 @@
   "active_task": "Await DNS/NS switch and future 5,000-lead data import; keep dispatch blocked.",
   "repo_path": "/Users/joelcherinodiaz/KI-System/02_Projects/active/hsb-boden",
   "handoff_path": "/Users/joelcherinodiaz/KI-System/ObsidianVault/brain/CURRENT_HANDOFF.md",
-  "last_commit": "fcd6412",
+  "last_commit": "2dc4444",
   "website_code_diff_lines": 0,
-  "modified_files": [
-    ".astro/data-store.json (pre-existing uncommitted cache, do not touch)"
-  ],
+  "modified_files": [],
   "push_done": false,
   "deploy_done": false,
   "completed_steps": [

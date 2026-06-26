@@ -17,7 +17,7 @@
 
 ## 3. Lead-Scoring (0–100, Start-Heuristik)
 - Branche-Fit, Flächenpotenzial, Belastungsart, Entscheider-Erreichbarkeit, Timing/Sanierungsfenster.
-- Verfeinerung optional via n8n/AI später.
+- Verfeinerung optional nur über später explizit freigegebene Automatisierung; n8n ist derzeit nicht aktiv.
 
 ## 4. Statusmodell
 `neu → kontaktiert → interessiert → Angebot → gewonnen | verloren | opt-out`
@@ -43,8 +43,8 @@
 - Alle Leads/Status in Google-Sheets-CRM-Light (`CRM_LIGHT_SCHEMA.md`).
 - Künftiger 5.000-Lead-Paste/Import ist nur CRM-Datenvorbereitung und keine Versandfreigabe.
 
-## 9. Übergang zu n8n
-- Formular-Leads automatisch ins CRM (`N8N_AUTOMATION_PLAN.md`), Follow-up-Reminder, Tagesreport.
+## 9. Optionale spätere Automatisierung (derzeit deaktiviert)
+- Mögliche spätere Erweiterungen: Follow-up-Reminder oder Tagesreporting, nur nach expliziter Freigabe.
 - Der aktive Lead-Intake ist jedoch Website `/api/lead` -> Google Apps Script Web App -> Google Sheets CRM-Light.
 - `ops/n8n/` bleibt historisch/deprecated und wird nur bei späterer expliziter Re-Freigabe wieder relevant.
 

@@ -1,5 +1,7 @@
 # Phase 7 Compliance Gate
 
+Status: `gate-prepared-awaiting-lead-data`
+
 ## Purpose
 
 Phase 7 is a controlled manual B2B outreach gate only.

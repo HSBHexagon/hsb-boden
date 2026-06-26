@@ -11,12 +11,12 @@
 
 | Feld | Wert |
 |------|------|
-| **Aktuelle Phase** | Phase 7 — Compliance-/Import-Gate vorbereitet; Phase 12 bleibt extern blockiert |
+| **Aktuelle Phase** | `internal-base-ready-awaiting-dns-and-leads` · Phase 7 wartet auf reale Lead-Daten; Phase 12 bleibt extern blockiert |
 | **Letzte abgeschlossene Phase** | Phase 11 — Go-live-Vorbereitung |
 | **Nächste geplante Phase** | DNS/NS-Switch abwarten + spätere 5.000-Lead-Dateneinfügung; danach erst kontrolliertes Phase-7-Testbatch |
 | **Gesamt-Fortschritt** | Website ~95% · Go-live-Readiness ~90% · Akquise-System ~50% |
 | **Operativer Blocker** | Externer NS-/DNS-Switch (Zone `hsb-boden.de` = `pending`, Domain-Admin) |
-| **Letzter Commit `main`** | `fcd6412` — `docs(hsb): close phase 4 outreach material approval` |
+| **Letzter Commit `main`** | `2dc4444` — `docs(hsb): prepare phase 7 lead import gate` |
 
 ---
 
@@ -100,7 +100,7 @@ Parallel zur bestehenden WordPress-Live-Site eine neue Astro/Cloudflare-Website 
 
 ### Phase 5 — CRM-Light & Lead-Control
 
-**Status:** ✅ COMPLETED
+**Status:** ✅ COMPLETED — template-ready-awaiting-lead-data
 
 **Objective:** Minimales CRM-System für erste Lead-Erfassung und -Verwaltung aufbauen.
 
@@ -226,7 +226,7 @@ Parallel zur bestehenden WordPress-Live-Site eine neue Astro/Cloudflare-Website 
 
 ### Phase 12 — DNS + Live-Schaltung (Production-Cutover)
 
-**Status:** 🟡 CURRENT — extern blockiert
+**Status:** 🟡 CURRENT — blocked-awaiting-dns-ns-switch
 
 **Objective:** Neue Astro/Cloudflare-Website unter `hsb-boden.de` live schalten und Lead-Pipeline auf der Produktionsdomäne verifizieren.
 

@@ -6,7 +6,7 @@
   "active_task": "Wait for DNS/NS switch or future 5,000 lead dataset",
   "repo_path": "/Users/joelcherinodiaz/KI-System/02_Projects/active/hsb-boden",
   "handoff_path": "/Users/joelcherinodiaz/KI-System/ObsidianVault/brain/CURRENT_HANDOFF.md",
-  "last_commit": "14ad1e4",
+  "last_commit": "296d757",
   "website_code_diff_lines": 0,
   "modified_files": [],
   "push_done": false,
@@ -28,7 +28,7 @@
     "The future 5,000-lead dataset is not inserted yet.",
     "Recipient basis and batch approval are still missing until real lead data exists."
   ],
-  "next_step": "If DNS active, run Phase-C cutover runbook; if lead data available, run lead import checklist; otherwise stop.",
+  "next_step": "Use docs/FINAL_OPERATOR_HANDOFF.md; if neither external input exists, stop.",
   "handoff_required": true,
   "safe_to_continue": true
 }

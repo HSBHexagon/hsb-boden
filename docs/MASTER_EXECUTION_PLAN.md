@@ -16,7 +16,7 @@
 | **Nächste geplante Phase** | DNS/NS-Switch abwarten + spätere 5.000-Lead-Dateneinfügung; danach erst kontrolliertes Phase-7-Testbatch |
 | **Gesamt-Fortschritt** | Website ~95% · Go-live-Readiness ~90% · Akquise-System ~50% |
 | **Operativer Blocker** | Externer NS-/DNS-Switch (Zone `hsb-boden.de` = `pending`, Domain-Admin) |
-| **Letzter Commit `main`** | `14ad1e4` — `docs(hsb): reconcile master phase status` |
+| **Letzter Commit `main`** | `296d757` — `docs(hsb): add final operator handoff freeze` |
 
 ---
 
@@ -280,6 +280,7 @@ Kein formaler Phasennummern-Block, aber geplante Aufgaben nach Go-live:
 | `AGENTS.md` | Repository-weite Arbeitsregeln (Non-Negotiables, Deploy Gate) |
 | `CLAUDE.md` | Claude-spezifische Workflow-Anweisungen |
 | `docs/FINAL_OPERATOR_HANDOFF.md` | Finaler Freeze-/Trigger-Handoff fuer den naechsten Operator |
+| `docs/FINAL_COMPLETION_REPORT.md` | Abschlussbericht der intern vervollstaendigten Vorbereitung |
 | `docs/PHASE_C_CUTOVER_RUNBOOK.md` | Schritt-für-Schritt-Anleitung Phase 12 |
 | `CRM_LIGHT_SCHEMA.md` | CRM-Spaltenstruktur |
 | `SEO_GO_LIVE_CHECKLIST.md` | SEO/Tracking Go-live-Checkliste |

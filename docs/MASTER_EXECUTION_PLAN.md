@@ -17,7 +17,8 @@
 | **Gesamt-Fortschritt** | Website ~95% · Go-live-Readiness ~100% (intern) · Akquise-System ~60% |
 | **Operativer Blocker** | Externer NS-/DNS-Switch (Zone `hsb-boden.de` = `pending`, Domain-Admin) |
 | **Letzter Commit `main`** | `d4ea032` — `chore(hsb): guard production deploy script` |
-| **Kanonischer Readiness-Stack** | `docs/cloudflare/`, `docs/email/`, `docs/analytics/`, `docs/assets/`, `docs/crm/`, `docs/automation/`, `docs/handoff/` |
+| **Kanonischer Readiness-Stack (Tier 1)** | `docs/cloudflare/CLOUDFLARE_PROVIDER_MAX_READINESS.md`, `docs/email/EMAIL_ROUTING_AND_DELIVERABILITY_MAX_READINESS.md`, `docs/analytics/GA4_GTM_GSC_MAX_READINESS.md`, `docs/assets/ASSET_PACKAGE_AND_PUBLIC_DOWNLOAD_MAX_READINESS.md`, `docs/crm/CRM_LIGHT_MAX_READINESS.md`, `docs/automation/STATUS_UPDATE_AUTOMATION_BLUEPRINT.md` |
+| **Kanonischer Readiness-Stack (Tier 2, 2026-06-26)** | `docs/cloudflare/GO_LIVE_MAX_PREFLIGHT_UI_INVENTORY.md`, `docs/cloudflare/WAF_CACHE_RATE_LIMIT_READINESS.md`, `docs/cloudflare/R2_ASSET_UPLOAD_STRATEGY.md`, `docs/cloudflare/TURNSTILE_FORM_PROTECTION_READINESS.md`, `docs/analytics/GA4_GSC_EVENT_TRACKING_READINESS.md`, `docs/email/EMAIL_DELIVERABILITY_AND_TEMPLATE_READINESS.md`, `docs/assets/UTM_QR_DOWNLOAD_MATRIX.md`, `docs/crm/CRM_LIGHT_OPERATOR_READINESS.md`, `docs/automation/N8N_APPS_SCRIPT_SAFE_AUTOMATION_READINESS.md`, `docs/ops/MULTI_PC_OPERATOR_SYNC_PROTOCOL.md`, `docs/launch/PRE_DNS_GO_LIVE_MAX_CHECKLIST.md` |
 
 ---
 

@@ -1,21 +1,37 @@
 {
   "project": "HSB / HEXAFLOOR",
-  "last_updated": "2026-06-26T12:00:00+0200",
+  "last_updated": "2026-06-26T14:00:00+0200",
   "active_model": "Claude Code (Sonnet 4.6)",
   "active_phase": "sales-operations-max-ready-awaiting-dns-and-leads",
-  "active_task": "Max-readiness doc sweep complete; awaiting DNS/NS switch and lead dataset",
+  "active_task": "Final pre-go-live documentation wave complete (2026-06-26 Tier-2 sweep)",
   "repo_path": "/Users/joelcherinodiaz/KI-System/02_Projects/active/hsb-boden",
   "handoff_path": "/Users/joelcherinodiaz/KI-System/ObsidianVault/brain/CURRENT_HANDOFF.md",
   "last_commit": "d4ea032",
   "website_code_diff_lines": 0,
   "canonical_readiness_stack": {
-    "cloudflare": "docs/cloudflare/CLOUDFLARE_PROVIDER_MAX_READINESS.md",
-    "email": "docs/email/EMAIL_ROUTING_AND_DELIVERABILITY_MAX_READINESS.md",
-    "analytics": "docs/analytics/GA4_GTM_GSC_MAX_READINESS.md",
-    "assets": "docs/assets/ASSET_PACKAGE_AND_PUBLIC_DOWNLOAD_MAX_READINESS.md",
-    "crm": "docs/crm/CRM_LIGHT_MAX_READINESS.md",
-    "automation": "docs/automation/STATUS_UPDATE_AUTOMATION_BLUEPRINT.md",
-    "operator_runbook": "docs/handoff/JOEL_JORDIE_OPERATOR_RUNBOOK.md"
+    "tier1": {
+      "cloudflare": "docs/cloudflare/CLOUDFLARE_PROVIDER_MAX_READINESS.md",
+      "email": "docs/email/EMAIL_ROUTING_AND_DELIVERABILITY_MAX_READINESS.md",
+      "analytics": "docs/analytics/GA4_GTM_GSC_MAX_READINESS.md",
+      "assets": "docs/assets/ASSET_PACKAGE_AND_PUBLIC_DOWNLOAD_MAX_READINESS.md",
+      "crm": "docs/crm/CRM_LIGHT_MAX_READINESS.md",
+      "automation": "docs/automation/STATUS_UPDATE_AUTOMATION_BLUEPRINT.md",
+      "operator_runbook": "docs/handoff/JOEL_JORDIE_OPERATOR_RUNBOOK.md"
+    },
+    "tier2_2026_06_26": {
+      "cloudflare_ui_preflight": "docs/cloudflare/GO_LIVE_MAX_PREFLIGHT_UI_INVENTORY.md",
+      "waf_cache_rate_limit": "docs/cloudflare/WAF_CACHE_RATE_LIMIT_READINESS.md",
+      "r2_asset_strategy": "docs/cloudflare/R2_ASSET_UPLOAD_STRATEGY.md",
+      "turnstile": "docs/cloudflare/TURNSTILE_FORM_PROTECTION_READINESS.md",
+      "ai_gateway_future": "docs/cloudflare/AI_GATEWAY_FUTURE_ARCHITECTURE.md",
+      "ga4_event_tracking": "docs/analytics/GA4_GSC_EVENT_TRACKING_READINESS.md",
+      "email_templates": "docs/email/EMAIL_DELIVERABILITY_AND_TEMPLATE_READINESS.md",
+      "utm_qr_matrix": "docs/assets/UTM_QR_DOWNLOAD_MATRIX.md",
+      "crm_operator_workflow": "docs/crm/CRM_LIGHT_OPERATOR_READINESS.md",
+      "n8n_apps_script_safe": "docs/automation/N8N_APPS_SCRIPT_SAFE_AUTOMATION_READINESS.md",
+      "multi_pc_sync": "docs/ops/MULTI_PC_OPERATOR_SYNC_PROTOCOL.md",
+      "master_go_live_checklist": "docs/launch/PRE_DNS_GO_LIVE_MAX_CHECKLIST.md"
+    }
   },
   "modified_files": [
     "PROJECT_TRUTH.md",
@@ -32,7 +48,19 @@
     "docs/assets/ASSET_PACKAGE_AND_PUBLIC_DOWNLOAD_MAX_READINESS.md",
     "docs/crm/CRM_LIGHT_MAX_READINESS.md",
     "docs/automation/STATUS_UPDATE_AUTOMATION_BLUEPRINT.md",
-    "docs/handoff/JOEL_JORDIE_OPERATOR_RUNBOOK.md"
+    "docs/handoff/JOEL_JORDIE_OPERATOR_RUNBOOK.md",
+    "docs/cloudflare/GO_LIVE_MAX_PREFLIGHT_UI_INVENTORY.md",
+    "docs/cloudflare/WAF_CACHE_RATE_LIMIT_READINESS.md",
+    "docs/cloudflare/R2_ASSET_UPLOAD_STRATEGY.md",
+    "docs/cloudflare/TURNSTILE_FORM_PROTECTION_READINESS.md",
+    "docs/cloudflare/AI_GATEWAY_FUTURE_ARCHITECTURE.md",
+    "docs/analytics/GA4_GSC_EVENT_TRACKING_READINESS.md",
+    "docs/email/EMAIL_DELIVERABILITY_AND_TEMPLATE_READINESS.md",
+    "docs/assets/UTM_QR_DOWNLOAD_MATRIX.md",
+    "docs/crm/CRM_LIGHT_OPERATOR_READINESS.md",
+    "docs/automation/N8N_APPS_SCRIPT_SAFE_AUTOMATION_READINESS.md",
+    "docs/ops/MULTI_PC_OPERATOR_SYNC_PROTOCOL.md",
+    "docs/launch/PRE_DNS_GO_LIVE_MAX_CHECKLIST.md"
   ],
   "push_done": false,
   "deploy_done": false,
@@ -42,7 +70,8 @@
     "CRM-Light is documented as template-ready for future lead import and the Phase 7 compliance/import gate documents define the blocked manual outreach path.",
     "Phase 12 remains current but externally blocked by the pending NS/DNS switch.",
     "Workflow risks fixed (commit a28fbb2): CI SHA-pinned, deploy-production.yml workaround applied.",
-    "Max-readiness doc sweep (2026-06-26): 7 new canonical readiness docs created, FINAL_CLOUDFLARE_WORKERS_READINESS_AUDIT converted to historical wrapper, all cross-references updated."
+    "Max-readiness doc sweep (2026-06-26 Tier 1): 7 new canonical readiness docs created, FINAL_CLOUDFLARE_WORKERS_READINESS_AUDIT converted to historical wrapper, all cross-references updated.",
+    "Final pre-go-live documentation wave (2026-06-26 Tier 2): 12 new detailed readiness docs created across cloudflare/, analytics/, email/, assets/, crm/, automation/, ops/, launch/. All Tier-1 canonical docs updated with cross-references. PROJECT_TRUTH.md, CHECKPOINT_STATE.json, FINAL_OPERATOR_HANDOFF.md, MASTER_EXECUTION_PLAN.md updated."
   ],
   "workflow_risks_fixed": [
     "ci.yml: actions/checkout@v4 pinned to 34e114876b0b11c390a56381ad16ebd13914f8d5 (2026-06-26)",
@@ -52,17 +81,20 @@
   "open_steps": [
     "Wait for external DNS/NS activation or the future 5,000-lead dataset before continuing.",
     "If DNS becomes active, follow docs/PHASE_C_CUTOVER_RUNBOOK.md and docs/cloudflare/CLOUDFLARE_PROVIDER_MAX_READINESS.md.",
-    "Before outreach, activate M365 DKIM for j-cherino@hsb-boden.de per docs/email/EMAIL_ROUTING_AND_DELIVERABILITY_MAX_READINESS.md.",
+    "Pre-DNS: activate M365 DKIM for j-cherino@hsb-boden.de per docs/email/EMAIL_ROUTING_AND_DELIVERABILITY_MAX_READINESS.md.",
     "If lead data becomes available, follow docs/crm/CRM_LIGHT_MAX_READINESS.md and docs/launch/LEAD_IMPORT_5000_CHECKLIST.md.",
-    "Keep dispatch blocked until real lead data, recipient basis, opt-out handling, and batch approval exist."
+    "Keep dispatch blocked until real lead data, recipient basis, opt-out handling, and batch approval exist.",
+    "Use docs/launch/PRE_DNS_GO_LIVE_MAX_CHECKLIST.md as the master trigger-day gate."
   ],
   "blocked_by": [
     "External DNS/NS switch for hsb-boden.de is still pending.",
-    "The future 5,000-lead dataset is not inserted yet.",
+    "The future 5,000-lead dataset is not inserted yet."
+  ],
+  "pre_outreach_blockers": [
     "M365 DKIM for j-cherino@hsb-boden.de not yet activated.",
     "Recipient basis and batch approval are still missing until real lead data exists."
   ],
-  "next_step": "Read docs/handoff/JOEL_JORDIE_OPERATOR_RUNBOOK.md for resume order and trigger actions. If neither external input exists, stop.",
+  "next_step": "Read docs/launch/PRE_DNS_GO_LIVE_MAX_CHECKLIST.md and docs/handoff/JOEL_JORDIE_OPERATOR_RUNBOOK.md for resume order. If neither external input exists, stop.",
   "handoff_required": true,
   "safe_to_continue": true
 }

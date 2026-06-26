@@ -170,3 +170,12 @@ Flyers are validated. Dispatch remains blocked until:
 4. Exact batch approved per `docs/launch/PHASE_7_COMPLIANCE_GATE.md`
 
 See: `docs/email/EMAIL_ROUTING_AND_DELIVERABILITY_MAX_READINESS.md`
+
+---
+
+## Reference
+
+- UTM and QR link strategy: `docs/assets/UTM_QR_DOWNLOAD_MATRIX.md`
+- R2 asset offloading (future): `docs/cloudflare/R2_ASSET_UPLOAD_STRATEGY.md`
+- Email templates and flyer links: `docs/email/EMAIL_DELIVERABILITY_AND_TEMPLATE_READINESS.md`
+- Master go-live checklist: `docs/launch/PRE_DNS_GO_LIVE_MAX_CHECKLIST.md`

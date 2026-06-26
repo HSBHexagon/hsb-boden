@@ -192,3 +192,11 @@ No live mail send, no batch, no dispatch is permitted until:
 - Batch approved per `docs/launch/PHASE_7_COMPLIANCE_GATE.md`
 
 If DNS/NS is not active and no lead data exists, stop.
+
+---
+
+## Reference
+
+- Templates and opt-out handling: `docs/email/EMAIL_DELIVERABILITY_AND_TEMPLATE_READINESS.md`
+- CRM dispatch workflow: `docs/crm/CRM_LIGHT_OPERATOR_READINESS.md`
+- Master go-live checklist: `docs/launch/PRE_DNS_GO_LIVE_MAX_CHECKLIST.md`

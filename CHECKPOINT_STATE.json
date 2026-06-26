@@ -1,9 +1,9 @@
 {
   "project": "HSB / HEXAFLOOR",
-  "last_updated": "2026-06-26T00:00:00+0200",
-  "active_model": "Codex",
-  "active_phase": "Final freeze / Phase 12 blocked / Phase 7 awaiting lead data",
-  "active_task": "Wait for DNS/NS switch or future 5,000 lead dataset",
+  "last_updated": "2026-06-26T06:25:00+0200",
+  "active_model": "Claude Code (Sonnet 4.6)",
+  "active_phase": "Workflow risk fix — ultimate-ready-awaiting-dns-and-leads",
+  "active_task": "Internal workflow risks fixed; awaiting DNS/NS switch and lead dataset",
   "repo_path": "/Users/joelcherinodiaz/KI-System/02_Projects/active/hsb-boden",
   "handoff_path": "/Users/joelcherinodiaz/KI-System/ObsidianVault/brain/CURRENT_HANDOFF.md",
   "last_commit": "17479a3",
@@ -16,6 +16,11 @@
     "Phase 4 is closed for materials, channel decision, and owner approval scope: j-cherino@hsb-boden.de is canonical for flyer/mail outreach, info@hsb-boden.de remains the general/legal mailbox, and Outlook is historical fallback only.",
     "CRM-Light is documented as template-ready for future lead import and the Phase 7 compliance/import gate documents define the blocked manual outreach path.",
     "Phase 12 remains current but externally blocked by the pending NS/DNS switch."
+  ],
+  "workflow_risks_fixed": [
+    "ci.yml: actions/checkout@v4 pinned to 34e114876b0b11c390a56381ad16ebd13914f8d5 (2026-06-26)",
+    "ci.yml: actions/setup-node@v4 pinned to 49933ea5288caeca8642d1e84afbd3f7d6820020 (2026-06-26)",
+    "deploy-production.yml: replaced 'deploy --env production' with 'deploy --name hsb-boden --var ENVIRONMENT:production' per PHASE_C_CUTOVER_RUNBOOK.md"
   ],
   "open_steps": [
     "Wait for external DNS/NS activation or the future 5,000-lead dataset before continuing.",

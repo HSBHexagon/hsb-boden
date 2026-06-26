@@ -2,11 +2,11 @@
   "project": "HSB / HEXAFLOOR",
   "last_updated": "2026-06-26T00:00:00+0200",
   "active_model": "Codex",
-  "active_phase": "Phase 3 and Phase 4 complete; Phase 7 remains pending and Phase 12 remains externally blocked",
-  "active_task": "Keep dispatch blocked and prepare only the separate Phase 7 compliance gate for any future controlled manual outreach.",
+  "active_phase": "Phase 7 gate prepared / Phase 12 externally blocked",
+  "active_task": "Await DNS/NS switch and future 5,000-lead data import; keep dispatch blocked.",
   "repo_path": "/Users/joelcherinodiaz/KI-System/02_Projects/active/hsb-boden",
   "handoff_path": "/Users/joelcherinodiaz/KI-System/ObsidianVault/brain/CURRENT_HANDOFF.md",
-  "last_commit": "92bda23",
+  "last_commit": "fcd6412",
   "website_code_diff_lines": 0,
   "modified_files": [
     ".astro/data-store.json (pre-existing uncommitted cache, do not touch)"
@@ -14,20 +14,24 @@
   "push_done": false,
   "deploy_done": false,
   "completed_steps": [
-    "Phase 4 repository evidence was audited across flyer PDFs, flyer source assets, email templates, website URLs, and referential/legal claims.",
     "Phase 3 is backed by local Lighthouse evidence from 2026-06-26 with Performance 95, Accessibility 100, Best Practices 100, and SEO 100.",
     "Phase 4 is closed for materials, channel decision, and owner approval scope: j-cherino@hsb-boden.de is canonical for flyer/mail outreach, info@hsb-boden.de remains the general/legal mailbox, and Outlook is historical fallback only.",
+    "CRM-Light is documented as template-ready for future lead import and the Phase 7 compliance/import gate documents define the blocked manual outreach path.",
     "Phase 12 remains current but externally blocked by the pending NS/DNS switch."
   ],
   "open_steps": [
-    "Document recipient basis, opt-out handling, and compliance/freigabe for any controlled manual outreach before Phase 7 can start.",
+    "Await the future 5,000-lead dataset and import it only as CRM preparation data.",
+    "Document recipient basis, opt-out handling, and compliance/freigabe per lead before any controlled manual outreach batch can start.",
+    "Obtain explicit approval for one concrete manual Phase 7 test batch after real lead data exists.",
     "Keep Phase 12 blocked until the external NS/DNS switch is complete."
   ],
   "blocked_by": [
-    "Phase 7 has no repo-proven lead-list/compliance/opt-out execution approval yet.",
+    "The future 5,000-lead dataset is not inserted yet.",
+    "Recipient basis and opt-out approval are not yet documented per lead.",
+    "No concrete manual Phase 7 test batch is approved yet.",
     "External NS/DNS switch for hsb-boden.de is still pending."
   ],
-  "next_step": "Prepare the separate compliance gate for any controlled manual outreach; do not dispatch mail and do not proceed to Phase 12 operational work yet.",
+  "next_step": "Wait for DNS/NS switch and future lead data insertion; do not dispatch mail and do not proceed to live execution work yet.",
   "handoff_required": true,
   "safe_to_continue": true
 }

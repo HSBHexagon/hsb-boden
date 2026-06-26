@@ -11,12 +11,12 @@
 
 | Feld | Wert |
 |------|------|
-| **Aktuelle Phase** | Phase 12 — DNS + Live-Schaltung (Production-Cutover) |
+| **Aktuelle Phase** | Phase 7 — Compliance-/Import-Gate vorbereitet; Phase 12 bleibt extern blockiert |
 | **Letzte abgeschlossene Phase** | Phase 11 — Go-live-Vorbereitung |
-| **Nächste geplante Phase** | Phase 12 abschließen → danach Governance (PR-Triage, Branch-Protection) |
+| **Nächste geplante Phase** | DNS/NS-Switch abwarten + spätere 5.000-Lead-Dateneinfügung; danach erst kontrolliertes Phase-7-Testbatch |
 | **Gesamt-Fortschritt** | Website ~95% · Go-live-Readiness ~90% · Akquise-System ~50% |
 | **Operativer Blocker** | Externer NS-/DNS-Switch (Zone `hsb-boden.de` = `pending`, Domain-Admin) |
-| **Letzter Commit `main`** | `92bda23` — `docs(hsb): Phase-C Prod-Worker route-los vorgezogen + verifiziert, Runbook + PR-Triage` |
+| **Letzter Commit `main`** | `fcd6412` — `docs(hsb): close phase 4 outreach material approval` |
 
 ---
 
@@ -65,7 +65,7 @@ Parallel zur bestehenden WordPress-Live-Site eine neue Astro/Cloudflare-Website 
 
 ### Phase 3 — Website-QA & Trust-Härtung
 
-**Status:** 🟡 CURRENT
+**Status:** ✅ COMPLETED
 
 **Objective:** Qualität, Trust-Signale und rechtliche Korrektheit der Website sicherstellen.
 
@@ -73,33 +73,28 @@ Parallel zur bestehenden WordPress-Live-Site eine neue Astro/Cloudflare-Website 
 - Performance- und Accessibility-Reports vorhanden
 - `npm run test:run` grün (51/51, zuletzt 2026-06-24)
 - Security: CodeQL Medium-Findings behoben; AGENTS.md Non-Negotiables aktiv
-- Lighthouse 100/100 Desktop / ~99 Mobile (Stand pre-Astro-6-Migration, Re-Audit ausstehend)
+- Lokale Lighthouse-Evidenz vom 2026-06-26: Performance 95, Accessibility 100, Best Practices 100, SEO 100
+- Rechtstext-Abnahme abgeschlossen
 
-**Deliverables (offen):**
-- Finale Rechtstext-Abnahme (Impressum, DSGVO) durch Inhaber
-- Flyer-/Mail-Konsistenz gegen aktuelle Website prüfen (Namen, Logos, Referenzen)
-- Core Web Vitals Re-Audit nach Astro-6-Migration
-
-**Exit Criteria:** Rechtstext freigegeben; Flyer-/Website-Konsistenz bestätigt; kein offener Trust- oder Legal-Blocker.
+**Exit Criteria:** Erfuellt.
 
 ---
 
 ### Phase 4 — Flyer- & E-Mail-Finalisierung
 
-**Status:** 🟡 CURRENT
+**Status:** ✅ COMPLETED
 
 **Objective:** Marketing-Materialien (Flyer, Mail-Templates) auf aktuelle Website-Struktur und Rechtsstatus abgleichen.
 
 **Deliverables (erledigt):**
 - Flyer-PDFs committed und in `public/` für Direktlink verfügbar
-- Outlook-Mail (`cherinodiaz@outlook.com`) als Versandkanal dokumentiert
+- Mail-Templates finalisiert
+- Kanonischer Outreach-Kanal dokumentiert: `j-cherino@hsb-boden.de`
+- `info@hsb-boden.de` bleibt allgemeine/legal Mailbox
+- `cherinodiaz@outlook.com` ist nur historischer/interner Fallback
+- Materialien sind owner-approved fuer kontrolliertes manuelles Outreach-Material
 
-**Deliverables (offen):**
-- Flyer-/Website-Konsistenz: Namen, Logos, Referenzclaims prüfen (keine Argelith/Zahna-Claims ohne Beleg)
-- Mail-Templates an neue Website-URLs und Formulare anpassen
-- Rechtsprüfung Outreach-Inhalte (Massenversand blockiert bis Rechts-Review, `AGENTS.md`)
-
-**Exit Criteria:** Flyer und Mail-Templates konsistent mit Website; Rechtsprüfung abgeschlossen.
+**Exit Criteria:** Erfuellt. Kein realer Dispatch dadurch freigegeben.
 
 ---
 
@@ -142,19 +137,19 @@ Parallel zur bestehenden WordPress-Live-Site eine neue Astro/Cloudflare-Website 
 
 ### Phase 7 — Testkampagne (kontrolliert)
 
-**Status:** ⏳ PENDING
+**Status:** ⏳ PENDING — gate-prepared-awaiting-lead-data
 
-**Objective:** Erste kontrollierte Outreach-Kampagne mit ausgewählten A-Leads durchführen.
+**Objective:** Compliance-/Import-Gate fuer einen spaeteren kontrollierten manuellen B2B-Testversand vorbereiten, ohne die Kampagne zu starten.
 
 **Deliverables:**
-- Lead-Liste `hsb_lead_list_2026_06_11.csv` (30 Leads, außerhalb des Repos) prüfen und segmentieren
-- Mail-Templates finalisiert (→ Phase 4 Exit-Kriterium)
-- Opt-out-Regeln definiert und umgesetzt
-- Erstkontakt: Mail + Flyer-PDF-Anhang an max. 10–20 A-Leads
+- `docs/launch/PHASE_7_COMPLIANCE_GATE.md`
+- `docs/launch/LEAD_IMPORT_5000_CHECKLIST.md`
+- Lead-Liste, Empfaengerbasis, Opt-out-Logik und Versandfreigabe als Pflicht-Gates dokumentiert
+- Manuelles Testbatch spaeter auf max. `10-20` A-Leads begrenzt
 
-**Exit Criteria:** Opt-out-Regeln dokumentiert; Rechtsprüfung abgeschlossen; Freigabe durch Inhaber; Kampagne gesendet und CRM-Zeilen angelegt.
+**Exit Criteria:** Das Gate ist vorbereitet. Ein echter Testversand bleibt blockiert, bis reale Lead-Daten vorliegen, alle Batch-Zeilen freigegeben sind, die Compliance-Dokumentation vorliegt und der Owner das exakte Batch explizit freigibt.
 
-**Blockiert durch:** Phase 4 (Mail-/Flyer-Konsistenz, Rechts-Review), Freigabe Inhaber.
+**Blockiert durch:** Fehlende reale Lead-Daten, fehlende Batch-Freigabe, fehlende Compliance-/Opt-out-Freigabe pro Einsatz.
 
 ---
 
@@ -193,7 +188,7 @@ Parallel zur bestehenden WordPress-Live-Site eine neue Astro/Cloudflare-Website 
 
 ### Phase 10 — Automatisierungsausbau (Apps-Script-Basis)
 
-**Status:** 🟡 CURRENT
+**Status:** ⏸ OPTIONAL / dokumentiert deaktiviert
 
 **Objective:** Automationsbasis über die initiale Lead-Intake-Pipeline hinaus ausbauen (Reporting, Follow-up-Trigger, Datenpflege).
 
@@ -204,9 +199,9 @@ Parallel zur bestehenden WordPress-Live-Site eine neue Astro/Cloudflare-Website 
 **Deliverables (offen/geplant):**
 - Tagesreport-Aggregation im CRM-Sheet (optional)
 - Follow-up-Reminder via Apps-Script (optional, nach Phase 9)
-- Erweiterung nur nach expliziter Freigabe; n8n bleibt verworfen
+- Erweiterung nur nach expliziter Freigabe; n8n bleibt verworfen und nicht aktiv
 
-**Exit Criteria:** Kern-Automation (Lead-Intake) stabil; optionale Erweiterungen nach Bedarf; keine Abo-Dienste eingeführt.
+**Exit Criteria:** Kern-Automation (Lead-Intake) stabil; optionale Erweiterungen nur nach spaeterer expliziter Freigabe.
 
 ---
 

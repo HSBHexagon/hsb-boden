@@ -202,3 +202,15 @@ Fortlaufendes Log jeder KI-Session. Jeder Eintrag: Zeit · Modell · Phase · Au
 - **Push:** nein
 - **Deploy:** nein
 - **Nächster Schritt:** Phase 7 nur als separates Compliance-/Empfaengerbasis-Gate vorbereiten; Phase 12 bleibt extern blockiert.
+
+---
+
+## 2026-06-26 — Codex
+- **Phase:** Phase-7 Internal Base Readiness
+- **Aufgabe:** Phase 7 als reines Compliance-/Import-Gate vorbereiten und den internen Akquise-Unterbau auf `internal-base-ready-awaiting-dns-and-leads` ziehen; keine App-Code-, Versand-, Automations-, Cloudflare-, DNS- oder Deploy-Aktion.
+- **Ergebnis:** `docs/launch/PHASE_7_COMPLIANCE_GATE.md` und `docs/launch/LEAD_IMPORT_5000_CHECKLIST.md` als kanonische Gate-Artefakte angelegt. CRM-Light auf `template-ready-awaiting-lead-data` dokumentiert. Die echten 5.000 Lead-Datensaetze fehlen weiterhin und bleiben ein externer Zukunftsinput. Automation bleibt deaktiviert; kein Versand freigegeben. Phase 12 bleibt extern DNS-blockiert.
+- **Geänderte Dateien:** `docs/launch/PHASE_7_COMPLIANCE_GATE.md`, `docs/launch/LEAD_IMPORT_5000_CHECKLIST.md`, `CRM_LIGHT_SCHEMA.md`, `ACQUISITION_SYSTEM_PLAN.md`, `PROJECT_TRUTH.md`, `CHECKPOINT_STATE.json`, `docs/MASTER_EXECUTION_PLAN.md`, `SESSION_LOG.md`
+- **Website-Code-Diff:** 0
+- **Push:** nein
+- **Deploy:** nein
+- **Nächster Schritt:** Auf DNS/NS-Switch und auf die spaetere Bereitstellung der realen 5.000 Lead-Daten warten.

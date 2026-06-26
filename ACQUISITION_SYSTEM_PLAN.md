@@ -1,6 +1,6 @@
 # ACQUISITION_SYSTEM_PLAN — HSB-Boden / HEXAFLOOR
 
-> Stand: 2026-06-20. Akquise-Gesamtsystem (Plan). Eine Lead-Liste `hsb_lead_list_2026_06_11.csv` wird in älteren Docs erwähnt, ist im aktuellen Repo aber nicht vorhanden.
+> Stand: 2026-06-26. Akquise-Gesamtsystem (Plan). Eine Lead-Liste `hsb_lead_list_2026_06_11.csv` wird in älteren Docs erwähnt, ist im aktuellen Repo aber nicht vorhanden.
 
 ## 1. Zielgruppen / ICP
 - B2B-Industrie mit anspruchsvollen Bodenanforderungen: Lebensmittel/Getränke, Chemie/Pharma, Logistik/Lager, Produktion.
@@ -13,6 +13,7 @@
 - **C**: passender Fit, niedrige Priorität / Beobachtung.
 - Pflege im CRM-Light (`CRM_LIGHT_SCHEMA.md`).
 - Aktueller Repo-Check 2026-06-20: keine CSV-Leadliste im Arbeitsbaum gefunden. Für Versand heute muss die Empfängerliste außerhalb des Repos separat verifiziert werden.
+- Die späteren 5.000 Lead-Datensätze sind ein zukünftiger externer Input. Ihr Fehlen blockiert diese Dokumentationsvorbereitung nicht.
 
 ## 3. Lead-Scoring (0–100, Start-Heuristik)
 - Branche-Fit, Flächenpotenzial, Belastungsart, Entscheider-Erreichbarkeit, Timing/Sanierungsfenster.
@@ -40,11 +41,20 @@
 
 ## 8. Übergang zu CRM-Light
 - Alle Leads/Status in Google-Sheets-CRM-Light (`CRM_LIGHT_SCHEMA.md`).
+- Künftiger 5.000-Lead-Paste/Import ist nur CRM-Datenvorbereitung und keine Versandfreigabe.
 
 ## 9. Übergang zu n8n
 - Formular-Leads automatisch ins CRM (`N8N_AUTOMATION_PLAN.md`), Follow-up-Reminder, Tagesreport.
+- Der aktive Lead-Intake ist jedoch Website `/api/lead` -> Google Apps Script Web App -> Google Sheets CRM-Light.
+- `ops/n8n/` bleibt historisch/deprecated und wird nur bei späterer expliziter Re-Freigabe wieder relevant.
+
+## 10. Phase-7- und Import-Gates
+- Phase 7 wird kanonisch ueber `docs/launch/PHASE_7_COMPLIANCE_GATE.md` vorbereitet.
+- Der spaetere 5.000-Lead-Paste/Import wird kanonisch ueber `docs/launch/LEAD_IMPORT_5000_CHECKLIST.md` vorbereitet.
+- Dispatch bleibt blockiert, bis beide Gate-Anforderungen mit realen Daten und expliziten Freigaben erfuellt sind.
 
 ## Offene Punkte
 - Vor jedem echten Versand separat dokumentieren: Lead-Liste, Empfaengerbasis, Opt-out-Handling und Compliance/Freigabe fuer den konkreten Einsatz.
 - Heute owner-approved: bestehende Flyer- und Mail-Materialien fuer einen kontrollierten manuellen B2B-Testeinsatz.
 - Heute blockiert: Serienversand, CRM-Automation, n8n-Livebetrieb, Apps-Script-/API-Versand und jeglicher Dispatch ohne separate Compliance-/Freigabedokumentation.
+- Die 5.000 Akquise-Datensaetze fehlen aktuell noch und bleiben ein kuenftiger externer Input.

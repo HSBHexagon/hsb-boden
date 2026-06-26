@@ -1,6 +1,6 @@
 # CRM_LIGHT_SCHEMA — HSB-Boden
 
-> Google-Sheets-CRM-Light als Start. Stand: 2026-06-14. Plan, keine Live-Daten.
+> Google-Sheets-CRM-Light als Start. Stand: 2026-06-26. Template-ready, keine Live-Daten.
 
 ## Spalten (eine Zeile = ein Lead)
 
@@ -18,6 +18,7 @@
 | Telefon | string | — |
 | Website | url | — |
 | Quelle | string | Recherche, Empfehlung, Web … |
+| Beziehung / Kontaktgrund | string | Bestandskontakt / Messe / dokumentierter Anlass |
 | Kampagne | string | Outreach-2026-Q2 |
 | Score | number | 0–100 |
 | Status | enum | neu / kontaktiert / interessiert / Angebot / gewonnen / verloren / opt-out |
@@ -28,12 +29,20 @@
 | Fläche geschätzt | number (m²) | — |
 | Belastungsart | string | mechanisch / chemisch / thermisch |
 | Sanierungsfenster | string | Quartal / Zeitraum |
-| Notizen | text | — |
+| Opt-in-Status | enum | yes / no / unknown |
 | Opt-out-Status | enum | nein / ja |
-| Letzter Kontakt | date | YYYY-MM-DD |
+| Versandfreigabe | enum | no / yes |
 | Verantwortlicher | string | Joel / … |
+| Notizen | text | — |
 
 ## Hinweise
+- Die Struktur ist `template-ready-awaiting-lead-data`; die 5.000 Lead-Datensätze sind fuer diese Dokumentationsaufgabe nicht erforderlich.
+- Defaults bei Import: `Status = neu`, `Nächste Aktion = prüfen`, `Versandfreigabe = no`, `Opt-in-Status = unknown`, `Opt-out-Status = unknown`.
+- Telefonfelder muessen als Text gespeichert und formatiert werden.
+- Diese Felder duerfen beim Import leer bleiben: `Ansprechpartner`, `Rolle`, `Telefon`, `Interesse`, `Projektart`, `Fläche geschätzt`, `Belastungsart`, `Sanierungsfenster`, `Notizen`.
+- Dispatch bleibt blockiert, wenn `E-Mail`, `Quelle`, `Beziehung / Kontaktgrund`, `Opt-in-Status`, `Opt-out-Status`, `Versandfreigabe` oder `Verantwortlicher` fehlen oder unklar sind.
+- Duplicate detection keys: E-Mail, Website, Firma + Standort, Firma + Ansprechpartner, Telefon (falls vorhanden).
 - DSGVO: nur geschäftliche Kontaktdaten, dokumentierte Quelle, Opt-out respektieren (siehe `AGENTS.md` Non-Negotiables).
 - Scoring-Logik und Statusübergänge: siehe `ACQUISITION_SYSTEM_PLAN.md`.
-- Befüllung/Automation via n8n: siehe `N8N_AUTOMATION_PLAN.md`.
+- Aktiver Lead-Intake: Website `/api/lead` -> Google Apps Script Web App -> Google Sheets CRM-Light.
+- `ops/n8n/` und `N8N_AUTOMATION_PLAN.md` sind nur historisch/optional; n8n ist nicht die aktive Lead-Intake-Loesung.

@@ -16,7 +16,7 @@
 | **Nächste geplante Phase** | DNS/NS-Switch abwarten + spätere 5.000-Lead-Dateneinfügung; danach erst kontrolliertes Phase-7-Testbatch |
 | **Gesamt-Fortschritt** | Website ~95% · Go-live-Readiness ~90% · Akquise-System ~50% |
 | **Operativer Blocker** | Externer NS-/DNS-Switch (Zone `hsb-boden.de` = `pending`, Domain-Admin) |
-| **Letzter Commit `main`** | `2dc4444` — `docs(hsb): prepare phase 7 lead import gate` |
+| **Letzter Commit `main`** | `14ad1e4` — `docs(hsb): reconcile master phase status` |
 
 ---
 
@@ -259,6 +259,14 @@ Kein formaler Phasennummern-Block, aber geplante Aufgaben nach Go-live:
 - **PR #76 (Major-Bump React 19/Zod 4/TS 6/Vite 8):** eigene dedizierte Migration, nicht autonom mergebar
 - **Untracked Planungsdocs:** Entscheidung über `PROJECT_AUDIT.md`, `docs/ops/*` (außer dieser Datei), `docs/brain/*`, `src/OPTIMIZATION.md`, `.agents/`, `.codex/`
 
+## Final Freeze / External Input Gates
+
+- Die Roadmap ist intern reconciled und bleibt bis zu einem externen Trigger eingefroren.
+- Das Projekt soll operativ nicht weiterlaufen, solange weder der DNS/NS-Switch noch der reale 5.000-Lead-Datensatz vorliegt.
+- Phase 12 folgt ausschließlich `docs/PHASE_C_CUTOVER_RUNBOOK.md`.
+- Lead-Daten folgen ausschließlich `docs/launch/LEAD_IMPORT_5000_CHECKLIST.md`.
+- Phase 8 und Phase 9 bleiben gesperrt, bis Phase 7 mit realen Lead-Daten, Lead-Validierung und Batch-Freigabe fortgesetzt werden darf.
+
 ---
 
 ## Referenzen
@@ -271,6 +279,7 @@ Kein formaler Phasennummern-Block, aber geplante Aufgaben nach Go-live:
 | `~/KI-System/ObsidianVault/brain/CURRENT_HANDOFF.md` | Genau eine aktuelle Implementierungsaufgabe |
 | `AGENTS.md` | Repository-weite Arbeitsregeln (Non-Negotiables, Deploy Gate) |
 | `CLAUDE.md` | Claude-spezifische Workflow-Anweisungen |
+| `docs/FINAL_OPERATOR_HANDOFF.md` | Finaler Freeze-/Trigger-Handoff fuer den naechsten Operator |
 | `docs/PHASE_C_CUTOVER_RUNBOOK.md` | Schritt-für-Schritt-Anleitung Phase 12 |
 | `CRM_LIGHT_SCHEMA.md` | CRM-Spaltenstruktur |
 | `SEO_GO_LIVE_CHECKLIST.md` | SEO/Tracking Go-live-Checkliste |

@@ -2,11 +2,11 @@
   "project": "HSB / HEXAFLOOR",
   "last_updated": "2026-06-26T00:00:00+0200",
   "active_model": "Codex",
-  "active_phase": "Phase 7 gate prepared / Phase 12 externally blocked",
-  "active_task": "Await DNS/NS switch and future 5,000-lead data import; keep dispatch blocked.",
+  "active_phase": "Final freeze / Phase 12 blocked / Phase 7 awaiting lead data",
+  "active_task": "Wait for DNS/NS switch or future 5,000 lead dataset",
   "repo_path": "/Users/joelcherinodiaz/KI-System/02_Projects/active/hsb-boden",
   "handoff_path": "/Users/joelcherinodiaz/KI-System/ObsidianVault/brain/CURRENT_HANDOFF.md",
-  "last_commit": "2dc4444",
+  "last_commit": "14ad1e4",
   "website_code_diff_lines": 0,
   "modified_files": [],
   "push_done": false,
@@ -18,18 +18,17 @@
     "Phase 12 remains current but externally blocked by the pending NS/DNS switch."
   ],
   "open_steps": [
-    "Await the future 5,000-lead dataset and import it only as CRM preparation data.",
-    "Document recipient basis, opt-out handling, and compliance/freigabe per lead before any controlled manual outreach batch can start.",
-    "Obtain explicit approval for one concrete manual Phase 7 test batch after real lead data exists.",
-    "Keep Phase 12 blocked until the external NS/DNS switch is complete."
+    "Wait for external DNS/NS activation or the future 5,000-lead dataset before continuing.",
+    "If DNS becomes active, follow docs/PHASE_C_CUTOVER_RUNBOOK.md only.",
+    "If lead data becomes available, follow docs/launch/LEAD_IMPORT_5000_CHECKLIST.md only.",
+    "Keep dispatch blocked until real lead data, recipient basis, opt-out handling, and batch approval exist."
   ],
   "blocked_by": [
+    "External DNS/NS switch for hsb-boden.de is still pending.",
     "The future 5,000-lead dataset is not inserted yet.",
-    "Recipient basis and opt-out approval are not yet documented per lead.",
-    "No concrete manual Phase 7 test batch is approved yet.",
-    "External NS/DNS switch for hsb-boden.de is still pending."
+    "Recipient basis and batch approval are still missing until real lead data exists."
   ],
-  "next_step": "Wait for DNS/NS switch and future lead data insertion; do not dispatch mail and do not proceed to live execution work yet.",
+  "next_step": "If DNS active, run Phase-C cutover runbook; if lead data available, run lead import checklist; otherwise stop.",
   "handoff_required": true,
   "safe_to_continue": true
 }

@@ -224,3 +224,13 @@ Fortlaufendes Log jeder KI-Session. Jeder Eintrag: Zeit · Modell · Phase · Au
 - **Push:** nein
 - **Deploy:** nein
 - **Nächster Schritt:** Weiter auf DNS/NS-Switch und den spaeteren externen 5.000-Lead-Datensatz warten; bis dahin kein Versand und kein Cutover.
+
+## 2026-06-26 — Codex
+- **Phase:** Final Freeze + External Input Trigger Pack
+- **Aufgabe:** Finalen Freeze- und Trigger-Handoff fuer die zwei externen Fortsetzungswege dokumentiert; Remote-main- und CI-Status read-only verifiziert; keine Code-, Versand-, Automations-, Cloudflare-, DNS-, Deploy- oder Git-Integrationsaktion.
+- **Ergebnis:** `docs/FINAL_OPERATOR_HANDOFF.md` als einzelnes Operator-Handoff angelegt. Aktive Statusdateien auf `14ad1e4` und auf die zwei erlaubten Triggerpfade (DNS/NS aktiv oder 5.000 Lead-Daten verfuegbar) gezogen. Ergebnisstatus bleibt `internal-base-ready-awaiting-dns-and-leads`.
+- **Geänderte Dateien:** `docs/FINAL_OPERATOR_HANDOFF.md`, `PROJECT_TRUTH.md`, `CHECKPOINT_STATE.json`, `docs/MASTER_EXECUTION_PLAN.md`, `SESSION_LOG.md`
+- **Website-Code-Diff:** 0
+- **Push:** nein
+- **Deploy:** nein
+- **Nächster Schritt:** Wenn weder DNS/NS aktiv noch echte Lead-Daten vorhanden sind, stoppen; sonst nur den jeweiligen dokumentierten Triggerpfad ausfuehren.

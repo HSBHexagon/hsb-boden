@@ -13,7 +13,7 @@
 ## 2. Aktueller Repo-Zustand
 - Branch: `main`
 - Lokaler Stand: entspricht `origin/main`
-- Aktueller HEAD: `2dc4444`
+- Aktueller HEAD: `14ad1e4`
 - Website-Code-Diff: `0`
 - Lokale bekannte Nicht-Commit-Datei: keine
 
@@ -62,6 +62,11 @@
 - Kein Production-Deploy/Cutover ohne Freigabe
 - Kein Setzen der Domain-Routes vor erfolgreichem NS-/DNS-Switch
 - Kein Dispatch ohne `docs/launch/PHASE_7_COMPLIANCE_GATE.md` und `docs/launch/LEAD_IMPORT_5000_CHECKLIST.md` mit realen Daten und Batch-Freigabe.
+
+## 7a. Operator-Handoff
+- Finaler Freeze-/Trigger-Stand: `docs/FINAL_OPERATOR_HANDOFF.md`
+- Phase-12-Cutover-Pfad: `docs/PHASE_C_CUTOVER_RUNBOOK.md`
+- Lead-Import-Pfad: `docs/launch/LEAD_IMPORT_5000_CHECKLIST.md`
 
 ## 8. Naechster sichere Schritt
 DNS/NS-Switch fuer `hsb-boden.de` und spaetere Einfuegung der realen 5.000 Lead-Daten abwarten. Import bleibt CRM-Datenvorbereitung, kein Versand.

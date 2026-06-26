@@ -90,3 +90,14 @@
 
 1. DNS/NS transfer for `hsb-boden.de`
 2. Future 5,000 lead dataset
+
+## Canonical readiness stack (current)
+
+See `docs/handoff/JOEL_JORDIE_OPERATOR_RUNBOOK.md` for the full operator view.
+
+- Cloudflare: `docs/cloudflare/CLOUDFLARE_PROVIDER_MAX_READINESS.md`
+- Email: `docs/email/EMAIL_ROUTING_AND_DELIVERABILITY_MAX_READINESS.md`
+- Analytics: `docs/analytics/GA4_GTM_GSC_MAX_READINESS.md`
+- Assets: `docs/assets/ASSET_PACKAGE_AND_PUBLIC_DOWNLOAD_MAX_READINESS.md`
+- CRM: `docs/crm/CRM_LIGHT_MAX_READINESS.md`
+- Automation: `docs/automation/STATUS_UPDATE_AUTOMATION_BLUEPRINT.md`

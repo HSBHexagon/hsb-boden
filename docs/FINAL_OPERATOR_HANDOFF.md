@@ -1,9 +1,9 @@
 # FINAL_OPERATOR_HANDOFF — HSB-Boden / HEXAFLOOR
 
 ## Status
-- Overall: `internal-base-ready-awaiting-dns-and-leads`
-- Remote main: `bf0f998`
-- CI/QA/Deploy Preview/Security/CodeQL: latest observed `success` on `main` for commit `bf0f998`
+- Overall: `sales-operations-max-ready-awaiting-dns-and-leads`
+- Remote main: `d4ea032`
+- CI/QA/Deploy Preview/Security/CodeQL: latest observed `success` on `main`
 - Master plan: aligned
 - Website: prepared
 - CRM-Light: `template-ready-awaiting-lead-data`
@@ -15,15 +15,24 @@
 1. DNS/NS transfer for `hsb-boden.de`
 2. Future 5,000 lead dataset
 
-## Final audit entrypoints
+## Canonical readiness stack (current)
+- **Cloudflare**: `docs/cloudflare/CLOUDFLARE_PROVIDER_MAX_READINESS.md`
+- **Email/Deliverability**: `docs/email/EMAIL_ROUTING_AND_DELIVERABILITY_MAX_READINESS.md`
+- **Analytics**: `docs/analytics/GA4_GTM_GSC_MAX_READINESS.md`
+- **Assets**: `docs/assets/ASSET_PACKAGE_AND_PUBLIC_DOWNLOAD_MAX_READINESS.md`
+- **CRM**: `docs/crm/CRM_LIGHT_MAX_READINESS.md`
+- **Automation**: `docs/automation/STATUS_UPDATE_AUTOMATION_BLUEPRINT.md`
+- **Operator Runbook**: `docs/handoff/JOEL_JORDIE_OPERATOR_RUNBOOK.md`
+
+## Final audit entrypoints (historical evidence)
 1. `docs/FINAL_PHASE_BY_PHASE_AUDIT.md`
-2. `docs/FINAL_CLOUDFLARE_WORKERS_READINESS_AUDIT.md`
+2. `docs/FINAL_CLOUDFLARE_WORKERS_READINESS_AUDIT.md` (historical wrapper → see cloudflare/ canonical)
 3. `docs/PHASE_C_CUTOVER_RUNBOOK.md`
 
 ## Trigger A — DNS/NS becomes active
 Only when Cloudflare zone `hsb-boden.de` is active:
-1. Read `docs/PHASE_C_CUTOVER_RUNBOOK.md`
-2. Read `docs/FINAL_CLOUDFLARE_WORKERS_READINESS_AUDIT.md`
+1. Read `docs/cloudflare/CLOUDFLARE_PROVIDER_MAX_READINESS.md` — go/no-go checklist
+2. Read `docs/PHASE_C_CUTOVER_RUNBOOK.md` — execution steps
 3. Verify production Worker route-less state before routes
 4. Verify `LEAD_WEBHOOK_URL` secret exists
 5. Set only the documented Worker routes

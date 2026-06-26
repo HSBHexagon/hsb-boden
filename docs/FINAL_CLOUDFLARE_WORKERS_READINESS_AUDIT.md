@@ -1,6 +1,21 @@
 # FINAL_CLOUDFLARE_WORKERS_READINESS_AUDIT — HSB-Boden / HEXAFLOOR
 
-## Verdict
+> **Historical/Final-Audit Evidence Only**
+> This document records the Cloudflare Workers readiness state as audited up to 2026-06-26.
+> It is preserved as final audit evidence and is no longer the active canonical source.
+>
+> **Canonical Cloudflare provider-readiness document:**
+> `docs/cloudflare/CLOUDFLARE_PROVIDER_MAX_READINESS.md`
+>
+> **Cutover execution runbook:**
+> `docs/PHASE_C_CUTOVER_RUNBOOK.md`
+>
+> Do not maintain two active canonical Cloudflare readiness documents.
+> Use `docs/cloudflare/CLOUDFLARE_PROVIDER_MAX_READINESS.md` for all new decisions.
+
+---
+
+## Verdict (at time of audit)
 
 `cloudflare-workers-ready-awaiting-dns-ns-switch`
 
@@ -18,10 +33,10 @@
 
 ## Hidden repo risks
 
-- `.github/workflows/deploy-production.yml` still points to `deploy --env production`, while the runbook documents that path as unsafe for production cutover with the current adapter behavior
-- `.github/workflows/ci.yml` still uses unpinned `actions/checkout@v4` and `actions/setup-node@v4`, which conflicts with the repository rule that third-party GitHub Actions should be pinned to commit SHAs
+- `.github/workflows/deploy-production.yml` used `deploy --env production` (broken for production) — **RESOLVED in commit `a28fbb2`**: replaced with `--name hsb-boden --var ENVIRONMENT:production`
+- `.github/workflows/ci.yml` used unpinned `actions/checkout@v4` and `actions/setup-node@v4` — **RESOLVED in commit `a28fbb2`**: all action refs pinned to full commit SHAs
 
-These risks were documented only. No workflow mutation was performed in this task.
+All workflow risks from this audit have been resolved. See `docs/cloudflare/CLOUDFLARE_PROVIDER_MAX_READINESS.md` for current state.
 
 ## Not executed
 

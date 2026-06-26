@@ -2,12 +2,16 @@
 
 ## Verdict
 
-`ultimate-ready-awaiting-dns-and-leads`
+`sales-operations-max-ready-awaiting-dns-and-leads`
 
-> Updated 2026-06-26 after GitHub Actions workflow risk fix (Claude Code, Sonnet 4.6):
-> `ci.yml` action refs pinned to full commit SHAs; `deploy-production.yml` aligned
-> with verified workaround from `docs/PHASE_C_CUTOVER_RUNBOOK.md`.
+> Updated 2026-06-26 — max-readiness doc sweep (Claude Code, Sonnet 4.6):
+> Canonical readiness stack created for Cloudflare, email, analytics, assets, CRM,
+> automation, and operator handoff. FINAL_CLOUDFLARE_WORKERS_READINESS_AUDIT converted
+> to historical wrapper. All internal work is complete.
 > No internally completable task remains.
+>
+> Canonical readiness stack: `docs/cloudflare/`, `docs/email/`, `docs/analytics/`,
+> `docs/assets/`, `docs/crm/`, `docs/automation/`, `docs/handoff/`
 
 ## Audit result
 
@@ -57,5 +61,5 @@ No internally completable task remains after adversarial verification.
 
 ## Resume rule
 
-Use `docs/FINAL_OPERATOR_HANDOFF.md`.
+Use `docs/handoff/JOEL_JORDIE_OPERATOR_RUNBOOK.md` → `docs/FINAL_OPERATOR_HANDOFF.md`.
 If neither external input exists, stop.

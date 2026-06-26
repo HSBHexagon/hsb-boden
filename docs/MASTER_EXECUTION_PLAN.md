@@ -11,12 +11,13 @@
 
 | Feld | Wert |
 |------|------|
-| **Aktuelle Phase** | `internal-base-ready-awaiting-dns-and-leads` · Phase 7 wartet auf reale Lead-Daten; Phase 12 bleibt extern blockiert |
-| **Letzte abgeschlossene Phase** | Phase 11 — Go-live-Vorbereitung |
+| **Aktuelle Phase** | `sales-operations-max-ready-awaiting-dns-and-leads` · Phase 7 wartet auf reale Lead-Daten; Phase 12 bleibt extern blockiert |
+| **Letzte abgeschlossene Phase** | Max-Readiness-Sweep (2026-06-26) — kanonischer Readiness-Stack vollständig |
 | **Nächste geplante Phase** | DNS/NS-Switch abwarten + spätere 5.000-Lead-Dateneinfügung; danach erst kontrolliertes Phase-7-Testbatch |
-| **Gesamt-Fortschritt** | Website ~95% · Go-live-Readiness ~90% · Akquise-System ~50% |
+| **Gesamt-Fortschritt** | Website ~95% · Go-live-Readiness ~100% (intern) · Akquise-System ~60% |
 | **Operativer Blocker** | Externer NS-/DNS-Switch (Zone `hsb-boden.de` = `pending`, Domain-Admin) |
-| **Letzter Commit `main`** | `bf0f998` — `docs(hsb): add final adversarial audit` |
+| **Letzter Commit `main`** | `d4ea032` — `chore(hsb): guard production deploy script` |
+| **Kanonischer Readiness-Stack** | `docs/cloudflare/`, `docs/email/`, `docs/analytics/`, `docs/assets/`, `docs/crm/`, `docs/automation/`, `docs/handoff/` |
 
 ---
 

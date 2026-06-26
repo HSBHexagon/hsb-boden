@@ -1,12 +1,12 @@
 # FINAL_COMPLETION_REPORT — HSB-Boden / HEXAFLOOR
 
 ## Verdict
-`internal-base-ready-awaiting-dns-and-leads`
+`sales-operations-max-ready-awaiting-dns-and-leads`
 
 ## Latest verified main
-- Commit: `bf0f998`
+- Commit: `d4ea032`
 - GitHub Actions: `CI`, `Quality Assurance`, `Deploy Preview`, `Security Analysis`, `CodeQL` zuletzt beobachtet `success` auf `main`
-- Working tree before this sweep: clean; keine untracked Dateien; `stash@{0}` bleibt unverändert erhalten
+- Working tree before this sweep: clean
 
 ## Completed internal preparation
 - Website / Astro / Cloudflare Worker preparation
@@ -17,9 +17,19 @@
 - Phase-7 compliance gate
 - Final operator handoff
 - Final phase-by-phase audit
-- Final Cloudflare/Workers readiness audit
+- Final Cloudflare/Workers readiness audit (now historical wrapper)
 - Master execution plan reconciliation
 - Cutover runbook
+- **Max-readiness doc sweep (2026-06-26):** canonical readiness stack for Cloudflare, email, analytics, assets, CRM, automation, and operator handoff
+
+## Canonical readiness stack (current)
+- `docs/cloudflare/CLOUDFLARE_PROVIDER_MAX_READINESS.md`
+- `docs/email/EMAIL_ROUTING_AND_DELIVERABILITY_MAX_READINESS.md`
+- `docs/analytics/GA4_GTM_GSC_MAX_READINESS.md`
+- `docs/assets/ASSET_PACKAGE_AND_PUBLIC_DOWNLOAD_MAX_READINESS.md`
+- `docs/crm/CRM_LIGHT_MAX_READINESS.md`
+- `docs/automation/STATUS_UPDATE_AUTOMATION_BLUEPRINT.md`
+- `docs/handoff/JOEL_JORDIE_OPERATOR_RUNBOOK.md`
 
 ## Remaining external inputs
 1. DNS/NS transfer for `hsb-boden.de`
@@ -45,9 +55,9 @@ Start with:
 1. `docs/FINAL_OPERATOR_HANDOFF.md`
 2. `PROJECT_TRUTH.md`
 3. `CHECKPOINT_STATE.json`
-4. `docs/MASTER_EXECUTION_PLAN.md`
-5. `docs/FINAL_ADVERSARIAL_AUDIT.md`
-6. `docs/FINAL_PHASE_BY_PHASE_AUDIT.md`
-7. `docs/FINAL_CLOUDFLARE_WORKERS_READINESS_AUDIT.md`
+4. `docs/handoff/JOEL_JORDIE_OPERATOR_RUNBOOK.md`
+5. `docs/cloudflare/CLOUDFLARE_PROVIDER_MAX_READINESS.md`
+6. `docs/FINAL_ADVERSARIAL_AUDIT.md`
+7. `docs/FINAL_PHASE_BY_PHASE_AUDIT.md`
 
 If neither external input exists, stop.

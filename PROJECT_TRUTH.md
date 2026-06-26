@@ -4,7 +4,7 @@
 > Historischer Verlauf gehoert in `SESSION_LOG.md` oder Archive, nicht hier hinein.
 > Unklare Punkte sind als `unklar / zu pruefen` markiert.
 >
-> Gesamturteil: `internal-base-ready-awaiting-dns-and-leads`
+> Gesamturteil: `sales-operations-max-ready-awaiting-dns-and-leads`
 
 ## 1. Kanonischer Arbeitsort
 - Repo: `/Users/joelcherinodiaz/KI-System/02_Projects/active/hsb-boden`
@@ -63,14 +63,27 @@
 - Kein Setzen der Domain-Routes vor erfolgreichem NS-/DNS-Switch
 - Kein Dispatch ohne `docs/launch/PHASE_7_COMPLIANCE_GATE.md` und `docs/launch/LEAD_IMPORT_5000_CHECKLIST.md` mit realen Daten und Batch-Freigabe.
 
-## 7a. Operator-Handoff
+## 7a. Operator-Handoff und kanonischer Readiness-Stack (aktuell)
+
+Readiness-Docs (kanonisch, seit 2026-06-26 Sweep):
+- Cloudflare Provider Readiness (kanonisch): `docs/cloudflare/CLOUDFLARE_PROVIDER_MAX_READINESS.md`
+- E-Mail/Deliverability Readiness: `docs/email/EMAIL_ROUTING_AND_DELIVERABILITY_MAX_READINESS.md`
+- Analytics Readiness (GA4/GTM/GSC): `docs/analytics/GA4_GTM_GSC_MAX_READINESS.md`
+- Asset/PDF Readiness: `docs/assets/ASSET_PACKAGE_AND_PUBLIC_DOWNLOAD_MAX_READINESS.md`
+- CRM-Light Readiness: `docs/crm/CRM_LIGHT_MAX_READINESS.md`
+- Automation Blueprints (optional): `docs/automation/STATUS_UPDATE_AUTOMATION_BLUEPRINT.md`
+- Joel/JORDIE Operator Runbook: `docs/handoff/JOEL_JORDIE_OPERATOR_RUNBOOK.md`
+
+Historische Finale Docs (Evidenz, nicht aktiv kanonisch fuer Cloudflare):
 - Finaler Freeze-/Trigger-Stand: `docs/FINAL_OPERATOR_HANDOFF.md`
 - Finaler Abschlussbericht: `docs/FINAL_COMPLETION_REPORT.md`
 - Finaler adversarial audit: `docs/FINAL_ADVERSARIAL_AUDIT.md`
 - Finaler Phase-fuer-Phase-Audit: `docs/FINAL_PHASE_BY_PHASE_AUDIT.md`
-- Finaler Cloudflare-/Workers-Readiness-Audit: `docs/FINAL_CLOUDFLARE_WORKERS_READINESS_AUDIT.md`
-- Phase-12-Cutover-Pfad: `docs/PHASE_C_CUTOVER_RUNBOOK.md`
-- Lead-Import-Pfad: `docs/launch/LEAD_IMPORT_5000_CHECKLIST.md`
+- Cloudflare Workers Readiness Audit (historisch): `docs/FINAL_CLOUDFLARE_WORKERS_READINESS_AUDIT.md`
+
+Ausfuehrungspfade:
+- Phase-12-Cutover: `docs/PHASE_C_CUTOVER_RUNBOOK.md`
+- Lead-Import: `docs/launch/LEAD_IMPORT_5000_CHECKLIST.md`
 
 ## 8. Naechster sichere Schritt
 DNS/NS-Switch fuer `hsb-boden.de` und spaetere Einfuegung der realen 5.000 Lead-Daten abwarten. Import bleibt CRM-Datenvorbereitung, kein Versand.

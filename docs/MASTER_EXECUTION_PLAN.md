@@ -16,7 +16,7 @@
 | **Nächste geplante Phase** | DNS/NS-Switch abwarten + spätere 5.000-Lead-Dateneinfügung; danach erst kontrolliertes Phase-7-Testbatch |
 | **Gesamt-Fortschritt** | Website ~95% · Go-live-Readiness ~90% · Akquise-System ~50% |
 | **Operativer Blocker** | Externer NS-/DNS-Switch (Zone `hsb-boden.de` = `pending`, Domain-Admin) |
-| **Letzter Commit `main`** | `17479a3` — `docs(hsb): add final completion report` |
+| **Letzter Commit `main`** | `bf0f998` — `docs(hsb): add final adversarial audit` |
 
 ---
 
@@ -278,6 +278,8 @@ Kein formaler Phasennummern-Block, aber geplante Aufgaben nach Go-live:
 | `CHECKPOINT_STATE.json` | Maschinenlesbarer Ausführungsstand |
 | `~/KI-System/ObsidianVault/brain/CURRENT_HANDOFF.md` | Genau eine aktuelle Implementierungsaufgabe |
 | `AGENTS.md` | Repository-weite Arbeitsregeln (Non-Negotiables, Deploy Gate) |
+| `docs/FINAL_PHASE_BY_PHASE_AUDIT.md` | Abschlussbeleg fuer Phasen 1-12 |
+| `docs/FINAL_CLOUDFLARE_WORKERS_READINESS_AUDIT.md` | Read-only Cutover- und Workers-Readiness-Audit |
 | `CLAUDE.md` | Claude-spezifische Workflow-Anweisungen |
 | `docs/FINAL_OPERATOR_HANDOFF.md` | Finaler Freeze-/Trigger-Handoff fuer den naechsten Operator |
 | `docs/FINAL_COMPLETION_REPORT.md` | Abschlussbericht der intern vervollstaendigten Vorbereitung |

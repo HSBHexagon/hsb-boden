@@ -10,11 +10,11 @@ No internally completable task remains after adversarial verification.
 
 ## Verified latest state
 
-- Remote and local `main`: `17479a3` — `docs(hsb): add final completion report`
+- Remote and local `main`: `bf0f998` — `docs(hsb): add final adversarial audit`
 - Working tree before this audit: clean
 - Untracked files: none
 - Stash: `stash@{0}` preserved, not required for current truth
-- Latest observed GitHub Actions on `main` for `17479a3`: `CI`, `Quality Assurance`, `Deploy Preview`, `Security Analysis`, `CodeQL` = `success`
+- Latest observed GitHub Actions on `main` for `bf0f998`: `CI`, `Quality Assurance`, `Deploy Preview`, `Security Analysis`, `CodeQL` = `success`
 - Verification commands: `npm run check` passed with 0 errors / 0 warnings / 1 Astro hint, `npm run test:run` passed with 33 files / 235 tests, `npm run build` passed
 
 ## Verified product gates
@@ -29,8 +29,9 @@ No internally completable task remains after adversarial verification.
 
 ## Audit fixes applied
 
-- Active completion documents were updated from stale `296d757` references to current `17479a3`
+- Active completion documents were updated from stale `296d757` references to current `bf0f998`
 - Historical root snapshots that still described obsolete n8n / `PUBLIC_LEAD_ENDPOINT` blockers were explicitly marked as non-canonical historical documents
+- Two non-blocking repo risks remained visible during the ultimate sweep: `.github/workflows/ci.yml` still uses unpinned `actions/checkout@v4` and `actions/setup-node@v4`, and `.github/workflows/deploy-production.yml` still points to the documented-broken `deploy --env production` path. They were not changed in this audit because workflow mutation was explicitly out of scope.
 - No application code, tests, build config, deployment, DNS, Cloudflare, or infrastructure files were changed
 
 ## Remaining external inputs only

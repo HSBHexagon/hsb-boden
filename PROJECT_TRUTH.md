@@ -12,10 +12,10 @@
 
 ## 2. Aktueller Repo-Zustand
 - Branch: `main`
-- Lokaler Stand: entspricht `origin/main`
-- Aktueller HEAD: `17479a3`
+- Lokaler Commit-Stand: entspricht `origin/main`
+- Aktueller HEAD: `bf0f998`
 - Website-Code-Diff: `0`
-- Lokale bekannte Nicht-Commit-Datei: keine
+- Lokale bekannte Nicht-Commit-Dateien: aktuelle Doku-Audits dieses Sweeps (`PROJECT_TRUTH.md`, `CHECKPOINT_STATE.json`, `SESSION_LOG.md`, `docs/MASTER_EXECUTION_PLAN.md`, `docs/FINAL_OPERATOR_HANDOFF.md`, `docs/FINAL_COMPLETION_REPORT.md`, `docs/FINAL_ADVERSARIAL_AUDIT.md`, `docs/FINAL_PHASE_BY_PHASE_AUDIT.md`, `docs/FINAL_CLOUDFLARE_WORKERS_READINESS_AUDIT.md`)
 
 ## 3. Aktueller Projektzustand
 - Die Lead-Pipeline ist end-to-end live und verifiziert.
@@ -67,6 +67,8 @@
 - Finaler Freeze-/Trigger-Stand: `docs/FINAL_OPERATOR_HANDOFF.md`
 - Finaler Abschlussbericht: `docs/FINAL_COMPLETION_REPORT.md`
 - Finaler adversarial audit: `docs/FINAL_ADVERSARIAL_AUDIT.md`
+- Finaler Phase-fuer-Phase-Audit: `docs/FINAL_PHASE_BY_PHASE_AUDIT.md`
+- Finaler Cloudflare-/Workers-Readiness-Audit: `docs/FINAL_CLOUDFLARE_WORKERS_READINESS_AUDIT.md`
 - Phase-12-Cutover-Pfad: `docs/PHASE_C_CUTOVER_RUNBOOK.md`
 - Lead-Import-Pfad: `docs/launch/LEAD_IMPORT_5000_CHECKLIST.md`
 

@@ -4,9 +4,9 @@
 `internal-base-ready-awaiting-dns-and-leads`
 
 ## Latest verified main
-- Commit: `17479a3`
+- Commit: `bf0f998`
 - GitHub Actions: `CI`, `Quality Assurance`, `Deploy Preview`, `Security Analysis`, `CodeQL` zuletzt beobachtet `success` auf `main`
-- Working tree: lokale Dokumentationsänderungen aus diesem Completion Sweep; keine untracked Dateien; `stash@{0}` bleibt unverändert erhalten
+- Working tree before this sweep: clean; keine untracked Dateien; `stash@{0}` bleibt unverändert erhalten
 
 ## Completed internal preparation
 - Website / Astro / Cloudflare Worker preparation
@@ -16,6 +16,8 @@
 - 5,000-lead import checklist
 - Phase-7 compliance gate
 - Final operator handoff
+- Final phase-by-phase audit
+- Final Cloudflare/Workers readiness audit
 - Master execution plan reconciliation
 - Cutover runbook
 
@@ -45,5 +47,7 @@ Start with:
 3. `CHECKPOINT_STATE.json`
 4. `docs/MASTER_EXECUTION_PLAN.md`
 5. `docs/FINAL_ADVERSARIAL_AUDIT.md`
+6. `docs/FINAL_PHASE_BY_PHASE_AUDIT.md`
+7. `docs/FINAL_CLOUDFLARE_WORKERS_READINESS_AUDIT.md`
 
 If neither external input exists, stop.

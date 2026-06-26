@@ -264,3 +264,15 @@ Fortlaufendes Log jeder KI-Session. Jeder Eintrag: Zeit · Modell · Phase · Au
 - **Push:** nein
 - **Deploy:** nein
 - **Nächster Schritt:** Nur bei externem Trigger fortfahren; fuer DNS/NS-Switch zuerst `docs/FINAL_CLOUDFLARE_WORKERS_READINESS_AUDIT.md` und `docs/PHASE_C_CUTOVER_RUNBOOK.md` verwenden.
+---
+
+## 2026-06-26 — Claude Code (Sonnet 4.6)
+- **Phase:** GitHub Actions Workflow Risk Fix
+- **Aufgabe:** Zwei interne Workflow-Risiken behoben, die beim Ultimate Codex Sweep als `not-ready` markiert waren. Keine Cloudflare-, DNS-, Deploy-, Versand-, Automations- oder App-Code-Aktion.
+- **Ergebnis:** `.github/workflows/ci.yml` action-Refs auf volle Commit-SHAs gepinnt; `.github/workflows/deploy-production.yml` von `deploy --env production` (dokumentiert fehlerhaft) auf verifizierten Workaround `deploy --name hsb-boden --var ENVIRONMENT:production` umgestellt. Kommentar mit Root-Cause-Verweis auf `docs/PHASE_C_CUTOVER_RUNBOOK.md` eingefügt. Alle lokalen Checks bestanden: `npm run check` 0/0/1, `npm run test:run` 51/51, `npm run build` grün.
+- **Geänderte Dateien:** `.github/workflows/ci.yml`, `.github/workflows/deploy-production.yml`, `CHECKPOINT_STATE.json`, `SESSION_LOG.md`
+- **Website-Code-Diff:** 0
+- **Push:** nein
+- **Deploy:** nein
+- **Kein Stash-Pop, keine Secrets, kein Cloudflare/DNS**
+- **Nächster Schritt:** Worktree-Diff nach `main` committen (freigabepflichtig), dann auf DNS/NS-Switch oder Lead-Daten warten.

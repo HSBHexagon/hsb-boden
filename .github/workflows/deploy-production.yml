@@ -34,8 +34,14 @@ jobs:
         run: npm run build
 
       - name: Deploy to Cloudflare Workers (Production)
+        # NOTE: `--env production` is intentionally NOT used.
+        # The Astro-6 Cloudflare adapter generates `.wrangler/deploy/config.json`
+        # flattened from the top-level wrangler.toml (name=hsb-boden-preview).
+        # `--env production` is silently ignored — it deploys to preview, not production.
+        # Verified 2026-06-24 via dry-run: `--env production` → ENVIRONMENT=preview.
+        # Workaround documented in docs/PHASE_C_CUTOVER_RUNBOOK.md.
         uses: cloudflare/wrangler-action@9acf94ace14e7dc412b076f2c5c20b8ce93c79cd # v3.15
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: deploy --env production
+          command: deploy --name hsb-boden --var ENVIRONMENT:production

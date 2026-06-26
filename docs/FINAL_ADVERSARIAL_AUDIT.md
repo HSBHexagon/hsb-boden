@@ -2,7 +2,12 @@
 
 ## Verdict
 
-`product-preparation-complete-awaiting-external-inputs`
+`ultimate-ready-awaiting-dns-and-leads`
+
+> Updated 2026-06-26 after GitHub Actions workflow risk fix (Claude Code, Sonnet 4.6):
+> `ci.yml` action refs pinned to full commit SHAs; `deploy-production.yml` aligned
+> with verified workaround from `docs/PHASE_C_CUTOVER_RUNBOOK.md`.
+> No internally completable task remains.
 
 ## Audit result
 

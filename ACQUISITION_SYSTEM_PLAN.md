@@ -30,10 +30,12 @@
 ## 6. Flyer / Landingpage / QR / UTM
 - Flyer-PDFs in `public/` (committet 9ac994a) mit QR → Landingpage/Kontakt.
 - UTM-Parameter pro Kanal/Kampagne (Quelle/Kampagne im CRM erfassen).
-- Konsistenz Flyer ↔ Website (Namen/Logos/Referenzen) = offen (P1).
+- Konsistenz Flyer ↔ Website (Namen/Logos/Referenzen) fuer den dokumentierten Materialstand geschlossen.
 
-## 7. Rolle der Outlook-Mail
-- `cherinodiaz@outlook.com` als Versand-/Antwortkanal für Erstansprache und Follow-ups.
+## 7. Kanonischer Outreach-Kanal
+- `j-cherino@hsb-boden.de` ist der kanonische Absender- und Antwortkanal fuer finalisierte Flyer- und Mail-Outreach-Materialien.
+- `info@hsb-boden.de` bleibt die offizielle allgemeine Website-/Legal-/Kontakt-Mailbox.
+- `cherinodiaz@outlook.com` ist nur historischer/interner Fallback und kein kanonischer oeffentlicher Outreach-Kanal.
 - Keine Massen-Automation an gekaufte Kontakte ohne Rechts-Review (`AGENTS.md`).
 
 ## 8. Übergang zu CRM-Light
@@ -43,6 +45,6 @@
 - Formular-Leads automatisch ins CRM (`N8N_AUTOMATION_PLAN.md`), Follow-up-Reminder, Tagesreport.
 
 ## Offene Punkte
-- Webhook/SMTP aktivieren (P0), n8n-Hosting (P0), Rechts-Review Outreach (P1), Go-Live-Zeitpunkt.
-- Heute verwendbar: einzelne vorbereitete Mails mit geprüftem PDF-Anhang und manueller Antwortbearbeitung.
-- Heute blockiert: Serienversand, CRM-Automation, n8n-Livebetrieb und Formularzustellung ohne Freigabe/Secrets.
+- Vor jedem echten Versand separat dokumentieren: Lead-Liste, Empfaengerbasis, Opt-out-Handling und Compliance/Freigabe fuer den konkreten Einsatz.
+- Heute owner-approved: bestehende Flyer- und Mail-Materialien fuer einen kontrollierten manuellen B2B-Testeinsatz.
+- Heute blockiert: Serienversand, CRM-Automation, n8n-Livebetrieb, Apps-Script-/API-Versand und jeglicher Dispatch ohne separate Compliance-/Freigabedokumentation.

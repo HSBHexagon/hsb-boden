@@ -166,3 +166,39 @@ Fortlaufendes Log jeder KI-Session. Jeder Eintrag: Zeit · Modell · Phase · Au
 - **Sicher vorbereitet (Doku-only, kein `src/`):** `PROJECT_TRUTH.md` war Stand 2026-06-17 und stark veraltet (Lead-Pipeline als „inaktiv/BLOCKER", n8n unentschieden, Branch=Auditbranch, Route „unklar"). Auf Realstand 2026-06-26 gezogen: Branch=main/HEAD `92bda23`, Astro-6-Migration, route-loser Prod-Worker + Secret live, Lead-Pipeline live & verifiziert, CRM „HSB CRM Light" aktiv, n8n→Apps-Script-Pivot, P0 abgeschlossen, P3-Cutover als einziges Finale (DNS-blockiert). `CHECKPOINT_STATE.json` (Datum/Modell/Verifikations-Step/blocked_by/next_step, JSON valide), `SESSION_LOG.md` (dieser Eintrag), brain `CURRENT_HANDOFF.md` aktualisiert.
 - **Isolation:** Doku-Edits im bg-Worktree `worktree-hsb-truth-refresh` (von `92bda23`). **Kein Commit, kein Push, kein Deploy.** Diff wird zur main-Übernahme vorgelegt (freigabepflichtig).
 - **Verbleibende nächste Aufgabe:** Nach erfolgtem NS-Switch (Zone `pending`→`active`) **und** Freigabe → Cutover strikt nach `docs/PHASE_C_CUTOVER_RUNBOOK.md` Schritte 5–6 (Routes setzen, Worker vorher re-prüfen, Live-Verify). Danach Phase D (PR-Triage/Branch-Protection).
+
+---
+
+## 2026-06-26 — Codex
+- **Phase:** Startup-Context-Verifikation
+- **Aufgabe:** Nur den aktiven Startup-Kontext auditieren (`CLAUDE.md`, `PROJECT_TRUTH.md`, `CHECKPOINT_STATE.json`, `SESSION_LOG.md`, `docs/context/README.md`) und Rest-Bloat nur dort beseitigen
+- **Ergebnis:** `CLAUDE.md` bleibt der einzige Entrypoint. `PROJECT_TRUTH.md` wurde auf reinen Gegenwartsstand reduziert. `CHECKPOINT_STATE.json` wurde von Verlaufsduplikaten auf Resume-Zweck verschlankt. `SESSION_LOG.md` bleibt append-only. Archive wurden nicht veraendert, ausserhalb des Startup-Pfads belassen.
+- **Geänderte Dateien:** `PROJECT_TRUTH.md`, `CHECKPOINT_STATE.json`, `SESSION_LOG.md`
+- **Website-Code-Diff:** 0
+- **Push:** nein
+- **Deploy:** nein
+- **Nächster Schritt:** Kein weiterer Umbau noetig, solange Archive nicht in den Startup-Pfad ruecken
+
+---
+
+## 2026-06-26 — Codex
+- **Phase:** Phase-4-Evidenzaudit
+- **Aufgabe:** Nur Repo-Evidenz fuer Flyer, Mail, Website-Konsistenz, Referenzclaims, Freigaben und Lighthouse-Status pruefen; keine Code-, Deploy- oder Infrastrukturarbeit.
+- **Ergebnis:** Phase 3 auf Basis lokaler Lighthouse-Evidenz vom 2026-06-26 auf abgeschlossen gezogen (Performance 95, Accessibility 100, Best Practices 100, SEO 100). Phase 4 bleibt offen: Flyer-PDFs, Mail-Templates, Domains und freigegebene Referenzclaims sind belegt, aber der Repo-Stand liefert weiterhin keinen eindeutigen kanonischen Outreach-Absender und keine explizite Owner-/Legal-Freigabe fuer finalen Outreach.
+- **Geänderte Dateien:** `PROJECT_TRUTH.md`, `CHECKPOINT_STATE.json`, `SESSION_LOG.md`
+- **Website-Code-Diff:** 0
+- **Push:** nein
+- **Deploy:** nein
+- **Nächster Schritt:** Phase 4 nur noch ueber Absender-/Kanalfestlegung und explizite Outreach-Freigabe schliessen; Phase 12 bleibt extern blockiert.
+
+---
+
+## 2026-06-26 — Codex
+- **Phase:** Phase-4-Abschluss nach Owner-Entscheidung
+- **Aufgabe:** Nur Dokumentations- und Statusabgleich nach expliziter Owner-Entscheidung fuer Outreach-Kanal und Materialfreigabe; keine Code-, Deploy-, DNS-, Cloudflare- oder Versandaktion.
+- **Ergebnis:** Phase 4 auf abgeschlossen gezogen. `j-cherino@hsb-boden.de` ist jetzt kanonisch fuer Flyer-/Mail-Outreach, `info@hsb-boden.de` bleibt die allgemeine/legal Mailbox, `cherinodiaz@outlook.com` ist nur historischer/interner Fallback. Der Materialstand ist owner-approved fuer kontrolliertes manuelles B2B-Outreach-Material; Dispatch bleibt separat blockiert, bis Empfaengerbasis, Opt-out-Handling und Compliance/Freigabe dokumentiert sind.
+- **Geänderte Dateien:** `PROJECT_TRUTH.md`, `CHECKPOINT_STATE.json`, `SESSION_LOG.md`, `ACQUISITION_SYSTEM_PLAN.md`, `marketing/flyer/validation.md`
+- **Website-Code-Diff:** 0
+- **Push:** nein
+- **Deploy:** nein
+- **Nächster Schritt:** Phase 7 nur als separates Compliance-/Empfaengerbasis-Gate vorbereiten; Phase 12 bleibt extern blockiert.

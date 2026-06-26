@@ -35,6 +35,13 @@ Stand: 2026-06-12 · QA-Skill: `hsb-digital-flyer-design-review`
 - Nur 3 freigegebene Kundennamen, restliche Referenzen anonym formuliert ✓
 - Keine erfundenen Zahlen/Zertifikate ✓
 
+## Owner-Freigabe (Materialstand)
+- `j-cherino@hsb-boden.de` ist der kanonische oeffentliche Absender- und Antwortkanal fuer die finalen Flyer-/Mail-Materialien.
+- `info@hsb-boden.de` bleibt die allgemeine Website-/Legal-Mailbox; `cherinodiaz@outlook.com` ist nur historischer/interner Fallback.
+- Der bestehende Flyer- und Mail-Stand ist owner-approved als Material fuer einen kontrollierten manuellen B2B-Testeinsatz.
+- Diese Freigabe ist **keine** Freigabe fuer automatisierten Versand, Massenmailing, n8n-Aktivierung, API-/Apps-Script-Versand oder Phase-7/8-Kampagnenausfuehrung.
+- Vor jedem echten Versand muessen Lead-Liste, Empfaengerbasis, Opt-out-Handling und Compliance/Freigabe separat dokumentiert werden.
+
 ## Isolation
 - `git status -- src/ astro.config.* package.json` → leer (Website unberührt) ✓
 - Neue Pfade nur unter `marketing/` und `.claude/skills/hsb-digital-flyer-design-review/` ✓

@@ -1,0 +1,1 @@
+- Documented that Cloudflare's `trim.color` supports `rgba` values in `worker-configuration.d.ts` alongside rgb and hex.

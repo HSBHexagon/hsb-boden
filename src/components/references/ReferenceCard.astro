@@ -40,7 +40,7 @@ const { reference } = Astro.props;
       <span class="rounded-[2px] border border-hsb-line bg-hsb-mist px-2 py-0.5 text-[0.65rem] font-black uppercase tracking-wider text-hsb-steel">{reference.approvalStatus === "approved" ? "freigegeben" : "anonymisiert"}</span>
       {reference.logo ? (
         <div class="grid h-10 w-28 place-items-center rounded bg-white border border-hsb-line/30 px-3 shadow-sm">
-          <img src={reference.logo} alt={`${reference.displayName} Logo`} class="max-h-5 w-auto max-w-full grayscale opacity-70 contrast-125" loading="lazy" />
+          <img src={reference.logo} alt={`${reference.displayName} Logo`} class="max-h-5 w-auto max-w-full grayscale opacity-70 contrast-125" loading="lazy" decoding="async" />
         </div>
       ) : null}
     </div>

@@ -4,7 +4,7 @@ import { join } from "node:path";
 import {
   getAllPublicPages,
   getPublicReferences,
-  validateSiteContent,
+  validateSiteContent, getServiceBySlug,
 } from "../src/lib/content";
 import { services } from "../src/data/services";
 import { industries } from "../src/data/industries";
@@ -127,5 +127,19 @@ describe("content hardening (Phase 1)", () => {
   it("molkerei-artikel nennt Epoxidharz gegen Milchsäure", () => {
     const a = articles.find((x) => x.slug === "warum-industrieboeden-in-molkereien-versagen")!;
     expect(JSON.stringify(a.sections)).toMatch(/Epoxidharz/);
+  });
+});
+
+describe("getServiceBySlug", () => {
+  it("returns the service for an existing slug", () => {
+    const service = getServiceBySlug("industrieboden-saeureschutz");
+    expect(service).toBeDefined();
+    expect(service?.slug).toBe("industrieboden-saeureschutz");
+    expect(service?.title).toBeTruthy();
+  });
+
+  it("returns undefined for a non-existent slug", () => {
+    const service = getServiceBySlug("non-existent-slug-xyz");
+    expect(service).toBeUndefined();
   });
 });

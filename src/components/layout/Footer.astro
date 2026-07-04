@@ -1,10 +1,10 @@
 ---
 import { footerGroups } from "../../data/navigation";
 import { site } from "../../data/site";
-import { ui, type Lang } from "../../lib/i18n";
+import { ui } from "../../lib/i18n";
 
 interface Props {
-  lang?: Lang;
+  lang?: keyof typeof ui;
 }
 
 const { lang = "de" } = Astro.props;

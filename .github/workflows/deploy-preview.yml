@@ -36,8 +36,5 @@ jobs:
           # (name = "hsb-boden-preview") IS the preview environment, matching
           # package.json's "deploy:preview" script (wrangler deploy --env="").
           command: deploy
-          secrets: |
-            LEAD_WEBHOOK_URL
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          LEAD_WEBHOOK_URL: ${{ secrets.LEAD_WEBHOOK_URL }}

@@ -1,0 +1,45 @@
+name: Jules / AI Agent Auto-Merge
+
+# Merges PRs authored by google-labs-jules[bot] or labeled 'jules-approved'
+# only when ALL required status checks pass.
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, labeled]
+    branches: [main]
+  check_suite:
+    types: [completed]
+  status: {}
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  jules-auto-merge:
+    name: Jules Auto-Merge
+    runs-on: ubuntu-latest
+    # Only run for Jules bot PRs OR PRs labeled 'jules-approved'
+    if: |
+      github.actor == 'google-labs-jules[bot]' ||
+      contains(github.event.pull_request.labels.*.name, 'jules-approved')
+    steps:
+      - name: Enable auto-merge (squash)
+        run: gh pr merge --auto --squash "$PR_URL"
+        env:
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  label-auto-merge:
+    name: Label-triggered Auto-Merge
+    runs-on: ubuntu-latest
+    if: |
+      github.event_name == 'pull_request' &&
+      github.event.action == 'labeled' &&
+      github.event.label.name == 'auto-merge'
+    steps:
+      - name: Enable auto-merge (squash)
+        run: gh pr merge --auto --squash "$PR_URL"
+        env:
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

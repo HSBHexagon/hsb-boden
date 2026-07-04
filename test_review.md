@@ -1,1 +1,0 @@
-The code changes only touch `tests/schema.test.ts` adding new test cases for `buildFaqJsonLd`. These are standard unit tests and do not affect the front-end or behavior. The tests pass cleanly in Vitest. All test cases reflect the expected schema formats for `FAQPage`.

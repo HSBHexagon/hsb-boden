@@ -60,6 +60,22 @@ describe("POST /api/lead", () => {
     expect(JSON.stringify(json)).not.toMatch(/webhook|n8n|stack/i);
   });
 
+  it("returns 400 on invalid JSON body", async () => {
+    const request = new Request("https://hsb-boden.de/api/lead", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "CF-Connecting-IP": "203.0.113.1",
+        Origin: "https://hsb-boden.de",
+      },
+      body: "{ invalid json string",
+    });
+    const res = await POST(makeContext(request));
+    expect(res.status).toBe(400);
+    const json = await res.json();
+    expect(json).toEqual({ error: "Invalid JSON" });
+  });
+
   it("silently rejects a filled honeypot without calling the webhook", async () => {
     const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response("{}", { status: 200 }));
     const res = await POST(makeContext(makeRequest({ ...validBody, honeypot: "i-am-a-bot" })));

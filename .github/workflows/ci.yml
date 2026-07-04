@@ -18,11 +18,11 @@ jobs:
     steps:
       - name: Checkout repository
         # actions/checkout@v4 pinned on 2026-06-26
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
 
       - name: Set up Node.js
         # actions/setup-node@v4 pinned on 2026-06-26
-        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with:
           node-version: 22
 

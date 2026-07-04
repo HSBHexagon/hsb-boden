@@ -151,6 +151,5 @@ export async function POST(context: APIContext) {
     return jsonResponse(502, { ok: false, error: "webhook_unreachable" }, origin);
   }
 
-  console.log(JSON.stringify({ ts: new Date(now).toISOString(), result: "ok", emailDomain: lead.email.split("@")[1] }));
   return jsonResponse(200, { ok: true }, origin);
 }

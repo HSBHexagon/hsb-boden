@@ -1,5 +1,5 @@
 name = "hsb-boden-preview"
-main = "@astrojs/cloudflare/entrypoints/server"
+main = "./dist/_worker.js"
 compatibility_date = "2026-06-05"
 compatibility_flags = ["nodejs_compat"]
 workers_dev = true

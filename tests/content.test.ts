@@ -4,6 +4,7 @@ import { join } from "node:path";
 import {
   getAllPublicPages,
   getPublicReferences,
+  getReferencesForSlugs,
   validateSiteContent,
 } from "../src/lib/content";
 import { services } from "../src/data/services";
@@ -127,5 +128,38 @@ describe("content hardening (Phase 1)", () => {
   it("molkerei-artikel nennt Epoxidharz gegen Milchsäure", () => {
     const a = articles.find((x) => x.slug === "warum-industrieboeden-in-molkereien-versagen")!;
     expect(JSON.stringify(a.sections)).toMatch(/Epoxidharz/);
+  });
+});
+
+
+describe("getReferencesForSlugs", () => {
+  it("returns references for valid IDs", () => {
+    const publicRefs = getPublicReferences();
+    if (publicRefs.length > 0) {
+      const idToFind = publicRefs[0].id;
+      const result = getReferencesForSlugs([idToFind]);
+      expect(result.length).toBe(1);
+      expect(result[0].id).toBe(idToFind);
+    }
+  });
+
+  it("returns empty array for non-existent IDs", () => {
+    const result = getReferencesForSlugs(["non-existent-id-123"]);
+    expect(result).toEqual([]);
+  });
+
+  it("returns empty array for empty input", () => {
+    const result = getReferencesForSlugs([]);
+    expect(result).toEqual([]);
+  });
+
+  it("handles duplicate IDs and returns unique references", () => {
+    const publicRefs = getPublicReferences();
+    if (publicRefs.length > 0) {
+      const idToFind = publicRefs[0].id;
+      const result = getReferencesForSlugs([idToFind, idToFind]);
+      expect(result.length).toBe(1);
+      expect(result[0].id).toBe(idToFind);
+    }
   });
 });

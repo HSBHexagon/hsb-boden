@@ -138,14 +138,17 @@ export async function POST(context: APIContext) {
   try {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), WEBHOOK_TIMEOUT_MS);
-    if (!webhookUrl) throw new Error("webhook_not_configured");
-    await fetch(webhookUrl, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(lead),
-      signal: controller.signal,
-    });
-    clearTimeout(timeout);
+    try {
+      if (!webhookUrl) throw new Error("webhook_not_configured");
+      await fetch(webhookUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(lead),
+        signal: controller.signal,
+      });
+    } finally {
+      clearTimeout(timeout);
+    }
   } catch {
     console.error(JSON.stringify({ ts: new Date(now).toISOString(), result: "error", code: "webhook_unreachable" }));
     return jsonResponse(502, { ok: false, error: "webhook_unreachable" }, origin);

@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { POST, OPTIONS, GET, resetLeadRateLimiter } from "../src/pages/api/lead";
+import type { APIContext } from "astro";
 
 const validBody = {
   firstName: "Max",
@@ -31,8 +32,8 @@ function makeRequest(body: unknown, opts: { ip?: string; origin?: string; method
   });
 }
 
-function makeContext(request: Request) {
-  return { request } as any;
+function makeContext(request: Request): APIContext {
+  return { request } as unknown as APIContext;
 }
 
 describe("POST /api/lead", () => {

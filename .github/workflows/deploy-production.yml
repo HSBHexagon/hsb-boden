@@ -41,7 +41,9 @@ jobs:
         # Verified 2026-06-24 via dry-run: `--env production` → ENVIRONMENT=preview.
         # Workaround documented in docs/PHASE_C_CUTOVER_RUNBOOK.md.
         uses: cloudflare/wrangler-action@ebbaa1584979971c8614a24965b4405ff95890e0 # v4.0.0
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN || 'dummy-token-for-dry-run' }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID || 'dummy-account-for-dry-run' }}
         with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: deploy --name hsb-boden --var ENVIRONMENT:production
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID || 'dummy-account-for-dry-run' }}
+          command: ${{ secrets.CLOUDFLARE_API_TOKEN != '' && 'deploy --name hsb-boden --var ENVIRONMENT:production' || 'deploy --name hsb-boden --var ENVIRONMENT:production --dry-run' }}

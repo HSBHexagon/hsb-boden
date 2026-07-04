@@ -1,0 +1,1 @@
+- Use `as unknown as Type` instead of `as any` to mock types in tests where we only need to provide a subset of properties required for the specific test scenario, improving type safety without over-complicating test setup.

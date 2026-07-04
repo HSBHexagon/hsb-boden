@@ -36,3 +36,4 @@ jobs:
           # (name = "hsb-boden-preview") IS the preview environment, matching
           # package.json's "deploy:preview" script (wrangler deploy --env="").
           command: deploy
+        env:

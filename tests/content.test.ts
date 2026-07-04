@@ -4,6 +4,7 @@ import { join } from "node:path";
 import {
   getAllPublicPages,
   getPublicReferences,
+  getReferencesForSlugs,
   validateSiteContent,
 } from "../src/lib/content";
 import { services } from "../src/data/services";
@@ -127,5 +128,26 @@ describe("content hardening (Phase 1)", () => {
   it("molkerei-artikel nennt Epoxidharz gegen Milchsäure", () => {
     const a = articles.find((x) => x.slug === "warum-industrieboeden-in-molkereien-versagen")!;
     expect(JSON.stringify(a.sections)).toMatch(/Epoxidharz/);
+  });
+});
+
+describe("getReferencesForSlugs", () => {
+  it("returns references for matching valid slugs", () => {
+    const refs = getReferencesForSlugs(["suedzucker-zeitz", "molkerei-sued"]);
+    expect(refs).toHaveLength(2);
+    const ids = refs.map((r) => r.id);
+    expect(ids).toContain("suedzucker-zeitz");
+    expect(ids).toContain("molkerei-sued");
+  });
+
+  it("returns an empty array when provided an empty array", () => {
+    const refs = getReferencesForSlugs([]);
+    expect(refs).toHaveLength(0);
+  });
+
+  it("returns only matching references and ignores unknown slugs", () => {
+    const refs = getReferencesForSlugs(["suedzucker-zeitz", "unknown-123"]);
+    expect(refs).toHaveLength(1);
+    expect(refs[0].id).toBe("suedzucker-zeitz");
   });
 });

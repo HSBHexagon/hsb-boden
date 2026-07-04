@@ -2,20 +2,15 @@ name: Security Analysis
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   pull_request:
-    branches: [ main ]
+    branches: [main]
   schedule:
-    - cron: '30 4 * * 1'
+    - cron: '30 4 * * 1' # Weekly Monday 04:30 UTC
 
-# CodeQL is intentionally NOT run from this workflow: this repository has
-# GitHub's "default setup" for code scanning enabled (Settings > Code
-# security > Code scanning), which manages CodeQL analysis itself. Running a
-# second, advanced-configuration CodeQL job here causes
-# "CodeQL analyses from advanced configurations cannot be processed when the
-# default setup is enabled" and the upload fails. If advanced configuration
-# is needed later (custom queries, multiple languages, etc.), first disable
-# default setup in repo settings, then re-add an analyze job here.
+# CodeQL: GitHub default setup is enabled in repo settings (Code scanning).
+# A second advanced-setup job here causes upload conflicts.
+# Re-enable only if default setup is disabled in repo settings first.
 
 jobs:
   dependency-review:
@@ -24,11 +19,15 @@ jobs:
     if: github.event_name == 'pull_request'
     permissions:
       contents: read
+      pull-requests: write
     steps:
       - name: Checkout repository
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v4
       - name: Dependency Review
         uses: actions/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294 # v5.0.0
+        with:
+          fail-on-severity: high
+          comment-summary-in-pr: always
 
   secret-scanning:
     name: Secret Scanning
@@ -37,10 +36,10 @@ jobs:
       contents: read
     steps:
       - name: Checkout repository
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v4
         with:
           fetch-depth: 0
-      - name: Secret Scanning
+      - name: Secret Scanning (TruffleHog)
         uses: trufflesecurity/trufflehog@f446421baf832d6356c42c1743d99abff52ff334 # v3.95.7
         with:
           extra_args: --only-verified

@@ -1,6 +1,6 @@
 import type { APIContext } from "astro";
 import { env } from "cloudflare:workers";
-import { leadEndpointSchema } from "../../lib/leadSchema";
+import { leadEndpointSchema, type LeadEndpointPayload } from "../../lib/leadSchema";
 
 export const prerender = false;
 
@@ -91,14 +91,7 @@ export async function GET({ request }: APIContext) {
 export const PUT = GET;
 export const DELETE = GET;
 
-export async function POST(context: APIContext) {
-  const { request } = context;
-  const origin = request.headers.get("Origin");
-
-  if (origin && !ALLOWED_ORIGINS.has(origin)) {
-    return jsonResponse(403, { ok: false, error: "forbidden_origin" }, origin);
-  }
-
+async function readAndValidateLead(request: Request, origin: string | null): Promise<Response | LeadEndpointPayload> {
   const declaredLength = Number(request.headers.get("Content-Length") ?? "0");
   if (declaredLength > MAX_PAYLOAD_BYTES) {
     return jsonResponse(413, { ok: false, error: "payload_too_large" }, origin);
@@ -125,14 +118,10 @@ export async function POST(context: APIContext) {
   if (!result.success) {
     return jsonResponse(400, { ok: false, error: "validation_failed" }, origin);
   }
-  const lead = result.data;
+  return result.data;
+}
 
-  const now = Date.now();
-  const ip = request.headers.get("CF-Connecting-IP") ?? "unknown";
-  if (isRateLimited(ip, ipHits, IP_LIMIT, now) || isRateLimited(lead.email, emailHits, EMAIL_LIMIT, now)) {
-    return jsonResponse(429, { ok: false, error: "rate_limited" }, origin);
-  }
-
+async function forwardToWebhook(lead: LeadEndpointPayload, origin: string | null, now: number): Promise<Response> {
   const webhookUrl = (env as { LEAD_WEBHOOK_URL?: string }).LEAD_WEBHOOK_URL;
 
   try {
@@ -153,4 +142,27 @@ export async function POST(context: APIContext) {
 
   console.log(JSON.stringify({ ts: new Date(now).toISOString(), result: "ok", emailDomain: lead.email.split("@")[1] }));
   return jsonResponse(200, { ok: true }, origin);
+}
+
+export async function POST(context: APIContext) {
+  const { request } = context;
+  const origin = request.headers.get("Origin");
+
+  if (origin && !ALLOWED_ORIGINS.has(origin)) {
+    return jsonResponse(403, { ok: false, error: "forbidden_origin" }, origin);
+  }
+
+  const leadResult = await readAndValidateLead(request, origin);
+  if (leadResult instanceof Response) {
+    return leadResult;
+  }
+  const lead = leadResult;
+
+  const now = Date.now();
+  const ip = request.headers.get("CF-Connecting-IP") ?? "unknown";
+  if (isRateLimited(ip, ipHits, IP_LIMIT, now) || isRateLimited(lead.email, emailHits, EMAIL_LIMIT, now)) {
+    return jsonResponse(429, { ok: false, error: "rate_limited" }, origin);
+  }
+
+  return forwardToWebhook(lead, origin, now);
 }

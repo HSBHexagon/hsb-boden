@@ -1,0 +1,245 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# ai-pr-review.yml — HSB Boden / HEXAFLOOR
+#
+# AI-gestützter PR-Review-Workflow (Gemini 2.5 Pro + ChatGPT CodeReviewer)
+# Maximal ausgebaut, HSB-spezifisch, sicher und ohne doppelte Deploy-Pfade.
+#
+# Benötigte GitHub Actions Secrets (Settings → Secrets → Actions):
+#   GEMINI_API_KEY     – Google AI Studio API Key (gemini-2.5-pro)
+#   OPENAI_API_KEY     – OpenAI API Key (gpt-4o)
+#
+# Beides NIEMALS in Notion, Chat, Commit-Messages oder Logs.
+#
+# Guardrails:
+#   - Kein Deploy, kein DNS, keine Production-Aktion
+#   - Nur PR-Kommentare und Review-Feedback
+#   - Kein Auto-Merge
+#   - Draft-PRs werden übersprungen
+# ─────────────────────────────────────────────────────────────────────────────
+
+name: AI PR Review
+
+on:
+  pull_request:
+    types: [opened, reopened, synchronize, ready_for_review]
+    branches: [main]
+    # Nur relevante Pfade triggern — kein Review für reine Docs-/Asset-Änderungen
+    paths:
+      - 'src/**'
+      - 'public/**'
+      - 'functions/**'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'wrangler.toml'
+      - 'astro.config.*'
+      - 'tsconfig.*'
+      - '.github/workflows/**'
+
+  # Manuell ausführbar (z.B. nach Secret-Setup)
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: 'PR number to review'
+        required: false
+        type: string
+
+# Verhindert parallele AI-Review-Runs auf demselben PR
+concurrency:
+  group: ai-pr-review-${{ github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: true
+
+# Minimale Permissions — nur was wirklich benötigt wird
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+
+jobs:
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # JOB 1: Gemini 2.5 Pro Review (primärer AI-Reviewer)
+  # Dokumentierte Action: google-github-actions/run-gemini-cli
+  # Fokus: Astro/CF-Kompatibilität, Security, SEO-Regressions, Lead-API-Sicherheit
+  # ─────────────────────────────────────────────────────────────────────────
+  gemini-review:
+    name: Gemini 2.5 Pro — Code Review
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    # Nur echte PRs, keine Drafts, keine Dependabot-PRs
+    if: |
+      github.event.pull_request.draft == false &&
+      github.actor != 'dependabot[bot]'
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          # Full history für bessere Diff-Analyse
+          fetch-depth: 0
+
+      - name: Gemini CLI — PR Review
+        uses: google-github-actions/run-gemini-cli@v0
+        with:
+          gemini_api_key: ${{ secrets.GEMINI_API_KEY }}
+          gemini_model: gemini-2.5-pro
+          prompt: |
+            Du bist ein erfahrener Senior-Entwickler und reviewst diesen Pull Request
+            für das Projekt HEXAFLOOR / HSB-Boden (Astro + Cloudflare Pages/Workers,
+            Astro SSR, Zod-Validierung, TypeScript, Tailwind).
+
+            Analysiere den PR-Diff auf folgende Punkte:
+
+            1. SICHERHEIT
+               - Secret-Leaks oder API-Keys im Code
+               - Ungesicherte Endpunkte (besonders /api/lead)
+               - Fehlende Input-Validierung / Zod-Schemas
+               - CORS, Origin-Check, Honeypot-Integrität
+               - Wrangler-/Cloudflare-Secrets korrekt referenziert?
+
+            2. CLOUDFLARE / ASTRO KOMPATIBILITÄT
+               - Astro Cloudflare Adapter Kompatibilität
+               - wrangler.toml Konfiguration korrekt?
+               - Keine SSR/Static-Hybridkonflikte
+               - Worker vs. Pages Function Grenzen eingehalten?
+
+            3. SEO & TRACKING REGRESSIONS
+               - Keine Änderungen an robots.txt, sitemap, canonical URLs ohne Absicht
+               - Meta-Tags, Open Graph, hreflang intakt?
+               - GA4 / Google Tag Manager Snippets nicht entfernt/kaputt
+
+            4. LEAD-PIPELINE INTEGRITÄT
+               - /api/lead Endpoint: Rate-Limit, Payload-Guard, Honeypot
+               - Google Apps Script Webhook (LEAD_WEBHOOK_URL) korrekt genutzt?
+               - Kein Datenverlust im CRM-Light-Flow
+
+            5. DEPLOYMENT-RISIKEN
+               - Änderungen an deploy-*.yml Workflows: sind sie sicher?
+               - Keine unfreigegebenen Production-Aktionen
+               - Keine neuen automatischen Merges oder Branch-Protection-Bypässe
+
+            6. CODE-QUALITÄT
+               - TypeScript-Typen korrekt
+               - Astro-Komponenten sauber strukturiert
+               - Keine unnötigen Dependencies
+               - Keine Console.log in Production-Code
+
+            Gib dein Feedback als strukturierten GitHub PR-Kommentar.
+            Sei konkret, prägnant und konstruktiv.
+            Unterscheide: BLOCKER / WARNUNG / VERBESSERUNGSVORSCHLAG.
+            Halte Lob kurz, Kritik spezifisch.
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # JOB 2: ChatGPT CodeReviewer (sekundärer AI-Reviewer, paralleler Run)
+  # Dokumentierte Action: anc95/ChatGPT-CodeReview
+  # Zweite Meinung mit GPT-4o — ergänzt Gemini, überschneidet sich bewusst minimal
+  # ─────────────────────────────────────────────────────────────────────────
+  chatgpt-review:
+    name: ChatGPT (GPT-4o) — Code Review
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    if: |
+      github.event.pull_request.draft == false &&
+      github.actor != 'dependabot[bot]'
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: ChatGPT Code Review
+        uses: anc95/ChatGPT-CodeReview@74b4f5ff1e37e00792fa4ae978d77f5d5f4acbc3 # v1.0.6
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          # GPT-4o für maximale Code-Review-Qualität
+          MODEL: gpt-4o
+          # Nur Diff-relevante Änderungen reviewen, keine trivialen Zeilen
+          top_p: 1
+          temperature: 0.2
+          # Klare Review-Sprache: Deutsch
+          language: de
+          # Review-Prompt HSB-spezifisch ergänzen
+          PROMPT: |
+            Reviewe diesen PR-Diff für ein Astro + Cloudflare Workers Projekt
+            (HSB-Boden, B2B Lead-Website für Industrieböden).
+            Fokussiere auf: Sicherheit der Lead-API, TypeScript-Korrektheit,
+            Astro-Cloudflare-Kompatibilität, SEO-Regressions und
+            riskante Workflow-/Deploy-Änderungen.
+            Markiere: BLOCKER | WARNUNG | HINWEIS
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # JOB 3: Review Summary (läuft nach beiden AI-Reviews)
+  # Postet einen abschließenden Status-Kommentar auf den PR
+  # ─────────────────────────────────────────────────────────────────────────
+  review-summary:
+    name: Review Summary
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    needs: [gemini-review, chatgpt-review]
+    # Immer ausführen, auch wenn einer der Reviews failed
+    if: always() && github.event.pull_request.draft == false && github.actor != 'dependabot[bot]'
+
+    steps:
+      - name: Post summary comment
+        uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea # v7.0.1
+        with:
+          script: |
+            const geminiStatus = '${{ needs.gemini-review.result }}';
+            const chatgptStatus = '${{ needs.chatgpt-review.result }}';
+
+            const statusEmoji = (s) => {
+              if (s === 'success') return '✅';
+              if (s === 'failure') return '❌';
+              if (s === 'skipped') return '⏭️';
+              return '⚠️';
+            };
+
+            const allGreen = geminiStatus === 'success' && chatgptStatus === 'success';
+            const anyFailed = geminiStatus === 'failure' || chatgptStatus === 'failure';
+
+            const header = allGreen
+              ? '### 🤖 AI Review abgeschlossen — Alle Checks grün'
+              : anyFailed
+                ? '### 🤖 AI Review — Mindestens ein Reviewer hat Probleme gefunden'
+                : '### 🤖 AI Review — Status gemischt';
+
+            const body = [
+              header,
+              '',
+              '| Reviewer | Status |',
+              '|---|---|',
+              `| 🟣 Gemini 2.5 Pro | ${statusEmoji(geminiStatus)} ${geminiStatus} |`,
+              `| 🟢 ChatGPT GPT-4o | ${statusEmoji(chatgptStatus)} ${chatgptStatus} |`,
+              '',
+              '> **Guardrail:** Kein Auto-Merge. Kein Production-Deploy. Kein DNS-Eingriff.',
+              '> Dieses Review ersetzt nicht die manuelle Freigabe durch den Operator.',
+              '',
+              '<sub>HSB Boden / HEXAFLOOR — AI PR Review Workflow</sub>',
+            ].join('\n');
+
+            // Bestehenden Summary-Kommentar aktualisieren statt neue zu posten
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+
+            const existingComment = comments.find(
+              c => c.user.type === 'Bot' && c.body.includes('AI Review abgeschlossen') ||
+                   c.user.type === 'Bot' && c.body.includes('AI Review — ')
+            );
+
+            if (existingComment) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existingComment.id,
+                body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body,
+              });
+            }

@@ -33,17 +33,11 @@ jobs:
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          # wrangler.toml has no [env.preview] block — the top-level config
-          # (name = "hsb-boden-preview") IS the preview environment, matching
-          # package.json's "deploy:preview" script (wrangler deploy --env="").
           command: deploy --env=""
 
       - name: Deploy to Cloudflare Workers (Dry Run)
         if: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository }}
-        uses: cloudflare/wrangler-action@ebbaa1584979971c8614a24965b4405ff95890e0 # v4.0.0
-        env:
-          CLOUDFLARE_API_TOKEN: dummy
-        with:
-          apiToken: dummy
-          accountId: dummy
-          command: deploy --env="" --dry-run
+        run: |
+          export CLOUDFLARE_API_TOKEN="dummy-token"
+          export CLOUDFLARE_ACCOUNT_ID="dummy-account"
+          npx wrangler deploy --env="" --dry-run

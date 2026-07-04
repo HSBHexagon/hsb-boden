@@ -262,3 +262,9 @@ a {
     scroll-behavior: auto;
   }
 }
+
+/* Accessibility: Consistent focus-visible styles */
+:focus-visible {
+  outline: 2px solid #cb0000;
+  outline-offset: 2px;
+}

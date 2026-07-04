@@ -2,10 +2,10 @@
 // DSGVO-Consent: Statistik-Cookies (GA4) werden erst nach aktiver Einwilligung
 // geladen. Auswahl liegt in localStorage ("hsb-consent-v1"); `hsb:consent`-Event
 // informiert Tracking-Code, `hsb:open-consent` öffnet den Banner erneut (Footer).
-import { cookieTexts, type Lang } from "../../lib/i18n";
+import { cookieTexts } from "../../lib/i18n";
 
 interface Props {
-  lang?: Lang;
+  lang?: keyof typeof cookieTexts;
 }
 
 const { lang = "de" } = Astro.props;

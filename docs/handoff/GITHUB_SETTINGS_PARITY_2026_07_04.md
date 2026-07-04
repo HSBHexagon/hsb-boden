@@ -190,3 +190,30 @@ CLOUDFLARE_API_TOKEN	2026-07-02T15:45:15Z
 /Users/joelcherinodiaz/KI-System/02_Projects/active/hsb-boden
 ```
 
+
+## Ruleset transfer update
+
+Date: 2026-07-04
+
+Ruleset `Protect Main` was copied from `cherinojoel-lang/hsb-boden` to `HSBHexagon/hsb-boden` using GitHub REST API.
+
+Verification commands used:
+
+```bash
+gh api repos/cherinojoel-lang/hsb-boden/rulesets
+gh api repos/HSBHexagon/hsb-boden/rulesets
+gh api repos/cherinojoel-lang/hsb-boden/rules/branches/main
+gh api repos/HSBHexagon/hsb-boden/rules/branches/main
+```
+
+Target ruleset result:
+
+```json
+{
+  "id": 18497243,
+  "name": "Protect Main",
+  "target": "branch",
+  "enforcement": "active"
+}
+```
+

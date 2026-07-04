@@ -15,10 +15,6 @@ enabled = true
 [vars]
 ENVIRONMENT = "preview"
 
-[[kv_namespaces]]
-binding = "RATE_LIMIT_KV"
-id = "placeholder-preview"
-
 [env.production]
 name = "hsb-boden"
 workers_dev = true
@@ -37,7 +33,3 @@ enabled = true
 
 [env.production.vars]
 ENVIRONMENT = "production"
-
-[[env.production.kv_namespaces]]
-binding = "RATE_LIMIT_KV"
-id = "placeholder-production"

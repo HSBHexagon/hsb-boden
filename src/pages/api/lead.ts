@@ -118,7 +118,7 @@ export async function POST(context: APIContext) {
   try {
     parsedBody = JSON.parse(rawBody);
   } catch {
-    return jsonResponse(400, { ok: false, error: "invalid_json" }, origin);
+    return jsonResponse(400, { error: "Invalid JSON" }, origin);
   }
 
   const result = leadEndpointSchema.safeParse(parsedBody);

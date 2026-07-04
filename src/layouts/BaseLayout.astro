@@ -4,7 +4,7 @@ import Footer from "../components/layout/Footer.astro";
 import Header from "../components/layout/Header.astro";
 import LanguageSuggest from "../components/layout/LanguageSuggest.astro";
 import SEOHead from "../components/seo/SEOHead.astro";
-import { ui, type Lang } from "../lib/i18n";
+import { ui } from "../lib/i18n";
 import "../styles/global.css";
 
 interface Props {
@@ -12,7 +12,7 @@ interface Props {
   description: string;
   path: string;
   jsonLd?: unknown[];
-  lang?: Lang;
+  lang?: keyof typeof ui;
   alternates?: { lang: string; path: string }[];
 }
 

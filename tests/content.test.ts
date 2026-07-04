@@ -5,12 +5,17 @@ import {
   getAllPublicPages,
   getPublicReferences,
   validateSiteContent,
+  getServiceBySlug,
 } from "../src/lib/content";
 import { services } from "../src/data/services";
 import { industries } from "../src/data/industries";
 import { articles } from "../src/data/articles";
 import { clientLocations } from "../src/data/clientLocations";
-import { germanyMapBounds, germanyStates, germanyTrustMarkers } from "../src/data/germanyMap";
+import {
+  germanyMapBounds,
+  germanyStates,
+  germanyTrustMarkers,
+} from "../src/data/germanyMap";
 
 describe("site content contract", () => {
   it("validates the complete dateibasiert content model", () => {
@@ -48,8 +53,12 @@ describe("site content contract", () => {
 
   it("keeps every visible reference logo backed by a local asset", () => {
     const logos = [
-      ...getPublicReferences().flatMap((reference) => (reference.logo ? [reference.logo] : [])),
-      ...clientLocations.flatMap((location) => ("logo" in location ? [location.logo] : [])),
+      ...getPublicReferences().flatMap((reference) =>
+        reference.logo ? [reference.logo] : [],
+      ),
+      ...clientLocations.flatMap((location) =>
+        "logo" in location ? [location.logo] : [],
+      ),
     ];
 
     expect(logos.length).toBeGreaterThanOrEqual(7);
@@ -78,10 +87,22 @@ describe("site content contract", () => {
       "Berlin",
       "Mecklenburg-Vorpommern",
     ];
-    const requiredMarkers = ["Husum", "Aachen", "Görlitz", "Oberstdorf", "Zeitz", "Bonefeld", "Gebesee"];
+    const requiredMarkers = [
+      "Husum",
+      "Aachen",
+      "Görlitz",
+      "Oberstdorf",
+      "Zeitz",
+      "Bonefeld",
+      "Gebesee",
+    ];
 
-    expect(germanyStates.map((state) => state.name).sort()).toEqual(requiredStates.sort());
-    expect(germanyTrustMarkers.map((marker) => marker.city).sort()).toEqual(requiredMarkers.sort());
+    expect(germanyStates.map((state) => state.name).sort()).toEqual(
+      requiredStates.sort(),
+    );
+    expect(germanyTrustMarkers.map((marker) => marker.city).sort()).toEqual(
+      requiredMarkers.sort(),
+    );
     for (const marker of germanyTrustMarkers) {
       expect(marker.lng).toBeGreaterThanOrEqual(germanyMapBounds.minLng);
       expect(marker.lng).toBeLessThanOrEqual(germanyMapBounds.maxLng);
@@ -125,7 +146,24 @@ describe("content hardening (Phase 1)", () => {
   });
 
   it("molkerei-artikel nennt Epoxidharz gegen Milchsäure", () => {
-    const a = articles.find((x) => x.slug === "warum-industrieboeden-in-molkereien-versagen")!;
+    const a = articles.find(
+      (x) => x.slug === "warum-industrieboeden-in-molkereien-versagen",
+    )!;
     expect(JSON.stringify(a.sections)).toMatch(/Epoxidharz/);
+  });
+});
+
+describe("getServiceBySlug", () => {
+  it("returns the service for an existing slug", () => {
+    const existingService = services[0];
+    const result = getServiceBySlug(existingService.slug);
+
+    expect(result).toBeDefined();
+    expect(result?.slug).toBe(existingService.slug);
+  });
+
+  it("returns undefined for a non-existent slug", () => {
+    const result = getServiceBySlug("non-existent-service-slug-12345");
+    expect(result).toBeUndefined();
   });
 });

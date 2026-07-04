@@ -14,21 +14,21 @@ const IP_LIMIT = { max: 5, windowMs: 10 * 60 * 1000 };
 const EMAIL_LIMIT = { max: 2, windowMs: 30 * 60 * 1000 };
 const WEBHOOK_TIMEOUT_MS = 6000;
 
-// In-memory pro Worker-Instanz. Ausreichend fuer Code-/Test-Phase (P0B ohne
-// Live-Aktivierung); fuer produktiven Mehrinstanz-Betrieb spaeter durch KV
-// ersetzen (siehe P0B_SECRET_REQUIREMENTS.md, "Rate-Limit-/Cloudflare-Config").
-let ipHits = new Map<string, number[]>();
-let emailHits = new Map<string, number[]>();
-
+// Rate limiting uses Cloudflare KV for distributed persistence across Worker instances.
+// (see P0B_SECRET_REQUIREMENTS.md, "Rate-Limit-/Cloudflare-Config").
 export function resetLeadRateLimiter() {
-  ipHits = new Map();
-  emailHits = new Map();
+  const kv = (env as any).RATE_LIMIT_KV;
+  if (kv && typeof kv.reset === "function") {
+    kv.reset(); // For test mock only
+  }
 }
 
-function isRateLimited(key: string, store: Map<string, number[]>, limit: { max: number; windowMs: number }, now: number) {
-  const hits = (store.get(key) ?? []).filter((t) => now - t < limit.windowMs);
+async function isRateLimited(key: string, kv: KVNamespace, limit: { max: number; windowMs: number }, now: number) {
+  const rawHits = (await kv.get(key, "json")) as number[] | null;
+  const hits = (rawHits ?? []).filter((t) => now - t < limit.windowMs);
   hits.push(now);
-  store.set(key, hits);
+  const ttlSeconds = Math.max(60, Math.ceil(limit.windowMs / 1000));
+  await kv.put(key, JSON.stringify(hits), { expirationTtl: ttlSeconds });
   return hits.length > limit.max;
 }
 
@@ -129,7 +129,11 @@ export async function POST(context: APIContext) {
 
   const now = Date.now();
   const ip = request.headers.get("CF-Connecting-IP") ?? "unknown";
-  if (isRateLimited(ip, ipHits, IP_LIMIT, now) || isRateLimited(lead.email, emailHits, EMAIL_LIMIT, now)) {
+  const kv = (env as any).RATE_LIMIT_KV;
+  if (
+    await isRateLimited(`ip:${ip}`, kv, IP_LIMIT, now) ||
+    await isRateLimited(`email:${lead.email}`, kv, EMAIL_LIMIT, now)
+  ) {
     return jsonResponse(429, { ok: false, error: "rate_limited" }, origin);
   }
 

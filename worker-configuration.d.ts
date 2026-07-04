@@ -4,6 +4,7 @@
 interface __BaseEnv_Env {
 	ASSETS: Fetcher;
 	ENVIRONMENT: "production" | "preview";
+	RATE_LIMIT_KV: KVNamespace;
 }
 declare namespace Cloudflare {
 	interface GlobalProps {

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildBreadcrumbJsonLd, buildOrganizationJsonLd, buildServiceJsonLd, buildLocalBusinessJsonLd } from "../src/lib/schema";
+import { buildBreadcrumbJsonLd, buildOrganizationJsonLd, buildServiceJsonLd, buildLocalBusinessJsonLd, buildFaqJsonLd } from "../src/lib/schema";
 
 describe("json-ld generation", () => {
   it("returns valid organization json-ld without unsupported partner claims", () => {
@@ -45,5 +45,41 @@ describe("json-ld generation", () => {
 
     expect(graph.itemListElement).toHaveLength(3);
     expect(graph.itemListElement[2].position).toBe(3);
+  });
+
+
+  it("builds faq json-ld with a single question", () => {
+    const graph = buildFaqJsonLd([
+      { question: "What is your main service?", answer: "We provide industrial flooring." }
+    ]);
+
+    expect(() => JSON.stringify(graph)).not.toThrow();
+    expect(graph["@type"]).toBe("FAQPage");
+    expect(graph.mainEntity).toHaveLength(1);
+    expect(graph.mainEntity[0]["@type"]).toBe("Question");
+    expect(graph.mainEntity[0].name).toBe("What is your main service?");
+    expect(graph.mainEntity[0].acceptedAnswer["@type"]).toBe("Answer");
+    expect(graph.mainEntity[0].acceptedAnswer.text).toBe("We provide industrial flooring.");
+  });
+
+  it("builds faq json-ld with multiple questions", () => {
+    const graph = buildFaqJsonLd([
+      { question: "Question 1?", answer: "Answer 1." },
+      { question: "Question 2?", answer: "Answer 2." }
+    ]);
+
+    expect(() => JSON.stringify(graph)).not.toThrow();
+    expect(graph["@type"]).toBe("FAQPage");
+    expect(graph.mainEntity).toHaveLength(2);
+    expect(graph.mainEntity[1].name).toBe("Question 2?");
+    expect(graph.mainEntity[1].acceptedAnswer.text).toBe("Answer 2.");
+  });
+
+  it("builds faq json-ld with empty array", () => {
+    const graph = buildFaqJsonLd([]);
+
+    expect(() => JSON.stringify(graph)).not.toThrow();
+    expect(graph["@type"]).toBe("FAQPage");
+    expect(graph.mainEntity).toHaveLength(0);
   });
 });

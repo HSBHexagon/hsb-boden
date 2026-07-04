@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { buildBreadcrumbJsonLd, buildOrganizationJsonLd, buildServiceJsonLd, buildLocalBusinessJsonLd } from "../src/lib/schema";
+import {
+  buildBreadcrumbJsonLd,
+  buildOrganizationJsonLd,
+  buildServiceJsonLd,
+  buildLocalBusinessJsonLd,
+  buildArticleJsonLd,
+} from "../src/lib/schema";
 
 describe("json-ld generation", () => {
   it("returns valid organization json-ld without unsupported partner claims", () => {
@@ -45,5 +51,21 @@ describe("json-ld generation", () => {
 
     expect(graph.itemListElement).toHaveLength(3);
     expect(graph.itemListElement[2].position).toBe(3);
+  });
+
+  it("builds article json-ld correctly", () => {
+    const graph = buildArticleJsonLd({
+      headline: "Test Article Title",
+      description: "This is a test article description.",
+      path: "/test-article/",
+    });
+
+    expect(() => JSON.stringify(graph)).not.toThrow();
+    expect(graph["@type"]).toBe("TechArticle");
+    expect(graph.headline).toBe("Test Article Title");
+    expect(graph.description).toBe("This is a test article description.");
+    expect(graph.mainEntityOfPage).toContain("/test-article/");
+    expect(graph.author["@type"]).toBe("Organization");
+    expect(graph.publisher["@type"]).toBe("Organization");
   });
 });

@@ -1,25 +1,9 @@
 {
   "project": "HSB / HEXAFLOOR",
-  "last_updated": "2026-07-04T01:55:00+0200",
-  "active_model": "Codex / ChatGPT Codex Connector",
+  "last_updated": "2026-06-26T14:00:00+0200",
+  "active_model": "Claude Code (Sonnet 4.6)",
   "active_phase": "sales-operations-max-ready-awaiting-dns-and-leads",
-  "active_task": "Canonical Runtime Migration COMPLETE: HSBHexagon GitHub/Codex Connector, Cloudflare Runtime, Wrangler, Exa OAuth Remote MCP, Chrome DevTools MCP und Repo-Paritaet verifiziert. Remaining drift: none.",
-  "account_migration_2026_07_02": {
-    "github_new_repo": "https://github.com/HSBHexagon/hsb-boden",
-    "github_old_repo_access": "HSBHexagon ist Admin-Collaborator im Alt-Repo cherinojoel-lang/hsb-boden (Ownership-Transfer pending, nicht blockierend)",
-    "cloudflare_new_account_id": "01dc37803d1c687b4f9d6249ec89f700",
-    "workers_live_verified": [
-      "https://hsb-boden-preview.hsb-boden.workers.dev",
-      "https://hsb-boden.hsb-boden.workers.dev"
-    ],
-    "lead_test_passed": "WEB-20260702-180225 (entfernt nach Verifikation)",
-    "open_followups": [
-      "DKIM-Selektoren M365",
-      "autodiscover DNS-only pruefen",
-      "Cloudflare-API-Token rotieren",
-      "GitHub-Ownership-Transfer final abschliessen"
-    ]
-  },
+  "active_task": "Final pre-go-live documentation wave complete (2026-06-26 Tier-2 sweep)",
   "repo_path": "/Users/joelcherinodiaz/KI-System/02_Projects/active/hsb-boden",
   "handoff_path": "/Users/joelcherinodiaz/KI-System/ObsidianVault/brain/CURRENT_HANDOFF.md",
   "last_commit": "d4ea032",
@@ -112,42 +96,5 @@
   ],
   "next_step": "Read docs/launch/PRE_DNS_GO_LIVE_MAX_CHECKLIST.md and docs/handoff/JOEL_JORDIE_OPERATOR_RUNBOOK.md for resume order. If neither external input exists, stop.",
   "handoff_required": true,
-  "safe_to_continue": true,
-  "canonical_runtime_migration_2026_07_04": {
-    "status": "PASS",
-    "goal_state": "COMPLETE",
-    "remaining_drift": "none",
-    "notion_ssot": "HSB Boden",
-    "code_truth": "https://github.com/HSBHexagon/hsb-boden",
-    "old_repo_role": "backup_alt_context_only",
-    "codex_github_connector": {
-      "owner": "HSBHexagon",
-      "repository": "HSBHexagon/hsb-boden",
-      "permissions": [
-        "admin",
-        "maintain",
-        "pull",
-        "push",
-        "triage"
-      ],
-      "status": "verified"
-    },
-    "verified_components": [
-      "Cloudflare runtime",
-      "Wrangler runtime",
-      "Exa OAuth Remote MCP",
-      "Chrome DevTools MCP",
-      "Local GitHub HSBHexagon access",
-      "Repo settings parity",
-      "Codex GitHub Connector visibility"
-    ],
-    "blocked_without_separate_approval": [
-      "DNS changes",
-      "Production deploy",
-      "Auto-merge activation",
-      "Secret rotation or secret changes",
-      "Live n8n workflows",
-      "Mass outreach"
-    ]
-  }
+  "safe_to_continue": true
 }

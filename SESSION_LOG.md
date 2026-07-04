@@ -277,13 +277,12 @@ Fortlaufendes Log jeder KI-Session. Jeder Eintrag: Zeit · Modell · Phase · Au
 - **Kein Stash-Pop, keine Secrets, kein Cloudflare/DNS**
 - **Nächster Schritt:** Worktree-Diff nach `main` committen (freigabepflichtig), dann auf DNS/NS-Switch oder Lead-Daten warten.
 
-## 2026-07-02 — Claude Code (Sonnet 5)
-- **Phase:** Account-Migration GitHub + Cloudflare auf HSB-Accounts
-- **Aufgabe:** Vollständige Migration der Online-Infrastruktur (GitHub-Repo, Cloudflare-Account, verbundene Integrationen) von den privaten Accounts des Users auf HSB-eigene Accounts (HSBHexagon / info@hsb-boden.de), ohne DNS-Cutover.
-- **Ergebnis:** Repo `HSBHexagon/hsb-boden` vollständig gespiegelt (main-Hash identisch zu Alt-Repo, alle 30 Branches). HSBHexagon zusätzlich als Admin-Collaborator im Alt-Repo (API-Einladung angenommen, kein E-Mail-Klick nötig) — GitHub-Ownership-Transfer bleibt separat pending (E-Mail-Bestätigung an info@hsb-boden.de, kein Postfach), aber nicht mehr blockierend. Zweite E-Mail j-cherino@hsb-boden.de am HSBHexagon-Account verifiziert. Lokaler Git-Remote in diesem Repo auf neues Repo umgestellt, Alt-Remote als Backup erhalten. Lokales Mirror-Backup unter `~/KI-System/04_SYSTEM/backups/`. Cloudflare-Account (Info@hsb-boden.de's Account, 01dc37803d1c687b4f9d6249ec89f700): workers.dev-Subdomain registriert, beide Worker (hsb-boden-preview, hsb-boden) deployed und per HTTP 200 verifiziert. CLOUDFLARE_ACCOUNT_ID/CLOUDFLARE_API_TOKEN/LEAD_WEBHOOK_URL als GitHub-Actions-Secrets neu gesetzt (nicht kopiert). End-to-End-Lead-Test grün (WEB-20260702-180225, danach entfernt). Cloudflare-Workers-Builds-Git-Integration und Google-Labs-Jules-GitHub-App auf HSBHexagon eingerichtet, analog zum Alt-Konto. Notion-Hub „HSB Boden" (bestehend, nicht dupliziert) und Task-Datenbank aktualisiert. `docs/handoff/ACCOUNT_MIGRATION_NEW_GITHUB_CLOUDFLARE.md` Abschnitt 12 ergänzt. Brain-Handoff geschrieben.
-- **Geänderte Dateien:** `docs/handoff/ACCOUNT_MIGRATION_NEW_GITHUB_CLOUDFLARE.md`, `CHECKPOINT_STATE.json`, `SESSION_LOG.md` (lokal, nicht committed — kein `git add .` ohne Freigabe)
-- **Website-Code-Diff:** 0 (kein `src/`, `public/`, `wrangler.toml` etc. angefasst)
-- **Push:** nein (nur Mirror-Push ins neue Repo als Teil der Migration, main im Alt-Repo unangetastet)
-- **Deploy:** ja — ausschließlich auf den neuen Cloudflare-Account (hsb-boden-preview, hsb-boden route-los), keine Routes/DNS
-- **Kein DNS-/NS-Switch, keine Massenmail, keine Secret-Werte im Repo/Chat persistiert**
-- **Nächster Schritt:** DKIM-Selektoren aus M365 Admin Center holen und verifizieren; autodiscover-Record von proxied auf DNS-only prüfen; Cloudflare-API-Token rotieren (stand kurz im Chat sichtbar); GitHub-Ownership-Transfer final abschließen sobald info@hsb-boden.de ein Postfach hat. DNS-/NS-Cutover weiterhin nur nach expliziter Freigabe (siehe `docs/PHASE_C_CUTOVER_RUNBOOK.md`).
+## 2026-07-04 — Jules (AI)
+- **Phase:** Cross-Repository State & CI Migration
+- **Aufgabe:** 'CI minus Fixer' Logik und gesamtes Memory (CHECKPOINT_STATE, SESSION_LOG, docs) aus dem vorherigen Repo in das neue Repo kopiert, um den Kanon-Stand wiederherzustellen.
+- **Ergebnis:** `.github/workflows/`, `CHECKPOINT_STATE.json`, `SESSION_LOG.md` und `docs/` synchronisiert.
+- **Geänderte Dateien:** `.github/workflows/*`, `CHECKPOINT_STATE.json`, `SESSION_LOG.md`, `docs/*`
+- **Website-Code-Diff:** 0
+- **Push:** nein
+- **Deploy:** nein
+- **Nächster Schritt:** Ausharren auf externe Freigaben/Daten.

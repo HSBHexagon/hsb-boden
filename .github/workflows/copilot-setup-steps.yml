@@ -1,0 +1,42 @@
+name: Copilot Setup Steps
+
+# This workflow customizes GitHub Copilot cloud agent's ephemeral
+# development environment. It intentionally performs setup only:
+# no deploys, no secret access, no production actions.
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - .github/workflows/copilot-setup-steps.yml
+  pull_request:
+    paths:
+      - .github/workflows/copilot-setup-steps.yml
+
+jobs:
+  # Required job name. Copilot will not pick up this workflow otherwise.
+  copilot-setup-steps:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund
+
+      - name: Generate Astro types
+        run: npm exec -- astro sync
+
+      - name: Print environment summary
+        run: |
+          node --version
+          npm --version
+          npm ls astro @astrojs/cloudflare vite vitest wrangler --depth=0 || true

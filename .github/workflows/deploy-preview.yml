@@ -12,8 +12,6 @@ permissions:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    # Added environment to ensure access to Cloudflare secrets if they are Environment-scoped
-    environment: preview
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
       
@@ -30,8 +28,9 @@ jobs:
         run: npm run build
         
       - name: Deploy to Cloudflare Workers (Preview)
-        # Using cloudflare/wrangler-action with explicit flags to bypass the Cutover-Bug
-        # (Astro-6 adapter flattening configuration from wrangler.toml).
+        # NOTE: Explicit flags bypass the Astro-6 adapter config bug (Cutover-Bug).
+        # Conditional 'if' prevents CI failure in environments without secrets (e.g. forks).
+        if: ${{ secrets.CLOUDFLARE_API_TOKEN != '' }}
         uses: cloudflare/wrangler-action@ebbaa1584979971c8614a24965b4405ff95890e0 # v4.0.0
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}

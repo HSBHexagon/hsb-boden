@@ -32,7 +32,8 @@ jobs:
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          # wrangler.toml has no [env.preview] block — the top-level config
-          # (name = "hsb-boden-preview") IS the preview environment, matching
-          # package.json's "deploy:preview" script (wrangler deploy --env="").
-          command: deploy
+          # NOTE: `--env preview` is intentionally NOT used.
+          # The Astro-6 Cloudflare adapter generates `.wrangler/deploy/config.json`
+          # flattened from the top-level wrangler.toml. Explicit flags are used
+          # to bypass the adapter's configuration bug (Cutover-Bug).
+          command: deploy --name hsb-boden-preview --var ENVIRONMENT:preview

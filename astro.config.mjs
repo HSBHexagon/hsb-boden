@@ -1,6 +1,7 @@
 // @ts-check
 import { defineConfig } from "astro/config";
 import cloudflare from "@astrojs/cloudflare";
+
 import tailwindcss from "@tailwindcss/vite";
 
 export default defineConfig({
@@ -19,7 +20,6 @@ export default defineConfig({
     cacheDir: "node_modules/.cache/.vite",
     plugins: [tailwindcss()],
     optimizeDeps: {
-      include: ["zod", "clsx", "tailwind-merge"],
     },
   },
 });

@@ -1,0 +1,3 @@
+## 2026-06-12 - Missing Focus Indicators for Accessibility
+**Learning:** The `ACCESSIBILITY_REPORT.md` highlights excellent ARIA implementations, semantic HTML, and image accessibility, but explicitly recommends: "Implement a high-visibility `:focus-visible` outline for buttons and links in `global.css`." Default browser focus outlines are currently used, which may have varying visibility and might not align well with the design system.
+**Action:** Add custom `:focus-visible` styles using the brand color (HSB Red, #cb0000) or an appropriate contrast color for better visibility across the application.

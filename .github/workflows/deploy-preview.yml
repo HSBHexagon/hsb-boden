@@ -12,6 +12,8 @@ permissions:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    # Added environment to ensure access to Cloudflare secrets if they are Environment-scoped
+    environment: preview
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
       
@@ -28,12 +30,10 @@ jobs:
         run: npm run build
         
       - name: Deploy to Cloudflare Workers (Preview)
+        # Using cloudflare/wrangler-action with explicit flags to bypass the Cutover-Bug
+        # (Astro-6 adapter flattening configuration from wrangler.toml).
         uses: cloudflare/wrangler-action@ebbaa1584979971c8614a24965b4405ff95890e0 # v4.0.0
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          # NOTE: `--env preview` is intentionally NOT used.
-          # The Astro-6 Cloudflare adapter generates `.wrangler/deploy/config.json`
-          # flattened from the top-level wrangler.toml. Explicit flags are used
-          # to bypass the adapter's configuration bug (Cutover-Bug).
           command: deploy --name hsb-boden-preview --var ENVIRONMENT:preview

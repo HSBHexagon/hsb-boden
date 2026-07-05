@@ -290,4 +290,4 @@ Kein formaler Phasennummern-Block, aber geplante Aufgaben nach Go-live:
 | `SEO_GO_LIVE_CHECKLIST.md` | SEO/Tracking Go-live-Checkliste |
 | `ACQUISITION_SYSTEM_PLAN.md` | Akquise-Gesamtplan (Zielgruppen, Stufen, Mail) |
 | `PHASED_EXECUTION_PLAN.md` | Veraltet — verweist auf diese Datei |
-| `docs/ops/PHASE_STATUS.md` | Veraltet — verweist auf diese Datei |
+| `PHASE_STATUS.md` | Veraltet — verweist auf diese Datei |

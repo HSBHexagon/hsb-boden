@@ -57,12 +57,11 @@ export function getServiceBySlug(slug: string) {
   return servicesMap.get(slug);
 }
 
-export function getPublicReferences() {
+let publicReferencesCache: ReturnType<typeof getPublicReferencesImpl> | null = null;
+
+function getPublicReferencesImpl() {
   return references
-    .filter((reference) => {
-      const approvalStatus: string = reference.approvalStatus;
-      return approvalStatus !== "internal";
-    })
+    .filter((reference) => reference.approvalStatus !== "internal")
     .map((reference) => {
       const approved = reference.approvalStatus === "approved";
       const canShowLogo = approved && reference.canShowLogo;
@@ -78,6 +77,14 @@ export function getPublicReferences() {
         logo: canShowLogo ? reference.logo : undefined,
       };
     });
+}
+
+export function getPublicReferences() {
+  if (!publicReferencesCache) {
+    // ⚡ Bolt optimization: Cache expensive repeated map/filter operations
+    publicReferencesCache = getPublicReferencesImpl();
+  }
+  return publicReferencesCache;
 }
 
 export function getReferencesForSlugs(referenceIds: string[]) {

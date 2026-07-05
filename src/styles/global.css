@@ -252,6 +252,21 @@ a {
   transition-duration: 200ms;
 }
 
+/* High-visibility focus indicators for keyboard navigation */
+:focus-visible {
+  outline: 2px solid #cb0000;
+  outline-offset: 2px;
+}
+
+/* In dark contexts like header/footer, use white outline for better contrast */
+.surface-dark :focus-visible,
+header :focus-visible,
+footer :focus-visible,
+#cookie-consent :focus-visible {
+  outline: 2px solid #ffffff;
+  outline-offset: 2px;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .reveal {
     opacity: 1 !important;

@@ -35,7 +35,4 @@ jobs:
           # wrangler.toml has no [env.preview] block — the top-level config
           # (name = "hsb-boden-preview") IS the preview environment, matching
           # package.json's "deploy:preview" script (wrangler deploy --env="").
-          command: deploy
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: npm run deploy:preview

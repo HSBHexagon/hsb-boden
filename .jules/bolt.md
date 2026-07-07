@@ -1,0 +1,3 @@
+## 2026-07-07 - LCP Image Loading Optimization
+**Learning:** In this application, hero/banner images located immediately after the PageHero component (like in `branchen/[slug].astro`, `leistungen/[slug].astro`, and the first image in `referenzen/index.astro`) were using `loading="lazy"`. This delays the Largest Contentful Paint (LCP) because the browser waits until it computes the layout before fetching the image.
+**Action:** Always use `fetchpriority="high" loading="eager" decoding="async"` for LCP candidate images that appear above the fold to improve perceived loading speed and Core Web Vitals.

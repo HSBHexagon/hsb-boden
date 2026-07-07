@@ -134,7 +134,7 @@ Shared rules for all agents:
 Die einzige kanonische Projekt-Roadmap ist:
 **`docs/MASTER_EXECUTION_PLAN.md`**
 
-Alle anderen Phasendokumente (`PHASED_EXECUTION_PLAN.md`, `docs/ops/PHASE_STATUS.md`) sind veraltet und verweisen auf diese Datei.
+Alle anderen Phasendokumente (`PHASED_EXECUTION_PLAN.md`, `PHASE_STATUS.md`) sind veraltet und verweisen auf diese Datei.
 
 ## Kanonischer Arbeitsrepo-Pfad
 

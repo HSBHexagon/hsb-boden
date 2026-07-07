@@ -18,7 +18,7 @@ import { homepageFaqs as faqs } from "../../data/homepageFaqs";
     <div class="divide-y divide-hsb-line">
       {faqs.map((faq) => (
         <details class="group py-5">
-          <summary class="flex cursor-pointer list-none items-start justify-between gap-4 text-base font-black">
+          <summary class="flex cursor-pointer list-none items-start justify-between gap-4 rounded text-base font-black transition-colors hover:text-hsb-red focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-hsb-red focus-visible:ring-offset-2">
             <span>{faq.question}</span>
             <svg
               class="mt-0.5 size-5 shrink-0 text-hsb-red transition-transform group-open:rotate-45"

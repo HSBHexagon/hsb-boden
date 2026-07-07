@@ -78,11 +78,10 @@ for (const reference of references) {
 const regions: { label: string; exact: boolean }[] = [];
 for (const label of exactRegions) {
   regions.push({ label, exact: true });
+  otherRegions.delete(label);
 }
 for (const label of otherRegions) {
-  if (!exactRegions.has(label)) {
-    regions.push({ label, exact: false });
-  }
+  regions.push({ label, exact: false });
 }
 ---
 

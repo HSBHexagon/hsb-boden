@@ -37,11 +37,18 @@
 ## 5. Aktueller Lead- und CRM-Stand
 - Das Kontaktformular postet an `/api/lead`.
 - Der Worker leitet an die Google-Apps-Script-Web-App weiter.
-- Zielsystem ist das Google Sheet `HSB CRM Light`.
+- Zielsystem der Website-Pipeline ist das Google Sheet `HSB CRM Light` (`1d0zZXXwYGo38ZKf0oUSSJpoZ_WVG545rDalXAdItm80`, Tab „Leads").
 - Die End-to-End-Zustellung wurde verifiziert.
 - `ops/n8n/` ist historisch/deprecated und nicht die aktive Loesung.
-- CRM-Light ist `template-ready-awaiting-lead-data`.
-- Der kuenftige 5.000-Lead-Paste/Import ist `prepared-awaiting-data`.
+- **Update 2026-07-08 (verifiziert via connected Google-Workspace-MCP, `cherinojoel@gmail.com`):** Reale Kaltakquise-Lead-Daten liegen jetzt vor — 6.424 Datensaetze, lokal in `data/lead-import/output/*.csv` und in drei separaten Google Sheets:
+  - MASTER (`1tmNuC_Wqr8blRfZCHLqpwXXOe7zyO-3SzsotaBxOzSk`, 6.433 Zeilen)
+  - Jordi Post (`1uMbZAteSPjRBLGwpfT_evqA9hPbSTdDqPOK5TBXoFu4`, 3.221 Zeilen)
+  - Joel Cherino (`1ha1iOX1pIWxF1c3FTRTxydqpa0uvPcBbbQ__ht1rAC8`, 3.231 Zeilen)
+  - Diese drei Sheets sind reine Kaltakquise-Ausgangslisten fuer spaeteren manuellen Versand, **nicht** an `LEAD_WEBHOOK_URL` oder einen Apps-Script-Webhook angebunden und sollen es nach aktuellem Stand auch nicht sein — Verwechslungsgefahr mit der Website-Inbound-Pipeline besteht, da alle vier Sheets denselben Namensraum „HSB CRM Light" teilen.
+  - Spaltenschema weicht zwischen MASTER-Sheet (23 Spalten), `CRM_LIGHT_SCHEMA.md` (27 Spalten) und dem Tab „Leads" im urspruenglichen Sheet (27 Spalten, teils andere Feldnamen) ab — nicht bereinigt, vor Versand zu klaeren.
+  - `CRM-Light` ist damit nicht mehr `template-ready-awaiting-lead-data`, sondern `lead-data-imported-awaiting-compliance-and-batch-approval` (siehe Phase 7 in `docs/MASTER_EXECUTION_PLAN.md`).
+- **Update 2026-07-08 (spaeter in derselben Session):** Der reale `LEAD_WEBHOOK_URL`-Wert wurde ueber den Apps-Script-Editor (aktive Browser-Session `cherinojoel@gmail.com`, kein Passwort eingegeben) am Projekt `HSBBODEN` verifiziert — Deployment „Version 3 am 22.06.2026, 23:35", Code bindet per `SpreadsheetApp.openById('1d0zZXXwYGo38ZKf0oUSSJpoZ_WVG545rDalXAdItm80')`, exakt das dokumentierte Ziel-Sheet. Wert: `https://script.google.com/macros/s/AKfycbygp7VIA3NjeIjiVYiRXXsBKh-Aoei7DmS2WGlLmCmPdtOwHHOOOaFF_270O-Cu4ugm/exec`. Lokaler `wrangler`-Login war bereits beim korrekten Account `info@hsb-boden.de` authentifiziert; Secret wurde per `npx wrangler pages secret put LEAD_WEBHOOK_URL --project-name hsb-boden` gesetzt und per `wrangler pages secret list` bestaetigt (production-Environment).
+- **Gefundene, ungeklaerte Altlast:** Ein zusaetzliches Apps-Script-Projekt „HSB-Boden CRM Webhook" (nicht zu verwechseln mit `HSBBODEN`) wurde am 2026-07-08 um 20:37 erstellt/bereitgestellt und ist an das Jordi-Kaltakquise-Sheet (`1uMbZAteSPjRBLGwpfT_evqA9hPbSTdDqPOK5TBXoFu4`) gebunden, nicht an das CRM-Light-Sheet. Herkunft nicht rekonstruiert (evtl. parallele Session). Es ist an keiner Stelle als Secret hinterlegt und sollte vor Verwechslung mit `HSBBODEN` geschuetzt werden; Owner sollte pruefen, ob dieses Projekt geloescht/archiviert werden soll.
 
 ## 6. Aktuelle offene Punkte
 - Externer NS-/DNS-Switch der Domain `hsb-boden.de` durch den Domain-Admin

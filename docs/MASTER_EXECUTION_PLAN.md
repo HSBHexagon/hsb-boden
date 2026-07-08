@@ -139,7 +139,7 @@ Parallel zur bestehenden WordPress-Live-Site eine neue Astro/Cloudflare-Website 
 
 ### Phase 7 — Testkampagne (kontrolliert)
 
-**Status:** ⏳ PENDING — gate-prepared-awaiting-lead-data / 2-Operator-Import vorbereitet
+**Status:** ⏳ PENDING — lead-data-imported-awaiting-compliance-and-batch-approval
 
 **Objective:** Compliance-/Import-Gate fuer einen spaeteren kontrollierten manuellen B2B-Testversand vorbereiten, ohne die Kampagne zu starten.
 
@@ -149,10 +149,17 @@ Parallel zur bestehenden WordPress-Live-Site eine neue Astro/Cloudflare-Website 
 - Lead-Liste, Empfaengerbasis, Opt-out-Logik und Versandfreigabe als Pflicht-Gates dokumentiert
 - Zwei-Personen-Bearbeitung vorbereitet: Joel Cherino Diaz und Jordi Post erhalten jeweils ca. 2.500 Datensaetze; passende Flyer-Anhaenge sind dokumentiert
 - Manuelles Testbatch spaeter auf max. `10-20` A-Leads begrenzt
+- **Neu (verifiziert 2026-07-08):** Reale Lead-Daten liegen jetzt vor. 6.424 Datensaetze lokal erzeugt (`data/lead-import/output/*.csv`) und in drei Google Sheets uebertragen (Account `cherinojoel@gmail.com`):
+  - `HSB CRM Light — Kaltakquise Kampagne 2026-07 (MASTER) v2` (`1tmNuC_Wqr8blRfZCHLqpwXXOe7zyO-3SzsotaBxOzSk`), Tab `Sheet1`, 6.433 Zeilen, 23 Spalten
+  - `HSB CRM Light — Jordi Post — Kaltakquise 2026-07` (`1uMbZAteSPjRBLGwpfT_evqA9hPbSTdDqPOK5TBXoFu4`), Tab `Sheet1`, 3.221 Zeilen
+  - `HSB CRM Light — Joel Cherino — Kaltakquise 2026-07` (`1ha1iOX1pIWxF1c3FTRTxydqpa0uvPcBbbQ__ht1rAC8`), Tab `Sheet1`, 3.231 Zeilen
+  - Diese drei Sheets sind **Kaltakquise-Ausgangslisten fuer manuellen Versand**, kein Eingang fuer die Website-Lead-Pipeline. Sie sind nicht mit `LEAD_WEBHOOK_URL` oder einem Apps-Script-Webhook verbunden und sollen es nach aktuellem Stand auch nicht sein.
+  - Schema-Drift festgestellt, noch nicht bereinigt: Die Spaltenkoepfe im MASTER-Sheet (`Lead-ID, Firma, Standort, Region, Branche, Rolle, Tier, Ansprechpartner, E-Mail, ...`, 23 Spalten) weichen von `CRM_LIGHT_SCHEMA.md` (27 Spalten) und vom urspruenglichen `HSB CRM Light`-Sheet-Tab „Leads" (27 Spalten, andere Feldnamen wie `Zielrollen-Kategorie`, `Antwortstatus`) ab. Ursache nicht rekonstruiert; vor einem echten Versand sollte geklaert werden, welches Schema kanonisch ist.
+  - Das urspruengliche Sheet `HSB CRM Light` (`1d0zZXXwYGo38ZKf0oUSSJpoZ_WVG545rDalXAdItm80`, Tab „Leads") bleibt das Ziel-Sheet der Website-Lead-Pipeline und ist davon unberuehrt.
 
-**Exit Criteria:** Das Gate ist vorbereitet. Ein echter Testversand bleibt blockiert, bis reale Lead-Daten vorliegen, alle Batch-Zeilen freigegeben sind, die Compliance-Dokumentation vorliegt und der Owner das exakte Batch explizit freigibt.
+**Exit Criteria:** Das Gate ist vorbereitet. Ein echter Testversand bleibt blockiert, bis alle Batch-Zeilen freigegeben sind, die Compliance-Dokumentation vorliegt, die Schema-Drift geklaert ist und der Owner das exakte Batch explizit freigibt.
 
-**Blockiert durch:** Fehlende reale Lead-Daten, fehlende Batch-Freigabe, fehlende Compliance-/Opt-out-Freigabe pro Einsatz.
+**Blockiert durch:** Batch-Freigabe, Compliance-/Opt-out-Freigabe pro Einsatz, Klaerung der Schema-Drift. Reale Lead-Daten liegen nicht mehr als Blocker vor (siehe oben).
 
 ---
 

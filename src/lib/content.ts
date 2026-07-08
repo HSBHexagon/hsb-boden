@@ -57,32 +57,36 @@ export function getServiceBySlug(slug: string) {
   return servicesMap.get(slug);
 }
 
-export function getPublicReferences() {
-  return references
-    .filter((reference) => {
-      const approvalStatus: string = reference.approvalStatus;
-      return approvalStatus !== "internal";
-    })
-    .map((reference) => {
-      const approved = reference.approvalStatus === "approved";
-      const canShowLogo = approved && reference.canShowLogo;
-      const canShowExactLocation = approved && reference.canShowExactLocation;
+// Pre-compute public references once (Performance optimization)
+// This avoids O(N) array filtering/mapping and object allocation on every function call.
+const publicReferencesCache = references
+  .filter((reference) => {
+    const approvalStatus: string = reference.approvalStatus;
+    return approvalStatus !== "internal";
+  })
+  .map((reference) => {
+    const approved = reference.approvalStatus === "approved";
+    const canShowLogo = approved && reference.canShowLogo;
+    const canShowExactLocation = approved && reference.canShowExactLocation;
 
-      return {
-        ...reference,
-        displayName: approved ? reference.publicName : reference.anonymousName,
-        displayLocation: canShowExactLocation
-          ? `${reference.city}, ${reference.region}`
-          : reference.region,
-        canShowExactLocation,
-        logo: canShowLogo ? reference.logo : undefined,
-      };
-    });
+    return {
+      ...reference,
+      displayName: approved ? reference.publicName : reference.anonymousName,
+      displayLocation: canShowExactLocation
+        ? `${reference.city}, ${reference.region}`
+        : reference.region,
+      canShowExactLocation,
+      logo: canShowLogo ? reference.logo : undefined,
+    };
+  });
+
+export function getPublicReferences() {
+  return publicReferencesCache;
 }
 
 export function getReferencesForSlugs(referenceIds: string[]) {
   const allowed = new Set(referenceIds);
-  return getPublicReferences().filter((reference) => allowed.has(reference.id));
+  return publicReferencesCache.filter((reference) => allowed.has(reference.id));
 }
 
 export function getAllPublicPages() {

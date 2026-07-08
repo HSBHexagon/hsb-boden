@@ -6,6 +6,7 @@ import { leadEndpointSchema } from "../../src/lib/leadSchema";
 
 interface Env {
   LEAD_WEBHOOK_URL?: string;
+  RATE_LIMIT_KV?: KVNamespace;
 }
 
 const ALLOWED_ORIGINS = new Set(["https://hsb-boden.de", "https://www.hsb-boden.de"]);
@@ -15,19 +16,36 @@ const IP_LIMIT = { max: 5, windowMs: 10 * 60 * 1000 };
 const EMAIL_LIMIT = { max: 2, windowMs: 30 * 60 * 1000 };
 const WEBHOOK_TIMEOUT_MS = 6000;
 
-// In-memory pro Worker-Instanz, siehe P0B_SECRET_REQUIREMENTS.md.
-let ipHits = new Map<string, number[]>();
-let emailHits = new Map<string, number[]>();
+// Distributed across Worker/Pages Function instances via Cloudflare KV — an
+// in-memory Map resets per instance/cold start and does not enforce a limit
+// reliably across a serverless fleet (see PR #42 / rate-limit-bypass fix).
+let memoryIpHits = new Map<string, number[]>();
+let memoryEmailHits = new Map<string, number[]>();
 
 export function resetLeadRateLimiter() {
-  ipHits = new Map();
-  emailHits = new Map();
+  memoryIpHits = new Map();
+  memoryEmailHits = new Map();
 }
 
-function isRateLimited(key: string, store: Map<string, number[]>, limit: { max: number; windowMs: number }, now: number) {
+function isRateLimitedMemory(key: string, store: Map<string, number[]>, limit: { max: number; windowMs: number }, now: number) {
   const hits = (store.get(key) ?? []).filter((t) => now - t < limit.windowMs);
   hits.push(now);
   store.set(key, hits);
+  return hits.length > limit.max;
+}
+
+async function isRateLimited(
+  kv: KVNamespace | undefined,
+  memoryStore: Map<string, number[]>,
+  key: string,
+  limit: { max: number; windowMs: number },
+  now: number,
+) {
+  if (!kv) return isRateLimitedMemory(key, memoryStore, limit, now);
+  const raw = await kv.get(key, "json");
+  const hits = ((raw as number[] | null) ?? []).filter((t) => now - t < limit.windowMs);
+  hits.push(now);
+  await kv.put(key, JSON.stringify(hits), { expirationTtl: Math.max(60, Math.ceil(limit.windowMs / 1000)) });
   return hits.length > limit.max;
 }
 
@@ -121,7 +139,9 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
 
   const now = Date.now();
   const ip = request.headers.get("CF-Connecting-IP") ?? "unknown";
-  if (isRateLimited(ip, ipHits, IP_LIMIT, now) || isRateLimited(lead.email, emailHits, EMAIL_LIMIT, now)) {
+  const ipLimited = await isRateLimited(env.RATE_LIMIT_KV, memoryIpHits, `ip:${ip}`, IP_LIMIT, now);
+  const emailLimited = await isRateLimited(env.RATE_LIMIT_KV, memoryEmailHits, `email:${lead.email}`, EMAIL_LIMIT, now);
+  if (ipLimited || emailLimited) {
     return jsonResponse(429, { ok: false, error: "rate_limited" }, origin);
   }
 

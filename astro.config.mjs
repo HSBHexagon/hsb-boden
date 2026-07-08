@@ -4,7 +4,7 @@ import react from "@astrojs/react";
 import tailwindcss from "@tailwindcss/vite";
 
 export default defineConfig({
-  site: "https://hsb-boden.de",
+  site: "https://www.hsb-boden.de",
   output: "static",
   integrations: [react()],
   devToolbar: { enabled: false },

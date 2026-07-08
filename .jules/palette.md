@@ -1,0 +1,3 @@
+## 2024-03-20 - Forms need visual required indicators
+**Learning:** This application relies on HTML5 `required` attributes for form validation, but the LeadForm didn't have visual indicators for which fields were required, causing potential friction. Additionally, native browser focus outlines were replaced without a strong custom focus-visible state.
+**Action:** Always add an `aria-hidden="true"` visual indicator (like a red asterisk) for required fields next to the label, and ensure `focus-visible` styles are explicitly defined with tailwind (e.g. `focus-visible:ring-1 focus-visible:ring-hsb-red focus-visible:outline-none`) when native outlines are removed.

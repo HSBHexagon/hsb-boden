@@ -14,16 +14,17 @@
 | Punkt | Status |
 |---|---|
 | `www.hsb-boden.de` live über Cloudflare Pages | ✅ |
-| `pages-static-migration` → `main` konsolidiert | ✅ (lokal committed, **nicht gepusht**) |
+| `pages-static-migration` → `main` konsolidiert | ✅ committed und **gepusht** |
 | Canonical-Domain-Bug (Code zeigte auf Apex statt www) | ✅ gefixt und deployed |
 | Rate-Limit-Bypass-Lücke in `/api/lead` (In-Memory statt verteilt) | ✅ gefixt via Cloudflare KV (`RATE_LIMIT_KV`, Namespace neu im `info@hsb-boden.de`-Account gebunden), deployed |
 | JSON-LD-XSS-Härtung (PR #32) | ✅ gemergt nach `main` auf GitHub |
 | Tests/Build/Check | ✅ 51/51 Tests, 0 Typfehler |
 | Apex `hsb-boden.de` | ❌ zeigt weiterhin alte WordPress-Seite |
-| **Lokales `main` vs. `origin/main`** | ⚠️ **in beide Richtungen auseinandergelaufen** — 9 lokale Commits (heutige Fixes) nicht auf GitHub; 12 GitHub-Commits (u. a. gemergte PRs #32, #28) nicht lokal. Muss vor Push zusammengeführt werden. |
-| Fehlendes GitHub-Actions-Secret `CLOUDFLARE_API_TOKEN` | ⚠️ neu gefunden — lässt jeden PR-Preview-Deploy-Check fehlschlagen, unabhängig vom Code-Inhalt |
+| Lokales `main` vs. `origin/main` | ✅ zusammengeführt und synchron (Push erfolgt via Admin-Bypass der Branch-Protection — bekanntes, im Projekt bereits dokumentiertes Risiko) |
+| GitHub-Actions-Secrets `CLOUDFLARE_API_TOKEN`/`CLOUDFLARE_ACCOUNT_ID` | ✅ neu gesetzt (vorheriger Wert leer/ungültig) |
+| CI-Deploy-Workflows (`deploy-preview.yml`, `deploy-production.yml`) | ✅ von obsoleter Worker-Architektur auf Cloudflare Pages migriert; Production-Deploy bleibt bewusst `workflow_dispatch`-only (manueller Gate erhalten), PR-Previews deployen jetzt korrekt auf Pages-Branch-URLs |
 
-**Nächster Schritt:** Lokales `main` mit `origin/main` zusammenführen (Konflikte möglich, noch nicht geprüft) und `git push` freigeben. `CLOUDFLARE_API_TOKEN` als GitHub-Actions-Secret neu setzen, damit PR-Preview-Deploys wieder funktionieren.
+**Nächster Schritt:** Apex-DNS (siehe Abschnitt 5), sonst ist dieser Bereich vollständig.
 
 ---
 

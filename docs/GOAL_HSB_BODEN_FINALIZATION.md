@@ -15,11 +15,15 @@
 |---|---|
 | `www.hsb-boden.de` live über Cloudflare Pages | ✅ |
 | `pages-static-migration` → `main` konsolidiert | ✅ (lokal committed, **nicht gepusht**) |
-| Canonical-Domain-Bug (Code zeigte auf Apex statt www) | ✅ gefixt und deployed (2026-07-09) |
+| Canonical-Domain-Bug (Code zeigte auf Apex statt www) | ✅ gefixt und deployed |
+| Rate-Limit-Bypass-Lücke in `/api/lead` (In-Memory statt verteilt) | ✅ gefixt via Cloudflare KV (`RATE_LIMIT_KV`, Namespace neu im `info@hsb-boden.de`-Account gebunden), deployed |
+| JSON-LD-XSS-Härtung (PR #32) | ✅ gemergt nach `main` auf GitHub |
 | Tests/Build/Check | ✅ 51/51 Tests, 0 Typfehler |
 | Apex `hsb-boden.de` | ❌ zeigt weiterhin alte WordPress-Seite |
+| **Lokales `main` vs. `origin/main`** | ⚠️ **in beide Richtungen auseinandergelaufen** — 9 lokale Commits (heutige Fixes) nicht auf GitHub; 12 GitHub-Commits (u. a. gemergte PRs #32, #28) nicht lokal. Muss vor Push zusammengeführt werden. |
+| Fehlendes GitHub-Actions-Secret `CLOUDFLARE_API_TOKEN` | ⚠️ neu gefunden — lässt jeden PR-Preview-Deploy-Check fehlschlagen, unabhängig vom Code-Inhalt |
 
-**Nächster Schritt:** `git push` freigeben, sobald gewünscht (aktuell nur lokal).
+**Nächster Schritt:** Lokales `main` mit `origin/main` zusammenführen (Konflikte möglich, noch nicht geprüft) und `git push` freigeben. `CLOUDFLARE_API_TOKEN` als GitHub-Actions-Secret neu setzen, damit PR-Preview-Deploys wieder funktionieren.
 
 ---
 

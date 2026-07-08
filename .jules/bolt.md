@@ -1,0 +1,3 @@
+## 2026-07-08 - Caching Array Operations in Content Fetchers
+**Learning:** In Astro applications, data/content getter functions like `getPublicReferences()` that perform operations like `.filter()` and `.map()` on static data arrays are often called multiple times per request (e.g., inside `.astro` map loops or data aggregation layers). Because they are executed on every call, they re-evaluate O(N) operations and allocate new objects continuously.
+**Action:** Always pre-compute and cache the results of expensive static array operations at the module scope when building getter functions, instead of performing the filtering/mapping logic synchronously inside the getter on every invocation.

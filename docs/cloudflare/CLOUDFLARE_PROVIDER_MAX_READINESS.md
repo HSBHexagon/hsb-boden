@@ -202,7 +202,7 @@ If mail DNS, secrets, or other settings require changes, those require separate 
 
 - Execution runbook: `docs/PHASE_C_CUTOVER_RUNBOOK.md`
 - Email/mail DNS records: `docs/email/EMAIL_ROUTING_AND_DELIVERABILITY_MAX_READINESS.md`
-- Operator handoff: `docs/handoff/JOEL_JORDIE_OPERATOR_RUNBOOK.md`
+- Operator handoff: `docs/handoff/JOEL_JORDI_OPERATOR_RUNBOOK.md`
 - Historical Cloudflare audit (final evidence): `docs/FINAL_CLOUDFLARE_WORKERS_READINESS_AUDIT.md`
 - Pre-go-live UI inventory: `docs/cloudflare/GO_LIVE_MAX_PREFLIGHT_UI_INVENTORY.md`
 - WAF/cache/rate-limit readiness: `docs/cloudflare/WAF_CACHE_RATE_LIMIT_READINESS.md`

@@ -33,14 +33,16 @@
 | Opt-out-Status | enum | nein / ja |
 | Versandfreigabe | enum | no / yes |
 | Verantwortlicher | string | Joel / … |
+| Flyer-Anhang | string | public/HSB-Flyer-Joel-Cherino.pdf / public/HSB-Flyer-Jordi-Post.pdf |
 | Notizen | text | — |
 
 ## Hinweise
 - Die Struktur ist `template-ready-awaiting-lead-data`; die 5.000 Lead-Datensätze sind fuer diese Dokumentationsaufgabe nicht erforderlich.
 - Defaults bei Import: `Status = neu`, `Nächste Aktion = prüfen`, `Versandfreigabe = no`, `Opt-in-Status = unknown`, `Opt-out-Status = unknown`.
+- Für die 2-Personen-Akquise wird `Verantwortlicher` auf `Joel Cherino Diaz` oder `Jordi Post` gesetzt und `Flyer-Anhang` passend zugeordnet.
 - Telefonfelder muessen als Text gespeichert und formatiert werden.
 - Diese Felder duerfen beim Import leer bleiben: `Ansprechpartner`, `Rolle`, `Telefon`, `Interesse`, `Projektart`, `Fläche geschätzt`, `Belastungsart`, `Sanierungsfenster`, `Notizen`.
-- Dispatch bleibt blockiert, wenn `E-Mail`, `Quelle`, `Beziehung / Kontaktgrund`, `Opt-in-Status`, `Opt-out-Status`, `Versandfreigabe` oder `Verantwortlicher` fehlen oder unklar sind.
+- Dispatch bleibt blockiert, wenn `E-Mail`, `Quelle`, `Beziehung / Kontaktgrund`, `Opt-in-Status`, `Opt-out-Status`, `Versandfreigabe`, `Verantwortlicher` oder `Flyer-Anhang` fehlen oder unklar sind.
 - Duplicate detection keys: E-Mail, Website, Firma + Standort, Firma + Ansprechpartner, Telefon (falls vorhanden).
 - DSGVO: nur geschäftliche Kontaktdaten, dokumentierte Quelle, Opt-out respektieren (siehe `AGENTS.md` Non-Negotiables).
 - Scoring-Logik und Statusübergänge: siehe `ACQUISITION_SYSTEM_PLAN.md`.

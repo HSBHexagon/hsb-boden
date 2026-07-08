@@ -86,14 +86,14 @@ No batch or individual outreach email may be sent until:
 
 ---
 
-## Role Split: Joel vs JORDIE
+## Role Split: Joel vs JORDI
 
-| CRM Task | Joel | JORDIE |
+| CRM Task | Joel | JORDI |
 |----------|------|--------|
 | CRM sheet ownership | ✅ Primary | — |
 | Review new web form leads | ✅ Daily | — |
 | Log own outreach contacts | ✅ Always | — |
-| Log JORDIE's contacts | — | ✅ Logs own column (Verantwortlicher = JORDIE) |
+| Log JORDI's contacts | — | ✅ Logs own column (Verantwortlicher = JORDI) |
 | Set Versandfreigabe | ✅ Joint approval | ✅ Joint approval |
 | Lead list import approval | ✅ Both required | ✅ Both required |
 | Tier A escalation decision | ✅ Joint | ✅ Joint |

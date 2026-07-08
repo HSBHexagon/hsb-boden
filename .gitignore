@@ -16,3 +16,6 @@ docs/brain/
 docs/ops/
 PROJECT_AUDIT.md
 src/OPTIMIZATION.md
+
+# Reale Lead-/Kontaktdaten - niemals in oeffentliches Repo (PII, DSGVO)
+data/lead-import/

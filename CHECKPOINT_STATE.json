@@ -1,9 +1,9 @@
 {
   "project": "HSB / HEXAFLOOR",
-  "last_updated": "2026-07-04T01:55:00+0200",
+  "last_updated": "2026-07-08T14:50:00+0200",
   "active_model": "Codex / ChatGPT Codex Connector",
-  "active_phase": "sales-operations-max-ready-awaiting-dns-and-leads",
-  "active_task": "Canonical Runtime Migration COMPLETE: HSBHexagon GitHub/Codex Connector, Cloudflare Runtime, Wrangler, Exa OAuth Remote MCP, Chrome DevTools MCP und Repo-Paritaet verifiziert. Remaining drift: none.",
+  "active_phase": "pages-www-live-awaiting-apex-and-leads",
+  "active_task": "Canonical truth consolidation after Pages www live verification: www.hsb-boden.de is live via Cloudflare Pages; apex hsb-boden.de still serves WordPress/Apache; Pages worktree must be consolidated into main before claiming one code truth.",
   "account_migration_2026_07_02": {
     "github_new_repo": "https://github.com/HSBHexagon/hsb-boden",
     "github_old_repo_access": "HSBHexagon ist Admin-Collaborator im Alt-Repo cherinojoel-lang/hsb-boden (Ownership-Transfer pending, nicht blockierend)",
@@ -22,8 +22,8 @@
   },
   "repo_path": "/Users/joelcherinodiaz/KI-System/02_Projects/active/hsb-boden",
   "handoff_path": "/Users/joelcherinodiaz/KI-System/ObsidianVault/brain/CURRENT_HANDOFF.md",
-  "last_commit": "d4ea032",
-  "website_code_diff_lines": 0,
+  "last_commit": "5e6e184",
+  "website_code_diff_lines": "local changes present: references, GA/Astro hint fix, CRM lead import docs, truth docs",
   "canonical_readiness_stack": {
     "tier1": {
       "cloudflare": "docs/cloudflare/CLOUDFLARE_PROVIDER_MAX_READINESS.md",
@@ -32,7 +32,7 @@
       "assets": "docs/assets/ASSET_PACKAGE_AND_PUBLIC_DOWNLOAD_MAX_READINESS.md",
       "crm": "docs/crm/CRM_LIGHT_MAX_READINESS.md",
       "automation": "docs/automation/STATUS_UPDATE_AUTOMATION_BLUEPRINT.md",
-      "operator_runbook": "docs/handoff/JOEL_JORDIE_OPERATOR_RUNBOOK.md"
+      "operator_runbook": "docs/handoff/JOEL_JORDI_OPERATOR_RUNBOOK.md"
     },
     "tier2_2026_06_26": {
       "cloudflare_ui_preflight": "docs/cloudflare/GO_LIVE_MAX_PREFLIGHT_UI_INVENTORY.md",
@@ -64,7 +64,7 @@
     "docs/assets/ASSET_PACKAGE_AND_PUBLIC_DOWNLOAD_MAX_READINESS.md",
     "docs/crm/CRM_LIGHT_MAX_READINESS.md",
     "docs/automation/STATUS_UPDATE_AUTOMATION_BLUEPRINT.md",
-    "docs/handoff/JOEL_JORDIE_OPERATOR_RUNBOOK.md",
+    "docs/handoff/JOEL_JORDI_OPERATOR_RUNBOOK.md",
     "docs/cloudflare/GO_LIVE_MAX_PREFLIGHT_UI_INVENTORY.md",
     "docs/cloudflare/WAF_CACHE_RATE_LIMIT_READINESS.md",
     "docs/cloudflare/R2_ASSET_UPLOAD_STRATEGY.md",
@@ -87,7 +87,9 @@
     "Phase 12 remains current but externally blocked by the pending NS/DNS switch.",
     "Workflow risks fixed (commit a28fbb2): CI SHA-pinned, deploy-production.yml workaround applied.",
     "Max-readiness doc sweep (2026-06-26 Tier 1): 7 new canonical readiness docs created, FINAL_CLOUDFLARE_WORKERS_READINESS_AUDIT converted to historical wrapper, all cross-references updated.",
-    "Final pre-go-live documentation wave (2026-06-26 Tier 2): 12 new detailed readiness docs created across cloudflare/, analytics/, email/, assets/, crm/, automation/, ops/, launch/. All Tier-1 canonical docs updated with cross-references. PROJECT_TRUTH.md, CHECKPOINT_STATE.json, FINAL_OPERATOR_HANDOFF.md, MASTER_EXECUTION_PLAN.md updated."
+    "Final pre-go-live documentation wave (2026-06-26 Tier 2): 12 new detailed readiness docs created across cloudflare/, analytics/, email/, assets/, crm/, automation/, ops/, launch/. All Tier-1 canonical docs updated with cross-references. PROJECT_TRUTH.md, CHECKPOINT_STATE.json, FINAL_OPERATOR_HANDOFF.md, MASTER_EXECUTION_PLAN.md updated.",
+    "Cloudflare Pages www live verification (2026-07-08): https://www.hsb-boden.de/referenzen/ returns HTTP 200 and includes corrected references KESSLER-ZINK GmbH, Weingut Dohlmühle-Genussreich, and Flonheim.",
+    "Phase 7 lead import preparation extended for two operators: Joel Cherino Diaz and Jordi Post each get about 2,500 addresses when data volume allows; flyer attachment field is required before dispatch."
   ],
   "workflow_risks_fixed": [
     "ci.yml: actions/checkout@v4 pinned to 34e114876b0b11c390a56381ad16ebd13914f8d5 (2026-06-26)",
@@ -95,22 +97,24 @@
     "deploy-production.yml: replaced 'deploy --env production' with 'deploy --name hsb-boden --var ENVIRONMENT:production' per PHASE_C_CUTOVER_RUNBOOK.md"
   ],
   "open_steps": [
-    "Wait for external DNS/NS activation or the future 5,000-lead dataset before continuing.",
-    "If DNS becomes active, follow docs/PHASE_C_CUTOVER_RUNBOOK.md and docs/cloudflare/CLOUDFLARE_PROVIDER_MAX_READINESS.md.",
+    "Consolidate the Pages migration worktree hsb-boden-pages-static into main after explicit approval, so there is no second code truth.",
+    "Resolve apex hsb-boden.de: it currently serves WordPress/Apache and /referenzen/ returns 404; decide and approve redirect to www or equivalent DNS/hosting change.",
+    "If DNS or redirect changes are approved, follow the updated Phase 12 section in docs/MASTER_EXECUTION_PLAN.md before touching Cloudflare or provider DNS.",
     "Pre-DNS: activate M365 DKIM for j-cherino@hsb-boden.de per docs/email/EMAIL_ROUTING_AND_DELIVERABILITY_MAX_READINESS.md.",
     "If lead data becomes available, follow docs/crm/CRM_LIGHT_MAX_READINESS.md and docs/launch/LEAD_IMPORT_5000_CHECKLIST.md.",
     "Keep dispatch blocked until real lead data, recipient basis, opt-out handling, and batch approval exist.",
-    "Use docs/launch/PRE_DNS_GO_LIVE_MAX_CHECKLIST.md as the master trigger-day gate."
+    "Use docs/launch/PRE_DNS_GO_LIVE_MAX_CHECKLIST.md as historical trigger-day evidence, but treat docs/MASTER_EXECUTION_PLAN.md and PROJECT_TRUTH.md as current truth."
   ],
   "blocked_by": [
-    "External DNS/NS switch for hsb-boden.de is still pending.",
+    "Apex hsb-boden.de still points to WordPress/Apache instead of the Pages www live path.",
+    "The Pages migration branch/worktree is not yet consolidated into main.",
     "The future 5,000-lead dataset is not inserted yet."
   ],
   "pre_outreach_blockers": [
     "M365 DKIM for j-cherino@hsb-boden.de not yet activated.",
     "Recipient basis and batch approval are still missing until real lead data exists."
   ],
-  "next_step": "Read docs/launch/PRE_DNS_GO_LIVE_MAX_CHECKLIST.md and docs/handoff/JOEL_JORDIE_OPERATOR_RUNBOOK.md for resume order. If neither external input exists, stop.",
+  "next_step": "Read docs/launch/PRE_DNS_GO_LIVE_MAX_CHECKLIST.md and docs/handoff/JOEL_JORDI_OPERATOR_RUNBOOK.md for resume order. If neither external input exists, stop.",
   "handoff_required": true,
   "safe_to_continue": true,
   "canonical_runtime_migration_2026_07_04": {

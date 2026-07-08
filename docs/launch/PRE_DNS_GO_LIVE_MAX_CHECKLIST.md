@@ -231,7 +231,7 @@ Dashboard: **Websites → hsb-boden.de → Security → Bots**
 - [ ] `Versandfreigabe = yes` set per recipient in CRM
 - [ ] `Opt-out-Status ≠ opted_out` per recipient
 - [ ] Recipient basis documented in CRM (`Beziehung / Kontaktgrund`)
-- [ ] First batch approved (Joel + JORDIE joint approval)
+- [ ] First batch approved (Joel + JORDI joint approval)
 - [ ] Production domain live (Block 4 complete)
 
 ---

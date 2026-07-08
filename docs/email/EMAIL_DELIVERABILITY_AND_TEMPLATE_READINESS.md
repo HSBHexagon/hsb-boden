@@ -100,11 +100,11 @@ mit dem Betreff „Abmelden" auf diese E-Mail.
 
 **Attachment:** `HSB-Flyer-Joel-Cherino.pdf` (254 KB)
 
-### Template 2 — JORDIE Post Variant
+### Template 2 — JORDI Post Variant
 
-**Subject:** Industrieböden für [Firmenname] – Beratung von JORDIE Post
+**Subject:** Industrieböden für [Firmenname] – Beratung von JORDI Post
 
-**Body:** Same structure, adapted to JORDIE's role and flyer variant (`HSB-Flyer-Jordie-Post.pdf`).
+**Body:** Same structure, adapted to JORDI's role and flyer variant (`HSB-Flyer-Jordi-Post.pdf`).
 
 ### Template 3 — Follow-Up (After No Reply, 14 Days)
 

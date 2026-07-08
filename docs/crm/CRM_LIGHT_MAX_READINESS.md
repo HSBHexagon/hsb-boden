@@ -43,7 +43,7 @@ Use this exact column order for all paste/import operations into "HSB CRM Light"
 | 24 | Opt-in-Status | enum | **Default: `unknown`** |
 | 25 | Opt-out-Status | enum | **Default: `unknown`** |
 | 26 | Versandfreigabe | enum | **Default: `no`** |
-| 27 | Verantwortlicher | string | Joel / JORDIE |
+| 27 | Verantwortlicher | string | Joel / JORDI |
 | 28 | Notizen | text | Free text |
 
 **Telephone fields must always be stored as text** — never as numbers. This preserves
@@ -232,7 +232,7 @@ This CRM remains `template-ready-awaiting-lead-data` until real data arrives.
 - Schema source: `CRM_LIGHT_SCHEMA.md`
 - Import checklist: `docs/launch/LEAD_IMPORT_5000_CHECKLIST.md`
 - Compliance gate: `docs/launch/PHASE_7_COMPLIANCE_GATE.md`
-- Operator handoff: `docs/handoff/JOEL_JORDIE_OPERATOR_RUNBOOK.md`
+- Operator handoff: `docs/handoff/JOEL_JORDI_OPERATOR_RUNBOOK.md`
 - Daily operator workflow: `docs/crm/CRM_LIGHT_OPERATOR_READINESS.md`
 - Automation blueprints: `docs/automation/N8N_APPS_SCRIPT_SAFE_AUTOMATION_READINESS.md`
 - Master go-live checklist: `docs/launch/PRE_DNS_GO_LIVE_MAX_CHECKLIST.md`

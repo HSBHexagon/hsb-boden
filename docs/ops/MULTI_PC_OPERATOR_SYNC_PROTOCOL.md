@@ -3,7 +3,7 @@
 Status: `protocol-documented-single-operator-active`
 Stand: 2026-06-26 | New doc — final pre-go-live documentation wave.
 
-This document defines how Joel, JORDIE, and any future operator keep the project in
+This document defines how Joel, JORDI, and any future operator keep the project in
 sync when working across multiple machines or as a team.
 
 ---
@@ -13,7 +13,7 @@ sync when working across multiple machines or as a team.
 | Operator | Role | Machines |
 |----------|------|---------|
 | Joel Cherino Diaz | Primary — repo, deploy, CRM, outreach | Primary Mac (canonical dev machine) |
-| JORDIE Post | Secondary — outreach only via own flyer variant | Own device — no repo access required |
+| JORDI Post | Secondary — outreach only via own flyer variant | Own device — no repo access required |
 | Future operators | Viewer / CRM-only | TBD |
 
 ---
@@ -23,7 +23,7 @@ sync when working across multiple machines or as a team.
 | Asset | Location | Who Has Write Access |
 |-------|----------|---------------------|
 | Website code | `git@github.com:cherinojoel-lang/hsb-boden` (`main`) | Joel only |
-| CRM-Light | Google Sheets "HSB CRM Light" | Joel (owner), JORDIE (editor if shared) |
+| CRM-Light | Google Sheets "HSB CRM Light" | Joel (owner), JORDI (editor if shared) |
 | Flyer PDFs | `public/` in repo + deployed on Worker | Joel (via git + wrangler) |
 | Outreach templates | `docs/email/EMAIL_DELIVERABILITY_AND_TEMPLATE_READINESS.md` | Joel (via git) |
 | Cloudflare secrets | Cloudflare Dashboard / wrangler | Joel only |
@@ -89,33 +89,33 @@ Docs like `PROJECT_TRUTH.md`, `CHECKPOINT_STATE.json`, session logs:
 
 ---
 
-## JORDIE — Operator Protocol (No Repo Access Required)
+## JORDI — Operator Protocol (No Repo Access Required)
 
-JORDIE's operational surface is:
-1. Own flyer: `HSB-Flyer-Jordie-Post.pdf` — provided by Joel via file share
-2. CRM-Light: Google Sheets — if Joel shares the sheet with JORDIE's email
-3. Outreach from JORDIE's own email account (not `j-cherino@hsb-boden.de`)
+JORDI's operational surface is:
+1. Own flyer: `HSB-Flyer-Jordi-Post.pdf` — provided by Joel via file share
+2. CRM-Light: Google Sheets — if Joel shares the sheet with JORDI's email
+3. Outreach from JORDI's own email account (not `j-cherino@hsb-boden.de`)
 
-### JORDIE CRM Workflow
+### JORDI CRM Workflow
 
-1. JORDIE logs all own contacts directly in CRM-Light (if sheet access granted)
-2. JORDIE sets `Verantwortlicher = JORDIE` on rows owned by JORDIE
-3. JORDIE never sets `Versandfreigabe = yes` unilaterally — joint approval required
-4. JORDIE reports new qualified leads to Joel for tier review
+1. JORDI logs all own contacts directly in CRM-Light (if sheet access granted)
+2. JORDI sets `Verantwortlicher = JORDI` on rows owned by JORDI
+3. JORDI never sets `Versandfreigabe = yes` unilaterally — joint approval required
+4. JORDI reports new qualified leads to Joel for tier review
 
-### JORDIE Flyer Distribution
+### JORDI Flyer Distribution
 
-JORDIE's flyer production URL (after DNS switch):
+JORDI's flyer production URL (after DNS switch):
 ```
-https://hsb-boden.de/HSB-Flyer-Jordie-Post.pdf
-```
-
-Linked in JORDIE's outreach emails with UTM:
-```
-https://hsb-boden.de/HSB-Flyer-Jordie-Post.pdf?utm_source=email&utm_medium=outreach&utm_campaign=kaltakquise-2026-q3&utm_content=jordie-flyer
+https://hsb-boden.de/HSB-Flyer-Jordi-Post.pdf
 ```
 
-Workers.dev URL is for testing only. JORDIE must not use it in any external communication.
+Linked in JORDI's outreach emails with UTM:
+```
+https://hsb-boden.de/HSB-Flyer-Jordi-Post.pdf?utm_source=email&utm_medium=outreach&utm_campaign=kaltakquise-2026-q3&utm_content=jordi-flyer
+```
+
+Workers.dev URL is for testing only. JORDI must not use it in any external communication.
 
 ---
 
@@ -140,9 +140,9 @@ If a third operator joins:
 | Event | Who | Action |
 |-------|-----|--------|
 | New web form lead | Apps Script → CRM row | Joel reviews next morning |
-| JORDIE contacts a lead | JORDIE | Log immediately in CRM (same day) |
+| JORDI contacts a lead | JORDI | Log immediately in CRM (same day) |
 | DNS switch pending | Domain registrar notification → Joel | Joel initiates cutover per `docs/PHASE_C_CUTOVER_RUNBOOK.md` |
-| Lead qualifies for offer | Joel + JORDIE | Joint review call before proposal |
+| Lead qualifies for offer | Joel + JORDI | Joint review call before proposal |
 | Deploy needed | Joel | Solo decision + wrangler deploy |
 
 No async batch updates. CRM must be updated same day as contact attempt.
@@ -187,8 +187,8 @@ npx wrangler deployments list --name hsb-boden  # verify current state
 wrangler deploy --name hsb-boden --var ENVIRONMENT:production
 ```
 
-JORDIE and future operators never run wrangler deploy.
-If JORDIE identifies a website bug, report to Joel → Joel fixes via PR → Joel deploys.
+JORDI and future operators never run wrangler deploy.
+If JORDI identifies a website bug, report to Joel → Joel fixes via PR → Joel deploys.
 
 ---
 
@@ -211,6 +211,6 @@ Full rollback plan: `docs/cloudflare/CLOUDFLARE_PROVIDER_MAX_READINESS.md` → R
 ## Stop Conditions
 
 - No deploy from any machine other than Joel's canonical dev machine without explicit approval
-- No CRM write access granted to JORDIE without explicit share decision from Joel
+- No CRM write access granted to JORDI without explicit share decision from Joel
 - No GitHub collaborator added without explicit approval
 - No Cloudflare sub-account or API token shared with third parties

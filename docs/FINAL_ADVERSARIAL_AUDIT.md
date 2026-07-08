@@ -61,5 +61,5 @@ No internally completable task remains after adversarial verification.
 
 ## Resume rule
 
-Use `docs/handoff/JOEL_JORDIE_OPERATOR_RUNBOOK.md` → `docs/FINAL_OPERATOR_HANDOFF.md`.
+Use `docs/handoff/JOEL_JORDI_OPERATOR_RUNBOOK.md` → `docs/FINAL_OPERATOR_HANDOFF.md`.
 If neither external input exists, stop.

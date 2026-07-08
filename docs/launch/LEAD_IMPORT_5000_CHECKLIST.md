@@ -62,7 +62,8 @@ Use `CRM_LIGHT_SCHEMA.md` as the source of truth and keep this column order for 
 25. `Opt-out-Status`
 26. `Versandfreigabe`
 27. `Verantwortlicher`
-28. `Notizen`
+28. `Flyer-Anhang`
+29. `Notizen`
 
 ## Fields allowed blank at import time
 
@@ -89,6 +90,7 @@ Dispatch remains blocked if any of these are missing, unknown, or unclear:
 - `Opt-out-Status`
 - `Versandfreigabe`
 - `Verantwortlicher`
+- `Flyer-Anhang`
 
 ## Required defaults
 
@@ -97,7 +99,29 @@ Dispatch remains blocked if any of these are missing, unknown, or unclear:
 - `Versandfreigabe` defaults to `no`
 - `Opt-out-Status` defaults to `unknown`
 - `Opt-in-Status` defaults to `unknown`
+- `Verantwortlicher` is assigned during the split: `Joel Cherino Diaz` or `Jordi Post`
+- `Flyer-Anhang` follows the assigned person:
+  - `Joel Cherino Diaz` -> `public/HSB-Flyer-Joel-Cherino.pdf`
+  - `Jordi Post` -> `public/HSB-Flyer-Jordi-Post.pdf`
 - phone fields must be stored and formatted as text
+
+## Two-person split rule
+
+When the real Excel lead files are provided:
+
+- Deduplicate and normalize first.
+- Split the cleaned usable leads into two working files.
+- Target split: 2,500 rows for `Joel Cherino Diaz` and 2,500 rows for `Jordi Post`.
+- If the usable row count is not exactly 5,000, split as evenly as possible and document the counts.
+- Every row in Joel's file gets:
+  - `Verantwortlicher = Joel Cherino Diaz`
+  - `Flyer-Anhang = public/HSB-Flyer-Joel-Cherino.pdf`
+- Every row in Jordi's file gets:
+  - `Verantwortlicher = Jordi Post`
+  - `Flyer-Anhang = public/HSB-Flyer-Jordi-Post.pdf`
+- The generic file `public/HSB-Flyer-Geschaeftsfuehrer.pdf` is retained as fallback material, not the default for the two-person split.
+- `Versandfreigabe` remains `no` in both files.
+- No email send, automation, Gmail API action, Apps Script dispatch, or n8n workflow is triggered by this split.
 
 ## Lead-ID rule
 

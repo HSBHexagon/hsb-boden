@@ -6,7 +6,7 @@ Stand: 2026-06-12 · QA-Skill: `hsb-digital-flyer-design-review`
 | Datei | Status |
 |---|---|
 | `public/HSB-Flyer-Joel-Cherino.pdf` | **253679 Bytes**, **2 Seiten** ✓ |
-| `public/HSB-Flyer-Jordie-Post.pdf` | **253428 Bytes**, **2 Seiten** ✓ |
+| `public/HSB-Flyer-Jordi-Post.pdf` | **253428 Bytes**, **2 Seiten** ✓ |
 | `public/HSB-Flyer-Geschaeftsfuehrer.pdf` | **253428 Bytes**, **2 Seiten** ✓ |
 | `flyer.html` / `flyer.css` / `render-flyer.mjs` | erstellt ✓ |
 | `akquise-email.md` (Hauptmail) | erstellt ✓ |

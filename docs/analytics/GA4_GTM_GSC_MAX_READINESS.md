@@ -105,7 +105,7 @@ Any changes to consent logic require separate code approval and rebuild.
 - SEO baseline: `SEO_GO_LIVE_CHECKLIST.md`
 - Technical architecture: `docs/ARCHITECTURE.md`
 - Cutover runbook: `docs/PHASE_C_CUTOVER_RUNBOOK.md`
-- Operator handoff: `docs/handoff/JOEL_JORDIE_OPERATOR_RUNBOOK.md`
+- Operator handoff: `docs/handoff/JOEL_JORDI_OPERATOR_RUNBOOK.md`
 - Event tracking plan (detailed): `docs/analytics/GA4_GSC_EVENT_TRACKING_READINESS.md`
 - UTM and QR matrix: `docs/assets/UTM_QR_DOWNLOAD_MATRIX.md`
 - Master go-live checklist: `docs/launch/PRE_DNS_GO_LIVE_MAX_CHECKLIST.md`

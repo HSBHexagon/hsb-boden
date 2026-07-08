@@ -50,7 +50,7 @@ Events must be measured without PII in event parameters.
 |------------|---------|------------|
 | `phone_click` | User clicks a `tel:` link | `phone_number`: omit PII — use placeholder `"contact"` |
 | `email_click` | User clicks a `mailto:` link | `email_label: "info" | "outreach"` (never the actual address) |
-| `pdf_download` | User clicks a PDF flyer link | `file_name: "HSB-Flyer-Joel-Cherino.pdf" | "HSB-Flyer-Jordie-Post.pdf" | "HSB-Flyer-Geschaeftsfuehrer.pdf"`, `link_text` |
+| `pdf_download` | User clicks a PDF flyer link | `file_name: "HSB-Flyer-Joel-Cherino.pdf" | "HSB-Flyer-Jordi-Post.pdf" | "HSB-Flyer-Geschaeftsfuehrer.pdf"`, `link_text` |
 | `scroll_depth` | User scrolls 25%, 50%, 75%, 90% of page | `percent_scrolled: 25 | 50 | 75 | 90` |
 | `outbound_click` | User clicks any external link | `outbound_domain`, `link_text` |
 

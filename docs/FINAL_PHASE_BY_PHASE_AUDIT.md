@@ -93,7 +93,7 @@
 
 ## Canonical readiness stack (current)
 
-See `docs/handoff/JOEL_JORDIE_OPERATOR_RUNBOOK.md` for the full operator view.
+See `docs/handoff/JOEL_JORDI_OPERATOR_RUNBOOK.md` for the full operator view.
 
 - Cloudflare: `docs/cloudflare/CLOUDFLARE_PROVIDER_MAX_READINESS.md`
 - Email: `docs/email/EMAIL_ROUTING_AND_DELIVERABILITY_MAX_READINESS.md`

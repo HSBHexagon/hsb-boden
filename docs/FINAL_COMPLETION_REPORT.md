@@ -29,7 +29,7 @@
 - `docs/assets/ASSET_PACKAGE_AND_PUBLIC_DOWNLOAD_MAX_READINESS.md`
 - `docs/crm/CRM_LIGHT_MAX_READINESS.md`
 - `docs/automation/STATUS_UPDATE_AUTOMATION_BLUEPRINT.md`
-- `docs/handoff/JOEL_JORDIE_OPERATOR_RUNBOOK.md`
+- `docs/handoff/JOEL_JORDI_OPERATOR_RUNBOOK.md`
 
 ## Remaining external inputs
 1. DNS/NS transfer for `hsb-boden.de`
@@ -55,7 +55,7 @@ Start with:
 1. `docs/FINAL_OPERATOR_HANDOFF.md`
 2. `PROJECT_TRUTH.md`
 3. `CHECKPOINT_STATE.json`
-4. `docs/handoff/JOEL_JORDIE_OPERATOR_RUNBOOK.md`
+4. `docs/handoff/JOEL_JORDI_OPERATOR_RUNBOOK.md`
 5. `docs/cloudflare/CLOUDFLARE_PROVIDER_MAX_READINESS.md`
 6. `docs/FINAL_ADVERSARIAL_AUDIT.md`
 7. `docs/FINAL_PHASE_BY_PHASE_AUDIT.md`

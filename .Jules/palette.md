@@ -1,0 +1,3 @@
+## 2024-05-18 - Visual Required Indicators & Focus Outlines
+**Learning:** React lead forms in this project were relying exclusively on native HTML5 `required` attributes. While screen readers announce "required", sighted users lacked visual indication (asterisk) of mandatory fields. Additionally, default browser focus rings were insufficient for keyboard navigators and sometimes stripped by Tailwind resets.
+**Action:** Always add visual indicators (`<span aria-hidden="true" className="text-hsb-red">*</span>`) to labels of required fields, and explicitly apply Tailwind `focus-visible:ring-1 focus-visible:ring-hsb-red focus-visible:outline-none` classes to interactive elements.

@@ -226,7 +226,12 @@ export function LeadForm() {
               className="flex items-center gap-2 text-sm text-hsb-steel"
               key={option}
             >
-              <input type="checkbox" name="loads" value={option} className="focus-visible:ring-1 focus-visible:ring-hsb-red focus-visible:outline-none" />
+              <input
+                type="checkbox"
+                name="loads"
+                value={option}
+                className="focus-visible:ring-1 focus-visible:ring-hsb-red focus-visible:outline-none"
+              />
               {option}
             </label>
           ))}

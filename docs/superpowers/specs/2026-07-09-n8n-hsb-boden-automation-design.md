@@ -6,7 +6,7 @@ Stand: 2026-07-09. Status: abgeschlossen als Referenzimplementierung (siehe Absc
 
 Am 2026-06-22 wurde n8n für HSB-Boden explizit verworfen (`N8N_HOSTING_DECISION.md` §9b), weil n8n Cloud ein laufendes Abo bedeutet hätte ("die nehmen, die gratis ist und bleibt"). Ersatz war eine kostenlose Google Apps Script Web App, die seither produktiv läuft (`/api/lead` → Apps Script → CRM-Sheet). `CRM_LIGHT_SCHEMA.md` hält fest: *"n8n ist nicht die aktive Lead-Intake-Lösung."*
 
-Am selben Tag (2026-07-09) wurde in einer separaten Session eine **lokale, self-hosted n8n-Instanz** für ein anderes Projekt (Schuldenmanagement/SCMS, `~/KI-System/notion-platform`) vollständig eingerichtet und verifiziert: Outlook-, Google-Drive-, Notion- und OpenAI-Credentials verbunden, Workflow `SCMS-01` lauffähig. Diese Instanz ist self-hosted und kostenlos (Docker, kein Abo) — der ursprüngliche Kosteneinwand gegen n8n bei HSB-Boden entfällt damit grundsätzlich.
+Am selben Tag (2026-07-09) wurde in einer separaten Session eine **lokale, self-hosted n8n-Instanz** für ein anderes Projekt (SMV2026 — Schuldenmanagement & Vollstreckung 2026, `~/KI-System/notion-platform`) vollständig eingerichtet und verifiziert: Outlook-, Google-Drive-, Notion- und OpenAI-Credentials verbunden, Workflow `SCMS-01` lauffähig (das ist der tatsächliche n8n-interne Workflow-Name; "SCMS" bezeichnet hier laut `SCMS_TERMINOLOGY_DECISION_2026-07-09.md` das globale Governance-Framework, nicht das SMV2026-Projekt — der Workflow-Name selbst wurde nicht geändert). Diese Instanz ist self-hosted und kostenlos (Docker, kein Abo) — der ursprüngliche Kosteneinwand gegen n8n bei HSB-Boden entfällt damit grundsätzlich.
 
 **Nutzerentscheidung dieser Session:** Die alte n8n-Ablehnung für HSB-Boden wird revidiert. n8n übernimmt die in `N8N_AUTOMATION_PLAN.md` beschriebenen Pipelines 2–5 (Dedupe/Scoring, Follow-up-Reminder, Tagesreport, Neu-Lead-Benachrichtigung) zusätzlich zum bestehenden Formularpfad, in einer eigenen, von allen bestehenden n8n-Instanzen getrennten Umgebung.
 
@@ -40,7 +40,7 @@ Diese Regeln wurden in dieser Session verbindlich vereinbart. Sie gelten für al
 
 | Instanz | Zweck | Ort | Port | Status |
 |---|---|---|---|---|
-| B: SCMS/Schuldenmanagement | Outlook/GDrive/Notion/OpenAI, `SCMS-01`-Workflow | `~/KI-System/notion-platform/workers/local-stub/` | 5678 | läuft, unangetastet |
+| B: SMV2026 | Outlook/GDrive/Notion/OpenAI, `SCMS-01`-Workflow (Workflow-Eigenname, siehe Terminologie-Hinweis oben) | `~/KI-System/notion-platform/workers/local-stub/` | 5678 | läuft, unangetastet |
 | A: KI-OS Task-Capture | Obsidian-Brain-Automation | `~/KI-System/04_Developer/n8n-ki-os/` | — | dormant, unangetastet |
 | C: HSB-Boden (neu) | Lead-Dedupe/Scoring, Follow-ups, Reports, Benachrichtigung | `~/KI-System/04_Developer/n8n-hsb-boden/` (Laufzeit) + `hsb-boden/ops/n8n/` (Workflow-Exporte, Doku) | 5679 | neu aufzusetzen |
 

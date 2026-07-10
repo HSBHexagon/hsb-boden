@@ -8,59 +8,39 @@ const benefits = [
 ---
 
 <section class="section border-b border-hsb-line bg-hsb-black text-white" id="digitale-bestandsaufnahme">
-  <div class="container grid gap-12 lg:grid-cols-[1.05fr_0.95fr] lg:items-center lg:gap-16">
-    <div class="grid gap-4 sm:grid-cols-[1.1fr_0.9fr]">
-      <figure class="overflow-hidden rounded-[4px] border border-white/10 bg-white/5">
-        <div class="aspect-[3/4] overflow-hidden">
-          <img
-            src="/media/hsb/projekte/3d-scan/3d-scan-halle-uebersicht.webp"
-            alt="Produktionshalle mit mehreren Referenzkugeln und Messgerät für eine digitale Bestandsaufnahme"
-            class="h-full w-full object-cover object-center"
-            loading="lazy"
-            decoding="async"
-            width="960"
-            height="1280"
-          />
-        </div>
-        <figcaption class="px-5 py-4 text-xs leading-5 text-white/60">
-          Messaufbau mit mehreren Positionen und Referenzpunkten in einer Produktionshalle.
-        </figcaption>
-      </figure>
-
-      <div class="grid gap-4">
-        <figure class="overflow-hidden rounded-[4px] border border-white/10 bg-white/5">
-          <video
-            class="aspect-[9/16] h-auto w-full bg-black object-cover"
-            controls
-            muted
-            playsinline
-            preload="metadata"
-            poster="/media/hsb/projekte/3d-scan/3d-scan-halle-poster.webp"
-            aria-label="Kurzer Einblick in die digitale Aufnahme einer Produktionshalle"
-          >
-            <source src="/media/hsb/projekte/3d-scan/3d-scan-halle.mp4" type="video/mp4" />
-            Ihr Browser unterstützt die Videowiedergabe nicht.
-          </video>
-          <figcaption class="px-4 py-3 text-xs leading-5 text-white/60">
-            Kurzer Einblick in den Aufnahmeprozess vor Ort.
-          </figcaption>
-        </figure>
-
-        <figure class="overflow-hidden rounded-[4px] border border-white/10 bg-white/5">
-          <div class="aspect-[4/3] overflow-hidden">
-            <img
-              src="/media/hsb/projekte/3d-scan/3d-scanner-detail.webp"
-              alt="Messgerät auf einem Stativ während der digitalen Aufnahme einer Industriehalle"
-              class="h-full w-full object-cover object-center"
-              loading="lazy"
-              decoding="async"
-              width="720"
-              height="1016"
-            />
-          </div>
-        </figure>
+  <div class="container grid gap-12 lg:grid-cols-[0.92fr_1.08fr] lg:items-center lg:gap-16">
+    <figure class="relative mx-auto w-full max-w-xl overflow-hidden rounded-[4px] border border-white/10 bg-white/5 shadow-industrial">
+      <div class="aspect-[4/3] overflow-hidden">
+        <img
+          src="/media/hsb/current/industrieboden-baustelle.webp"
+          alt="Industrieboden-Baustelle in einer Produktionshalle als Ausgangspunkt der technischen Bestandsaufnahme"
+          class="h-full w-full object-cover object-center opacity-70"
+          loading="lazy"
+          decoding="async"
+          width="1024"
+          height="768"
+        />
       </div>
-    </div>
+      <div class="absolute inset-0 bg-gradient-to-t from-black via-black/10 to-transparent"></div>
+      <div class="absolute bottom-5 right-5 w-[42%] overflow-hidden rounded-[3px] border border-white/20 bg-black shadow-2xl sm:bottom-7 sm:right-7">
+        <img
+          src="/media/hsb/projekte/3d-scan/3d-scan-halle-uebersicht.webp"
+          alt="Produktionshalle mit Referenzkugeln und Messgerät für die digitale Bestandsaufnahme"
+          class="aspect-[3/4] h-auto w-full object-cover"
+          loading="lazy"
+          decoding="async"
+          width="240"
+          height="320"
+        />
+        <figcaption class="border-t border-white/10 px-3 py-2 text-[0.62rem] font-bold uppercase tracking-[0.12em] text-white/65">
+          Messaufbau vor Ort
+        </figcaption>
+      </div>
+      <div class="absolute bottom-6 left-6 max-w-[52%] sm:bottom-8 sm:left-8">
+        <p class="text-xs font-black uppercase tracking-[0.16em] text-hsb-red-light">Bestand digital erfassen</p>
+        <p class="mt-2 text-sm leading-6 text-white/70">Mehrere Messpositionen werden zu einer gemeinsamen Planungsgrundlage zusammengeführt.</p>
+      </div>
+    </figure>
 
     <div>
       <p class="eyebrow-light mb-5">Digitale Bestandsaufnahme</p>

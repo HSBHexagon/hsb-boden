@@ -75,32 +75,32 @@ export function LeadForm() {
 
       <div className="grid gap-4 sm:grid-cols-2">
         <label className="grid gap-2 text-sm font-bold">
-          Vorname
-          <input required name="firstName" className="rounded border border-hsb-line px-3 py-3 font-normal" />
+          <span>Vorname <span className="text-hsb-red" aria-hidden="true">*</span></span>
+          <input required name="firstName" className="focus-visible:ring-1 focus-visible:ring-hsb-red focus-visible:outline-none rounded border border-hsb-line px-3 py-3 font-normal" />
         </label>
         <label className="grid gap-2 text-sm font-bold">
-          Nachname
-          <input required name="lastName" className="rounded border border-hsb-line px-3 py-3 font-normal" />
+          <span>Nachname <span className="text-hsb-red" aria-hidden="true">*</span></span>
+          <input required name="lastName" className="focus-visible:ring-1 focus-visible:ring-hsb-red focus-visible:outline-none rounded border border-hsb-line px-3 py-3 font-normal" />
         </label>
       </div>
       <label className="grid gap-2 text-sm font-bold">
-        Firma
-        <input required name="company" className="rounded border border-hsb-line px-3 py-3 font-normal" />
+        <span>Firma <span className="text-hsb-red" aria-hidden="true">*</span></span>
+        <input required name="company" className="focus-visible:ring-1 focus-visible:ring-hsb-red focus-visible:outline-none rounded border border-hsb-line px-3 py-3 font-normal" />
       </label>
       <div className="grid gap-4 sm:grid-cols-2">
         <label className="grid gap-2 text-sm font-bold">
-          E-Mail
-          <input required type="email" name="email" className="rounded border border-hsb-line px-3 py-3 font-normal" />
+          <span>E-Mail <span className="text-hsb-red" aria-hidden="true">*</span></span>
+          <input required type="email" name="email" className="focus-visible:ring-1 focus-visible:ring-hsb-red focus-visible:outline-none rounded border border-hsb-line px-3 py-3 font-normal" />
         </label>
         <label className="grid gap-2 text-sm font-bold">
-          Telefon
-          <input required type="tel" name="phone" className="rounded border border-hsb-line px-3 py-3 font-normal" />
+          <span>Telefon <span className="text-hsb-red" aria-hidden="true">*</span></span>
+          <input required type="tel" name="phone" className="focus-visible:ring-1 focus-visible:ring-hsb-red focus-visible:outline-none rounded border border-hsb-line px-3 py-3 font-normal" />
         </label>
       </div>
       <div className="grid gap-4 sm:grid-cols-2">
         <label className="grid gap-2 text-sm font-bold">
-          Branche
-          <select required name="industry" className="rounded border border-hsb-line px-3 py-3 font-normal">
+          <span>Branche <span className="text-hsb-red" aria-hidden="true">*</span></span>
+          <select required name="industry" className="focus-visible:ring-1 focus-visible:ring-hsb-red focus-visible:outline-none rounded border border-hsb-line px-3 py-3 font-normal">
             <option value="">Bitte wählen</option>
             <option value="lebensmittelindustrie">Lebensmittelindustrie</option>
             <option value="molkerei">Molkerei</option>
@@ -112,8 +112,8 @@ export function LeadForm() {
           </select>
         </label>
         <label className="grid gap-2 text-sm font-bold">
-          Projektart
-          <select required name="projectType" className="rounded border border-hsb-line px-3 py-3 font-normal">
+          <span>Projektart <span className="text-hsb-red" aria-hidden="true">*</span></span>
+          <select required name="projectType" className="focus-visible:ring-1 focus-visible:ring-hsb-red focus-visible:outline-none rounded border border-hsb-line px-3 py-3 font-normal">
             <option value="">Bitte wählen</option>
             <option value="neubau">Neubau</option>
             <option value="sanierung">Sanierung</option>
@@ -124,11 +124,11 @@ export function LeadForm() {
       <div className="grid gap-4 sm:grid-cols-2">
         <label className="grid gap-2 text-sm font-bold">
           Fläche in m²
-          <input name="areaSize" className="rounded border border-hsb-line px-3 py-3 font-normal" />
+          <input name="areaSize" className="focus-visible:ring-1 focus-visible:ring-hsb-red focus-visible:outline-none rounded border border-hsb-line px-3 py-3 font-normal" />
         </label>
         <label className="grid gap-2 text-sm font-bold">
-          Laufender Betrieb
-          <select required name="liveOperation" className="rounded border border-hsb-line px-3 py-3 font-normal">
+          <span>Laufender Betrieb <span className="text-hsb-red" aria-hidden="true">*</span></span>
+          <select required name="liveOperation" className="focus-visible:ring-1 focus-visible:ring-hsb-red focus-visible:outline-none rounded border border-hsb-line px-3 py-3 font-normal">
             <option value="">Bitte wählen</option>
             <option value="ja">Ja</option>
             <option value="nein">Nein</option>
@@ -141,19 +141,19 @@ export function LeadForm() {
         <div className="grid gap-2 sm:grid-cols-2">
           {loadOptions.map((option) => (
             <label className="flex items-center gap-2 text-sm text-hsb-steel" key={option}>
-              <input type="checkbox" name="loads" value={option} />
+              <input type="checkbox" name="loads" value={option} className="focus-visible:ring-1 focus-visible:ring-hsb-red focus-visible:outline-none" />
               {option}
             </label>
           ))}
         </div>
       </fieldset>
       <label className="grid gap-2 text-sm font-bold">
-        Nachricht
-        <textarea required name="message" rows={5} className="rounded border border-hsb-line px-3 py-3 font-normal" />
+        <span>Nachricht <span className="text-hsb-red" aria-hidden="true">*</span></span>
+        <textarea required name="message" rows={5} className="focus-visible:ring-1 focus-visible:ring-hsb-red focus-visible:outline-none rounded border border-hsb-line px-3 py-3 font-normal" />
       </label>
       <label className="flex items-start gap-3 text-sm leading-6 text-hsb-steel">
-        <input required type="checkbox" name="privacyConsent" className="mt-1" />
-        Ich stimme zu, dass meine Angaben zur Bearbeitung der Anfrage verarbeitet werden.
+        <input required type="checkbox" name="privacyConsent" className="focus-visible:ring-1 focus-visible:ring-hsb-red focus-visible:outline-none mt-1" />
+        <span>Ich stimme zu, dass meine Angaben zur Bearbeitung der Anfrage verarbeitet werden. <span className="text-hsb-red" aria-hidden="true">*</span></span>
       </label>
 
       {status === "error" ? (

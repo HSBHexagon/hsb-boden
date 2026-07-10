@@ -1,0 +1,3 @@
+## 2026-07-10 - Explicit required indicators and focus-visible states
+**Learning:** In this application, forms using HTML5 `required` attributes did not have clear visual indicators for sighted users, which impacts accessibility. Additionally, native focus outlines are either insufficient or stripped away.
+**Action:** Always add explicit visual indicators (like `<span aria-hidden="true">*</span>`) to labels of required fields, and explicitly set Tailwind `focus-visible` classes (e.g., `focus-visible:ring-1 focus-visible:ring-hsb-red focus-visible:outline-none`) on interactive elements to ensure clear keyboard navigation visibility.

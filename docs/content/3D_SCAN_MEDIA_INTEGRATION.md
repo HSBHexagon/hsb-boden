@@ -4,22 +4,29 @@
 
 Die Startseite erhält einen eigenständigen Trust-/Prozessabschnitt zur digitalen Bestandsaufnahme vor der Industriebodenausführung. Die Darstellung bleibt bewusst neutral und vermeidet unbelegte Aussagen zu Eigentum, Partnerstatus, Messgenauigkeit oder Normkonformität.
 
-## Öffentliche Assets
+## In diesem Branch veröffentlicht
 
 | Repo-Pfad | Quelle | Verwendung |
 |---|---|---|
-| `public/media/hsb/projekte/3d-scan/3d-scan-halle-uebersicht.webp` | Foto `297597.jpg` | Hallenübersicht mit Messaufbau und Referenzpunkten |
-| `public/media/hsb/projekte/3d-scan/3d-scanner-detail.webp` | zugeschnittener Ausschnitt aus `297598.jpg` | Detailansicht des Messgeräts |
-| `public/media/hsb/projekte/3d-scan/3d-scan-halle-poster.webp` | Standbild aus `297599.mp4` | Video-Poster |
-| `public/media/hsb/projekte/3d-scan/3d-scan-halle.mp4` | weboptimierte Fassung von `297599.mp4` | 17-Sekunden-Prozessvideo, H.264, 540 × 960, ohne Ton |
+| `public/media/hsb/projekte/3d-scan/3d-scan-halle-uebersicht.webp` | Foto `297597.jpg` | Kompakte Hallenübersicht mit Messaufbau und Referenzpunkten |
+
+Der neue Startseitenabschnitt kombiniert dieses Scanmotiv mit einem bereits vorhandenen Baustellenbild. Dadurch bleibt die Änderung klein, performant und ohne fehlende Medienreferenzen.
+
+## Lokal vorbereitet, noch nicht veröffentlicht
+
+- optimiertes Detailbild aus `297598.jpg`
+- Posterbild aus `297599.mp4`
+- weboptimierte H.264-Fassung des rund 17 Sekunden langen Hochkantvideos
+
+Diese Dateien bleiben zunächst außerhalb des Repositories, bis Medienfreigabe, sichtbarer KAGETEC-Schriftzug, erkennbare Personen und mögliche Projektdetails geprüft wurden.
 
 ## Technische Entscheidungen
 
-- Video wird nicht automatisch abgespielt.
-- `controls`, `muted`, `playsinline` und `preload="metadata"` sind gesetzt.
-- Die MP4-Datei ist etwa 1,4 MiB groß und liegt deutlich unter dem Cloudflare-Pages-Limit von 25 MiB je Asset.
+- Kein Autoplay und keine zusätzliche JavaScript-Logik.
 - Kein Cloudflare Stream oder R2 für ein einzelnes kurzes Video. Ein Wechsel ist erst bei einer wachsenden Videobibliothek sinnvoll.
+- Das veröffentlichte WebP liegt deutlich unter dem Cloudflare-Pages-Limit von 25 MiB je Asset.
 - Keine neue Dependency und keine Cloudflare-Konfigurationsänderung.
+- Production bleibt unverändert; die Änderung läuft ausschließlich über Branch, Pull Request und Pages-Preview.
 
 ## Claim-Grenzen
 
@@ -35,7 +42,8 @@ Ohne gesonderten Nachweis nicht veröffentlichen:
 ## Vor Production-Merge prüfen
 
 - Medienfreigabe des Auftraggebers beziehungsweise Rechteinhabers
-- Verwendung des sichtbaren KAGETEC-Schriftzugs am Gerät
+- Verwendung des sichtbaren KAGETEC-Schriftzugs
 - keine vertraulichen Anlagen-, Standort- oder Produktionsdetails
-- keine identifizierbaren Personen in den veröffentlichten Sequenzen
+- keine identifizierbaren Personen in veröffentlichten Sequenzen
 - Darstellung auf Desktop und Mobilgerät
+- Entscheidung, ob Detailbild und Video später im selben Abschnitt ergänzt werden

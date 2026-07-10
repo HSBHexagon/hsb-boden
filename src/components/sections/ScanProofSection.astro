@@ -1,0 +1,90 @@
+---
+const benefits = [
+  "Zusammenhängende Bestandsaufnahme statt einzelner Stichpunkte",
+  "Planungsgrundlage für Gefälle, Entwässerung und Anschlüsse",
+  "Übergänge und mögliche Konfliktstellen früher erkennen",
+  "Nachvollziehbare Dokumentation für Planung und Bauabschnitte",
+];
+---
+
+<section class="section border-b border-hsb-line bg-hsb-black text-white" id="digitale-bestandsaufnahme">
+  <div class="container grid gap-12 lg:grid-cols-[1.05fr_0.95fr] lg:items-center lg:gap-16">
+    <div class="grid gap-4 sm:grid-cols-[1.1fr_0.9fr]">
+      <figure class="overflow-hidden rounded-[4px] border border-white/10 bg-white/5">
+        <div class="aspect-[3/4] overflow-hidden">
+          <img
+            src="/media/hsb/projekte/3d-scan/3d-scan-halle-uebersicht.webp"
+            alt="Produktionshalle mit mehreren Referenzkugeln und Messgerät für eine digitale Bestandsaufnahme"
+            class="h-full w-full object-cover object-center"
+            loading="lazy"
+            decoding="async"
+            width="960"
+            height="1280"
+          />
+        </div>
+        <figcaption class="px-5 py-4 text-xs leading-5 text-white/60">
+          Messaufbau mit mehreren Positionen und Referenzpunkten in einer Produktionshalle.
+        </figcaption>
+      </figure>
+
+      <div class="grid gap-4">
+        <figure class="overflow-hidden rounded-[4px] border border-white/10 bg-white/5">
+          <video
+            class="aspect-[9/16] h-auto w-full bg-black object-cover"
+            controls
+            muted
+            playsinline
+            preload="metadata"
+            poster="/media/hsb/projekte/3d-scan/3d-scan-halle-poster.webp"
+            aria-label="Kurzer Einblick in die digitale Aufnahme einer Produktionshalle"
+          >
+            <source src="/media/hsb/projekte/3d-scan/3d-scan-halle.mp4" type="video/mp4" />
+            Ihr Browser unterstützt die Videowiedergabe nicht.
+          </video>
+          <figcaption class="px-4 py-3 text-xs leading-5 text-white/60">
+            Kurzer Einblick in den Aufnahmeprozess vor Ort.
+          </figcaption>
+        </figure>
+
+        <figure class="overflow-hidden rounded-[4px] border border-white/10 bg-white/5">
+          <div class="aspect-[4/3] overflow-hidden">
+            <img
+              src="/media/hsb/projekte/3d-scan/3d-scanner-detail.webp"
+              alt="Messgerät auf einem Stativ während der digitalen Aufnahme einer Industriehalle"
+              class="h-full w-full object-cover object-center"
+              loading="lazy"
+              decoding="async"
+              width="720"
+              height="1016"
+            />
+          </div>
+        </figure>
+      </div>
+    </div>
+
+    <div>
+      <p class="eyebrow-light mb-5">Digitale Bestandsaufnahme</p>
+      <h2 class="h2 max-w-xl text-white">Gefälle, Höhen und Einbauteile vor der Ausführung präzise erfassen.</h2>
+      <p class="mt-6 max-w-xl text-base leading-8 text-white/70 lg:text-lg">
+        Bei geeigneten Projekten kann die vorhandene Halle per 3D-Laserscan aufgenommen werden. Aus mehreren Messpositionen entsteht eine zusammenhängende digitale Bestandsaufnahme als Grundlage für Gefälle, Entwässerung, Anschlüsse und Bauabschnitte.
+      </p>
+
+      <ul class="mt-8 grid gap-4" aria-label="Vorteile der digitalen Bestandsaufnahme">
+        {benefits.map((benefit) => (
+          <li class="flex items-start gap-4 border-t border-white/10 pt-4 text-sm leading-6 text-white/78">
+            <span class="mt-2 size-2 shrink-0 bg-hsb-red" aria-hidden="true"></span>
+            <span>{benefit}</span>
+          </li>
+        ))}
+      </ul>
+
+      <div class="mt-9 flex flex-wrap items-center gap-4">
+        <a class="button-primary" href="/kontakt/">Technische Bestandsaufnahme anfragen</a>
+        <a class="button-secondary" href="#projektablauf">Projektablauf ansehen</a>
+      </div>
+      <p class="mt-5 max-w-lg text-xs leading-5 text-white/45">
+        Einsatz und Auswertung richten sich nach Projektgröße, Bestandssituation und Planungsanforderung.
+      </p>
+    </div>
+  </div>
+</section>

@@ -46,7 +46,10 @@ export function LeadForm() {
     try {
       const res = await fetch("/api/lead", {
         method: "POST",
-        headers: { "Content-Type": "application/json", Accept: "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
         body: JSON.stringify(payload),
       });
       if (!res.ok) throw new Error(`Status ${res.status}`);
@@ -58,7 +61,11 @@ export function LeadForm() {
   }
 
   return (
-    <form className="surface grid gap-4 p-5" onSubmit={onSubmit} onFocus={onFocus}>
+    <form
+      className="surface grid gap-4 p-5"
+      onSubmit={onSubmit}
+      onFocus={onFocus}
+    >
       {!deliveryConfigured ? (
         <div className="rounded border border-hsb-red/30 bg-hsb-red/5 p-4 text-sm leading-6 text-hsb-black">
           <p className="font-black">Direkter Draht ins Projektgeschäft</p>
@@ -66,54 +73,133 @@ export function LeadForm() {
             Für eine schnelle Ersteinschätzung erreichen Sie HSB direkt:
           </p>
           <p className="mt-2 font-bold">
-            <a className="text-hsb-red hover:underline" href={`tel:${site.phone.replace(/[^+\d]/g, "")}`}>{site.phone}</a>
+            <a
+              className="text-hsb-red hover:underline"
+              href={`tel:${site.phone.replace(/[^+\d]/g, "")}`}
+            >
+              {site.phone}
+            </a>
             <span className="mx-2 text-hsb-line">·</span>
-            <a className="text-hsb-red hover:underline" href={`mailto:${site.email}`}>{site.email}</a>
+            <a
+              className="text-hsb-red hover:underline"
+              href={`mailto:${site.email}`}
+            >
+              {site.email}
+            </a>
           </p>
         </div>
       ) : null}
 
       <div className="grid gap-4 sm:grid-cols-2">
         <label className="grid gap-2 text-sm font-bold">
-          <span>Vorname <span aria-hidden="true" className="text-hsb-red ml-1">*</span></span>
-          <input required name="firstName" className="rounded border border-hsb-line px-3 py-3 font-normal focus-visible:ring-1 focus-visible:ring-hsb-red focus-visible:outline-none" />
+          <span>
+            Vorname{" "}
+            <span aria-hidden="true" className="text-hsb-red ml-1">
+              *
+            </span>
+          </span>
+          <input
+            required
+            name="firstName"
+            className="rounded border border-hsb-line px-3 py-3 font-normal focus-visible:ring-1 focus-visible:ring-hsb-red focus-visible:outline-none"
+          />
         </label>
         <label className="grid gap-2 text-sm font-bold">
-          <span>Nachname <span aria-hidden="true" className="text-hsb-red ml-1">*</span></span>
-          <input required name="lastName" className="rounded border border-hsb-line px-3 py-3 font-normal focus-visible:ring-1 focus-visible:ring-hsb-red focus-visible:outline-none" />
+          <span>
+            Nachname{" "}
+            <span aria-hidden="true" className="text-hsb-red ml-1">
+              *
+            </span>
+          </span>
+          <input
+            required
+            name="lastName"
+            className="rounded border border-hsb-line px-3 py-3 font-normal focus-visible:ring-1 focus-visible:ring-hsb-red focus-visible:outline-none"
+          />
         </label>
       </div>
       <label className="grid gap-2 text-sm font-bold">
-        <span>Firma <span aria-hidden="true" className="text-hsb-red ml-1">*</span></span>
-        <input required name="company" className="rounded border border-hsb-line px-3 py-3 font-normal focus-visible:ring-1 focus-visible:ring-hsb-red focus-visible:outline-none" />
+        <span>
+          Firma{" "}
+          <span aria-hidden="true" className="text-hsb-red ml-1">
+            *
+          </span>
+        </span>
+        <input
+          required
+          name="company"
+          className="rounded border border-hsb-line px-3 py-3 font-normal focus-visible:ring-1 focus-visible:ring-hsb-red focus-visible:outline-none"
+        />
       </label>
       <div className="grid gap-4 sm:grid-cols-2">
         <label className="grid gap-2 text-sm font-bold">
-          <span>E-Mail <span aria-hidden="true" className="text-hsb-red ml-1">*</span></span>
-          <input required type="email" name="email" className="rounded border border-hsb-line px-3 py-3 font-normal focus-visible:ring-1 focus-visible:ring-hsb-red focus-visible:outline-none" />
+          <span>
+            E-Mail{" "}
+            <span aria-hidden="true" className="text-hsb-red ml-1">
+              *
+            </span>
+          </span>
+          <input
+            required
+            type="email"
+            name="email"
+            className="rounded border border-hsb-line px-3 py-3 font-normal focus-visible:ring-1 focus-visible:ring-hsb-red focus-visible:outline-none"
+          />
         </label>
         <label className="grid gap-2 text-sm font-bold">
-          <span>Telefon <span aria-hidden="true" className="text-hsb-red ml-1">*</span></span>
-          <input required type="tel" name="phone" className="rounded border border-hsb-line px-3 py-3 font-normal focus-visible:ring-1 focus-visible:ring-hsb-red focus-visible:outline-none" />
+          <span>
+            Telefon{" "}
+            <span aria-hidden="true" className="text-hsb-red ml-1">
+              *
+            </span>
+          </span>
+          <input
+            required
+            type="tel"
+            name="phone"
+            className="rounded border border-hsb-line px-3 py-3 font-normal focus-visible:ring-1 focus-visible:ring-hsb-red focus-visible:outline-none"
+          />
         </label>
       </div>
       <div className="grid gap-4 sm:grid-cols-2">
         <label className="grid gap-2 text-sm font-bold">
-          <span>Branche <span aria-hidden="true" className="text-hsb-red ml-1">*</span></span>
-          <select required name="industry" className="rounded border border-hsb-line px-3 py-3 font-normal focus-visible:ring-1 focus-visible:ring-hsb-red focus-visible:outline-none">
+          <span>
+            Branche{" "}
+            <span aria-hidden="true" className="text-hsb-red ml-1">
+              *
+            </span>
+          </span>
+          <select
+            required
+            name="industry"
+            className="rounded border border-hsb-line px-3 py-3 font-normal focus-visible:ring-1 focus-visible:ring-hsb-red focus-visible:outline-none"
+          >
             <option value="">Bitte wählen</option>
             <option value="lebensmittelindustrie">Lebensmittelindustrie</option>
             <option value="molkerei">Molkerei</option>
-            <option value="brauerei-getraenkeindustrie">Brauerei/Getränke</option>
+            <option value="brauerei-getraenkeindustrie">
+              Brauerei/Getränke
+            </option>
             <option value="chemieindustrie">Chemie</option>
             <option value="pharmaindustrie">Pharma</option>
-            <option value="backwarenproduktion-grosskueche">Backwaren/Großküche</option>
+            <option value="backwarenproduktion-grosskueche">
+              Backwaren/Großküche
+            </option>
             <option value="sonstige">Sonstige</option>
           </select>
         </label>
         <label className="grid gap-2 text-sm font-bold">
-          <span>Projektart <span aria-hidden="true" className="text-hsb-red ml-1">*</span></span>
-          <select required name="projectType" className="rounded border border-hsb-line px-3 py-3 font-normal focus-visible:ring-1 focus-visible:ring-hsb-red focus-visible:outline-none">
+          <span>
+            Projektart{" "}
+            <span aria-hidden="true" className="text-hsb-red ml-1">
+              *
+            </span>
+          </span>
+          <select
+            required
+            name="projectType"
+            className="rounded border border-hsb-line px-3 py-3 font-normal focus-visible:ring-1 focus-visible:ring-hsb-red focus-visible:outline-none"
+          >
             <option value="">Bitte wählen</option>
             <option value="neubau">Neubau</option>
             <option value="sanierung">Sanierung</option>
@@ -124,11 +210,23 @@ export function LeadForm() {
       <div className="grid gap-4 sm:grid-cols-2">
         <label className="grid gap-2 text-sm font-bold">
           Fläche in m²
-          <input name="areaSize" className="rounded border border-hsb-line px-3 py-3 font-normal focus-visible:ring-1 focus-visible:ring-hsb-red focus-visible:outline-none" />
+          <input
+            name="areaSize"
+            className="rounded border border-hsb-line px-3 py-3 font-normal focus-visible:ring-1 focus-visible:ring-hsb-red focus-visible:outline-none"
+          />
         </label>
         <label className="grid gap-2 text-sm font-bold">
-          <span>Laufender Betrieb <span aria-hidden="true" className="text-hsb-red ml-1">*</span></span>
-          <select required name="liveOperation" className="rounded border border-hsb-line px-3 py-3 font-normal focus-visible:ring-1 focus-visible:ring-hsb-red focus-visible:outline-none">
+          <span>
+            Laufender Betrieb{" "}
+            <span aria-hidden="true" className="text-hsb-red ml-1">
+              *
+            </span>
+          </span>
+          <select
+            required
+            name="liveOperation"
+            className="rounded border border-hsb-line px-3 py-3 font-normal focus-visible:ring-1 focus-visible:ring-hsb-red focus-visible:outline-none"
+          >
             <option value="">Bitte wählen</option>
             <option value="ja">Ja</option>
             <option value="nein">Nein</option>
@@ -140,25 +238,50 @@ export function LeadForm() {
         <legend className="text-sm font-black">Belastungen</legend>
         <div className="grid gap-2 sm:grid-cols-2">
           {loadOptions.map((option) => (
-            <label className="flex items-center gap-2 text-sm text-hsb-steel" key={option}>
-              <input type="checkbox" name="loads" value={option} className="focus-visible:ring-1 focus-visible:ring-hsb-red focus-visible:outline-none" />
+            <label
+              className="flex items-center gap-2 text-sm text-hsb-steel"
+              key={option}
+            >
+              <input
+                type="checkbox"
+                name="loads"
+                value={option}
+                className="focus-visible:ring-1 focus-visible:ring-hsb-red focus-visible:outline-none"
+              />
               {option}
             </label>
           ))}
         </div>
       </fieldset>
       <label className="grid gap-2 text-sm font-bold">
-        <span>Nachricht <span aria-hidden="true" className="text-hsb-red ml-1">*</span></span>
-        <textarea required name="message" rows={5} className="rounded border border-hsb-line px-3 py-3 font-normal focus-visible:ring-1 focus-visible:ring-hsb-red focus-visible:outline-none" />
+        <span>
+          Nachricht{" "}
+          <span aria-hidden="true" className="text-hsb-red ml-1">
+            *
+          </span>
+        </span>
+        <textarea
+          required
+          name="message"
+          rows={5}
+          className="rounded border border-hsb-line px-3 py-3 font-normal focus-visible:ring-1 focus-visible:ring-hsb-red focus-visible:outline-none"
+        />
       </label>
       <label className="flex items-start gap-3 text-sm leading-6 text-hsb-steel">
-        <input required type="checkbox" name="privacyConsent" className="mt-1 focus-visible:ring-1 focus-visible:ring-hsb-red focus-visible:outline-none" />
-        Ich stimme zu, dass meine Angaben zur Bearbeitung der Anfrage verarbeitet werden.
+        <input
+          required
+          type="checkbox"
+          name="privacyConsent"
+          className="mt-1 focus-visible:ring-1 focus-visible:ring-hsb-red focus-visible:outline-none"
+        />
+        Ich stimme zu, dass meine Angaben zur Bearbeitung der Anfrage
+        verarbeitet werden.
       </label>
 
       {status === "error" ? (
         <p className="rounded border border-hsb-red/40 bg-hsb-red/5 px-3 py-2 text-sm text-hsb-red">
-          Senden fehlgeschlagen. Bitte kontaktieren Sie uns direkt unter {site.phone} oder {site.email}.
+          Senden fehlgeschlagen. Bitte kontaktieren Sie uns direkt unter{" "}
+          {site.phone} oder {site.email}.
         </p>
       ) : null}
 

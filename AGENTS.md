@@ -87,7 +87,8 @@ Shared rules for all agents:
   `npm run check`, `npm run build`, `npm run test:run` on push/PR to `main`.
   `security.yml` runs CodeQL, Dependency Review, and secret scanning.
   `lighthouse.yml` runs Lighthouse CI against `.lighthouserc.json` thresholds.
-  `deploy-preview.yml` deploys PR previews to Cloudflare Workers preview env.
+  `deploy-preview.yml` deploys PR previews as Cloudflare Pages preview
+  deployments (project `hsb-boden`, branch-scoped preview URLs).
   `deploy-production.yml` is `workflow_dispatch`-only (manual) per the Deploy
   Gate above — do not change it to an automatic trigger without first
   confirming the lead pipeline is live and WordPress has been cut over.

@@ -106,8 +106,8 @@ jobs:
         shell: bash
         env:
           PROVIDER: ${{ vars.AI_REVIEW_PROVIDER || 'auto' }}
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY || secrets.OPENAI }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY || secrets.GEMINI }}
         run: |
           set -euo pipefail
 
@@ -176,7 +176,7 @@ jobs:
         continue-on-error: true
         uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea
         env:
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY || secrets.OPENAI }}
           OPENAI_MODEL: ${{ vars.OPENAI_REVIEW_MODEL || 'gpt-5.6-luna' }}
           OPENAI_REASONING_EFFORT: ${{ vars.OPENAI_REASONING_EFFORT || 'medium' }}
           PR_NUMBER: ${{ needs.guard.outputs.pr_number }}
@@ -329,7 +329,7 @@ jobs:
         continue-on-error: true
         uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea
         env:
-          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY || secrets.GEMINI }}
           GEMINI_MODEL: ${{ vars.GEMINI_REVIEW_MODEL || 'gemini-3.5-flash' }}
           PR_NUMBER: ${{ needs.guard.outputs.pr_number }}
         with:

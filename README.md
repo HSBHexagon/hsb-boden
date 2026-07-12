@@ -42,9 +42,9 @@ Referenzen haben Freigabelogik. Nicht freigegebene Referenzen werden anonymisier
 
 ## Deployment
 
-Staging-Ziel: `hsb-boden-preview.cherinojoel.workers.dev`
+Preview-Ziel: Cloudflare-Pages-Preview des Projekts `hsb-boden` (Branch-URL je PR bzw. `preview`-Branch)
 
-Live-Ziel später: `hsb-boden.de`
+Live: `https://www.hsb-boden.de` (Cloudflare Pages, Production-Deploy nur via `deploy-production.yml`)
 
 Vor Livegang:
 

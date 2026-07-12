@@ -1,35 +1,30 @@
-name = "hsb-boden-preview"
-main = "@astrojs/cloudflare/entrypoints/server"
-compatibility_date = "2026-06-05"
-compatibility_flags = ["nodejs_compat"]
-workers_dev = true
-preview_urls = true
-
-[assets]
-directory = "./dist"
-binding = "ASSETS"
-
-[observability]
-enabled = true
-
-[vars]
-ENVIRONMENT = "preview"
-
-[env.production]
-name = "hsb-boden"
-workers_dev = true
-preview_urls = true
-# routes = [
-#   { pattern = "hsb-boden.de/*", zone_name = "hsb-boden.de" },
-#   { pattern = "www.hsb-boden.de/*", zone_name = "hsb-boden.de" }
-# ]
-
-[env.production.assets]
-directory = "./dist"
-binding = "ASSETS"
-
-[env.production.observability]
-enabled = true
-
-[env.production.vars]
-ENVIRONMENT = "production"
+# wrangler.toml — hsb-boden
+#
+# Deployment reality: this site is a STATIC Astro build deployed to
+# **Cloudflare Pages** (project `hsb-boden`), not a Worker. API routes live
+# in `functions/` as Pages Functions.
+#
+# Deploys are flag-driven and do NOT read Workers config from this file:
+#   Preview (CI):     .github/workflows/deploy-preview.yml
+#                     npx wrangler pages deploy dist --project-name hsb-boden --branch="<pr-branch>"
+#   Production (CI):  .github/workflows/deploy-production.yml (workflow_dispatch-only, approval-gated)
+#                     npx wrangler pages deploy dist --project-name hsb-boden --branch=main
+#   Local preview:    npm run deploy:preview  (deploys to the non-production
+#                     `preview` branch; `npm run deploy` is an alias)
+#   Local validation: npm run deploy:dry-run — `wrangler pages deploy` has NO --dry-run
+#                     flag; this validates the static build, compiles the Pages
+#                     Functions bundle (`wrangler pages functions build`), and checks
+#                     Cloudflare auth/project reachability without deploying.
+#   Local dev:        npx wrangler pages dev dist --compatibility-date=2026-06-05 --compatibility-flags=nodejs_compat
+#
+# Bindings (e.g. the KV namespace for rate limiting) are managed on the Pages
+# project via the Cloudflare API/dashboard — intentionally NOT declared here.
+# Do not add `pages_build_output_dir`: it opts this file into config-managed
+# Pages mode, making wrangler.toml the source of truth for project config —
+# bindings here are currently managed via the Cloudflare API/dashboard, and a
+# config-managed deploy would apply this file's (empty) config instead.
+# See https://developers.cloudflare.com/pages/functions/wrangler-configuration/
+#
+# The previous Workers config (`main = "@astrojs/cloudflare/entrypoints/server"`,
+# `[env.production]`) was stale drift from the pre-Pages SSR setup and was
+# removed after the Pages migration (see deploy workflows above).

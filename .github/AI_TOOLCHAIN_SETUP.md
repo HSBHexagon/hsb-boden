@@ -29,8 +29,10 @@ This repository uses a guarded AI review and agent workflow setup. The configura
 - Never auto-merges merely because a pull request was authored by a bot
 - `jules-approved` authorizes auto-merge only for `google-labs-jules[bot]`
 - `auto-merge` authorizes auto-merge for another explicitly reviewed pull request
+- Only an actor with `write`, `maintain`, or `admin` permission can authorize auto-merge
 - Draft, closed, and non-`main` pull requests are rejected
 - The expected head SHA is verified before auto-merge is enabled
+- Every new commit disables auto-merge and removes approval labels, so fresh approval is required
 - Pull request code is never checked out or executed in the privileged `pull_request_target` workflow
 
 ## Repository secrets
@@ -69,4 +71,5 @@ GitHub native auto-merge waits only for requirements configured in branch protec
 - No DNS changes
 - No secret values in the repository, issues, pull requests, comments, or documentation
 - No unreviewed bot auto-merge
+- No stale approval after a pull request changes
 - No checkout or execution of pull request code in privileged workflows

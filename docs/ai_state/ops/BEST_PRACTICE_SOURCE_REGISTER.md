@@ -14,3 +14,4 @@ Regeln:
 - Kein Snippet ungeprüft übernehmen; Syntax immer gegen installierte Version/`--help`/offizielle Referenz validieren.
 - Bei Widerspruch gewinnt die Primärquelle (Anthropic, OpenAI, GitHub, Cloudflare, Google Search Central, Astro, W3C, Schema.org).
 - Nur entscheidungsrelevante Recherche; jeder Eintrag muss eine Entscheidung oder Umsetzung speisen.
+| 2026-07-12 | ai.google.dev/gemini-api/docs/coding-agents + blog.google (offiziell) | live | Gemini Docs MCP (`gemini-api-docs-mcp.dev`, Tool `search_documentation`) und Skills `google-gemini/gemini-skills` sind offiziell; Repo-Maintainer philschmid (Google DeepMind) | Herkunftsprüfung PASS; Registrierung DEFERRED: Endpoint liefert HTTP 429 (überlastet). Nativer Weg statt Fremd-npx: `claude mcp add --transport http gemini-api-docs https://gemini-api-docs-mcp.dev/mcp --scope project`. Skills-Klassifikation: gemini-api-dev/interactions/live = NOT_NEEDED (keine Gemini-API-Arbeit in hsb-boden) |

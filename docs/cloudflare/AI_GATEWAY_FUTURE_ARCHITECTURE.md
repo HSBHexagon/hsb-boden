@@ -1,6 +1,6 @@
 # AI_GATEWAY_FUTURE_ARCHITECTURE — HSB-Boden / HEXAFLOOR
 
-Status: `isolated-poc-code-implemented-not-configured-not-active`
+Status: `BLOCKED_MISSING_GITHUB_MODELS_TOKEN`
 Stand: 2026-07-12
 
 Canonical Cloudflare truth: `docs/cloudflare/CLOUDFLARE_PROVIDER_MAX_READINESS.md`
@@ -20,6 +20,58 @@ The production website has no active AI feature. The active architecture remains
 - no runtime use of customer, lead or CRM data by an AI model.
 
 The GitHub Models work exists only on branch `agent/github-models-cloudflare-poc` and draft PR #74. It is not merged, configured or active.
+
+## Operational continuation result (2026-07-12)
+
+The interrupted implementation was reconstructed without resuming or changing
+the paused process. The current verified state is:
+
+- Cloudflare account: `Info@hsb-boden.de's Account`
+  (`01dc37803d1c687b4f9d6249ec89f700`);
+- Pages project: `hsb-boden`;
+- latest inspected branch preview:
+  `https://8cb14123.hsb-boden.pages.dev`;
+- `POST /api/github-models` returned `404` while disabled;
+- the Pages API showed no preview environment variables for the PoC;
+- the available Cloudflare API token returned `403` for AI Gateway gateway and
+  custom-provider inventory, and the authenticated dashboard did not load the
+  AI Gateway application;
+- no approved fine-grained GitHub token with only `models:read` was available;
+- no Cloudflare, Pages, DNS, production or secret mutation was performed.
+
+The public GitHub Models catalog still listed `openai/gpt-5`. It did not list
+`deepseek/DeepSeek-V3-0324` or
+`meta/Llama-4-Scout-17B-16E-Instruct` at verification time. The allowlist was
+not changed because the approved primary test model remains valid and account
+availability could not be tested without the dedicated credential.
+
+### Manual unblock gate
+
+1. Create a dedicated fine-grained GitHub token with only `Models: Read`
+   (`models:read`). Do not reuse the general `gh` authentication token.
+2. In Cloudflare Dashboard, open **AI > AI Gateway**, create or select
+   `hsb-boden-ai`, and add the GitHub token under **Provider Keys** using BYOK.
+3. Create or verify custom provider `github-models` with base URL
+   `https://models.github.ai` and enable it only for the controlled test.
+4. Create an authenticated-gateway token with `AI Gateway Run`. Cloudflare
+   currently scopes this permission to the account, not to one gateway, so the
+   token must be treated as account-wide and rotated after the PoC if retained.
+5. Grant the operator token `AI Gateway Read/Edit` only for the setup window,
+   then re-run the inventory endpoints before creating anything.
+6. Configure only the Pages preview environment, beginning with
+   `AI_POC_ENABLED=false`, and verify the disabled `404` before opening the
+   temporary test window.
+
+Next non-secret verification command after the credentials are configured:
+
+```bash
+curl -sS -o /dev/null -w '%{http_code}\n' \
+  -X POST https://8cb14123.hsb-boden.pages.dev/api/github-models \
+  -H 'Content-Type: application/json' \
+  --data '{"model":"openai/gpt-5","messages":[{"role":"user","content":"synthetic test"}]}'
+```
+
+Expected result before enabling the test window: `404`.
 
 ---
 

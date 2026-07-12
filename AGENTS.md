@@ -52,8 +52,10 @@ For preview or production work, verify in this order:
 4. `npm run deploy:dry-run`
 5. browser or HTTP verification of one real user path
 
-Production deploys remain blocked until the lead pipeline is live and the
-WordPress site is intentionally cut over.
+Production deploys remain approval-gated: they run only via
+`deploy-production.yml` (`workflow_dispatch`-only, never automatic).
+The remaining owner gate is the apex/NS cutover at the registrar
+(All-Inkl); `www.hsb-boden.de` is already served by Cloudflare Pages.
 
 ## Content Model
 
@@ -87,7 +89,8 @@ Shared rules for all agents:
   `npm run check`, `npm run build`, `npm run test:run` on push/PR to `main`.
   `security.yml` runs CodeQL, Dependency Review, and secret scanning.
   `lighthouse.yml` runs Lighthouse CI against `.lighthouserc.json` thresholds.
-  `deploy-preview.yml` deploys PR previews to Cloudflare Workers preview env.
+  `deploy-preview.yml` deploys PR previews as Cloudflare Pages preview
+  deployments (project `hsb-boden`, branch-scoped preview URLs).
   `deploy-production.yml` is `workflow_dispatch`-only (manual) per the Deploy
   Gate above — do not change it to an automatic trigger without first
   confirming the lead pipeline is live and WordPress has been cut over.

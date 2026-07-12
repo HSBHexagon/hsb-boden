@@ -1,0 +1,3 @@
+## 2024-07-12 - Missing required field indicators and focus-visible states
+**Learning:** The LeadForm fields use the HTML5 `required` attribute but lack a clear visual indicator (like a red asterisk with `aria-hidden="true"`) for sighted users. Additionally, native focus outlines are either insufficient or stripped, so interactive elements need explicit Tailwind `focus-visible` classes (e.g., `focus-visible:ring-1 focus-visible:ring-hsb-red focus-visible:outline-none`) to ensure keyboard navigation visibility.
+**Action:** Add visual required indicators to labels and implement explicit `focus-visible` styles on form inputs/selects/textareas for better accessibility.

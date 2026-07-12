@@ -1,5 +1,16 @@
 # Phase C — Production-Cutover Runbook (HSB / HEXAFLOOR)
 
+> ## ⚠️ STALE — 2026-07-12: Deploy-Architektur hat sich geändert
+> Dieses Runbook stammt aus der **Cloudflare-Workers-SSR-Ära** (Juni 2026). Seitdem wurde
+> die Site auf **statisches Astro + Cloudflare Pages** migriert (Projekt `hsb-boden`,
+> `www.hsb-boden.de` läuft bereits live über Pages). Die `wrangler deploy`-Befehle unten
+> deployen einen **Worker** und sind nicht mehr der Production-Weg; der Worker
+> `hsb-boden` unter `cherinojoel.workers.dev` ist ein verwaistes Artefakt im alten Account.
+> Aktueller Production-Deploy-Weg: `.github/workflows/deploy-production.yml`
+> (`workflow_dispatch`-only, `wrangler pages deploy dist --project-name hsb-boden --branch=main`).
+> Offen bleibt ausschließlich der freigabepflichtige **Apex-/NS-Cutover bei All-Inkl**.
+> Die Schritte unten nur noch als historische Referenz lesen, nicht ausführen.
+
 > Erstellt 2026-06-24 (Claude Code, Opus 4.8). Alle Befehle/Pfade sind **empirisch per Dry-Run + Quellcode-Lesen verifiziert**, nicht nur aus dem Handoff übernommen.
 > **Cutover bleibt freigabepflichtig.** Dieses Dokument macht den Vorgang mechanisch — es ersetzt keine Freigabe.
 

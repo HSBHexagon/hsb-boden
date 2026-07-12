@@ -1,16 +1,15 @@
 {
   "project": "HSB / HEXAFLOOR",
-  "last_updated": "2026-07-08T14:50:00+0200",
-  "active_model": "Codex / ChatGPT Codex Connector",
-  "active_phase": "pages-www-live-awaiting-apex-and-leads",
-  "active_task": "Canonical truth consolidation after Pages www live verification: www.hsb-boden.de is live via Cloudflare Pages; apex hsb-boden.de still serves WordPress/Apache; Pages worktree must be consolidated into main before claiming one code truth.",
+  "last_updated": "2026-07-12T19:55:00+0200",
+  "active_model": "Claude Code (Fable 5)",
+  "active_phase": "lead-funnel-live-post-merge-wave-0712",
+  "active_task": "Merged #64-#70 wave live on Pages: zero-JS LeadForm ENABLED in production (PUBLIC_LEAD_FORM_ENABLED build flag), security _headers + immutable caching, Consent Mode v2, AI reviews (OpenAI+Gemini verified). Stale Workers hsb-boden/hsb-boden-preview DELETED 2026-07-12 (served no domains); workers.dev URLs in account_migration are HISTORICAL. E2E lead test row removed from CRM. Remaining: apex DNS (All-Inkl), GBP verification, cold-outreach compliance gate, ~31 open bot PRs triaged in docs/ai_state/PR_TRIAGE_2026-07-12.md.",
   "account_migration_2026_07_02": {
     "github_new_repo": "https://github.com/HSBHexagon/hsb-boden",
     "github_old_repo_access": "HSBHexagon ist Admin-Collaborator im Alt-Repo cherinojoel-lang/hsb-boden (Ownership-Transfer pending, nicht blockierend)",
     "cloudflare_new_account_id": "01dc37803d1c687b4f9d6249ec89f700",
     "workers_live_verified": [
-      "https://hsb-boden-preview.hsb-boden.workers.dev",
-      "https://hsb-boden.hsb-boden.workers.dev"
+      "HISTORICAL 2026-07-02, beide Workers am 2026-07-12 geloescht (Pages ist einzige Deploy-Wahrheit)"
     ],
     "lead_test_passed": "WEB-20260702-180225 (entfernt nach Verifikation)",
     "open_followups": [
@@ -22,7 +21,7 @@
   },
   "repo_path": "/Users/joelcherinodiaz/KI-System/02_Projects/active/hsb-boden",
   "handoff_path": "/Users/joelcherinodiaz/KI-System/ObsidianVault/brain/CURRENT_HANDOFF.md",
-  "last_commit": "5e6e184",
+  "last_commit": "32f8849",
   "website_code_diff_lines": "local changes present: references, GA/Astro hint fix, CRM lead import docs, truth docs",
   "canonical_readiness_stack": {
     "tier1": {

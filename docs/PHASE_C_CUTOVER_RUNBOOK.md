@@ -1,6 +1,8 @@
 # Phase C — Production-Cutover Runbook (HSB / HEXAFLOOR)
 
 > ## ⚠️ STALE — 2026-07-12: Deploy-Architektur hat sich geändert
+> *(Operatives Handoff-Wissen, nicht allein aus dem Repo verifizierbar; Stand 2026-07-12,
+> belegt per HTTP-Check auf www + `wrangler pages project list` mit Custom-Domain-Eintrag.)*
 > Dieses Runbook stammt aus der **Cloudflare-Workers-SSR-Ära** (Juni 2026). Seitdem wurde
 > die Site auf **statisches Astro + Cloudflare Pages** migriert (Projekt `hsb-boden`,
 > `www.hsb-boden.de` läuft bereits live über Pages). Die `wrangler deploy`-Befehle unten

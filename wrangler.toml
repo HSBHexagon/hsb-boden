@@ -10,6 +10,9 @@
 #   Production (CI):  .github/workflows/deploy-production.yml (workflow_dispatch-only, approval-gated)
 #                     npx wrangler pages deploy dist --project-name hsb-boden --branch=main
 #   Local preview:    npm run deploy  (deploys to the non-production `preview` branch)
+#   Local validation: npm run deploy:dry-run — `wrangler pages deploy` has NO --dry-run
+#                     flag; this validates build + Cloudflare auth + project reachability
+#                     (`wrangler pages deployment list`) without deploying anything.
 #   Local dev:        npx wrangler pages dev dist --compatibility-date=2026-06-05 --compatibility-flags=nodejs_compat
 #
 # Bindings (e.g. the KV namespace for rate limiting) are managed on the Pages

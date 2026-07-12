@@ -52,8 +52,10 @@ For preview or production work, verify in this order:
 4. `npm run deploy:dry-run`
 5. browser or HTTP verification of one real user path
 
-Production deploys remain blocked until the lead pipeline is live and the
-WordPress site is intentionally cut over.
+Production deploys remain approval-gated: they run only via
+`deploy-production.yml` (`workflow_dispatch`-only, never automatic).
+The remaining owner gate is the apex/NS cutover at the registrar
+(All-Inkl); `www.hsb-boden.de` is already served by Cloudflare Pages.
 
 ## Content Model
 

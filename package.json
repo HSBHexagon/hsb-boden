@@ -11,7 +11,7 @@
     "deploy": "npm run build && wrangler pages deploy dist --project-name hsb-boden --branch preview --commit-dirty=true",
     "deploy:preview": "npm run deploy",
     "deploy:production": "echo 'BLOCKED: Production cutover is freigabepflichtig. Use docs/PHASE_C_CUTOVER_RUNBOOK.md after DNS/NS trigger.' && exit 1",
-    "deploy:dry-run": "npm run build && wrangler pages project list"
+    "deploy:dry-run": "npm run build && wrangler pages deployment list --project-name hsb-boden"
   },
   "dependencies": {
     "@astrojs/check": "^0.9.9",

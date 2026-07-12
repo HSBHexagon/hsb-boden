@@ -16,14 +16,14 @@ Validation evidence: `marketing/flyer/validation.md` — all 20 acceptance crite
 | File | Size | Purpose |
 |------|------|---------|
 | `public/HSB-Flyer-Joel-Cherino.pdf` | 254 KB | Joel Cherino Diaz — canonical outreach variant |
-| `public/HSB-Flyer-Jordie-Post.pdf` | 253 KB | JORDIE Post — alternative representative variant |
+| `public/HSB-Flyer-Jordi-Post.pdf` | 253 KB | JORDI Post — alternative representative variant |
 | `public/HSB-Flyer-Geschaeftsfuehrer.pdf` | 253 KB | Managing director variant (general) |
 
 ### Public URLs After DNS Switch
 
 ```
 https://hsb-boden.de/HSB-Flyer-Joel-Cherino.pdf
-https://hsb-boden.de/HSB-Flyer-Jordie-Post.pdf
+https://hsb-boden.de/HSB-Flyer-Jordi-Post.pdf
 https://hsb-boden.de/HSB-Flyer-Geschaeftsfuehrer.pdf
 ```
 
@@ -82,7 +82,7 @@ documented approval. Operator must verify current customer relationship before e
 
 ## `marketing/flyer/final/` vs `public/` — Clarification
 
-`marketing/flyer/final/` contains 2 PDFs (Joel-Cherino, Jordie-Post).
+`marketing/flyer/final/` contains 2 PDFs (Joel-Cherino, Jordi-Post).
 `HSB-Flyer-Geschaeftsfuehrer.pdf` is only in `public/`.
 
 This is not a defect. `public/` is the deployment source; `marketing/flyer/final/` is the
@@ -95,7 +95,7 @@ render output directory. `public/` copies are canonical. No copy action required
 | Asset | In Repo | In Build | Workers-Dev | Custom Domain (after switch) |
 |-------|---------|----------|-------------|------------------------------|
 | HSB-Flyer-Joel-Cherino.pdf | ✅ | ✅ | ✅ | ⬜ after switch |
-| HSB-Flyer-Jordie-Post.pdf | ✅ | ✅ | ✅ | ⬜ after switch |
+| HSB-Flyer-Jordi-Post.pdf | ✅ | ✅ | ✅ | ⬜ after switch |
 | HSB-Flyer-Geschaeftsfuehrer.pdf | ✅ | ✅ | ✅ | ⬜ after switch |
 | Brand assets (`brand/`, `logos/`) | ✅ | ✅ | ✅ | ⬜ after switch |
 
@@ -153,7 +153,7 @@ No R2 bucket is required unless a real large-file or media streaming need arises
 After NS switch and route activation:
 
 - [ ] `https://hsb-boden.de/HSB-Flyer-Joel-Cherino.pdf` → 200, Content-Type: application/pdf
-- [ ] `https://hsb-boden.de/HSB-Flyer-Jordie-Post.pdf` → 200, Content-Type: application/pdf
+- [ ] `https://hsb-boden.de/HSB-Flyer-Jordi-Post.pdf` → 200, Content-Type: application/pdf
 - [ ] `https://hsb-boden.de/HSB-Flyer-Geschaeftsfuehrer.pdf` → 200, Content-Type: application/pdf
 - [ ] `https://hsb-boden.de/ueber-uns` → 301 redirect to `/`
 - [ ] QR codes in flyers resolve correctly to live domain

@@ -1,9 +1,9 @@
-# JOEL_JORDIE_OPERATOR_RUNBOOK — HSB-Boden / HEXAFLOOR
+# JOEL_JORDI_OPERATOR_RUNBOOK — HSB-Boden / HEXAFLOOR
 
 Status: `sales-operations-max-ready-awaiting-dns-and-leads`
 Stand: 2026-06-26 | Canonical operator layer above the truth docs.
 
-**Partner name quality rule:** The only correct spelling is `JORDIE`.
+**Partner name quality rule:** The only correct spelling is `JORDI`.
 Never use `Jordy`, `Jordi`, or `Jodie` in any project document.
 
 ---
@@ -35,18 +35,18 @@ Open this repo and read in this exact order:
 
 ---
 
-## Role Split: Joel vs JORDIE
+## Role Split: Joel vs JORDI
 
-| Responsibility | Joel | JORDIE |
+| Responsibility | Joel | JORDI |
 |---------------|------|--------|
 | Repo access, code decisions | ✅ Primary | — |
 | DNS/NS switch coordination | ✅ Primary (with registrar) | Informed |
 | Cloudflare route activation | ✅ Primary (after approval) | — |
 | Outreach email composition | ✅ Primary (`j-cherino@hsb-boden.de`) | — |
-| JORDIE's flyer variant | — | ✅ Owner (`HSB-Flyer-Jordie-Post.pdf`) |
+| JORDI's flyer variant | — | ✅ Owner (`HSB-Flyer-Jordi-Post.pdf`) |
 | Legal/compliance sign-off | ✅ Required from Joel | Co-review where agreed |
 | Lead list approval | ✅ Both must agree | ✅ Co-approval |
-| CRM updates after outreach | ✅ Joel logs first | JORDIE logs own contacts |
+| CRM updates after outreach | ✅ Joel logs first | JORDI logs own contacts |
 | Business decisions / offers | Jointly | Jointly |
 
 ---
@@ -141,7 +141,7 @@ At all times until explicit separate approval:
 | Flyer | Sender |
 |-------|--------|
 | `HSB-Flyer-Joel-Cherino.pdf` | Joel Cherino Diaz — use when Joel is the contact |
-| `HSB-Flyer-Jordie-Post.pdf` | JORDIE Post — use when JORDIE is the contact |
+| `HSB-Flyer-Jordi-Post.pdf` | JORDI Post — use when JORDI is the contact |
 | `HSB-Flyer-Geschaeftsfuehrer.pdf` | Generic variant — use when role matters more than name |
 
 Do not send before DKIM is active and Phase 7 gate is completed.

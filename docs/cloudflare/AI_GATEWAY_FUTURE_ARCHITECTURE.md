@@ -40,7 +40,7 @@ planned or approved for the current launch.
 | Use Case | Trigger | Priority |
 |----------|---------|---------|
 | Internal lead scoring assistant | >200 leads in CRM, manual scoring slow | Low |
-| AI-generated follow-up draft templates | JORDIE or Joel requests it | Low |
+| AI-generated follow-up draft templates | JORDI or Joel requests it | Low |
 | AI search over product docs | Internal knowledge base decision | Low |
 | Customer-facing chatbot | Explicit product decision + legal review | Very low |
 

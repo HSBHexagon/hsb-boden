@@ -1,10 +1,10 @@
 # PROJECT_TRUTH — HSB-Boden / HEXAFLOOR
 
-> Single Source of Truth fuer den **aktuellen** Projektstand. Stand: 2026-06-26.
+> Single Source of Truth fuer den **aktuellen** Projektstand. Stand: 2026-07-08.
 > Historischer Verlauf gehoert in `SESSION_LOG.md` oder Archive, nicht hier hinein.
 > Unklare Punkte sind als `unklar / zu pruefen` markiert.
 >
-> Gesamturteil: `sales-operations-max-ready-awaiting-dns-and-leads`
+> Gesamturteil: `pages-www-live-awaiting-apex-and-leads`
 
 ## 1. Kanonischer Arbeitsort
 - Repo: `/Users/joelcherinodiaz/KI-System/02_Projects/active/hsb-boden`
@@ -13,32 +13,42 @@
 ## 2. Aktueller Repo-Zustand
 - Branch: `main`
 - Lokaler Commit-Stand: entspricht `origin/main`
-- Aktueller HEAD: `bf0f998`
-- Website-Code-Diff: `0`
-- Lokale bekannte Nicht-Commit-Dateien: aktuelle Doku-Audits dieses Sweeps (`PROJECT_TRUTH.md`, `CHECKPOINT_STATE.json`, `SESSION_LOG.md`, `docs/MASTER_EXECUTION_PLAN.md`, `docs/FINAL_OPERATOR_HANDOFF.md`, `docs/FINAL_COMPLETION_REPORT.md`, `docs/FINAL_ADVERSARIAL_AUDIT.md`, `docs/FINAL_PHASE_BY_PHASE_AUDIT.md`, `docs/FINAL_CLOUDFLARE_WORKERS_READINESS_AUDIT.md`)
+- Aktueller HEAD: `5e6e184`
+- Website-Code-Diff: lokale, noch nicht committete Aenderungen vorhanden (`src/data/clientLocations.ts`, `src/layouts/BaseLayout.astro`) plus Doku-/CRM-Import-Vorbereitung
+- Lokale bekannte Nicht-Commit-Dateien: `CHECKPOINT_STATE.json`, `CRM_LIGHT_SCHEMA.md`, `PROJECT_TRUTH.md`, `docs/FINAL_OPERATOR_HANDOFF.md`, `docs/MASTER_EXECUTION_PLAN.md`, `docs/launch/LEAD_IMPORT_5000_CHECKLIST.md`, `src/data/clientLocations.ts`, `src/layouts/BaseLayout.astro`
+- Parallel-Worktree: `/Users/joelcherinodiaz/KI-System/02_Projects/active/hsb-boden-pages-static`, Branch `pages-static-migration`, letzter lokaler Commit `926cf6b`, noch nicht in `main` konsolidiert.
 
 ## 3. Aktueller Projektzustand
 - Die Lead-Pipeline ist end-to-end live und verifiziert.
 - Der Production-Worker `hsb-boden` ist route-los deployed und erreichbar.
 - Das Production-Secret `LEAD_WEBHOOK_URL` ist gesetzt.
-- Die Website ist **noch nicht live auf der Domain**, weil weiterhin keine Worker-Routes gesetzt sind.
-- Die bestehende WordPress-Live-Seite bleibt bis zum Cutover aktiv.
+- `www.hsb-boden.de` ist live ueber Cloudflare Pages und wurde am 2026-07-08 gegen `/referenzen/` verifiziert.
+- `hsb-boden.de` ohne `www` zeigt weiterhin auf die alte WordPress/Apache-Seite; `/referenzen/` liefert dort 404. Apex-Redirect oder DNS-Anpassung bleibt offen.
+- Die Worker-Schiene laeuft parallel weiter, ist aber nicht die aktuelle `www`-Live-Schiene.
 
 ## 4. Aktueller Cloudflare- und Domain-Stand
 - Preview-Worker: `hsb-boden-preview`
 - Production-Worker: `hsb-boden`
-- Production-Routes sind bewusst noch nicht gesetzt.
-- Zone `hsb-boden.de` steht weiterhin auf `pending`.
-- Der externe NS-/DNS-Switch durch den Domain-Admin ist der aktuelle externe Hauptblocker.
+- Cloudflare Pages Projekt: `hsb-boden`
+- Aktuelle Live-Schiene fuer `www.hsb-boden.de`: Cloudflare Pages (`hsb-boden.pages.dev`)
+- Production-Worker-Routes sind weiterhin nicht die kanonische Live-Schiene.
+- Offen: Apex `hsb-boden.de` muss auf `www.hsb-boden.de` weiterleiten oder technisch auf die neue Site zeigen.
 
 ## 5. Aktueller Lead- und CRM-Stand
 - Das Kontaktformular postet an `/api/lead`.
 - Der Worker leitet an die Google-Apps-Script-Web-App weiter.
-- Zielsystem ist das Google Sheet `HSB CRM Light`.
+- Zielsystem der Website-Pipeline ist das Google Sheet `HSB CRM Light` (`1d0zZXXwYGo38ZKf0oUSSJpoZ_WVG545rDalXAdItm80`, Tab „Leads").
 - Die End-to-End-Zustellung wurde verifiziert.
 - `ops/n8n/` ist historisch/deprecated und nicht die aktive Loesung.
-- CRM-Light ist `template-ready-awaiting-lead-data`.
-- Der kuenftige 5.000-Lead-Paste/Import ist `prepared-awaiting-data`.
+- **Update 2026-07-08 (verifiziert via connected Google-Workspace-MCP, `cherinojoel@gmail.com`):** Reale Kaltakquise-Lead-Daten liegen jetzt vor — 6.424 Datensaetze, lokal in `data/lead-import/output/*.csv` und in drei separaten Google Sheets:
+  - MASTER (`1tmNuC_Wqr8blRfZCHLqpwXXOe7zyO-3SzsotaBxOzSk`, 6.433 Zeilen)
+  - Jordi Post (`1uMbZAteSPjRBLGwpfT_evqA9hPbSTdDqPOK5TBXoFu4`, 3.221 Zeilen)
+  - Joel Cherino (`1ha1iOX1pIWxF1c3FTRTxydqpa0uvPcBbbQ__ht1rAC8`, 3.231 Zeilen)
+  - Diese drei Sheets sind reine Kaltakquise-Ausgangslisten fuer spaeteren manuellen Versand, **nicht** an `LEAD_WEBHOOK_URL` oder einen Apps-Script-Webhook angebunden und sollen es nach aktuellem Stand auch nicht sein — Verwechslungsgefahr mit der Website-Inbound-Pipeline besteht, da alle vier Sheets denselben Namensraum „HSB CRM Light" teilen.
+  - Spaltenschema weicht zwischen MASTER-Sheet (23 Spalten), `CRM_LIGHT_SCHEMA.md` (27 Spalten) und dem Tab „Leads" im urspruenglichen Sheet (27 Spalten, teils andere Feldnamen) ab. **Kanonik-Entscheidung 2026-07-08:** `CRM_LIGHT_SCHEMA.md` ist das kanonische Schema (bereits vorher so in `LEAD_IMPORT_5000_CHECKLIST.md` festgelegt). Details der Abweichungen siehe `CRM_LIGHT_SCHEMA.md` Abschnitt „Kanonik-Entscheidung". Live-Sheets wurden bewusst nicht automatisiert umstrukturiert.
+  - `CRM-Light` ist damit nicht mehr `template-ready-awaiting-lead-data`, sondern `lead-data-imported-awaiting-compliance-and-batch-approval` (siehe Phase 7 in `docs/MASTER_EXECUTION_PLAN.md`).
+- **Update 2026-07-08 (spaeter in derselben Session):** Der reale `LEAD_WEBHOOK_URL`-Wert wurde ueber den Apps-Script-Editor (aktive Browser-Session `cherinojoel@gmail.com`, kein Passwort eingegeben) am Projekt `HSBBODEN` verifiziert — Deployment „Version 3 am 22.06.2026, 23:35", Code bindet per `SpreadsheetApp.openById('1d0zZXXwYGo38ZKf0oUSSJpoZ_WVG545rDalXAdItm80')`, exakt das dokumentierte Ziel-Sheet. Wert: `https://script.google.com/macros/s/AKfycbygp7VIA3NjeIjiVYiRXXsBKh-Aoei7DmS2WGlLmCmPdtOwHHOOOaFF_270O-Cu4ugm/exec`. Lokaler `wrangler`-Login war bereits beim korrekten Account `info@hsb-boden.de` authentifiziert; Secret wurde per `npx wrangler pages secret put LEAD_WEBHOOK_URL --project-name hsb-boden` gesetzt und per `wrangler pages secret list` bestaetigt (production-Environment).
+- **Gefundene, ungeklaerte Altlast:** Ein zusaetzliches Apps-Script-Projekt „HSB-Boden CRM Webhook" (nicht zu verwechseln mit `HSBBODEN`) wurde am 2026-07-08 um 20:37 erstellt/bereitgestellt und ist an das Jordi-Kaltakquise-Sheet (`1uMbZAteSPjRBLGwpfT_evqA9hPbSTdDqPOK5TBXoFu4`) gebunden, nicht an das CRM-Light-Sheet. Herkunft nicht rekonstruiert (evtl. parallele Session). Es ist an keiner Stelle als Secret hinterlegt und sollte vor Verwechslung mit `HSBBODEN` geschuetzt werden; Owner sollte pruefen, ob dieses Projekt geloescht/archiviert werden soll.
 
 ## 6. Aktuelle offene Punkte
 - Externer NS-/DNS-Switch der Domain `hsb-boden.de` durch den Domain-Admin
@@ -53,14 +63,14 @@
 - Phase 8 und Phase 9 bleiben pending.
 - Phase 10 ist optional und derzeit dokumentiert deaktiviert; n8n ist nicht aktiv.
 - Phase 11 ist abgeschlossen.
-- Phase 12 ist `blocked-awaiting-dns-ns-switch`.
+- Phase 12 ist teilweise abgeschlossen: `www.hsb-boden.de` ist live ueber Pages; offen bleibt Apex `hsb-boden.de` und die Konsolidierung des Pages-Worktrees in `main`.
 - Rechtstext-Abnahme gilt fuer die aktuelle Statusfuehrung als erledigt.
 - Kein realer Versand ist dadurch freigegeben: Dispatch bleibt blockiert, bis reale Lead-Daten importiert sind, die Lead-Liste freigegeben ist, Empfaengerbasis und Opt-out dokumentiert sind, das exakte Batch freigegeben ist und die Compliance-Freigabe dokumentiert ist.
 
 ## 7. Aktuelle Freigabegates
 - Kein Push ohne Freigabe
-- Kein Production-Deploy/Cutover ohne Freigabe
-- Kein Setzen der Domain-Routes vor erfolgreichem NS-/DNS-Switch
+- Kein weiterer Production-Deploy/Cutover ohne Freigabe
+- Kein Setzen von Domain-Routes, DNS-Records oder Apex-Redirects ohne Freigabe
 - Kein Dispatch ohne `docs/launch/PHASE_7_COMPLIANCE_GATE.md` und `docs/launch/LEAD_IMPORT_5000_CHECKLIST.md` mit realen Daten und Batch-Freigabe.
 
 ## 7a. Operator-Handoff und kanonischer Readiness-Stack (aktuell)
@@ -72,7 +82,7 @@
 - Asset/PDF Readiness: `docs/assets/ASSET_PACKAGE_AND_PUBLIC_DOWNLOAD_MAX_READINESS.md`
 - CRM-Light Readiness: `docs/crm/CRM_LIGHT_MAX_READINESS.md`
 - Automation Blueprints (optional): `docs/automation/STATUS_UPDATE_AUTOMATION_BLUEPRINT.md`
-- Joel/JORDIE Operator Runbook: `docs/handoff/JOEL_JORDIE_OPERATOR_RUNBOOK.md`
+- Joel/JORDI Operator Runbook: `docs/handoff/JOEL_JORDI_OPERATOR_RUNBOOK.md`
 
 ### Tier 2 — Erweiterter Readiness-Detail (2026-06-26 Wave)
 - Cloudflare UI Preflight Inventory: `docs/cloudflare/GO_LIVE_MAX_PREFLIGHT_UI_INVENTORY.md`
@@ -100,4 +110,4 @@ Ausfuehrungspfade:
 - Lead-Import: `docs/launch/LEAD_IMPORT_5000_CHECKLIST.md`
 
 ## 8. Naechster sichere Schritt
-DNS/NS-Switch fuer `hsb-boden.de` und spaetere Einfuegung der realen 5.000 Lead-Daten abwarten. Import bleibt CRM-Datenvorbereitung, kein Versand.
+Keine zweite Wahrheit weiterfuehren: Pages-Worktree, `main`, `PROJECT_TRUTH.md`, `docs/MASTER_EXECUTION_PLAN.md`, `docs/FINAL_OPERATOR_HANDOFF.md` und `CHECKPOINT_STATE.json` muessen auf den Pages-`www`-Live-Stand konsolidiert werden. Danach reale Lead-Dateien importbereit auf zwei Operator-Dateien splitten. Import bleibt CRM-Datenvorbereitung, kein Versand.

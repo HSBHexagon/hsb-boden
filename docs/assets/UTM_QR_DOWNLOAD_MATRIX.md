@@ -18,7 +18,7 @@ Canonical asset readiness: `docs/assets/ASSET_PACKAGE_AND_PUBLIC_DOWNLOAD_MAX_RE
 | `utm_source` | `email`, `qr`, `linkedin`, `xing`, `print` | Where the click originated |
 | `utm_medium` | `outreach`, `flyer`, `social`, `direct` | Channel type |
 | `utm_campaign` | `kaltakquise-2026-q3`, `messe-2026`, `followup-batch-01` | Campaign name (date-stamped) |
-| `utm_content` | `joel-flyer`, `jordie-flyer`, `gf-flyer`, `homepage-link` | Which specific asset/link |
+| `utm_content` | `joel-flyer`, `jordi-flyer`, `gf-flyer`, `homepage-link` | Which specific asset/link |
 | `utm_term` | (optional) `lebensmittel`, `chemie`, `logistik` | Industry segment |
 
 All parameter values must be lowercase with hyphens. No spaces. No special characters.
@@ -33,7 +33,7 @@ Base: `https://hsb-boden.de`
 
 ```
 https://hsb-boden.de/HSB-Flyer-Joel-Cherino.pdf
-https://hsb-boden.de/HSB-Flyer-Jordie-Post.pdf
+https://hsb-boden.de/HSB-Flyer-Jordi-Post.pdf
 https://hsb-boden.de/HSB-Flyer-Geschaeftsfuehrer.pdf
 ```
 
@@ -48,7 +48,7 @@ https://hsb-boden.de/?utm_source=qr&utm_medium=flyer&utm_campaign=kaltakquise-20
 ```
 https://hsb-boden.de/HSB-Flyer-Joel-Cherino.pdf?utm_source=email&utm_medium=outreach&utm_campaign=kaltakquise-2026-q3&utm_content=joel-flyer
 
-https://hsb-boden.de/HSB-Flyer-Jordie-Post.pdf?utm_source=email&utm_medium=outreach&utm_campaign=kaltakquise-2026-q3&utm_content=jordie-flyer
+https://hsb-boden.de/HSB-Flyer-Jordi-Post.pdf?utm_source=email&utm_medium=outreach&utm_campaign=kaltakquise-2026-q3&utm_content=jordi-flyer
 ```
 
 > **Note:** UTM parameters on direct PDF links are captured by GA4 as referral context
@@ -65,7 +65,7 @@ https://hsb-boden.de/HSB-Flyer-Jordie-Post.pdf?utm_source=email&utm_medium=outre
 | Asset | UTM URL |
 |-------|---------|
 | Joel flyer link in email | `?utm_source=email&utm_medium=outreach&utm_campaign=kaltakquise-2026-q3&utm_content=joel-flyer` |
-| JORDIE flyer link in email | `?utm_source=email&utm_medium=outreach&utm_campaign=kaltakquise-2026-q3&utm_content=jordie-flyer` |
+| JORDI flyer link in email | `?utm_source=email&utm_medium=outreach&utm_campaign=kaltakquise-2026-q3&utm_content=jordi-flyer` |
 | Homepage link in email | `?utm_source=email&utm_medium=outreach&utm_campaign=kaltakquise-2026-q3&utm_content=homepage-link` |
 
 ### Printed Flyer QR Code
@@ -73,7 +73,7 @@ https://hsb-boden.de/HSB-Flyer-Jordie-Post.pdf?utm_source=email&utm_medium=outre
 | Asset | Target URL | QR Points To |
 |-------|-----------|--------------|
 | Joel Cherino flyer | `https://hsb-boden.de/?utm_source=qr&utm_medium=flyer&utm_campaign=kaltakquise-2026-q3&utm_content=joel-flyer` | Homepage with UTM |
-| JORDIE Post flyer | `https://hsb-boden.de/?utm_source=qr&utm_medium=flyer&utm_campaign=kaltakquise-2026-q3&utm_content=jordie-flyer` | Homepage with UTM |
+| JORDI Post flyer | `https://hsb-boden.de/?utm_source=qr&utm_medium=flyer&utm_campaign=kaltakquise-2026-q3&utm_content=jordi-flyer` | Homepage with UTM |
 | Geschäftsführer flyer | `https://hsb-boden.de/?utm_source=qr&utm_medium=flyer&utm_campaign=kaltakquise-2026-q3&utm_content=gf-flyer` | Homepage with UTM |
 
 QR codes on printed flyers should point to the **homepage with UTM**, not directly to the PDF.

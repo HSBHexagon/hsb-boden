@@ -26,13 +26,20 @@ jobs:
         
       - name: Build
         run: npm run build
-        
-      - name: Deploy to Cloudflare Workers (Preview)
-        uses: cloudflare/wrangler-action@ebbaa1584979971c8614a24965b4405ff95890e0 # v4.0.0
-        with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          # wrangler.toml has no [env.preview] block — the top-level config
-          # (name = "hsb-boden-preview") IS the preview environment, matching
-          # package.json's "deploy:preview" script (wrangler deploy --env="").
-          command: deploy
+
+      # Cloudflare Pages (not Workers) is the live architecture since the
+      # static-output migration (astro.config.mjs output:"static"). Deploying
+      # branch=main via `wrangler pages deploy` becomes the PRODUCTION
+      # deployment on Pages, so this only runs for PR branches (safe preview
+      # URL) — pushes to main are intentionally NOT deployed here, to keep
+      # the manual production gate in deploy-production.yml meaningful.
+      - name: Deploy PR preview to Cloudflare Pages
+        if: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository }}
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: npx wrangler pages deploy dist --project-name hsb-boden --branch="${{ github.head_ref }}"
+
+      - name: Verify Pages deploy (dry run, fork PRs)
+        if: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository }}
+        run: echo "Fork PR — skipping Pages deploy (no secrets available for external contributors). Build above already verifies the static output compiles."

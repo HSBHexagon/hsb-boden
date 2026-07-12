@@ -1,7 +1,7 @@
 export const site = {
   name: "HSB Hexagon Säurebau GmbH",
   shortName: "HSB",
-  domain: "https://hsb-boden.de",
+  domain: "https://www.hsb-boden.de",
   email: "info@hsb-boden.de",
   phone: "+49 (0)2562 9463030",
   description:

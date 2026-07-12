@@ -1,19 +1,20 @@
 # FINAL_OPERATOR_HANDOFF — HSB-Boden / HEXAFLOOR
 
 ## Status
-- Overall: `sales-operations-max-ready-awaiting-dns-and-leads`
-- Remote main: `d4ea032`
+- Overall: `pages-www-live-awaiting-apex-and-leads`
+- Remote main: `5e6e184`
 - CI/QA/Deploy Preview/Security/CodeQL: latest observed `success` on `main`
-- Master plan: aligned
-- Website: prepared
+- Master plan: aligned to verified 2026-07-08 Pages/www reality
+- Website: `www.hsb-boden.de` live via Cloudflare Pages; apex `hsb-boden.de` still WordPress/Apache
 - CRM-Light: `template-ready-awaiting-lead-data`
-- 5,000-lead import: `prepared-awaiting-data`
+- 5,000-lead import: `prepared-awaiting-data` with two-operator split and flyer assignment
 - Phase 7: `gate-prepared-awaiting-lead-data`
-- Phase 12: `blocked-awaiting-dns-ns-switch`
+- Phase 12: `partially-live-on-pages-www-awaiting-apex-and-main-consolidation`
 
 ## Remaining external inputs
-1. DNS/NS transfer for `hsb-boden.de`
+1. Apex decision for `hsb-boden.de`: redirect to `www.hsb-boden.de` or equivalent approved DNS/hosting change
 2. Future 5,000 lead dataset
+3. Approval to consolidate/push the Pages migration and today's local fixes into `main`
 
 ## Canonical readiness stack (current)
 
@@ -24,7 +25,7 @@
 - **Assets/PDFs**: `docs/assets/ASSET_PACKAGE_AND_PUBLIC_DOWNLOAD_MAX_READINESS.md`
 - **CRM-Light**: `docs/crm/CRM_LIGHT_MAX_READINESS.md`
 - **Automation Blueprints**: `docs/automation/STATUS_UPDATE_AUTOMATION_BLUEPRINT.md`
-- **Operator Runbook**: `docs/handoff/JOEL_JORDIE_OPERATOR_RUNBOOK.md`
+- **Operator Runbook**: `docs/handoff/JOEL_JORDI_OPERATOR_RUNBOOK.md`
 
 ### Tier 2 — Expanded Readiness Detail (2026-06-26 Wave)
 - **Cloudflare UI Preflight Inventory**: `docs/cloudflare/GO_LIVE_MAX_PREFLIGHT_UI_INVENTORY.md`
@@ -46,15 +47,19 @@
 3. `docs/PHASE_C_CUTOVER_RUNBOOK.md`
 
 ## Trigger A — DNS/NS becomes active
-Only when Cloudflare zone `hsb-boden.de` is active:
-1. Read `docs/cloudflare/CLOUDFLARE_PROVIDER_MAX_READINESS.md` — go/no-go checklist
-2. Read `docs/PHASE_C_CUTOVER_RUNBOOK.md` — execution steps
-3. Verify production Worker route-less state before routes
-4. Verify `LEAD_WEBHOOK_URL` secret exists
-5. Set only the documented Worker routes
-6. Verify live domain response
-7. Verify real contact form writes to CRM
-8. Do not touch mail DNS records unless separately required and approved
+Historical Worker-route trigger only. Do not treat this as the current `www` live path without re-approval.
+
+Current live path:
+1. `www.hsb-boden.de` is served by Cloudflare Pages and was verified on 2026-07-08.
+2. `hsb-boden.de` apex still serves WordPress/Apache and `/referenzen/` returns 404.
+3. Before any further DNS/redirect action, read `PROJECT_TRUTH.md` and `docs/MASTER_EXECUTION_PLAN.md`.
+4. Do not touch mail DNS records unless separately required and approved.
+
+Current required consolidation:
+1. Compare `main` and worktree `../hsb-boden-pages-static`.
+2. Bring the Pages migration, reference corrections, GA/Astro hint fix, and CRM lead-import/flyer updates into one canonical branch.
+3. Run `npm run test:run`, `npm run check`, and `npm run build`.
+4. Push or open PR only after explicit approval.
 
 ## Trigger B — 5,000 lead dataset becomes available
 Only when the real lead dataset exists:
@@ -66,8 +71,10 @@ Only when the real lead dataset exists:
 6. Mark `Versandfreigabe = no` by default
 7. Import or paste as CRM preparation only
 8. Verify row count and sample 20 rows
-9. Do not send email
-10. Do not start Phase 8 or Phase 9
+9. Split into two operator files: Joel Cherino Diaz and Jordi Post, about 2,500 addresses each when the dataset size allows it
+10. Assign flyer attachments according to `docs/launch/LEAD_IMPORT_5000_CHECKLIST.md`
+11. Do not send email
+12. Do not start Phase 8 or Phase 9
 
 ## Still forbidden
 - no email sending
@@ -77,6 +84,7 @@ Only when the real lead dataset exists:
 - no Gmail API sending
 - no Apps Script live dispatch
 - no Cloudflare/DNS/deploy action without explicit trigger and approval
+- no push/merge of the Pages migration without explicit approval
 - no Phase 8/9 start
 - no use of unverified claims, logos, certificates, or references
 - do not use `deploy-production.yml` as cutover truth; use `docs/PHASE_C_CUTOVER_RUNBOOK.md`
@@ -90,4 +98,4 @@ gh run list --branch main --limit 10
 
 ## Stop condition
 
-If neither external input exists, stop. Do not invent work.
+If neither external input exists, continue only with local truth consolidation and verification. Do not invent dispatch, DNS, deploy, or push work.

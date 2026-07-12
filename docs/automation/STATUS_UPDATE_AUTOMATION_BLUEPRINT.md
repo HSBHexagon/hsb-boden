@@ -133,4 +133,4 @@ Automation remains disabled by default until explicit operator approval.
 
 - CRM readiness: `docs/crm/CRM_LIGHT_MAX_READINESS.md`
 - Compliance gate: `docs/launch/PHASE_7_COMPLIANCE_GATE.md`
-- Operator handoff: `docs/handoff/JOEL_JORDIE_OPERATOR_RUNBOOK.md`
+- Operator handoff: `docs/handoff/JOEL_JORDI_OPERATOR_RUNBOOK.md`

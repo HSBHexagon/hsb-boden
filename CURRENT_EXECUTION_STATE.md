@@ -17,7 +17,7 @@ _Zuletzt aktualisiert: 2026-06-26 02:08 CEST_
 | Impressum eingebaut | ✅ Erledigt | 2026-06-26 |
 | Datenschutz (DSGVO) eingebaut | ✅ Erledigt | 2026-06-26 |
 | Meta Conversions API Abschnitt ergänzt | ✅ Erledigt | 2026-06-26 |
-| Rechtstext-Abnahme durch Jordie Post | ✅ Freigegeben | 2026-06-26 |
+| Rechtstext-Abnahme durch Jordi Post | ✅ Freigegeben | 2026-06-26 |
 | Core Web Vitals Re-Audit (Lighthouse) | ⏳ Manuell erforderlich | — |
 
 ---

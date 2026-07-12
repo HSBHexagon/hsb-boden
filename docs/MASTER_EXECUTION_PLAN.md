@@ -3,7 +3,7 @@
 > **Dies ist die einzige kanonische Ausführungs-Roadmap des Projekts.**
 > Keine konkurrierende Roadmap existiert. Alle anderen Phasendokumente (`PHASED_EXECUTION_PLAN.md`, `PHASE_STATUS.md`) verweisen auf diese Datei und werden nicht mehr eigenständig gepflegt.
 >
-> Stand: 2026-06-26. Rekonstruiert aus: `PHASE_STATUS.md`, `CHECKPOINT_STATE.json`, `PROJECT_TRUTH.md`, `AI_EXECUTION_PLAYBOOK.md`, `ACQUISITION_SYSTEM_PLAN.md`, `AGENTS.md`, `CLAUDE.md`, `brain/CURRENT_HANDOFF.md`.
+> Stand: 2026-07-08. Rekonstruiert aus: `PHASE_STATUS.md`, `CHECKPOINT_STATE.json`, `PROJECT_TRUTH.md`, `AI_EXECUTION_PLAYBOOK.md`, `ACQUISITION_SYSTEM_PLAN.md`, `AGENTS.md`, `CLAUDE.md`, `brain/CURRENT_HANDOFF.md` und Live-HTTP-Verifikation.
 
 ---
 
@@ -11,12 +11,12 @@
 
 | Feld | Wert |
 |------|------|
-| **Aktuelle Phase** | `sales-operations-max-ready-awaiting-dns-and-leads` · Phase 7 wartet auf reale Lead-Daten; Phase 12 bleibt extern blockiert |
-| **Letzte abgeschlossene Phase** | Max-Readiness-Sweep (2026-06-26) — kanonischer Readiness-Stack vollständig |
-| **Nächste geplante Phase** | DNS/NS-Switch abwarten + spätere 5.000-Lead-Dateneinfügung; danach erst kontrolliertes Phase-7-Testbatch |
-| **Gesamt-Fortschritt** | Website ~95% · Go-live-Readiness ~100% (intern) · Akquise-System ~60% |
-| **Operativer Blocker** | Externer NS-/DNS-Switch (Zone `hsb-boden.de` = `pending`, Domain-Admin) |
-| **Letzter Commit `main`** | `d4ea032` — `chore(hsb): guard production deploy script` |
+| **Aktuelle Phase** | `pages-www-live-awaiting-apex-and-leads` · Phase 12 ist fuer `www` teilweise live; Phase 7 wartet auf reale Lead-Daten |
+| **Letzte abgeschlossene Phase** | Cloudflare-Pages-`www`-Live-Schaltung und Referenzkorrektur auf `www.hsb-boden.de/referenzen/` verifiziert (2026-07-08) |
+| **Nächste geplante Phase** | Pages-Worktree in `main` konsolidieren, Apex `hsb-boden.de` klaeren, spaetere 5.000-Lead-Dateneinfuegung vorbereiten |
+| **Gesamt-Fortschritt** | Website `www` live · Apex offen · Go-live-Readiness intern vorhanden · Akquise-System importbereit, aber ohne reale Lead-Daten |
+| **Operativer Blocker** | Kein technischer `www`-Blocker mehr; offen sind Apex-Redirect/DNS und reale Lead-Dateien |
+| **Letzter Commit `main`** | `5e6e184` — `docs: record Protect Main ruleset transfer` |
 | **Kanonischer Readiness-Stack (Tier 1)** | `docs/cloudflare/CLOUDFLARE_PROVIDER_MAX_READINESS.md`, `docs/email/EMAIL_ROUTING_AND_DELIVERABILITY_MAX_READINESS.md`, `docs/analytics/GA4_GTM_GSC_MAX_READINESS.md`, `docs/assets/ASSET_PACKAGE_AND_PUBLIC_DOWNLOAD_MAX_READINESS.md`, `docs/crm/CRM_LIGHT_MAX_READINESS.md`, `docs/automation/STATUS_UPDATE_AUTOMATION_BLUEPRINT.md` |
 | **Kanonischer Readiness-Stack (Tier 2, 2026-06-26)** | `docs/cloudflare/GO_LIVE_MAX_PREFLIGHT_UI_INVENTORY.md`, `docs/cloudflare/WAF_CACHE_RATE_LIMIT_READINESS.md`, `docs/cloudflare/R2_ASSET_UPLOAD_STRATEGY.md`, `docs/cloudflare/TURNSTILE_FORM_PROTECTION_READINESS.md`, `docs/analytics/GA4_GSC_EVENT_TRACKING_READINESS.md`, `docs/email/EMAIL_DELIVERABILITY_AND_TEMPLATE_READINESS.md`, `docs/assets/UTM_QR_DOWNLOAD_MATRIX.md`, `docs/crm/CRM_LIGHT_OPERATOR_READINESS.md`, `docs/automation/N8N_APPS_SCRIPT_SAFE_AUTOMATION_READINESS.md`, `docs/ops/MULTI_PC_OPERATOR_SYNC_PROTOCOL.md`, `docs/launch/PRE_DNS_GO_LIVE_MAX_CHECKLIST.md` |
 
@@ -139,7 +139,7 @@ Parallel zur bestehenden WordPress-Live-Site eine neue Astro/Cloudflare-Website 
 
 ### Phase 7 — Testkampagne (kontrolliert)
 
-**Status:** ⏳ PENDING — gate-prepared-awaiting-lead-data
+**Status:** ⏳ PENDING — lead-data-imported-awaiting-compliance-and-batch-approval
 
 **Objective:** Compliance-/Import-Gate fuer einen spaeteren kontrollierten manuellen B2B-Testversand vorbereiten, ohne die Kampagne zu starten.
 
@@ -147,11 +147,19 @@ Parallel zur bestehenden WordPress-Live-Site eine neue Astro/Cloudflare-Website 
 - `docs/launch/PHASE_7_COMPLIANCE_GATE.md`
 - `docs/launch/LEAD_IMPORT_5000_CHECKLIST.md`
 - Lead-Liste, Empfaengerbasis, Opt-out-Logik und Versandfreigabe als Pflicht-Gates dokumentiert
+- Zwei-Personen-Bearbeitung vorbereitet: Joel Cherino Diaz und Jordi Post erhalten jeweils ca. 2.500 Datensaetze; passende Flyer-Anhaenge sind dokumentiert
 - Manuelles Testbatch spaeter auf max. `10-20` A-Leads begrenzt
+- **Neu (verifiziert 2026-07-08):** Reale Lead-Daten liegen jetzt vor. 6.424 Datensaetze lokal erzeugt (`data/lead-import/output/*.csv`) und in drei Google Sheets uebertragen (Account `cherinojoel@gmail.com`):
+  - `HSB CRM Light — Kaltakquise Kampagne 2026-07 (MASTER) v2` (`1tmNuC_Wqr8blRfZCHLqpwXXOe7zyO-3SzsotaBxOzSk`), Tab `Sheet1`, 6.433 Zeilen, 23 Spalten
+  - `HSB CRM Light — Jordi Post — Kaltakquise 2026-07` (`1uMbZAteSPjRBLGwpfT_evqA9hPbSTdDqPOK5TBXoFu4`), Tab `Sheet1`, 3.221 Zeilen
+  - `HSB CRM Light — Joel Cherino — Kaltakquise 2026-07` (`1ha1iOX1pIWxF1c3FTRTxydqpa0uvPcBbbQ__ht1rAC8`), Tab `Sheet1`, 3.231 Zeilen
+  - Diese drei Sheets sind **Kaltakquise-Ausgangslisten fuer manuellen Versand**, kein Eingang fuer die Website-Lead-Pipeline. Sie sind nicht mit `LEAD_WEBHOOK_URL` oder einem Apps-Script-Webhook verbunden und sollen es nach aktuellem Stand auch nicht sein.
+  - Schema-Drift festgestellt, noch nicht bereinigt: Die Spaltenkoepfe im MASTER-Sheet (`Lead-ID, Firma, Standort, Region, Branche, Rolle, Tier, Ansprechpartner, E-Mail, ...`, 23 Spalten) weichen von `CRM_LIGHT_SCHEMA.md` (27 Spalten) und vom urspruenglichen `HSB CRM Light`-Sheet-Tab „Leads" (27 Spalten, andere Feldnamen wie `Zielrollen-Kategorie`, `Antwortstatus`) ab. Ursache nicht rekonstruiert; vor einem echten Versand sollte geklaert werden, welches Schema kanonisch ist.
+  - Das urspruengliche Sheet `HSB CRM Light` (`1d0zZXXwYGo38ZKf0oUSSJpoZ_WVG545rDalXAdItm80`, Tab „Leads") bleibt das Ziel-Sheet der Website-Lead-Pipeline und ist davon unberuehrt.
 
-**Exit Criteria:** Das Gate ist vorbereitet. Ein echter Testversand bleibt blockiert, bis reale Lead-Daten vorliegen, alle Batch-Zeilen freigegeben sind, die Compliance-Dokumentation vorliegt und der Owner das exakte Batch explizit freigibt.
+**Exit Criteria:** Das Gate ist vorbereitet. Ein echter Testversand bleibt blockiert, bis alle Batch-Zeilen freigegeben sind, die Compliance-Dokumentation vorliegt, die Schema-Drift geklaert ist und der Owner das exakte Batch explizit freigibt.
 
-**Blockiert durch:** Fehlende reale Lead-Daten, fehlende Batch-Freigabe, fehlende Compliance-/Opt-out-Freigabe pro Einsatz.
+**Blockiert durch:** Batch-Freigabe, Compliance-/Opt-out-Freigabe pro Einsatz, Klaerung der Schema-Drift. Reale Lead-Daten liegen nicht mehr als Blocker vor (siehe oben).
 
 ---
 
@@ -228,27 +236,28 @@ Parallel zur bestehenden WordPress-Live-Site eine neue Astro/Cloudflare-Website 
 
 ### Phase 12 — DNS + Live-Schaltung (Production-Cutover)
 
-**Status:** 🟡 CURRENT — blocked-awaiting-dns-ns-switch
+**Status:** 🟡 CURRENT — partially-live-on-pages-www-awaiting-apex-and-main-consolidation
 
-**Objective:** Neue Astro/Cloudflare-Website unter `hsb-boden.de` live schalten und Lead-Pipeline auf der Produktionsdomäne verifizieren.
+**Objective:** Neue Astro/Cloudflare-Website unter `www.hsb-boden.de` und `hsb-boden.de` konsistent live halten und Lead-Pipeline auf der Produktionsdomäne verifizieren.
 
 **Deliverables:**
-- Externer NS-/DNS-Switch: Domain-Admin setzt Nameserver → Zone `hsb-boden.de` wechselt von `pending` auf `active`
-- Zwei Worker-Routes setzen (Zone `2aefa04f69a2339b2f9f3f2876d7e35c`):
-  - `hsb-boden.de/*` → script `hsb-boden`
-  - `www.hsb-boden.de/*` → script `hsb-boden`
-- Live-Verify: `curl -sI https://hsb-boden.de` = 200 vom Worker; echtes Browser-Formular auf `/kontakt/` → Zeile im CRM-Sheet
+- Erledigt: `www.hsb-boden.de/referenzen/` liefert HTTP 200 ueber Cloudflare Pages und enthaelt die korrigierten Referenzen `KESSLER-ZINK GmbH`, `Weingut Dohlmühle-Genussreich` und `Flonheim` (verifiziert 2026-07-08).
+- Offen: `hsb-boden.de` ohne `www` zeigt weiterhin WordPress/Apache; `/referenzen/` liefert dort 404. Apex-Redirect auf `www` oder DNS-Anpassung bleibt freigabepflichtig.
+- Offen: Pages-Worktree `pages-static-migration` muss nach Freigabe in `main` konsolidiert werden; bis dahin ist `www`-Live-Schiene nicht sauber mit `main` vereinheitlicht.
+- Historisch/optional: Worker-Routes aus dem alten Runbook sind nicht mehr die aktuelle Live-Schiene fuer `www`.
+- Live-Verify nach finaler Konsolidierung: `https://www.hsb-boden.de` und `https://hsb-boden.de` muessen denselben Zielzustand liefern; echtes Browser-Formular auf `/kontakt/` → Zeile im CRM-Sheet erst nach separater Formularfreigabe.
 - Tracking produktiv aktivieren (GA4/GSC/GTM, vorbereitet in `SEO_GO_LIVE_CHECKLIST.md`)
 
-**Durchführung:** Strikt nach `docs/PHASE_C_CUTOVER_RUNBOOK.md`, Schritte 5–6. Worker **vor** Routes prüfen — nach NS-Switch greift die Route sofort.
+**Durchführung:** Die kanonische Ausfuehrung muss zuerst die Cloudflare-Pages-Realitaet abbilden. `docs/PHASE_C_CUTOVER_RUNBOOK.md` ist fuer die historische Worker-Route-Schiene weiter Evidenz, aber nicht mehr alleinige Cutover-Wahrheit.
 
 **Exit Criteria:**
-- Zone `active` (nach NS-Switch durch Domain-Admin)
-- `curl -sI https://hsb-boden.de` → 200 vom Worker (nicht WordPress)
+- `curl -sI https://www.hsb-boden.de/referenzen/` → 200 ueber Cloudflare Pages
+- `curl -sI https://hsb-boden.de/referenzen/` → konsistenter Zielzustand, nicht WordPress-404
+- Pages-Worktree und `main` sind konsolidiert; keine zweite Code-/Deploy-Wahrheit bleibt offen
 - Echtes Kontakt-Formular → Zeile im CRM-Sheet
-- Alter WordPress-Fallback verifiziert nicht mehr erreichbar
+- Alter WordPress-Fallback verifiziert nicht mehr unter produktiven Nutzerpfaden erreichbar
 
-**Blockiert durch:** NS-/DNS-Switch (externer Domain-Admin, Zone `hsb-boden.de` = `pending`, Stand 2026-06-26). Danach freigabepflichtig.
+**Blockiert durch:** Apex-Entscheidung/DNS- oder Redirect-Freigabe, Konsolidierung des Pages-Worktrees in `main`, und spaetere Formular-/Lead-Freigabe.
 
 ---
 

@@ -20,7 +20,7 @@ All PDF flyers and static files are in `public/` and served via the Cloudflare W
 | File | Served From | Status |
 |------|-------------|--------|
 | `public/HSB-Flyer-Joel-Cherino.pdf` | Worker Static Assets | Deployed |
-| `public/HSB-Flyer-Jordie-Post.pdf` | Worker Static Assets | Deployed |
+| `public/HSB-Flyer-Jordi-Post.pdf` | Worker Static Assets | Deployed |
 | `public/HSB-Flyer-Geschaeftsfuehrer.pdf` | Worker Static Assets | Deployed |
 | `public/_redirects` | Worker Static Assets | Active redirect rules |
 | `public/brand/` | Worker Static Assets | Deployed |
@@ -87,7 +87,7 @@ If internal/private documents are stored in R2 or served via a Worker path:
 
 ```
 Path: https://hsb-boden.de/internal/*
-Gate: Cloudflare Access — one-time PIN to joel@... or JORDIE's email
+Gate: Cloudflare Access — one-time PIN to joel@... or JORDI's email
 ```
 
 Cloudflare Access is not activated today. This is a future optional feature.
@@ -105,8 +105,8 @@ npx wrangler r2 object put hsb-boden-public/HSB-Flyer-Joel-Cherino.pdf \
   --file public/HSB-Flyer-Joel-Cherino.pdf \
   --content-type application/pdf
 
-npx wrangler r2 object put hsb-boden-public/HSB-Flyer-Jordie-Post.pdf \
-  --file public/HSB-Flyer-Jordie-Post.pdf \
+npx wrangler r2 object put hsb-boden-public/HSB-Flyer-Jordi-Post.pdf \
+  --file public/HSB-Flyer-Jordi-Post.pdf \
   --content-type application/pdf
 
 npx wrangler r2 object put hsb-boden-public/HSB-Flyer-Geschaeftsfuehrer.pdf \

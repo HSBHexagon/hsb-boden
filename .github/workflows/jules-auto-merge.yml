@@ -2,7 +2,7 @@ name: Jules / Approved PR Auto-Merge
 
 on:
   pull_request_target:
-    types: [labeled, synchronize, reopened, ready_for_review]
+    types: [labeled, synchronize]
     branches: [main]
   workflow_dispatch:
     inputs:
@@ -18,18 +18,52 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  reset-approval-after-update:
+    name: Reset approval after new commits
+    if: >-
+      github.event_name == 'pull_request_target' &&
+      github.event.action == 'synchronize'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
+    steps:
+      - name: Disable auto-merge and remove stale approval labels
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          REPOSITORY: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+
+          gh pr merge "$PR_NUMBER" \
+            --repo "$REPOSITORY" \
+            --disable-auto 2>/dev/null || true
+
+          for label in auto-merge jules-approved; do
+            gh pr edit "$PR_NUMBER" \
+              --repo "$REPOSITORY" \
+              --remove-label "$label" 2>/dev/null || true
+          done
+
+          echo "New commits detected on PR #$PR_NUMBER. Auto-merge was disabled and approval labels were removed; fresh approval is required." >> "$GITHUB_STEP_SUMMARY"
+
   enable-auto-merge:
     name: Enable guarded auto-merge
     if: >-
       github.event_name == 'workflow_dispatch' ||
       (
         github.event_name == 'pull_request_target' &&
+        github.event.action == 'labeled' &&
         github.event.pull_request.draft == false &&
         (
-          contains(github.event.pull_request.labels.*.name, 'auto-merge') ||
+          github.event.label.name == 'auto-merge' ||
           (
-            github.event.pull_request.user.login == 'google-labs-jules[bot]' &&
-            contains(github.event.pull_request.labels.*.name, 'jules-approved')
+            github.event.label.name == 'jules-approved' &&
+            github.event.pull_request.user.login == 'google-labs-jules[bot]'
           )
         )
       )
@@ -47,6 +81,7 @@ jobs:
           EVENT_PR_NUMBER: ${{ github.event.pull_request.number }}
           INPUT_PR_NUMBER: ${{ inputs.pr_number }}
           REPOSITORY: ${{ github.repository }}
+          TRIGGER_ACTOR: ${{ github.actor }}
         run: |
           set -euo pipefail
 
@@ -55,6 +90,20 @@ jobs:
             echo "Invalid pull request number: $PR_NUMBER" >&2
             exit 1
           fi
+
+          PERMISSION="$({
+            gh api "repos/$REPOSITORY/collaborators/$TRIGGER_ACTOR/permission" \
+              --jq '.permission'
+          } 2>/dev/null || true)"
+
+          case "$PERMISSION" in
+            admin|maintain|write)
+              ;;
+            *)
+              echo "Actor '$TRIGGER_ACTOR' has '$PERMISSION' permission and cannot authorize auto-merge." >&2
+              exit 1
+              ;;
+          esac
 
           PR_JSON="$(
             gh pr view "$PR_NUMBER" \
@@ -110,4 +159,4 @@ jobs:
             --squash \
             --match-head-commit "$HEAD_SHA"
 
-          echo "Auto-merge enabled for PR #$PR_NUMBER at head $HEAD_SHA." >> "$GITHUB_STEP_SUMMARY"
+          echo "Auto-merge enabled for PR #$PR_NUMBER at head $HEAD_SHA. Any later commit requires fresh approval." >> "$GITHUB_STEP_SUMMARY"

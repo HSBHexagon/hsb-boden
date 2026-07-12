@@ -1,8 +1,8 @@
 name: Deploy Production
 
-# Manual gate: per AGENTS.md, production deploys remain blocked until the
-# lead pipeline is live and the WordPress site is intentionally cut over.
-# Trigger manually from the Actions tab once that condition is met.
+# Manual gate: production deploys stay workflow_dispatch-only. The Pages
+# cutover of www.hsb-boden.de is live since 2026-07-09; the gate now exists
+# to keep production releases an explicit human decision.
 on:
   workflow_dispatch:
 
@@ -31,6 +31,12 @@ jobs:
           npm run test:run
 
       - name: Build
+        # PUBLIC_LEAD_FORM_ENABLED is a build-time flag (site.hasLeadEndpoint):
+        # without it the LeadForm renders in the disabled phone/mail fallback.
+        # Runtime delivery is gated separately by LEAD_WEBHOOK_URL on the
+        # Pages production environment.
+        env:
+          PUBLIC_LEAD_FORM_ENABLED: "true"
         run: npm run build
 
       - name: Deploy to Cloudflare Pages (Production)

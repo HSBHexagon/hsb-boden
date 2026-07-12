@@ -1,110 +1,181 @@
 # AI_GATEWAY_FUTURE_ARCHITECTURE — HSB-Boden / HEXAFLOOR
 
-Status: `ai-gateway-future-only-not-planned-for-current-launch`
-Stand: 2026-06-26 | New doc — final pre-go-live documentation wave.
-
-**No AI Gateway created. No AI feature built. No Cloudflare AI products activated.**
-This document is a forward-looking architecture note only.
-It does not represent any planned or approved near-term work.
+Status: `isolated-poc-code-implemented-not-configured-not-active`
+Stand: 2026-07-12
 
 Canonical Cloudflare truth: `docs/cloudflare/CLOUDFLARE_PROVIDER_MAX_READINESS.md`
+Architecture decision: `docs/adr/ADR-0001-github-models-cloudflare-poc.md`
+Implementation plan: `docs/superpowers/plans/2026-07-12-github-models-cloudflare-poc.md`
 
 ---
 
-## Current AI Usage in HSB-Boden
+## Current production boundary
 
-None. The current production system is:
-- Cloudflare Worker serving an Astro 6 static site
-- Lead intake form → `/api/lead` → Apps Script → Google Sheets CRM-Light
-- No AI inference, no LLM calls, no AI-generated content at runtime
+The production website has no active AI feature. The active architecture remains:
 
----
+- static Astro 6 site on Cloudflare Pages;
+- Pages Function `/api/lead` for website lead intake;
+- Google Apps Script and Google Sheets CRM-Light as the verified lead destination;
+- no AI inference in the lead path;
+- no runtime use of customer, lead or CRM data by an AI model.
 
-## What AI Gateway Would Enable (Future Only)
-
-Cloudflare AI Gateway is a proxy/observability layer for AI API calls. It provides:
-- Request/response logging for LLM calls
-- Rate limiting and cost control per model
-- Caching of identical prompts (reduces cost)
-- Fallback routing between AI providers
-- No model training or fine-tuning
-
-**AI Gateway is only relevant if HSB-Boden adds an AI feature (e.g., smart lead scoring,
-AI-assisted response generation, or an internal assistant).** There is no such feature
-planned or approved for the current launch.
+The GitHub Models work exists only on branch `agent/github-models-cloudflare-poc` and draft PR #74. It is not merged, configured or active.
 
 ---
 
-## Potential Future Use Cases (No Commitment)
+## Approved isolated PoC
 
-| Use Case | Trigger | Priority |
-|----------|---------|---------|
-| Internal lead scoring assistant | >200 leads in CRM, manual scoring slow | Low |
-| AI-generated follow-up draft templates | JORDI or Joel requests it | Low |
-| AI search over product docs | Internal knowledge base decision | Low |
-| Customer-facing chatbot | Explicit product decision + legal review | Very low |
+The project owner explicitly approved an isolated proof of concept on 2026-07-12.
 
-None of these use cases are approved, planned, or funded.
+```text
+Authorized internal caller
+  -> POST /api/github-models
+  -> Cloudflare AI Gateway custom provider github-models
+  -> GitHub Models inference API
+```
 
----
+The implementation is deliberately inert by default:
 
-## If AI Gateway Is Activated in the Future
+- `AI_POC_ENABLED` must equal `true` or the route returns 404;
+- a separate `AI_POC_ACCESS_TOKEN` bearer token is required;
+- there is no frontend caller and no CORS support;
+- model names are restricted to a three-model allowlist;
+- prompt and response data are not logged;
+- AI Gateway caching is disabled;
+- no production deployment or merge is authorized by this document.
 
-### Setup Steps
+Allowed PoC models:
 
-1. Cloudflare Dashboard → **AI → AI Gateway → Create Gateway**
-2. Name: `hsb-boden-ai`
-3. Enable logging (costs apply at scale; verify current plan pricing)
-4. Replace direct AI API calls in Worker with AI Gateway endpoint URL:
-   ```
-   https://gateway.ai.cloudflare.com/v1/{account_id}/hsb-boden-ai/{provider}/{model}
-   ```
-5. Keep AI API keys as Worker secrets — never hardcoded
-
-### Supported Providers (As of Mid-2026)
-
-- OpenAI (GPT-4o, GPT-4o-mini)
-- Anthropic (Claude 3.5 Sonnet, Claude Haiku 4.5)
-- Google (Gemini Pro)
-- Workers AI (Cloudflare's own hosted models — Llama, Mistral, etc.)
-
-### Workers AI (Lowest Cost Option)
-
-Cloudflare Workers AI runs inference directly on Cloudflare's edge network.
-No external API key required. Billed per neuron token.
-Suitable for: simple classification, embedding generation, basic summarization.
-Not suitable for: complex reasoning, long document analysis, customer-facing chat (quality risk).
+- `openai/gpt-5`
+- `deepseek/DeepSeek-V3-0324`
+- `meta/Llama-4-Scout-17B-16E-Instruct`
 
 ---
 
-## Cloudflare AI Search (Future Only)
+## Credential model
 
-Cloudflare AI Search (formerly Vectorize + Workers AI embeddings) enables semantic search
-over an embedded document corpus. Use cases:
-- Internal product knowledge base search
-- Semantic lead matching (very advanced, not required)
+### Cloudflare Pages environment
 
-**Not planned. Not built. Not approved.** Document here for architectural awareness only.
+Configure only as encrypted server-side values:
+
+```text
+AI_POC_ENABLED=false
+AI_POC_ACCESS_TOKEN=<generated internal bearer token>
+CF_ACCOUNT_ID=<Cloudflare account identifier>
+CF_AI_GATEWAY_ID=hsb-boden-ai
+CF_AIG_TOKEN=<scoped AI Gateway token>
+```
+
+### Cloudflare AI Gateway custom provider
+
+```text
+Provider slug: github-models
+Base URL: https://models.github.ai
+Credential header: Authorization
+Credential value: Bearer <fine-grained GitHub token>
+Required GitHub permission: models:read only
+```
+
+The GitHub Models token must not be placed in Pages variables, `.env`, `.dev.vars`, repository files, GitHub issues, PR text or logs.
 
 ---
 
-## Boundary with Current Work
+## Manual Cloudflare setup gate
 
-| Item | Status |
-|------|--------|
-| AI Gateway created | No |
-| AI feature in Worker code | No |
-| LLM API calls in any Worker | No |
-| Workers AI binding in `wrangler.toml` | No |
-| AI-generated content in production | No |
+No Cloudflare setting was changed by the repository implementation. An authorized operator must perform these dashboard steps before any live PoC test:
 
-If any AI feature is added, a separate ADR (Architecture Decision Record) must be written,
-reviewed by Joel, and approved before implementation.
+1. Open Cloudflare AI Gateway.
+2. Create or select gateway `hsb-boden-ai`.
+3. Create custom provider `github-models` with base URL `https://models.github.ai`.
+4. Store a fine-grained GitHub token with `models:read` only in the provider credential configuration.
+5. Create a scoped AI Gateway authentication token.
+6. Add the five Pages values in a non-production or preview environment first.
+7. Keep `AI_POC_ENABLED=false` until a specific test window is approved.
+8. Use synthetic prompts only; do not use leads, CRM records, customer data or confidential project documents.
+
+Expected provider-specific route used by the Pages Function:
+
+```text
+https://gateway.ai.cloudflare.com/v1/{account_id}/{gateway_id}/custom-github-models/inference/chat/completions
+```
 
 ---
 
-## Stop Condition
+## Implemented controls
 
-If this document is referenced during a launch session, stop.
-AI Gateway has no relevance to the current DNS-triggered go-live.
-Focus on `docs/PHASE_C_CUTOVER_RUNBOOK.md` and `docs/cloudflare/CLOUDFLARE_PROVIDER_MAX_READINESS.md`.
+| Control | Implementation |
+|---|---|
+| Default state | 404 unless `AI_POC_ENABLED=true` |
+| Caller authentication | Separate bearer token |
+| Allowed methods | POST only |
+| Model access | Explicit allowlist |
+| Request size | 16 KiB maximum |
+| Response size | 256 KiB maximum |
+| Message count | 1–12 |
+| Message length | 1–4,000 characters |
+| Output tokens | 1–2,000 |
+| Upstream timeout | 15 seconds |
+| AI Gateway cache | Disabled with `cf-aig-cache-ttl: 0` |
+| Logging | Timestamp, result, model, duration and upstream status only |
+| Error handling | Sanitized client responses; no upstream body exposure |
+
+---
+
+## Explicitly out of scope
+
+- customer-facing chatbot;
+- lead scoring from real CRM data;
+- automated outreach or email generation;
+- automatic follow-up decisions;
+- website content generation at runtime;
+- AI Search, Vectorize, D1, R2 or Workers AI bindings;
+- production activation;
+- changes to `/api/lead`;
+- DNS, routes, apex redirect or production deployment.
+
+Any of these requires a separate ADR, privacy review and owner approval.
+
+---
+
+## Verification gate
+
+Before this PoC can be considered code-ready, the draft PR must show successful:
+
+```bash
+npm run test:run
+npm run check
+npm run build
+```
+
+The preview deployment may compile the route, but the route must remain disabled without environment configuration.
+
+A real inference test is a separate manual step and must verify:
+
+- disabled mode returns 404;
+- missing/invalid bearer token returns 401 when enabled;
+- one synthetic request succeeds through AI Gateway;
+- AI Gateway logs contain no credential or prompt leakage;
+- disabling the flag immediately closes the route.
+
+---
+
+## Rollback
+
+1. Set `AI_POC_ENABLED=false` or remove it.
+2. Remove the PoC Pages environment values.
+3. Delete or disable custom provider `github-models`.
+4. Revoke both the GitHub token and the Cloudflare AI Gateway token.
+5. Close draft PR #74 and delete branch `agent/github-models-cloudflare-poc` if abandoned.
+
+Rollback does not touch the website, lead endpoint, CRM, DNS or production domain.
+
+---
+
+## Future use cases requiring a separate decision
+
+| Use case | Trigger | Current status |
+|---|---|---|
+| Internal lead scoring assistant | Manual scoring becomes operationally slow | Not approved |
+| Follow-up draft assistant | Operators request controlled drafting | Not approved |
+| Internal product-document search | Knowledge-base project approved | Not approved |
+| Customer-facing chatbot | Product, privacy and legal approval | Not approved |

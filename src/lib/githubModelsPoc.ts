@@ -2,7 +2,7 @@ import { z } from "zod";
 
 export const GITHUB_MODELS_ALLOWLIST = [
   "openai/gpt-5",
-  "deepseek/DeepSeek-V3-0324",
+  "deepseek/deepseek-v3-0324",
   "meta/Llama-4-Scout-17B-16E-Instruct",
 ] as const;
 
@@ -39,19 +39,24 @@ const requestSchema = z
       .min(1)
       .max(12),
     max_tokens: z.number().int().min(1).max(2_000).optional(),
-    temperature: z.number().min(0).max(2).optional(),
+    temperature: z.number().min(0).max(1).optional(),
     top_p: z.number().min(0).max(1).optional(),
   })
   .strict();
 
 class PayloadTooLargeError extends Error {}
 
-function jsonResponse(status: number, body: unknown) {
+function jsonResponse(
+  status: number,
+  body: unknown,
+  extraHeaders?: HeadersInit,
+) {
   return new Response(JSON.stringify(body), {
     status,
     headers: {
       "Content-Type": "application/json; charset=utf-8",
       "Cache-Control": "no-store",
+      ...extraHeaders,
     },
   });
 }
@@ -141,7 +146,11 @@ export async function handleGithubModelsPoc(
   }
 
   if (request.method !== "POST") {
-    return jsonResponse(405, { ok: false, error: "method_not_allowed" });
+    return jsonResponse(
+      405,
+      { ok: false, error: "method_not_allowed" },
+      { Allow: "POST" },
+    );
   }
 
   if (!env.AI_POC_ACCESS_TOKEN) {
@@ -202,7 +211,7 @@ export async function handleGithubModelsPoc(
         Accept: "application/json",
         "Content-Type": "application/json",
         "cf-aig-authorization": `Bearer ${env.CF_AIG_TOKEN}`,
-        "cf-aig-cache-ttl": "0",
+        "cf-aig-skip-cache": "true",
       },
       body: JSON.stringify(parsed.data),
       signal: controller.signal,

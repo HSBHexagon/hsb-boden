@@ -12,6 +12,30 @@ That file remains the canonical trigger-day execution path. This file is readine
 
 ---
 
+## GitHub Models Preview-only PoC addendum (2026-07-12)
+
+This addendum records an isolated AI Gateway experiment. It does not alter the
+website cutover state, zone/NS prerequisites, production Worker, WordPress
+boundary, DNS, or CRM readiness recorded below.
+
+| Item | Verified PoC state |
+|---|---|
+| Pages project | `hsb-boden`, Preview only |
+| Final Preview deployment | `https://9fb64336.hsb-boden.pages.dev` |
+| Final gate | `AI_POC_ENABLED=false` |
+| Production PoC configuration | None; production retained only `LEAD_WEBHOOK_URL` |
+| Gateway | `hsb-boden-ai`, authenticated, `collect_logs=false`, `cache_ttl=0` |
+| Custom provider | `github-models`, enabled, base URL `https://models.github.ai` |
+| Provider credential | Active Secret Store key scoped to `ai_gateway`; default alias configured |
+| Inference outcome | Blocked: the custom-provider endpoint reproducibly returned a GitHub-shaped `404` while direct GitHub Models fallback inference returned `200` |
+
+The disabled route was verified as `404` for `GET`, `HEAD`, `PUT`, `PATCH`,
+`DELETE`, `OPTIONS`, and `POST`. No production deployment or mutation occurred.
+The exact evidence, non-secret test matrix, and follow-up gate are in
+`docs/cloudflare/GITHUB_MODELS_POC_EXECUTION_REPORT.md`.
+
+---
+
 ## Verified Provider State
 
 | Field | Value |
@@ -208,5 +232,6 @@ If mail DNS, secrets, or other settings require changes, those require separate 
 - WAF/cache/rate-limit readiness: `docs/cloudflare/WAF_CACHE_RATE_LIMIT_READINESS.md`
 - R2 asset strategy: `docs/cloudflare/R2_ASSET_UPLOAD_STRATEGY.md`
 - Turnstile form protection: `docs/cloudflare/TURNSTILE_FORM_PROTECTION_READINESS.md`
-- AI Gateway (future only): `docs/cloudflare/AI_GATEWAY_FUTURE_ARCHITECTURE.md`
+- AI Gateway (Preview PoC configured/tested/disabled; inference blocked):
+  `docs/cloudflare/AI_GATEWAY_FUTURE_ARCHITECTURE.md`
 - Master go-live checklist: `docs/launch/PRE_DNS_GO_LIVE_MAX_CHECKLIST.md`

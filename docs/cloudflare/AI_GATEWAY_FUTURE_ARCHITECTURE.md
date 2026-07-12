@@ -1,227 +1,151 @@
-# AI_GATEWAY_FUTURE_ARCHITECTURE — HSB-Boden / HEXAFLOOR
+# AI Gateway — HSB-Boden / HEXAFLOOR
 
-Status: `BLOCKED_MISSING_GITHUB_MODELS_TOKEN`
+Status: `PREVIEW_POC_CONFIGURED_TESTED_DISABLED`
+
+Inference status: `BLOCKED_CUSTOM_PROVIDER_FORWARDING`
+
 Stand: 2026-07-12
 
-Canonical Cloudflare truth: `docs/cloudflare/CLOUDFLARE_PROVIDER_MAX_READINESS.md`
+Canonical Cloudflare website readiness: `docs/cloudflare/CLOUDFLARE_PROVIDER_MAX_READINESS.md`
+PoC execution evidence: `docs/cloudflare/GITHUB_MODELS_POC_EXECUTION_REPORT.md`
 Architecture decision: `docs/adr/ADR-0001-github-models-cloudflare-poc.md`
-Implementation plan: `docs/superpowers/plans/2026-07-12-github-models-cloudflare-poc.md`
 
----
+## Current boundary
 
-## Current production boundary
+The production website has no active AI feature. The active production
+architecture remains a static Astro site on Cloudflare Pages with `/api/lead`
+for lead intake and the existing CRM-Light destination. No AI model receives
+lead, customer, CRM, or form data.
 
-The production website has no active AI feature. The active architecture remains:
+The GitHub Models work is restricted to branch
+`agent/github-models-cloudflare-poc` and draft PR #74. It was configured and
+tested on a Cloudflare Pages Preview deployment only. The final Preview state
+is disabled; there was no production deployment, production Pages-variable
+mutation, DNS change, WordPress change, CRM change, or merge.
 
-- static Astro 6 site on Cloudflare Pages;
-- Pages Function `/api/lead` for website lead intake;
-- Google Apps Script and Google Sheets CRM-Light as the verified lead destination;
-- no AI inference in the lead path;
-- no runtime use of customer, lead or CRM data by an AI model.
+## Verified Preview configuration
 
-The GitHub Models work exists only on branch `agent/github-models-cloudflare-poc` and draft PR #74. It is not merged, configured or active.
+| Component | Verified state |
+|---|---|
+| Pages project | `hsb-boden` |
+| Final Preview deployment | `https://9fb64336.hsb-boden.pages.dev` |
+| Preview gate | `AI_POC_ENABLED=false` |
+| Production PoC variables | None; production retained only `LEAD_WEBHOOK_URL` |
+| AI Gateway | `hsb-boden-ai`, authenticated, `collect_logs=false`, `cache_ttl=0` |
+| Custom provider | `github-models`, enabled, base URL `https://models.github.ai` |
+| Provider credential | Active Secret Store key scoped to `ai_gateway` |
+| Provider configuration | Default alias configured |
 
-## Operational continuation result (2026-07-12)
+For the PoC, Preview contains only the gate, caller token, Cloudflare account
+identifier, gateway identifier, and scoped AI Gateway runtime token. The GitHub
+Models credential is stored in Cloudflare's provider credential flow; it is not
+a Pages variable and is never stored in the repository, `.env`, `.dev.vars`,
+issue, PR text, or logs.
 
-The interrupted implementation was reconstructed without resuming or changing
-the paused process. The current verified state is:
-
-- Cloudflare account: `Info@hsb-boden.de's Account`
-  (`01dc37803d1c687b4f9d6249ec89f700`);
-- Pages project: `hsb-boden`;
-- latest inspected branch preview:
-  `https://8cb14123.hsb-boden.pages.dev`;
-- `POST /api/github-models` returned `404` while disabled;
-- the Pages API showed no preview environment variables for the PoC;
-- the available Cloudflare API token returned `403` for AI Gateway gateway and
-  custom-provider inventory, and the authenticated dashboard did not load the
-  AI Gateway application;
-- no approved fine-grained GitHub token with only `models:read` was available;
-- no Cloudflare, Pages, DNS, production or secret mutation was performed.
-
-The public GitHub Models catalog still listed `openai/gpt-5`. It did not list
-`deepseek/DeepSeek-V3-0324` or
-`meta/Llama-4-Scout-17B-16E-Instruct` at verification time. The allowlist was
-not changed because the approved primary test model remains valid and account
-availability could not be tested without the dedicated credential.
-
-### Manual unblock gate
-
-1. Create a dedicated fine-grained GitHub token with only `Models: Read`
-   (`models:read`). Do not reuse the general `gh` authentication token.
-2. In Cloudflare Dashboard, open **AI > AI Gateway**, create or select
-   `hsb-boden-ai`, and add the GitHub token under **Provider Keys** using BYOK.
-3. Create or verify custom provider `github-models` with base URL
-   `https://models.github.ai` and enable it only for the controlled test.
-4. Create an authenticated-gateway token with `AI Gateway Run`. Cloudflare
-   currently scopes this permission to the account, not to one gateway, so the
-   token must be treated as account-wide and rotated after the PoC if retained.
-5. Grant the operator token `AI Gateway Read/Edit` only for the setup window,
-   then re-run the inventory endpoints before creating anything.
-6. Configure only the Pages preview environment, beginning with
-   `AI_POC_ENABLED=false`, and verify the disabled `404` before opening the
-   temporary test window.
-
-Next non-secret verification command after the credentials are configured:
-
-```bash
-curl -sS -o /dev/null -w '%{http_code}\n' \
-  -X POST https://8cb14123.hsb-boden.pages.dev/api/github-models \
-  -H 'Content-Type: application/json' \
-  --data '{"model":"openai/gpt-5","messages":[{"role":"user","content":"synthetic test"}]}'
-```
-
-Expected result before enabling the test window: `404`.
-
----
-
-## Approved isolated PoC
-
-The project owner explicitly approved an isolated proof of concept on 2026-07-12.
+## Request path and controls
 
 ```text
 Authorized internal caller
-  -> POST /api/github-models
+  -> Cloudflare Pages Function /api/github-models
   -> Cloudflare AI Gateway custom provider github-models
   -> GitHub Models inference API
 ```
 
-The implementation is deliberately inert by default:
-
-- `AI_POC_ENABLED` must equal `true` or the route returns 404;
-- a separate `AI_POC_ACCESS_TOKEN` bearer token is required;
-- there is no frontend caller and no CORS support;
-- model names are restricted to a three-model allowlist;
-- prompt and response data are not logged;
-- AI Gateway caching is disabled;
-- no production deployment or merge is authorized by this document.
-
-Allowed PoC models:
-
-- `openai/gpt-5`
-- `deepseek/DeepSeek-V3-0324`
-- `meta/Llama-4-Scout-17B-16E-Instruct`
-
----
-
-## Credential model
-
-### Cloudflare Pages environment
-
-Configure only as encrypted server-side values:
-
-```text
-AI_POC_ENABLED=false
-AI_POC_ACCESS_TOKEN=<generated internal bearer token>
-CF_ACCOUNT_ID=<Cloudflare account identifier>
-CF_AI_GATEWAY_ID=hsb-boden-ai
-CF_AIG_TOKEN=<scoped AI Gateway token>
-```
-
-### Cloudflare AI Gateway custom provider
-
-```text
-Provider slug: github-models
-Base URL: https://models.github.ai
-Credential header: Authorization
-Credential value: Bearer <fine-grained GitHub token>
-Required GitHub permission: models:read only
-```
-
-The GitHub Models token must not be placed in Pages variables, `.env`, `.dev.vars`, repository files, GitHub issues, PR text or logs.
-
----
-
-## Manual Cloudflare setup gate
-
-No Cloudflare setting was changed by the repository implementation. An authorized operator must perform these dashboard steps before any live PoC test:
-
-1. Open Cloudflare AI Gateway.
-2. Create or select gateway `hsb-boden-ai`.
-3. Create custom provider `github-models` with base URL `https://models.github.ai`.
-4. Store a fine-grained GitHub token with `models:read` only in the provider credential configuration.
-5. Create a scoped AI Gateway authentication token.
-6. Add the five Pages values in a non-production or preview environment first.
-7. Keep `AI_POC_ENABLED=false` until a specific test window is approved.
-8. Use synthetic prompts only; do not use leads, CRM records, customer data or confidential project documents.
-
-Expected provider-specific route used by the Pages Function:
+The Pages Function calls the provider-specific Cloudflare endpoint:
 
 ```text
 https://gateway.ai.cloudflare.com/v1/{account_id}/{gateway_id}/custom-github-models/inference/chat/completions
 ```
 
----
+Implemented controls:
 
-## Implemented controls
-
-| Control | Implementation |
+| Control | Current behavior |
 |---|---|
-| Default state | 404 unless `AI_POC_ENABLED=true` |
-| Caller authentication | Separate bearer token |
-| Allowed methods | POST only |
-| Model access | Explicit allowlist |
+| Default state | Every method returns `404` unless `AI_POC_ENABLED=true` |
+| Enabled methods | Only `POST`; non-POST methods return `405` |
+| Caller authentication | Separate internal bearer token |
+| Model access | Explicit three-model allowlist |
 | Request size | 16 KiB maximum |
 | Response size | 256 KiB maximum |
 | Message count | 1–12 |
 | Message length | 1–4,000 characters |
 | Output tokens | 1–2,000 |
+| Temperature | 0–1 |
 | Upstream timeout | 15 seconds |
-| AI Gateway cache | Disabled with `cf-aig-cache-ttl: 0` |
-| Logging | Timestamp, result, model, duration and upstream status only |
-| Error handling | Sanitized client responses; no upstream body exposure |
+| Gateway cache | Gateway `cache_ttl=0` and request header `cf-aig-skip-cache: true` |
+| Logging | Metadata only; no prompt, response, credential, or bearer-token logging |
+| Browser access | No CORS support |
 
----
+The approved allowlist is:
 
-## Explicitly out of scope
+- `openai/gpt-5`
+- `deepseek/deepseek-v3-0324`
+- `meta/Llama-4-Scout-17B-16E-Instruct`
 
-- customer-facing chatbot;
-- lead scoring from real CRM data;
-- automated outreach or email generation;
-- automatic follow-up decisions;
-- website content generation at runtime;
-- AI Search, Vectorize, D1, R2 or Workers AI bindings;
-- production activation;
-- changes to `/api/lead`;
-- DNS, routes, apex redirect or production deployment.
+The DeepSeek identifier was corrected test-first to the exact current catalog
+casing. No new model was added.
 
-Any of these requires a separate ADR, privacy review and owner approval.
+## Completed Preview checks
 
----
+The final Preview URL returned `200` for the home page with
+`x-robots-tag: noindex`. With the final disabled flag, `GET`, `HEAD`, `PUT`,
+`PATCH`, `DELETE`, `OPTIONS`, and `POST` to `/api/github-models` each returned
+`404`; the `HEAD` response had no body.
 
-## Verification gate
+During the temporary enabled test window, the following negative controls were
+verified: missing or wrong caller token (`401`), malformed JSON (`400`),
+non-allowlisted model (`400`), and over-size request (`413`). Valid requests
+reached the Pages handler but returned its sanitized `502 upstream_unavailable`
+response when the custom-provider call failed.
 
-Before this PoC can be considered code-ready, the draft PR must show successful:
+The final local gates passed:
 
-```bash
-npm run test:run
-npm run check
-npm run build
+```text
+npm run test:run       73/73 passed
+npm run check          0 errors, 0 warnings, 0 hints
+npm run build          35 pages built successfully
+npm run deploy:dry-run Worker compilation succeeded
 ```
 
-The preview deployment may compile the route, but the route must remain disabled without environment configuration.
+## Inference blocker
 
-A real inference test is a separate manual step and must verify:
+The preferred `openai/gpt-5` was present in the GitHub Models catalog but a
+direct synthetic inference request returned the safe classification
+`unavailable_model`. The first existing allowed fallback,
+`deepseek/deepseek-v3-0324`, succeeded directly against GitHub Models with
+`200`; its response content was not retained.
 
-- disabled mode returns 404;
-- missing/invalid bearer token returns 401 when enabled;
-- one synthetic request succeeds through AI Gateway;
-- AI Gateway logs contain no credential or prompt leakage;
-- disabling the flag immediately closes the route.
+The exact Cloudflare custom-provider endpoint returned a GitHub-shaped `404`
+for the allowed fallback model in two independent credential modes: the
+configured BYOK/default-alias path and a transient in-memory inline
+provider-authentication test. This leaves a reproducible Cloudflare
+custom-provider forwarding incompatibility or defect as the remaining blocker.
+It is not evidence of a failed GitHub credential, unavailable fallback model,
+or Pages validation defect.
 
----
+No successful inference through Cloudflare AI Gateway was observed. The
+performance warm-up and three sequential inference measurements were therefore
+not performed; failure timings are not reported as inference latency.
 
-## Rollback
+## Next permitted action
 
-1. Set `AI_POC_ENABLED=false` or remove it.
-2. Remove the PoC Pages environment values.
-3. Delete or disable custom provider `github-models`.
-4. Revoke both the GitHub token and the Cloudflare AI Gateway token.
-5. Close draft PR #74 and delete branch `agent/github-models-cloudflare-poc` if abandoned.
+Keep the Preview route disabled. Reopen a Preview-only test window only after
+the Cloudflare custom-provider forwarding issue is resolved. The required
+re-test sequence is: disabled route check, enabled authentication and
+validation checks, one successful synthetic inference, warm-up plus three
+sequential measurements, then a final disabled deployment and `404` check.
 
-Rollback does not touch the website, lead endpoint, CRM, DNS or production domain.
+Production activation, frontend integration, CRM use, lead scoring, automated
+outreach, DNS changes, and changes to `/api/lead` remain out of scope and
+require separate approval.
 
----
+## Rollback options
+
+The immediate runtime rollback is already in effect: `AI_POC_ENABLED=false` in
+Preview. If the experiment is abandoned, an owner may additionally remove the
+Preview variables, disable or delete the custom provider, revoke the scoped
+tokens, and close draft PR #74. None of those actions changes the website,
+lead endpoint, CRM, DNS, or production domain.
 
 ## Future use cases requiring a separate decision
 

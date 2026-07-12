@@ -1,6 +1,7 @@
 # ADR-0001: GitHub Models via Cloudflare AI Gateway PoC
 
-- **Status:** Approved for isolated PoC branch only
+- **Status:** Approved for isolated Preview-only PoC; test window closed,
+  final route disabled; custom-provider forwarding blocked
 - **Date:** 2026-07-12
 - **Decision owner:** HSBHexagon project owner
 - **Repository:** `HSBHexagon/hsb-boden`
@@ -38,12 +39,13 @@ The custom provider uses:
 
 - Slug: `github-models`
 - Base URL: `https://models.github.ai`
-- Upstream credential: fine-grained GitHub token with `models:read` only
+- Upstream credential: fine-grained GitHub token for GitHub Models (the
+  required permission is `models:read`)
 
 Allowed models:
 
 - `openai/gpt-5`
-- `deepseek/DeepSeek-V3-0324`
+- `deepseek/deepseek-v3-0324`
 - `meta/Llama-4-Scout-17B-16E-Instruct`
 
 ## Security constraints
@@ -55,7 +57,8 @@ Allowed models:
 - Message count and message length are bounded.
 - Model names are allowlisted.
 - Upstream calls time out after 15 seconds.
-- AI Gateway caching is disabled for the PoC.
+- AI Gateway caching is disabled for the PoC (`cache_ttl=0` and
+  `cf-aig-skip-cache: true`).
 - Logs contain only timestamp, result, model, duration and upstream status.
 - Prompts, responses, tokens, customer data and lead data are never logged.
 - No browser CORS support is added.
@@ -78,16 +81,30 @@ Not selected for this PoC because the requested experiment is specifically GitHu
 
 Rejected and out of scope. These require a separate product, privacy and legal decision.
 
-## Operational setup
+## Operational state (2026-07-12)
 
-No Cloudflare setting is changed by this repository branch. Before a live PoC call, an authorized operator must manually:
+The authorized setup was performed only for the controlled Cloudflare Pages
+Preview test window. It does not change production authorization or activate a
+customer-facing feature.
 
-1. Create or select AI Gateway `hsb-boden-ai`.
-2. Create custom provider `github-models` with base URL `https://models.github.ai`.
-3. Store the GitHub fine-grained token in the provider credential configuration; permission `models:read` only.
-4. Create a scoped AI Gateway auth token.
-5. Add the five Pages environment values as encrypted secrets/variables in a non-production environment first.
-6. Keep `AI_POC_ENABLED=false` until an explicit test window is approved.
+- Gateway `hsb-boden-ai` is authenticated with `collect_logs=false` and
+  `cache_ttl=0`.
+- The enabled custom provider is `github-models` with base URL
+  `https://models.github.ai` and an active Secret Store credential scoped to
+  `ai_gateway`; its default alias is configured.
+- The five PoC Pages values exist only in Preview. Production has no PoC
+  variables and retains only `LEAD_WEBHOOK_URL`.
+- The final Preview deployment has `AI_POC_ENABLED=false` and the route is
+  closed with `404` for every tested method.
+
+The preferred `openai/gpt-5` was catalog-listed but returned
+`unavailable_model` in direct synthetic inference. The first existing allowed
+fallback, `deepseek/deepseek-v3-0324`, returned `200` directly from GitHub
+Models. The exact Cloudflare custom-provider route still returned a
+GitHub-shaped `404` in BYOK/default-alias and transient inline-authentication
+tests, so successful Gateway inference and performance measurements remain
+blocked. The evidence and test boundaries are recorded in
+`docs/cloudflare/GITHUB_MODELS_POC_EXECUTION_REPORT.md`.
 
 ## Rollback
 
@@ -110,6 +127,7 @@ Positive:
 
 Negative:
 
-- Manual Cloudflare dashboard setup is still required.
+- Cloudflare custom-provider forwarding is not yet proven compatible with
+  GitHub Models for this configuration.
 - The PoC adds an internal API surface that must never be enabled without token configuration.
 - GitHub Models free-tier limits remain unsuitable for unbounded production traffic.

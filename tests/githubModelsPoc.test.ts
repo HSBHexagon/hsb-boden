@@ -76,6 +76,47 @@ describe("handleGithubModelsPoc", () => {
     expect(fetchImpl).not.toHaveBeenCalled();
   });
 
+  it("accepts the available lower-case DeepSeek fallback model", async () => {
+    const fallbackBody = {
+      ...validBody,
+      model: "deepseek/deepseek-v3-0324",
+    };
+    const fetchImpl = vi.fn<typeof fetch>().mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          choices: [{ message: { role: "assistant", content: "OK" } }],
+        }),
+        { status: 200, headers: { "Content-Type": "application/json" } },
+      ),
+    );
+
+    const response = await handleGithubModelsPoc(
+      request(fallbackBody),
+      enabledEnv,
+      fetchImpl,
+    );
+
+    expect(response.status).toBe(200);
+    expect(fetchImpl).toHaveBeenCalledTimes(1);
+    expect(JSON.parse(String(fetchImpl.mock.calls[0][1]?.body))).toEqual(
+      fallbackBody,
+    );
+  });
+
+  it("rejects temperatures above the GitHub Models maximum", async () => {
+    const fetchImpl = vi.fn<typeof fetch>();
+
+    const response = await handleGithubModelsPoc(
+      request({ ...validBody, temperature: 1.1 }),
+      enabledEnv,
+      fetchImpl,
+    );
+
+    expect(response.status).toBe(400);
+    expect(await json(response)).toEqual({ ok: false, error: "validation_failed" });
+    expect(fetchImpl).not.toHaveBeenCalled();
+  });
+
   it("routes a valid request through the configured GitHub Models custom provider", async () => {
     const fetchImpl = vi.fn<typeof fetch>().mockResolvedValue(
       new Response(
@@ -105,7 +146,8 @@ describe("handleGithubModelsPoc", () => {
     expect(new Headers(init?.headers).get("cf-aig-authorization")).toBe(
       "Bearer gateway-test-token",
     );
-    expect(new Headers(init?.headers).get("cf-aig-cache-ttl")).toBe("0");
+    expect(new Headers(init?.headers).get("cf-aig-skip-cache")).toBe("true");
+    expect(new Headers(init?.headers).has("cf-aig-cache-ttl")).toBe(false);
     expect(new Headers(init?.headers).has("Authorization")).toBe(false);
     expect(JSON.parse(String(init?.body))).toEqual(validBody);
   });

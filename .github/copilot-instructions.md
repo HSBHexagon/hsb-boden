@@ -1,6 +1,6 @@
 # Copilot Instructions — hsb-boden
 
-This is an **Astro 5** project deployed to **Cloudflare Workers** (SSR adapter `@astrojs/cloudflare`, `output: server`). It is the public website for HSB Bodenbeschichtungen — B2B lead generation for industrial floor coating services.
+This is an **Astro 6** project (`output: "static"`) deployed to **Cloudflare Pages** with Pages Functions (`functions/`). It is the public website for HSB Bodenbeschichtungen — B2B lead generation for industrial floor coating services.
 
 For full project rules, non-negotiables, and the deploy gate, see `AGENTS.md` in the repository root. This file summarizes the points most relevant to Copilot's code-completion and chat suggestions.
 
@@ -35,13 +35,13 @@ If a suggested change would touch any of the above, prefer the smallest possible
   npm run test:run
   npm run build
   ```
-- **Production deploys remain blocked** until the lead pipeline is live and the WordPress site (`hsb-boden.de`) is intentionally cut over (see `AGENTS.md` → Deploy Gate). Do not suggest enabling automatic production deploys (`wrangler deploy --env production`) on push to `main`.
+- **Production deploys remain approval-gated** (see `AGENTS.md` → Deploy Gate). Production deploys run via `deploy-production.yml` (`workflow_dispatch`-only, `wrangler pages deploy dist --project-name hsb-boden --branch=main`). Do not suggest enabling automatic production deploys on push to `main`.
 
 ## Tech stack quick reference
 
-- Framework: Astro 5, TypeScript
+- Framework: Astro 6 (static output), TypeScript
 - Styling: project design tokens — follow existing component conventions, do not introduce new design systems
-- Deployment: Cloudflare Workers via `wrangler`, config in `wrangler.toml`
+- Deployment: Cloudflare Pages (project `hsb-boden`) via `wrangler pages deploy`; API routes live in `functions/` (Pages Functions)
 - Tests: `npm run test:run`
 - Type/lint check: `npm run check`
 

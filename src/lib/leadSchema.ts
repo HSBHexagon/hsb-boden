@@ -37,16 +37,21 @@ export const leadEndpointSchema = z
     // verworfen bzw. gekappt statt den Lead abzulehnen (Payload-Größe deckelt
     // der Endpoint separat mit 413). Same-Origin-Referrer werden auch server-
     // seitig verworfen, damit direkte POSTs kein "referral" fälschen können.
-    utm_source: z.string().optional().transform(sanitizeUtmValue),
-    utm_medium: z.string().optional().transform(sanitizeUtmValue),
-    utm_campaign: z.string().optional().transform(sanitizeUtmValue),
-    utm_term: z.string().optional().transform(sanitizeUtmValue),
-    utm_content: z.string().optional().transform(sanitizeUtmValue),
-    referrer: z.string().optional().transform((v) => sanitizeReferrerOrigin(v, SITE_ORIGIN)),
-    landing_page: z.string().optional().transform(sanitizePagePath),
-    form_path: z.string().optional().transform(sanitizePagePath),
+    // z.unknown(): auch falsche JSON-Typen (Zahl, Objekt, null) verwerfen nur
+    // das Feld, nie den Lead — die Sanitizer geben für Nicht-Strings undefined
+    // zurück. Hinweis: Attribution ist client-supplied und damit prinzipiell
+    // fälschbar (kein Herkunftsnachweis) — hier wird nur normalisiert und
+    // Injection verhindert, nicht die Echtheit der Herkunft verifiziert.
+    utm_source: z.unknown().optional().transform(sanitizeUtmValue),
+    utm_medium: z.unknown().optional().transform(sanitizeUtmValue),
+    utm_campaign: z.unknown().optional().transform(sanitizeUtmValue),
+    utm_term: z.unknown().optional().transform(sanitizeUtmValue),
+    utm_content: z.unknown().optional().transform(sanitizeUtmValue),
+    referrer: z.unknown().optional().transform((v) => sanitizeReferrerOrigin(v, SITE_ORIGIN)),
+    landing_page: z.unknown().optional().transform(sanitizePagePath),
+    form_path: z.unknown().optional().transform(sanitizePagePath),
     attribution_channel: z
-      .string()
+      .unknown()
       .optional()
       .transform((v) =>
         v === "campaign" || v === "referral" || v === "direct" ? v : undefined,

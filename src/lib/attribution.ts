@@ -24,10 +24,18 @@ export interface Attribution {
 type ReadableStorage = Pick<Storage, "getItem">;
 type WritableStorage = Pick<Storage, "getItem" | "setItem">;
 
-/** UTM-Werte strikt per Allowlist: Wortzeichen, Leerzeichen und `-_.~%+`. */
-function sanitizeUtmValue(value: unknown): string | undefined {
+/**
+ * UTM-Werte strikt per Allowlist (Wortzeichen, Leerzeichen, `-_.~%+`); führende
+ * `=+-@` werden entfernt (Spreadsheet-Formula-Injection). Läuft auch serverseitig
+ * im Lead-Endpoint — die Vertrauensgrenze ist der Endpoint, nicht der Browser.
+ */
+export function sanitizeUtmValue(value: unknown): string | undefined {
   if (typeof value !== "string") return undefined;
-  const cleaned = value.replace(/[^\w .~%+-]/g, "").trim().slice(0, UTM_MAX);
+  const cleaned = value
+    .replace(/[^\w .~%+-]/g, "")
+    .replace(/^[=+@-]+/, "")
+    .trim()
+    .slice(0, UTM_MAX);
   return cleaned.length > 0 ? cleaned : undefined;
 }
 
@@ -39,17 +47,21 @@ function sanitizePathValue(value: unknown): string | undefined {
   return cleaned.length > 0 ? cleaned : undefined;
 }
 
-function sanitizePath(value: unknown): string | undefined {
-  const cleaned = sanitizePathValue(value);
+/** Seitenpfad ohne Query/Hash; alles, was nicht mit `/` beginnt, wird verworfen. */
+export function sanitizePagePath(value: unknown): string | undefined {
+  if (typeof value !== "string") return undefined;
+  const withoutQuery = value.split(/[?#]/, 1)[0];
+  const cleaned = sanitizePathValue(withoutQuery);
   if (!cleaned || !cleaned.startsWith("/")) return undefined;
   return cleaned;
 }
 
-function sanitizeReferrer(referrer: string, ownOrigin: string): string | undefined {
-  if (!referrer) return undefined;
+/** Referrer auf ein externes http(s)-Origin reduzieren; sonst verwerfen. */
+export function sanitizeReferrerOrigin(referrer: unknown, ownOrigin = ""): string | undefined {
+  if (typeof referrer !== "string" || !referrer) return undefined;
   try {
     const url = new URL(referrer);
-    if (url.origin === ownOrigin) return undefined;
+    if (ownOrigin && url.origin === ownOrigin) return undefined;
     if (url.protocol !== "https:" && url.protocol !== "http:") return undefined;
     return sanitizePathValue(url.origin);
   } catch {
@@ -69,9 +81,9 @@ export function captureAttribution(input: {
     const value = sanitizeUtmValue(params.get(key));
     if (value) attr[key] = value;
   }
-  const referrer = sanitizeReferrer(input.referrer, input.origin);
+  const referrer = sanitizeReferrerOrigin(input.referrer, input.origin);
   if (referrer) attr.referrer = referrer;
-  const landing = sanitizePath(input.pathname);
+  const landing = sanitizePagePath(input.pathname);
   if (landing) attr.landing_page = landing;
   return attr;
 }
@@ -91,7 +103,7 @@ function sanitizeStored(raw: unknown): Attribution | undefined {
   }
   const referrer = sanitizePathValue(source.referrer);
   if (referrer) attr.referrer = referrer;
-  const landing = sanitizePath(source.landing_page);
+  const landing = sanitizePagePath(source.landing_page);
   if (landing) attr.landing_page = landing;
   return attr;
 }
@@ -148,7 +160,7 @@ export function buildLeadAttributionFields(
   }
   if (source.referrer) fields.referrer = source.referrer;
   if (source.landing_page) fields.landing_page = source.landing_page;
-  const path = sanitizePath(formPath);
+  const path = sanitizePagePath(formPath);
   if (path) fields.form_path = path;
   fields.attribution_channel = resolveChannel(source);
   return fields;

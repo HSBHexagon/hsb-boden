@@ -264,6 +264,12 @@ Attribution den MPA-Seitenwechsel zur Kontaktseite überlebt. Blockierter/fehlen
 gekapselt — der Formularversand kann durch Attribution nie scheitern. Leads ohne UTM
 bleiben vollständig gültig (`attribution_channel: "direct"`).
 
+**Serverseitige Vertrauensgrenze (seit Review-Fix):** Der Lead-Endpoint re-normalisiert
+alle Attributionsfelder unabhängig vom Browser (Zod-Transforms in `leadSchema.ts`):
+UTM-Allowlist, Entfernung führender `=+-@` (Spreadsheet-Formula-Injection), Referrer
+auf http(s)-Origin reduziert, Pfade ohne Query/Hash; ungültige Werte werden verworfen,
+der Lead bleibt gültig. Direkte POSTs können daher keine ungefilterten Strings ins CRM schleusen.
+
 **Datenschutz:** Es werden keine personenbezogenen Daten erfasst: Referrer wird auf das
 Origin reduziert, Pfade verlieren Query/Hash, alle Werte sind zeichen- und längenbegrenzt
 und werden serverseitig erneut per Zod validiert. Nichts davon geht an GA4/Analytics —

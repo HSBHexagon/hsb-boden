@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { loadOptions } from "./validation";
+import { sanitizePagePath, sanitizeReferrerOrigin, sanitizeUtmValue } from "./attribution";
 
 // Schema für POST /api/lead (serverseitig). Bewusst getrennt von leadFormSchema
 // in validation.ts: andere Pflichtfelder (source/legalBasis/honeypot serverseitig
@@ -21,18 +22,20 @@ export const leadEndpointSchema = z
     source: z.string().trim().min(1),
     legalBasis: z.string().trim().min(1),
     access_key: z.string().trim().optional(),
-    utm_source: z.string().trim().max(100).optional(),
-    utm_medium: z.string().trim().max(100).optional(),
-    utm_campaign: z.string().trim().max(100).optional(),
-    utm_term: z.string().trim().max(100).optional(),
-    utm_content: z.string().trim().max(100).optional(),
-    // Attribution (Client erfasst, siehe src/lib/attribution.ts): Referrer nur
-    // als externes Origin, Pfade ohne Query — Webhook reicht sie 1:1 ans CRM.
-    // Alle Felder optional, weil ältere gecachte Client-Bundles ohne Attribution
-    // senden; der aktuelle Client liefert attribution_channel immer mit.
-    referrer: z.string().trim().max(200).optional(),
-    landing_page: z.string().trim().max(200).optional(),
-    form_path: z.string().trim().max(200).optional(),
+    // Attribution: Client sanitisiert bereits (src/lib/attribution.ts), aber die
+    // Vertrauensgrenze ist dieser Endpoint — direkte POSTs umgehen den Browser.
+    // Deshalb serverseitige Re-Normalisierung (Allowlist, Formula-Prefix-Schutz,
+    // Referrer→Origin, Pfade ohne Query); ungültige Werte werden verworfen statt
+    // den Lead abzulehnen. Alle Felder optional, weil ältere gecachte
+    // Client-Bundles ohne Attribution senden.
+    utm_source: z.string().max(100).optional().transform(sanitizeUtmValue),
+    utm_medium: z.string().max(100).optional().transform(sanitizeUtmValue),
+    utm_campaign: z.string().max(100).optional().transform(sanitizeUtmValue),
+    utm_term: z.string().max(100).optional().transform(sanitizeUtmValue),
+    utm_content: z.string().max(100).optional().transform(sanitizeUtmValue),
+    referrer: z.string().max(200).optional().transform((v) => sanitizeReferrerOrigin(v)),
+    landing_page: z.string().max(200).optional().transform(sanitizePagePath),
+    form_path: z.string().max(200).optional().transform(sanitizePagePath),
     attribution_channel: z.enum(["campaign", "referral", "direct"]).optional(),
     honeypot: z.string().trim().max(0).optional(),
     timestamp: z.number().optional(),

@@ -110,6 +110,40 @@ describe("leadEndpointSchema", () => {
     expect(leadEndpointSchema.safeParse({ ...validPayload, attribution_channel: "paid-social" }).success).toBe(false);
   });
 
+  it("re-sanitizes attribution fields server-side against direct POSTs", () => {
+    const result = leadEndpointSchema.safeParse({
+      ...validPayload,
+      utm_source: '=HYPERLINK("https://evil.example")',
+      utm_campaign: "+kampagne<script>",
+      referrer: "https://evil.example/pfad?q=jemand@example.com",
+      landing_page: "/kontakt/?token=geheim#fragment",
+      form_path: "kein-pfad",
+    });
+
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.utm_source).toBe("HYPERLINKhttpsevil.example");
+      expect(result.data.utm_campaign).toBe("kampagnescript");
+      expect(result.data.referrer).toBe("https://evil.example");
+      expect(result.data.landing_page).toBe("/kontakt/");
+      expect(result.data.form_path).toBeUndefined();
+    }
+  });
+
+  it("drops non-http referrers and invalid paths instead of forwarding them", () => {
+    const result = leadEndpointSchema.safeParse({
+      ...validPayload,
+      referrer: "javascript:alert(1)",
+      landing_page: "javascript:alert(1)",
+    });
+
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.referrer).toBeUndefined();
+      expect(result.data.landing_page).toBeUndefined();
+    }
+  });
+
   it("still accepts a legacy payload without any attribution fields", () => {
     const result = leadEndpointSchema.safeParse(validPayload);
     expect(result.success).toBe(true);

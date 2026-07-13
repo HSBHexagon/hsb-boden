@@ -236,3 +236,44 @@ This CRM remains `template-ready-awaiting-lead-data` until real data arrives.
 - Daily operator workflow: `docs/crm/CRM_LIGHT_OPERATOR_READINESS.md`
 - Automation blueprints: `docs/automation/N8N_APPS_SCRIPT_SAFE_AUTOMATION_READINESS.md`
 - Master go-live checklist: `docs/launch/PRE_DNS_GO_LIVE_MAX_CHECKLIST.md`
+
+---
+
+## Website-Lead-Attribution (seit 2026-07-13, Branch `feat/lead-utm-attribution`)
+
+Website-Leads aus dem Live-Formular tragen zusätzlich zu `source: "website"` folgende
+optionale Attributionsfelder im Webhook-Payload (Client-Erfassung: `src/lib/attribution.ts`,
+Schema: `src/lib/leadSchema.ts`):
+
+| Feld | Inhalt | Grenzen |
+|------|--------|---------|
+| `utm_source` / `utm_medium` / `utm_campaign` / `utm_term` / `utm_content` | UTM-Parameter des Session-Einstiegs | max. 100 Zeichen, Allowlist `[\w .~%+-]` |
+| `referrer` | **nur externes Origin** (Schema+Host, nie Pfad/Query) | max. 200 Zeichen |
+| `landing_page` | Pfad der ersten Seite der Session (ohne Query/Hash) | max. 200 Zeichen |
+| `form_path` | Pfad der Seite, auf der das Formular abgeschickt wurde | max. 200 Zeichen |
+| `attribution_channel` | `campaign` \| `referral` \| `direct` (abgeleitet) | Enum |
+
+**Prioritätsregeln:** aktuelle gültige UTM-Parameter → gespeicherte Session-Attribution
+(`sessionStorage`-Key `hsb-attribution-v1`) → Referrer-Herkunft → `direct`.
+Eine neue Kampagne (beliebiger `utm_source/medium/campaign`) überschreibt die gespeicherte
+Session-Attribution inkl. neuer Landingpage.
+
+**Session-/Fehlerverhalten:** Erfassung läuft auf jeder Seite (`BaseLayout.astro`), damit
+Attribution den MPA-Seitenwechsel zur Kontaktseite überlebt. Blockierter/fehlender
+`sessionStorage` fällt auf Frisch-Erfassung beim Submit zurück; jeder Fehlerpfad ist
+gekapselt — der Formularversand kann durch Attribution nie scheitern. Leads ohne UTM
+bleiben vollständig gültig (`attribution_channel: "direct"`).
+
+**Datenschutz:** Es werden keine personenbezogenen Daten erfasst: Referrer wird auf das
+Origin reduziert, Pfade verlieren Query/Hash, alle Werte sind zeichen- und längenbegrenzt
+und werden serverseitig erneut per Zod validiert. Nichts davon geht an GA4/Analytics —
+nur an den bestehenden Lead-Webhook.
+
+**CRM-Mapping (Connector-Gate):** Der Apps-Script-Connector des Sheets „HSB CRM Light"
+muss die neuen Payload-Keys auf Spalten mappen, sonst werden sie verworfen (bestehende
+Spalten für `utm_source/medium/campaign` zuerst nutzen). Benötigte zusätzliche Spalten:
+`utm_term`, `utm_content`, `referrer`, `landing_page`, `form_path`, `attribution_channel`.
+Sheet-Umbau erfolgt nicht aus dem Repo — Owner-/Connector-Aufgabe.
+
+**Rollback:** Revert der Commits auf `feat/lead-utm-attribution` genügt; die Schema-Felder
+sind optional, Altverhalten (`source: "website"` ohne Attribution) bleibt jederzeit gültig.

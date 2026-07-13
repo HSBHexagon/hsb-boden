@@ -24,6 +24,14 @@ export const leadEndpointSchema = z
     utm_source: z.string().trim().max(100).optional(),
     utm_medium: z.string().trim().max(100).optional(),
     utm_campaign: z.string().trim().max(100).optional(),
+    utm_term: z.string().trim().max(100).optional(),
+    utm_content: z.string().trim().max(100).optional(),
+    // Attribution (Client erfasst, siehe src/lib/attribution.ts): Referrer nur
+    // als externes Origin, Pfade ohne Query — Webhook reicht sie 1:1 ans CRM.
+    referrer: z.string().trim().max(200).optional(),
+    landing_page: z.string().trim().max(200).optional(),
+    form_path: z.string().trim().max(200).optional(),
+    attribution_channel: z.enum(["campaign", "referral", "direct"]).optional(),
     honeypot: z.string().trim().max(0).optional(),
     timestamp: z.number().optional(),
   })

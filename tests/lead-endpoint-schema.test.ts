@@ -77,4 +77,44 @@ describe("leadEndpointSchema", () => {
     });
     expect(result.success).toBe(true);
   });
+
+  it("passes attribution fields through to the webhook payload", () => {
+    const result = leadEndpointSchema.safeParse({
+      ...validPayload,
+      utm_source: "qr",
+      utm_medium: "flyer",
+      utm_campaign: "messe-2026",
+      utm_term: "industrieboden",
+      utm_content: "joel-flyer",
+      referrer: "https://www.google.com",
+      landing_page: "/leistungen/",
+      form_path: "/kontakt/",
+      attribution_channel: "campaign",
+    });
+
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.utm_term).toBe("industrieboden");
+      expect(result.data.utm_content).toBe("joel-flyer");
+      expect(result.data.referrer).toBe("https://www.google.com");
+      expect(result.data.landing_page).toBe("/leistungen/");
+      expect(result.data.form_path).toBe("/kontakt/");
+      expect(result.data.attribution_channel).toBe("campaign");
+    }
+  });
+
+  it("rejects oversized or invalid attribution values", () => {
+    expect(leadEndpointSchema.safeParse({ ...validPayload, utm_term: "a".repeat(101) }).success).toBe(false);
+    expect(leadEndpointSchema.safeParse({ ...validPayload, referrer: "a".repeat(201) }).success).toBe(false);
+    expect(leadEndpointSchema.safeParse({ ...validPayload, landing_page: "a".repeat(201) }).success).toBe(false);
+    expect(leadEndpointSchema.safeParse({ ...validPayload, attribution_channel: "paid-social" }).success).toBe(false);
+  });
+
+  it("still accepts a legacy payload without any attribution fields", () => {
+    const result = leadEndpointSchema.safeParse(validPayload);
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect("attribution_channel" in result.data).toBe(false);
+    }
+  });
 });

@@ -126,6 +126,26 @@ describe("leadEndpointSchema", () => {
     }
   });
 
+  it("drops attribution values with wrong JSON types instead of rejecting the lead", () => {
+    const result = leadEndpointSchema.safeParse({
+      ...validPayload,
+      utm_source: 123,
+      utm_medium: ["cpc"],
+      referrer: {},
+      landing_page: null,
+      form_path: false,
+      attribution_channel: 42,
+    });
+
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.utm_source).toBeUndefined();
+      expect(result.data.referrer).toBeUndefined();
+      expect(result.data.landing_page).toBeUndefined();
+      expect(result.data.form_path).toBeUndefined();
+    }
+  });
+
   it("drops same-origin referrers server-side so direct POSTs cannot fake referrals", () => {
     const result = leadEndpointSchema.safeParse({
       ...validPayload,

@@ -271,10 +271,14 @@ auf http(s)-Origin reduziert, Pfade ohne Query/Hash; ungültige Werte werden ver
 der Lead bleibt gültig (überlange UTM-Werte werden gekappt, ungültige Pfade/Referrer
 verworfen — kein `.max()`-Reject). Same-Origin-Referrer werden auch serverseitig verworfen
 und `attribution_channel` wird serverseitig aus den normalisierten Feldern abgeleitet —
-direkte POSTs können daher weder ungefilterte Strings ins CRM schleusen noch ein
-`referral`/`campaign` fälschen. Grundsatz: Attribution ist clientseitig erhobene
-Metadatenlage und **keine vertrauenswürdige Herkunftsbestätigung** — nie für
-Sicherheits- oder Abrechnungsentscheidungen verwenden.
+direkte POSTs können daher keine ungefilterten Strings ins CRM schleusen und kein
+Same-Origin-`referral` fälschen. **Wichtig:** Syntaktisch gültige externe Referrer-
+und UTM-Werte kann ein direkter POST weiterhin frei behaupten — der Endpoint
+normalisiert und entschärft, er verifiziert keine Herkunft. Attribution ist
+clientseitig erhobene Metadatenlage und **keine vertrauenswürdige
+Herkunftsbestätigung** — nie für Sicherheits- oder Abrechnungsentscheidungen
+verwenden. Falsche JSON-Typen (Zahl/Objekt/null) in Attributionsfeldern verwerfen
+nur das Feld, nie den Lead.
 
 **Datenschutz:** Es werden keine personenbezogenen Daten erfasst: Referrer wird auf das
 Origin reduziert, Pfade verlieren Query/Hash, alle Werte sind zeichen- und längenbegrenzt

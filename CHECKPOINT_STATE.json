@@ -1,9 +1,9 @@
 {
   "project": "HSB / HEXAFLOOR",
-  "last_updated": "2026-07-12T19:55:00+0200",
+  "last_updated": "2026-07-13T14:55:00+0200",
   "active_model": "Claude Code (Fable 5)",
-  "active_phase": "lead-funnel-live-post-merge-wave-0712",
-  "active_task": "Merged #64-#70 wave live on Pages: zero-JS LeadForm ENABLED in production (PUBLIC_LEAD_FORM_ENABLED build flag), security _headers + immutable caching, Consent Mode v2, AI reviews (OpenAI+Gemini verified). Stale Workers hsb-boden/hsb-boden-preview DELETED 2026-07-12 (served no domains); workers.dev URLs in account_migration are HISTORICAL. E2E lead test row removed from CRM. Remaining: apex DNS (All-Inkl), GBP verification, cold-outreach compliance gate, ~31 open bot PRs triaged in docs/ai_state/PR_TRIAGE_2026-07-12.md.",
+  "active_phase": "lead-attribution-live-0713",
+  "active_task": "PR #79 merged 2026-07-13 (e6cd860 via Jules auto-merge of d75d616 + ad7ebc3 rest delta): session-scoped lead attribution (UTM incl. term/content, external referrer origin, landing_page, form_path, server-derived attribution_channel) captured in sessionStorage hsb-attribution-v1, endpoint re-sanitizes as trust boundary (allowlist, formula-prefix strip, same-origin referrer drop, tolerant error semantics), privacy notice section added. 74/74 tests. Production deploy of ad7ebc3 dispatched 2026-07-13. Remaining: Apps-Script column mapping for new attribution keys (connector gate), apex DNS (All-Inkl), GBP verification, cold-outreach compliance gate.",
   "account_migration_2026_07_02": {
     "github_new_repo": "https://github.com/HSBHexagon/hsb-boden",
     "github_old_repo_access": "HSBHexagon ist Admin-Collaborator im Alt-Repo cherinojoel-lang/hsb-boden (Ownership-Transfer pending, nicht blockierend)",
@@ -21,7 +21,7 @@
   },
   "repo_path": "/Users/joelcherinodiaz/KI-System/02_Projects/active/hsb-boden",
   "handoff_path": "/Users/joelcherinodiaz/KI-System/ObsidianVault/brain/CURRENT_HANDOFF.md",
-  "last_commit": "32f8849",
+  "last_commit": "ad7ebc3",
   "website_code_diff_lines": "local changes present: references, GA/Astro hint fix, CRM lead import docs, truth docs",
   "canonical_readiness_stack": {
     "tier1": {
@@ -77,8 +77,8 @@
     "docs/ops/MULTI_PC_OPERATOR_SYNC_PROTOCOL.md",
     "docs/launch/PRE_DNS_GO_LIVE_MAX_CHECKLIST.md"
   ],
-  "push_done": false,
-  "deploy_done": false,
+  "push_done": true,
+  "deploy_done": "dispatched 2026-07-13 (run 29267479160, verify separately)",
   "completed_steps": [
     "Phase 3 is backed by local Lighthouse evidence from 2026-06-26 with Performance 95, Accessibility 100, Best Practices 100, and SEO 100.",
     "Phase 4 is closed for materials, channel decision, and owner approval scope: j-cherino@hsb-boden.de is canonical for flyer/mail outreach, info@hsb-boden.de remains the general/legal mailbox, and Outlook is historical fallback only.",
@@ -88,7 +88,8 @@
     "Max-readiness doc sweep (2026-06-26 Tier 1): 7 new canonical readiness docs created, FINAL_CLOUDFLARE_WORKERS_READINESS_AUDIT converted to historical wrapper, all cross-references updated.",
     "Final pre-go-live documentation wave (2026-06-26 Tier 2): 12 new detailed readiness docs created across cloudflare/, analytics/, email/, assets/, crm/, automation/, ops/, launch/. All Tier-1 canonical docs updated with cross-references. PROJECT_TRUTH.md, CHECKPOINT_STATE.json, FINAL_OPERATOR_HANDOFF.md, MASTER_EXECUTION_PLAN.md updated.",
     "Cloudflare Pages www live verification (2026-07-08): https://www.hsb-boden.de/referenzen/ returns HTTP 200 and includes corrected references KESSLER-ZINK GmbH, Weingut Dohlmühle-Genussreich, and Flonheim.",
-    "Phase 7 lead import preparation extended for two operators: Joel Cherino Diaz and Jordi Post each get about 2,500 addresses when data volume allows; flyer attachment field is required before dispatch."
+    "Phase 7 lead import preparation extended for two operators: Joel Cherino Diaz and Jordi Post each get about 2,500 addresses when data volume allows; flyer attachment field is required before dispatch.",
+    "Lead attribution end-to-end (PR #79, 2026-07-13): 4 OpenAI review rounds all fixed, Codex privacy finding fixed, Playwright E2E proof without real lead; docs/crm/CRM_LIGHT_MAX_READINESS.md documents CRM mapping + connector gate."
   ],
   "workflow_risks_fixed": [
     "ci.yml: actions/checkout@v4 pinned to 34e114876b0b11c390a56381ad16ebd13914f8d5 (2026-06-26)",
@@ -96,6 +97,7 @@
     "deploy-production.yml: replaced 'deploy --env production' with 'deploy --name hsb-boden --var ENVIRONMENT:production' per PHASE_C_CUTOVER_RUNBOOK.md"
   ],
   "open_steps": [
+    "Apps-Script connector: map new payload keys utm_term/utm_content/referrer/landing_page/form_path/attribution_channel to CRM columns (owner/connector gate).",
     "Consolidate the Pages migration worktree hsb-boden-pages-static into main after explicit approval, so there is no second code truth.",
     "Resolve apex hsb-boden.de: it currently serves WordPress/Apache and /referenzen/ returns 404; decide and approve redirect to www or equivalent DNS/hosting change.",
     "If DNS or redirect changes are approved, follow the updated Phase 12 section in docs/MASTER_EXECUTION_PLAN.md before touching Cloudflare or provider DNS.",

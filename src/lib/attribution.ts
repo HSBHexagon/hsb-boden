@@ -31,8 +31,11 @@ type WritableStorage = Pick<Storage, "getItem" | "setItem">;
  */
 export function sanitizeUtmValue(value: unknown): string | undefined {
   if (typeof value !== "string") return undefined;
+  // Reihenfolge wichtig: erst trimmen, dann Formula-Präfixe strippen — sonst
+  // schützt " +SUM(...)" das führende Plus hinter dem Leerzeichen.
   const cleaned = value
     .replace(/[^\w .~%+-]/g, "")
+    .trim()
     .replace(/^[=+@-]+/, "")
     .trim()
     .slice(0, UTM_MAX);

@@ -130,6 +130,38 @@ describe("leadEndpointSchema", () => {
     }
   });
 
+  it("strips formula prefixes even behind leading whitespace", () => {
+    const result = leadEndpointSchema.safeParse({
+      ...validPayload,
+      utm_source: " +SUM(A1)",
+      utm_medium: "\t-2+3",
+      utm_campaign: "  =HYPERLINK(x)",
+      utm_term: " @import",
+    });
+
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.utm_source).toBe("SUMA1");
+      expect(result.data.utm_medium).toBe("2+3");
+      expect(result.data.utm_campaign).toBe("HYPERLINKx");
+      expect(result.data.utm_term).toBe("import");
+    }
+  });
+
+  it("recomputes attribution_channel server-side from sanitized fields", () => {
+    const spoofed = leadEndpointSchema.safeParse({ ...validPayload, attribution_channel: "campaign" });
+    expect(spoofed.success).toBe(true);
+    if (spoofed.success) {
+      expect(spoofed.data.attribution_channel).toBe("direct");
+    }
+
+    const legit = leadEndpointSchema.safeParse({ ...validPayload, utm_source: "qr", attribution_channel: "direct" });
+    expect(legit.success).toBe(true);
+    if (legit.success) {
+      expect(legit.data.attribution_channel).toBe("campaign");
+    }
+  });
+
   it("drops non-http referrers and invalid paths instead of forwarding them", () => {
     const result = leadEndpointSchema.safeParse({
       ...validPayload,

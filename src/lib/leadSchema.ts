@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { loadOptions } from "./validation";
-import { sanitizePagePath, sanitizeReferrerOrigin, sanitizeUtmValue } from "./attribution";
+import { resolveChannel, sanitizePagePath, sanitizeReferrerOrigin, sanitizeUtmValue } from "./attribution";
 
 // Schema für POST /api/lead (serverseitig). Bewusst getrennt von leadFormSchema
 // in validation.ts: andere Pflichtfelder (source/legalBasis/honeypot serverseitig
@@ -40,6 +40,21 @@ export const leadEndpointSchema = z
     honeypot: z.string().trim().max(0).optional(),
     timestamp: z.number().optional(),
   })
-  .transform(({ honeypot, ...rest }) => rest);
+  .transform(({ honeypot, ...rest }) => {
+    // attribution_channel serverseitig aus den normalisierten Feldern ableiten,
+    // damit direkte POSTs die CRM-Attribution nicht verfälschen können. Nur
+    // setzen, wenn der Client überhaupt Attribution mitschickt (Legacy-Payloads
+    // bleiben unverändert ohne das Feld).
+    if (
+      rest.attribution_channel !== undefined ||
+      rest.utm_source !== undefined ||
+      rest.utm_medium !== undefined ||
+      rest.utm_campaign !== undefined ||
+      rest.referrer !== undefined
+    ) {
+      rest.attribution_channel = resolveChannel(rest);
+    }
+    return rest;
+  });
 
 export type LeadEndpointPayload = z.infer<typeof leadEndpointSchema>;

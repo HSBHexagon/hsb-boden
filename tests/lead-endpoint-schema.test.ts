@@ -1,7 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { leadEndpointSchema } from "../src/lib/leadSchema";
+import { leadEndpointSchema, SITE_ORIGIN } from "../src/lib/leadSchema";
+import { site } from "../src/data/site";
 
 describe("leadEndpointSchema", () => {
+  it("keeps SITE_ORIGIN in sync with site.domain (drift guard)", () => {
+    expect(SITE_ORIGIN).toBe(new URL(site.domain).origin);
+  });
+
   const validPayload = {
     firstName: "Max",
     lastName: "Mustermann",

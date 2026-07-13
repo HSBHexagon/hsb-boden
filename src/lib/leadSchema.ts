@@ -1,9 +1,11 @@
 import { z } from "zod";
 import { loadOptions } from "./validation";
 import { resolveChannel, sanitizePagePath, sanitizeReferrerOrigin, sanitizeUtmValue } from "./attribution";
-import { site } from "../data/site";
 
-const SITE_ORIGIN = new URL(site.domain).origin;
+// Bewusst NICHT aus src/data/site.ts importiert: site.ts liest import.meta.env,
+// das im Pages-Function-Bundle nicht existiert (Publish-Crash). Muss mit
+// site.domain übereinstimmen — abgesichert durch Test in lead-endpoint-schema.
+export const SITE_ORIGIN = "https://www.hsb-boden.de";
 
 // Schema für POST /api/lead (serverseitig). Bewusst getrennt von leadFormSchema
 // in validation.ts: andere Pflichtfelder (source/legalBasis/honeypot serverseitig

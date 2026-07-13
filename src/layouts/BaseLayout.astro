@@ -81,5 +81,22 @@ const skipLabel = ui[lang].skip;
         els.forEach((el) => io.observe(el));
       }
     </script>
+    <script>
+      import { captureAttribution, updateSessionAttribution } from "../lib/attribution";
+
+      // Erst-Attribution der Session (UTM/Referrer/Landingpage) erfassen,
+      // damit sie beim MPA-Seitenwechsel bis zum Lead-Formular erhalten bleibt.
+      try {
+        const current = captureAttribution({
+          search: window.location.search,
+          referrer: document.referrer,
+          pathname: window.location.pathname,
+          origin: window.location.origin,
+        });
+        updateSessionAttribution(window.sessionStorage, current);
+      } catch {
+        // Attribution ist optional — Seitenfunktion darf nie daran scheitern.
+      }
+    </script>
   </body>
 </html>

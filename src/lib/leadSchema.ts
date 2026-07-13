@@ -1,6 +1,9 @@
 import { z } from "zod";
 import { loadOptions } from "./validation";
 import { resolveChannel, sanitizePagePath, sanitizeReferrerOrigin, sanitizeUtmValue } from "./attribution";
+import { site } from "../data/site";
+
+const SITE_ORIGIN = new URL(site.domain).origin;
 
 // Schema für POST /api/lead (serverseitig). Bewusst getrennt von leadFormSchema
 // in validation.ts: andere Pflichtfelder (source/legalBasis/honeypot serverseitig
@@ -28,15 +31,24 @@ export const leadEndpointSchema = z
     // Referrer→Origin, Pfade ohne Query); ungültige Werte werden verworfen statt
     // den Lead abzulehnen. Alle Felder optional, weil ältere gecachte
     // Client-Bundles ohne Attribution senden.
-    utm_source: z.string().max(100).optional().transform(sanitizeUtmValue),
-    utm_medium: z.string().max(100).optional().transform(sanitizeUtmValue),
-    utm_campaign: z.string().max(100).optional().transform(sanitizeUtmValue),
-    utm_term: z.string().max(100).optional().transform(sanitizeUtmValue),
-    utm_content: z.string().max(100).optional().transform(sanitizeUtmValue),
-    referrer: z.string().max(200).optional().transform((v) => sanitizeReferrerOrigin(v)),
-    landing_page: z.string().max(200).optional().transform(sanitizePagePath),
-    form_path: z.string().max(200).optional().transform(sanitizePagePath),
-    attribution_channel: z.enum(["campaign", "referral", "direct"]).optional(),
+    // Bewusst kein .max() vor dem Transform: ungültige/überlange Werte werden
+    // verworfen bzw. gekappt statt den Lead abzulehnen (Payload-Größe deckelt
+    // der Endpoint separat mit 413). Same-Origin-Referrer werden auch server-
+    // seitig verworfen, damit direkte POSTs kein "referral" fälschen können.
+    utm_source: z.string().optional().transform(sanitizeUtmValue),
+    utm_medium: z.string().optional().transform(sanitizeUtmValue),
+    utm_campaign: z.string().optional().transform(sanitizeUtmValue),
+    utm_term: z.string().optional().transform(sanitizeUtmValue),
+    utm_content: z.string().optional().transform(sanitizeUtmValue),
+    referrer: z.string().optional().transform((v) => sanitizeReferrerOrigin(v, SITE_ORIGIN)),
+    landing_page: z.string().optional().transform(sanitizePagePath),
+    form_path: z.string().optional().transform(sanitizePagePath),
+    attribution_channel: z
+      .string()
+      .optional()
+      .transform((v) =>
+        v === "campaign" || v === "referral" || v === "direct" ? v : undefined,
+      ),
     honeypot: z.string().trim().max(0).optional(),
     timestamp: z.number().optional(),
   })
@@ -50,6 +62,8 @@ export const leadEndpointSchema = z
       rest.utm_source !== undefined ||
       rest.utm_medium !== undefined ||
       rest.utm_campaign !== undefined ||
+      rest.utm_term !== undefined ||
+      rest.utm_content !== undefined ||
       rest.referrer !== undefined
     ) {
       rest.attribution_channel = resolveChannel(rest);

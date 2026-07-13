@@ -92,7 +92,7 @@ export function captureAttribution(input: {
 }
 
 function hasCampaign(attr: Attribution): boolean {
-  return Boolean(attr.utm_source || attr.utm_medium || attr.utm_campaign);
+  return UTM_KEYS.some((key) => Boolean(attr[key]));
 }
 
 /** Re-sanitisiert gespeicherte Daten — Storage-Inhalt gilt als untrusted. */

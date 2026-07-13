@@ -103,11 +103,36 @@ describe("leadEndpointSchema", () => {
     }
   });
 
-  it("rejects oversized or invalid attribution values", () => {
-    expect(leadEndpointSchema.safeParse({ ...validPayload, utm_term: "a".repeat(101) }).success).toBe(false);
-    expect(leadEndpointSchema.safeParse({ ...validPayload, referrer: "a".repeat(201) }).success).toBe(false);
-    expect(leadEndpointSchema.safeParse({ ...validPayload, landing_page: "a".repeat(201) }).success).toBe(false);
-    expect(leadEndpointSchema.safeParse({ ...validPayload, attribution_channel: "paid-social" }).success).toBe(false);
+  it("tolerates oversized or invalid attribution values without rejecting the lead", () => {
+    const result = leadEndpointSchema.safeParse({
+      ...validPayload,
+      utm_term: "a".repeat(101),
+      referrer: "a".repeat(201),
+      landing_page: "a".repeat(201),
+      attribution_channel: "paid-social",
+    });
+
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.utm_term).toBe("a".repeat(100));
+      expect(result.data.referrer).toBeUndefined();
+      expect(result.data.landing_page).toBeUndefined();
+      expect(result.data.attribution_channel).toBe("campaign");
+    }
+  });
+
+  it("drops same-origin referrers server-side so direct POSTs cannot fake referrals", () => {
+    const result = leadEndpointSchema.safeParse({
+      ...validPayload,
+      referrer: "https://www.hsb-boden.de/kontakt/",
+      attribution_channel: "referral",
+    });
+
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.referrer).toBeUndefined();
+      expect(result.data.attribution_channel).toBe("direct");
+    }
   });
 
   it("re-sanitizes attribution fields server-side against direct POSTs", () => {

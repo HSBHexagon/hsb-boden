@@ -268,7 +268,13 @@ bleiben vollständig gültig (`attribution_channel: "direct"`).
 alle Attributionsfelder unabhängig vom Browser (Zod-Transforms in `leadSchema.ts`):
 UTM-Allowlist, Entfernung führender `=+-@` (Spreadsheet-Formula-Injection), Referrer
 auf http(s)-Origin reduziert, Pfade ohne Query/Hash; ungültige Werte werden verworfen,
-der Lead bleibt gültig. Direkte POSTs können daher keine ungefilterten Strings ins CRM schleusen.
+der Lead bleibt gültig (überlange UTM-Werte werden gekappt, ungültige Pfade/Referrer
+verworfen — kein `.max()`-Reject). Same-Origin-Referrer werden auch serverseitig verworfen
+und `attribution_channel` wird serverseitig aus den normalisierten Feldern abgeleitet —
+direkte POSTs können daher weder ungefilterte Strings ins CRM schleusen noch ein
+`referral`/`campaign` fälschen. Grundsatz: Attribution ist clientseitig erhobene
+Metadatenlage und **keine vertrauenswürdige Herkunftsbestätigung** — nie für
+Sicherheits- oder Abrechnungsentscheidungen verwenden.
 
 **Datenschutz:** Es werden keine personenbezogenen Daten erfasst: Referrer wird auf das
 Origin reduziert, Pfade verlieren Query/Hash, alle Werte sind zeichen- und längenbegrenzt

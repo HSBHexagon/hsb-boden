@@ -116,8 +116,9 @@ export function updateSessionAttribution(
   current: Attribution,
 ): Attribution {
   const stored = loadAttribution(storage);
-  const effective = hasCampaign(current) || !stored ? current : stored;
-  if (storage && effective === current) {
+  const shouldStoreCurrent = hasCampaign(current) || !stored;
+  const effective = shouldStoreCurrent ? current : stored;
+  if (storage && shouldStoreCurrent) {
     try {
       storage.setItem(ATTRIBUTION_STORAGE_KEY, JSON.stringify(current));
     } catch {

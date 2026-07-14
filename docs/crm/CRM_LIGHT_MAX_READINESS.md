@@ -285,7 +285,8 @@ Origin reduziert, Pfade verlieren Query/Hash, alle Werte sind zeichen- und läng
 und werden serverseitig erneut per Zod validiert. Nichts davon geht an GA4/Analytics —
 nur an den bestehenden Lead-Webhook.
 
-**CRM-Mapping (Connector-Gate):** Der Apps-Script-Connector des Sheets „HSB CRM Light"
+**CRM-Mapping (Connector-Gate):** Paste-fertiger Patch inkl. Spaltenlayout und
+Verifikationsablauf: `docs/crm/ATTRIBUTION_CONNECTOR_PATCH.md`. Der Apps-Script-Connector des Sheets „HSB CRM Light"
 muss die neuen Payload-Keys auf Spalten mappen, sonst werden sie verworfen (bestehende
 Spalten für `utm_source/medium/campaign` zuerst nutzen). Benötigte zusätzliche Spalten:
 `utm_term`, `utm_content`, `referrer`, `landing_page`, `form_path`, `attribution_channel`.

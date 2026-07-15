@@ -23,31 +23,31 @@ const deliveryConfigured = site.hasLeadEndpoint;
 
   <div class="grid gap-4 sm:grid-cols-2">
     <label class="grid gap-2 text-sm font-bold">
-      Vorname
+      <span>Vorname <span class="text-hsb-red" aria-hidden="true">*</span></span>
       <input required minlength={2} maxlength={80} name="firstName" class="rounded border border-hsb-line px-3 py-3 font-normal" />
     </label>
     <label class="grid gap-2 text-sm font-bold">
-      Nachname
+      <span>Nachname <span class="text-hsb-red" aria-hidden="true">*</span></span>
       <input required minlength={2} maxlength={80} name="lastName" class="rounded border border-hsb-line px-3 py-3 font-normal" />
     </label>
   </div>
   <label class="grid gap-2 text-sm font-bold">
-    Firma
+    <span>Firma <span class="text-hsb-red" aria-hidden="true">*</span></span>
     <input required minlength={2} maxlength={120} name="company" class="rounded border border-hsb-line px-3 py-3 font-normal" />
   </label>
   <div class="grid gap-4 sm:grid-cols-2">
     <label class="grid gap-2 text-sm font-bold">
-      E-Mail
+      <span>E-Mail <span class="text-hsb-red" aria-hidden="true">*</span></span>
       <input required type="email" name="email" class="rounded border border-hsb-line px-3 py-3 font-normal" />
     </label>
     <label class="grid gap-2 text-sm font-bold">
-      Telefon
+      <span>Telefon <span class="text-hsb-red" aria-hidden="true">*</span></span>
       <input required minlength={5} type="tel" name="phone" class="rounded border border-hsb-line px-3 py-3 font-normal" />
     </label>
   </div>
   <div class="grid gap-4 sm:grid-cols-2">
     <label class="grid gap-2 text-sm font-bold">
-      Branche
+      <span>Branche <span class="text-hsb-red" aria-hidden="true">*</span></span>
       <select required name="industry" class="rounded border border-hsb-line px-3 py-3 font-normal">
         <option value="">Bitte wählen</option>
         <option value="lebensmittelindustrie">Lebensmittelindustrie</option>
@@ -60,7 +60,7 @@ const deliveryConfigured = site.hasLeadEndpoint;
       </select>
     </label>
     <label class="grid gap-2 text-sm font-bold">
-      Projektart
+      <span>Projektart <span class="text-hsb-red" aria-hidden="true">*</span></span>
       <select required name="projectType" class="rounded border border-hsb-line px-3 py-3 font-normal">
         <option value="">Bitte wählen</option>
         <option value="neubau">Neubau</option>
@@ -75,7 +75,7 @@ const deliveryConfigured = site.hasLeadEndpoint;
       <input name="areaSize" class="rounded border border-hsb-line px-3 py-3 font-normal" />
     </label>
     <label class="grid gap-2 text-sm font-bold">
-      Laufender Betrieb
+      <span>Laufender Betrieb <span class="text-hsb-red" aria-hidden="true">*</span></span>
       <select required name="liveOperation" class="rounded border border-hsb-line px-3 py-3 font-normal">
         <option value="">Bitte wählen</option>
         <option value="ja">Ja</option>
@@ -85,7 +85,7 @@ const deliveryConfigured = site.hasLeadEndpoint;
     </label>
   </div>
   <fieldset id="loads-fieldset" class="grid gap-3">
-    <legend class="text-sm font-black">Belastungen <span class="font-normal text-hsb-steel">(mindestens eine auswählen)</span></legend>
+    <legend class="text-sm font-black"><span>Belastungen <span class="text-hsb-red" aria-hidden="true">*</span></span> <span class="font-normal text-hsb-steel">(mindestens eine auswählen)</span></legend>
     <div class="grid gap-2 sm:grid-cols-2">
       {loadOptions.map((option) => (
         <label class="flex items-center gap-2 text-sm text-hsb-steel">
@@ -96,12 +96,12 @@ const deliveryConfigured = site.hasLeadEndpoint;
     </div>
   </fieldset>
   <label class="grid gap-2 text-sm font-bold">
-    Nachricht
+    <span>Nachricht <span class="text-hsb-red" aria-hidden="true">*</span></span>
     <textarea required minlength={10} maxlength={2000} name="message" rows={5} class="rounded border border-hsb-line px-3 py-3 font-normal" />
   </label>
   <label class="flex items-start gap-3 text-sm leading-6 text-hsb-steel">
     <input required type="checkbox" name="privacyConsent" class="mt-1" />
-    Ich stimme zu, dass meine Angaben zur Bearbeitung der Anfrage verarbeitet werden.
+    <span>Ich stimme zu, dass meine Angaben zur Bearbeitung der Anfrage verarbeitet werden. <span class="text-hsb-red" aria-hidden="true">*</span></span>
   </label>
 
   <p id="form-error" role="alert" aria-live="assertive" class="hidden rounded border border-hsb-red/40 bg-hsb-red/5 px-3 py-2 text-sm text-hsb-red">

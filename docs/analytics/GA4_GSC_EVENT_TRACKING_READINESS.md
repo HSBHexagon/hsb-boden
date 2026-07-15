@@ -1,11 +1,11 @@
 # GA4_GSC_EVENT_TRACKING_READINESS — HSB-Boden / HEXAFLOOR
 
-Status: `ga4-code-present-events-planned-gsc-pending-domain-verification`
-Stand: 2026-06-26 | New doc — final pre-go-live documentation wave.
+Status: `ga4-lead-events-in-pr-gsc-url-prefix-active-owner-gates-open`
+Stand: 2026-07-15 | Verifizierter Implementierungs- und Owner-Gate-Stand.
 
-**No analytics activation, no property creation, no GSC verification performed here.**
-This document defines the production event tracking plan for GA4 and GSC.
-GA4 code is already present in the build. Events fire after user consent.
+**No analytics/property activation and no GSC dashboard mutation were performed here.**
+PR #86 implements the lead-event delivery path. It is not production-active until
+review, merge, and the approval-gated production deployment are complete.
 
 Canonical analytics truth: `docs/analytics/GA4_GTM_GSC_MAX_READINESS.md`
 
@@ -18,31 +18,39 @@ Canonical analytics truth: `docs/analytics/GA4_GTM_GSC_MAX_READINESS.md`
 | GA4 Measurement ID | `G-VC4BJBEFTV` — present in code | `src/layouts/BaseLayout.astro:31–36` |
 | gtag.js snippet | Present and deployed | `src/layouts/BaseLayout.astro:30–37` |
 | Consent gate (DSGVO) | Active — CookieConsent component | `src/components/layout/CookieConsent.astro` |
-| GA4 fires only after consent | Enforced in code | — |
+| Consent Mode default | `denied` before the GA4 config command | `src/layouts/BaseLayout.astro` |
+| Custom event privacy guard | `hsb:tracking`, `dataLayer`, and `gtag` require explicit analytics consent plus allowlisted parameter names and values | `src/lib/tracking.ts` |
+| Custom event routing | `send_to` limits HSB custom events to the GA4 destination even if the Google tag has other linked destinations | `src/lib/tracking.ts` |
+| Lead redirect delivery guard | Successful submits await the Google event callback or a bounded local fallback before navigation | `src/lib/tracking.ts`, `src/components/forms/LeadForm.astro` |
+| Implemented call sites | `lead_form_start` on first focus; `generate_lead` only after a successful API response | `src/components/forms/LeadForm.astro` |
 
-GA4 is code-ready. Events below fire in production once custom measurement is configured
-in the GA4 property and/or GTM container (if GTM is added).
+The branch is code-ready. Direct `gtag.js` does not require GTM for collection.
+GA4 dashboard verification and the Key Event designation remain owner actions.
+The live browser audit also exposed an existing Google Ads destination linked to
+the Google tag. PR #86 prevents HSB custom events from being routed there; the
+owner must separately review or unlink that destination in Google Tag settings.
 
 ---
 
 ## Production GA4 Event Plan
 
-All events below follow GA4 recommended event naming conventions.
-Events must be measured without PII in event parameters.
+Only `lead_form_start` and `generate_lead` are wired by PR #86. Every other event
+below remains a future plan and must not be reported as active. Events must be
+measured without PII in event parameters.
 
 ### Core Conversion Events
 
 | Event Name | Trigger | Parameters |
 |------------|---------|------------|
-| `generate_lead` | Form submitted successfully, server returns 200 | `method: "contact_form"`, `campaign` (from UTM if present) |
-| `form_submit_success` | `/api/lead` returns success | `form_id: "lead_form"` |
+| `generate_lead` | Form submitted successfully, server returns 200 | `method: "contact_form"` |
+| `form_submit_success` (planned) | `/api/lead` returns success | `form_id: "lead_form"` |
 
 ### Form Funnel Events
 
 | Event Name | Trigger | Parameters |
 |------------|---------|------------|
-| `form_start` | User focuses any form field for the first time | `form_id: "lead_form"` |
-| `form_error` | Server returns error on submit OR client-side validation fails | `form_id: "lead_form"`, `error_type: "server_error" | "validation_error"` |
+| `lead_form_start` | User focuses any form field for the first time | none |
+| `form_error` (planned) | Server returns error on submit OR client-side validation fails | `form_id: "lead_form"`, `error_type: "server_error"` or `"validation_error"` |
 
 ### Engagement Events
 
@@ -63,6 +71,9 @@ Events must be measured without PII in event parameters.
 
 GA4 automatically captures UTM parameters via `page_view` in sessions where the URL
 contains `utm_*` parameters. Custom `qr_landing` event is supplementary for QR-specific reporting.
+PR #86 intentionally does not copy the user-controlled `utm_campaign` value into
+`generate_lead`; the conversion keeps GA4 session attribution without adding a
+second URL-controlled custom parameter that could contain personal data.
 
 ---
 
@@ -87,44 +98,20 @@ If GTM is added:
 ### Recommended Implementation Pattern (Client-Side)
 
 ```typescript
-// In form submit handler (src/pages/index.astro or form component)
-// After successful API response:
-if (typeof gtag !== 'undefined') {
-  gtag('event', 'generate_lead', {
-    method: 'contact_form',
-  });
-  gtag('event', 'form_submit_success', {
-    form_id: 'lead_form',
-  });
-}
+import { trackEvent, trackEventAndWait, TrackingEvent } from "../../lib/tracking";
 
-// On first field focus (form_start):
-formElement.addEventListener('focusin', (e) => {
-  if (!formStarted) {
-    formStarted = true;
-    gtag('event', 'form_start', { form_id: 'lead_form' });
-  }
-}, { once: false });
+// First form interaction:
+trackEvent(TrackingEvent.LeadFormStart);
 
-// On form error:
-gtag('event', 'form_error', {
-  form_id: 'lead_form',
-  error_type: 'server_error',
-});
+// Only after /api/lead returned success; waits briefly before navigation:
+await trackEventAndWait(TrackingEvent.LeadFormSubmit);
 ```
 
 ### PDF Download Tracking
 
-```html
-<!-- In PDF link markup -->
-<a href="/HSB-Flyer-Joel-Cherino.pdf"
-   onclick="gtag('event', 'pdf_download', {
-     file_name: 'HSB-Flyer-Joel-Cherino.pdf',
-     link_text: 'Flyer herunterladen'
-   })">
-  Flyer herunterladen
-</a>
-```
+PDF download tracking is not implemented. Before adding it, extend the validated
+external parameter map in `src/lib/tracking.ts`, add tests, and emit through
+`trackEvent`; do not add inline `gtag` calls that bypass the consent/privacy guard.
 
 ---
 
@@ -134,26 +121,28 @@ gtag('event', 'form_error', {
 
 | Item | Status |
 |------|--------|
-| GSC property | Not yet verified — `hsb-boden.de` DNS pending |
+| GSC property | URL-prefix property `https://www.hsb-boden.de/` is accessible in the interactive `Jordie (HEXAGON)` Chrome profile |
+| Coverage snapshot | Same-day views showed 28–29 indexed and 5 not indexed; counts are time-dependent and require live recheck |
+| API automation | Blocked: the available Google connector resolves to a different account than the interactive property access |
 | `robots.txt` | Present — `src/pages/robots.txt.ts` |
 | `sitemap.xml` | Present — `src/pages/sitemap.xml.ts` |
 | Canonical URLs | Present — multilingual (de/en/fr/nl/pl/tr) + hreflang |
 
-### GSC Verification (After DNS/NS Switch)
+### GSC Owner Actions
 
-1. Log into Google Search Console with `cherinojoel@gmail.com`
-2. Add property: `hsb-boden.de` (domain property preferred)
-3. Verify via DNS TXT record:
-   - Value provided by GSC (e.g., `google-site-verification=XXXXXXXX`)
-   - Add to Cloudflare DNS as TXT on apex — DNS-only
-4. Submit sitemap: `https://hsb-boden.de/sitemap.xml`
-5. Monitor Index Coverage after 1–2 weeks
+1. Confirm which of the two visible Google properties is canonical for reporting.
+2. Re-authenticate the automation connector with the same account that owns the
+   `https://www.hsb-boden.de/` property.
+3. Confirm the submitted sitemap and inspect the live reasons for the five
+   non-indexed URLs before requesting validation.
+4. Link the canonical GSC property to the intended GA4 property after both have
+   been unambiguously identified.
 
-### Sitemap Submission Commands (After Verification)
+### Sitemap Submission
 
 No command needed — submit via GSC UI:
 **GSC → Property → Sitemaps → Add sitemap URL**
-Enter: `sitemap.xml`
+Enter: `sitemap.xml` only if the live property does not already show that sitemap.
 
 ---
 
@@ -166,14 +155,17 @@ Enter: `sitemap.xml`
 - [ ] Event implementation code merged and deployed
 - [ ] Consent gate verified working (test incognito — GA4 must NOT fire before consent)
 - [ ] `generate_lead` event visible in GA4 DebugView after test form submission
+- [ ] Existing linked Google Ads destination reviewed/unlinked by the Google property owner
+- [ ] Owner: after DebugView verification, mark `generate_lead` as a Key Event in the GA4 dashboard (this is not activated by the website code)
 - [ ] Joel approval
 
-### GSC Activation
+### GSC Completion
 
-- [ ] DNS/NS switch complete — zone `Active`
-- [ ] GSC TXT verification record added to Cloudflare DNS
-- [ ] Sitemap submitted
-- [ ] Initial crawl requested
+- [x] URL-prefix property is interactively accessible
+- [ ] Canonical property selected from the two visible properties
+- [ ] Correct owner account connected for API/automation access
+- [ ] Sitemap status and non-indexed reasons rechecked live
+- [ ] Canonical GSC property linked to the intended GA4 property
 
 ---
 
@@ -181,5 +173,5 @@ Enter: `sitemap.xml`
 
 - No analytics events that capture PII (name, email, phone) in event parameters
 - No GA4 events firing before DSGVO consent is granted by user
-- No GSC verification before DNS/NS switch
+- No duplicate property creation or GA4/GSC linking before the owner identifies the canonical properties
 - No GTM container linked to paid ad platforms without separate approval

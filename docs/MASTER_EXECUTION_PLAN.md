@@ -3,7 +3,10 @@
 > **Dies ist die einzige kanonische Ausführungs-Roadmap des Projekts.**
 > Keine konkurrierende Roadmap existiert. Alle anderen Phasendokumente (`PHASED_EXECUTION_PLAN.md`, `PHASE_STATUS.md`) verweisen auf diese Datei und werden nicht mehr eigenständig gepflegt.
 >
-> Stand: 2026-07-08. Rekonstruiert aus: `PHASE_STATUS.md`, `CHECKPOINT_STATE.json`, `PROJECT_TRUTH.md`, `AI_EXECUTION_PLAYBOOK.md`, `ACQUISITION_SYSTEM_PLAN.md`, `AGENTS.md`, `CLAUDE.md`, `brain/CURRENT_HANDOFF.md` und Live-HTTP-Verifikation.
+> Stand: 2026-07-15, 12:06 CEST. Der Abschnitt „Aktuelle
+> Ausfuehrungsreihenfolge“ ist handlungsleitend. Das nachfolgende alte
+> Phasenmodell bleibt als historische Entscheidungs- und Auditspur erhalten und
+> darf bei Widerspruch nicht ausgefuehrt werden.
 
 ---
 
@@ -11,12 +14,12 @@
 
 | Feld | Wert |
 |------|------|
-| **Aktuelle Phase** | `pages-www-live-awaiting-apex-and-leads` · Phase 12 ist fuer `www` teilweise live; Phase 7 wartet auf reale Lead-Daten |
-| **Letzte abgeschlossene Phase** | Cloudflare-Pages-`www`-Live-Schaltung und Referenzkorrektur auf `www.hsb-boden.de/referenzen/` verifiziert (2026-07-08) |
-| **Nächste geplante Phase** | Pages-Worktree in `main` konsolidieren, Apex `hsb-boden.de` klaeren, spaetere 5.000-Lead-Dateneinfuegung vorbereiten |
-| **Gesamt-Fortschritt** | Website `www` live · Apex offen · Go-live-Readiness intern vorhanden · Akquise-System importbereit, aber ohne reale Lead-Daten |
-| **Operativer Blocker** | Kein technischer `www`-Blocker mehr; offen sind Apex-Redirect/DNS und reale Lead-Dateien |
-| **Letzter Commit `main`** | `5e6e184` — `docs: record Protect Main ruleset transfer` |
+| **Aktuelle Phase** | `post-deploy-security-and-owner-gates` |
+| **Letzte abgeschlossene Phase** | Website-Schaltung: Pages live, Apex 301 auf www, Soft-404 und Lead-Upstream-Fehlerbehandlung produktiv behoben |
+| **Nächste geplante Phase** | P0 neuen authentifizierten Pfad dual-kompatibel bauen, in Preview testen, Production atomar umstellen und alte Endpunkte zuletzt invalidieren |
+| **Gesamt-Fortschritt** | Website technisch produktiv · 6.424 Outbound-Leads vorhanden und gesperrt · externe Security-, Analytics-, Google-, Compliance- und GBP-Gates offen |
+| **Operativer Blocker** | Zwei oeffentlich dokumentierte Apps-Script-Endpunkte sind kompromittiert; kein Abschlussclaim und kein echter Testlead vor Invalidation/Authentifizierung |
+| **Letzter Remote-Commit `main`** | `f202cb6` — Doku-Nachtrag nach Production-Deploy von `bf0a257` |
 | **Kanonischer Readiness-Stack (Tier 1)** | `docs/cloudflare/CLOUDFLARE_PROVIDER_MAX_READINESS.md`, `docs/email/EMAIL_ROUTING_AND_DELIVERABILITY_MAX_READINESS.md`, `docs/analytics/GA4_GTM_GSC_MAX_READINESS.md`, `docs/assets/ASSET_PACKAGE_AND_PUBLIC_DOWNLOAD_MAX_READINESS.md`, `docs/crm/CRM_LIGHT_MAX_READINESS.md`, `docs/automation/STATUS_UPDATE_AUTOMATION_BLUEPRINT.md` |
 | **Kanonischer Readiness-Stack (Tier 2, 2026-06-26)** | `docs/cloudflare/GO_LIVE_MAX_PREFLIGHT_UI_INVENTORY.md`, `docs/cloudflare/WAF_CACHE_RATE_LIMIT_READINESS.md`, `docs/cloudflare/R2_ASSET_UPLOAD_STRATEGY.md`, `docs/cloudflare/TURNSTILE_FORM_PROTECTION_READINESS.md`, `docs/analytics/GA4_GSC_EVENT_TRACKING_READINESS.md`, `docs/email/EMAIL_DELIVERABILITY_AND_TEMPLATE_READINESS.md`, `docs/assets/UTM_QR_DOWNLOAD_MATRIX.md`, `docs/crm/CRM_LIGHT_OPERATOR_READINESS.md`, `docs/automation/N8N_APPS_SCRIPT_SAFE_AUTOMATION_READINESS.md`, `docs/ops/MULTI_PC_OPERATOR_SYNC_PROTOCOL.md`, `docs/launch/PRE_DNS_GO_LIVE_MAX_CHECKLIST.md` |
 
@@ -24,11 +27,119 @@
 
 ## Gesamtziel
 
-Parallel zur bestehenden WordPress-Live-Site eine neue Astro/Cloudflare-Website (`hsb-boden.de`) aufbauen, die als **Premium-Vertrauensanker und B2B-Akquise-System** für organische Industrieboden-Leads dient — bis zur finalen Freigabe des Cutover.
+Die Astro-/Cloudflare-Pages-Website als belastbaren B2B-Vertrauensanker und
+Lead-System betreiben: technisch sicher, suchmaschinenfaehig, messbar und mit
+einer kontrollierten CRM-/Outreach-Kette. Ein Abschluss ist erst belastbar,
+wenn technische Live-Evidenz und verbleibende Owner-Gates klar getrennt sind.
 
 ---
 
-## Phasenmodell
+## Aktuelle Ausfuehrungsreihenfolge
+
+### P0 — Apps-Script-Webhook absichern
+
+**Status:** 🔴 OWNER/SECURITY GATE
+
+Aktueller Tree redigiert zwei vormals oeffentliche Endpoint-Werte. Da beide in
+der Git-Historie bleiben und anonym erreichbar waren, ist Redaktion allein
+keine Behebung.
+
+Reihenfolge:
+
+1. Einen **neuen** Apps-Script-Deployment-Pfad vorbereiten, waehrend der alte
+   Produktionspfad unveraendert bleibt.
+2. Einen unabhaengigen Webhook-Schluessel als Apps-Script-Property verwalten;
+   keine Klartextwerte in Git oder Chat.
+3. Apps Script muss den Schluessel serverseitig pruefen, bevor eine Zeile
+   geschrieben wird. URL-Geheimhaltung ist kein Authentifizierungsverfahren.
+4. Die Pages Function in einem separaten TDD-PR dual-kompatibel erweitern:
+   ohne neues Secret unveraendert Legacy-URL + Plain-Lead; mit genau **einem**
+   JSON-Secret `LEAD_WEBHOOK_CONFIG` (`url` + `token`) den von Apps Script
+   lesbaren Auth-Envelope senden. Ein ungueltiges konfiguriertes JSON muss
+   fail-closed reagieren.
+5. Diesen kompatiblen Code zuerst ohne `LEAD_WEBHOOK_CONFIG` deployen; dadurch
+   bleibt der bestehende Production-Pfad unveraendert.
+6. Den neuen Apps-Script-Pfad und `LEAD_WEBHOOK_CONFIG` ausschliesslich im
+   Preview-Environment testen: direkter Request ohne/mit falschem Schluessel
+   darf keine Zeile schreiben.
+7. Nach Preview-Freigabe das einzelne JSON-Secret in Production setzen und
+   anschliessend den **gleichen geprueften dual-kompatiblen Commit** ueber den
+   manuellen, approval-gated Production-Workflow erneut deployen. Erst das neue
+   Deployment bindet das Secret; das vorherige Deployment bleibt bis zum
+   erfolgreichen Wechsel auf dem Legacy-Pfad.
+8. Im neuen Deployment das Vorhandensein der Binding-Namen ohne Ausgabe ihrer
+   Werte verifizieren. URL und Auth-Vertrag wechseln damit gemeinsam beim
+   Deployment, nicht bereits beim blossen Setzen des Secrets.
+9. Genau einen synthetischen, loeschbaren End-to-End-Test ueber Production mit
+   aktivem Sheet-Zugriff und dokumentiertem Cleanup ausfuehren.
+10. Erst nach erfolgreicher Verifikation das Legacy-Secret entfernen und
+   **danach** beide alten Deployment-IDs invalidieren.
+
+**Exit:** Alte Deployments unbrauchbar, neuer Endpoint ohne gueltige
+Authentifizierung ablehnend, Pages→Apps Script→CRM einmal kontrolliert belegt.
+
+### P1 — Google/CRM-Wahrheit herstellen
+
+**Status:** 🟠 OWNER ACCOUNT GATE
+
+1. Profil `cherinojoel` explizit neu authentifizieren und
+   `cherinojoel@gmail.com` auswaehlen.
+2. Inbound-Tab und 29-Spalten-Outbound-MASTER nicht vermischen.
+3. Live-Header und Apps-Script-Attribution gegen
+   `docs/crm/ATTRIBUTION_CONNECTOR_PATCH.md` pruefen.
+4. CRM-Zielmodell aus `docs/crm/CRM_DEEP_DIVE_2026-07-15.md` nur additiv
+   vorbereiten; bestehende Joel-/Jordi-Tabs nur nach Backup und Freigabe ersetzen.
+
+**Exit:** Kontoidentitaet belegt, Header/Mapping belegt, keine unkontrollierte
+Sheet-Mutation, Testlead nach P0 nachvollziehbar entfernt.
+
+### P2 — GA4-Lead-Conversion belastbar machen
+
+**Status:** 🟠 CODE FOLLOW-UP + OWNER/LEGAL DECISION
+
+1. Basic vs. Advanced Consent Mode ausdruecklich entscheiden und Banner,
+   Datenschutzerklaerung, Code und Doku angleichen.
+2. Aus PR #86 nur einzeln gepruefte Schutzlogik auf aktuellem `main` portieren:
+   `generate_lead`, PII-Allowlist/Snapshots, `send_to`, Callback mit Timeout.
+3. Die exklusive Transportlogik aus PR #87 beibehalten: `gtag` **oder**
+   `dataLayer`-Fallback, nicht beide parallel.
+4. Netzwerkrequest/DebugView real belegen und das kanonische Event als Key Event
+   markieren. PR #90 beweist bislang nur den lokalen gtag-Shim-Aufruf.
+5. Erst danach PR #86 als superseded schliessen.
+
+**Exit:** Consent-Vertrag konsistent, erfolgreicher Submit verliert das Event
+nicht beim Redirect, kein PII-Pfad, DebugView/Key-Event belegt.
+
+### P3 — Outreach-Readiness
+
+**Status:** 🔴 GESPERRT
+
+- 6.424 Leads sind lokal verifiziert, `Versandfreigabe` bleibt 0/6.424.
+- Rechtsgrundlage, Empfaengerbasis, Opt-out, exaktes Testbatch und Owner-
+  Freigabe gemaess `docs/launch/PHASE_7_COMPLIANCE_GATE.md` dokumentieren.
+- M365-DKIM fuer den Versandkanal aktivieren und verifizieren.
+- Kein Massenversand, kein n8n-/Apps-Script-Autodispatch.
+
+**Exit:** Compliance und DKIM belegt; hoechstens ein separat freigegebenes
+kleines Testbatch. Phase 8/9 bleiben bis zur Auswertung gesperrt.
+
+### P4 — Nicht blockierende Owner-Cleanups
+
+- GBP anlegen und physisch verifizieren.
+- Alten Cloudflare-Preview-Worker stilllegen oder `noindex` setzen, doppelte
+  Zone bereinigen und exponierte Tokens rotieren.
+- Voller NS-Cutover nur optional mit neuem Pages-/Mail-DNS-Runbook; das
+  historische Worker-Cutover-Runbook nicht ausfuehren.
+- PR #74 als deaktivierten Draft belassen, bis echte AI-Gateway-Inferenz und
+  separate Produktfreigabe belegt sind.
+- Offene Alt-PRs anhand aktueller Diffs triagieren; keine Sammel-Merges.
+
+## Historisches Phasenmodell — Auditspur, nicht direkt ausfuehren
+
+> Die folgenden Phase-1-bis-12-Abschnitte enthalten historische Worker-, React-,
+> Pages-Migrations-, Apex- und Lead-Daten-Aussagen. Sie bleiben fuer
+> Nachvollziehbarkeit erhalten. Bei jedem Widerspruch gewinnen
+> `PROJECT_TRUTH.md`, `CHECKPOINT_STATE.json` und die aktuelle Reihenfolge oben.
 
 ### Phase 1 — Website-Konzept & Zielbild
 
@@ -272,11 +383,15 @@ Kein formaler Phasennummern-Block, aber geplante Aufgaben nach Go-live:
 
 ## Final Freeze / External Input Gates
 
-- Die Roadmap ist intern reconciled und bleibt bis zu einem externen Trigger eingefroren.
-- Das Projekt soll operativ nicht weiterlaufen, solange weder der DNS/NS-Switch noch der reale 5.000-Lead-Datensatz vorliegt.
-- Phase 12 folgt ausschließlich `docs/PHASE_C_CUTOVER_RUNBOOK.md`.
-- Lead-Daten folgen ausschließlich `docs/launch/LEAD_IMPORT_5000_CHECKLIST.md`.
-- Phase 8 und Phase 9 bleiben gesperrt, bis Phase 7 mit realen Lead-Daten, Lead-Validierung und Batch-Freigabe fortgesetzt werden darf.
+- Keine weiteren parallelen Merges oder Production-Deploys, bevor P0 und diese
+  Truth-Reconciliation reviewt sind.
+- Das historische `docs/PHASE_C_CUTOVER_RUNBOOK.md` darf nicht ausgefuehrt werden.
+- Kein echter Lead-Test ohne authentifizierten neuen Endpoint, richtigen
+  Google-Sheet-Zugriff und garantierten Testzeilen-Cleanup.
+- Kein Outreach, bis Phase 7 Compliance und DKIM erfuellt sind.
+- DNS/NS, Cloudflare-Altaccount, Credentials, GBP und Codex-Cloud-Umgebung sind
+  separate Owner-Gates; breite Freigabe ersetzt keine physische oder
+  kontogebundene Aktion.
 
 ---
 
@@ -292,9 +407,9 @@ Kein formaler Phasennummern-Block, aber geplante Aufgaben nach Go-live:
 | `docs/FINAL_PHASE_BY_PHASE_AUDIT.md` | Abschlussbeleg fuer Phasen 1-12 |
 | `docs/FINAL_CLOUDFLARE_WORKERS_READINESS_AUDIT.md` | Read-only Cutover- und Workers-Readiness-Audit |
 | `CLAUDE.md` | Claude-spezifische Workflow-Anweisungen |
-| `docs/FINAL_OPERATOR_HANDOFF.md` | Finaler Freeze-/Trigger-Handoff fuer den naechsten Operator |
+| `docs/FINAL_OPERATOR_HANDOFF.md` | Historischer/superseded Operator-Snapshot; nicht als Resume-Start verwenden |
 | `docs/FINAL_COMPLETION_REPORT.md` | Abschlussbericht der intern vervollstaendigten Vorbereitung |
-| `docs/PHASE_C_CUTOVER_RUNBOOK.md` | Schritt-für-Schritt-Anleitung Phase 12 |
+| `docs/PHASE_C_CUTOVER_RUNBOOK.md` | Historische/superseded Worker-Anleitung; nicht ausfuehren |
 | `CRM_LIGHT_SCHEMA.md` | CRM-Spaltenstruktur |
 | `SEO_GO_LIVE_CHECKLIST.md` | SEO/Tracking Go-live-Checkliste |
 | `ACQUISITION_SYSTEM_PLAN.md` | Akquise-Gesamtplan (Zielgruppen, Stufen, Mail) |

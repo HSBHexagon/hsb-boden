@@ -1,6 +1,19 @@
 # FINAL_OPERATOR_HANDOFF — HSB-Boden / HEXAFLOOR
 
-## Status
+> ## HISTORICAL / SUPERSEDED
+>
+> Dieses Dokument konserviert den Stand vom 2026-07-08 und ist **kein aktueller
+> Operator-Handoff**. Es enthaelt inzwischen ueberholte Aussagen zu Apex,
+> Pages-Migration, Lead-Daten, PRs und Deploy-Pfaden. Aktuelle Reihenfolge:
+> `PROJECT_TRUTH.md` → `CHECKPOINT_STATE.json` →
+> `docs/ai_state/TRUTH_MATRIX_2026-07-15.md` →
+> `docs/MASTER_EXECUTION_PLAN.md` →
+> `docs/handoff/JOEL_JORDIE_OPERATOR_RUNBOOK.md`.
+>
+> Keine Befehle oder Gates aus diesem historischen Snapshot ausfuehren, ohne
+> sie gegen die aktuelle Truth-Kette zu pruefen.
+
+## Historischer Status
 - Overall: `pages-www-live-awaiting-apex-and-leads`
 - Remote main: `5e6e184`
 - CI/QA/Deploy Preview/Security/CodeQL: latest observed `success` on `main`

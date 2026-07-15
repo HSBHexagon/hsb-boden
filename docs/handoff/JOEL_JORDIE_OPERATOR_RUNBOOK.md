@@ -1,7 +1,7 @@
 # JOEL_JORDI_OPERATOR_RUNBOOK — HSB-Boden / HEXAFLOOR
 
-Status: `www-live-awaiting-review-compliance-and-owner-gates`
-Stand: 2026-07-15 | Canonical operator layer above the truth docs.
+Status: `www-live-core-fixed-security-and-owner-gates-open`
+Stand: 2026-07-15, 12:06 CEST | Canonical operator layer above the truth docs.
 
 **Partner name quality rule:** The only correct spelling is `Jordi` (JORDI in headings).
 Never use `Jordy`, `Jordie`, or `Jodie` for the person in project text. Technical exceptions are the historical filename of this runbook and the exact existing Chrome profile label `Jordie (HEXAGON)`.
@@ -15,7 +15,16 @@ Stand 2026-07-15 sind die früheren externen Trigger eingetreten:
 1. `www.hsb-boden.de` läuft produktiv über Cloudflare Pages; der Apex leitet per 301 auf www. Die Zone `hsb-boden.de` im Info-Account ist weiterhin `pending`: Ein voller NS-Cutover ist **nicht** erfolgt und bleibt Owner-Gate.
 2. 6.424 Leads liegen im MASTER-Sheet (Tier A 1.612 / B 4.812), aber die Versandfreigabe steht bei 0/6.424.
 
-**Verbleibender Stop:** Kein Versand ohne erfüllten `docs/launch/PHASE_7_COMPLIANCE_GATE.md` und aktives M365-DKIM. Keine Production-Soft-404-Korrektur ohne unabhängiges Review/Freigabe, Merge und manuellen Deploy von PR #85. Keine Google-/CRM-Arbeit ohne explizite Re-Authentifizierung und Auswahl von `cherinojoel@gmail.com`. NS-Cutover, Cloudflare-Altaccount-Bereinigung und Token-/Service-Account-Key-Rotation bleiben separate Owner-Gates. Der GitHub-Models-PoC aus PR #74 bleibt deaktiviert, bis reale Cloudflare-AI-Gateway-Inferenz belegt ist.
+**Verbleibender Stop:** Kein Versand ohne erfüllten
+`docs/launch/PHASE_7_COMPLIANCE_GATE.md` und aktives M365-DKIM. Zwei im
+oeffentlichen Repo sichtbar gewordene Apps-Script-Endpunkte muessen durch einen
+neuen authentifizierten Pfad ersetzt werden: Preview-Test, atomare Production-
+Umstellung, E2E-Verifikation, alte Deployments zuletzt invalidieren. Keine
+Google-/CRM-Arbeit ohne explizite
+Re-Authentifizierung und Auswahl von `cherinojoel@gmail.com`. PR #86 nicht
+unveraendert mergen. NS-Cutover, Cloudflare-Altaccount-Bereinigung und
+Token-/Service-Account-Key-Rotation bleiben separate Owner-Gates. PR #74 bleibt
+deaktiviert, bis reale Cloudflare-AI-Gateway-Inferenz belegt ist.
 
 ---
 
@@ -23,15 +32,15 @@ Stand 2026-07-15 sind die früheren externen Trigger eingetreten:
 
 Open this repo and read in this exact order:
 
-1. `docs/FINAL_OPERATOR_HANDOFF.md` — overall project status
-2. `PROJECT_TRUTH.md` — canonical truth snapshot
-3. `CHECKPOINT_STATE.json` — machine-readable state
-4. `docs/FINAL_ADVERSARIAL_AUDIT.md` — verified final verdict
-5. `docs/FINAL_CLOUDFLARE_WORKERS_READINESS_AUDIT.md` — historical Cloudflare audit
-6. `docs/cloudflare/CLOUDFLARE_PROVIDER_MAX_READINESS.md` — canonical Cloudflare readiness
-7. `docs/PHASE_C_CUTOVER_RUNBOOK.md` — DNS trigger execution path
-8. `docs/crm/CRM_LIGHT_MAX_READINESS.md` — CRM and lead data readiness
-9. This file — operator role split and next actions
+1. `PROJECT_TRUTH.md` — current canonical project truth
+2. `CHECKPOINT_STATE.json` — machine-readable current state
+3. `docs/ai_state/TRUTH_MATRIX_2026-07-15.md` — timestamped evidence
+4. `docs/MASTER_EXECUTION_PLAN.md` — canonical phase roadmap
+5. This file — operator role split and next actions
+6. `docs/cloudflare/CLOUDFLARE_PROVIDER_MAX_READINESS.md` — Cloudflare readiness
+7. `docs/crm/CRM_LIGHT_MAX_READINESS.md` — CRM and lead data readiness
+8. `docs/FINAL_OPERATOR_HANDOFF.md` — historical/superseded evidence only
+9. `docs/PHASE_C_CUTOVER_RUNBOOK.md` — historical/superseded; never execute
 
 ---
 
@@ -58,7 +67,9 @@ Open this repo and read in this exact order:
 Falls später ein NS-Cutover freigegeben wird (Zone `hsb-boden.de` Status `active`):
 
 1. Read `docs/cloudflare/CLOUDFLARE_PROVIDER_MAX_READINESS.md` — go/no-go checklist
-2. Read `docs/PHASE_C_CUTOVER_RUNBOOK.md` — **Achtung: dieses Dokument ist STALE aus der Workers-Ära.** Vor Ausführung erst prüfen/aktualisieren, ob die Schritte noch zur aktuellen Pages-only-Architektur passen; keine Worker-Route-Befehle blind ausführen.
+2. `docs/PHASE_C_CUTOVER_RUNBOOK.md` nur als historische Evidenz lesen. Fuer
+   einen spaeter freigegebenen NS-Cutover zuerst ein neues Pages-/Mail-DNS-
+   Runbook erstellen; keine Worker-Befehle daraus ausfuehren.
 3. Verify Pages deployment truth: `npm run deploy:dry-run` (Projekt `hsb-boden`, Account 01dc37803d1c687b4f9d6249ec89f700)
 4. Verify env var `LEAD_WEBHOOK_URL` on the Pages project (Dashboard → Settings → Environment variables)
 5. Run pre-cutover checks: `npm run build && npm run check && npm run test:run`
@@ -130,7 +141,11 @@ At all times until explicit separate approval:
 - No automation activation (n8n, Apps Script send, any auto-dispatch)
 - No Cloudflare zone/NS change, old-account cleanup, or token rotation without separate owner approval
 - No production deploy via GitHub Actions without going through runbook
-- No merge or production deploy of PR #85 without independent review and approval
+- Keine Wiederverwendung der im Git-Verlauf exponierten Apps-Script-Endpunkte;
+  neuen Auth-Pfad zuerst bauen/testen, alte Deployments erst nach erfolgreicher
+  Umstellung invalidieren
+- PR #86 nicht unveraendert mergen; nur einzeln belegte Schutzlogik in einem
+  frischen PR auf aktuellem `main` portieren
 - No activation of PR #74 while successful Cloudflare AI Gateway inference remains unproven
 - No Phase 8/9 start (requires Phase 7 review outcome)
 - No use of customer logos, names, or references without per-use approval
@@ -157,7 +172,7 @@ Do not send before DKIM is active and Phase 7 gate is completed.
 | Need | Document |
 |------|----------|
 | Cloudflare readiness (canonical) | `docs/cloudflare/CLOUDFLARE_PROVIDER_MAX_READINESS.md` |
-| DNS cutover execution | `docs/PHASE_C_CUTOVER_RUNBOOK.md` |
+| Optionaler spaeterer NS-Cutover | Neues Pages-/Mail-DNS-Runbook erforderlich; `docs/PHASE_C_CUTOVER_RUNBOOK.md` nur historische Evidenz |
 | Email/deliverability readiness | `docs/email/EMAIL_ROUTING_AND_DELIVERABILITY_MAX_READINESS.md` |
 | Analytics readiness | `docs/analytics/GA4_GTM_GSC_MAX_READINESS.md` |
 | Asset/PDF readiness | `docs/assets/ASSET_PACKAGE_AND_PUBLIC_DOWNLOAD_MAX_READINESS.md` |
@@ -166,7 +181,7 @@ Do not send before DKIM is active and Phase 7 gate is completed.
 | Phase 7 compliance gate | `docs/launch/PHASE_7_COMPLIANCE_GATE.md` |
 | Lead import checklist | `docs/launch/LEAD_IMPORT_5000_CHECKLIST.md` |
 | Overall project truth | `PROJECT_TRUTH.md` |
-| Final operator handoff | `docs/FINAL_OPERATOR_HANDOFF.md` |
+| Historischer Operator-Snapshot | `docs/FINAL_OPERATOR_HANDOFF.md` — superseded, nicht als Resume-Start verwenden |
 
 ---
 

@@ -308,3 +308,28 @@ Fortlaufendes Log jeder KI-Session. Jeder Eintrag: Zeit · Modell · Phase · Au
 - **PR #87 (GA4-Event-Fix) erstellt**: `trackEvent()` ruft jetzt `gtag('event', …)` statt nur `dataLayer.push(...)` auf — behebt den dokumentierten Defekt, dass Lead-Submits nie einen GA4-Collect erzeugten. TDD: 7 neue jsdom-Tests, gesamt 82/82 grün, `check`/`build` sauber. Wartet auf Review.
 - GA4-Recherche: Datenstream-„Stream-URL" zeigt weiterhin kosmetisch auf die alte Preview-Adresse (Measurement-ID `G-VC4BJBEFTV` ist aber korrekt und identisch mit der Live-Seite — kein Datenverlust). Lead-Key-Event-Einrichtung in GA4 UI begonnen, noch nicht abgeschlossen (Owner-Fortsetzung nötig).
 - CRM-Zugriff erneut bestätigt blockiert: Chrome-Session und alle Google-MCP-Profile validieren gegen `cherinodiaz@outlook.com`, keine zweite Google-Kontositzung verfügbar — echtes OWNER_GATE, kein Login durch die KI versucht oder durchgeführt.
+
+## 2026-07-15 ~12:06 CEST — Codex: Post-Deploy-Sicherheits- und Truth-Reconciliation
+
+- **Remote-/Live-Stand:** `origin/main=f202cb6`; PR #84/#85/#87/#88/#89/#90
+  gemergt. Production-Run `29404977846` fuer `bf0a257` erfolgreich. Live-GET:
+  `/kontakt/` 200, unbekannter Pfad 404, `GET /api/lead` 405; kein Lead gesendet.
+- **Security-Fund:** Zwei unterschiedliche Apps-Script-Endpunkte standen im
+  oeffentlichen Repository und antworteten anonym. Kein POST ausgefuehrt. Werte
+  aus dem aktuellen Tree entfernt; Invalidation/Neudeploy,
+  `LEAD_WEBHOOK_URL`-Aktualisierung und serverseitige Authentifizierung bleiben
+  P0-Owner-Gate, weil die Git-Historie fortbesteht.
+- **Truth-Fund:** PROJECT_TRUTH, CHECKPOINT, Masterplan, Goal, historischer
+  Final-Handoff, Truth-Matrix und Operator-Runbook enthielten gleichzeitig
+  Vor- und Nach-Merge-Zustaende. Aktueller Overlay auf 12:06 CEST gezogen;
+  historische Worker-Runbooks klar als nicht ausfuehrbar markiert.
+- **Post-Merge-Review-Fund:** CRM-Formel aus PR #88 nutzte Q statt AA fuer
+  `Verantwortlicher`, zwei QUERY-Beschreibungen waren nicht ausfuehrbar und der
+  Scope war falsch. Auf AA, gueltige Datums-/OR-Syntax sowie fuenf Formeln und
+  drei neue Tabs korrigiert; bestehende Owner-Tabs nur nach Backup/Freigabe.
+- **Analytics-Fund:** PR #87 behebt den direkten gtag-Aufruf, PR #90 beweist aber
+  nur den lokalen Shim-Aufruf. Consent-Vertrag, `generate_lead`, PII-Grenze,
+  Zielrouting, Callback vor Navigation, DebugView und Key Event bleiben ein
+  kleiner Folge-PR plus Owner/Legal-Gate. PR #86 nicht unveraendert mergen.
+- **Nicht ausgefuehrt:** kein Merge, Production-Deploy, DNS/NS, Google-/CRM-
+  Write, Outreach, Endpoint-POST, Secret-Lesen oder Worktree-Cleanup.

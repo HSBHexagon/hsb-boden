@@ -1,6 +1,6 @@
 # Phase C — Production-Cutover Runbook (HSB / HEXAFLOOR)
 
-> ## ⚠️ STALE — 2026-07-12: Deploy-Architektur hat sich geändert
+> ## HISTORICAL / SUPERSEDED — NICHT AUSFUEHREN
 > *(Operatives Handoff-Wissen, nicht allein aus dem Repo verifizierbar; Stand 2026-07-12,
 > belegt per HTTP-Check auf www + `wrangler pages project list` mit Custom-Domain-Eintrag.)*
 > Dieses Runbook stammt aus der **Cloudflare-Workers-SSR-Ära** (Juni 2026). Seitdem wurde
@@ -10,8 +10,18 @@
 > `hsb-boden` unter `cherinojoel.workers.dev` ist ein verwaistes Artefakt im alten Account.
 > Aktueller Production-Deploy-Weg: `.github/workflows/deploy-production.yml`
 > (`workflow_dispatch`-only, `wrangler pages deploy dist --project-name hsb-boden --branch=main`).
-> Offen bleibt ausschließlich der freigabepflichtige **Apex-/NS-Cutover bei All-Inkl**.
-> Die Schritte unten nur noch als historische Referenz lesen, nicht ausführen.
+> `www` ist produktiv, der Apex leitet query-erhaltend auf `www`, und der
+> Soft-404 ist behoben. Ein voller NS-Cutover ist optional und nur mit separatem
+> Mail-/DNS-Sicherheitsplan zulaessig. Die Schritte unten sind ausschliesslich
+> historische Evidenz und duerfen nicht kopiert oder ausgefuehrt werden.
+>
+> **Security-Hinweis 2026-07-15:** Zwei ehemals hier beziehungsweise in der
+> Projekt-SSOT dokumentierte Apps-Script-Endpunkte waren im oeffentlichen
+> Repository sichtbar und anonym erreichbar. Die Werte wurden aus dem aktuellen
+> Tree entfernt. Zuerst muss ein neuer authentifizierter Pfad ohne Ausfall
+> aufgebaut und getestet werden; erst nach atomarer Production-Umstellung und
+> erfolgreichem E2E-Test duerfen die alten Deployments invalidiert werden. Die
+> Git-Historie wird durch Redaktion des aktuellen Trees nicht bereinigt.
 
 > Erstellt 2026-06-24 (Claude Code, Opus 4.8). Alle Befehle/Pfade sind **empirisch per Dry-Run + Quellcode-Lesen verifiziert**, nicht nur aus dem Handoff übernommen.
 > **Cutover bleibt freigabepflichtig.** Dieses Dokument macht den Vorgang mechanisch — es ersetzt keine Freigabe.
@@ -38,7 +48,7 @@ Den fertigen Astro-/Cloudflare-Worker als **Production-Worker `hsb-boden`** live
 | Preview-Worker | `hsb-boden-preview` (existiert, Lead-Pipeline live) | wrangler |
 | Production-Worker | `hsb-boden` — **deployed route-los 2026-06-24**, Version `27f7a6a0…`, URL `https://hsb-boden.cherinojoel.workers.dev` (noch ohne Routes) | wrangler deploy 2026-06-24 |
 | SESSION-KV (Prod) | `hsb-boden-session` (`dc91654846b546e39c273d85f559a5a2`), auto-provisioniert beim Deploy | wrangler |
-| Lead-Webhook (Apps Script) | `https://script.google.com/macros/s/AKfycbyVR_Mib5YEI4qZ1MUhUKKZWGJl6VDVmTIC_h_fiFt8INII5_epMUcjh5LhqqdH3lUv/exec` | Handoff 2026-06-22, GET = `{"ok":true,"service":"hsb-lead-intake"}` |
+| Lead-Webhook (Apps Script) | nur als geschuetztes Secret `LEAD_WEBHOOK_URL` | Der fruehere Copy-paste-Wert ist kompromittiert und darf nicht wiederverwendet werden |
 | CRM-Sheet | „HSB CRM Light" (`1d0zZXXwYGo38ZKf0oUSSJpoZ_WVG545rDalXAdItm80`), Account cherinojoel@gmail.com | Handoff |
 | Secret-Name | `LEAD_WEBHOOK_URL` (Endpoint liest `env.LEAD_WEBHOOK_URL`, `src/pages/api/lead.ts:136`) | Quellcode |
 | Origin-Allowlist | hart kodiert `https://hsb-boden.de`, `https://www.hsb-boden.de` (`src/pages/api/lead.ts:7-9`) | Quellcode |
@@ -65,7 +75,9 @@ git status --short            # sauber
 git log --oneline -1          # auf main, Stand bekannt
 ```
 - DNS/NS-Switch bestätigt? Zone `hsb-boden.de` Status = `active`?
-- Apps-Script-Webhook lebt? `curl -s "<LEAD_WEBHOOK_URL>"` → `{"ok":true,"service":"hsb-lead-intake"}`
+- Historischen Apps-Script-Endpunkt nicht direkt aufrufen. Der aktuelle Health-
+  Check gehoert nach Rotation in einen authentifizierten, nicht oeffentlichen
+  Operator-Runbook-Schritt.
 
 ### 1. Build
 ```bash
@@ -80,7 +92,7 @@ wrangler deploy --name hsb-boden --var ENVIRONMENT:production
 
 ### 3. Production-Secret setzen
 ```bash
-printf '%s' 'https://script.google.com/macros/s/AKfycbyVR_Mib5YEI4qZ1MUhUKKZWGJl6VDVmTIC_h_fiFt8INII5_epMUcjh5LhqqdH3lUv/exec' \
+printf '%s' "$LEAD_WEBHOOK_URL" \
   | wrangler secret put LEAD_WEBHOOK_URL --name hsb-boden
 ```
 - `printf '%s'` (kein `echo`) → kein Trailing-Newline in der URL.

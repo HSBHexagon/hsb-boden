@@ -41,7 +41,7 @@ Zugriff VERIFIED 2026-07-15: Das Chrome-Profil `Jordie (HEXAGON)` öffnet die Pr
 
 Empfehlung Preview: behalten als historische Ansicht; optional (Owner) den alten Preview-Worker im cherinojoel-CF-Account stilllegen oder mit `X-Robots-Tag: noindex` versehen, damit der 1-Seiten-Indexrest ausläuft.
 
-**Fehlkonfiguration (Owner-Aktion):** GA4 (Property p543244027) ist mit der **Preview**-GSC-Property verknüpft (Kopplung 09.07.), nicht mit der Production-Property. → In GA4-Admin die Search-Console-Verknüpfung auf `https://www.hsb-boden.de/` umstellen.
+**ERLEDIGT (2026-07-15):** Die GA4↔GSC-Verknüpfung zeigte auf die Preview-Property (Kopplung 26.06.). Alte Verknüpfung gelöscht (GA4-Backend meldete beim ersten Löschversuch HTTP 500, die Löschung griff aber — verifiziert durch „Nog geen koppelingen"), neu verknüpft mit `https://www.hsb-boden.de/` (Stream HAB, `G-VC4BJBEFTV`), verknüpft von `info@hsb-boden.de` am 15.07.2026. Live in GA4-Verwaltung → Search-Console-Koppelingen verifiziert.
 
 ## 4. Analytics
 
@@ -144,7 +144,7 @@ W3 (mit Lead-Gegenprüfung):
 | CRM/Apps-Script (Attribution-Mapping) | Profil `cherinojoel` explizit neu authentifizieren und `cherinojoel@gmail.com` auswählen — oder `docs/crm/ATTRIBUTION_CONNECTOR_PATCH.md` selbst einspielen |
 | GSC-Zugriff | Für Property-Arbeit das berechtigte Chrome-Profil `Jordie (HEXAGON)` nutzen; falls Joel eigenen Zugriff braucht, Property-Berechtigung separat durch den Owner vergeben. Die Google-Mailadresse des HEXAGON-Profils nicht erraten. |
 | GA4-Lead-Event | Separaten getesteten Code-PR reviewen; nach dessen Merge `generate_lead` in GA4 als Key Event markieren |
-| GA4↔GSC-Verknüpfung | In GA4-Admin Search-Console-Link von Preview- auf www-Property umstellen |
+| ~~GA4↔GSC-Verknüpfung~~ | ERLEDIGT 2026-07-15 (siehe Abschnitt 3) |
 | Production-Soft-404 | ERLEDIGT — PR #85 gemerged (`ebe824c`), Production-Deploy ausgelöst und live 404 verifiziert (Abschnitt 2) |
 | GitHub-Models-PoC | PR #74 als Draft/deaktiviert belassen, bis eine echte Cloudflare-AI-Gateway-Inferenz nachgewiesen und separat freigegeben ist |
 | GBP-Verifizierung | Physische Postkarten-Verifizierung durch Joel |

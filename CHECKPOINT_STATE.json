@@ -1,9 +1,9 @@
 {
   "project": "HSB / HEXAFLOOR",
-  "last_updated": "2026-07-13T14:55:00+0200",
+  "last_updated": "2026-07-15T03:40:00+0200",
   "active_model": "Claude Code (Fable 5)",
-  "active_phase": "lead-attribution-live-0713",
-  "active_task": "PR #79 merged 2026-07-13 (e6cd860 via Jules auto-merge of d75d616 + ad7ebc3 rest delta): session-scoped lead attribution (UTM incl. term/content, external referrer origin, landing_page, form_path, server-derived attribution_channel) captured in sessionStorage hsb-attribution-v1, endpoint re-sanitizes as trust boundary (allowlist, formula-prefix strip, same-origin referrer drop, tolerant error semantics), privacy notice section added. 74/74 tests. Production deploy of ad7ebc3 dispatched 2026-07-13. Remaining: Apps-Script column mapping for new attribution keys (connector gate), apex DNS (All-Inkl), GBP verification, cold-outreach compliance gate.",
+  "active_phase": "truth-finalization-0715",
+  "active_task": "Fable-5-Finalisierungspass 2026-07-15: Gesamtsystem verifiziert (Details docs/ai_state/TRUTH_MATRIX_2026-07-15.md). main=6fa875e, Tests 147/147, check/build/deploy:dry-run gruen. Apex hsb-boden.de leitet jetzt 301 auf www (Query-erhaltend) — frueherer WordPress-Blocker aufgehoben. GSC: www-Property 29 indexiert/5 nicht indexiert (normale Google-Zustaende), Sitemap gruen 33 Seiten; Preview-Property historisch (1 Seite). GA4-Fehlkonfiguration gefunden: Search-Console-Link zeigt auf Preview- statt www-Property (Owner-Aktion). Google-MCP: alle 4 Profile re-authed, aber alle auf cherinodiaz@outlook.com -> CRM-Sheets (cherinojoel@gmail.com) 403 = Owner-Gate; Attribution-Connector-Patch bleibt paste-fertig. Leadbestaende lokal verifiziert: MASTER 6424 = Joel 3212 + Jordi 3212, Ueberlappung 0, Tier A 1612/B 4812, Versandfreigabe 0. 3 Flyer live auf www (Jordi kanonisch, nicht Jordie).",
   "account_migration_2026_07_02": {
     "github_new_repo": "https://github.com/HSBHexagon/hsb-boden",
     "github_old_repo_access": "HSBHexagon ist Admin-Collaborator im Alt-Repo cherinojoel-lang/hsb-boden (Ownership-Transfer pending, nicht blockierend)",
@@ -21,8 +21,8 @@
   },
   "repo_path": "/Users/joelcherinodiaz/KI-System/02_Projects/active/hsb-boden",
   "handoff_path": "/Users/joelcherinodiaz/KI-System/ObsidianVault/brain/CURRENT_HANDOFF.md",
-  "last_commit": "ad7ebc3",
-  "website_code_diff_lines": "local changes present: references, GA/Astro hint fix, CRM lead import docs, truth docs",
+  "last_commit": "6fa875e",
+  "website_code_diff_lines": "0 (nur docs/ai_state + CHECKPOINT via PR)",
   "canonical_readiness_stack": {
     "tier1": {
       "cloudflare": "docs/cloudflare/CLOUDFLARE_PROVIDER_MAX_READINESS.md",
@@ -97,25 +97,23 @@
     "deploy-production.yml: replaced 'deploy --env production' with 'deploy --name hsb-boden --var ENVIRONMENT:production' per PHASE_C_CUTOVER_RUNBOOK.md"
   ],
   "open_steps": [
-    "Apps-Script connector: map new payload keys utm_term/utm_content/referrer/landing_page/form_path/attribution_channel to CRM columns (owner/connector gate).",
-    "Consolidate the Pages migration worktree hsb-boden-pages-static into main after explicit approval, so there is no second code truth.",
-    "Resolve apex hsb-boden.de: it currently serves WordPress/Apache and /referenzen/ returns 404; decide and approve redirect to www or equivalent DNS/hosting change.",
-    "If DNS or redirect changes are approved, follow the updated Phase 12 section in docs/MASTER_EXECUTION_PLAN.md before touching Cloudflare or provider DNS.",
-    "Pre-DNS: activate M365 DKIM for j-cherino@hsb-boden.de per docs/email/EMAIL_ROUTING_AND_DELIVERABILITY_MAX_READINESS.md.",
-    "If lead data becomes available, follow docs/crm/CRM_LIGHT_MAX_READINESS.md and docs/launch/LEAD_IMPORT_5000_CHECKLIST.md.",
-    "Keep dispatch blocked until real lead data, recipient basis, opt-out handling, and batch approval exist.",
-    "Use docs/launch/PRE_DNS_GO_LIVE_MAX_CHECKLIST.md as historical trigger-day evidence, but treat docs/MASTER_EXECUTION_PLAN.md and PROJECT_TRUTH.md as current truth."
+    "Owner: MCP-Profil cherinojoel auf cherinojoel@gmail.com re-authen (npx @dguido/google-workspace-mcp auth) -> danach Apps-Script-Spaltenmapping maschinell.",
+    "Owner: GA4-Admin -> Search-Console-Links -> auf https://www.hsb-boden.de/ umstellen; Lead-Submit als Key Event markieren.",
+    "Docs-Drift beheben: JOEL_JORDIE_OPERATOR_RUNBOOK Trigger A auf Pages-Pfad aktualisieren (dieser PR), Notion-CNAME-Task auf Erledigt setzen.",
+    "Preview-Worker im alten cherinojoel-CF-Account stilllegen oder X-Robots-Tag noindex (Owner-Zugang noetig).",
+    "PR-Triage-Cluster gemaess docs/ai_state/PR_TRIAGE-Berichte weiter abarbeiten (nur mit Diff-Evidenz).",
+    "Unveraendert: GBP-Verifizierung (physisch), Kaltakquise-Compliance-Gate, CF-Token-Rotation, Service-Account-Key rotieren."
   ],
   "blocked_by": [
-    "Apex hsb-boden.de still points to WordPress/Apache instead of the Pages www live path.",
-    "The Pages migration branch/worktree is not yet consolidated into main.",
-    "The future 5,000-lead dataset is not inserted yet."
+    "CRM/Apps-Script-Attribution-Mapping: Google-MCP-Profile zeigen alle auf cherinodiaz@outlook.com, CRM-Sheets liegen bei cherinojoel@gmail.com (403) - Re-Auth oder manueller Patch (docs/crm/ATTRIBUTION_CONNECTOR_PATCH.md).",
+    "GA4-Search-Console-Verknuepfung zeigt auf Preview-Property statt www (GA4-Admin, Owner).",
+    "Die zukuenftige Versandfreigabe (PHASE_7_COMPLIANCE_GATE) und M365-DKIM bleiben offen."
   ],
   "pre_outreach_blockers": [
     "M365 DKIM for j-cherino@hsb-boden.de not yet activated.",
     "Recipient basis and batch approval are still missing until real lead data exists."
   ],
-  "next_step": "Read docs/launch/PRE_DNS_GO_LIVE_MAX_CHECKLIST.md and docs/handoff/JOEL_JORDI_OPERATOR_RUNBOOK.md for resume order. If neither external input exists, stop.",
+  "next_step": "Owner-Gates aus docs/ai_state/TRUTH_MATRIX_2026-07-15.md Abschnitt 11 abarbeiten; ohne Owner-Input keine weiteren Aenderungen noetig.",
   "handoff_required": true,
   "safe_to_continue": true,
   "canonical_runtime_migration_2026_07_04": {

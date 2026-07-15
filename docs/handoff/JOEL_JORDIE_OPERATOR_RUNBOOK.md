@@ -53,21 +53,23 @@ Open this repo and read in this exact order:
 
 ## Trigger A — DNS/NS Becomes Active
 
-When Cloudflare zone `hsb-boden.de` shows status `active`:
+> **Status 2026-07-15:** Weitgehend erledigt. `www.hsb-boden.de` läuft produktiv über **Cloudflare Pages** (nicht mehr Workers; die Worker wurden am 2026-07-12 gelöscht). Der Apex `hsb-boden.de` leitet per 301 (Query-erhaltend) auf www um. Ein voller NS-Cutover zu Cloudflare bleibt eine separate Owner-Entscheidung.
+
+Falls später ein NS-Cutover freigegeben wird (Zone `hsb-boden.de` Status `active`):
 
 1. Read `docs/cloudflare/CLOUDFLARE_PROVIDER_MAX_READINESS.md` — go/no-go checklist
 2. Read `docs/PHASE_C_CUTOVER_RUNBOOK.md` — step-by-step execution
-3. Verify production worker is still route-less: `npx wrangler deployments list --name hsb-boden`
-4. Verify secret: `npx wrangler secret list --name hsb-boden` — `LEAD_WEBHOOK_URL` must appear
+3. Verify Pages deployment truth: `npm run deploy:dry-run` (Projekt `hsb-boden`, Account 01dc37803d1c687b4f9d6249ec89f700)
+4. Verify env var `LEAD_WEBHOOK_URL` on the Pages project (Dashboard → Settings → Environment variables)
 5. Run pre-cutover checks: `npm run build && npm run check && npm run test:run`
-6. Only then: activate routes per runbook
-7. Verify live domain response: `curl -I https://hsb-boden.de`
+6. Only then: switch DNS per runbook
+7. Verify live domain response: `curl -I https://hsb-boden.de` (must 301 → www) and `curl -I https://www.hsb-boden.de`
 8. Verify contact form writes to CRM: test POST to `/api/lead`
-9. Activate GA4/GSC per `docs/analytics/GA4_GTM_GSC_MAX_READINESS.md`
+9. Verify GA4/GSC per `docs/analytics/GA4_GTM_GSC_MAX_READINESS.md`
 10. Do not touch mail DNS records unless separately approved
 11. Log completion in `SESSION_LOG.md`
 
-**Do not skip the go/no-go checklist. Do not create routes before zone is `active`.**
+**Do not skip the go/no-go checklist.**
 
 ---
 

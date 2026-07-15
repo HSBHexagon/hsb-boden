@@ -3,7 +3,7 @@ export const navigation = [
   { label: "Branchen", href: "/branchen/" },
   { label: "Referenzen", href: "/referenzen/" },
   { label: "Wissen", href: "/wissen/" },
-  { label: "Projektablauf", href: "/#projektablauf" },
+  { label: "Projektablauf", href: "/projektablauf/" },
   { label: "Karriere", href: "/karriere/" },
   { label: "Kontakt", href: "/kontakt/" },
 ];
@@ -37,6 +37,7 @@ export const footerGroups = [
     title: "Unternehmen & Team",
     links: [
       { label: "Über uns", href: "/#ueber-uns" },
+      { label: "Projektablauf", href: "/projektablauf/" },
       { label: "Referenzen", href: "/referenzen/" },
       { label: "Wissen", href: "/wissen/" },
       { label: "Karriere", href: "/karriere/" },

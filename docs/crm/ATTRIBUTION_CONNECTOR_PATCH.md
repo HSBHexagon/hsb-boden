@@ -71,12 +71,17 @@ Hinweise:
   authentifizierter Pfad** mit atomarem URL+Token-Vertrag; das alte Deployment
   bleibt nur bis zur verifizierten Umschaltung aktiv.
 
-## Schritt 3 — Verifikation (historisch erledigt)
+## Schritt 3 — Verifikation (historisch erledigt; nach Cutover erneut erforderlich)
 
 1. OPERATOR_VERIFIED 2026-07-15: Ein klar markierter UTM-Testlead wurde über das
    Website-Formular zugestellt. Keine echten Kontaktdaten werden hier wiederholt.
 2. Im Sheet prüfen — **alle** sechs neuen Zellen der Zeile müssen exakt stimmen (deckt Vertauschungen/Auslassungen auf): `utm_term` = `spalten_check`, `utm_content` = `patch_v1`, `referrer` leer oder externes Origin, `landing_page` = `/kontakt/`, `form_path` = `/kontakt/`, `attribution_channel` = `campaign`.
 3. Testzeile löschen und Löschung verifizieren.
+
+Für den Auth-Cutover dieselbe Verifikation mit ausschließlich internen Testdaten
+nach `docs/crm/WEBHOOK_AUTH_CUTOVER.md` erneut durchführen. Dabei URL und Token
+atomar in `LEAD_WEBHOOK_CONFIG` der jeweiligen Pages-Umgebung setzen; das
+Legacy-Deployment bleibt nur bis zur erfolgreichen Umschaltung aktiv.
 
 ## Feldreferenz (Quelle: `src/lib/leadSchema.ts` / `src/lib/attribution.ts`)
 

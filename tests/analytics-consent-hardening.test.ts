@@ -40,6 +40,7 @@ describe("analytics and consent hardening", () => {
     const tracking = source("src/lib/tracking.ts");
 
     expect(form).toContain('import { trackConversion, trackEvent, TrackingEvent }');
+    expect(form).toContain('site.phone.replace("(0)", "")');
     expect(form).toContain("if (!res.ok) throw new Error");
     expect(form).toContain("await trackConversion(TrackingEvent.GenerateLead)");
     expect(form.indexOf("await trackConversion(TrackingEvent.GenerateLead)")).toBeGreaterThan(

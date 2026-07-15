@@ -61,8 +61,8 @@ describe("lead webhook authentication", () => {
     vi.unstubAllGlobals();
   });
 
-  it("keeps the legacy webhook payload unchanged when no secret is configured", async () => {
-    const fetchImpl = vi.fn<typeof fetch>().mockResolvedValue(webhookResponse({ ok: true }));
+  it("preserves the legacy HTTP-only success contract when no secret is configured", async () => {
+    const fetchImpl = vi.fn<typeof fetch>().mockResolvedValue(new Response("", { status: 200 }));
     vi.stubGlobal("fetch", fetchImpl);
 
     const response = await onRequestPost(
@@ -78,7 +78,7 @@ describe("lead webhook authentication", () => {
     expect(forwarded).toMatchObject(validPayload);
   });
 
-  it("injects the configured secret server-side and overrides browser input", async () => {
+  it("injects the configured secret server-side and requires explicit acceptance", async () => {
     const fetchImpl = vi.fn<typeof fetch>().mockResolvedValue(webhookResponse({ ok: true }));
     vi.stubGlobal("fetch", fetchImpl);
 
@@ -114,12 +114,15 @@ describe("lead webhook authentication", () => {
     await expect(response.json()).resolves.toEqual({ ok: false, error: "webhook_unreachable" });
   });
 
-  it("returns 502 when the webhook response is not valid JSON", async () => {
+  it("returns 502 for a non-JSON response once strict secret mode is enabled", async () => {
     const fetchImpl = vi.fn<typeof fetch>().mockResolvedValue(new Response("not-json", { status: 200 }));
     vi.stubGlobal("fetch", fetchImpl);
 
     const response = await onRequestPost(
-      context(validPayload, { LEAD_WEBHOOK_URL: "https://script.google.test/webhook" }),
+      context(validPayload, {
+        LEAD_WEBHOOK_URL: "https://script.google.test/webhook",
+        LEAD_WEBHOOK_SECRET: "server-controlled-secret",
+      }),
     );
 
     expect(response.status).toBe(502);

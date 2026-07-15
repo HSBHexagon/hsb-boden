@@ -6,6 +6,7 @@ import { leadEndpointSchema } from "../../src/lib/leadSchema";
 
 interface Env {
   LEAD_WEBHOOK_URL?: string;
+  LEAD_WEBHOOK_SECRET?: string;
   RATE_LIMIT_KV?: KVNamespace;
 }
 
@@ -15,6 +16,7 @@ const MAX_PAYLOAD_BYTES = 16 * 1024;
 const IP_LIMIT = { max: 5, windowMs: 10 * 60 * 1000 };
 const EMAIL_LIMIT = { max: 2, windowMs: 30 * 60 * 1000 };
 const WEBHOOK_TIMEOUT_MS = 6000;
+const WEBHOOK_AUTH_FIELD = "_hsbWebhookToken";
 
 // Distributed across Worker/Pages Function instances via Cloudflare KV — an
 // in-memory Map resets per instance/cold start and does not enforce a limit
@@ -88,6 +90,11 @@ async function readBodyWithLimit(request: Request, limitBytes: number): Promise<
   return new TextDecoder().decode(out);
 }
 
+function buildWebhookPayload(lead: Record<string, unknown>, webhookSecret?: string) {
+  if (!webhookSecret) return lead;
+  return { ...lead, [WEBHOOK_AUTH_FIELD]: webhookSecret };
+}
+
 export const onRequestOptions: PagesFunction<Env> = async ({ request }) => {
   const origin = request.headers.get("Origin");
   const headers = corsHeaders(origin);
@@ -154,7 +161,7 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
     const webhookResponse = await fetch(webhookUrl, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(lead),
+      body: JSON.stringify(buildWebhookPayload(lead, env.LEAD_WEBHOOK_SECRET)),
       signal: controller.signal,
     });
     if (!webhookResponse.ok) throw new Error("webhook_rejected");

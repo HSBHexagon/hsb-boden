@@ -31,6 +31,8 @@ Nicht zulässig:
 - pauschale WHG-, ISO-, VCA-/SCC- oder sonstige Zertifikatsaussagen,
 - Bilder ohne Nutzungsrecht.
 
+Die Veröffentlichungsfunktion entfernt interne Nachweis-, Einwilligungs- und Rechteverweise aus der öffentlichen Ausgabe.
+
 ## Case Studies
 
 Pflichtfelder vor Veröffentlichung:
@@ -41,20 +43,22 @@ Pflichtfelder vor Veröffentlichung:
 4. Projektquellen in `evidenceRefs`,
 5. dokumentierte Owner-/Projektfreigabe in `publicationApprovalRef`.
 
-Zusätzliche Einzel-Freigaben sind erforderlich für:
+Zusätzliche feldspezifische Freigabereferenzen sind erforderlich für:
 
-- `customerName`: öffentlicher Kundenname,
-- `logo`: Kundenlogo,
-- `exactLocation`: Werk, Stadt oder genauer Standort,
-- `metrics`: Flächen, Sperrzeiten, Kosten, Lebensdauer oder Auditergebnisse,
-- `quote`: Kundenstimme und namentliche/funktionale Quellenangabe,
-- `images`: Projektbilder und deren Bildrechte.
+- `approvals.customerName`: öffentlicher Kundenname,
+- `approvals.logo`: Kundenlogo,
+- `approvals.exactLocation`: Werk, Stadt oder genauer Standort,
+- `approvals.metrics`: Flächen, Sperrzeiten, Kosten, Lebensdauer oder Auditergebnisse,
+- `approvals.quote`: Kundenstimme und namentliche/funktionale Quellenangabe,
+- `approvals.images`: Projektbilder und deren Bildrechte.
 
-Ohne die jeweilige Freigabe entfernt die Veröffentlichungsfunktion diese Angaben automatisch.
+Jeder Wert in `approvals` ist ein nicht leerer interner Verweis auf die konkrete Freigabe des jeweiligen Feldes. Ein Boolean oder eine pauschale Gesamtfreigabe genügt dafür nicht. Ohne die jeweilige Referenz entfernt die Veröffentlichungsfunktion die Angabe automatisch.
+
+Die öffentliche Ausgabe enthält weder `evidenceRefs` noch `publicationApprovalRef`, feldspezifische Approval-Verweise, Metriknachweise, Zitatnachweise oder Bildrechte-Verweise.
 
 ## Quellenreferenzen
 
-`evidenceRefs`, `publicationConsentRef`, `publicationApprovalRef` und Rechteverweise enthalten keine Secrets oder personenbezogenen Dokumentinhalte. Sie sind interne Pointer auf den freigegebenen Ablageort, zum Beispiel:
+`evidenceRefs`, `publicationConsentRef`, `publicationApprovalRef`, die Werte in `approvals` und Rechteverweise enthalten keine Secrets oder personenbezogenen Dokumentinhalte. Sie sind interne Pointer auf den freigegebenen Ablageort, zum Beispiel:
 
 - interne Dokument-ID,
 - freigegebene Drive-Datei,
@@ -71,9 +75,10 @@ Vor jedem Eintrag:
 - [ ] Fakten mit Originalquelle abgeglichen
 - [ ] Status auf `approved` gesetzt
 - [ ] Owner-/Personenfreigabe dokumentiert
-- [ ] Kundenname, Logo, Standort, Kennzahlen, Zitat und Bilder einzeln bewertet
+- [ ] für Kundenname, Logo, Standort, Kennzahlen, Zitat und Bilder jeweils eine eigene Approval-Referenz hinterlegt
 - [ ] Bildrechte und Alt-Text geprüft
 - [ ] keine Betriebsgeheimnisse oder personenbezogenen Daten sichtbar
+- [ ] öffentliche Ausgabe enthält keine internen Evidence-/Approval-Verweise
 - [ ] Preview kontrolliert
 - [ ] PR-Review abgeschlossen
 - [ ] Production-Freigabe separat erteilt

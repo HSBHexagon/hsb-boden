@@ -51,7 +51,7 @@ Empfehlung Preview: behalten als historische Ansicht; optional (Owner) den alten
 | 7-Tage-Traffic überwiegend (direct)/(none) aus den USA → Bot-/Crawler-Rauschen, kein realer Kundentraffic | VERIFIED (Interpretation: INFERRED) |
 | 0 Key Events konfiguriert (Lead-Submit nicht als Schlüsselereignis) | VERIFIED → Owner-Empfehlung: `generate_lead`/Danke-Seite als Key Event markieren |
 | Lead-Attribution (sessionStorage `hsb-attribution-v1`) live auf www | HISTORICAL (live-verifiziert 2026-07-14), Code auf main VERIFIED |
-| Lead-Submit-Eventtransport | DEFECT VERIFIED: Die Seite lädt direkt `gtag.js`, `trackEvent()` pusht bislang jedoch nur ein GTM-artiges Objekt. Ein lokaler Browser-Probe mit vollständig abgefangenen Collect-Endpunkten erzeugte damit keinen GA4-Collect; ein direkter `gtag('event', ...)`-Aufruf dagegen schon. Separater TDD-/Review-PR erforderlich. |
+| Lead-Submit-Eventtransport | BEHOBEN 2026-07-15 (PR #87, `bf0a257`, deployed): `trackEvent()` ruft jetzt `gtag('event', name, payload)` auf statt nur `dataLayer.push`. Live auf Production verifiziert: ein Browser-Hook auf `dataLayer.push` fing nach dem Fix ein `arguments`-Objekt (`{"0":"event","1":"lead_form_start","2":{}}`) ab — die charakteristische interne Transportsignatur von `gtag.js` selbst, nicht mehr das alte literale `{event,...payload}`-Objekt. Damit ist belegt, dass `gtag('event', …)` tatsächlich aufgerufen wird. Vorher (Baseline-Test, gleicher Ablauf) blieb der Hook leer — kein GA4-Collect. CodeRabbit-Nachbesserung (payload.event könnte Fallback-Namen überschreiben) ebenfalls behoben und getestet (8/8 grün). |
 
 ## 5. Google-Zugänge (MCP) — zentraler Befund
 
@@ -143,7 +143,7 @@ W3 (mit Lead-Gegenprüfung):
 |---|---|
 | CRM/Apps-Script (Attribution-Mapping) | Profil `cherinojoel` explizit neu authentifizieren und `cherinojoel@gmail.com` auswählen — oder `docs/crm/ATTRIBUTION_CONNECTOR_PATCH.md` selbst einspielen |
 | GSC-Zugriff | Für Property-Arbeit das berechtigte Chrome-Profil `Jordie (HEXAGON)` nutzen; falls Joel eigenen Zugriff braucht, Property-Berechtigung separat durch den Owner vergeben. Die Google-Mailadresse des HEXAGON-Profils nicht erraten. |
-| GA4-Lead-Event | Separaten getesteten Code-PR reviewen; nach dessen Merge `generate_lead` in GA4 als Key Event markieren |
+| GA4-Lead-Event | ERLEDIGT (Code, siehe oben). Verbleibend: `lead_form_submit` in GA4-Admin als Key Event markieren (kosmetisch, keine Funktionsblockade) |
 | ~~GA4↔GSC-Verknüpfung~~ | ERLEDIGT 2026-07-15 (siehe Abschnitt 3) |
 | Production-Soft-404 | ERLEDIGT — PR #85 gemerged (`ebe824c`), Production-Deploy ausgelöst und live 404 verifiziert (Abschnitt 2) |
 | GitHub-Models-PoC | PR #74 als Draft/deaktiviert belassen, bis eine echte Cloudflare-AI-Gateway-Inferenz nachgewiesen und separat freigegeben ist |

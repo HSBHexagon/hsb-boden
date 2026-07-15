@@ -118,9 +118,9 @@
     "deploy-production.yml: replaced 'deploy --env production' with 'deploy --name hsb-boden --var ENVIRONMENT:production' per PHASE_C_CUTOVER_RUNBOOK.md"
   ],
   "open_steps": [
+    "ERLEDIGT 2026-07-15: GA4-Lead-Event-Fix (PR #87) gemergt und deployed, live via dataLayer-Hook verifiziert (gtag-Transportsignatur bestaetigt). Verbleibend nur kosmetisch: lead_form_submit als GA4-Key-Event markieren.",
     "ERLEDIGT 2026-07-15: GA4-GSC-Link von Preview- auf www-Property umgestellt (Details docs/ai_state/TRUTH_MATRIX_2026-07-15.md Abschnitt 3).",
     "Owner: Google-MCP-Profil cherinojoel explizit neu authentifizieren und im Browser cherinojoel@gmail.com auswaehlen; danach Apps-Script-Spaltenmapping maschinell pruefen.",
-    "Technisch: GA4-Lead-Event ueber den vorhandenen direkten gtag.js-Einbau senden und separat reviewen; danach Owner: Lead-Submit in GA4 als Key Event markieren.",
     "PR #85 unabhaengig reviewen und freigeben; erst danach mergen und den Production-Deploy manuell ausloesen. Bis dahin bleibt der Production-Soft-404 offen.",
     "Cloudflare-Owner: Zone/NS-Entscheidung separat treffen; Alt-Account-Worker und doppelte Zone bereinigen sowie API-Token rotieren.",
     "PR #74 bleibt Draft und deaktiviert; erfolgreiche Cloudflare-AI-Gateway-Inferenz ist vor jeder Readiness-Aussage real nachzuweisen.",

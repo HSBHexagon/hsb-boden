@@ -58,15 +58,15 @@ async function isRateLimited(
   return hits.length > limit.max;
 }
 
-function corsHeaders(origin: string | null) {
+function corsHeaders(origin: string | null, requestUrl: string) {
   const headers = new Headers({ "Content-Type": "application/json" });
-  if (origin && isAllowedOrigin(origin)) {
+  if (origin && isAllowedOrigin(origin, requestUrl)) {
     headers.set("Access-Control-Allow-Origin", origin);
   }
   return headers;
 }
 
-function isAllowedOrigin(origin: string): boolean {
+function isAllowedOrigin(origin: string, requestUrl: string): boolean {
   if (ALLOWED_ORIGINS.has(origin)) return true;
 
   try {
@@ -74,15 +74,16 @@ function isAllowedOrigin(origin: string): boolean {
     return (
       url.origin === origin &&
       url.protocol === "https:" &&
-      /^[a-z0-9-]+\.hsb-boden\.pages\.dev$/.test(url.hostname)
+      /^[a-z0-9-]+\.hsb-boden\.pages\.dev$/.test(url.hostname) &&
+      url.origin === new URL(requestUrl).origin
     );
   } catch {
     return false;
   }
 }
 
-function jsonResponse(status: number, body: unknown, origin: string | null) {
-  return new Response(JSON.stringify(body), { status, headers: corsHeaders(origin) });
+function jsonResponse(status: number, body: unknown, origin: string | null, requestUrl: string) {
+  return new Response(JSON.stringify(body), { status, headers: corsHeaders(origin, requestUrl) });
 }
 
 function isAllowedAppsScriptUrl(value: string): boolean {
@@ -181,14 +182,14 @@ async function readBodyWithLimit(request: Request, limitBytes: number): Promise<
 
 export const onRequestOptions: PagesFunction<Env> = async ({ request }) => {
   const origin = request.headers.get("Origin");
-  const headers = corsHeaders(origin);
+  const headers = corsHeaders(origin, request.url);
   headers.set("Access-Control-Allow-Methods", "POST, OPTIONS");
   headers.set("Access-Control-Allow-Headers", "Content-Type");
   return new Response(null, { status: 204, headers });
 };
 
 export const onRequestGet: PagesFunction<Env> = async ({ request }) => {
-  const response = jsonResponse(405, { ok: false, error: "method_not_allowed" }, request.headers.get("Origin"));
+  const response = jsonResponse(405, { ok: false, error: "method_not_allowed" }, request.headers.get("Origin"), request.url);
   response.headers.set("Allow", "POST, OPTIONS");
   return response;
 };
@@ -199,13 +200,13 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
   const { request, env } = context;
   const origin = request.headers.get("Origin");
 
-  if (origin && !isAllowedOrigin(origin)) {
-    return jsonResponse(403, { ok: false, error: "forbidden_origin" }, origin);
+  if (origin && !isAllowedOrigin(origin, request.url)) {
+    return jsonResponse(403, { ok: false, error: "forbidden_origin" }, origin, request.url);
   }
 
   const declaredLength = Number(request.headers.get("Content-Length") ?? "0");
   if (declaredLength > MAX_PAYLOAD_BYTES) {
-    return jsonResponse(413, { ok: false, error: "payload_too_large" }, origin);
+    return jsonResponse(413, { ok: false, error: "payload_too_large" }, origin, request.url);
   }
 
   let rawBody: string;
@@ -213,21 +214,21 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
     rawBody = await readBodyWithLimit(request, MAX_PAYLOAD_BYTES);
   } catch (err) {
     if (err instanceof PayloadTooLargeError) {
-      return jsonResponse(413, { ok: false, error: "payload_too_large" }, origin);
+      return jsonResponse(413, { ok: false, error: "payload_too_large" }, origin, request.url);
     }
-    return jsonResponse(400, { ok: false, error: "invalid_body" }, origin);
+    return jsonResponse(400, { ok: false, error: "invalid_body" }, origin, request.url);
   }
 
   let parsedBody: unknown;
   try {
     parsedBody = JSON.parse(rawBody);
   } catch {
-    return jsonResponse(400, { ok: false, error: "invalid_json" }, origin);
+    return jsonResponse(400, { ok: false, error: "invalid_json" }, origin, request.url);
   }
 
   const result = leadEndpointSchema.safeParse(parsedBody);
   if (!result.success) {
-    return jsonResponse(400, { ok: false, error: "validation_failed" }, origin);
+    return jsonResponse(400, { ok: false, error: "validation_failed" }, origin, request.url);
   }
   const lead = result.data;
 
@@ -236,7 +237,7 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
   const ipLimited = await isRateLimited(env.RATE_LIMIT_KV, memoryIpHits, `ip:${ip}`, IP_LIMIT, now);
   const emailLimited = await isRateLimited(env.RATE_LIMIT_KV, memoryEmailHits, `email:${lead.email}`, EMAIL_LIMIT, now);
   if (ipLimited || emailLimited) {
-    return jsonResponse(429, { ok: false, error: "rate_limited" }, origin);
+    return jsonResponse(429, { ok: false, error: "rate_limited" }, origin, request.url);
   }
 
   const controller = new AbortController();
@@ -265,11 +266,11 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
     }
   } catch {
     console.error(JSON.stringify({ ts: new Date(now).toISOString(), result: "error", code: "webhook_unreachable" }));
-    return jsonResponse(502, { ok: false, error: "webhook_unreachable" }, origin);
+    return jsonResponse(502, { ok: false, error: "webhook_unreachable" }, origin, request.url);
   } finally {
     clearTimeout(timeout);
   }
 
   console.log(JSON.stringify({ ts: new Date(now).toISOString(), result: "ok", emailDomain: lead.email.split("@")[1] }));
-  return jsonResponse(200, { ok: true }, origin);
+  return jsonResponse(200, { ok: true }, origin, request.url);
 };

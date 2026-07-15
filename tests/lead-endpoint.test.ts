@@ -27,9 +27,14 @@ const validBody = {
   legalBasis: "inquiry",
 };
 
-function makeRequest(body: unknown, opts: { ip?: string; origin?: string; method?: string } = {}) {
-  const { ip = "203.0.113.1", origin = "https://hsb-boden.de", method = "POST" } = opts;
-  return new Request("https://hsb-boden.de/api/lead", {
+function makeRequest(body: unknown, opts: { ip?: string; origin?: string; method?: string; url?: string } = {}) {
+  const {
+    ip = "203.0.113.1",
+    origin = "https://hsb-boden.de",
+    method = "POST",
+    url = "https://hsb-boden.de/api/lead",
+  } = opts;
+  return new Request(url, {
     method,
     headers: {
       "Content-Type": "application/json",
@@ -236,10 +241,21 @@ describe("POST /api/lead", () => {
     vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response("{}", { status: 200 }));
     const origin = "https://feature-auth-cutover.hsb-boden.pages.dev";
 
-    const res = await onRequestPost(makeContext(makeRequest(validBody, { origin })));
+    const res = await onRequestPost(makeContext(makeRequest(validBody, { origin, url: `${origin}/api/lead` })));
 
     expect(res.status).toBe(200);
     expect(res.headers.get("Access-Control-Allow-Origin")).toBe(origin);
+  });
+
+  it("rejects a Pages preview Origin when the request targets the production host", async () => {
+    const origin = "https://feature-auth-cutover.hsb-boden.pages.dev";
+
+    const res = await onRequestPost(makeContext(makeRequest(validBody, {
+      origin,
+      url: "https://www.hsb-boden.de/api/lead",
+    })));
+
+    expect(res.status).toBe(403);
   });
 
   it("rejects a lookalike Cloudflare Pages preview Origin", async () => {

@@ -352,3 +352,16 @@ Fortlaufendes Log jeder KI-Session. Jeder Eintrag: Zeit · Modell · Phase · Au
   lokalen Commit `e3f4b57` auf Root-`main`; er wurde nicht gepusht und wegen
   enthaltener Ressourcen-IDs nur unter `codex/fable-attribution-live-state`
   gesichert. Die bereinigte Wahrheit wird stattdessen in PR #91 konsolidiert.
+
+---
+
+## 2026-07-15 13:20 CEST — Claude Code (Fable 5)
+- **Phase:** CRM/Attribution-Connector-Patch Live-Rollout + Finalisierungswelle (Cloudflare/GSC/GA4/CRM)
+- **Aufgabe:** Nach User-Freigabe ("übernehme es jetzt" für CRM-Login-Blocker, danach "merge was du mergen kannst... es muss alles eingerichtet sein"): PRs mergen wo möglich, GA4/GSC/Cloudflare final einrichten, CRM prüfen/ausbauen und den dokumentierten Attribution-Connector-Patch live umsetzen.
+- **Ergebnis:** PR #85 (Soft-404) + PR #84 (Doku/Truth) gemerged/deployed/live verifiziert. PR #87 (GA4 trackEvent→gtag Bugfix, TDD, 7 neue jsdom-Tests) gemerged/deployed/live verifiziert. GA4-GSC-Link von falscher Preview-Property auf www.hsb-boden.de korrigiert. CRM-Zugriff: User hat sich selbst in cherinojoel@gmail.com eingeloggt (MCP/API-OAuth-Kanal blieb defekt über 4 Versuche, interaktiver Browser-Kanal stattdessen genutzt). CRM-Deep-Dive dokumentiert (PR #88, 6.424 Leads, 1.612 Tier-A ohne Standortdaten). Attribution-Connector-Patch (docs/crm/ATTRIBUTION_CONNECTOR_PATCH.md) live umgesetzt: HSB CRM Light Sheet um 6 Spalten AB1:AG1 erweitert (utm_term, utm_content, referrer, landing_page, form_path, attribution_channel); HSBBODEN Apps-Script Code.gs um att()-Sanitizer + 6 Row-Felder erweitert; bestehendes Deployment auf Version 4 aktualisiert, keine neue Deployment-ID/URL (IDs bewusst nicht in Git, siehe Projektregel). Schritt-3-Verifikation mit echtem UTM-Test-Lead (utm_source=internal_test, utm_medium=qa, utm_campaign=mapping_check, utm_term=spalten_check, utm_content=patch_v1) durchgeführt: alle 6 Spalten korrekt befüllt, Testzeile danach gelöscht.
+- **Geänderte Dateien:** `CHECKPOINT_STATE.json`, `SESSION_LOG.md`, `~/KI-System/ObsidianVault/brain/CURRENT_HANDOFF.md` (lokal); live-seitig: Google Sheet "HSB CRM Light" (Header AB1:AG1), Google Apps Script "HSBBODEN" Code.gs + Deployment-Version 4 (nicht im Git-Repo)
+- **Website-Code-Diff:** 0 in dieser Sitzung (Apps-Script/Sheet sind keine Repo-Artefakte)
+- **Push:** ja (bereits vorher gemergter PRs #85/#84/#87, siehe jeweilige PR-Historie)
+- **Deploy:** ja — Cloudflare Pages (PR #85, #87 Inhalte) sowie separat Google Apps Script Deployment Version 4 (Webhook-URL unverändert)
+- **Kein DNS-/NS-Switch, keine Massenmail, keine neue Apps-Script-Deployment-ID erzeugt**
+- **Nächster Schritt:** Attribution-Connector-Patch-Doku als "live" markieren (docs/crm/ATTRIBUTION_CONNECTOR_PATCH.md, docs/crm/CRM_LIGHT_MAX_READINESS.md); PR #88 (CRM-Deep-Dive) reviewen/mergen; verbleibende Jules-PRs triagieren; Apex-DNS-Switch, Google-Business-Profil-Verifizierung und Compliance-Freigabe für Kaltakquise bleiben die drei zentralen Owner-Gates.

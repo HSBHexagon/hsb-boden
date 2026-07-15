@@ -15,11 +15,11 @@ beforeEach(() => {
 });
 
 describe("trackEvent", () => {
-  it("ruft gtag('event', name, payload) auf, wenn gtag vorhanden ist", () => {
+  it("ruft gtag('event', name, payload) mit dem kanonischen Lead-Event auf", () => {
     const gtag = vi.fn();
     win.gtag = gtag;
-    trackEvent(TrackingEvent.LeadFormSubmit, { form_path: "/kontakt/" });
-    expect(gtag).toHaveBeenCalledWith("event", "lead_form_submit", { form_path: "/kontakt/" });
+    trackEvent(TrackingEvent.GenerateLead, { form_path: "/kontakt/" });
+    expect(gtag).toHaveBeenCalledWith("event", "generate_lead", { form_path: "/kontakt/" });
   });
 
   it("ruft gtag auch ohne Payload mit leerem Objekt auf", () => {

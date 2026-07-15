@@ -122,6 +122,7 @@ const deliveryConfigured = site.hasLeadEndpoint;
 
 <script>
   import { trackEvent, TrackingEvent } from "../../lib/tracking";
+  import { buildLeadAttributionFields, captureAttribution, loadAttribution } from "../../lib/attribution";
 
   const form = document.getElementById("lead-form") as HTMLFormElement | null;
   const submitBtn = document.getElementById("form-submit") as HTMLButtonElement | null;
@@ -153,7 +154,25 @@ const deliveryConfigured = site.hasLeadEndpoint;
       document.getElementById("loads-fieldset")?.querySelector("input")?.focus();
       return;
     }
+    // Session-Attribution (UTM/Referrer/Landingpage) anreichern; Fallback auf
+    // Frisch-Erfassung, falls sessionStorage blockiert ist. Darf nie werfen.
+    let attributionFields: Record<string, string> = {};
+    try {
+      const attribution =
+        loadAttribution(window.sessionStorage) ??
+        captureAttribution({
+          search: window.location.search,
+          referrer: document.referrer,
+          pathname: window.location.pathname,
+          origin: window.location.origin,
+        });
+      attributionFields = buildLeadAttributionFields(attribution, window.location.pathname);
+    } catch {
+      attributionFields = {};
+    }
+
     const payload: Record<string, any> = {
+      ...attributionFields,
       source: "website",
       legalBasis: "inquiry",
       firstName: fd.get("firstName"),

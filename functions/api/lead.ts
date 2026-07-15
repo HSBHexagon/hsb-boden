@@ -95,6 +95,21 @@ function buildWebhookPayload(lead: Record<string, unknown>, webhookSecret?: stri
   return { ...lead, [WEBHOOK_AUTH_FIELD]: webhookSecret };
 }
 
+async function requireWebhookAcceptance(response: Response) {
+  if (!response.ok) throw new Error("webhook_rejected");
+
+  let body: unknown;
+  try {
+    body = await response.json();
+  } catch {
+    throw new Error("webhook_invalid_response");
+  }
+
+  if (typeof body !== "object" || body === null || !("ok" in body) || body.ok !== true) {
+    throw new Error("webhook_rejected");
+  }
+}
+
 export const onRequestOptions: PagesFunction<Env> = async ({ request }) => {
   const origin = request.headers.get("Origin");
   const headers = corsHeaders(origin);
@@ -164,7 +179,7 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
       body: JSON.stringify(buildWebhookPayload(lead, env.LEAD_WEBHOOK_SECRET)),
       signal: controller.signal,
     });
-    if (!webhookResponse.ok) throw new Error("webhook_rejected");
+    await requireWebhookAcceptance(webhookResponse);
   } catch {
     console.error(JSON.stringify({ ts: new Date(now).toISOString(), result: "error", code: "webhook_unreachable" }));
     return jsonResponse(502, { ok: false, error: "webhook_unreachable" }, origin);

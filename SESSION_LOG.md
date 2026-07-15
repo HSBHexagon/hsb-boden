@@ -287,3 +287,13 @@ Fortlaufendes Log jeder KI-Session. Jeder Eintrag: Zeit · Modell · Phase · Au
 - **Deploy:** ja — ausschließlich auf den neuen Cloudflare-Account (hsb-boden-preview, hsb-boden route-los), keine Routes/DNS
 - **Kein DNS-/NS-Switch, keine Massenmail, keine Secret-Werte im Repo/Chat persistiert**
 - **Nächster Schritt:** DKIM-Selektoren aus M365 Admin Center holen und verifizieren; autodiscover-Record von proxied auf DNS-only prüfen; Cloudflare-API-Token rotieren (stand kurz im Chat sichtbar); GitHub-Ownership-Transfer final abschließen sobald info@hsb-boden.de ein Postfach hat. DNS-/NS-Cutover weiterhin nur nach expliziter Freigabe (siehe `docs/PHASE_C_CUTOVER_RUNBOOK.md`).
+
+## 2026-07-15 ~03:50 CEST — Claude Code (Fable 5): Gesamtsystem-Finalisierungspass
+- Truth-Matrix erstellt (docs/ai_state/TRUTH_MATRIX_2026-07-15.md), CHECKPOINT_STATE.json refreshed, Runbook-Trigger-A-Drift (Workers→Pages) behoben — Draft-PR #84.
+- Frische Evidenz: Tests 147/147, check 0 warnings, Build 35 Seiten, deploy:dry-run grün.
+- VERIFIED: Apex 301→www (Query-erhaltend, früherer Blocker aufgehoben); GSC www 29 indexiert/5 nicht (normale Zustände), Sitemap grün 33 URLs; Preview-Property historisch (1 Seite indexiert).
+- Neue Befunde: GA4-GSC-Link zeigt auf Preview- statt www-Property (Owner); GA4 0 Key Events; Soft-404 sitewide (200+HTML für nicht-existente Pfade, freigabepflichtiger Fix); Preview-Worker im Alt-Account ohne noindex.
+- Google-MCP: 4 Profile re-authed, aber alle auf cherinodiaz@outlook.com → CRM-Sheets (cherinojoel@gmail.com) 403 = Owner-Gate; kein Live-Lead-Test (Testzeile wäre nicht löschbar).
+- Leadbestand lokal VERIFIED: MASTER 6424 = Joel 3212 + Jordi 3212, Überlappung 0, Tier A 1612/B 4812, Versandfreigabe 0/6424. 3 Flyer live (Jordi kanonisch). Mail-Varianten + UTM-Matrix konsistent.
+- Ruleset "Protect Main" aktiv gegenverifiziert (pull_request + required_status_checks). Offene PRs: 40. Kein Merge/Close/Deploy in diesem Pass.
+- Notion: stalen CNAME-Task auf Erledigt gesetzt (mit Verifikationsnotiz).

@@ -41,12 +41,12 @@ export const caseStudyImageSchema = z.object({
 });
 
 export const caseStudyApprovalsSchema = z.object({
-  customerName: z.boolean(),
-  exactLocation: z.boolean(),
-  logo: z.boolean(),
-  metrics: z.boolean(),
-  quote: z.boolean(),
-  images: z.boolean(),
+  customerName: evidenceRefSchema.optional(),
+  exactLocation: evidenceRefSchema.optional(),
+  logo: evidenceRefSchema.optional(),
+  metrics: evidenceRefSchema.optional(),
+  quote: evidenceRefSchema.optional(),
+  images: evidenceRefSchema.optional(),
 });
 
 export const caseStudyDraftSchema = z.object({
@@ -71,7 +71,30 @@ export type PublicationStatus = z.infer<typeof publicationStatusSchema>;
 export type TeamProfileDraft = z.infer<typeof teamProfileDraftSchema>;
 export type CaseStudyDraft = z.infer<typeof caseStudyDraftSchema>;
 
-export function getPublishableTeamProfiles(items: TeamProfileDraft[]): TeamProfileDraft[] {
+export interface PublicTeamProfile {
+  id: string;
+  name: string;
+  role: string;
+  shortBio: string;
+  image?: string;
+  qualifications: Array<{ label: string }>;
+}
+
+export interface PublicCaseStudy {
+  id: string;
+  industry: string;
+  challenge: string;
+  solution: string;
+  outcome: string;
+  customerName?: string;
+  exactLocation?: string;
+  logo?: string;
+  metrics: Array<{ label: string; value: string }>;
+  quote?: { text: string; source: string };
+  images: Array<{ src: string; alt: string }>;
+}
+
+export function getPublishableTeamProfiles(items: TeamProfileDraft[]): PublicTeamProfile[] {
   return items.flatMap((item) => {
     const parsed = teamProfileDraftSchema.safeParse(item);
     if (!parsed.success) return [];
@@ -85,16 +108,20 @@ export function getPublishableTeamProfiles(items: TeamProfileDraft[]): TeamProfi
       return [];
     }
 
-    if (profile.image && !profile.imageRightsRef) {
-      const { image: _image, ...withoutUnclearedImage } = profile;
-      return [withoutUnclearedImage as TeamProfileDraft];
-    }
-
-    return [profile];
+    return [
+      {
+        id: profile.id,
+        name: profile.name,
+        role: profile.role,
+        shortBio: profile.shortBio,
+        image: profile.image && profile.imageRightsRef ? profile.image : undefined,
+        qualifications: profile.qualifications.map(({ label }) => ({ label })),
+      },
+    ];
   });
 }
 
-export function getPublishableCaseStudies(items: CaseStudyDraft[]) {
+export function getPublishableCaseStudies(items: CaseStudyDraft[]): PublicCaseStudy[] {
   return items.flatMap((item) => {
     const parsed = caseStudyDraftSchema.safeParse(item);
     if (!parsed.success) return [];
@@ -110,13 +137,23 @@ export function getPublishableCaseStudies(items: CaseStudyDraft[]) {
 
     return [
       {
-        ...study,
+        id: study.id,
+        industry: study.industry,
+        challenge: study.challenge,
+        solution: study.solution,
+        outcome: study.outcome,
         customerName: study.approvals.customerName ? study.customerName : undefined,
         exactLocation: study.approvals.exactLocation ? study.exactLocation : undefined,
         logo: study.approvals.logo ? study.logo : undefined,
-        metrics: study.approvals.metrics ? (study.metrics ?? []) : [],
-        quote: study.approvals.quote ? study.quote : undefined,
-        images: study.approvals.images ? (study.images ?? []) : [],
+        metrics: study.approvals.metrics
+          ? (study.metrics ?? []).map(({ label, value }) => ({ label, value }))
+          : [],
+        quote: study.approvals.quote && study.quote
+          ? { text: study.quote.text, source: study.quote.source }
+          : undefined,
+        images: study.approvals.images
+          ? (study.images ?? []).map(({ src, alt }) => ({ src, alt }))
+          : [],
       },
     ];
   });

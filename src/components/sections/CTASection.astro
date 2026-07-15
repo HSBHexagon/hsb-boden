@@ -13,7 +13,7 @@ const {
   label = "Werksbegehung anfragen",
 } = Astro.props;
 
-const phoneHref = site.phone.replace(/[^\d+]/g, "");
+const phoneHref = site.phone.replace("(0)", "").replace(/[^\d+]/g, "");
 ---
 
 <section class="bg-hsb-black text-white">

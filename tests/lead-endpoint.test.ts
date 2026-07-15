@@ -85,6 +85,20 @@ describe("POST /api/lead", () => {
     expect(res.status).toBe(502);
   });
 
+  it("returns 502 when the lead webhook responds with a non-success status", async () => {
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response("upstream failure", { status: 503 }),
+    );
+
+    const res = await onRequestPost(makeContext(makeRequest(validBody)));
+
+    expect(res.status).toBe(502);
+    await expect(res.json()).resolves.toEqual({
+      ok: false,
+      error: "webhook_unreachable",
+    });
+  });
+
   it("rate-limits after 5 requests from the same IP within 10 minutes", async () => {
     vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response("{}", { status: 200 }));
     const ip = "203.0.113.42";

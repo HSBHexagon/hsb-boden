@@ -36,11 +36,11 @@ describe("project flow navigation", () => {
     expect(sitemap).toContain('"/projektablauf/"');
   });
 
-  it("builds header telephone links from the central site data", () => {
+  it("builds valid header telephone links from the central site data", () => {
     const header = source("src/components/layout/Header.astro");
 
     expect(header).toContain('import { site } from "../../data/site"');
-    expect(header).toContain("const phoneHref = site.phone.replace");
+    expect(header).toContain('site.phone.replace("(0)", "")');
     expect(header).toContain("tel:${phoneHref}");
     expect(header).toContain("site.phone");
   });

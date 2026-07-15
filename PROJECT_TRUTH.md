@@ -1,10 +1,16 @@
 # PROJECT_TRUTH — HSB-Boden / HEXAFLOOR
 
-> Single Source of Truth fuer den **aktuellen** Projektstand. Stand: 2026-07-08.
+> Single Source of Truth fuer den **aktuellen** Projektstand. Stand: 2026-07-15.
 > Historischer Verlauf gehoert in `SESSION_LOG.md` oder Archive, nicht hier hinein.
 > Unklare Punkte sind als `unklar / zu pruefen` markiert.
 >
-> Gesamturteil: `pages-www-live-awaiting-apex-and-leads`
+> Gesamturteil: `pages-www-live-awaiting-compliance-gates`
+>
+> **Delta 2026-07-15 (Fable-5-Verifikationspass, Details in `docs/ai_state/TRUTH_MATRIX_2026-07-15.md`):**
+> - Apex `hsb-boden.de` leitet jetzt per 301 (Query-erhaltend) auf `www` um — der fruehere WordPress-/404-Befund in Abschnitt 3 ist HISTORICAL.
+> - Die Worker-Schiene wurde am 2026-07-12 geloescht; Cloudflare Pages ist die einzige Deploy-Wahrheit. Worker-Aussagen unten sind HISTORICAL.
+> - Lead-Datensatz existiert: 6.424 Leads im MASTER-Sheet (Joel 3.212 / Jordi 3.212, Versandfreigabe 0/6.424). "awaiting leads" ist damit erfuellt; offen ist die Compliance-/Versandfreigabe (PHASE_7) und M365-DKIM.
+> - HEAD-Angabe in Abschnitt 2 ist HISTORICAL; aktueller Stand siehe `CHECKPOINT_STATE.json`.
 
 ## 1. Kanonischer Arbeitsort
 - Repo: `/Users/joelcherinodiaz/KI-System/02_Projects/active/hsb-boden`

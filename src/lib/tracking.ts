@@ -13,8 +13,16 @@ export enum TrackingEvent {
 export function trackEvent(event: TrackingEvent, payload: Record<string, string | number | boolean> = {}) {
   if (typeof window === "undefined") return;
   window.dispatchEvent(new CustomEvent("hsb:tracking", { detail: { event, payload } }));
-  const dataLayer = (window as Window & { dataLayer?: unknown[] }).dataLayer;
-  if (Array.isArray(dataLayer)) {
-    dataLayer.push({ event, ...payload });
+  const w = window as Window & { dataLayer?: unknown[]; gtag?: (...args: unknown[]) => void };
+  try {
+    if (typeof w.gtag === "function") {
+      // Direkte gtag.js-Einbindung: nur gtag('event', …) erzeugt einen GA4-Collect.
+      // Kein zusätzlicher dataLayer-Push, sonst zählt ein späteres GTM doppelt.
+      w.gtag("event", event, payload);
+    } else if (Array.isArray(w.dataLayer)) {
+      w.dataLayer.push({ event, ...payload });
+    }
+  } catch {
+    // Tracking darf nie die aufrufende Interaktion (z. B. Formular-Submit) brechen.
   }
 }

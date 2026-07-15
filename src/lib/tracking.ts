@@ -66,13 +66,14 @@ export function trackConversion(
 
   return new Promise((resolve) => {
     let settled = false;
+    let fallbackTimer: number | undefined;
     const finish = () => {
       if (settled) return;
       settled = true;
-      window.clearTimeout(fallbackTimer);
+      if (fallbackTimer !== undefined) window.clearTimeout(fallbackTimer);
       resolve();
     };
-    const fallbackTimer = window.setTimeout(finish, timeoutMs + 100);
+    fallbackTimer = window.setTimeout(finish, timeoutMs + 100);
 
     try {
       if (typeof w.gtag === "function") {

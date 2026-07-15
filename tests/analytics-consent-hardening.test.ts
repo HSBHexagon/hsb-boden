@@ -18,6 +18,9 @@ describe("analytics and consent hardening", () => {
       sanitizeTrackingPayload({
         placement: "hero",
         firstName: "Max",
+        contactName: "Max Kontakt",
+        customerName: "Musterkunde",
+        userName: "max-user",
         email: "max@example.com",
         phone: "+49 123 456789",
         message: "Bitte zurückrufen",

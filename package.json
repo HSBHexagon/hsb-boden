@@ -11,6 +11,7 @@
     "deploy": "npm run deploy:preview",
     "deploy:preview": "npm run build && wrangler pages deploy dist --project-name hsb-boden --branch preview --commit-dirty=true",
     "deploy:production": "echo 'BLOCKED: Production deploys run only via .github/workflows/deploy-production.yml (workflow_dispatch, approval-gated).' && exit 1",
+    "postinstall": "patch-package",
     "deploy:dry-run": "npm run build && wrangler pages functions build functions --outdir node_modules/.cache/functions-check && wrangler pages deployment list --project-name hsb-boden"
   },
   "dependencies": {
@@ -32,6 +33,7 @@
     "@testing-library/jest-dom": "^5.16.5",
     "@vitest/coverage-v8": "^4.1.9",
     "jsdom": "^20.0.0",
+    "patch-package": "^8.0.1",
     "playwright": "^1.61.1",
     "vite": "^7.3.2",
     "vitest": "^4.1.8",

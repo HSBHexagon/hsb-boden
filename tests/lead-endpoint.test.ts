@@ -41,6 +41,8 @@ describe("POST /api/lead", () => {
   beforeEach(() => {
     resetLeadRateLimiter();
     vi.restoreAllMocks();
+    // Default valid mock for tests not testing SSRF
+    testEnv.LEAD_WEBHOOK_URL = "https://script.google.com/macros/s/EXAMPLE/exec";
   });
   afterEach(() => {
     vi.restoreAllMocks();
@@ -120,6 +122,30 @@ describe("POST /api/lead", () => {
     expect(res2.status).toBe(200);
     expect(res3.status).toBe(429);
   });
+  it("rejects non-HTTPS webhook URLs to prevent SSRF", async () => {
+    testEnv.LEAD_WEBHOOK_URL = "http://169.254.169.254/latest/meta-data";
+    const res = await onRequestPost(makeContext(makeRequest(validBody)));
+    expect(res.status).toBe(502);
+    const json = await res.json();
+    expect(json).toEqual({ ok: false, error: "webhook_unreachable" });
+  });
+
+  it("rejects unauthorized webhook domains to prevent SSRF", async () => {
+    testEnv.LEAD_WEBHOOK_URL = "https://evil.example.com/webhook";
+    const res = await onRequestPost(makeContext(makeRequest(validBody)));
+    expect(res.status).toBe(502);
+    const json = await res.json();
+    expect(json).toEqual({ ok: false, error: "webhook_unreachable" });
+  });
+
+  it("accepts n8n.hsb-boden.de as a valid webhook domain", async () => {
+    testEnv.LEAD_WEBHOOK_URL = "https://n8n.hsb-boden.de/webhook/lead";
+    const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response("{}", { status: 200 }));
+    const res = await onRequestPost(makeContext(makeRequest(validBody)));
+    expect(res.status).toBe(200);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
 });
 
 describe("GET/PUT/DELETE /api/lead", () => {

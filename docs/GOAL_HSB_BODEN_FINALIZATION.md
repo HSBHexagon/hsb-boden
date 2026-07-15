@@ -40,7 +40,7 @@ PRs.
 
 | Punkt | Status |
 |---|---|
-| `/api/lead` → Cloudflare Pages Function → Apps Script → Sheet „HSB CRM Light" | ✅ 2026-07-15 operator-verifiziert: UTM-Testlead zugestellt, sechs Attributionsfelder korrekt, Testzeile gelöscht; Auth-Sicherheit separat offen |
+| `/api/lead` → Cloudflare Pages Function → Apps Script → Sheet „HSB CRM Light“ | ✅ 2026-07-15 operator-verifiziert: UTM-Testlead zugestellt, sechs Attributionsfelder korrekt, Testzeile gelöscht; Auth-Sicherheit separat offen |
 | `LEAD_WEBHOOK_URL` auf Cloudflare Pages Production gesetzt | ⚠️ HISTORICAL/COMPROMISED: Legacy-Wert aktiv, darf nicht als genehmigte Sicherheitskonfiguration gelten |
 | Reale Kaltakquise-Lead-Daten | ✅ vorhanden — 6.424 Datensätze, 3 Sheets (Master/Joel/Jordi) |
 | Schema-Drift zwischen den 4 CRM-Sheets | ⚠️ dokumentiert, **nicht bereinigt** — `CRM_LIGHT_SCHEMA.md` ist kanonisch erklärt |

@@ -1,7 +1,7 @@
 # ATTRIBUTION_CONNECTOR_PATCH — Apps-Script-Mapping für Lead-Attribution
 
 Status: `mapping-live-on-legacy; auth-cutover-open` | Stand: 2026-07-15
-Gilt für: Apps Script **HSBBODEN** und Sheet **„HSB CRM Light"**, Tab `Leads`.
+Gilt für: Apps Script **HSBBODEN** und Sheet **„HSB CRM Light“**, Tab `Leads`.
 
 Seit 2026-07-13 sendet der Live-Lead-Endpoint (`/api/lead`, PR #79) sechs zusätzliche
 Attributionsfelder im Webhook-JSON. Das Mapping wurde am 2026-07-15 in das

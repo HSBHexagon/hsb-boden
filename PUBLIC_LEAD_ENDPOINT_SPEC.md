@@ -1,6 +1,8 @@
 # PUBLIC_LEAD_ENDPOINT_SPEC — HSB-Boden
 
-> P0A/P0B-Spezifikation. Stand: 2026-06-20. Nur Spezifikation. Kein Endpoint-Code, kein Webhook-Livebetrieb, keine Live-Aktivierung in diesem Dokument.
+> P0A/P0B-Spezifikation. Sicherheitsrevision: 2026-07-15. Der aktuelle Endpoint-Code
+> liegt als Cloudflare Pages Function unter `functions/api/lead.ts`; Live-Cutover und
+> externe Owner-Gates sind nicht durch dieses Dokument erledigt.
 
 ## 1. Zweck
 Serverseitiger Annahmepunkt für Website-Formular-Leads, der validierte Daten an den konfigurierten Lead-Webhook weiterreicht. Frontend hält keine Secrets.
@@ -64,7 +66,14 @@ Serverseitiger Annahmepunkt für Website-Formular-Leads, der validierte Daten an
 
 ## 8. Weiterleitung an den Lead-Webhook
 > Revidiert 2026-06-22: n8n entfällt (Abo-Kosten). Ziel ist jetzt eine kostenlose Google-Apps-Script-Web-App, siehe `N8N_HOSTING_DECISION.md` §9b und `GOOGLE_SHEETS_CRM_SETUP.md`.
-- Server ruft die in `LEAD_WEBHOOK_URL` konfigurierte Ziel-URL serverseitig auf (Secret/Env, nicht im Frontend).
+- Bevorzugter Modus: `LEAD_WEBHOOK_CONFIG` enthält URL und Token atomar. Die Pages
+  Function sendet `{version:1, authToken, lead}` und akzeptiert nur eine JSON-Antwort
+  mit `{ok:true}`.
+- Übergangsmodus: Nur wenn `LEAD_WEBHOOK_CONFIG` vollständig fehlt, wird
+  `LEAD_WEBHOOK_URL` mit dem bisherigen Lead-JSON verwendet. Eine vorhandene, aber
+  ungültige neue Config fällt niemals auf Legacy zurück.
+- Beide Ziel-URLs müssen HTTPS, Host `script.google.com`, den kanonischen
+  `/macros/s/.../exec`-Pfad und weder Query noch Fragment erfüllen.
 - Ziel: Google Apps Script Web App, gebunden an das CRM-Light-Sheet (`doPost(e)`).
 - Payload: validierte, normalisierte Felder mit den Namen aus Abschnitt 4.
 - Timeout: 6 Sekunden. Retry: keine automatische Mehrfachsendung aus dem Browser; serverseitig höchstens 1 Retry oder Queue in P0B.
@@ -74,7 +83,7 @@ Serverseitiger Annahmepunkt für Website-Formular-Leads, der validierte Daten an
 | Fall | Antwort |
 |------|---------|
 | Validierung fehlgeschlagen | 400 + Feldfehler (ohne interne Details) |
-| Methode unzulässig | 405 |
+| Methode unzulässig | 405 + `Allow: POST, OPTIONS` |
 | Rate Limit | 429 |
 | Webhook nicht erreichbar | 502 + keine Erfolgsmeldung; Persistenz/Queue nur nach P0B-Entscheidung |
 | interner Fehler | 500 (generisch) |
@@ -85,8 +94,9 @@ Serverseitiger Annahmepunkt für Website-Formular-Leads, der validierte Daten an
 
 ## 11. Teststrategie
 - Unit: Schema-Validierung (gültig/ungültig, `privacyConsent` fehlt, Honeypot gefüllt).
-- Integration: Mock-Webhook (kein Live-Endpoint).
-- Negativtests: 400/405/429.
+- Integration: Mock-Webhook (kein Live-Endpoint), getrennt für Legacy- und Auth-Modus.
+- Negativtests: 400/405/429 sowie ungültige Config, unsicherer Host, schwacher Token,
+  fehlender/negativer Acknowledge und Upstream-Ausfall.
 - E2E erst in P0B nach Freigabe (Mock vor Live).
 
 ## 12. Freigabe-Gate vor echter Implementierung
@@ -98,4 +108,6 @@ Implementierung erst nach Freigabe in `P0B_USER_APPROVAL_REQUEST.md`.
 - Kein Webhook-Livebetrieb in P0A.
 
 ## 14. Nächster Entscheidungspunkt
-Freigabe Route + Rate-Limit-Werte + Webhook-Ziel → P0B-Implementierung. Ohne angekreuzte P0B-Freigabe bleibt `LEAD_WEBHOOK_URL` leer und `PUBLIC_LEAD_FORM_ENABLED` auf `false`.
+Der externe Cutover folgt `docs/crm/WEBHOOK_AUTH_CUTOVER.md`. Ohne verifiziertes
+serverseitiges Binding bleibt `PUBLIC_LEAD_FORM_ENABLED` auf `false`; Production-Secret,
+Redeploy und E2E bleiben getrennte Freigabe-Gates.

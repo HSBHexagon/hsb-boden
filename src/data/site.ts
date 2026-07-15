@@ -13,6 +13,7 @@ export const site = {
   ctaTarget: "/kontakt/",
   // Lead-Zustellung läuft serverseitig über /api/lead (kein Secret im Bundle).
   // false = Online-Versand inaktiv -> Formular zeigt direkten Kontaktweg statt PII zu leaken.
-  // Wird erst auf "true" gesetzt, wenn LEAD_WEBHOOK_URL serverseitig konfiguriert ist.
+  // Wird erst auf "true" gesetzt, wenn LEAD_WEBHOOK_CONFIG (oder während des
+  // Cutovers der Legacy-Fallback LEAD_WEBHOOK_URL) serverseitig konfiguriert ist.
   hasLeadEndpoint: import.meta.env.PUBLIC_LEAD_FORM_ENABLED === "true",
 };

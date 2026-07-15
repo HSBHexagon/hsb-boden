@@ -1,16 +1,18 @@
 import { existsSync, readFileSync } from "node:fs";
+import { join } from "node:path";
 import { describe, expect, it } from "vitest";
+import { getAllPublicPages } from "../src/lib/content";
 
 function source(path: string) {
-  return readFileSync(new URL(`../${path}`, import.meta.url), "utf8");
+  return readFileSync(join(process.cwd(), path), "utf8");
 }
 
 describe("project flow navigation", () => {
   it("publishes a dedicated project flow page with five visible phases", () => {
-    const pageUrl = new URL("../src/pages/projektablauf/index.astro", import.meta.url);
-    expect(existsSync(pageUrl)).toBe(true);
+    const pagePath = join(process.cwd(), "src/pages/projektablauf/index.astro");
+    expect(existsSync(pagePath)).toBe(true);
 
-    const page = readFileSync(pageUrl, "utf8");
+    const page = readFileSync(pagePath, "utf8");
     expect(page).toContain('path="/projektablauf/"');
     expect(page).toContain("Analyse vor Ort");
     expect(page).toContain("Systemauslegung");
@@ -19,14 +21,19 @@ describe("project flow navigation", () => {
     expect(page).toContain("Abnahme und Dokumentation");
   });
 
-  it("uses the dedicated route in navigation and from the homepage process section", () => {
+  it("registers the page in canonical content and navigation sources", () => {
     const navigation = source("src/data/navigation.ts");
     const homepage = source("src/pages/index.astro");
+    const sitemap = source("src/pages/sitemap.xml.ts");
+    const publicPage = getAllPublicPages().find((page) => page.canonicalPath === "/projektablauf/");
 
+    expect(publicPage).toBeDefined();
+    expect(publicPage?.seoTitle).toContain("Projektablauf");
     expect(navigation).toContain('{ label: "Projektablauf", href: "/projektablauf/" }');
     expect(navigation).not.toContain('href: "/#projektablauf"');
     expect(homepage).toContain('href="/projektablauf/"');
     expect(homepage).toContain("Projektablauf im Detail");
+    expect(sitemap).toContain('"/projektablauf/"');
   });
 
   it("builds header telephone links from the central site data", () => {

@@ -14,9 +14,10 @@ interface Props {
   jsonLd?: unknown[];
   lang?: Lang;
   alternates?: { lang: string; path: string }[];
+  robots?: string;
 }
 
-const { title, description, path, jsonLd = [], lang = "de", alternates = [] } = Astro.props;
+const { title, description, path, jsonLd = [], lang = "de", alternates = [], robots } = Astro.props;
 const skipLabel = ui[lang].skip;
 ---
 
@@ -25,7 +26,7 @@ const skipLabel = ui[lang].skip;
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <SEOHead title={title} description={description} path={path} jsonLd={jsonLd} alternates={alternates} />
+    <SEOHead title={title} description={description} path={path} jsonLd={jsonLd} alternates={alternates} robots={robots} />
     <meta name="google-site-verification" content="vKVeg5NwhzKj_x1eTTi0bHF_4SmQUgc47r82_lUaz1g" />
     <!-- Google tag (gtag.js) mit Consent Mode v2 (Advanced): Default "denied",
          ohne Einwilligung werden keine Analytics-Cookies gesetzt. Gespeicherte

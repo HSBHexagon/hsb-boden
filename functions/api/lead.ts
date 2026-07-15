@@ -146,21 +146,23 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
   }
 
   const webhookUrl = env.LEAD_WEBHOOK_URL;
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), WEBHOOK_TIMEOUT_MS);
 
   try {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), WEBHOOK_TIMEOUT_MS);
     if (!webhookUrl) throw new Error("webhook_not_configured");
-    await fetch(webhookUrl, {
+    const webhookResponse = await fetch(webhookUrl, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(lead),
       signal: controller.signal,
     });
-    clearTimeout(timeout);
+    if (!webhookResponse.ok) throw new Error("webhook_rejected");
   } catch {
     console.error(JSON.stringify({ ts: new Date(now).toISOString(), result: "error", code: "webhook_unreachable" }));
     return jsonResponse(502, { ok: false, error: "webhook_unreachable" }, origin);
+  } finally {
+    clearTimeout(timeout);
   }
 
   console.log(JSON.stringify({ ts: new Date(now).toISOString(), result: "ok", emailDomain: lead.email.split("@")[1] }));

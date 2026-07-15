@@ -1,0 +1,24 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+---
+
+<BaseLayout
+  title="Seite nicht gefunden"
+  description="Die angeforderte Seite wurde nicht gefunden."
+  path="/404/"
+  robots="noindex, follow"
+>
+  <section class="section bg-[#f8f9fb]">
+    <div class="container max-w-3xl">
+      <p class="eyebrow mb-4">Fehler 404</p>
+      <h1 class="h1 max-w-2xl">Diese Seite wurde nicht gefunden.</h1>
+      <p class="lead mt-6 max-w-2xl">
+        Die angeforderte Adresse existiert nicht oder wurde verschoben. Über die Startseite und den Kontakt gelangen Sie direkt zu den relevanten Informationen.
+      </p>
+      <div class="mt-10 flex flex-wrap gap-4">
+        <a class="button-primary" href="/">Zur Startseite</a>
+        <a class="button-secondary" href="/kontakt/">Projekt anfragen</a>
+      </div>
+    </div>
+  </section>
+</BaseLayout>

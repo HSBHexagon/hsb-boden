@@ -232,7 +232,7 @@ This CRM remains `template-ready-awaiting-lead-data` until real data arrives.
 - Schema source: `CRM_LIGHT_SCHEMA.md`
 - Import checklist: `docs/launch/LEAD_IMPORT_5000_CHECKLIST.md`
 - Compliance gate: `docs/launch/PHASE_7_COMPLIANCE_GATE.md`
-- Operator handoff: `docs/handoff/JOEL_JORDI_OPERATOR_RUNBOOK.md`
+- Operator handoff: `docs/handoff/JOEL_JORDIE_OPERATOR_RUNBOOK.md`
 - Daily operator workflow: `docs/crm/CRM_LIGHT_OPERATOR_READINESS.md`
 - Automation blueprints: `docs/automation/N8N_APPS_SCRIPT_SAFE_AUTOMATION_READINESS.md`
 - Master go-live checklist: `docs/launch/PRE_DNS_GO_LIVE_MAX_CHECKLIST.md`

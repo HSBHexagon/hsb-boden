@@ -15,7 +15,7 @@ export enum TrackingEvent {
 type TrackingValue = string | number | boolean;
 export type TrackingPayload = Record<string, TrackingValue>;
 
-const PII_KEY_PATTERN = /^(?:first_?name|last_?name|full_?name|name|email|e_?mail|phone|telephone|mobile|company|message|address|street|postal|zip)$/i;
+const PII_KEY_PATTERN = /^(?:first_?name|last_?name|full_?name|contact_?name|customer_?name|user_?name|name|email|e_?mail|phone|telephone|mobile|company|message|address|street|postal|zip)$/i;
 const EMAIL_VALUE_PATTERN = /\b[^\s@]+@[^\s@]+\.[^\s@]+\b/i;
 const PHONE_VALUE_PATTERN = /^\+?[\d\s()./-]{7,}$/;
 

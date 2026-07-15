@@ -79,6 +79,28 @@ describe("POST /api/lead", () => {
     expect(res.status).toBe(413);
   });
 
+  it("rejects an undeclared payload larger than 16 KB during streaming", async () => {
+    const stream = new ReadableStream({
+      start(controller) {
+        controller.enqueue(new Uint8Array(10000));
+        controller.enqueue(new Uint8Array(10000));
+        controller.close();
+      }
+    });
+    const request = new Request("https://hsb-boden.de/api/lead", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "CF-Connecting-IP": "127.0.0.1",
+        Origin: "https://hsb-boden.de",
+      },
+      body: stream,
+      duplex: "half"
+    } as any);
+    const res = await onRequestPost(makeContext(request));
+    expect(res.status).toBe(413);
+  });
+
   it("returns 502 when the lead webhook is unreachable", async () => {
     vi.spyOn(globalThis, "fetch").mockRejectedValue(new Error("network down"));
     const res = await onRequestPost(makeContext(makeRequest(validBody)));

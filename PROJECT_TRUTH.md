@@ -26,11 +26,11 @@
 
 ## 3. Aktueller Projektzustand
 - Die Lead-Pipeline ist end-to-end live und verifiziert.
-- Der Production-Worker `hsb-boden` ist route-los deployed und erreichbar.
-- Das Production-Secret `LEAD_WEBHOOK_URL` ist gesetzt.
+- HISTORICAL (Stand 07-08, durch 07-12/07-15 überholt): Der Production-Worker `hsb-boden` war route-los deployed. Die Worker wurden am 2026-07-12 gelöscht; **Cloudflare Pages ist die einzige Deploy-Wahrheit**.
+- Das Production-Secret `LEAD_WEBHOOK_URL` ist als Pages-Umgebungsvariable gesetzt.
 - `www.hsb-boden.de` ist live ueber Cloudflare Pages und wurde am 2026-07-08 gegen `/referenzen/` verifiziert.
-- `hsb-boden.de` ohne `www` zeigt weiterhin auf die alte WordPress/Apache-Seite; `/referenzen/` liefert dort 404. Apex-Redirect oder DNS-Anpassung bleibt offen.
-- Die Worker-Schiene laeuft parallel weiter, ist aber nicht die aktuelle `www`-Live-Schiene.
+- HISTORICAL (durch 2026-07-15 überholt, siehe Delta oben): `hsb-boden.de` ohne `www` zeigte damals noch auf die alte WordPress/Apache-Seite. **Aktuell:** Apex leitet per 301 (query-erhaltend) auf `www` um.
+- HISTORICAL: Die Worker-Schiene existiert nicht mehr (siehe oben).
 
 ## 4. Aktueller Cloudflare- und Domain-Stand
 - Preview-Worker: `hsb-boden-preview`
@@ -57,15 +57,15 @@
 - **Gefundene, ungeklaerte Altlast:** Ein zusaetzliches Apps-Script-Projekt „HSB-Boden CRM Webhook" (nicht zu verwechseln mit `HSBBODEN`) wurde am 2026-07-08 um 20:37 erstellt/bereitgestellt und ist an das Jordi-Kaltakquise-Sheet (`1uMbZAteSPjRBLGwpfT_evqA9hPbSTdDqPOK5TBXoFu4`) gebunden, nicht an das CRM-Light-Sheet. Herkunft nicht rekonstruiert (evtl. parallele Session). Es ist an keiner Stelle als Secret hinterlegt und sollte vor Verwechslung mit `HSBBODEN` geschuetzt werden; Owner sollte pruefen, ob dieses Projekt geloescht/archiviert werden soll.
 
 ## 6. Aktuelle offene Punkte
-- Externer NS-/DNS-Switch der Domain `hsb-boden.de` durch den Domain-Admin
-- Zukunftsinput ausserhalb des Repos: spaetere Einfuegung oder Import der 5.000 Akquise-Leads
+- Voller NS-/DNS-Switch der Domain `hsb-boden.de` (optional, Apex-301 auf www ist bereits aktiv — siehe Delta oben)
+- HISTORICAL (durch Update 2026-07-08 oben und 2026-07-15 überholt): Die 6.424 Akquise-Leads liegen bereits importiert vor; offen ist nicht mehr der Import, sondern Compliance-/Versandfreigabe (Phase 7).
 
 ## 6a. Verifizierte Phasenlage
 - Phase 3 ist abgeschlossen: lokale Lighthouse-Evidenz vom 2026-06-26 gegen `https://hsb-boden.cherinojoel.workers.dev/` belegt Performance 95, Accessibility 100, Best Practices 100 und SEO 100.
 - Phase 4 ist abgeschlossen: Materialien, Referenzclaims, kanonischer Outreach-Kanal und Owner-Freigabe fuer kontrolliertes manuelles Outreach-Material sind repo-belegt bzw. durch die vorliegende Owner-Entscheidung geschlossen.
 - Phase 5 ist fuer diesen Stand abgeschlossen: CRM-Light ist als leere, importfaehige Struktur dokumentiert.
 - Phase 6 ist abgeschlossen: Lead-Intake Website `/api/lead` -> Google Apps Script Web App -> Google Sheets CRM-Light ist die aktive verifizierte Kette.
-- Phase 7 ist `gate-prepared-awaiting-lead-data`.
+- Phase 7 ist `lead-data-imported-awaiting-compliance-and-batch-approval` (Leads liegen seit 2026-07-08 vor, siehe Update oben; HISTORICAL: „awaiting-lead-data" traf vor diesem Update zu).
 - Phase 8 und Phase 9 bleiben pending.
 - Phase 10 ist optional und derzeit dokumentiert deaktiviert; n8n ist nicht aktiv.
 - Phase 11 ist abgeschlossen.
@@ -88,7 +88,7 @@
 - Asset/PDF Readiness: `docs/assets/ASSET_PACKAGE_AND_PUBLIC_DOWNLOAD_MAX_READINESS.md`
 - CRM-Light Readiness: `docs/crm/CRM_LIGHT_MAX_READINESS.md`
 - Automation Blueprints (optional): `docs/automation/STATUS_UPDATE_AUTOMATION_BLUEPRINT.md`
-- Joel/JORDI Operator Runbook: `docs/handoff/JOEL_JORDI_OPERATOR_RUNBOOK.md`
+- Joel/JORDI Operator Runbook: `docs/handoff/JOEL_JORDIE_OPERATOR_RUNBOOK.md`
 
 ### Tier 2 — Erweiterter Readiness-Detail (2026-06-26 Wave)
 - Cloudflare UI Preflight Inventory: `docs/cloudflare/GO_LIVE_MAX_PREFLIGHT_UI_INVENTORY.md`

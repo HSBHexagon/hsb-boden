@@ -1,6 +1,6 @@
 # TRUTH_MATRIX — 2026-07-15 (Fable-5-Finalisierungspass)
 
-Erstellt: 2026-07-15 ~03:35 CEST · final gegengeprüft ~04:54 CEST · Modelle: Claude Code (Fable 5) + Codex · PR-#84-Baseline: `900fe9e`
+Erstellt: 2026-07-15 ~03:35 CEST · gegengeprüft ~04:54 CEST (Codex-Adversarial-Runde) · final nachgeführt ~10:40 CEST nach Merge von PR #84 und PR #85 · Modelle: Claude Code (Fable 5) + Codex · Basis für die 04:54-Zahlen: `900fe9e` (letzter Baseline-Commit vor dieser Datei; der tatsächlich reviewte PR-#84-Kopf lag jeweils einen Commit weiter, da dieselbe PR die Korrekturen enthielt)
 
 Jede Aussage ist gekennzeichnet: VERIFIED (frisch geprüft in dieser Session), HISTORICAL, STALE, CONTRADICTED, NOT_FOUND, OWNER_GATE.
 
@@ -14,6 +14,7 @@ Jede Aussage ist gekennzeichnet: VERIFIED (frisch geprüft in dieser Session), H
 | PR #84: Draft, Doku-only; CodeRabbit aktiv/erfolgreich | VERIFIED | PR-/Check-Status 2026-07-15 |
 | PR #84 Baseline/lokal und CI: 8 Testdateien / 74 Tests; `147ms` war eine Laufzeit, keine Testzahl | VERIFIED | Vitest-/CI-Ausgabe für `900fe9e` |
 | PR #85: MERGED 2026-07-15 08:36 UTC nach Cross-Approval; alle Checks waren grün | VERIFIED | Squash-Commit `ebe824c` |
+| PR #84: MERGED 2026-07-15 nach Re-Approval (HSBHexagon) und Admin-Merge, da nur der optionale CodeRabbit-Check noch lief und alle Pflicht-Checks des Rulesets bereits grün waren | VERIFIED | Merge-Log 2026-07-15 |
 | PR #74: OPEN, DRAFT, REVIEW_REQUIRED; Head nach Auto-Merge von `main`: `de6dd57`; frische Checks grün, PoC deaktiviert | VERIFIED | PR-/Check-/Preview-Status 2026-07-15 |
 
 ## 2. Cloudflare / Live-Website
@@ -92,7 +93,7 @@ Konsistenz VERIFIED: Joel ∪ Jordi == MASTER, Überlappung 0. Verteilungen: Ver
 
 29-Spalten-Header inkl. Status, Nächste Aktion, Follow-up-Datum, Opt-in/Opt-out, Versandfreigabe, Verantwortlicher, Flyer-Anhang, Notizen — beantwortet die operativen Fragen („Welche Leads gehören mir? Was ist überfällig? …") pro Zeile.
 
-Schreibweise: **Jordi Post** ist kanonisch (Flyer-Datei, CSV, Live-URL). „Jordie" kommt nur noch in Alt-Dateinamen vor (`docs/handoff/JOEL_JORDIE_OPERATOR_RUNBOOK.md`) — Inhalt nutzt „JORDI".
+Schreibweise: **Jordi Post** ist kanonisch (Flyer-Datei, CSV, Live-URL) und wird im Fließtext verwendet. Zwei bewusste technische Ausnahmen bleiben bestehen: der historische Dateiname `docs/handoff/JOEL_JORDIE_OPERATOR_RUNBOOK.md` und das exakte, existierende Chrome-Profil-Label `Jordie (HEXAGON)` (Abschnitt 5/11) — beides sind feste externe Bezeichner, keine Tippfehler.
 
 ## 8. Flyer / E-Mail / Landingpage-Matrix (W5)
 
@@ -144,7 +145,7 @@ W3 (mit Lead-Gegenprüfung):
 | GSC-Zugriff | Für Property-Arbeit das berechtigte Chrome-Profil `Jordie (HEXAGON)` nutzen; falls Joel eigenen Zugriff braucht, Property-Berechtigung separat durch den Owner vergeben. Die Google-Mailadresse des HEXAGON-Profils nicht erraten. |
 | GA4-Lead-Event | Separaten getesteten Code-PR reviewen; nach dessen Merge `generate_lead` in GA4 als Key Event markieren |
 | GA4↔GSC-Verknüpfung | In GA4-Admin Search-Console-Link von Preview- auf www-Property umstellen |
-| Production-Soft-404 | PR #85 unabhängig reviewen/freigeben, mergen und anschließend den Production-Deploy manuell auslösen |
+| Production-Soft-404 | ERLEDIGT — PR #85 gemerged (`ebe824c`), Production-Deploy ausgelöst und live 404 verifiziert (Abschnitt 2) |
 | GitHub-Models-PoC | PR #74 als Draft/deaktiviert belassen, bis eine echte Cloudflare-AI-Gateway-Inferenz nachgewiesen und separat freigegeben ist |
 | GBP-Verifizierung | Physische Postkarten-Verifizierung durch Joel |
 | Kaltakquise-Versand | PHASE_7_COMPLIANCE_GATE.md mit Owner durchgehen (Rechtsgrundlage, Opt-out, Batch-Freigabe) + M365-DKIM für j-cherino@ aktivieren |

@@ -58,13 +58,13 @@ Open this repo and read in this exact order:
 Falls später ein NS-Cutover freigegeben wird (Zone `hsb-boden.de` Status `active`):
 
 1. Read `docs/cloudflare/CLOUDFLARE_PROVIDER_MAX_READINESS.md` — go/no-go checklist
-2. Read `docs/PHASE_C_CUTOVER_RUNBOOK.md` — step-by-step execution
+2. Read `docs/PHASE_C_CUTOVER_RUNBOOK.md` — **Achtung: dieses Dokument ist STALE aus der Workers-Ära.** Vor Ausführung erst prüfen/aktualisieren, ob die Schritte noch zur aktuellen Pages-only-Architektur passen; keine Worker-Route-Befehle blind ausführen.
 3. Verify Pages deployment truth: `npm run deploy:dry-run` (Projekt `hsb-boden`, Account 01dc37803d1c687b4f9d6249ec89f700)
 4. Verify env var `LEAD_WEBHOOK_URL` on the Pages project (Dashboard → Settings → Environment variables)
 5. Run pre-cutover checks: `npm run build && npm run check && npm run test:run`
 6. Only then: switch DNS per runbook
 7. Verify live domain response: `curl -I https://hsb-boden.de` (must 301 → www) and `curl -I https://www.hsb-boden.de`
-8. Verify contact form writes to CRM: test POST to `/api/lead`
+8. Verify contact form writes to CRM: **nur mit Owner-Freigabe**, nach erfolgreicher Google-Re-Authentifizierung, mit einer synthetischen Nicht-PII-Testprobe an `/api/lead` und verifiziertem Cleanup der Testzeile im Anschluss — ohne diese Voraussetzungen stattdessen einen Mock/Dry-Run verwenden
 9. Verify GA4/GSC per `docs/analytics/GA4_GTM_GSC_MAX_READINESS.md`
 10. Do not touch mail DNS records unless separately approved
 11. Log completion in `SESSION_LOG.md`

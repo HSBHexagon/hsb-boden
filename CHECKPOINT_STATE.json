@@ -3,7 +3,7 @@
   "last_updated": "2026-07-15T05:14:00+0200",
   "active_model": "Claude Code (Fable 5) + Codex",
   "active_phase": "truth-finalization-0715",
-  "active_task": "PR-#84-Truth-Finalisierung auf Basis 900fe9e: ausschliesslich vier Doku-/State-Dateien, kein Website-Code. Baseline und CI: 8 Testdateien / 74 Tests; 147ms war eine Laufzeit, keine Testzahl. Details und verbleibende Owner-Gates: docs/ai_state/TRUTH_MATRIX_2026-07-15.md.",
+  "active_task": "PR #84 (Truth-Finalisierung, gemerged 2026-07-15) aenderte exakt fuenf Dateien: CHECKPOINT_STATE.json, PROJECT_TRUTH.md, SESSION_LOG.md, docs/ai_state/TRUTH_MATRIX_2026-07-15.md, docs/handoff/JOEL_JORDIE_OPERATOR_RUNBOOK.md. Kein Website-Code. Baseline-CI (Commit vor diesem Pass): 8 Testdateien / 74 Tests; die fruehere 147-Zahl war eine falsch gelesene Laufzeit (echte Ursache: PoC-Worktree-Tests versehentlich mitgezaehlt). PR #85 (Soft-404-Fix) parallel gemergt (`ebe824c`) und deployed. Details: docs/ai_state/TRUTH_MATRIX_2026-07-15.md.",
   "account_migration_2026_07_02": {
     "github_new_repo": "https://github.com/HSBHexagon/hsb-boden",
     "github_old_repo_access": "HSBHexagon ist Admin-Collaborator im Alt-Repo cherinojoel-lang/hsb-boden (Ownership-Transfer pending, nicht blockierend)",
@@ -43,7 +43,7 @@
   "repo_path": "/Users/joelcherinodiaz/KI-System/02_Projects/active/hsb-boden",
   "handoff_path": "/Users/joelcherinodiaz/KI-System/ObsidianVault/brain/CURRENT_HANDOFF.md",
   "last_commit": "900fe9e (PR-#84-Baseline vor diesem Finalisierungscommit)",
-  "website_code_diff_lines": "0 in src/public/config; PR #84 aendert nur CHECKPOINT_STATE.json, SESSION_LOG.md, docs/ai_state/ und docs/handoff/JOEL_JORDIE_OPERATOR_RUNBOOK.md",
+  "website_code_diff_lines": "0 in src/public/config fuer PR #84 (reiner Doku-/State-PR). PR #85 aenderte Website-Code (Soft-404-Fix) und ist bereits gemerged+deployed.",
   "canonical_readiness_stack": {
     "tier1": {
       "cloudflare": "docs/cloudflare/CLOUDFLARE_PROVIDER_MAX_READINESS.md",
@@ -177,5 +177,6 @@
       "Live n8n workflows",
       "Mass outreach"
     ]
-  }
+  },
+  "modified_files_note": "Das Feld 'modified_files' unten listet einen HISTORISCHEN Doku-Sweep vom 2026-06-26 (nicht den Scope von PR #84/#85)."
 }

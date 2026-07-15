@@ -121,7 +121,7 @@ const deliveryConfigured = site.hasLeadEndpoint;
 </form>
 
 <script>
-  import { trackEvent, TrackingEvent } from "../../lib/tracking";
+  import { trackEvent, trackEventAndWait, TrackingEvent } from "../../lib/tracking";
   import { buildLeadAttributionFields, captureAttribution, loadAttribution } from "../../lib/attribution";
 
   const form = document.getElementById("lead-form") as HTMLFormElement | null;
@@ -201,7 +201,7 @@ const deliveryConfigured = site.hasLeadEndpoint;
         body: JSON.stringify(payload),
       });
       if (!res.ok) throw new Error(`Status ${res.status}`);
-      trackEvent(TrackingEvent.LeadFormSubmit);
+      await trackEventAndWait(TrackingEvent.LeadFormSubmit);
       window.location.href = "/danke-projektanfrage/";
     } catch (e) {
       console.error("Submission error:", e);

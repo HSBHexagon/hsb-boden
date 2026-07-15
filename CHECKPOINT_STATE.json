@@ -1,9 +1,9 @@
 {
   "project": "HSB / HEXAFLOOR",
-  "last_updated": "2026-07-15T05:14:00+0200",
+  "last_updated": "2026-07-15T13:20:00+0200",
   "active_model": "Claude Code (Fable 5) + Codex",
-  "active_phase": "truth-finalization-0715",
-  "active_task": "PR #84 (Truth-Finalisierung, gemerged 2026-07-15) aenderte exakt fuenf Dateien: CHECKPOINT_STATE.json, PROJECT_TRUTH.md, SESSION_LOG.md, docs/ai_state/TRUTH_MATRIX_2026-07-15.md, docs/handoff/JOEL_JORDIE_OPERATOR_RUNBOOK.md. Kein Website-Code. Baseline-CI (Commit vor diesem Pass): 8 Testdateien / 74 Tests; die fruehere 147-Zahl war eine falsch gelesene Laufzeit (echte Ursache: PoC-Worktree-Tests versehentlich mitgezaehlt). PR #85 (Soft-404-Fix) parallel gemergt (`ebe824c`) und deployed. Details: docs/ai_state/TRUTH_MATRIX_2026-07-15.md.",
+  "active_phase": "post-deploy-security-and-truth-reconciliation",
+  "active_task": "Produktionsstand nach PR #84/#85/#87/#88/#89/#90 und dem operator-verifizierten Attribution-Mapping konsolidieren, oeffentlich dokumentierte Apps-Script-Endpunkte aus dem aktuellen Tree entfernen und den weiterhin offenen Auth-Cutover ohne Abschlussuebertreibung festhalten.",
   "account_migration_2026_07_02": {
     "github_new_repo": "https://github.com/HSBHexagon/hsb-boden",
     "github_old_repo_access": "HSBHexagon ist Admin-Collaborator im Alt-Repo cherinojoel-lang/hsb-boden (Ownership-Transfer pending, nicht blockierend)",
@@ -20,30 +20,34 @@
     ]
   },
   "current_truth_2026_07_15": {
-    "audit_time": "2026-07-15 ca. 04:54 Europe/Berlin",
+    "audit_time": "2026-07-15 ca. 12:06 Europe/Berlin",
     "github": {
-      "open_pull_requests": 41,
-      "pr_84": "Draft; Dokumentations-PR. Baseline/lokal und CI: 8 Testdateien / 74 Tests. CodeRabbit aktiv und erfolgreich.",
-      "pr_85": "OPEN, non-draft, BLOCKED, REVIEW_REQUIRED; Reviewer HSBHexagon angefordert. Alle angehaengten automatisierten Checks gruen: OpenAI Review, Gemini Review, Review Summary, CodeRabbit, CI, QA, Security, CodeQL, Lighthouse und Preview-Deploy.",
+      "origin_main": "f202cb646d3e66d714ec385e724916b7f38f2eec",
+      "open_pull_requests": 40,
+      "merged_prs_in_finalization_wave": [84, 85, 87, 88, 89, 90],
+      "pr_86": "OPEN, non-draft, DIRTY, REVIEW_REQUIRED; durch PR #87 nur teilweise ueberholt. Nicht as-is mergen; Schutzlogik einzeln gegen aktuellen main bewerten.",
       "pr_74": "OPEN, DRAFT, REVIEW_REQUIRED; main wurde automatisch in den Branch gemergt, Head de6dd57. Frische CI-/QA-/Security-/CodeQL-/Lighthouse-/Preview-Checks gruen; PoC bleibt deaktiviert und erfolgreiche Cloudflare-AI-Gateway-Inferenz ist nicht belegt."
     },
     "soft_404": {
-      "pr_85_preview": "https://2b373bd9.hsb-boden.pages.dev liefert fuer einen unbekannten Pfad HTTP 404.",
-      "production": "https://www.hsb-boden.de/definitely-not-a-real-hsb-page liefert weiterhin HTTP 200; der Production-Soft-404 bleibt bis zu unabhaengiger Freigabe, Merge und manuellem Production-Deploy von PR #85 offen."
+      "status": "RESOLVED",
+      "production": "Ein zufaelliger unbekannter www-Pfad lieferte am 2026-07-15 HTTP 404, Cache-Control no-store und eine noindex-404-Seite."
     },
     "google": {
-      "cherinojoel_profile": "Zugriffstoken aktuell gueltig, API-Validierung aber gegen den falschen Account cherinodiaz@outlook.com.",
-      "cherinodiaz_profile": "Token abgelaufen; Drive nicht initialisiert.",
+      "as_of": "frueherer Fable-Audit 2026-07-15 vor 05:14 CEST; beim 12:06-Truth-Pass nicht erneut authentifiziert oder API-validiert",
+      "cherinojoel_profile": "Laut frueherem Audit war der Zugriffstoken gueltig, die API-Validierung lief aber gegen den falschen Account cherinodiaz@outlook.com; Zustand kann inzwischen gedriftet sein.",
+      "cherinodiaz_profile": "Laut frueherem Audit war der Token abgelaufen und Drive nicht initialisiert; Zustand kann inzwischen gedriftet sein.",
       "required_owner_action": "Profil cherinojoel explizit neu authentifizieren und cherinojoel@gmail.com auswaehlen; in diesem Pass wurde keine Google-Auth- oder Schreibaktion ausgefuehrt."
     },
-    "gsc": "Property-Zugriff auf https://www.hsb-boden.de/ funktioniert im Chrome-Profil Jordie (HEXAGON); die konkrete Google-Mailadresse dieses Profils ist nicht verifiziert. cherinojoel@gmail.com ist fuer die Property nicht berechtigt. Zwei zeitversetzte UI-Snapshots zeigen 28 bzw. 29 indexierte und jeweils 5 nicht indexierte Seiten; diese Zaehler sind zeitabhaengig.",
-    "analytics": "Der direkte gtag.js-Einbau ist aktiv, aber src/lib/tracking.ts uebergibt Lead-Events nur als GTM-artiges dataLayer-Objekt. Ein lokaler, vollständig abgefangener Browser-Probe belegt: Dadurch wird kein GA4-Collect fuer den Lead-Submit erzeugt; die Behebung erfolgt in einem separaten Code-PR.",
-    "cloudflare_info_account": "Pages-Projekt hsb-boden und www.hsb-boden.de aktiv; keine Workers; Zone hsb-boden.de weiterhin pending. Kein voller NS-Cutover. Alt-Account-Worker-/Duplicate-Zone-Cleanup und Token-Rotation bleiben Owner-Gates."
+    "gsc": "PR #89 dokumentiert die Umstellung des GA4-GSC-Links von Preview auf die www-Property als operator-verifiziert. Der Repo-Audit kann diese Backend-Einstellung ohne berechtigtes Google-Profil nicht unabhaengig bestaetigen.",
+    "analytics": "PR #87 ruft Tracking-Events produktiv ueber gtag('event', ...) auf. PR #90 belegt den Browser-Aufrufpfad, nicht den GA4-Netzwerkempfang, DebugView oder ein Key Event. Eventname, Callback-Delivery und Key-Event-Konfiguration bleiben Follow-up.",
+    "cloudflare_info_account": "Pages-Projekt hsb-boden und www.hsb-boden.de aktiv; keine Workers; Zone hsb-boden.de weiterhin pending. Production-Run 29404977846 fuer bf0a257 war erfolgreich. Alt-Account-Worker-/Duplicate-Zone-Cleanup und Token-Rotation bleiben Owner-Gates.",
+    "security": "Zwei unterschiedliche, real erreichbare Apps-Script-Endpunkte waren im oeffentlichen Repo dokumentiert. Das bestehende Legacy-Deployment wurde am 2026-07-15 fuer das Attribution-Mapping auf Version 4 aktualisiert und erfolgreich getestet, aber nicht authentifiziert. Aktueller Tree wird redigiert; beide Altpfade muessen trotzdem invalidiert/rotiert und durch einen authentifizierten Pfad ersetzt werden."
   },
   "repo_path": "/Users/joelcherinodiaz/KI-System/02_Projects/active/hsb-boden",
+  "local_root_checkout": "tracked files unveraendert, sechs Commits hinter origin/main; untracked .local-secrets/ aus laufender Fable-Sitzung wurde nicht geoeffnet oder veraendert",
   "handoff_path": "/Users/joelcherinodiaz/KI-System/ObsidianVault/brain/CURRENT_HANDOFF.md",
-  "last_commit": "900fe9e (PR-#84-Baseline vor diesem Finalisierungscommit)",
-  "website_code_diff_lines": "0 in src/public/config fuer PR #84 (reiner Doku-/State-PR). PR #85 aenderte Website-Code (Soft-404-Fix) und ist bereits gemerged+deployed.",
+  "last_commit": "origin/main f202cb6; produktiver Code bf0a257; Production-Run 29404977846 erfolgreich",
+  "website_code_diff_lines": "0 in diesem Truth-/Security-Dokumentationspass; aktuelle Codeaenderungen stammen aus den bereits gemergten PRs #85 und #87.",
   "canonical_readiness_stack": {
     "tier1": {
       "cloudflare": "docs/cloudflare/CLOUDFLARE_PROVIDER_MAX_READINESS.md",
@@ -70,6 +74,20 @@
     }
   },
   "modified_files": [
+    "CHECKPOINT_STATE.json",
+    "PROJECT_TRUTH.md",
+    "SESSION_LOG.md",
+    "docs/FINAL_OPERATOR_HANDOFF.md",
+    "docs/GOAL_HSB_BODEN_FINALIZATION.md",
+    "docs/MASTER_EXECUTION_PLAN.md",
+    "docs/PHASE_C_CUTOVER_RUNBOOK.md",
+    "docs/ai_state/TRUTH_MATRIX_2026-07-15.md",
+    "docs/crm/ATTRIBUTION_CONNECTOR_PATCH.md",
+    "docs/crm/CRM_DEEP_DIVE_2026-07-15.md",
+    "docs/handoff/ACCOUNT_MIGRATION_NEW_GITHUB_CLOUDFLARE.md",
+    "docs/handoff/JOEL_JORDIE_OPERATOR_RUNBOOK.md"
+  ],
+  "historical_modified_files_2026_06_26": [
     "PROJECT_TRUTH.md",
     "CHECKPOINT_STATE.json",
     "docs/FINAL_CLOUDFLARE_WORKERS_READINESS_AUDIT.md",
@@ -98,39 +116,47 @@
     "docs/ops/MULTI_PC_OPERATOR_SYNC_PROTOCOL.md",
     "docs/launch/PRE_DNS_GO_LIVE_MAX_CHECKLIST.md"
   ],
-  "push_done": true,
-  "deploy_done": "dispatched 2026-07-13 (run 29267479160, verify separately)",
+  "push_done": false,
+  "deploy_done": "not_run",
+  "historical_deploy_evidence": [
+    "Production-Run 29404977846 fuer bf0a257 war erfolgreich; dieser Truth-Pass fuehrt keinen Deploy aus."
+  ],
   "completed_steps": [
+    "Aktuellen GitHub-, Cloudflare-Pages-, Live-HTTP- und dokumentierten Google-Zustand zeitgestempelt konsolidiert.",
+    "Oeffentlich dokumentierte Apps-Script-Endpunktwerte im aktuellen Tree redigiert; Invalidation, Rotation und Authentifizierung bleiben externe Gates.",
+    "Zero-Downtime-Sequenz fuer einen authentifizierten Apps-Script-Pfad und eine dual-kompatible Pages Function festgelegt.",
+    "CRM-Formeln und GA4-/GSC-Beleggrenzen gegen den tatsaechlichen Code- und Dokumentstand korrigiert.",
+    "OPERATOR_VERIFIED 2026-07-15: Attribution-Mapping im bestehenden Legacy-Deployment auf Version 4 aktualisiert; UTM-Testlead mit sechs korrekten Attributionsfeldern zugestellt und Testzeile geloescht. Dies schliesst Mapping/Test, nicht den Auth-Cutover."
+  ],
+  "historical_and_completed_steps": [
     "Phase 3 is backed by local Lighthouse evidence from 2026-06-26 with Performance 95, Accessibility 100, Best Practices 100, and SEO 100.",
     "Phase 4 is closed for materials, channel decision, and owner approval scope: j-cherino@hsb-boden.de is canonical for flyer/mail outreach, info@hsb-boden.de remains the general/legal mailbox, and Outlook is historical fallback only.",
-    "CRM-Light is documented as template-ready for future lead import and the Phase 7 compliance/import gate documents define the blocked manual outreach path.",
-    "Phase 12 remains current but externally blocked by the pending NS/DNS switch.",
+    "CRM-Light Inbound ist historisch end-to-end belegt; 6424 Outbound-Leads existieren lokal, bleiben aber vollstaendig fuer Versand gesperrt.",
+    "Phase 12 Website-Schaltung ist abgeschlossen: www live, Apex 301 query-erhaltend, Pages in main, Production-404 korrekt.",
     "Workflow risks fixed (commit a28fbb2): CI SHA-pinned, deploy-production.yml workaround applied.",
     "Max-readiness doc sweep (2026-06-26 Tier 1): 7 new canonical readiness docs created, FINAL_CLOUDFLARE_WORKERS_READINESS_AUDIT converted to historical wrapper, all cross-references updated.",
     "Final pre-go-live documentation wave (2026-06-26 Tier 2): 12 new detailed readiness docs created across cloudflare/, analytics/, email/, assets/, crm/, automation/, ops/, launch/. All Tier-1 canonical docs updated with cross-references. PROJECT_TRUTH.md, CHECKPOINT_STATE.json, FINAL_OPERATOR_HANDOFF.md, MASTER_EXECUTION_PLAN.md updated.",
-    "Cloudflare Pages www live verification (2026-07-08): https://www.hsb-boden.de/referenzen/ returns HTTP 200 and includes corrected references KESSLER-ZINK GmbH, Weingut Dohlmühle-Genussreich, and Flonheim.",
+    "Cloudflare Pages www live verification (2026-07-08): Die Referenzseite lieferte HTTP 200 und zeigte die freigegebene generische Referenzdarstellung; keine konkreten Kundennamen oder Standorte werden in diesem Checkpoint wiederholt.",
     "Phase 7 lead import preparation extended for two operators: Joel Cherino Diaz and Jordi Post each get about 2,500 addresses when data volume allows; flyer attachment field is required before dispatch.",
     "Lead attribution end-to-end (PR #79, 2026-07-13): 4 OpenAI review rounds all fixed, Codex privacy finding fixed, Playwright E2E proof without real lead; docs/crm/CRM_LIGHT_MAX_READINESS.md documents CRM mapping + connector gate."
   ],
-  "workflow_risks_fixed": [
+  "historical_workflow_risks_fixed": [
     "ci.yml: actions/checkout@v4 pinned to 34e114876b0b11c390a56381ad16ebd13914f8d5 (2026-06-26)",
     "ci.yml: actions/setup-node@v4 pinned to 49933ea5288caeca8642d1e84afbd3f7d6820020 (2026-06-26)",
     "deploy-production.yml: replaced 'deploy --env production' with 'deploy --name hsb-boden --var ENVIRONMENT:production' per PHASE_C_CUTOVER_RUNBOOK.md"
   ],
   "open_steps": [
-    "ERLEDIGT 2026-07-15: GA4-Lead-Event-Fix (PR #87) gemergt und deployed, live via dataLayer-Hook verifiziert (gtag-Transportsignatur bestaetigt). Verbleibend nur kosmetisch: lead_form_submit als GA4-Key-Event markieren.",
-    "ERLEDIGT 2026-07-15: GA4-GSC-Link von Preview- auf www-Property umgestellt (Details docs/ai_state/TRUTH_MATRIX_2026-07-15.md Abschnitt 3).",
-    "Owner: Google-MCP-Profil cherinojoel explizit neu authentifizieren und im Browser cherinojoel@gmail.com auswaehlen; danach Apps-Script-Spaltenmapping maschinell pruefen.",
-    "PR #85 unabhaengig reviewen und freigeben; erst danach mergen und den Production-Deploy manuell ausloesen. Bis dahin bleibt der Production-Soft-404 offen.",
+    "P0 Security ohne Ausfall: neuen authentifizierten Apps-Script-Pfad plus dual-kompatible Pages Function vorbereiten. Nach Preview-Test LEAD_WEBHOOK_CONFIG in Production setzen und denselben geprueften Commit approval-gated neu deployen; erst das neue Deployment bindet URL+Token. Alte Deployment-IDs erst nach erfolgreichem Production-E2E invalidieren.",
+    "GA4: kanonischen Conversion-Eventnamen festlegen, Event-Delivery vor Navigation absichern und Netzwerk/DebugView/Key-Event real verifizieren; PR #86 nicht blind mergen.",
+    "Owner: Google-MCP-Profil cherinojoel fuer weitere API-/Admin-Arbeit explizit neu authentifizieren und im Browser cherinojoel@gmail.com auswaehlen; Mapping und loeschbarer Testlead sind bereits operator-verifiziert.",
     "Cloudflare-Owner: Zone/NS-Entscheidung separat treffen; Alt-Account-Worker und doppelte Zone bereinigen sowie API-Token rotieren.",
     "PR #74 bleibt Draft und deaktiviert; erfolgreiche Cloudflare-AI-Gateway-Inferenz ist vor jeder Readiness-Aussage real nachzuweisen.",
     "Unveraendert: GBP-Verifizierung (physisch), Kaltakquise-Compliance-Gate, M365-DKIM, Service-Account-Key-Rotation und PR-Triage mit Diff-Evidenz."
   ],
   "blocked_by": [
-    "CRM/Apps-Script-Attribution-Mapping: Profil cherinojoel hat einen gueltigen Token, validiert aber gegen cherinodiaz@outlook.com; Profil cherinodiaz ist abgelaufen und Drive nicht initialisiert. Explizite Re-Auth/Accountwahl fuer cherinojoel@gmail.com oder manueller Patch erforderlich.",
-    "GA4-Lead-Submit wird im direkten gtag.js-Setup noch nicht als Event gesendet; separater Code-PR mit Test und Review erforderlich.",
-    "GA4-Search-Console-Verknuepfung zeigt auf Preview-Property statt www (GA4-Admin, Owner).",
-    "Production-Soft-404: PR #85 braucht unabhaengiges Review, Freigabe, Merge und manuellen Production-Deploy.",
+    "Google API-/Admin-Follow-up: Profil cherinojoel war im frueheren Audit nicht eindeutig dem vorgesehenen Owner-Konto zugeordnet. Explizite Re-Auth/Accountwahl bleibt fuer weitere maschinelle Admin-Arbeit erforderlich; Attribution-Mapping und Testlead sind nicht mehr blockiert.",
+    "Apps-Script-Sicherheit: oeffentlich gewordene Endpunkte bleiben bis Invalidation, Rotation und Authentifizierung kompromittiert.",
+    "GA4: gtag-Aufruf ist produktiv, aber Netzwerkempfang, Callback-Delivery und Key-Event-Konfiguration sind noch nicht end-to-end belegt.",
     "Cloudflare: Zone hsb-boden.de im Info-Account ist pending; voller NS-Cutover, Alt-Account-Cleanup und Token-Rotation sind Owner-Gates.",
     "Die zukuenftige Versandfreigabe (PHASE_7_COMPLIANCE_GATE) und M365-DKIM bleiben offen."
   ],
@@ -138,14 +164,14 @@
     "M365 DKIM for j-cherino@hsb-boden.de not yet activated.",
     "Lead-Datensatz existiert (6424 im MASTER-Sheet), aber Versandfreigabe 0/6424: PHASE_7_COMPLIANCE_GATE (Rechtsgrundlage, Opt-out, Batch-Freigabe) unerfuellt."
   ],
-  "next_step": "PR #84 pushen und CI bestaetigen; danach den reproduzierten GA4-Lead-Eventfehler in einem separaten TDD-/Review-PR beheben. Anschliessend verbleiben die Owner-Gates aus docs/ai_state/TRUTH_MATRIX_2026-07-15.md Abschnitt 11.",
+  "next_step": "Diesen atomaren Truth-/Endpoint-Redaction-PR reviewen. Parallel keine unrelatierten Fable-Merges oder Deploys. Danach neuen Apps-Script-Pfad und dual-kompatible Pages Function bauen; Preview testen; Production-Secret setzen und denselben Commit approval-gated neu deployen; E2E verifizieren; alte Deployments zuletzt invalidieren.",
   "handoff_required": true,
   "safe_to_continue": true,
-  "canonical_runtime_migration_2026_07_04": {
+  "historical_canonical_runtime_migration_2026_07_04": {
     "status": "PASS",
     "goal_state": "COMPLETE",
-    "remaining_drift": "none",
-    "notion_ssot": "HSB Boden",
+    "remaining_drift": "docs und externe Owner-Gates offen; Details PROJECT_TRUTH.md",
+    "notion_role": "Cockpit, nicht Wissens-SSOT",
     "code_truth": "https://github.com/HSBHexagon/hsb-boden",
     "old_repo_role": "backup_alt_context_only",
     "codex_github_connector": {
@@ -177,6 +203,5 @@
       "Live n8n workflows",
       "Mass outreach"
     ]
-  },
-  "modified_files_note": "Das Feld 'modified_files' unten listet einen HISTORISCHEN Doku-Sweep vom 2026-06-26 (nicht den Scope von PR #84/#85)."
+  }
 }

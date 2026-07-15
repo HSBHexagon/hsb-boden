@@ -1,16 +1,14 @@
 # PROJECT_TRUTH — HSB-Boden / HEXAFLOOR
 
-> Single Source of Truth fuer den **aktuellen** Projektstand. Stand: 2026-07-15.
+> Single Source of Truth fuer den **aktuellen** Projektstand. Stand: 2026-07-15, 12:05 CEST.
 > Historischer Verlauf gehoert in `SESSION_LOG.md` oder Archive, nicht hier hinein.
 > Unklare Punkte sind als `unklar / zu pruefen` markiert.
 >
-> Gesamturteil: `pages-www-live-awaiting-compliance-gates`
+> Gesamturteil: `pages-live-core-web-fixed-external-owner-gates-remain`
 >
-> **Delta 2026-07-15 (Fable-5-Verifikationspass, Details in `docs/ai_state/TRUTH_MATRIX_2026-07-15.md`):**
-> - Apex `hsb-boden.de` leitet jetzt per 301 (Query-erhaltend) auf `www` um — der fruehere WordPress-/404-Befund in Abschnitt 3 ist HISTORICAL.
-> - Die Worker-Schiene wurde am 2026-07-12 geloescht; Cloudflare Pages ist die einzige Deploy-Wahrheit. Worker-Aussagen unten sind HISTORICAL.
-> - Lead-Datensatz existiert: 6.424 Leads im MASTER-Sheet (Joel 3.212 / Jordi 3.212, Versandfreigabe 0/6.424). "awaiting leads" ist damit erfuellt; offen ist die Compliance-/Versandfreigabe (PHASE_7) und M365-DKIM.
-> - HEAD-Angabe in Abschnitt 2 ist HISTORICAL; aktueller Stand siehe `CHECKPOINT_STATE.json`.
+> Aktuelle Evidenz und zeitgebundene Detailbefunde stehen in
+> `docs/ai_state/TRUTH_MATRIX_2026-07-15.md`. Historische Worker-, WordPress-,
+> Pages-Migrations- und PR-Snapshots sind nicht mehr handlungsleitend.
 
 ## 1. Kanonischer Arbeitsort
 - Repo: `/Users/joelcherinodiaz/KI-System/02_Projects/active/hsb-boden`
@@ -18,60 +16,107 @@
 
 ## 2. Aktueller Repo-Zustand
 - Branch: `main`
-- Lokaler Commit-Stand: entspricht `origin/main`
-- Aktueller HEAD: `5e6e184`
-- Website-Code-Diff: lokale, noch nicht committete Aenderungen vorhanden (`src/data/clientLocations.ts`, `src/layouts/BaseLayout.astro`) plus Doku-/CRM-Import-Vorbereitung
-- Lokale bekannte Nicht-Commit-Dateien: `CHECKPOINT_STATE.json`, `CRM_LIGHT_SCHEMA.md`, `PROJECT_TRUTH.md`, `docs/FINAL_OPERATOR_HANDOFF.md`, `docs/MASTER_EXECUTION_PLAN.md`, `docs/launch/LEAD_IMPORT_5000_CHECKLIST.md`, `src/data/clientLocations.ts`, `src/layouts/BaseLayout.astro`
-- Parallel-Worktree: `/Users/joelcherinodiaz/KI-System/02_Projects/active/hsb-boden-pages-static`, Branch `pages-static-migration`, letzter lokaler Commit `926cf6b`, noch nicht in `main` konsolidiert.
+- Remote-HEAD: `f202cb6` (`origin/main`, verifiziert 2026-07-15 12:05 CEST).
+- Das lokale Root-Worktree ist bei den getrackten Dateien unveraendert und sechs
+  Commits hinter `origin/main`; zusaetzlich existiert das ungetrackte Verzeichnis
+  `.local-secrets/` aus der laufenden Fable-Sitzung. Es wurde nicht geoeffnet
+  oder veraendert. Nicht waehrend dieser Sitzung ungefragt umschalten.
+- PR #84, #85, #87, #88, #89 und #90 sind gemergt. Der manuelle
+  Production-Deploy-Run `29404977846` fuer `bf0a257` war erfolgreich.
+- PR #86 ist offen, konfliktbehaftet und durch PR #87 funktional teilweise
+  ueberholt; nicht pauschal mergen. PR #74 bleibt Draft und deaktiviert.
+- Zum Snapshot 12:05 CEST sind 40 Pull Requests offen; diese Zahl ist
+  zeitgebunden und keine dauerhafte Projekteigenschaft.
 
 ## 3. Aktueller Projektzustand
-- Die Lead-Pipeline ist end-to-end live und verifiziert.
-- HISTORICAL (Stand 07-08, durch 07-12/07-15 überholt): Der Production-Worker `hsb-boden` war route-los deployed. Die Worker wurden am 2026-07-12 gelöscht; **Cloudflare Pages ist die einzige Deploy-Wahrheit**.
-- Das Production-Secret `LEAD_WEBHOOK_URL` ist als Pages-Umgebungsvariable gesetzt.
-- `www.hsb-boden.de` ist live ueber Cloudflare Pages und wurde am 2026-07-08 gegen `/referenzen/` verifiziert.
-- HISTORICAL (durch 2026-07-15 überholt, siehe Delta oben): `hsb-boden.de` ohne `www` zeigte damals noch auf die alte WordPress/Apache-Seite. **Aktuell:** Apex leitet per 301 (query-erhaltend) auf `www` um.
-- HISTORICAL: Die Worker-Schiene existiert nicht mehr (siehe oben).
+- `www.hsb-boden.de` ist live ueber Cloudflare Pages.
+- `https://www.hsb-boden.de/kontakt/` liefert HTTP 200.
+- Ein zufaelliger unbekannter Produktionspfad liefert HTTP 404 mit `no-store`;
+  der fruehere siteweite Soft-404 ist durch PR #85 behoben.
+- `GET /api/lead` liefert HTTP 405; dabei wurde kein Lead erzeugt.
+- `hsb-boden.de` leitet per HTTP 301 und unter Erhalt der Query-Parameter auf
+  `www` um. Der funktionale Apex-Zielzustand ist damit erreicht; ein voller
+  Nameserver-Cutover ist nicht erfolgt und technisch nicht Voraussetzung fuer
+  die aktuelle Website-Funktion.
+- PR #87 ruft GA4-Events nun direkt ueber `gtag('event', ...)` auf und ist
+  produktiv. Der Live-Probe aus PR #90 belegt den Aufrufpfad, nicht jedoch einen
+  real abgeschlossenen Lead oder die Sichtbarkeit als GA4-Key-Event.
 
 ## 4. Aktueller Cloudflare- und Domain-Stand
-- Preview-Worker: `hsb-boden-preview`
-- Production-Worker: `hsb-boden`
 - Cloudflare Pages Projekt: `hsb-boden`
 - Aktuelle Live-Schiene fuer `www.hsb-boden.de`: Cloudflare Pages (`hsb-boden.pages.dev`)
-- Production-Worker-Routes sind weiterhin nicht die kanonische Live-Schiene.
-- Offen: Apex `hsb-boden.de` muss auf `www.hsb-boden.de` weiterleiten oder technisch auf die neue Site zeigen.
+- Aktueller Production-Source-Commit: `bf0a257`; Deployment-Run
+  `29404977846` war erfolgreich.
+- Im produktiven Info-Account existieren keine Workers; die Zone
+  `hsb-boden.de` bleibt `pending`.
+- Ein alter Preview-Worker und eine doppelte Zone liegen im Alt-Account. Deren
+  Stilllegung beziehungsweise `noindex`, die doppelte Zone und Token-Rotation
+  sind separate Owner-Cleanup-Gates.
 
 ## 5. Aktueller Lead- und CRM-Stand
 - Das Kontaktformular postet an `/api/lead`.
-- Der Worker leitet an die Google-Apps-Script-Web-App weiter.
-- Zielsystem der Website-Pipeline ist das Google Sheet `HSB CRM Light` (`1d0zZXXwYGo38ZKf0oUSSJpoZ_WVG545rDalXAdItm80`, Tab „Leads").
-- Die End-to-End-Zustellung wurde verifiziert.
+- Die Pages Function leitet an die Google-Apps-Script-Web-App weiter.
+- Zielsystem der Website-Pipeline ist das Google Sheet `HSB CRM Light`, Tab
+  `Leads`. IDs und Webhook-URLs gehoeren nicht in diese versionierte SSOT.
+- OPERATOR_VERIFIED 2026-07-15 ca. 13:05 CEST: Eine Fable-Browser-Sitzung
+  ergaenzte die sechs Attributionsspalten, aktualisierte das bestehende
+  Legacy-Deployment auf Version 4 und uebermittelte einen klar markierten
+  UTM-Testlead. Alle sechs Felder waren korrekt; die Testzeile wurde danach
+  geloescht. Codex hat die Google-UI nicht unabhaengig erneut geoeffnet.
+- Dieses Ergebnis belegt Mapping und Zustellung, **nicht** die Sicherheit: Das
+  verwendete Legacy-Deployment prueft weiterhin keinen neuen Auth-Vertrag und
+  bleibt bis zum P0-Cutover kompromittiert.
 - `ops/n8n/` ist historisch/deprecated und nicht die aktive Loesung.
-- **Update 2026-07-08 (verifiziert via connected Google-Workspace-MCP, `cherinojoel@gmail.com`):** Reale Kaltakquise-Lead-Daten liegen jetzt vor — 6.424 Datensaetze, lokal in `data/lead-import/output/*.csv` und in drei separaten Google Sheets:
-  - MASTER (`1tmNuC_Wqr8blRfZCHLqpwXXOe7zyO-3SzsotaBxOzSk`, 6.433 Zeilen)
-  - Jordi Post (`1uMbZAteSPjRBLGwpfT_evqA9hPbSTdDqPOK5TBXoFu4`, 3.221 Zeilen)
-  - Joel Cherino (`1ha1iOX1pIWxF1c3FTRTxydqpa0uvPcBbbQ__ht1rAC8`, 3.231 Zeilen)
-  - Diese drei Sheets sind reine Kaltakquise-Ausgangslisten fuer spaeteren manuellen Versand, **nicht** an `LEAD_WEBHOOK_URL` oder einen Apps-Script-Webhook angebunden und sollen es nach aktuellem Stand auch nicht sein — Verwechslungsgefahr mit der Website-Inbound-Pipeline besteht, da alle vier Sheets denselben Namensraum „HSB CRM Light" teilen.
-  - Spaltenschema weicht zwischen MASTER-Sheet (23 Spalten), `CRM_LIGHT_SCHEMA.md` (27 Spalten) und dem Tab „Leads" im urspruenglichen Sheet (27 Spalten, teils andere Feldnamen) ab. **Kanonik-Entscheidung 2026-07-08:** `CRM_LIGHT_SCHEMA.md` ist das kanonische Schema (bereits vorher so in `LEAD_IMPORT_5000_CHECKLIST.md` festgelegt). Details der Abweichungen siehe `CRM_LIGHT_SCHEMA.md` Abschnitt „Kanonik-Entscheidung". Live-Sheets wurden bewusst nicht automatisiert umstrukturiert.
-  - `CRM-Light` ist damit nicht mehr `template-ready-awaiting-lead-data`, sondern `lead-data-imported-awaiting-compliance-and-batch-approval` (siehe Phase 7 in `docs/MASTER_EXECUTION_PLAN.md`).
-- **Update 2026-07-08 (spaeter in derselben Session):** Der reale `LEAD_WEBHOOK_URL`-Wert wurde ueber den Apps-Script-Editor (aktive Browser-Session `cherinojoel@gmail.com`, kein Passwort eingegeben) am Projekt `HSBBODEN` verifiziert — Deployment „Version 3 am 22.06.2026, 23:35", Code bindet per `SpreadsheetApp.openById('1d0zZXXwYGo38ZKf0oUSSJpoZ_WVG545rDalXAdItm80')`, exakt das dokumentierte Ziel-Sheet. Wert: `https://script.google.com/macros/s/AKfycbygp7VIA3NjeIjiVYiRXXsBKh-Aoei7DmS2WGlLmCmPdtOwHHOOOaFF_270O-Cu4ugm/exec`. Lokaler `wrangler`-Login war bereits beim korrekten Account `info@hsb-boden.de` authentifiziert; Secret wurde per `npx wrangler pages secret put LEAD_WEBHOOK_URL --project-name hsb-boden` gesetzt und per `wrangler pages secret list` bestaetigt (production-Environment).
-- **Gefundene, ungeklaerte Altlast:** Ein zusaetzliches Apps-Script-Projekt „HSB-Boden CRM Webhook" (nicht zu verwechseln mit `HSBBODEN`) wurde am 2026-07-08 um 20:37 erstellt/bereitgestellt und ist an das Jordi-Kaltakquise-Sheet (`1uMbZAteSPjRBLGwpfT_evqA9hPbSTdDqPOK5TBXoFu4`) gebunden, nicht an das CRM-Light-Sheet. Herkunft nicht rekonstruiert (evtl. parallele Session). Es ist an keiner Stelle als Secret hinterlegt und sollte vor Verwechslung mit `HSBBODEN` geschuetzt werden; Owner sollte pruefen, ob dieses Projekt geloescht/archiviert werden soll.
+- Die lokalen, bewusst unversionierten Exporte enthalten 6.424 Outbound-Leads:
+  Joel 3.212, Jordi 3.212, keine Ueberschneidung. Alle bleiben mit
+  `Versandfreigabe = no` und unbekanntem Opt-in/Opt-out gesperrt.
+- Der 29-Spalten-Outbound-Bestand und das 27-Spalten-Inbound-Schema sind
+  unterschiedliche Modelle. Live-Sheets wurden nicht automatisiert
+  umstrukturiert. Details und das additive Zielmodell stehen in
+  `docs/crm/CRM_DEEP_DIVE_2026-07-15.md`.
+- Das Attribution-Mapping ist operator-verifiziert live. Die eindeutige
+  Google-Kontoidentitaet bleibt fuer weitere API-/Admin-Arbeit ein Owner-Gate.
 
 ## 6. Aktuelle offene Punkte
-- Voller NS-/DNS-Switch der Domain `hsb-boden.de` (optional, Apex-301 auf www ist bereits aktiv — siehe Delta oben)
-- HISTORICAL (durch Update 2026-07-08 oben und 2026-07-15 überholt): Die 6.424 Akquise-Leads liegen bereits importiert vor; offen ist nicht mehr der Import, sondern Compliance-/Versandfreigabe (Phase 7).
+- GA4: den fachlich kanonischen Conversion-Namen festlegen, den Event-Transport
+  bei erfolgreichem Formular-Submit verlaesslich abschliessen und das Ergebnis
+  in DebugView/Realtimedaten als Key Event verifizieren. PR #86 darf wegen
+  Konflikten und abweichender Consent-Semantik nicht blind gemergt werden.
+- Google/CRM: Profil `cherinojoel` fuer weitere API-/Admin-Pruefungen explizit
+  als `cherinojoel@gmail.com` re-authentifizieren. Mapping und loeschbarer
+  Testlead sind bereits operator-verifiziert; nicht erneut als offenen Schritt
+  ausfuehren.
+- Cloudflare: Alt-Account-Worker, doppelte Zone und exponierte Tokens/Endpoint-
+  Werte rotieren beziehungsweise stilllegen. Kein NS-Cutover ohne separaten
+  Mail-/DNS-Plan.
+- Outreach: Rechtsgrundlage, Opt-out, M365-DKIM und Batch-Freigabe abschliessen.
+  Kein Versand ist freigegeben.
+- Google-Unternehmensprofil: Owner-Anlage und physische Verifizierung.
+- Codex GitHub Review: Cloud-Umgebung/Review-Kontingent fehlt; automatische
+  Review-Erfolge nicht mit einem manuellen `@codex review` verwechseln.
 
 ## 6a. Verifizierte Phasenlage
-- Phase 3 ist abgeschlossen: lokale Lighthouse-Evidenz vom 2026-06-26 gegen `https://hsb-boden.cherinojoel.workers.dev/` belegt Performance 95, Accessibility 100, Best Practices 100 und SEO 100.
+- Phase 3 ist technisch abgeschlossen; aktuelle CI-/Lighthouse-Checks sind gruen
+  und der Production-Soft-404 ist behoben. Historische Worker-Lighthouse-Werte
+  sind Evidenz, aber nicht der aktuelle Live-Messpunkt.
 - Phase 4 ist abgeschlossen: Materialien, Referenzclaims, kanonischer Outreach-Kanal und Owner-Freigabe fuer kontrolliertes manuelles Outreach-Material sind repo-belegt bzw. durch die vorliegende Owner-Entscheidung geschlossen.
-- Phase 5 ist fuer diesen Stand abgeschlossen: CRM-Light ist als leere, importfaehige Struktur dokumentiert.
-- Phase 6 ist abgeschlossen: Lead-Intake Website `/api/lead` -> Google Apps Script Web App -> Google Sheets CRM-Light ist die aktive verifizierte Kette.
-- Phase 7 ist `lead-data-imported-awaiting-compliance-and-batch-approval` (Leads liegen seit 2026-07-08 vor, siehe Update oben; HISTORICAL: „awaiting-lead-data" traf vor diesem Update zu).
+- Phase 5 ist strukturell vorbereitet; das Attributionsmapping ist
+  operator-verifiziert, die additiven Live-Sheet-Ansichten und eindeutige
+  Kontoidentitaet bleiben offen.
+- Phase 6 ist technisch live: Website `/api/lead` -> Pages Function -> Google
+  Apps Script -> CRM-Light. Ein frischer UTM-End-to-End-Test ist
+  operator-verifiziert und bereinigt; der Auth-Cutover bleibt P0 offen.
+- Phase 7 ist `lead-data-imported-awaiting-compliance-and-batch-approval` (Leads liegen seit 2026-07-08 vor, siehe Update oben; HISTORICAL: „awaiting-lead-data“ traf vor diesem Update zu).
 - Phase 8 und Phase 9 bleiben pending.
 - Phase 10 ist optional und derzeit dokumentiert deaktiviert; n8n ist nicht aktiv.
 - Phase 11 ist abgeschlossen.
-- Phase 12 ist teilweise abgeschlossen: `www.hsb-boden.de` ist live ueber Pages; offen bleibt Apex `hsb-boden.de` und die Konsolidierung des Pages-Worktrees in `main`.
+- Phase 12 ist fuer die Website-Schaltung abgeschlossen: `www` ist live, Apex
+  leitet query-erhaltend um, Pages ist in `main`, 404 und Lead-Fehlerbehandlung
+  sind produktiv. Externe Owner-Gates bleiben getrennt.
 - Rechtstext-Abnahme gilt fuer die aktuelle Statusfuehrung als erledigt.
-- Kein realer Versand ist dadurch freigegeben: Dispatch bleibt blockiert, bis reale Lead-Daten importiert sind, die Lead-Liste freigegeben ist, Empfaengerbasis und Opt-out dokumentiert sind, das exakte Batch freigegeben ist und die Compliance-Freigabe dokumentiert ist.
+- Kein realer Versand ist dadurch freigegeben: Dispatch bleibt blockiert, bis
+  Empfaengerbasis, Rechtsgrundlage, Opt-out, DKIM, das exakte Batch und die
+  Owner-Freigabe dokumentiert sind.
 
 ## 7. Aktuelle Freigabegates
 - Kein Push ohne Freigabe
@@ -112,8 +157,14 @@ Historische Finale Docs (Evidenz, nicht aktiv kanonisch fuer Cloudflare):
 - Cloudflare Workers Readiness Audit (historisch): `docs/FINAL_CLOUDFLARE_WORKERS_READINESS_AUDIT.md`
 
 Ausfuehrungspfade:
-- Phase-12-Cutover: `docs/PHASE_C_CUTOVER_RUNBOOK.md`
+- Spaeterer optionaler NS-Cutover: neues Pages-/Mail-DNS-Runbook erforderlich;
+  `docs/PHASE_C_CUTOVER_RUNBOOK.md` ist historical/superseded und nicht ausfuehrbar
 - Lead-Import: `docs/launch/LEAD_IMPORT_5000_CHECKLIST.md`
 
 ## 8. Naechster sichere Schritt
-Keine zweite Wahrheit weiterfuehren: Pages-Worktree, `main`, `PROJECT_TRUTH.md`, `docs/MASTER_EXECUTION_PLAN.md`, `docs/FINAL_OPERATOR_HANDOFF.md` und `CHECKPOINT_STATE.json` muessen auf den Pages-`www`-Live-Stand konsolidiert werden. Danach reale Lead-Dateien importbereit auf zwei Operator-Dateien splitten. Import bleibt CRM-Datenvorbereitung, kein Versand.
+Diese Truth-Reconciliation reviewen und mergen. Danach genau einen kleinen
+P0-Webhook-Sicherheits-PR mit dual-kompatiblem Legacy-/Auth-Pfad bauen und in
+Preview pruefen. Production-Secret und approval-gated Redeploy folgen erst nach
+Owner-Zugriff; alte Deployments werden zuletzt invalidiert. Danach den kleinen
+GA4-Nachfolge-PR aus dem Diff #87/#86 umsetzen. Google-, Cloudflare-, DNS-,
+Credential-, GBP- und Outreach-Aktionen bleiben getrennte Owner-Gates.

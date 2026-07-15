@@ -1,15 +1,18 @@
 # GOAL — HSB-Boden Finalisierung
 
-> Konsolidiertes Ziel-/Statusdokument. Stand: 2026-07-09.
+> Konsolidiertes Ziel-/Statusdokument. Stand: 2026-07-15, 12:06 CEST.
 > Ergänzt `docs/MASTER_EXECUTION_PLAN.md` (Phasenmodell) um eine flache, bereichsweise Sicht: was ist fertig, was ist blockiert und warum, was ist der nächste konkrete Schritt.
 
 ## Gesamtziel
 
-`www.hsb-boden.de` als vollständig funktionierendes, sichtbares, technisch sauberes B2B-Akquise-System betreiben — Website live, Lead-Pipeline verifiziert, Sichtbarkeit bei Google aufgebaut — bis zur finalen Freigabe von Apex-DNS und Kaltakquise-Versand.
+`www.hsb-boden.de` als funktionierendes, sichtbares und technisch sauberes
+B2B-Akquise-System betreiben: Website live, Lead-Pipeline abgesichert,
+Google-Sichtbarkeit messbar und Outreach kontrolliert freigabefaehig. Ein voller
+NS-Cutover ist optional und kein globales Abschlusskriterium.
 
 ---
 
-## 1. Website & Deploy — ✅ weitgehend fertig
+## 1. Website & Deploy — ✅ produktiv, Kernfehler behoben
 
 | Punkt | Status |
 |---|---|
@@ -18,45 +21,60 @@
 | Canonical-Domain-Bug (Code zeigte auf Apex statt www) | ✅ gefixt und deployed |
 | Rate-Limit-Bypass-Lücke in `/api/lead` (In-Memory statt verteilt) | ✅ gefixt via Cloudflare KV (`RATE_LIMIT_KV`, Namespace neu im `info@hsb-boden.de`-Account gebunden), deployed |
 | JSON-LD-XSS-Härtung (PR #32) | ✅ gemergt nach `main` auf GitHub |
-| Tests/Build/Check | ✅ 51/51 Tests, 0 Typfehler |
-| Apex `hsb-boden.de` | ❌ zeigt weiterhin alte WordPress-Seite |
-| Lokales `main` vs. `origin/main` | ✅ zusammengeführt und synchron (Push erfolgt via Admin-Bypass der Branch-Protection — bekanntes, im Projekt bereits dokumentiertes Risiko) |
+| Tests/Build/Check im Production-Run `29404977846` | ✅ Astro Check ohne Findings, 83 Tests, 36 Seiten |
+| Apex `hsb-boden.de` | ✅ 301 auf `www`, Query-Parameter bleiben erhalten |
+| Lokales Root-`main` vs. `origin/main` | ⚠️ getrackte Dateien unveraendert, sechs Commits hinter `origin/main`; ungetracktes `.local-secrets/` aus laufender Fable-Sitzung nicht geoeffnet/veraendert; Reconciliation-Worktree basiert auf aktuellem `origin/main` |
 | GitHub-Actions-Secrets `CLOUDFLARE_API_TOKEN`/`CLOUDFLARE_ACCOUNT_ID` | ✅ neu gesetzt (vorheriger Wert leer/ungültig) |
 | CI-Deploy-Workflows (`deploy-preview.yml`, `deploy-production.yml`) | ✅ von obsoleter Worker-Architektur auf Cloudflare Pages migriert; Production-Deploy bleibt bewusst `workflow_dispatch`-only (manueller Gate erhalten), PR-Previews deployen jetzt korrekt auf Pages-Branch-URLs |
+| Unbekannte Pfade | ✅ echter HTTP 404, `no-store`, `noindex` |
+| `GET /api/lead` | ✅ HTTP 405 ohne Lead-Erzeugung; `Allow: POST` fehlt als kleiner Vertrags-Follow-up |
 
-**Nächster Schritt:** Apex-DNS (siehe Abschnitt 5), sonst ist dieser Bereich vollständig.
+**Nächster Schritt:** Kein unrelatierter Production-Deploy. Der einzige
+vorgesehene Deploy ist der review- und owner-gesteuerte, dual-kompatible
+P0-Webhook-Sicherheitscutover; danach nur gezielte Follow-ups ueber reviewbare
+PRs.
 
 ---
 
-## 2. Lead-Pipeline & CRM — ✅ fertig, mit zwei offenen Aufräumpunkten
+## 2. Lead-Pipeline & CRM — ⚠️ technisch live, Security-Gate offen
 
 | Punkt | Status |
 |---|---|
-| `/api/lead` → Cloudflare Pages Function → Apps Script (`HSBBODEN`) → Sheet „HSB CRM Light" | ✅ End-to-End verifiziert (historisch, Phase 6) |
-| `LEAD_WEBHOOK_URL` auf Cloudflare Pages Production gesetzt | ✅ (2026-07-08, echter Wert verifiziert über Apps-Script-Deployment v3) |
+| `/api/lead` → Cloudflare Pages Function → Apps Script → Sheet „HSB CRM Light“ | ✅ 2026-07-15 operator-verifiziert: UTM-Testlead zugestellt, sechs Attributionsfelder korrekt, Testzeile gelöscht; Auth-Sicherheit separat offen |
+| `LEAD_WEBHOOK_URL` auf Cloudflare Pages Production gesetzt | ⚠️ HISTORICAL/COMPROMISED: Legacy-Wert aktiv, darf nicht als genehmigte Sicherheitskonfiguration gelten |
 | Reale Kaltakquise-Lead-Daten | ✅ vorhanden — 6.424 Datensätze, 3 Sheets (Master/Joel/Jordi) |
 | Schema-Drift zwischen den 4 CRM-Sheets | ⚠️ dokumentiert, **nicht bereinigt** — `CRM_LIGHT_SCHEMA.md` ist kanonisch erklärt |
-| Verwaistes Apps-Script-Projekt „HSB-Boden CRM Webhook" (an Jordi-Sheet gebunden) | ✅ umbenannt + Deployment archiviert (kein Risiko mehr, aber Projekt existiert noch) |
+| Weiteres historisches Apps-Script-Deployment | ⚠️ Redigiert, aber bis zur nachgewiesenen Invalidation nicht als risikofrei behandeln |
+| Zwei Apps-Script-Endpunkte im oeffentlichen Git-Verlauf | ❌ P0: anonym erreichbar; neuen authentifizierten Pfad ohne Ausfall aufbauen/testen, URL umstellen und alte Deployments zuletzt invalidieren |
 
-**Nächster Schritt:** Vor einem echten Versand die Spaltenreihenfolge der 3 Kaltakquise-Sheets gegen `CRM_LIGHT_SCHEMA.md` abgleichen (dispatch-blockierende Felder: `Verantwortlicher`, `Flyer-Anhang`, `Versandfreigabe`, `Opt-in-/Opt-out-Status`).
+**Nächster Schritt:** Neuen Apps-Script-Pfad und eine dual-kompatible Pages
+Function vorbereiten. Das einzelne JSON-Secret `LEAD_WEBHOOK_CONFIG` kapselt URL
+und Token: zuerst nur Preview negativ/E2E testen, dann Production mit genau
+diesem einen Secret konfigurieren und denselben geprueften Commit ueber den
+manuellen Production-Workflow erneut deployen. Erst dieses Deployment bindet
+URL+Token. Danach einen loeschbaren synthetischen Testlead pruefen,
+Legacy-Secret entfernen und alte Deployments zuletzt invalidieren. Kein
+Outreach-Versand.
 
 ---
 
-## 3. SEO & Analytics — ✅ heute deutlich vorangebracht
+## 3. SEO & Analytics — ⚠️ technische Basis aktiv, Conversion-Beweis offen
 
 | Punkt | Status |
 |---|---|
-| GA4 Tracking-Code im Build (`G-VC4BJBEFTV`) | ✅ korrekt, empfängt echten Traffic (735 Nutzer/7 Tage) |
+| GA4 Tracking-Code im Build | ✅ produktiv vorhanden |
 | GA4-Property „HSBBODENCLOUDFLAIRE" (Account HexagonSäurebauGmbH) | ✅ identifiziert, verifiziert |
 | GA4 Datenaufbewahrung | ✅ auf 14 Monate vereinheitlicht (vorher: Events nur 2 Monate) |
-| GSC-Property für `www.hsb-boden.de` | ✅ neu angelegt, automatisch via GA4 verifiziert (kein DNS nötig) |
+| GSC-Property für `www.hsb-boden.de` | ✅ Production-Property vorhanden; aktueller Backend-Link von PR #89 operator-verifiziert, im Repo-Audit nicht unabhaengig reproduziert |
 | Sitemap bei GSC eingereicht | ✅ |
 | Indexierung Startseite + Kontakt angefragt | ✅ |
-| GA4 Key Events / Conversions | ⬜ noch nicht konfiguriert |
-| GSC-Property für Apex `hsb-boden.de` | ⬜ blockiert bis Apex live/DNS-Entscheidung |
+| GA4 `gtag('event', ...)`-Pfad | ✅ durch PR #87 produktiv; PR #90 belegt den lokalen Aufrufpfad |
+| GA4 Netzwerkempfang/DebugView/Key Event | ⬜ nicht end-to-end belegt |
 | Doppelte Cloudflare-Zone für `hsb-boden.de` (Account cherinojoel) | ⚠️ identifiziert, **nicht gelöscht** (API-Token ohne Löschrecht) — die produktive Zone liegt im `info@hsb-boden.de`-Account |
 
-**Nächster Schritt:** GA4 Key Events (z. B. `kontakt`-Formular-Submit) definieren; verwaiste Cloudflare-Zone im `cherinojoel@gmail.com`-Account manuell im Dashboard löschen.
+**Nächster Schritt:** Basic-vs.-Advanced-Consent explizit entscheiden,
+kanonischen Eventnamen festlegen, Delivery vor Navigation absichern und den
+Empfang in Network/DebugView verifizieren. PR #86 nicht unveraendert mergen.
 
 ---
 
@@ -68,13 +86,17 @@ Erfordert Neuanlage eines Profils plus Postkarten-/Telefon-Verifizierung an die 
 
 ---
 
-## 5. Apex-DNS (`hsb-boden.de` ohne www) — ❌ weiterhin blockiert, bewusst
+## 5. Apex-DNS (`hsb-boden.de` ohne www) — ✅ funktional, voller NS-Cutover optional
 
-- Registrar (All-Inkl/Kasserver) zeigt weiterhin auf die alten Nameserver — kein NS-Switch erfolgt.
+- Registrar (All-Inkl/Kasserver) nutzt weiterhin die bisherigen Nameserver — kein voller NS-Switch erfolgt.
 - Zwei Cloudflare-Zonen existieren parallel vorbereitet; die richtige liegt im `info@hsb-boden.de`-Account.
-- Dies bleibt **absichtlich** blockiert: DNS-Änderungen an einer live laufenden Domain (inkl. E-Mail-Routing-Risiko) sind in jeder Projektdoku als freigabepflichtig markiert und werden nicht automatisiert ausgeführt — auch nicht auf wiederholte Anfrage.
+- Der funktionale Website-Zielzustand ist durch den query-erhaltenden 301 auf
+  `www` erreicht. Ein voller NS-Cutover ist keine Website-Completion-
+  Voraussetzung und bleibt wegen E-Mail-Routing-Risiken separat freigabepflichtig.
 
-**Nächster Schritt (nur durch Joel/Jan):** Bei All-Inkl die Nameserver auf `bart.ns.cloudflare.com` / `melody.ns.cloudflare.com` (Zone im `info@hsb-boden.de`-Account) umstellen.
+**Nächster Schritt (optional, nur Joel/Jan):** Vor einer Nameserver-Aenderung
+einen frischen Pages-/Mail-DNS-Plan erstellen und alle MX/SPF/DKIM/DMARC-
+Eintraege sichern. Das historische Worker-Cutover-Runbook nicht ausfuehren.
 
 ---
 
@@ -88,12 +110,21 @@ Erfordert Neuanlage eines Profils plus Postkarten-/Telefon-Verifizierung an die 
 
 ---
 
-## Zusammenfassung: Ein letzter Schritt?
+## Zusammenfassung: Was trennt das System vom belastbaren Abschluss?
 
-Nein — es sind **drei unabhängige, nicht von mir ausführbare Freigaben**, die das Projekt vom vollständigen Abschluss trennen:
+Die Website selbst ist produktiv und technisch stabil. Offen sind getrennte,
+nicht zu vermischende Gates:
 
-1. **Apex-DNS-Switch** bei All-Inkl (Joel/Jan)
-2. **Google-Unternehmensprofil-Verifizierung** (nur Joel, physisch)
-3. **Compliance-Freigabe für Kaltakquise-Versand** (Joel, inhaltliche Entscheidung)
+1. **P0 Webhook-Sicherheit:** neuen authentifizierten Pfad ohne Ausfall bauen,
+   testen und umstellen; exponierte Deployments erst danach invalidieren.
+2. **Google/CRM:** Mapping und loeschbarer Testlead sind operator-verifiziert;
+   korrektes Owner-Profil nur fuer weitere API-/Admin-Arbeit re-authentifizieren.
+3. **GA4:** Consent-Vertrag, Conversion-Event, Delivery und Key Event belegen.
+4. **Google-Unternehmensprofil:** physische Owner-Verifizierung.
+5. **Kaltakquise:** Rechtsgrundlage, Opt-out, M365-DKIM und Batch-Freigabe.
+6. **Cloudflare-Altlasten/Credentials:** getrennt bereinigen und rotieren;
+   voller NS-Cutover nur optional mit Mail-DNS-Sicherheitsplan.
+7. **PR #74/Codex Cloud:** PoC deaktiviert lassen; Review-Umgebung und echte
+   Gateway-Inferenz fehlen.
 
-Alles technisch Vorbereitbare ohne diese drei Freigaben ist Stand jetzt erledigt.
+Ein globaler „alles fertig“-Claim ist deshalb noch nicht belastbar.

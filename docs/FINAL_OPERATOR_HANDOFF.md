@@ -1,6 +1,32 @@
 # FINAL_OPERATOR_HANDOFF — HSB-Boden / HEXAFLOOR
 
-## Status
+> ## HISTORICAL / SUPERSEDED
+>
+> Dieses Dokument konserviert den Stand vom 2026-07-08 und ist **kein aktueller
+> Operator-Handoff**. Es enthaelt inzwischen ueberholte Aussagen zu Apex,
+> Pages-Migration, Lead-Daten, PRs und Deploy-Pfaden. Aktuelle Reihenfolge:
+> `PROJECT_TRUTH.md` → `CHECKPOINT_STATE.json` →
+> `docs/ai_state/TRUTH_MATRIX_2026-07-15.md` →
+> `docs/MASTER_EXECUTION_PLAN.md` →
+> `docs/handoff/JOEL_JORDIE_OPERATOR_RUNBOOK.md`.
+>
+> Keine Befehle oder Gates aus diesem historischen Snapshot ausfuehren, ohne
+> sie gegen die aktuelle Truth-Kette zu pruefen.
+
+Vor jeder Interpretation dieses historischen Dokuments ist folgender Preflight
+verpflichtend:
+
+1. `~/KI-System/ObsidianVault/brain/01_core/STORAGE_ROLES.md`
+2. `~/KI-System/ObsidianVault/brain/START_HIER.md`
+3. `~/KI-System/ObsidianVault/brain/CANONICAL_STATE.md`
+4. `~/KI-System/08_System/config/canonical-projects.json`
+5. `~/KI-System/ObsidianVault/brain/CURRENT_HANDOFF.md`
+6. `cd "$(~/KI-System/08_System/scripts/resolve_project_path.sh hsb-boden)"`
+7. `~/KI-System/08_System/scripts/assert_canonical_project_path.sh hsb-boden`
+8. `AGENTS.md`, `CLAUDE.md`, `PROJECT_TRUTH.md`, `CHECKPOINT_STATE.json` und
+   `docs/MASTER_EXECUTION_PLAN.md`
+
+## Historischer Status
 - Overall: `pages-www-live-awaiting-apex-and-leads`
 - Remote main: `5e6e184`
 - CI/QA/Deploy Preview/Security/CodeQL: latest observed `success` on `main`
@@ -44,7 +70,11 @@
 ## Final audit entrypoints (historical evidence)
 1. `docs/FINAL_PHASE_BY_PHASE_AUDIT.md`
 2. `docs/FINAL_CLOUDFLARE_WORKERS_READINESS_AUDIT.md` (historical wrapper → see cloudflare/ canonical)
-3. `docs/PHASE_C_CUTOVER_RUNBOOK.md`
+3. `docs/PHASE_C_CUTOVER_RUNBOOK.md` (historical evidence only; never execute)
+
+Current operator guidance: `PROJECT_TRUTH.md` and `docs/MASTER_EXECUTION_PLAN.md`
+for the Pages/lead path; `docs/email/EMAIL_ROUTING_AND_DELIVERABILITY_MAX_READINESS.md`
+for mail-DNS boundaries.
 
 ## Trigger A — DNS/NS becomes active
 Historical Worker-route trigger only. Do not treat this as the current `www` live path without re-approval.
@@ -87,7 +117,9 @@ Only when the real lead dataset exists:
 - no push/merge of the Pages migration without explicit approval
 - no Phase 8/9 start
 - no use of unverified claims, logos, certificates, or references
-- do not use `deploy-production.yml` as cutover truth; use `docs/PHASE_C_CUTOVER_RUNBOOK.md`
+- do not treat any workflow or historical runbook as cutover truth; use
+  `PROJECT_TRUTH.md`, `docs/MASTER_EXECUTION_PLAN.md`, and the current mail-DNS
+  readiness document named above
 
 ## Safe next command after reopening the repo
 ```bash

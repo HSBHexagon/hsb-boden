@@ -1,11 +1,19 @@
 # ATTRIBUTION_CONNECTOR_PATCH — Apps-Script-Mapping für Lead-Attribution
 
-Status: `ready-to-paste` | Stand: 2026-07-13
-Gilt für: Apps Script **HSBBODEN** (Script-ID `1_xBbLkV_BddyAPqqPLaRGnZrw_DRY82GYGPcFUPvMZunXMwJOYdgeSzV`, Google-Konto cherinojoel@gmail.com) und Sheet **„HSB CRM Light"** (`1d0zZXXwYGo38ZKf0oUSSJpoZ_WVG545rDalXAdItm80`, Tab `Leads`).
+Status: `mapping-live-on-legacy; auth-cutover-open` | Stand: 2026-07-15
+Gilt für: Apps Script **HSBBODEN** und Sheet **„HSB CRM Light“**, Tab `Leads`.
 
 Seit 2026-07-13 sendet der Live-Lead-Endpoint (`/api/lead`, PR #79) sechs zusätzliche
-Attributionsfelder im Webhook-JSON. Sie werden vom Connector **ignoriert**, bis dieses
-Mapping eingespielt ist. Kein Bruch — nur Datenverlust für Attribution.
+Attributionsfelder im Webhook-JSON. Das Mapping wurde am 2026-07-15 in das
+bestehende Legacy-Deployment (Version 4) eingespielt und operator-verifiziert:
+sechs Header, sechs korrekte Werte, Testzeile anschließend gelöscht. Dieses
+Ergebnis belegt das Mapping, nicht die Authentifizierung des öffentlich
+erreichbaren Legacy-Pfads.
+
+> Die folgenden Mapping-Schritte sind historische Implementierungsevidenz und
+> nicht erneut auf dem Legacy-Deployment auszuführen. Jede weitere Änderung muss
+> mit dem neuen authentifizierten Deployment aus `docs/MASTER_EXECUTION_PLAN.md`
+> zusammengeführt werden. IDs, Webhook-URLs und Tokens gehören nicht in Git.
 
 ## Schritt 1 — Spalten im Sheet ergänzen (einmalig)
 
@@ -58,14 +66,15 @@ Hinweise:
 - Falls der Bestandscode **headerbasiert** mappt (Objekt→Header-Lookup), genügt es,
   die sechs Keys der Mapping-Liste hinzuzufügen — der `att()`-Guard bleibt empfohlen.
 - Bereits gemappte Felder `utm_source`, `utm_medium`, `utm_campaign` NICHT doppeln.
-- Danach: neue Version deployen (Bereitstellen → Deployment verwalten → Bearbeiten →
-  Version: Neu → Bereitstellen). Die Webhook-URL bleibt unverändert, solange dasselbe
-  Deployment aktualisiert wird — **kein** neues Deployment anlegen, sonst ändert sich
-  die URL und `LEAD_WEBHOOK_URL` (Cloudflare Pages, Production) müsste nachgezogen werden.
+- HISTORICAL COMPLETE 2026-07-15: Das Mapping wurde auf Legacy-Version 4
+  aktualisiert. Nicht wiederholen. Der nächste Deployment-Schritt ist ein **neuer
+  authentifizierter Pfad** mit atomarem URL+Token-Vertrag; das alte Deployment
+  bleibt nur bis zur verifizierten Umschaltung aktiv.
 
-## Schritt 3 — Verifikation (ohne echten Lead)
+## Schritt 3 — Verifikation (historisch erledigt)
 
-1. Auf `https://www.hsb-boden.de/kontakt/?utm_source=internal_test&utm_medium=qa&utm_campaign=mapping_check&utm_term=spalten_check&utm_content=patch_v1` das Formular mit klar als intern markierten Daten absenden (Nachricht: „INTERNER TEST — bitte löschen").
+1. OPERATOR_VERIFIED 2026-07-15: Ein klar markierter UTM-Testlead wurde über das
+   Website-Formular zugestellt. Keine echten Kontaktdaten werden hier wiederholt.
 2. Im Sheet prüfen — **alle** sechs neuen Zellen der Zeile müssen exakt stimmen (deckt Vertauschungen/Auslassungen auf): `utm_term` = `spalten_check`, `utm_content` = `patch_v1`, `referrer` leer oder externes Origin, `landing_page` = `/kontakt/`, `form_path` = `/kontakt/`, `attribution_channel` = `campaign`.
 3. Testzeile löschen und Löschung verifizieren.
 

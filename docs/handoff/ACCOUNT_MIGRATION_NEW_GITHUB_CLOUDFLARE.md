@@ -427,10 +427,11 @@ abgearbeitet werden.
 - KV-Namespaces `hsb-boden-preview-session` / `hsb-boden-session` frisch im
   neuen Account provisioniert (waren im Alt-Account zwar vorhanden, aber in
   `wrangler.toml` nicht gebunden — kein Datenverlust, da ungenutzt).
-- `LEAD_WEBHOOK_URL` gesetzt: bestehende, unveraenderte Apps-Script-Web-App-URL
-  wiederverwendet (`AKfycbygp7VIA3...270O-Cu4ugm/exec`, Projekt „HSBBODEN",
-  Sheet „HSB CRM Light", beide unter `cherinodiaz@outlook.com`-Google-Konto).
-  Kein neues Deployment noetig.
+- Historische Migrationsevidenz: `LEAD_WEBHOOK_URL` wurde am 2026-07-02 noch
+  mit dem damaligen Apps-Script-Deployment gesetzt. Seit dem Security-Fund vom
+  2026-07-15 gilt dieser Wert als kompromittiert, ist **keine** genehmigte
+  aktuelle Konfiguration und muss durch einen neuen authentifizierten Pfad
+  ersetzt werden. Der alte Wert darf nicht wiederverwendet werden.
 - End-to-End-Lead-Test gruen: Testlead `WEB-20260702-180225` korrekt im Sheet
   angekommen, danach wieder entfernt.
 

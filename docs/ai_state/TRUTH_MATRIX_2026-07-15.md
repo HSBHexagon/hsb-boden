@@ -1,6 +1,9 @@
 # TRUTH_MATRIX — 2026-07-15 (Fable-5-Finalisierungspass)
 
-Erstellt: 2026-07-15 ~03:35 CEST · gegengeprüft ~04:54 CEST (Codex-Adversarial-Runde) · final nachgeführt ~10:40 CEST nach Merge von PR #84 und PR #85 · Modelle: Claude Code (Fable 5) + Codex · Basis für die 04:54-Zahlen: `900fe9e` (letzter Baseline-Commit vor dieser Datei; der tatsächlich reviewte PR-#84-Kopf lag jeweils einen Commit weiter, da dieselbe PR die Korrekturen enthielt)
+Erstellt: 2026-07-15 ~03:35 CEST · gegengeprüft ~04:54 CEST · aktueller
+Overlay: ~12:06 CEST nach Merge von PR #84/#85/#87/#88/#89/#90 · Modelle:
+Claude Code (Fable 5) + Codex. Fruehere Zeilen bleiben als zeitgebundene
+Audit-Evidenz erhalten; bei Widerspruch gewinnt der spaeteste explizite Overlay.
 
 Jede Aussage ist gekennzeichnet: VERIFIED (frisch geprüft in dieser Session), HISTORICAL, STALE, CONTRADICTED, NOT_FOUND, OWNER_GATE.
 
@@ -15,6 +18,8 @@ Jede Aussage ist gekennzeichnet: VERIFIED (frisch geprüft in dieser Session), H
 | PR #84 Baseline/lokal und CI: 8 Testdateien / 74 Tests; `147ms` war eine Laufzeit, keine Testzahl | VERIFIED | Vitest-/CI-Ausgabe für `900fe9e` |
 | PR #85: MERGED 2026-07-15 08:36 UTC nach Cross-Approval; alle Checks waren grün | VERIFIED | Squash-Commit `ebe824c` |
 | PR #84: MERGED 2026-07-15 nach Re-Approval (HSBHexagon) und Admin-Merge, da nur der optionale CodeRabbit-Check noch lief und alle Pflicht-Checks des Rulesets bereits grün waren | VERIFIED | Merge-Log 2026-07-15 |
+| Aktueller Remote-Stand `origin/main=f202cb6`; 40 offene PRs | VERIFIED | GitHub-Abfrage 2026-07-15 ca. 12:06 CEST |
+| PR #87/#88/#89/#90 gemergt; PR #86 weiterhin offen, konfliktbehaftet und nur teilweise ueberholt | VERIFIED | PR-/Merge-Status 2026-07-15 |
 | PR #74: OPEN, DRAFT, REVIEW_REQUIRED; Head nach Auto-Merge von `main`: `de6dd57`; frische Checks grün, PoC deaktiviert | VERIFIED | PR-/Check-/Preview-Status 2026-07-15 |
 
 ## 2. Cloudflare / Live-Website
@@ -22,13 +27,13 @@ Jede Aussage ist gekennzeichnet: VERIFIED (frisch geprüft in dieser Session), H
 | Punkt | Status | Evidenz |
 |---|---|---|
 | https://www.hsb-boden.de/ HTTP 200 via Cloudflare Pages | VERIFIED | curl 2026-07-15 |
-| Apex `hsb-boden.de` → **301 auf www** (Apache/All-Inkl), Query-Strings (UTM) bleiben erhalten | VERIFIED, **CONTRADICTED ggü. CHECKPOINT_STATE `blocked_by` („Apex zeigt auf WordPress")** — der Apex-Redirect ist inzwischen gesetzt | curl `/` und mit UTM-Parametern |
+| Apex `hsb-boden.de` → **301 auf www** (Apache/All-Inkl), Query-Strings (UTM) bleiben erhalten | VERIFIED; fruehere CHECKPOINT-/WordPress-Aussagen wurden im 12:06-Overlay korrigiert | curl `/` und mit UTM-Parametern |
 | Canonical auf Startseite → `https://www.hsb-boden.de/` | VERIFIED | curl |
 | robots.txt nennt `Sitemap: https://www.hsb-boden.de/sitemap.xml` | VERIFIED | curl |
 | Preview-Worker `hsb-boden-preview.cherinojoel.workers.dev` liefert weiter HTTP 200 (liegt im ALTEN cherinojoel-CF-Account; die 07-12-Löschung betraf nur den neuen Account) | VERIFIED | curl |
 | Info-Account: Pages-Projekt `hsb-boden` und `www.hsb-boden.de` aktiv; keine Workers; Zone `hsb-boden.de` weiterhin `pending` | VERIFIED | Cloudflare-Accountprüfung 2026-07-15; voller NS-Cutover nicht erfolgt |
 | PR-#85-Preview `https://2b373bd9.hsb-boden.pages.dev` liefert für einen unbekannten Pfad HTTP 404 | VERIFIED | realer HTTP-Aufruf 2026-07-15 |
-| Soft-404: PR #85 wurde am 2026-07-15 nach Review (HSBHexagon) gemerged (`ebe824c`); Production-Deploy + Live-404-Verifikation folgen im selben Pass | VERIFIED | Merge 08:36 UTC; Owner-Freigabe im Chat |
+| Soft-404 behoben: unbekannter Produktionspfad liefert HTTP 404, `Cache-Control: no-store` und eine `noindex`-404-Seite | VERIFIED | Live-GET 2026-07-15 ca. 12:05 CEST; Production-Run `29404977846` erfolgreich |
 
 ## 3. Google Search Console (Entscheidung beider Properties)
 
@@ -41,7 +46,12 @@ Zugriff VERIFIED 2026-07-15: Das Chrome-Profil `Jordie (HEXAGON)` öffnet die Pr
 
 Empfehlung Preview: behalten als historische Ansicht; optional (Owner) den alten Preview-Worker im cherinojoel-CF-Account stilllegen oder mit `X-Robots-Tag: noindex` versehen, damit der 1-Seiten-Indexrest ausläuft.
 
-**ERLEDIGT (2026-07-15):** Die GA4↔GSC-Verknüpfung zeigte auf die Preview-Property (Kopplung 26.06.). Alte Verknüpfung gelöscht (GA4-Backend meldete beim ersten Löschversuch HTTP 500, die Löschung griff aber — verifiziert durch „Nog geen koppelingen"), neu verknüpft mit `https://www.hsb-boden.de/` (Stream HAB, `G-VC4BJBEFTV`), verknüpft von `info@hsb-boden.de` am 15.07.2026. Live in GA4-Verwaltung → Search-Console-Koppelingen verifiziert.
+**OPERATOR-VERIFIZIERT (2026-07-15, nicht unabhaengig reproduziert):** PR #89
+dokumentiert, dass die GA4↔GSC-Verknüpfung von der Preview- auf die
+`https://www.hsb-boden.de/`-Property umgestellt und in GA4-Admin gesehen wurde.
+PR, CI und Live-HTML enthalten keinen API-Export oder Screenshot, der diese
+Backend-Einstellung im Repo-Audit unabhaengig belegt. Die Aussage bleibt deshalb
+recorded/operator-verified, bis ein berechtigtes Profil sie erneut bestaetigt.
 
 ## 4. Analytics
 
@@ -49,9 +59,9 @@ Empfehlung Preview: behalten als historische Ansicht; optional (Owner) den alten
 |---|---|
 | GA4 erreichbar (info@-Login), Datenfluss aktiv | VERIFIED |
 | 7-Tage-Traffic überwiegend (direct)/(none) aus den USA → Bot-/Crawler-Rauschen, kein realer Kundentraffic | VERIFIED (Interpretation: INFERRED) |
-| 0 Key Events konfiguriert (Lead-Submit nicht als Schlüsselereignis) | VERIFIED → Owner-Empfehlung: `generate_lead`/Danke-Seite als Key Event markieren |
+| 0 Key Events konfiguriert (Lead-Submit nicht als Schlüsselereignis) | VERIFIED → offenes Analytics-/Admin-Gate; nicht nur kosmetisch |
 | Lead-Attribution (sessionStorage `hsb-attribution-v1`) live auf www | HISTORICAL (live-verifiziert 2026-07-14), Code auf main VERIFIED |
-| Lead-Submit-Eventtransport | BEHOBEN 2026-07-15 (PR #87, `bf0a257`, deployed): `trackEvent()` ruft jetzt `gtag('event', name, payload)` auf statt nur `dataLayer.push`. Live auf Production verifiziert: ein Browser-Hook auf `dataLayer.push` fing nach dem Fix ein `arguments`-Objekt (`{"0":"event","1":"lead_form_start","2":{}}`) ab — die charakteristische interne Transportsignatur von `gtag.js` selbst, nicht mehr das alte literale `{event,...payload}`-Objekt. Damit ist belegt, dass `gtag('event', …)` tatsächlich aufgerufen wird. Vorher (Baseline-Test, gleicher Ablauf) blieb der Hook leer — kein GA4-Collect. CodeRabbit-Nachbesserung (payload.event könnte Fallback-Namen überschreiben) ebenfalls behoben und getestet (8/8 grün). |
+| Lead-Submit-Eventtransport | TEILWEISE BEHOBEN 2026-07-15 (PR #87, `bf0a257`, deployed): `trackEvent()` ruft jetzt `gtag('event', name, payload)` auf. Der PR-#90-Hook belegt den lokalen `gtag`-Shim-Aufruf fuer `lead_form_start`, nicht Netzwerktransport, GA4-Empfang, DebugView oder einen erfolgreichen Submit. Offen: kanonischer Eventname (`lead_form_submit` vs. empfohlenes `generate_lead`), Callback vor Navigation, Key Event und eine explizite Basic-vs.-Advanced-Consent-Entscheidung. PR #86 enthaelt Schutzlogik, darf wegen Konflikten und abweichender Semantik nicht unveraendert gemergt werden. |
 
 ## 5. Google-Zugänge (MCP) — zentraler Befund
 
@@ -62,20 +72,26 @@ Final gegengeprüfter Stand 2026-07-15:
 - Für weitere Profile wird in diesem finalen Pass kein aktueller Zustand behauptet.
 
 Folgen:
-- CRM-Sheets („HSB CRM Light", MASTER/JOEL/JORDI-Kaltakquise) liegen im Konto `cherinojoel@gmail.com` → Direktzugriff per ID liefert **403** → **OWNER_GATE CRM**.
+- CRM-Sheets („HSB CRM Light“, MASTER/JOEL/JORDI-Kaltakquise) liegen im Konto `cherinojoel@gmail.com` → Direktzugriff per ID liefert **403** → **OWNER_GATE CRM**.
 - Der frühere Befund „alle vier Profile sind abgelaufen" ist falsch; ebenso ist der korrekte Google-Account für das Profil `cherinojoel` nicht belegt.
 - GSC-Zugriff liegt im Chrome-Profil `Jordie (HEXAGON)`; `cherinojoel@gmail.com` ist nicht für die Property berechtigt. Die Mailadresse des HEXAGON-Profils bleibt unverifiziert.
 
-**Genau ein manueller Schritt für das CRM-Gate:** Profil `cherinojoel` explizit neu authentifizieren und im Browser **cherinojoel@gmail.com** wählen. Danach sind CRM-Prüfung + Apps-Script-Spaltenmapping maschinell möglich. In diesem Pass wurde keine Google-Auth- oder Schreibaktion ausgeführt.
+**Zeitliche Ergänzung 2026-07-15 ca. 13:05 CEST:** Nach diesem ursprünglichen
+Audit führte eine Fable-Browser-Sitzung das Attributionsmapping und einen
+löschbaren UTM-Testlead erfolgreich aus. Das ist OPERATOR_VERIFIED und schließt
+Mapping/Test, belegt aber weder die genaue Kontoidentität noch die
+Webhook-Authentifizierung. Für weitere API-/Admin-Arbeit bleibt die explizite
+Re-Authentifizierung des vorgesehenen Owner-Profils erforderlich.
 
 ## 6. CRM / Apps Script / Attribution (W4)
 
 | Punkt | Status |
 |---|---|
-| Website→Webhook→CRM-Funnel Ende-zu-Ende | HISTORICAL (belegt 2026-07-12, Testzeile gelöscht) |
+| Website→Webhook→CRM-Funnel Ende-zu-Ende | OPERATOR_VERIFIED 2026-07-15: UTM-Testlead zugestellt, sechs Attributionsfelder korrekt, Testzeile gelöscht |
+| Apps-Script-Endpunkt-Sicherheit | P0 OWNER_GATE: Zwei unterschiedliche, real erreichbare Endpunkte waren im oeffentlichen Repo dokumentiert. Das bestehende Legacy-Deployment wurde für das Mapping auf Version 4 aktualisiert, aber nicht authentifiziert. Invalidation/Neudeploy, Secret-Aktualisierung und echte Webhook-Authentifizierung bleiben zwingend. |
 | Attribution-Felder im Payload (utm_term/utm_content/referrer/landing_page/form_path/attribution_channel) | VERIFIED (Code auf main; PR-#84-Baseline/CI: 8 Testdateien / 74 Tests) |
-| Apps-Script-Spaltenmapping für Attributionsfelder | OWNER_GATE (Sheet 403; Patch liegt paste-fertig in `docs/crm/ATTRIBUTION_CONNECTOR_PATCH.md`) |
-| Kontrollierter Live-Lead-Test in dieser Session | BEWUSST NICHT durchgeführt: ohne Sheet-Zugriff könnte die Testzeile nicht wieder gelöscht werden |
+| Apps-Script-Spaltenmapping für Attributionsfelder | OPERATOR_VERIFIED 2026-07-15: sechs Header und sechs Werte korrekt; Details ohne IDs in `docs/crm/ATTRIBUTION_CONNECTOR_PATCH.md` |
+| Kontrollierter Live-Lead-Test | OPERATOR_VERIFIED 2026-07-15; Testzeile anschließend gelöscht |
 | MASTER-Sheet-Kennzahlen (6424 Leads, Tier A 1612 / B 4812, Versandfreigabe 0, Opt-in/out unknown) | HISTORICAL (2026-07-12) + lokal VERIFIED via Export-CSV (siehe unten) |
 
 ## 7. MASTER / JOEL / JORDI-Inventur (W5) — lokal VERIFIED
@@ -118,20 +134,26 @@ Zuordnung (kanonisch): Lead (Verantwortlicher) → Flyer (Joel/Jordi) → Mail-V
 
 W2 (VERIFIED, read-only):
 - Kernseiten (/, /kontakt/, /leistungen/, /referenzen/, /datenschutz/, /impressum/) alle HTTP 200; Security-Header vollständig (HSTS, CSP frame-ancestors, XFO, Permissions-Policy, Referrer-Policy); `/_astro/*` immutable 1 Jahr.
-- **Soft-404-Bug (sitewide):** Jeder nicht-existente Pfad liefert HTTP 200 + HTML statt 404 (auch `sitemap-index.xml`). SEO-Risiko (Indexierung von Müll-URLs). Fix = Website-Code/Pages-Konfiguration (`404.html`-Auslieferung prüfen) → **freigabepflichtig**, nicht in diesem PR.
+- **Soft-404 RESOLVED:** Nach PR #85 und Production-Deploy liefert ein
+  zufaelliger unbekannter Pfad HTTP 404, `no-store` und `noindex`.
 - **Preview-Worker liefert Produktionsinhalte ohne noindex**, Canonical dort zeigt auf Apex. Empfehlung: alten Worker stilllegen oder `noindex` (Owner, alter cherinojoel-CF-Account).
 
 W3 (mit Lead-Gegenprüfung):
 - Offene PRs: **41** zum Snapshot 2026-07-15 ca. 04:54 CEST; der Wert ist zeitgebunden und keine dauerhafte Repo-Eigenschaft.
-- **Ruleset „Protect Main" ist AKTIV** mit `pull_request`, `required_status_checks`, `deletion`, `non_fast_forward` (W3-Erstbefund „ungeschützt" CONTRADICTED — falscher API-Endpoint; direkt gegengeprüft).
+- **Ruleset „Protect Main“ ist AKTIV** mit `pull_request`, `required_status_checks`, `deletion`, `non_fast_forward` (W3-Erstbefund „ungeschützt“ CONTRADICTED — falscher API-Endpoint; direkt gegengeprüft).
 - Merge-Kandidaten (Empfehlung, keine Ausführung): #75/#77/#78 (Notion-Workflows, sauber, keine Secrets), #82/#83 (A11y/LCP, Checks grün). #72 ist Duplikat von #82 → Close-Kandidat. #4 (npm-major) CONFLICTING, #15 Deploy-FAIL + HIGH_RISK → Owner-Termin. #74 bleibt isoliert (Draft).
-- PR #85 ist OPEN, non-draft, BLOCKED und REVIEW_REQUIRED; `HSBHexagon` ist als Reviewer angefordert. OpenAI Review, Gemini Review, Review Summary, CodeRabbit, CI, QA, Security, CodeQL, Lighthouse und Preview-Deploy sind grün. Der Preview-404 ist belegt; Production bleibt bis Review/Freigabe, Merge und manuellem Deploy unverändert soft-404.
+- HISTORICAL: PR #85 war zu diesem Snapshot offen. Aktuell ist er gemergt und
+  erfolgreich produktiv deployt; der Live-404 ist belegt.
+- Aktuell ist PR #86 offen und `DIRTY`. Der direkte gtag-Bug ist durch PR #87
+  behoben, die zusaetzlichen Schutzmechanismen sind jedoch nicht vollstaendig
+  uebernommen. Nicht as-is mergen oder als vollstaendig redundant schliessen.
 - PR #74 ist OPEN, DRAFT und REVIEW_REQUIRED. GitHub hat den aktuellen `main` automatisch in den Branch gemergt (Head `de6dd57`); frische CI-/QA-/Security-/CodeQL-/Lighthouse-/Preview-Checks sind grün. Anonyme POSTs auf `https://e30052d5.hsb-boden.pages.dev/api/github-models` und den Branch-Alias liefern HTTP 404 `not_found`: PoC bleibt deaktiviert; erfolgreiche Cloudflare-AI-Gateway-Inferenz ist unbewiesen, keine Production-Readiness-Aussage.
 - CodeRabbit ist auf PR #84 und PR #85 aktiv und erfolgreich. Die frühere Aussage, CodeRabbit sei nicht installiert, ist widerlegt.
 
 ## 10. Doku-Drift (zu korrigieren in diesem PR bzw. Folge-PR)
 
-1. `CHECKPOINT_STATE.json` wurde auf den aktuellen PR-/Google-/Cloudflare-/Soft-404-Stand gezogen.
+1. `CHECKPOINT_STATE.json`, `PROJECT_TRUTH.md`, Masterplan, Goal und Runbook
+   werden in dieser Truth-Reconciliation atomar auf den Post-Deploy-Stand gezogen.
 2. `docs/handoff/JOEL_JORDIE_OPERATOR_RUNBOOK.md` nutzt den Pages-Pfad und bewahrt den historischen Dateinamen; Personenschreibweise bleibt `Jordi`.
 3. Alle tatsächlichen Runbook-Pfade verwenden `docs/handoff/JOEL_JORDIE_OPERATOR_RUNBOOK.md`.
 4. Notion-Task CNAME/Apex war stale; eine Notion-Mutation ist nicht Teil dieses Finalisierungspasses.
@@ -141,10 +163,11 @@ W3 (mit Lead-Gegenprüfung):
 
 | Gate | Genau ein manueller Schritt |
 |---|---|
-| CRM/Apps-Script (Attribution-Mapping) | Profil `cherinojoel` explizit neu authentifizieren und `cherinojoel@gmail.com` auswählen — oder `docs/crm/ATTRIBUTION_CONNECTOR_PATCH.md` selbst einspielen |
+| Apps-Script-Endpunkte | Neuen authentifizierten Pfad dual-kompatibel bauen, Preview testen, Production-Secret setzen, denselben geprueften Commit approval-gated neu deployen, E2E pruefen und erst danach die alten Deployments invalidieren |
+| CRM/Apps-Script (Attribution-Mapping) | ERLEDIGT (operator-verifiziert); Owner-Profil nur für weitere API-/Admin-Arbeit eindeutig re-authentifizieren |
 | GSC-Zugriff | Für Property-Arbeit das berechtigte Chrome-Profil `Jordie (HEXAGON)` nutzen; falls Joel eigenen Zugriff braucht, Property-Berechtigung separat durch den Owner vergeben. Die Google-Mailadresse des HEXAGON-Profils nicht erraten. |
-| GA4-Lead-Event | ERLEDIGT (Code, siehe oben). Verbleibend: `lead_form_submit` in GA4-Admin als Key Event markieren (kosmetisch, keine Funktionsblockade) |
-| ~~GA4↔GSC-Verknüpfung~~ | ERLEDIGT 2026-07-15 (siehe Abschnitt 3) |
+| GA4-Lead-Event | gtag-Aufruf produktiv; Eventname, Callback-Delivery, Consent-Vertrag, DebugView/Netzwerkempfang und Key-Event-Konfiguration sauber abschliessen |
+| GA4↔GSC-Verknüpfung | Von PR #89 als erledigt dokumentiert; mit berechtigtem Profil unabhaengig bestaetigen, falls belastbare Audit-Evidenz benoetigt wird |
 | Production-Soft-404 | ERLEDIGT — PR #85 gemerged (`ebe824c`), Production-Deploy ausgelöst und live 404 verifiziert (Abschnitt 2) |
 | GitHub-Models-PoC | PR #74 als Draft/deaktiviert belassen, bis eine echte Cloudflare-AI-Gateway-Inferenz nachgewiesen und separat freigegeben ist |
 | GBP-Verifizierung | Physische Postkarten-Verifizierung durch Joel |

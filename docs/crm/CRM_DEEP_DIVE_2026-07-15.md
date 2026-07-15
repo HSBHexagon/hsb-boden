@@ -31,7 +31,7 @@ Analysebasis: lokale Rohexporte `data/lead-import/output/HSB_CRM_Leads_ALL_{MAST
 
 **Empfehlung (keine Automatisierung ohne Freigabe):** Firmenname + vorhandene Website-URL genügen für eine manuelle oder KI-gestützte Nachanreicherung von Ort/Bundesland (z. B. Impressum-Abgleich). Sollte als eigener, kleiner freigegebener Arbeitsblock laufen — nicht spekulativ befüllen.
 
-## 3. Kategorien: „Architekten" vs. „Architekten-Ingenieure"
+## 3. Kategorien: „Architekten“ vs. „Architekten-Ingenieure“
 
 4.760 Zeilen tragen `Architekten`, 52 tragen `Architekten-Ingenieure` — praktisch dieselbe Zielgruppe, uneinheitlich benannt (vermutlich Artefakt zweier separater Quelldateien). Für Auswertungen/Filter in Joel/Jordis Arbeitsansicht sollten beide als eine Branchen-Gruppe behandelt werden (Anzeige-Alias, keine Änderung der Rohdaten).
 
@@ -44,12 +44,24 @@ Analysebasis: lokale Rohexporte `data/lead-import/output/HSB_CRM_Leads_ALL_{MAST
 Aktuell sind die Joel- und Jordi-Exporte **Vollkopien** (jede Zeile physisch dupliziert), nicht abgeleitete Filter-Ansichten des Masters. Das ist im Google-Sheet-Kontext eine bekannte, dokumentierte Entscheidung (Drift-Risiko akzeptiert, siehe Handoff 2026-07-12). Für den nächsten Ausbauschritt (sobald Sheet-Zugriff wiederhergestellt ist) empfiehlt sich in Google Sheets:
 
 1. **MASTER bleibt einzige Wahrheit** (bereits so).
-2. **Joel-Tab / Jordi-Tab werden zu QUERY-Formeln** statt Kopien:
-   `=QUERY(MASTER!A:AC; "SELECT * WHERE Q = 'Joel Cherino Diaz'"; 1)` (Spalte Q = Verantwortlicher) — eliminiert Drift vollständig, ohne Apps Script.
-3. **Neuer Tab `HEUTE_JOEL` / `HEUTE_JORDI`** (ebenfalls QUERY-basiert): filtert auf `Follow-up-Datum <= HEUTE()` UND `Status != 'verloren'` — beantwortet direkt „Was muss ich heute tun? Was ist überfällig?" ohne manuelles Sortieren.
-4. **Neuer Tab `OPPORTUNITIES`** (nur bei `Status IN ('interessiert','angebot-offen','termin')`) für den Vertriebstrichter oberhalb reiner Kontaktverwaltung.
+2. **Joel-Tab / Jordi-Tab werden nach Backup und Owner-Freigabe zu
+   QUERY-Formeln** statt Kopien. `Verantwortlicher` liegt im 29-Spalten-Modell
+   in Spalte **AA**, nicht Q:
+   - Joel: `=QUERY(MASTER!A:AC; "SELECT * WHERE AA = 'Joel Cherino Diaz'"; 1)`
+   - Jordi: `=QUERY(MASTER!A:AC; "SELECT * WHERE AA = 'Jordi Post'"; 1)`
+3. **Neue Tabs `HEUTE_JOEL` und `HEUTE_JORDI`**. Google-QUERY erwartet ein
+   Datumsliteral; `HEUTE()` muss deshalb ausserhalb des Query-Strings formatiert
+   werden. `Status` ist Spalte P, `Follow-up-Datum` R:
+   - Joel: `=QUERY(MASTER!A:AC; "SELECT * WHERE AA = 'Joel Cherino Diaz' AND R <= date '"&TEXT(HEUTE();"yyyy-MM-dd")&"' AND P <> 'verloren'"; 1)`
+   - Jordi: `=QUERY(MASTER!A:AC; "SELECT * WHERE AA = 'Jordi Post' AND R <= date '"&TEXT(HEUTE();"yyyy-MM-dd")&"' AND P <> 'verloren'"; 1)`
+4. **Neuer Tab `OPPORTUNITIES`**. QUERY unterstuetzt hier kein SQL-`IN`; die
+   Statuswerte werden explizit verknuepft:
+   `=QUERY(MASTER!A:AC; "SELECT * WHERE P = 'interessiert' OR P = 'angebot-offen' OR P = 'termin'"; 1)`
 
-Keiner dieser Schritte erfordert das Löschen oder Umstrukturieren bestehender Daten — alle sind additiv (neue Tabs/Formeln) und rückgängig machbar.
+Das Zielmodell umfasst damit **drei neue Tabs und fuenf QUERY-Formeln**. Die
+drei neuen Tabs sind additiv und leicht entfernbar. Das Ersetzen der bestehenden
+Joel-/Jordi-Vollkopien veraendert dagegen bestehende Tabs und darf nur nach
+Backup, Live-Header-Pruefung und Owner-Freigabe erfolgen.
 
 ## 6. Verbindung zu Flyer/Mail/Attribution (bereits verifiziert)
 
@@ -59,4 +71,6 @@ Die Zuordnungskette Lead → Flyer → Mail-Variante → Landingpage → Follow-
 
 - Live-Sheet-Struktur konnte nicht geprüft/verändert werden (Google-Account-Gate).
 - Kein Schreibzugriff, keine Testzeile, keine Formel wurde live gesetzt.
-- Sobald `cherinojoel@gmail.com` erreichbar ist, sind Punkt 5.2–5.4 in ca. 15–20 Minuten manuell umsetzbar (drei QUERY-Formeln, ein neuer Tab).
+- Sobald `cherinojoel@gmail.com` erreichbar ist, sind Punkt 5.2–5.4 nach
+  Live-Header-Pruefung als fuenf QUERY-Formeln und drei neue Tabs umsetzbar.
+  Eine Zeitdauer wird ohne echten Live-Lauf nicht behauptet.

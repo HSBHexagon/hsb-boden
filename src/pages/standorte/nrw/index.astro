@@ -1,0 +1,82 @@
+---
+import CTASection from "../../../components/sections/CTASection.astro";
+import PageHero from "../../../components/sections/PageHero.astro";
+import BaseLayout from "../../../layouts/BaseLayout.astro";
+---
+
+<BaseLayout
+  title="Industrieboden NRW | Keramische Böden & Säureschutz Nordrhein-Westfalen"
+  description="HSB Hexagon – Ihr Spezialist für keramische Industrieböden, Säureschutzsysteme und Entwässerung in NRW. Projekte in Köln, Düsseldorf, Dortmund, Essen und ganz Nordrhein-Westfalen."
+  canonical="https://www.hsb-boden.de/standorte/nrw/"
+>
+  <PageHero
+    eyebrow="Region NRW"
+    title="Industrieboden-Spezialist in Nordrhein-Westfalen"
+    text="HSB Hexagon realisiert anspruchsvolle Industriebodenprojekte in Köln, Düsseldorf, Dortmund, Essen, Bielefeld und der gesamten Region NRW."
+  />
+
+  <section class="section">
+    <div class="container">
+      <div class="prose max-w-3xl mx-auto">
+        <h2>Keramische Industrieböden in NRW</h2>
+        <p>
+          Als erfahrener Fachbetrieb für keramische Industrieböden und Säureschutzsysteme sind wir in ganz
+          Nordrhein-Westfalen tätig. Ob Lebensmittelproduktion in Köln, Chemiewerke im Ruhrgebiet oder
+          Brauereien in Dortmund – HSB Hexagon liefert dauerhaft belastbare Bodensysteme für Industrie und Gewerbe.
+        </p>
+
+        <h2>Unsere Leistungen in NRW</h2>
+        <ul>
+          <li><strong>Keramische Industrieböden</strong> – rutschhemmend, hygienekonform, chemikalienbeständig</li>
+          <li><strong>Säureschutzsysteme</strong> – für Chemieindustrie, Galvanik und Lebensmittelbetriebe</li>
+          <li><strong>Entwässerungssysteme</strong> – GFK-Rinnen, Punktabläufe, Ex-Zonen</li>
+          <li><strong>Industrieboden-Sanierung</strong> – Reparatur und Erneuerung bestehender Böden</li>
+          <li><strong>Epoxidharz & Beschichtung</strong> – für leichte bis mittlere Belastungen</li>
+        </ul>
+
+        <h2>Regionale Präsenz in NRW</h2>
+        <p>
+          Wir betreuen Projekte in der gesamten Region Nordrhein-Westfalen:
+          Köln, Düsseldorf, Dortmund, Essen, Bochum, Duisburg, Bielefeld, Münster, Aachen und Umgebung.
+          Kurze Wege, schnelle Reaktionszeiten und fundiertes regionaltypisches Know-how.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <CTASection
+    title="Projekt in NRW anfragen"
+    text="Kontaktieren Sie uns für eine unverbindliche Beratung zu Ihrem Industriebodenprojekt in Nordrhein-Westfalen."
+  />
+
+  <!-- LocalBusiness + Service Schema for NRW -->
+  <script type="application/ld+json" set:html={JSON.stringify({
+    "@context": "https://schema.org",
+    "@type": "LocalBusiness",
+    "name": "Hexagon Säurebau GmbH",
+    "description": "Spezialist für keramische Industrieböden, Säureschutzsysteme und Entwässerung in NRW",
+    "url": "https://www.hsb-boden.de",
+    "telephone": "+49-2234-9876543",
+    "areaServed": [
+      {"@type": "City", "name": "Köln"},
+      {"@type": "City", "name": "Düsseldorf"},
+      {"@type": "City", "name": "Dortmund"},
+      {"@type": "City", "name": "Essen"},
+      {"@type": "City", "name": "Bochum"},
+      {"@type": "City", "name": "Duisburg"},
+      {"@type": "City", "name": "Bielefeld"},
+      {"@type": "City", "name": "Münster"},
+      {"@type": "AdministrativeArea", "name": "Nordrhein-Westfalen"}
+    ],
+    "hasOfferCatalog": {
+      "@type": "OfferCatalog",
+      "name": "Industrieboden-Leistungen NRW",
+      "itemListElement": [
+        {"@type": "Offer", "itemOffered": {"@type": "Service", "name": "Keramische Industrieböden NRW"}},
+        {"@type": "Offer", "itemOffered": {"@type": "Service", "name": "Säureschutzsysteme NRW"}},
+        {"@type": "Offer", "itemOffered": {"@type": "Service", "name": "Industrieboden-Sanierung NRW"}}
+      ]
+    },
+    "sameAs": "https://www.hsb-boden.de"
+  })} />
+</BaseLayout>

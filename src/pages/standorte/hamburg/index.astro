@@ -1,0 +1,66 @@
+---
+import CTASection from "../../../components/sections/CTASection.astro";
+import PageHero from "../../../components/sections/PageHero.astro";
+import BaseLayout from "../../../layouts/BaseLayout.astro";
+---
+
+<BaseLayout
+  title="Industrieboden Hamburg | Keramische Böden & Säureschutz Nord"
+  description="HSB Hexagon – Ihr Spezialist für keramische Industrieböden, Säureschutzsysteme und Entwässerung in Hamburg, Schleswig-Holstein und Norddeutschland."
+  canonical="https://www.hsb-boden.de/standorte/hamburg/"
+>
+  <PageHero
+    eyebrow="Region Hamburg & Nord"
+    title="Industrieboden-Spezialist in Norddeutschland"
+    text="HSB Hexagon realisiert anspruchsvolle Industriebodenprojekte in Hamburg, Bremen, Schleswig-Holstein und der gesamten Nordregion."
+  />
+
+  <section class="section">
+    <div class="container">
+      <div class="prose max-w-3xl mx-auto">
+        <h2>Keramische Industrieböden in Hamburg & Norddeutschland</h2>
+        <p>
+          Als erfahrener Fachbetrieb für keramische Industrieböden und Säureschutzsysteme sind wir in
+          Norddeutschland tätig. Ob Hafenbetriebe in Hamburg, Lebensmittelbetriebe in Bremen oder
+          Produktionsstätten in Schleswig-Holstein – HSB Hexagon liefert dauerhaft belastbare Bodensysteme.
+        </p>
+
+        <h2>Unsere Leistungen in Norddeutschland</h2>
+        <ul>
+          <li><strong>Keramische Industrieböden</strong> – rutschhemmend, hygienekonform, chemikalienbeständig</li>
+          <li><strong>Säureschutzsysteme</strong> – für Hafenbetriebe, Lebensmittel und Chemieindustrie</li>
+          <li><strong>Entwässerungssysteme</strong> – GFK-Rinnen, Punktabläufe, Ex-Zonen</li>
+          <li><strong>Industrieboden-Sanierung</strong> – Reparatur und Erneuerung bestehender Böden</li>
+        </ul>
+
+        <h2>Regionale Präsenz in Norddeutschland</h2>
+        <p>
+          Wir betreuen Projekte in Hamburg, Bremen, Kiel, Lübeck, Flensburg, Rostock und der gesamten Nordregion.
+          Schnelle Reaktionszeiten und erfahrene Montageteams für norddeutsche Industriebetriebe.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <CTASection
+    title="Projekt in Norddeutschland anfragen"
+    text="Kontaktieren Sie uns für eine unverbindliche Beratung zu Ihrem Industriebodenprojekt in Hamburg oder Norddeutschland."
+  />
+
+  <script type="application/ld+json" set:html={JSON.stringify({
+    "@context": "https://schema.org",
+    "@type": "LocalBusiness",
+    "name": "Hexagon Säurebau GmbH",
+    "description": "Spezialist für keramische Industrieböden in Hamburg und Norddeutschland",
+    "url": "https://www.hsb-boden.de",
+    "areaServed": [
+      {"@type": "City", "name": "Hamburg"},
+      {"@type": "City", "name": "Bremen"},
+      {"@type": "City", "name": "Kiel"},
+      {"@type": "City", "name": "Lübeck"},
+      {"@type": "City", "name": "Rostock"},
+      {"@type": "AdministrativeArea", "name": "Schleswig-Holstein"}
+    ],
+    "sameAs": "https://www.hsb-boden.de"
+  })} />
+</BaseLayout>

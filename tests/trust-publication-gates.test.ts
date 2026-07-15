@@ -35,14 +35,7 @@ const approvedCaseStudy: CaseStudyDraft = {
   metrics: [{ label: "Fläche", value: "100 m²", evidenceRef: "internal://metric/case-1" }],
   quote: { text: "Freigegebenes Zitat", source: "Produktionsleitung", evidenceRef: "internal://quote/case-1" },
   images: [{ src: "/media/internal.webp", alt: "Freigegebenes Projektbild", rightsRef: "internal://rights/case-1" }],
-  approvals: {
-    customerName: false,
-    exactLocation: false,
-    logo: false,
-    metrics: false,
-    quote: false,
-    images: false,
-  },
+  approvals: {},
 };
 
 describe("trust publication gates", () => {
@@ -58,7 +51,16 @@ describe("trust publication gates", () => {
         { ...approvedTeamProfile, id: "missing-consent", publicationConsentRef: undefined },
         approvedTeamProfile,
       ]),
-    ).toEqual([approvedTeamProfile]);
+    ).toEqual([
+      {
+        id: "profile-1",
+        name: "Freigegebene Person",
+        role: "Freigegebene Funktion",
+        shortBio: "Freigegebener Kurztext mit belegbarer fachlicher Einordnung.",
+        image: undefined,
+        qualifications: [{ label: "Belegte Qualifikation" }],
+      },
+    ]);
   });
 
   it("publishes only approved case studies with project evidence and owner approval", () => {
@@ -71,7 +73,7 @@ describe("trust publication gates", () => {
     ).toHaveLength(1);
   });
 
-  it("removes customer-identifying content without individual approvals", () => {
+  it("removes customer-identifying content without field-specific approval references", () => {
     const [published] = getPublishableCaseStudies([approvedCaseStudy]);
 
     expect(published.customerName).toBeUndefined();
@@ -80,19 +82,22 @@ describe("trust publication gates", () => {
     expect(published.metrics).toEqual([]);
     expect(published.quote).toBeUndefined();
     expect(published.images).toEqual([]);
+    expect(published).not.toHaveProperty("evidenceRefs");
+    expect(published).not.toHaveProperty("publicationApprovalRef");
+    expect(published).not.toHaveProperty("approvals");
   });
 
-  it("retains individually approved and evidenced content", () => {
+  it("retains only fields with individual auditable approval references", () => {
     const [published] = getPublishableCaseStudies([
       {
         ...approvedCaseStudy,
         approvals: {
-          customerName: true,
-          exactLocation: true,
-          logo: true,
-          metrics: true,
-          quote: true,
-          images: true,
+          customerName: "internal://approval/case-1/customer-name",
+          exactLocation: "internal://approval/case-1/location",
+          logo: "internal://approval/case-1/logo",
+          metrics: "internal://approval/case-1/metrics",
+          quote: "internal://approval/case-1/quote",
+          images: "internal://approval/case-1/images",
         },
       },
     ]);
@@ -100,8 +105,10 @@ describe("trust publication gates", () => {
     expect(published.customerName).toBe(approvedCaseStudy.customerName);
     expect(published.exactLocation).toBe(approvedCaseStudy.exactLocation);
     expect(published.logo).toBe(approvedCaseStudy.logo);
-    expect(published.metrics).toHaveLength(1);
-    expect(published.quote).toEqual(approvedCaseStudy.quote);
-    expect(published.images).toEqual(approvedCaseStudy.images);
+    expect(published.metrics).toEqual([{ label: "Fläche", value: "100 m²" }]);
+    expect(published.quote).toEqual({ text: "Freigegebenes Zitat", source: "Produktionsleitung" });
+    expect(published.images).toEqual([
+      { src: "/media/internal.webp", alt: "Freigegebenes Projektbild" },
+    ]);
   });
 });

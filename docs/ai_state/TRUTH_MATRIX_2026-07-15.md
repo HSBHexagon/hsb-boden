@@ -72,7 +72,7 @@ Final gegengeprüfter Stand 2026-07-15:
 - Für weitere Profile wird in diesem finalen Pass kein aktueller Zustand behauptet.
 
 Folgen:
-- CRM-Sheets („HSB CRM Light", MASTER/JOEL/JORDI-Kaltakquise) liegen im Konto `cherinojoel@gmail.com` → Direktzugriff per ID liefert **403** → **OWNER_GATE CRM**.
+- CRM-Sheets („HSB CRM Light“, MASTER/JOEL/JORDI-Kaltakquise) liegen im Konto `cherinojoel@gmail.com` → Direktzugriff per ID liefert **403** → **OWNER_GATE CRM**.
 - Der frühere Befund „alle vier Profile sind abgelaufen" ist falsch; ebenso ist der korrekte Google-Account für das Profil `cherinojoel` nicht belegt.
 - GSC-Zugriff liegt im Chrome-Profil `Jordie (HEXAGON)`; `cherinojoel@gmail.com` ist nicht für die Property berechtigt. Die Mailadresse des HEXAGON-Profils bleibt unverifiziert.
 

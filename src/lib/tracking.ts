@@ -20,7 +20,7 @@ export function trackEvent(event: TrackingEvent, payload: Record<string, string 
       // Kein zusätzlicher dataLayer-Push, sonst zählt ein späteres GTM doppelt.
       w.gtag("event", event, payload);
     } else if (Array.isArray(w.dataLayer)) {
-      w.dataLayer.push({ event, ...payload });
+      w.dataLayer.push({ ...payload, event });
     }
   } catch {
     // Tracking darf nie die aufrufende Interaktion (z. B. Formular-Submit) brechen.

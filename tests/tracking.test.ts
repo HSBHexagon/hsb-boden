@@ -35,6 +35,12 @@ describe("trackEvent", () => {
     expect(win.dataLayer).toContainEqual({ event: "cta_click", cta: "hero" });
   });
 
+  it("lässt den echten Eventnamen nicht durch ein payload.event-Feld überschreiben (dataLayer-Fallback)", () => {
+    win.dataLayer = [];
+    trackEvent(TrackingEvent.CtaClick, { event: "fake_event", cta: "hero" });
+    expect(win.dataLayer).toContainEqual({ event: "cta_click", cta: "hero" });
+  });
+
   it("nutzt dataLayer nur als Fallback, wenn gtag fehlt — kein Doppel-Event bei gtag", () => {
     const gtag = vi.fn();
     win.gtag = gtag;

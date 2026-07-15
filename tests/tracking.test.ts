@@ -58,7 +58,7 @@ describe("trackEvent", () => {
     const dispatchEventSpy = vi.spyOn(window, 'dispatchEvent');
     trackEvent(TrackingEvent.FlyerQrVisit, { source: "qr" });
     expect(dispatchEventSpy).toHaveBeenCalledTimes(1);
-    const eventArg = dispatchEventSpy.mock.calls[0][0] as CustomEvent;
+    const eventArg = dispatchEventSpy.mock.calls[0][0] as unknown as CustomEvent;
     expect(eventArg.type).toBe("hsb:tracking");
     expect(eventArg.detail).toEqual({ event: TrackingEvent.FlyerQrVisit, payload: { source: "qr" } });
     dispatchEventSpy.mockRestore();

@@ -1,6 +1,6 @@
 # TRUTH_MATRIX — 2026-07-15 (Fable-5-Finalisierungspass)
 
-Erstellt: 2026-07-15 ~03:35 CEST · Modell: Claude Code (Fable 5) · Basis: main = `6fa875e` (== origin/main)
+Erstellt: 2026-07-15 ~03:35 CEST · final gegengeprüft ~04:54 CEST · Modelle: Claude Code (Fable 5) + Codex · PR-#84-Baseline: `900fe9e`
 
 Jede Aussage ist gekennzeichnet: VERIFIED (frisch geprüft in dieser Session), HISTORICAL, STALE, CONTRADICTED, NOT_FOUND, OWNER_GATE.
 
@@ -8,11 +8,13 @@ Jede Aussage ist gekennzeichnet: VERIFIED (frisch geprüft in dieser Session), H
 
 | Punkt | Status | Evidenz |
 |---|---|---|
-| main == origin/main auf `6fa875e`, Working Tree clean | VERIFIED | `git status`/`git log` 2026-07-15 |
+| PR-#84-Baseline auf `900fe9e`, Finalisierungs-Worktree vor den Korrekturen clean | VERIFIED | `git status`/`git log` 2026-07-15 |
 | PR #79/#80/#81 (Lead-Attribution + Docs + Connector-Patch) gemerged | VERIFIED | Commits ad7ebc3/76fcffe/6fa875e auf main |
-| 39 offene PRs (davon Großteil Jules-Bot-Drafts) | VERIFIED | `gh pr list --state open` 2026-07-15 |
-| PR #74 (GitHub-Models-PoC) Draft, isoliert, kein Produktionsbestandteil | VERIFIED | PR-Liste; nicht angefasst |
-| Tests 147/147, `check` 0 warnings, Build 35 Seiten, `deploy:dry-run` grün | VERIFIED | Frische Läufe 2026-07-15 03:29–03:31 |
+| 41 offene PRs zum Auditzeitpunkt | VERIFIED | GitHub-Abfrage 2026-07-15 ca. 04:54 CEST; zeitgebundener Snapshot |
+| PR #84: Draft, Doku-only; CodeRabbit aktiv/erfolgreich | VERIFIED | PR-/Check-Status 2026-07-15 |
+| PR #84 Baseline/lokal und CI: 8 Testdateien / 74 Tests; `147ms` war eine Laufzeit, keine Testzahl | VERIFIED | Vitest-/CI-Ausgabe für `900fe9e` |
+| PR #85: OPEN, non-draft, BLOCKED, REVIEW_REQUIRED; Reviewer `HSBHexagon` angefordert; alle angehängten automatisierten Checks grün | VERIFIED | OpenAI Review, Gemini Review, Review Summary, CodeRabbit, CI, QA, Security, CodeQL, Lighthouse, Preview-Deploy |
+| PR #74: OPEN, DRAFT, REVIEW_REQUIRED; Head nach Auto-Merge von `main`: `de6dd57`; frische Checks grün, PoC deaktiviert | VERIFIED | PR-/Check-/Preview-Status 2026-07-15 |
 
 ## 2. Cloudflare / Live-Website
 
@@ -23,15 +25,17 @@ Jede Aussage ist gekennzeichnet: VERIFIED (frisch geprüft in dieser Session), H
 | Canonical auf Startseite → `https://www.hsb-boden.de/` | VERIFIED | curl |
 | robots.txt nennt `Sitemap: https://www.hsb-boden.de/sitemap.xml` | VERIFIED | curl |
 | Preview-Worker `hsb-boden-preview.cherinojoel.workers.dev` liefert weiter HTTP 200 (liegt im ALTEN cherinojoel-CF-Account; die 07-12-Löschung betraf nur den neuen Account) | VERIFIED | curl |
-| Nicht-existente Pfade (z. B. Tippfehler `HSB-Flyer-Jordie-Post.pdf`) liefern HTTP 200 + text/html (Soft-404-Verhalten) | VERIFIED | curl -I |
+| Info-Account: Pages-Projekt `hsb-boden` und `www.hsb-boden.de` aktiv; keine Workers; Zone `hsb-boden.de` weiterhin `pending` | VERIFIED | Cloudflare-Accountprüfung 2026-07-15; voller NS-Cutover nicht erfolgt |
+| PR-#85-Preview `https://2b373bd9.hsb-boden.pages.dev` liefert für einen unbekannten Pfad HTTP 404 | VERIFIED | realer HTTP-Aufruf 2026-07-15 |
+| Production `https://www.hsb-boden.de/definitely-not-a-real-hsb-page` liefert weiterhin HTTP 200 | VERIFIED, OWNER_GATE | Production-Soft-404 bleibt bis zu unabhängigem Review/Freigabe, Merge und manuellem Production-Deploy von PR #85 offen |
 
 ## 3. Google Search Console (Entscheidung beider Properties)
 
-Zugriff: Chrome-Session `info@hsb-boden.de` (authuser=1). VERIFIED 2026-07-15.
+Zugriff VERIFIED 2026-07-15: Das Chrome-Profil `Jordie (HEXAGON)` öffnet die Production-Property erfolgreich; die konkrete Google-Mailadresse dieses Profils ist nicht verifiziert. `cherinojoel@gmail.com` erhält für dieselbe Property „Du hast leider keinen Zugriff auf diese Property“. Es wurde keine UI- oder Account-Änderung vorgenommen.
 
 | Property | Klassifikation | Zustand |
 |---|---|---|
-| `https://www.hsb-boden.de/` | **AKTIVE PRODUKTIONS- UND SEO-WAHRHEIT** | 29 indexiert / 5 nicht indexiert (3× „Gecrawlt – zurzeit nicht indexiert", 2× „Gefunden – zurzeit nicht indexiert" — normale Google-Zustände, keine Fehler, keine noindex-Probleme). Sitemap `/sitemap.xml` eingereicht 09.07., zuletzt gelesen 12.07., Status Erfolgreich, 33 Seiten. HTTPS 29/0. Breadcrumbs 18 gültig / 0 ungültig. |
+| `https://www.hsb-boden.de/` | **AKTIVE PRODUKTIONS- UND SEO-WAHRHEIT** | Zwei zeitversetzte UI-Snapshots am 15.07. zeigten 28 bzw. 29 indexierte und jeweils 5 nicht indexierte Seiten; der vom Nutzer bereitgestellte Screenshot zeigt 28/5. Diese Zähler sind zeitabhängig. Die fünf Ausschlüsse verteilen sich auf „Gecrawlt – zurzeit nicht indexiert" und „Gefunden – zurzeit nicht indexiert"; im UI war kein noindex-Fehler ausgewiesen. Sitemap `/sitemap.xml`: erfolgreich, 33 Seiten im überprüften Snapshot. Breadcrumbs: 18 gültig / 0 ungültig im überprüften Snapshot. |
 | `hsb-boden-preview.cherinojoel.workers.dev` | **HISTORISCH — behalten als Referenz, keine SEO-Arbeit mehr dagegen** | Genau 1 indexierte Seite, 0 nicht indexiert, 1 Klick gesamt. Keine dritte Property erzeugen. Nicht löschen ohne Owner-Entscheid. |
 
 Empfehlung Preview: behalten als historische Ansicht; optional (Owner) den alten Preview-Worker im cherinojoel-CF-Account stilllegen oder mit `X-Robots-Tag: noindex` versehen, damit der 1-Seiten-Indexrest ausläuft.
@@ -46,31 +50,36 @@ Empfehlung Preview: behalten als historische Ansicht; optional (Owner) den alten
 | 7-Tage-Traffic überwiegend (direct)/(none) aus den USA → Bot-/Crawler-Rauschen, kein realer Kundentraffic | VERIFIED (Interpretation: INFERRED) |
 | 0 Key Events konfiguriert (Lead-Submit nicht als Schlüsselereignis) | VERIFIED → Owner-Empfehlung: `generate_lead`/Danke-Seite als Key Event markieren |
 | Lead-Attribution (sessionStorage `hsb-attribution-v1`) live auf www | HISTORICAL (live-verifiziert 2026-07-14), Code auf main VERIFIED |
+| Lead-Submit-Eventtransport | DEFECT VERIFIED: Die Seite lädt direkt `gtag.js`, `trackEvent()` pusht bislang jedoch nur ein GTM-artiges Objekt. Ein lokaler Browser-Probe mit vollständig abgefangenen Collect-Endpunkten erzeugte damit keinen GA4-Collect; ein direkter `gtag('event', ...)`-Aufruf dagegen schon. Separater TDD-/Review-PR erforderlich. |
 
 ## 5. Google-Zugänge (MCP) — zentraler Befund
 
-Alle 4 MCP-Profile (cherinojoel, cherinodiaz, hsb-boden, info) wurden 2026-07-15 ~01:08–01:15 neu authentifiziert, validieren aber **alle gegen denselben Google-Account `cherinodiaz@outlook.com`**.
+Final gegengeprüfter Stand 2026-07-15:
+
+- Profil `cherinojoel`: Zugriffstoken aktuell gültig, die API-Validierung identifiziert jedoch den falschen Account `cherinodiaz@outlook.com`.
+- Profil `cherinodiaz`: Token abgelaufen; Drive nicht initialisiert.
+- Für weitere Profile wird in diesem finalen Pass kein aktueller Zustand behauptet.
 
 Folgen:
 - CRM-Sheets („HSB CRM Light", MASTER/JOEL/JORDI-Kaltakquise) liegen im Konto `cherinojoel@gmail.com` → Direktzugriff per ID liefert **403** → **OWNER_GATE CRM**.
-- Der frühere Befund „info@-Profil tot / 403-Testnutzer" ist STALE (Token existiert), aber das Profil zeigt auf den falschen Account.
-- GSC/GA4 sind nur über die Chrome-Session (authuser=1 = info@hsb-boden.de) erreichbar, nicht über MCP.
+- Der frühere Befund „alle vier Profile sind abgelaufen" ist falsch; ebenso ist der korrekte Google-Account für das Profil `cherinojoel` nicht belegt.
+- GSC-Zugriff liegt im Chrome-Profil `Jordie (HEXAGON)`; `cherinojoel@gmail.com` ist nicht für die Property berechtigt. Die Mailadresse des HEXAGON-Profils bleibt unverifiziert.
 
-**Genau ein manueller Schritt für dieses Gate:** `npx @dguido/google-workspace-mcp auth` für Profil `cherinojoel` ausführen und dabei im Browser **cherinojoel@gmail.com** wählen (analog optional Profil `info` → info@hsb-boden.de). Danach sind CRM-Prüfung + Apps-Script-Spaltenmapping maschinell möglich.
+**Genau ein manueller Schritt für das CRM-Gate:** Profil `cherinojoel` explizit neu authentifizieren und im Browser **cherinojoel@gmail.com** wählen. Danach sind CRM-Prüfung + Apps-Script-Spaltenmapping maschinell möglich. In diesem Pass wurde keine Google-Auth- oder Schreibaktion ausgeführt.
 
 ## 6. CRM / Apps Script / Attribution (W4)
 
 | Punkt | Status |
 |---|---|
 | Website→Webhook→CRM-Funnel Ende-zu-Ende | HISTORICAL (belegt 2026-07-12, Testzeile gelöscht) |
-| Attribution-Felder im Payload (utm_term/utm_content/referrer/landing_page/form_path/attribution_channel) | VERIFIED (Code auf main + 147 Tests) |
+| Attribution-Felder im Payload (utm_term/utm_content/referrer/landing_page/form_path/attribution_channel) | VERIFIED (Code auf main; PR-#84-Baseline/CI: 8 Testdateien / 74 Tests) |
 | Apps-Script-Spaltenmapping für Attributionsfelder | OWNER_GATE (Sheet 403; Patch liegt paste-fertig in `docs/crm/ATTRIBUTION_CONNECTOR_PATCH.md`) |
 | Kontrollierter Live-Lead-Test in dieser Session | BEWUSST NICHT durchgeführt: ohne Sheet-Zugriff könnte die Testzeile nicht wieder gelöscht werden |
 | MASTER-Sheet-Kennzahlen (6424 Leads, Tier A 1612 / B 4812, Versandfreigabe 0, Opt-in/out unknown) | HISTORICAL (2026-07-12) + lokal VERIFIED via Export-CSV (siehe unten) |
 
 ## 7. MASTER / JOEL / JORDI-Inventur (W5) — lokal VERIFIED
 
-Quelle: `data/lead-import/output/` (Stand 2026-07-08, deckungsgleich mit Sheet-Befund vom 07-12):
+Quelle: `data/lead-import/output/` — **lokal, bewusst unversioniert** (`.gitignore` Zeile `data/lead-import/`), daher nur auf dem kanonischen Rechner reproduzierbar. Datei-Fingerprints (sha256, erste 16 Hex): MASTER `8dc1f75228d2c797`, Joel `6de5a782412980e3`, Jordi `24168527f8532d7f`. Stand 2026-07-08, deckungsgleich mit Sheet-Befund vom 07-12:
 
 | Datei | Zeilen (ohne Header) |
 |---|---|
@@ -112,26 +121,32 @@ W2 (VERIFIED, read-only):
 - **Preview-Worker liefert Produktionsinhalte ohne noindex**, Canonical dort zeigt auf Apex. Empfehlung: alten Worker stilllegen oder `noindex` (Owner, alter cherinojoel-CF-Account).
 
 W3 (mit Lead-Gegenprüfung):
-- Offene PRs exakt **40** (inkl. #84 dieses Passes; W3-Rohzahl 43 war überzählt, per `gh api --paginate` gegengeprüft).
+- Offene PRs: **41** zum Snapshot 2026-07-15 ca. 04:54 CEST; der Wert ist zeitgebunden und keine dauerhafte Repo-Eigenschaft.
 - **Ruleset „Protect Main" ist AKTIV** mit `pull_request`, `required_status_checks`, `deletion`, `non_fast_forward` (W3-Erstbefund „ungeschützt" CONTRADICTED — falscher API-Endpoint; direkt gegengeprüft).
 - Merge-Kandidaten (Empfehlung, keine Ausführung): #75/#77/#78 (Notion-Workflows, sauber, keine Secrets), #82/#83 (A11y/LCP, Checks grün). #72 ist Duplikat von #82 → Close-Kandidat. #4 (npm-major) CONFLICTING, #15 Deploy-FAIL + HIGH_RISK → Owner-Termin. #74 bleibt isoliert (Draft).
-- AI-Reviews: `ai-pr-review.yml` funktionsfähig (OpenAI+Gemini, skippen bewusst auf Drafts). CodeRabbit nicht installiert (bekannt).
+- PR #85 ist OPEN, non-draft, BLOCKED und REVIEW_REQUIRED; `HSBHexagon` ist als Reviewer angefordert. OpenAI Review, Gemini Review, Review Summary, CodeRabbit, CI, QA, Security, CodeQL, Lighthouse und Preview-Deploy sind grün. Der Preview-404 ist belegt; Production bleibt bis Review/Freigabe, Merge und manuellem Deploy unverändert soft-404.
+- PR #74 ist OPEN, DRAFT und REVIEW_REQUIRED. GitHub hat den aktuellen `main` automatisch in den Branch gemergt (Head `de6dd57`); frische CI-/QA-/Security-/CodeQL-/Lighthouse-/Preview-Checks sind grün. Anonyme POSTs auf `https://e30052d5.hsb-boden.pages.dev/api/github-models` und den Branch-Alias liefern HTTP 404 `not_found`: PoC bleibt deaktiviert; erfolgreiche Cloudflare-AI-Gateway-Inferenz ist unbewiesen, keine Production-Readiness-Aussage.
+- CodeRabbit ist auf PR #84 und PR #85 aktiv und erfolgreich. Die frühere Aussage, CodeRabbit sei nicht installiert, ist widerlegt.
 
 ## 10. Doku-Drift (zu korrigieren in diesem PR bzw. Folge-PR)
 
-1. `CHECKPOINT_STATE.json` `blocked_by`: Apex-WordPress-Eintrag ist überholt (301 aktiv) → aktualisiert in diesem Branch.
-2. `docs/handoff/JOEL_JORDIE_OPERATOR_RUNBOOK.md` Trigger A referenziert gelöschte Workers-Architektur (`wrangler deployments list --name hsb-boden`) → Pages-Pfad.
-3. `CHECKPOINT_STATE.json` referenziert `docs/handoff/JOEL_JORDI_OPERATOR_RUNBOOK.md` (falscher Dateiname, real `JOEL_JORDIE_...`).
-4. Notion-Task CNAME/Apex stale.
+1. `CHECKPOINT_STATE.json` wurde auf den aktuellen PR-/Google-/Cloudflare-/Soft-404-Stand gezogen.
+2. `docs/handoff/JOEL_JORDIE_OPERATOR_RUNBOOK.md` nutzt den Pages-Pfad und bewahrt den historischen Dateinamen; Personenschreibweise bleibt `Jordi`.
+3. Alle tatsächlichen Runbook-Pfade verwenden `docs/handoff/JOEL_JORDIE_OPERATOR_RUNBOOK.md`.
+4. Notion-Task CNAME/Apex war stale; eine Notion-Mutation ist nicht Teil dieses Finalisierungspasses.
 5. MASTER_EXECUTION_RULES.md §5/§6 (P0B-Phase) ist HISTORICAL gegenüber realem Projektstand (Website live, Formular live); PROJECT_TRUTH/CHECKPOINT gelten als aktueller.
 
 ## 11. Verbleibende echte Owner-Gates (konsolidiert)
 
 | Gate | Genau ein manueller Schritt |
 |---|---|
-| CRM/Apps-Script (Attribution-Mapping) | MCP-Profil `cherinojoel` auf cherinojoel@gmail.com re-authen — oder `docs/crm/ATTRIBUTION_CONNECTOR_PATCH.md` selbst einspielen |
+| CRM/Apps-Script (Attribution-Mapping) | Profil `cherinojoel` explizit neu authentifizieren und `cherinojoel@gmail.com` auswählen — oder `docs/crm/ATTRIBUTION_CONNECTOR_PATCH.md` selbst einspielen |
+| GSC-Zugriff | Für Property-Arbeit das berechtigte Chrome-Profil `Jordie (HEXAGON)` nutzen; falls Joel eigenen Zugriff braucht, Property-Berechtigung separat durch den Owner vergeben. Die Google-Mailadresse des HEXAGON-Profils nicht erraten. |
+| GA4-Lead-Event | Separaten getesteten Code-PR reviewen; nach dessen Merge `generate_lead` in GA4 als Key Event markieren |
 | GA4↔GSC-Verknüpfung | In GA4-Admin Search-Console-Link von Preview- auf www-Property umstellen |
+| Production-Soft-404 | PR #85 unabhängig reviewen/freigeben, mergen und anschließend den Production-Deploy manuell auslösen |
+| GitHub-Models-PoC | PR #74 als Draft/deaktiviert belassen, bis eine echte Cloudflare-AI-Gateway-Inferenz nachgewiesen und separat freigegeben ist |
 | GBP-Verifizierung | Physische Postkarten-Verifizierung durch Joel |
 | Kaltakquise-Versand | PHASE_7_COMPLIANCE_GATE.md mit Owner durchgehen (Rechtsgrundlage, Opt-out, Batch-Freigabe) + M365-DKIM für j-cherino@ aktivieren |
-| Cloudflare-Altlasten | Doppelte CF-Zone im cherinojoel-Account löschen; alten Preview-Worker stilllegen/noindex; CF-API-Token rotieren (stand 07-02 kurz im Chat) |
-| Service-Account-Key | `hsb-boden-5389a664a3a5.json` in ~/Desktop + ~/Downloads rotieren/verschieben |
+| Cloudflare-Zone/Altlasten | Volle NS-Umstellung separat freigeben; doppelte Zone im Alt-Account löschen, alten Preview-Worker stilllegen/noindex und CF-API-Token rotieren |
+| Service-Account-Key | Lokal ungeschützt abgelegten Google-Service-Account-Key rotieren und sicher verwahren (genaue Fundorte im lokalen Handoff vom 2026-07-12, bewusst nicht in diesem versionierten Dokument) |

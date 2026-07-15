@@ -1,21 +1,21 @@
 # JOEL_JORDI_OPERATOR_RUNBOOK — HSB-Boden / HEXAFLOOR
 
-Status: `sales-operations-max-ready-awaiting-dns-and-leads`
-Stand: 2026-06-26 | Canonical operator layer above the truth docs.
+Status: `www-live-awaiting-review-compliance-and-owner-gates`
+Stand: 2026-07-15 | Canonical operator layer above the truth docs.
 
-**Partner name quality rule:** The only correct spelling is `JORDI`.
-Never use `Jordy`, `Jordi`, or `Jodie` in any project document.
+**Partner name quality rule:** The only correct spelling is `Jordi` (JORDI in headings).
+Never use `Jordy`, `Jordie`, or `Jodie` for the person in project text. Technical exceptions are the historical filename of this runbook and the exact existing Chrome profile label `Jordie (HEXAGON)`.
 
 ---
 
 ## Stop Condition (Read First)
 
-If neither of the following external inputs exists, stop. Do not invent work.
+Stand 2026-07-15 sind die früheren externen Trigger eingetreten:
 
-1. DNS/NS transfer for `hsb-boden.de` is active
-2. Real 5,000-lead dataset has been delivered
+1. `www.hsb-boden.de` läuft produktiv über Cloudflare Pages; der Apex leitet per 301 auf www. Die Zone `hsb-boden.de` im Info-Account ist weiterhin `pending`: Ein voller NS-Cutover ist **nicht** erfolgt und bleibt Owner-Gate.
+2. 6.424 Leads liegen im MASTER-Sheet (Tier A 1.612 / B 4.812), aber die Versandfreigabe steht bei 0/6.424.
 
-Everything else in this repo is ready. The only remaining work is triggered by external inputs.
+**Verbleibender Stop:** Kein Versand ohne erfüllten `docs/launch/PHASE_7_COMPLIANCE_GATE.md` und aktives M365-DKIM. Keine Production-Soft-404-Korrektur ohne unabhängiges Review/Freigabe, Merge und manuellen Deploy von PR #85. Keine Google-/CRM-Arbeit ohne explizite Re-Authentifizierung und Auswahl von `cherinojoel@gmail.com`. NS-Cutover, Cloudflare-Altaccount-Bereinigung und Token-/Service-Account-Key-Rotation bleiben separate Owner-Gates. Der GitHub-Models-PoC aus PR #74 bleibt deaktiviert, bis reale Cloudflare-AI-Gateway-Inferenz belegt ist.
 
 ---
 
@@ -53,7 +53,7 @@ Open this repo and read in this exact order:
 
 ## Trigger A — DNS/NS Becomes Active
 
-> **Status 2026-07-15:** Weitgehend erledigt. `www.hsb-boden.de` läuft produktiv über **Cloudflare Pages** (nicht mehr Workers; die Worker wurden am 2026-07-12 gelöscht). Der Apex `hsb-boden.de` leitet per 301 (Query-erhaltend) auf www um. Ein voller NS-Cutover zu Cloudflare bleibt eine separate Owner-Entscheidung.
+> **Status 2026-07-15:** `www.hsb-boden.de` läuft produktiv über **Cloudflare Pages**; der Apex `hsb-boden.de` leitet per 301 (Query-erhaltend) auf www um. Im Cloudflare-Info-Account sind Pages-Projekt und www-Domain aktiv, es gibt dort keine Workers, und die Zone bleibt `pending`. Der alte Preview-Worker und die doppelte Zone im Alt-Account sind davon getrennte Cleanup-Gates. Ein voller NS-Cutover wurde nicht durchgeführt.
 
 Falls später ein NS-Cutover freigegeben wird (Zone `hsb-boden.de` Status `active`):
 
@@ -73,9 +73,9 @@ Falls später ein NS-Cutover freigegeben wird (Zone `hsb-boden.de` Status `activ
 
 ---
 
-## Trigger B — 5,000-Lead Dataset Arrives
+## Trigger B — Lead Dataset Present; Outreach Still Blocked
 
-When the real lead dataset is delivered:
+Der reale Datensatz ist vorhanden (MASTER 6.424), bleibt aber vollständig für Versand gesperrt. Vor jedem Outreach:
 
 1. Read `docs/crm/CRM_LIGHT_MAX_READINESS.md` — field order, defaults, duplicate rules
 2. Read `docs/launch/LEAD_IMPORT_5000_CHECKLIST.md` — pre-paste and post-paste checklists
@@ -83,8 +83,8 @@ When the real lead dataset is delivered:
 4. Verify DKIM is active for `j-cherino@hsb-boden.de` (see `docs/email/EMAIL_ROUTING_AND_DELIVERABILITY_MAX_READINESS.md`)
 5. Normalize phone fields as text, deduplicate on all defined keys
 6. Set all defaults: `Status = neu`, `Versandfreigabe = no`, `Opt-out-Status = unknown`
-7. Import or paste to Google Sheets "HSB CRM Light"
-8. Sample-check 20 rows after import
+7. Bestehenden Import in Google Sheets „HSB CRM Light" nicht ohne Owner-Freigabe überschreiben; für maschinellen Zugriff zuerst Profil `cherinojoel` explizit auf `cherinojoel@gmail.com` re-authentifizieren
+8. Bei einem freigegebenen Neuimport 20 Zeilen stichprobenartig prüfen
 9. **Do not send email. Do not start Phase 8 or 9.**
 10. Complete Phase 7 compliance gate before any batch send
 
@@ -128,8 +128,10 @@ At all times until explicit separate approval:
 - No email sending to leads (DKIM + Phase 7 gate required first)
 - No mass mailing
 - No automation activation (n8n, Apps Script send, any auto-dispatch)
-- No Cloudflare route creation before DNS/NS active
+- No Cloudflare zone/NS change, old-account cleanup, or token rotation without separate owner approval
 - No production deploy via GitHub Actions without going through runbook
+- No merge or production deploy of PR #85 without independent review and approval
+- No activation of PR #74 while successful Cloudflare AI Gateway inference remains unproven
 - No Phase 8/9 start (requires Phase 7 review outcome)
 - No use of customer logos, names, or references without per-use approval
 - No unapproved claims, certifications, or project references
@@ -177,4 +179,4 @@ git log --oneline --decorate -5
 gh run list --branch main --limit 5
 ```
 
-If clean and no external trigger exists: stop. Do not invent work.
+If clean and the remaining review/compliance/account/owner gates are not explicitly cleared: stop. Do not invent work or mutate external systems.

@@ -90,12 +90,15 @@ wrangler deploy --name hsb-boden --var ENVIRONMENT:production
 ```
 - Erzeugt/aktualisiert Worker `hsb-boden`. Bindings (ASSETS, SESSION-KV) werden vom Top-Level geerbt; `ENVIRONMENT=production` per CLI-Override; **keine Routes** (kommen in Schritt 4).
 
-### 3. Production-Secret setzen
-```bash
-printf '%s' "$LEAD_WEBHOOK_URL" \
-  | wrangler secret put LEAD_WEBHOOK_URL --name hsb-boden
-```
-- `printf '%s'` (kein `echo`) → kein Trailing-Newline in der URL.
+### 3. HISTORICAL — altes Production-Secret
+
+Nicht ausfuehren. Der fruehere `LEAD_WEBHOOK_URL`-Befehl wurde entfernt, weil
+er den kompromittierten unauthentifizierten Vertrag erneut aktivieren koennte.
+Der aktuelle Pages-Pfad verlangt den in `docs/MASTER_EXECUTION_PLAN.md` unter
+„P0 — Apps-Script-Webhook absichern“ beschriebenen atomaren
+`LEAD_WEBHOOK_CONFIG`-Cutover mit URL **und** Auth-Token. Keine Secret-Werte aus
+Shell-Variablen uebernehmen, solange Quelle, Zielumgebung und Nicht-Leerheit
+nicht separat verifiziert sind.
 
 ### 4. Worker VOR Live-Schaltung verifizieren (noch ohne Routes!)
 ```bash

@@ -30,17 +30,31 @@ deaktiviert, bis reale Cloudflare-AI-Gateway-Inferenz belegt ist.
 
 ## Exact Resume Order
 
-Open this repo and read in this exact order:
+Read and verify in this exact order before any action:
 
-1. `PROJECT_TRUTH.md` — current canonical project truth
-2. `CHECKPOINT_STATE.json` — machine-readable current state
-3. `docs/ai_state/TRUTH_MATRIX_2026-07-15.md` — timestamped evidence
-4. `docs/MASTER_EXECUTION_PLAN.md` — canonical phase roadmap
-5. This file — operator role split and next actions
-6. `docs/cloudflare/CLOUDFLARE_PROVIDER_MAX_READINESS.md` — Cloudflare readiness
-7. `docs/crm/CRM_LIGHT_MAX_READINESS.md` — CRM and lead data readiness
-8. `docs/FINAL_OPERATOR_HANDOFF.md` — historical/superseded evidence only
-9. `docs/PHASE_C_CUTOVER_RUNBOOK.md` — historical/superseded; never execute
+1. `~/KI-System/ObsidianVault/brain/01_core/STORAGE_ROLES.md`
+2. `~/KI-System/ObsidianVault/brain/START_HIER.md`
+3. `~/KI-System/ObsidianVault/brain/CANONICAL_STATE.md`
+4. `~/KI-System/08_System/config/canonical-projects.json`
+5. `~/KI-System/ObsidianVault/brain/CURRENT_HANDOFF.md`
+6. Resolve and assert the canonical checkout, then inspect Git:
+
+   ```bash
+   cd "$(~/KI-System/08_System/scripts/resolve_project_path.sh hsb-boden)"
+   ~/KI-System/08_System/scripts/assert_canonical_project_path.sh hsb-boden
+   git status --short --branch
+   ```
+
+7. `AGENTS.md` and `CLAUDE.md` — project rules and execution preflight
+8. `PROJECT_TRUTH.md` — current canonical project truth
+9. `CHECKPOINT_STATE.json` — machine-readable current state
+10. `docs/ai_state/TRUTH_MATRIX_2026-07-15.md` — timestamped evidence
+11. `docs/MASTER_EXECUTION_PLAN.md` — canonical phase roadmap
+12. This file — operator role split and next actions
+13. `docs/cloudflare/CLOUDFLARE_PROVIDER_MAX_READINESS.md` — supporting Cloudflare evidence
+14. `docs/crm/CRM_LIGHT_MAX_READINESS.md` — supporting CRM evidence
+15. `docs/FINAL_OPERATOR_HANDOFF.md` and `docs/PHASE_C_CUTOVER_RUNBOOK.md` —
+    historical/superseded evidence only; never execute their old commands
 
 ---
 

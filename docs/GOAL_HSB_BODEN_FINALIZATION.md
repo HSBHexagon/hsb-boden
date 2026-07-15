@@ -40,11 +40,11 @@ PRs.
 
 | Punkt | Status |
 |---|---|
-| `/api/lead` → Cloudflare Pages Function → Apps Script → Sheet „HSB CRM Light" | ✅ historisch End-to-End verifiziert; kein frischer Test ohne loeschbaren Sheet-Zugriff |
-| `LEAD_WEBHOOK_URL` auf Cloudflare Pages Production gesetzt | ✅ (2026-07-08, echter Wert verifiziert über Apps-Script-Deployment v3) |
+| `/api/lead` → Cloudflare Pages Function → Apps Script → Sheet „HSB CRM Light" | ✅ 2026-07-15 operator-verifiziert: UTM-Testlead zugestellt, sechs Attributionsfelder korrekt, Testzeile gelöscht; Auth-Sicherheit separat offen |
+| `LEAD_WEBHOOK_URL` auf Cloudflare Pages Production gesetzt | ⚠️ HISTORICAL/COMPROMISED: Legacy-Wert aktiv, darf nicht als genehmigte Sicherheitskonfiguration gelten |
 | Reale Kaltakquise-Lead-Daten | ✅ vorhanden — 6.424 Datensätze, 3 Sheets (Master/Joel/Jordi) |
 | Schema-Drift zwischen den 4 CRM-Sheets | ⚠️ dokumentiert, **nicht bereinigt** — `CRM_LIGHT_SCHEMA.md` ist kanonisch erklärt |
-| Verwaistes Apps-Script-Projekt „HSB-Boden CRM Webhook" (an Jordi-Sheet gebunden) | ✅ umbenannt + Deployment archiviert (kein Risiko mehr, aber Projekt existiert noch) |
+| Weiteres historisches Apps-Script-Deployment | ⚠️ Redigiert, aber bis zur nachgewiesenen Invalidation nicht als risikofrei behandeln |
 | Zwei Apps-Script-Endpunkte im oeffentlichen Git-Verlauf | ❌ P0: anonym erreichbar; neuen authentifizierten Pfad ohne Ausfall aufbauen/testen, URL umstellen und alte Deployments zuletzt invalidieren |
 
 **Nächster Schritt:** Neuen Apps-Script-Pfad und eine dual-kompatible Pages
@@ -117,8 +117,8 @@ nicht zu vermischende Gates:
 
 1. **P0 Webhook-Sicherheit:** neuen authentifizierten Pfad ohne Ausfall bauen,
    testen und umstellen; exponierte Deployments erst danach invalidieren.
-2. **Google/CRM:** korrektes Owner-Profil re-authentifizieren, Mapping und einen
-   loeschbaren Testlead pruefen.
+2. **Google/CRM:** Mapping und loeschbarer Testlead sind operator-verifiziert;
+   korrektes Owner-Profil nur fuer weitere API-/Admin-Arbeit re-authentifizieren.
 3. **GA4:** Consent-Vertrag, Conversion-Event, Delivery und Key Event belegen.
 4. **Google-Unternehmensprofil:** physische Owner-Verifizierung.
 5. **Kaltakquise:** Rechtsgrundlage, Opt-out, M365-DKIM und Batch-Freigabe.

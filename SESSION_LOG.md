@@ -333,3 +333,22 @@ Fortlaufendes Log jeder KI-Session. Jeder Eintrag: Zeit · Modell · Phase · Au
   kleiner Folge-PR plus Owner/Legal-Gate. PR #86 nicht unveraendert mergen.
 - **Nicht ausgefuehrt:** kein Merge, Production-Deploy, DNS/NS, Google-/CRM-
   Write, Outreach, Endpoint-POST, Secret-Lesen oder Worktree-Cleanup.
+
+## 2026-07-15 ~13:05 CEST — Fable-Browser-Sitzung: Attribution-Mapping operator-verifiziert
+
+- **Externe Aenderung:** Im bestehenden Apps-Script-Legacy-Deployment wurden
+  sechs Attributionsfelder samt Formula-Injection-Sanitizer ergänzt und das
+  Deployment auf Version 4 aktualisiert. Im CRM-Sheet wurden die passenden
+  sechs Header ergänzt. Keine IDs, URLs oder Tokens werden in diesem Eintrag
+  wiederholt.
+- **Verifikation:** Ein klar markierter synthetischer UTM-Testlead wurde über
+  das produktive Website-Formular zugestellt. Alle sechs Attributionsfelder
+  waren korrekt befüllt; die Testzeile wurde anschließend gelöscht.
+- **Sicherheitsgrenze:** Diese Verifikation schließt Mapping und Zustellung,
+  aber nicht den P0-Sicherheitsfund. Das aktualisierte Legacy-Deployment ist
+  weiterhin nicht durch den neuen Auth-Vertrag geschützt und bleibt bis zum
+  dual-kompatiblen Cutover kompromittiert.
+- **Lokaler Git-Zustand:** Fable erzeugte nach einem abgeschlossenen Rebase den
+  lokalen Commit `e3f4b57` auf Root-`main`; er wurde nicht gepusht und wegen
+  enthaltener Ressourcen-IDs nur unter `codex/fable-attribution-live-state`
+  gesichert. Die bereinigte Wahrheit wird stattdessen in PR #91 konsolidiert.

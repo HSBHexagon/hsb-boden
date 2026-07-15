@@ -76,17 +76,22 @@ Folgen:
 - Der frühere Befund „alle vier Profile sind abgelaufen" ist falsch; ebenso ist der korrekte Google-Account für das Profil `cherinojoel` nicht belegt.
 - GSC-Zugriff liegt im Chrome-Profil `Jordie (HEXAGON)`; `cherinojoel@gmail.com` ist nicht für die Property berechtigt. Die Mailadresse des HEXAGON-Profils bleibt unverifiziert.
 
-**Genau ein manueller Schritt für das CRM-Gate:** Profil `cherinojoel` explizit neu authentifizieren und im Browser **cherinojoel@gmail.com** wählen. Danach sind CRM-Prüfung + Apps-Script-Spaltenmapping maschinell möglich. In diesem Pass wurde keine Google-Auth- oder Schreibaktion ausgeführt.
+**Zeitliche Ergänzung 2026-07-15 ca. 13:05 CEST:** Nach diesem ursprünglichen
+Audit führte eine Fable-Browser-Sitzung das Attributionsmapping und einen
+löschbaren UTM-Testlead erfolgreich aus. Das ist OPERATOR_VERIFIED und schließt
+Mapping/Test, belegt aber weder die genaue Kontoidentität noch die
+Webhook-Authentifizierung. Für weitere API-/Admin-Arbeit bleibt die explizite
+Re-Authentifizierung des vorgesehenen Owner-Profils erforderlich.
 
 ## 6. CRM / Apps Script / Attribution (W4)
 
 | Punkt | Status |
 |---|---|
-| Website→Webhook→CRM-Funnel Ende-zu-Ende | HISTORICAL (belegt 2026-07-12, Testzeile gelöscht) |
-| Apps-Script-Endpunkt-Sicherheit | P0 OWNER_GATE: Zwei unterschiedliche, real erreichbare Endpunkte waren im oeffentlichen Repo dokumentiert. Aktueller Tree wird redigiert; Invalidation/Neudeploy, Secret-Aktualisierung und echte Webhook-Authentifizierung bleiben zwingend, weil die Git-Historie fortbesteht. |
+| Website→Webhook→CRM-Funnel Ende-zu-Ende | OPERATOR_VERIFIED 2026-07-15: UTM-Testlead zugestellt, sechs Attributionsfelder korrekt, Testzeile gelöscht |
+| Apps-Script-Endpunkt-Sicherheit | P0 OWNER_GATE: Zwei unterschiedliche, real erreichbare Endpunkte waren im oeffentlichen Repo dokumentiert. Das bestehende Legacy-Deployment wurde für das Mapping auf Version 4 aktualisiert, aber nicht authentifiziert. Invalidation/Neudeploy, Secret-Aktualisierung und echte Webhook-Authentifizierung bleiben zwingend. |
 | Attribution-Felder im Payload (utm_term/utm_content/referrer/landing_page/form_path/attribution_channel) | VERIFIED (Code auf main; PR-#84-Baseline/CI: 8 Testdateien / 74 Tests) |
-| Apps-Script-Spaltenmapping für Attributionsfelder | OWNER_GATE (Sheet 403; Patch liegt paste-fertig in `docs/crm/ATTRIBUTION_CONNECTOR_PATCH.md`) |
-| Kontrollierter Live-Lead-Test in dieser Session | BEWUSST NICHT durchgeführt: ohne Sheet-Zugriff könnte die Testzeile nicht wieder gelöscht werden |
+| Apps-Script-Spaltenmapping für Attributionsfelder | OPERATOR_VERIFIED 2026-07-15: sechs Header und sechs Werte korrekt; Details ohne IDs in `docs/crm/ATTRIBUTION_CONNECTOR_PATCH.md` |
+| Kontrollierter Live-Lead-Test | OPERATOR_VERIFIED 2026-07-15; Testzeile anschließend gelöscht |
 | MASTER-Sheet-Kennzahlen (6424 Leads, Tier A 1612 / B 4812, Versandfreigabe 0, Opt-in/out unknown) | HISTORICAL (2026-07-12) + lokal VERIFIED via Export-CSV (siehe unten) |
 
 ## 7. MASTER / JOEL / JORDI-Inventur (W5) — lokal VERIFIED
@@ -135,7 +140,7 @@ W2 (VERIFIED, read-only):
 
 W3 (mit Lead-Gegenprüfung):
 - Offene PRs: **41** zum Snapshot 2026-07-15 ca. 04:54 CEST; der Wert ist zeitgebunden und keine dauerhafte Repo-Eigenschaft.
-- **Ruleset „Protect Main" ist AKTIV** mit `pull_request`, `required_status_checks`, `deletion`, `non_fast_forward` (W3-Erstbefund „ungeschützt" CONTRADICTED — falscher API-Endpoint; direkt gegengeprüft).
+- **Ruleset „Protect Main“ ist AKTIV** mit `pull_request`, `required_status_checks`, `deletion`, `non_fast_forward` (W3-Erstbefund „ungeschützt“ CONTRADICTED — falscher API-Endpoint; direkt gegengeprüft).
 - Merge-Kandidaten (Empfehlung, keine Ausführung): #75/#77/#78 (Notion-Workflows, sauber, keine Secrets), #82/#83 (A11y/LCP, Checks grün). #72 ist Duplikat von #82 → Close-Kandidat. #4 (npm-major) CONFLICTING, #15 Deploy-FAIL + HIGH_RISK → Owner-Termin. #74 bleibt isoliert (Draft).
 - HISTORICAL: PR #85 war zu diesem Snapshot offen. Aktuell ist er gemergt und
   erfolgreich produktiv deployt; der Live-404 ist belegt.
@@ -159,7 +164,7 @@ W3 (mit Lead-Gegenprüfung):
 | Gate | Genau ein manueller Schritt |
 |---|---|
 | Apps-Script-Endpunkte | Neuen authentifizierten Pfad dual-kompatibel bauen, Preview testen, Production-Secret setzen, denselben geprueften Commit approval-gated neu deployen, E2E pruefen und erst danach die alten Deployments invalidieren |
-| CRM/Apps-Script (Attribution-Mapping) | Profil `cherinojoel` explizit neu authentifizieren und `cherinojoel@gmail.com` auswählen — oder `docs/crm/ATTRIBUTION_CONNECTOR_PATCH.md` selbst einspielen |
+| CRM/Apps-Script (Attribution-Mapping) | ERLEDIGT (operator-verifiziert); Owner-Profil nur für weitere API-/Admin-Arbeit eindeutig re-authentifizieren |
 | GSC-Zugriff | Für Property-Arbeit das berechtigte Chrome-Profil `Jordie (HEXAGON)` nutzen; falls Joel eigenen Zugriff braucht, Property-Berechtigung separat durch den Owner vergeben. Die Google-Mailadresse des HEXAGON-Profils nicht erraten. |
 | GA4-Lead-Event | gtag-Aufruf produktiv; Eventname, Callback-Delivery, Consent-Vertrag, DebugView/Netzwerkempfang und Key-Event-Konfiguration sauber abschliessen |
 | GA4↔GSC-Verknüpfung | Von PR #89 als erledigt dokumentiert; mit berechtigtem Profil unabhaengig bestaetigen, falls belastbare Audit-Evidenz benoetigt wird |

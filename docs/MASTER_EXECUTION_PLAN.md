@@ -42,7 +42,10 @@ wenn technische Live-Evidenz und verbleibende Owner-Gates klar getrennt sind.
 
 Aktueller Tree redigiert zwei vormals oeffentliche Endpoint-Werte. Da beide in
 der Git-Historie bleiben und anonym erreichbar waren, ist Redaktion allein
-keine Behebung.
+keine Behebung. Am 2026-07-15 wurde das Attributionsmapping im bestehenden
+Legacy-Deployment auf Version 4 aktualisiert und mit einer danach geloeschten
+Testzeile verifiziert. Das belegt das Mapping, **nicht** die Authentifizierung;
+der Legacy-Pfad bleibt bis zum folgenden Cutover kompromittiert.
 
 Reihenfolge:
 
@@ -57,16 +60,17 @@ Reihenfolge:
    JSON-Secret `LEAD_WEBHOOK_CONFIG` (`url` + `token`) den von Apps Script
    lesbaren Auth-Envelope senden. Ein ungueltiges konfiguriertes JSON muss
    fail-closed reagieren.
-5. Diesen kompatiblen Code zuerst ohne `LEAD_WEBHOOK_CONFIG` deployen; dadurch
-   bleibt der bestehende Production-Pfad unveraendert.
+5. Den fehlenden-Config-Fallback per Unit-Test und ausschliesslich im Preview
+   pruefen. Den Legacy-only-Modus **nicht** als neuen Production-Stand deployen.
 6. Den neuen Apps-Script-Pfad und `LEAD_WEBHOOK_CONFIG` ausschliesslich im
-   Preview-Environment testen: direkter Request ohne/mit falschem Schluessel
-   darf keine Zeile schreiben.
-7. Nach Preview-Freigabe das einzelne JSON-Secret in Production setzen und
-   anschliessend den **gleichen geprueften dual-kompatiblen Commit** ueber den
-   manuellen, approval-gated Production-Workflow erneut deployen. Erst das neue
-   Deployment bindet das Secret; das vorherige Deployment bleibt bis zum
-   erfolgreichen Wechsel auf dem Legacy-Pfad.
+   Preview-Environment mit einem eigenen Testtoken/Testziel pruefen: falscher
+   Schluessel darf keine Zeile schreiben; ein markierter Testlead wird nach der
+   Pruefung entfernt. Production-Token niemals in Preview verwenden.
+7. Nach Preview-Freigabe `LEAD_WEBHOOK_CONFIG` zuerst als verschluesseltes
+   Production-Secret setzen und danach den **gleichen geprueften
+   dual-kompatiblen Commit** erstmals ueber den manuellen, approval-gated
+   Production-Workflow deployen. Der bisherige Production-Deploy bleibt bis
+   zu diesem atomaren Wechsel unveraendert auf dem Legacy-Pfad.
 8. Im neuen Deployment das Vorhandensein der Binding-Namen ohne Ausgabe ihrer
    Werte verifizieren. URL und Auth-Vertrag wechseln damit gemeinsam beim
    Deployment, nicht bereits beim blossen Setzen des Secrets.
@@ -85,8 +89,9 @@ Authentifizierung ablehnend, Pages→Apps Script→CRM einmal kontrolliert beleg
 1. Profil `cherinojoel` explizit neu authentifizieren und
    `cherinojoel@gmail.com` auswaehlen.
 2. Inbound-Tab und 29-Spalten-Outbound-MASTER nicht vermischen.
-3. Live-Header und Apps-Script-Attribution gegen
-   `docs/crm/ATTRIBUTION_CONNECTOR_PATCH.md` pruefen.
+3. HISTORICAL COMPLETE 2026-07-15: Live-Header und Apps-Script-Attribution
+   wurden gegen `docs/crm/ATTRIBUTION_CONNECTOR_PATCH.md` geprueft; sechs
+   Attributionsfelder waren korrekt, die markierte Testzeile wurde entfernt.
 4. CRM-Zielmodell aus `docs/crm/CRM_DEEP_DIVE_2026-07-15.md` nur additiv
    vorbereiten; bestehende Joel-/Jordi-Tabs nur nach Backup und Freigabe ersetzen.
 

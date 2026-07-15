@@ -58,9 +58,14 @@
 - Die Pages Function leitet an die Google-Apps-Script-Web-App weiter.
 - Zielsystem der Website-Pipeline ist das Google Sheet `HSB CRM Light`, Tab
   `Leads`. IDs und Webhook-URLs gehoeren nicht in diese versionierte SSOT.
-- Die End-to-End-Zustellung ist historisch belegt. In diesem Pass wurde bewusst
-  kein echter Testlead erzeugt, weil der aktuelle Sheet-Zugriff blockiert ist
-  und eine Testzeile nicht verlaesslich geloescht werden koennte.
+- OPERATOR_VERIFIED 2026-07-15 ca. 13:05 CEST: Eine Fable-Browser-Sitzung
+  ergaenzte die sechs Attributionsspalten, aktualisierte das bestehende
+  Legacy-Deployment auf Version 4 und uebermittelte einen klar markierten
+  UTM-Testlead. Alle sechs Felder waren korrekt; die Testzeile wurde danach
+  geloescht. Codex hat die Google-UI nicht unabhaengig erneut geoeffnet.
+- Dieses Ergebnis belegt Mapping und Zustellung, **nicht** die Sicherheit: Das
+  verwendete Legacy-Deployment prueft weiterhin keinen neuen Auth-Vertrag und
+  bleibt bis zum P0-Cutover kompromittiert.
 - `ops/n8n/` ist historisch/deprecated und nicht die aktive Loesung.
 - Die lokalen, bewusst unversionierten Exporte enthalten 6.424 Outbound-Leads:
   Joel 3.212, Jordi 3.212, keine Ueberschneidung. Alle bleiben mit
@@ -69,17 +74,18 @@
   unterschiedliche Modelle. Live-Sheets wurden nicht automatisiert
   umstrukturiert. Details und das additive Zielmodell stehen in
   `docs/crm/CRM_DEEP_DIVE_2026-07-15.md`.
-- Das Attribution-Mapping fuer den Apps-Script-Connector bleibt Owner-Gate,
-  solange das richtige Google-Konto nicht neu authentifiziert ist.
+- Das Attribution-Mapping ist operator-verifiziert live. Die eindeutige
+  Google-Kontoidentitaet bleibt fuer weitere API-/Admin-Arbeit ein Owner-Gate.
 
 ## 6. Aktuelle offene Punkte
 - GA4: den fachlich kanonischen Conversion-Namen festlegen, den Event-Transport
   bei erfolgreichem Formular-Submit verlaesslich abschliessen und das Ergebnis
   in DebugView/Realtimedaten als Key Event verifizieren. PR #86 darf wegen
   Konflikten und abweichender Consent-Semantik nicht blind gemergt werden.
-- Google/CRM: Profil `cherinojoel` explizit als `cherinojoel@gmail.com`
-  re-authentifizieren; danach Sheet-Header, Attribution-Mapping und genau einen
-  loeschbaren Testlead verifizieren.
+- Google/CRM: Profil `cherinojoel` fuer weitere API-/Admin-Pruefungen explizit
+  als `cherinojoel@gmail.com` re-authentifizieren. Mapping und loeschbarer
+  Testlead sind bereits operator-verifiziert; nicht erneut als offenen Schritt
+  ausfuehren.
 - Cloudflare: Alt-Account-Worker, doppelte Zone und exponierte Tokens/Endpoint-
   Werte rotieren beziehungsweise stilllegen. Kein NS-Cutover ohne separaten
   Mail-/DNS-Plan.
@@ -94,12 +100,13 @@
   und der Production-Soft-404 ist behoben. Historische Worker-Lighthouse-Werte
   sind Evidenz, aber nicht der aktuelle Live-Messpunkt.
 - Phase 4 ist abgeschlossen: Materialien, Referenzclaims, kanonischer Outreach-Kanal und Owner-Freigabe fuer kontrolliertes manuelles Outreach-Material sind repo-belegt bzw. durch die vorliegende Owner-Entscheidung geschlossen.
-- Phase 5 ist strukturell vorbereitet; die Live-Sheet-Ansichten und das
-  Attribution-Mapping bleiben durch das Google-Konto-Gate offen.
+- Phase 5 ist strukturell vorbereitet; das Attributionsmapping ist
+  operator-verifiziert, die additiven Live-Sheet-Ansichten und eindeutige
+  Kontoidentitaet bleiben offen.
 - Phase 6 ist technisch live: Website `/api/lead` -> Pages Function -> Google
-  Apps Script -> CRM-Light. Ein frischer End-to-End-Test bleibt bis zum
-  kontrollierten Sheet-Zugriff bewusst aus.
-- Phase 7 ist `lead-data-imported-awaiting-compliance-and-batch-approval` (Leads liegen seit 2026-07-08 vor, siehe Update oben; HISTORICAL: „awaiting-lead-data" traf vor diesem Update zu).
+  Apps Script -> CRM-Light. Ein frischer UTM-End-to-End-Test ist
+  operator-verifiziert und bereinigt; der Auth-Cutover bleibt P0 offen.
+- Phase 7 ist `lead-data-imported-awaiting-compliance-and-batch-approval` (Leads liegen seit 2026-07-08 vor, siehe Update oben; HISTORICAL: „awaiting-lead-data“ traf vor diesem Update zu).
 - Phase 8 und Phase 9 bleiben pending.
 - Phase 10 ist optional und derzeit dokumentiert deaktiviert; n8n ist nicht aktiv.
 - Phase 11 ist abgeschlossen.

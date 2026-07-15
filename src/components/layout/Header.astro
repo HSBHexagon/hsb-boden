@@ -2,7 +2,7 @@
 import { navigation } from "../../data/navigation";
 import { site } from "../../data/site";
 
-const phoneHref = site.phone.replace(/[^\d+]/g, "");
+const phoneHref = site.phone.replace("(0)", "").replace(/[^\d+]/g, "");
 ---
 
 <style>

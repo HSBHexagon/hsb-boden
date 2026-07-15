@@ -78,8 +78,7 @@ async function readBodyWithLimit(request: Request, limitBytes: number): Promise<
     }
     chunks.push(value);
   }
-  const total = chunks.reduce((sum, c) => sum + c.byteLength, 0);
-  const out = new Uint8Array(total);
+  const out = new Uint8Array(received);
   let offset = 0;
   for (const chunk of chunks) {
     out.set(chunk, offset);

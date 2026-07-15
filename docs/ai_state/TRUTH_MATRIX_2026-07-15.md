@@ -13,7 +13,7 @@ Jede Aussage ist gekennzeichnet: VERIFIED (frisch geprüft in dieser Session), H
 | 41 offene PRs zum Auditzeitpunkt | VERIFIED | GitHub-Abfrage 2026-07-15 ca. 04:54 CEST; zeitgebundener Snapshot |
 | PR #84: Draft, Doku-only; CodeRabbit aktiv/erfolgreich | VERIFIED | PR-/Check-Status 2026-07-15 |
 | PR #84 Baseline/lokal und CI: 8 Testdateien / 74 Tests; `147ms` war eine Laufzeit, keine Testzahl | VERIFIED | Vitest-/CI-Ausgabe für `900fe9e` |
-| PR #85: OPEN, non-draft, BLOCKED, REVIEW_REQUIRED; Reviewer `HSBHexagon` angefordert; alle angehängten automatisierten Checks grün | VERIFIED | OpenAI Review, Gemini Review, Review Summary, CodeRabbit, CI, QA, Security, CodeQL, Lighthouse, Preview-Deploy |
+| PR #85: MERGED 2026-07-15 08:36 UTC nach Cross-Approval; alle Checks waren grün | VERIFIED | Squash-Commit `ebe824c` |
 | PR #74: OPEN, DRAFT, REVIEW_REQUIRED; Head nach Auto-Merge von `main`: `de6dd57`; frische Checks grün, PoC deaktiviert | VERIFIED | PR-/Check-/Preview-Status 2026-07-15 |
 
 ## 2. Cloudflare / Live-Website
@@ -27,7 +27,7 @@ Jede Aussage ist gekennzeichnet: VERIFIED (frisch geprüft in dieser Session), H
 | Preview-Worker `hsb-boden-preview.cherinojoel.workers.dev` liefert weiter HTTP 200 (liegt im ALTEN cherinojoel-CF-Account; die 07-12-Löschung betraf nur den neuen Account) | VERIFIED | curl |
 | Info-Account: Pages-Projekt `hsb-boden` und `www.hsb-boden.de` aktiv; keine Workers; Zone `hsb-boden.de` weiterhin `pending` | VERIFIED | Cloudflare-Accountprüfung 2026-07-15; voller NS-Cutover nicht erfolgt |
 | PR-#85-Preview `https://2b373bd9.hsb-boden.pages.dev` liefert für einen unbekannten Pfad HTTP 404 | VERIFIED | realer HTTP-Aufruf 2026-07-15 |
-| Production `https://www.hsb-boden.de/definitely-not-a-real-hsb-page` liefert weiterhin HTTP 200 | VERIFIED, OWNER_GATE | Production-Soft-404 bleibt bis zu unabhängigem Review/Freigabe, Merge und manuellem Production-Deploy von PR #85 offen |
+| Soft-404: PR #85 wurde am 2026-07-15 nach Review (HSBHexagon) gemerged (`ebe824c`); Production-Deploy + Live-404-Verifikation folgen im selben Pass | VERIFIED | Merge 08:36 UTC; Owner-Freigabe im Chat |
 
 ## 3. Google Search Console (Entscheidung beider Properties)
 

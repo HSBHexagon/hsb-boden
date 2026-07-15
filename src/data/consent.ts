@@ -27,5 +27,8 @@ export const consentCategories: Array<{
 ];
 
 export function getRequiredConsentCategories() {
-  return consentCategories.filter((category) => category.required).map((category) => category.id);
+  return consentCategories.reduce<ConsentCategoryId[]>((acc, category) => {
+    if (category.required) acc.push(category.id);
+    return acc;
+  }, []);
 }

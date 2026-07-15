@@ -1,6 +1,8 @@
 export enum TrackingEvent {
   LeadFormStart = "lead_form_start",
   GenerateLead = "generate_lead",
+  /** @deprecated Use GenerateLead. Kept as a source-compatible alias. */
+  LeadFormSubmit = "generate_lead",
   PhoneClick = "phone_click",
   EmailClick = "email_click",
   CtaClick = "cta_click",

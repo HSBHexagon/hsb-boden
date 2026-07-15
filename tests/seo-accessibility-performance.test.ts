@@ -25,11 +25,11 @@ describe("SEO, accessibility and performance guardrails", () => {
     expect(seoHead).toContain('name="twitter:image:alt"');
   });
 
-  it("uses the central business phone in the reusable CTA", () => {
+  it("uses a valid central business phone in the reusable CTA", () => {
     const cta = source("src/components/sections/CTASection.astro");
 
     expect(cta).toContain('import { site } from "../../data/site"');
-    expect(cta).toContain("const phoneHref = site.phone.replace");
+    expect(cta).toContain('site.phone.replace("(0)", "")');
     expect(cta).toContain("tel:${phoneHref}");
     expect(cta).not.toContain("tel:+4925629463030");
   });

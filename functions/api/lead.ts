@@ -95,8 +95,13 @@ function buildWebhookPayload(lead: Record<string, unknown>, webhookSecret?: stri
   return { ...lead, [WEBHOOK_AUTH_FIELD]: webhookSecret };
 }
 
-async function requireWebhookAcceptance(response: Response) {
+async function requireWebhookAcceptance(response: Response, requireJsonConfirmation: boolean) {
   if (!response.ok) throw new Error("webhook_rejected");
+
+  // Legacy mode deliberately preserves the existing contract: any successful
+  // HTTP response is accepted until the Apps Script and Preview secret have
+  // both been migrated. Strict JSON confirmation is enabled only with auth.
+  if (!requireJsonConfirmation) return;
 
   let body: unknown;
   try {
@@ -179,7 +184,7 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
       body: JSON.stringify(buildWebhookPayload(lead, env.LEAD_WEBHOOK_SECRET)),
       signal: controller.signal,
     });
-    await requireWebhookAcceptance(webhookResponse);
+    await requireWebhookAcceptance(webhookResponse, Boolean(env.LEAD_WEBHOOK_SECRET));
   } catch {
     console.error(JSON.stringify({ ts: new Date(now).toISOString(), result: "error", code: "webhook_unreachable" }));
     return jsonResponse(502, { ok: false, error: "webhook_unreachable" }, origin);

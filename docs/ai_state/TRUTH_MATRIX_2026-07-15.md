@@ -104,6 +104,19 @@ Zuordnung (kanonisch): Lead (Verantwortlicher) → Flyer (Joel/Jordi) → Mail-V
 - Drive (Konto cherinodiaz@outlook.com): enthält HSB-Doku-Spiegel (Quellenregister, Masterprompt-Doc vom 07-11 = HISTORICAL Snapshot), keine CRM-/Flyer-Originale. Originale liegen in `cherinojoel@gmail.com` (CRM) bzw. im Repo (Flyer).
 - `FABLE5_CODEX_TEAM_MASTERPROMPT_HSB_FINAL_v2.md`: lokal NOT_FOUND; ein Drive-Doc „HSB Masterprompt — Claude Fable 5 + Codex — Google Finalisierung" (07-11) existiert, wurde als historischer Snapshot behandelt.
 
+## 9b. Website-Detailaudit (W2) + GitHub-Detailaudit (W3)
+
+W2 (VERIFIED, read-only):
+- Kernseiten (/, /kontakt/, /leistungen/, /referenzen/, /datenschutz/, /impressum/) alle HTTP 200; Security-Header vollständig (HSTS, CSP frame-ancestors, XFO, Permissions-Policy, Referrer-Policy); `/_astro/*` immutable 1 Jahr.
+- **Soft-404-Bug (sitewide):** Jeder nicht-existente Pfad liefert HTTP 200 + HTML statt 404 (auch `sitemap-index.xml`). SEO-Risiko (Indexierung von Müll-URLs). Fix = Website-Code/Pages-Konfiguration (`404.html`-Auslieferung prüfen) → **freigabepflichtig**, nicht in diesem PR.
+- **Preview-Worker liefert Produktionsinhalte ohne noindex**, Canonical dort zeigt auf Apex. Empfehlung: alten Worker stilllegen oder `noindex` (Owner, alter cherinojoel-CF-Account).
+
+W3 (mit Lead-Gegenprüfung):
+- Offene PRs exakt **40** (inkl. #84 dieses Passes; W3-Rohzahl 43 war überzählt, per `gh api --paginate` gegengeprüft).
+- **Ruleset „Protect Main" ist AKTIV** mit `pull_request`, `required_status_checks`, `deletion`, `non_fast_forward` (W3-Erstbefund „ungeschützt" CONTRADICTED — falscher API-Endpoint; direkt gegengeprüft).
+- Merge-Kandidaten (Empfehlung, keine Ausführung): #75/#77/#78 (Notion-Workflows, sauber, keine Secrets), #82/#83 (A11y/LCP, Checks grün). #72 ist Duplikat von #82 → Close-Kandidat. #4 (npm-major) CONFLICTING, #15 Deploy-FAIL + HIGH_RISK → Owner-Termin. #74 bleibt isoliert (Draft).
+- AI-Reviews: `ai-pr-review.yml` funktionsfähig (OpenAI+Gemini, skippen bewusst auf Drafts). CodeRabbit nicht installiert (bekannt).
+
 ## 10. Doku-Drift (zu korrigieren in diesem PR bzw. Folge-PR)
 
 1. `CHECKPOINT_STATE.json` `blocked_by`: Apex-WordPress-Eintrag ist überholt (301 aktiv) → aktualisiert in diesem Branch.

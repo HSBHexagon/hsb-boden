@@ -1,11 +1,14 @@
 # ATTRIBUTION_CONNECTOR_PATCH — Apps-Script-Mapping für Lead-Attribution
 
-Status: `ready-to-paste` | Stand: 2026-07-13
+Status: `live` | Stand: 2026-07-15
 Gilt für: Apps Script **HSBBODEN** (Script-ID `1_xBbLkV_BddyAPqqPLaRGnZrw_DRY82GYGPcFUPvMZunXMwJOYdgeSzV`, Google-Konto cherinojoel@gmail.com) und Sheet **„HSB CRM Light"** (`1d0zZXXwYGo38ZKf0oUSSJpoZ_WVG545rDalXAdItm80`, Tab `Leads`).
 
 Seit 2026-07-13 sendet der Live-Lead-Endpoint (`/api/lead`, PR #79) sechs zusätzliche
-Attributionsfelder im Webhook-JSON. Sie werden vom Connector **ignoriert**, bis dieses
-Mapping eingespielt ist. Kein Bruch — nur Datenverlust für Attribution.
+Attributionsfelder im Webhook-JSON. Der Patch wurde am 2026-07-15 live eingespielt:
+Sheet-Header AB1:AG1 ergänzt, Code.gs um `att()`-Sanitizer + 6 Row-Felder erweitert,
+bestehendes Deployment auf Version 4 aktualisiert (Deployment-ID/Webhook-URL unverändert).
+Schritt-3-Verifikation mit echtem UTM-Test-Lead bestand: alle 6 Spalten korrekt befüllt,
+Testzeile danach gelöscht. Kein Datenverlust mehr für Attribution.
 
 ## Schritt 1 — Spalten im Sheet ergänzen (einmalig)
 

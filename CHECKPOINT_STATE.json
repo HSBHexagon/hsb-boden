@@ -1,9 +1,9 @@
 {
   "project": "HSB / HEXAFLOOR",
-  "last_updated": "2026-07-15T05:14:00+0200",
+  "last_updated": "2026-07-15T13:20:00+0200",
   "active_model": "Claude Code (Fable 5) + Codex",
-  "active_phase": "truth-finalization-0715",
-  "active_task": "PR #84 (Truth-Finalisierung, gemerged 2026-07-15) aenderte exakt fuenf Dateien: CHECKPOINT_STATE.json, PROJECT_TRUTH.md, SESSION_LOG.md, docs/ai_state/TRUTH_MATRIX_2026-07-15.md, docs/handoff/JOEL_JORDIE_OPERATOR_RUNBOOK.md. Kein Website-Code. Baseline-CI (Commit vor diesem Pass): 8 Testdateien / 74 Tests; die fruehere 147-Zahl war eine falsch gelesene Laufzeit (echte Ursache: PoC-Worktree-Tests versehentlich mitgezaehlt). PR #85 (Soft-404-Fix) parallel gemergt (`ebe824c`) und deployed. Details: docs/ai_state/TRUTH_MATRIX_2026-07-15.md.",
+  "active_phase": "crm-attribution-connector-live-0715",
+  "active_task": "PR #84 (Truth-Finalisierung, gemerged 2026-07-15) aenderte exakt fuenf Dateien: CHECKPOINT_STATE.json, PROJECT_TRUTH.md, SESSION_LOG.md, docs/ai_state/TRUTH_MATRIX_2026-07-15.md, docs/handoff/JOEL_JORDIE_OPERATOR_RUNBOOK.md. Kein Website-Code. Baseline-CI (Commit vor diesem Pass): 8 Testdateien / 74 Tests; die fruehere 147-Zahl war eine falsch gelesene Laufzeit (echte Ursache: PoC-Worktree-Tests versehentlich mitgezaehlt). PR #85 (Soft-404-Fix), PR #87 (GA4-gtag-Fix) und PR #88 (CRM-Deep-Dive) parallel gemergt und deployed. Danach: Attribution-Connector-Patch (docs/crm/ATTRIBUTION_CONNECTOR_PATCH.md) live im HSBBODEN Apps Script + HSB CRM Light Sheet eingespielt (Deployment Version 4, Webhook-URL unveraendert), End-to-End mit echtem UTM-Test-Lead verifiziert. Details: docs/ai_state/TRUTH_MATRIX_2026-07-15.md.",
   "account_migration_2026_07_02": {
     "github_new_repo": "https://github.com/HSBHexagon/hsb-boden",
     "github_old_repo_access": "HSBHexagon ist Admin-Collaborator im Alt-Repo cherinojoel-lang/hsb-boden (Ownership-Transfer pending, nicht blockierend)",
@@ -110,7 +110,9 @@
     "Final pre-go-live documentation wave (2026-06-26 Tier 2): 12 new detailed readiness docs created across cloudflare/, analytics/, email/, assets/, crm/, automation/, ops/, launch/. All Tier-1 canonical docs updated with cross-references. PROJECT_TRUTH.md, CHECKPOINT_STATE.json, FINAL_OPERATOR_HANDOFF.md, MASTER_EXECUTION_PLAN.md updated.",
     "Cloudflare Pages www live verification (2026-07-08): https://www.hsb-boden.de/referenzen/ returns HTTP 200 and includes corrected references KESSLER-ZINK GmbH, Weingut Dohlmühle-Genussreich, and Flonheim.",
     "Phase 7 lead import preparation extended for two operators: Joel Cherino Diaz and Jordi Post each get about 2,500 addresses when data volume allows; flyer attachment field is required before dispatch.",
-    "Lead attribution end-to-end (PR #79, 2026-07-13): 4 OpenAI review rounds all fixed, Codex privacy finding fixed, Playwright E2E proof without real lead; docs/crm/CRM_LIGHT_MAX_READINESS.md documents CRM mapping + connector gate."
+    "Lead attribution end-to-end (PR #79, 2026-07-13): 4 OpenAI review rounds all fixed, Codex privacy finding fixed, Playwright E2E proof without real lead; docs/crm/CRM_LIGHT_MAX_READINESS.md documents CRM mapping + connector gate.",
+    "GA4 lead-event gtag bridge (PR #87, 2026-07-15): trackEvent() now calls gtag('event', name, payload) directly instead of dataLayer-only push, TDD with 7 new jsdom tests, live browser-verified pre/post fix.",
+    "Attribution connector patch live (2026-07-15, per docs/crm/ATTRIBUTION_CONNECTOR_PATCH.md): HSBBODEN Apps Script (Script-ID 1_xBbLkV_BddyAPqqPLaRGnZrw_DRY82GYGPcFUPvMZunXMwJOYdgeSzV) Code.gs patched with att() sanitizer + 6 new row fields (utm_term, utm_content, referrer, landing_page, form_path, attribution_channel); HSB CRM Light sheet (1d0zZXXwYGo38ZKf0oUSSJpoZ_WVG545rDalXAdItm80) got matching headers AB1:AG1. Existing deployment (ID AKfycbygp7VIA3NjeljiVYiRXXsBKh-Aoei7DmS2WGlLmCmPdtOwHHOOaFF_27O0-Cu4ugm) updated to Version 4 — no new deployment created, webhook URL unchanged. Verified end-to-end via real UTM test lead through https://www.hsb-boden.de/kontakt/?utm_source=internal_test&utm_medium=qa&utm_campaign=mapping_check&utm_term=spalten_check&utm_content=patch_v1: sheet row showed utm_term=spalten_check, utm_content=patch_v1, referrer=(empty, correct for direct nav), landing_page=/kontakt/, form_path=/kontakt/, attribution_channel=campaign. Test row deleted after verification."
   ],
   "workflow_risks_fixed": [
     "ci.yml: actions/checkout@v4 pinned to 34e114876b0b11c390a56381ad16ebd13914f8d5 (2026-06-26)",
@@ -120,10 +122,11 @@
   "open_steps": [
     "ERLEDIGT 2026-07-15: GA4-Lead-Event-Fix (PR #87) gemergt und deployed, live via dataLayer-Hook verifiziert (gtag-Transportsignatur bestaetigt). Verbleibend nur kosmetisch: lead_form_submit als GA4-Key-Event markieren.",
     "ERLEDIGT 2026-07-15: GA4-GSC-Link von Preview- auf www-Property umgestellt (Details docs/ai_state/TRUTH_MATRIX_2026-07-15.md Abschnitt 3).",
-    "Owner: Google-MCP-Profil cherinojoel explizit neu authentifizieren und im Browser cherinojoel@gmail.com auswaehlen; danach Apps-Script-Spaltenmapping maschinell pruefen.",
-    "PR #85 unabhaengig reviewen und freigeben; erst danach mergen und den Production-Deploy manuell ausloesen. Bis dahin bleibt der Production-Soft-404 offen.",
+    "ERLEDIGT 2026-07-15: Attribution-Connector-Patch (docs/crm/ATTRIBUTION_CONNECTOR_PATCH.md) live im HSBBODEN Apps Script + HSB CRM Light Sheet eingespielt, Deployment Version 4, End-to-End mit echtem UTM-Test-Lead verifiziert.",
+    "PR #88 (CRM-Deep-Dive) reviewen/mergen.",
     "Cloudflare-Owner: Zone/NS-Entscheidung separat treffen; Alt-Account-Worker und doppelte Zone bereinigen sowie API-Token rotieren.",
     "PR #74 bleibt Draft und deaktiviert; erfolgreiche Cloudflare-AI-Gateway-Inferenz ist vor jeder Readiness-Aussage real nachzuweisen.",
+    "Consolidate the Pages migration worktree hsb-boden-pages-static into main after explicit approval, so there is no second code truth.",
     "Unveraendert: GBP-Verifizierung (physisch), Kaltakquise-Compliance-Gate, M365-DKIM, Service-Account-Key-Rotation und PR-Triage mit Diff-Evidenz."
   ],
   "blocked_by": [

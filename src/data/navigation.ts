@@ -37,7 +37,6 @@ export const footerGroups = [
     title: "Unternehmen & Team",
     links: [
       { label: "Über uns", href: "/#ueber-uns" },
-      { label: "Projektablauf", href: "/projektablauf/" },
       { label: "Referenzen", href: "/referenzen/" },
       { label: "Wissen", href: "/wissen/" },
       { label: "Karriere", href: "/karriere/" },

@@ -100,17 +100,19 @@ Sheet-Mutation, Testlead nach P0 nachvollziehbar entfernt.
 
 ### P2 — GA4-Lead-Conversion belastbar machen
 
-**Status:** 🟠 CODE FOLLOW-UP + OWNER/LEGAL DECISION
+**Status:** 🟡 BASIC-CONSENT-CUTOVER IM GESTAPELTEN REVIEW; OWNER/LEGAL VERIFICATION OPEN
 
-1. Basic vs. Advanced Consent Mode ausdruecklich entscheiden und Banner,
-   Datenschutzerklaerung, Code und Doku angleichen.
-2. Aus PR #86 nur einzeln gepruefte Schutzlogik auf aktuellem `main` portieren:
-   `generate_lead`, PII-Allowlist/Snapshots, `send_to`, Callback mit Timeout.
-3. Die exklusive Transportlogik aus PR #87 beibehalten: `gtag` **oder**
+1. Basic Consent ist im Review umgesetzt: `gtag.js` wird erst nach aktiver
+   Statistik-Einwilligung geladen; Code, Events und Dokumentation sind darauf
+   ausgerichtet. Die Datenschutzerklärung bleibt vor Veröffentlichung rechtlich
+   gegen den tatsächlich eingesetzten Dienst zu prüfen.
+2. Der Cutover transportiert `generate_lead` mit PII-Allowlist, `send_to` und
+   Callback-Timeout. Die Transportlogik bleibt exklusiv: `gtag` **oder**
    `dataLayer`-Fallback, nicht beide parallel.
-4. Netzwerkrequest/DebugView real belegen und das kanonische Event als Key Event
-   markieren. PR #90 beweist bislang nur den lokalen gtag-Shim-Aufruf.
-5. Erst danach PR #86 als superseded schliessen.
+3. Nach Preview und Merge Netzwerkrequest/DebugView real belegen und das
+   kanonische Event erst dann als Key Event markieren.
+4. Den nicht mergebaren PR #86 erst nach Review des neuen Cutovers als überholt
+   schließen.
 
 **Exit:** Consent-Vertrag konsistent, erfolgreicher Submit verliert das Event
 nicht beim Redirect, kein PII-Pfad, DebugView/Key-Event belegt.

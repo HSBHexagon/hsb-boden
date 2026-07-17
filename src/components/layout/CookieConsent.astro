@@ -25,13 +25,13 @@ const t = cookieTexts[lang];
         <p id="cookie-consent-title" class="text-[10px] font-black uppercase tracking-wide sm:text-sm">{t.title}</p>
         <p class="mt-1 text-[11px] leading-4 text-white/70 sm:mt-1.5 sm:text-sm sm:leading-6">
           {t.intro}
-          <a class="ml-1 underline hover:text-white" href="/datenschutz/">{t.privacyLink}</a>
+          <a class="focus-visible:ring-2 focus-visible:ring-hsb-red focus-visible:ring-offset-2 focus-visible:ring-offset-hsb-black focus-visible:outline-none ml-1 underline hover:text-white" href="/datenschutz/">{t.privacyLink}</a>
         </p>
       </div>
       <div class="flex flex-wrap items-center gap-2 sm:gap-3 lg:justify-end">
-        <button id="cookie-settings-toggle" class="mr-auto text-[11px] font-bold text-white/70 underline hover:text-white sm:mr-0 sm:text-sm" aria-expanded="false" aria-controls="cookie-categories">{t.settings}</button>
-        <button id="cookie-necessary" class="button-secondary-dark !min-h-9 !border-white/30 !px-3 !text-[11px] !text-white hover:!border-white sm:!min-h-[44px] sm:!px-4 sm:!text-sm">{t.necessaryOnly}</button>
-        <button id="cookie-accept-all" class="button-primary !min-h-9 !px-3 !text-[11px] sm:!min-h-[44px] sm:!px-4 sm:!text-sm">{t.acceptAll}</button>
+        <button id="cookie-settings-toggle" class="focus-visible:ring-2 focus-visible:ring-hsb-red focus-visible:ring-offset-2 focus-visible:ring-offset-hsb-black focus-visible:outline-none mr-auto text-[11px] font-bold text-white/70 underline hover:text-white sm:mr-0 sm:text-sm" aria-expanded="false" aria-controls="cookie-categories">{t.settings}</button>
+        <button id="cookie-necessary" class="focus-visible:ring-2 focus-visible:ring-hsb-red focus-visible:ring-offset-2 focus-visible:ring-offset-hsb-black focus-visible:outline-none button-secondary-dark !min-h-9 !border-white/30 !px-3 !text-[11px] !text-white hover:!border-white sm:!min-h-[44px] sm:!px-4 sm:!text-sm">{t.necessaryOnly}</button>
+        <button id="cookie-accept-all" class="focus-visible:ring-2 focus-visible:ring-hsb-red focus-visible:ring-offset-2 focus-visible:ring-offset-hsb-black focus-visible:outline-none button-primary !min-h-9 !px-3 !text-[11px] sm:!min-h-[44px] sm:!px-4 sm:!text-sm">{t.acceptAll}</button>
       </div>
     </div>
 
@@ -46,12 +46,12 @@ const t = cookieTexts[lang];
       <div class="rounded border border-white/15 p-3 sm:p-4">
         <div class="flex items-center justify-between gap-3">
           <label class="text-sm font-black" for="cookie-analytics-toggle">{t.analyticsTitle}</label>
-          <input id="cookie-analytics-toggle" type="checkbox" class="size-5 accent-hsb-red" />
+          <input id="cookie-analytics-toggle" type="checkbox" class="focus-visible:ring-2 focus-visible:ring-hsb-red focus-visible:ring-offset-2 focus-visible:ring-offset-hsb-black focus-visible:outline-none size-5 accent-hsb-red" />
         </div>
         <p class="mt-1.5 text-xs leading-5 text-white/65">{t.analyticsDesc}</p>
       </div>
       <div class="sm:col-span-2">
-        <button id="cookie-save" class="button-secondary-dark !min-h-10 !border-white/30 !px-3 !text-xs !text-white hover:!border-white sm:!min-h-[44px] sm:!px-4 sm:!text-sm">{t.save}</button>
+        <button id="cookie-save" class="focus-visible:ring-2 focus-visible:ring-hsb-red focus-visible:ring-offset-2 focus-visible:ring-offset-hsb-black focus-visible:outline-none button-secondary-dark !min-h-10 !border-white/30 !px-3 !text-xs !text-white hover:!border-white sm:!min-h-[44px] sm:!px-4 sm:!text-sm">{t.save}</button>
       </div>
     </div>
   </div>

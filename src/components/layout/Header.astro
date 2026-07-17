@@ -49,7 +49,8 @@ import { navigation } from "../../data/navigation";
 
     <!-- Logo: helle Marken-Variante, fuer den durchgehend dunklen Header gebaut (transparenter PNG-Hintergrund) -->
     <a href="/" class="logo-lockup flex shrink-0 items-center no-underline" aria-label="HSB Hexagon Säurebau Startseite">
-      <img src="/brand/hsb-boden-logo-dark.png" alt="HSB Hexagon Säurebau GmbH" class="h-11 w-auto object-contain" width="60" height="44" />
+      <!-- ⚡ Bolt Optimization: LCP priority on logo to improve above-the-fold render time -->
+      <img src="/brand/hsb-boden-logo-dark.png" alt="HSB Hexagon Säurebau GmbH" class="h-11 w-auto object-contain" width="60" height="44" fetchpriority="high" loading="eager" decoding="async" />
     </a>
 
     <!-- Rechter Cluster: Navigation und CTA bilden eine bewusste Gruppe,

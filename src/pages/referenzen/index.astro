@@ -26,11 +26,14 @@ const references = getPublicReferences();
       <div class="grid gap-5 lg:grid-cols-[1.25fr_0.75fr]">
         <figure class="overflow-hidden rounded-[4px] border border-hsb-line bg-white">
           <div class="aspect-[16/10] overflow-hidden bg-hsb-black">
+            <!-- ⚡ Bolt Optimization: Hero image is LCP candidate, removed lazy loading and added high fetchpriority -->
             <img
               src="/media/hsb/current/referenzflaeche-1.webp"
               alt="Keramischer Industrieboden mit Entwässerungsrinne als Referenzfläche von Hexagon Säurebau"
               class="h-full w-full object-cover object-center transition-transform duration-500 hover:scale-[1.015]"
-              loading="lazy"
+              fetchpriority="high"
+              loading="eager"
+              decoding="async"
               width="554"
               height="361"
             />

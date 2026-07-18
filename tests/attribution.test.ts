@@ -6,6 +6,7 @@ import {
   loadAttribution,
   resolveChannel,
   updateSessionAttribution,
+  sanitizePagePath,
 } from "../src/lib/attribution";
 
 const ORIGIN = "https://www.hsb-boden.de";
@@ -203,5 +204,39 @@ describe("buildLeadAttributionFields", () => {
 
     expect(fields).toEqual({ form_path: "/kontakt/", attribution_channel: "direct" });
     expect(Object.keys(fields)).not.toContain("utm_source");
+  });
+});
+
+
+describe("sanitizePagePath", () => {
+  it("keeps valid absolute paths intact", () => {
+    expect(sanitizePagePath("/leistungen/")).toBe("/leistungen/");
+    expect(sanitizePagePath("/")).toBe("/");
+    expect(sanitizePagePath("/a/b/c")).toBe("/a/b/c");
+  });
+
+  it("removes query strings and hash anchors", () => {
+    expect(sanitizePagePath("/kontakt/?utm_source=test")).toBe("/kontakt/");
+    expect(sanitizePagePath("/ueber-uns#team")).toBe("/ueber-uns");
+    expect(sanitizePagePath("/faq?page=2#top")).toBe("/faq");
+    expect(sanitizePagePath("/a/?b=c")).toBe("/a/");
+  });
+
+  it("returns undefined for paths not starting with a slash", () => {
+    expect(sanitizePagePath("leistungen/")).toBeUndefined();
+    expect(sanitizePagePath("")).toBeUndefined();
+  });
+
+  it("returns undefined for non-string inputs", () => {
+    expect(sanitizePagePath(123)).toBeUndefined();
+    expect(sanitizePagePath(null)).toBeUndefined();
+    expect(sanitizePagePath(undefined)).toBeUndefined();
+    expect(sanitizePagePath({})).toBeUndefined();
+  });
+
+  it("removes control and HTML characters due to underlying sanitization", () => {
+    expect(sanitizePagePath("/test<script>")).toBe("/testscript");
+    expect(sanitizePagePath("/test\x00")).toBe("/test");
+    expect(sanitizePagePath("/test\nnewline")).toBe("/testnewline");
   });
 });

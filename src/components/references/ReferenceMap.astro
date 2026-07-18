@@ -27,19 +27,20 @@ interface Props {
 
 const { references, clients = [] } = Astro.props;
 
-const project = (lat: number, lng: number) => ({
-  x: 4 + ((lng - germanyMapBounds.minLng) / (germanyMapBounds.maxLng - germanyMapBounds.minLng)) * (germanyMapViewBox.width - 8),
-  y: 4 + ((germanyMapBounds.maxLat - lat) / (germanyMapBounds.maxLat - germanyMapBounds.minLat)) * (germanyMapViewBox.height - 8),
-});
-
-const points = references.map((reference) => ({
-  ...reference,
-  ...project(reference.lat, reference.lng),
-}));
+const scaleX = (germanyMapViewBox.width - 8) / (germanyMapBounds.maxLng - germanyMapBounds.minLng);
+const scaleY = (germanyMapViewBox.height - 8) / (germanyMapBounds.maxLat - germanyMapBounds.minLat);
+const minLng = germanyMapBounds.minLng;
+const maxLat = germanyMapBounds.maxLat;
 
 const clientPoints = clients.map((client) => ({
-  ...client,
-  ...project(client.lat, client.lng),
+  name: client.name,
+  city: client.city,
+  region: client.region,
+  lat: client.lat,
+  lng: client.lng,
+  branche: client.branche,
+  x: 4 + (client.lng - minLng) * scaleX,
+  y: 4 + (maxLat - client.lat) * scaleY,
 }));
 
 const labelOffsets: Record<string, { dx: number; dy: number; anchor: "start" | "end" }> = {
@@ -57,17 +58,40 @@ const stateLabelOverrides: Record<string, { x: number; y: number }> = {
   Brandenburg: { x: 78.2, y: 38.7 },
 };
 
-const coveragePoints = germanyTrustMarkers.map((marker) => ({
-  ...marker,
-  ...project(marker.lat, marker.lng),
-  ...(labelOffsets[marker.city] ?? { dx: 2, dy: 0, anchor: "start" as const }),
-}));
+const coveragePoints = germanyTrustMarkers.map((marker) => {
+  const labelOffset = labelOffsets[marker.city] ?? { dx: 2, dy: 0, anchor: "start" as const };
+  return {
+    label: marker.label,
+    city: marker.city,
+    lat: marker.lat,
+    lng: marker.lng,
+    x: 4 + (marker.lng - minLng) * scaleX,
+    y: 4 + (maxLat - marker.lat) * scaleY,
+    dx: labelOffset.dx,
+    dy: labelOffset.dy,
+    anchor: labelOffset.anchor,
+  };
+});
 
 // Regionen deduplizieren: kollidierende Inline-Labels auf der Karte ersetzen wir
 // durch eine saubere Chip-Liste. Freigegebene exakte Standorte zuerst.
+const points: (ReferenceItem & { x: number; y: number })[] = [];
 const exactRegions = new Set<string>();
 const otherRegions = new Set<string>();
+
 for (const reference of references) {
+  points.push({
+    id: reference.id,
+    displayName: reference.displayName,
+    displayLocation: reference.displayLocation,
+    region: reference.region,
+    canShowExactLocation: reference.canShowExactLocation,
+    lat: reference.lat,
+    lng: reference.lng,
+    x: 4 + (reference.lng - minLng) * scaleX,
+    y: 4 + (maxLat - reference.lat) * scaleY,
+  });
+
   if (reference.canShowExactLocation) {
     exactRegions.add(reference.displayLocation);
   } else {

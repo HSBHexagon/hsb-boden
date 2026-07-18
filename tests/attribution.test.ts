@@ -96,6 +96,17 @@ describe("captureAttribution", () => {
     expect(attr.referrer).toBeUndefined();
     expect(attr.landing_page).toBeUndefined();
   });
+
+  it("returns undefined for malformed referrer URLs that trigger the catch block", () => {
+    const attr = captureAttribution({
+      search: "",
+      referrer: "this is not a valid url!!!",
+      pathname: "/",
+      origin: ORIGIN,
+    });
+
+    expect(attr.referrer).toBeUndefined();
+  });
 });
 
 describe("updateSessionAttribution / loadAttribution", () => {

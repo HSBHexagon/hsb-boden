@@ -57,7 +57,7 @@ export function getServiceBySlug(slug: string) {
   return servicesMap.get(slug);
 }
 
-export function getPublicReferences() {
+function _computePublicReferences() {
   return references
     .filter((reference) => {
       const approvalStatus: string = reference.approvalStatus;
@@ -78,6 +78,15 @@ export function getPublicReferences() {
         logo: canShowLogo ? reference.logo : undefined,
       };
     });
+}
+
+let publicRefsCache: ReturnType<typeof _computePublicReferences> | undefined;
+
+export function getPublicReferences() {
+  if (!publicRefsCache) {
+    publicRefsCache = _computePublicReferences();
+  }
+  return publicRefsCache;
 }
 
 export function getReferencesForSlugs(referenceIds: string[]) {

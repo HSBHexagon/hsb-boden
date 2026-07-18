@@ -6,6 +6,7 @@ import {
   loadAttribution,
   resolveChannel,
   updateSessionAttribution,
+  sanitizeUtmValue,
 } from "../src/lib/attribution";
 
 const ORIGIN = "https://www.hsb-boden.de";
@@ -203,5 +204,59 @@ describe("buildLeadAttributionFields", () => {
 
     expect(fields).toEqual({ form_path: "/kontakt/", attribution_channel: "direct" });
     expect(Object.keys(fields)).not.toContain("utm_source");
+  });
+});
+
+describe("sanitizeUtmValue", () => {
+  it("returns undefined for non-string inputs", () => {
+    expect(sanitizeUtmValue(null)).toBeUndefined();
+    expect(sanitizeUtmValue(undefined)).toBeUndefined();
+    expect(sanitizeUtmValue(123)).toBeUndefined();
+    expect(sanitizeUtmValue({})).toBeUndefined();
+    expect(sanitizeUtmValue([])).toBeUndefined();
+  });
+
+  it("returns undefined for empty or fully invalid strings", () => {
+    expect(sanitizeUtmValue("")).toBeUndefined();
+    expect(sanitizeUtmValue("   ")).toBeUndefined();
+    expect(sanitizeUtmValue("<>")).toBeUndefined();
+    expect(sanitizeUtmValue("<script>")).toBe("script");
+    expect(sanitizeUtmValue("!!!")).toBeUndefined();
+  });
+
+  it("preserves allowed characters and trims spaces", () => {
+    expect(sanitizeUtmValue("  valid-UTM_123.~%+  ")).toBe("valid-UTM_123.~%+");
+  });
+
+  it("strips disallowed characters", () => {
+    expect(sanitizeUtmValue("utm<script>alert(1)</script>value!")).toBe("utmscriptalert1scriptvalue");
+    expect(sanitizeUtmValue("something\\with\\slashes")).toBe("somethingwithslashes");
+    expect(sanitizeUtmValue("value (with parens)")).toBe("value with parens");
+  });
+
+  it("strips leading spreadsheet formula injection characters", () => {
+    expect(sanitizeUtmValue("=cmd")).toBe("cmd");
+    expect(sanitizeUtmValue("+cmd")).toBe("cmd");
+    expect(sanitizeUtmValue("-cmd")).toBe("cmd");
+    expect(sanitizeUtmValue("@cmd")).toBe("cmd");
+    // Should handle them even if preceded by spaces, because we trim before stripping prefixes
+    expect(sanitizeUtmValue("   =cmd")).toBe("cmd");
+    expect(sanitizeUtmValue("  + SUM(1,2)")).toBe("SUM12");
+  });
+
+  it("allows formula characters in the middle or end of strings", () => {
+    expect(sanitizeUtmValue("val=1")).toBe("val1"); // = is not allowed per regex
+    expect(sanitizeUtmValue("user@example")).toBe("userexample"); // @ is not in allowed chars so it gets stripped in first regex anyway!
+    // Let's test with allowed characters that might be formula chars (+, -)
+    expect(sanitizeUtmValue("a+b")).toBe("a+b");
+    expect(sanitizeUtmValue("a-b")).toBe("a-b");
+    expect(sanitizeUtmValue("valid+")).toBe("valid+");
+  });
+
+  it("truncates values to UTM_MAX (100) characters max", () => {
+    const longString = "a".repeat(150);
+    const sanitized = sanitizeUtmValue(longString);
+    expect(sanitized).toBe("a".repeat(100));
+    expect(sanitized?.length).toBe(100);
   });
 });

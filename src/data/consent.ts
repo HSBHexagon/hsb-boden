@@ -27,5 +27,11 @@ export const consentCategories: Array<{
 ];
 
 export function getRequiredConsentCategories() {
-  return consentCategories.filter((category) => category.required).map((category) => category.id);
+  // Using reduce instead of filter().map() to avoid intermediate array allocation
+  return consentCategories.reduce((acc, category) => {
+    if (category.required) {
+      acc.push(category.id);
+    }
+    return acc;
+  }, [] as ConsentCategoryId[]);
 }

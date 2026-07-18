@@ -1,6 +1,8 @@
 ---
 import { navigation } from "../../data/navigation";
 
+const headerNavigation = navigation.filter(n => n.href !== "/kontakt/");
+
 
 ---
 
@@ -57,7 +59,7 @@ import { navigation } from "../../data/navigation";
          die Navigation nicht isoliert in der Mitte schwebt. -->
     <div class="flex items-center gap-4 xl:gap-8">
       <nav class="nav-links hidden items-center gap-4 text-sm font-bold lg:flex xl:gap-6" aria-label="Hauptnavigation">
-        {navigation.filter(n => n.href !== "/kontakt/").map((item) => (
+        {headerNavigation.map((item) => (
           <a class="transition-colors" href={item.href}>{item.label}</a>
         ))}
       </nav>

@@ -59,25 +59,25 @@ export function getServiceBySlug(slug: string) {
 
 export function getPublicReferences() {
   return references
-    .filter((reference) => {
+    .reduce((acc: any[], reference) => {
       const approvalStatus: string = reference.approvalStatus;
-      return approvalStatus !== "internal";
-    })
-    .map((reference) => {
-      const approved = reference.approvalStatus === "approved";
-      const canShowLogo = approved && reference.canShowLogo;
-      const canShowExactLocation = approved && reference.canShowExactLocation;
+      if (approvalStatus !== "internal") {
+        const approved = reference.approvalStatus === "approved";
+        const canShowLogo = approved && reference.canShowLogo;
+        const canShowExactLocation = approved && reference.canShowExactLocation;
 
-      return {
-        ...reference,
-        displayName: approved ? reference.publicName : reference.anonymousName,
-        displayLocation: canShowExactLocation
-          ? `${reference.city}, ${reference.region}`
-          : reference.region,
-        canShowExactLocation,
-        logo: canShowLogo ? reference.logo : undefined,
-      };
-    });
+        acc.push({
+          ...reference,
+          displayName: approved ? reference.publicName : reference.anonymousName,
+          displayLocation: canShowExactLocation
+            ? `${reference.city}, ${reference.region}`
+            : reference.region,
+          canShowExactLocation,
+          logo: canShowLogo ? reference.logo : undefined,
+        });
+      }
+      return acc;
+    }, []);
 }
 
 export function getReferencesForSlugs(referenceIds: string[]) {

@@ -59,7 +59,12 @@ async function isRateLimited(
 }
 
 function corsHeaders(origin: string | null) {
-  const headers = new Headers({ "Content-Type": "application/json" });
+  const headers = new Headers({
+    "Content-Type": "application/json",
+    "Cache-Control": "no-store",
+    "X-Content-Type-Options": "nosniff",
+    "Referrer-Policy": "no-referrer",
+  });
   if (origin && isAllowedOrigin(origin)) {
     headers.set("Access-Control-Allow-Origin", origin);
   }

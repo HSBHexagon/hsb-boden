@@ -33,8 +33,9 @@ jobs:
       - name: Build
         # PUBLIC_LEAD_FORM_ENABLED is a build-time flag (site.hasLeadEndpoint):
         # without it the LeadForm renders in the disabled phone/mail fallback.
-        # Runtime delivery is gated separately by LEAD_WEBHOOK_URL on the
-        # Pages production environment.
+        # Runtime delivery is gated separately by LEAD_WEBHOOK_CONFIG on the
+        # Pages production environment. LEAD_WEBHOOK_URL is only the temporary
+        # backwards-compatible cutover fallback.
         env:
           PUBLIC_LEAD_FORM_ENABLED: "true"
         run: npm run build

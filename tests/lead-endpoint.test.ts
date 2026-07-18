@@ -2,6 +2,13 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { onRequestPost, onRequestOptions, onRequestGet, resetLeadRateLimiter } from "../functions/api/lead";
 
 const testEnv = { LEAD_WEBHOOK_URL: "https://script.google.com/macros/s/EXAMPLE/exec" };
+const authenticatedEnv = {
+  LEAD_WEBHOOK_URL: "https://script.google.com/macros/s/LEGACY_EXAMPLE/exec",
+  LEAD_WEBHOOK_CONFIG: JSON.stringify({
+    url: "https://script.google.com/macros/s/AUTHENTICATED_EXAMPLE/exec",
+    token: "test-only-auth-token-with-32-characters",
+  }),
+};
 
 const validBody = {
   firstName: "Max",
@@ -33,8 +40,8 @@ function makeRequest(body: unknown, opts: { ip?: string; origin?: string; method
   });
 }
 
-function makeContext(request: Request) {
-  return { request, env: testEnv } as any;
+function makeContext(request: Request, env: Record<string, unknown> = testEnv) {
+  return { request, env } as any;
 }
 
 describe("POST /api/lead", () => {
@@ -47,12 +54,161 @@ describe("POST /api/lead", () => {
   });
 
   it("forwards a valid lead to the configured webhook and returns 200", async () => {
-    const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response("{}", { status: 200 }));
+    const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response("{}", { status: 200 }),
+    );
     const res = await onRequestPost(makeContext(makeRequest(validBody)));
     expect(res.status).toBe(200);
     expect(fetchMock).toHaveBeenCalledTimes(1);
     const [, init] = fetchMock.mock.calls[0];
     expect(init?.body).not.toContain("honeypot");
+    expect(JSON.parse(String(init?.body))).toEqual(validBody);
+  });
+
+  it("uses an authenticated envelope when LEAD_WEBHOOK_CONFIG is present", async () => {
+    const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      Response.json({ ok: true }),
+    );
+
+    const res = await onRequestPost(makeContext(makeRequest(validBody), authenticatedEnv));
+
+    expect(res.status).toBe(200);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    const [url, init] = fetchMock.mock.calls[0];
+    expect(url).toBe("https://script.google.com/macros/s/AUTHENTICATED_EXAMPLE/exec");
+    expect(JSON.parse(String(init?.body))).toEqual({
+      version: 1,
+      authToken: "test-only-auth-token-with-32-characters",
+      lead: validBody,
+    });
+  });
+
+  it("fails closed instead of falling back when LEAD_WEBHOOK_CONFIG is invalid JSON", async () => {
+    const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      Response.json({ ok: true }),
+    );
+
+    const res = await onRequestPost(makeContext(makeRequest(validBody), {
+      ...testEnv,
+      LEAD_WEBHOOK_CONFIG: "not-json",
+    }));
+
+    expect(res.status).toBe(502);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("rejects an authenticated config with unexpected fields", async () => {
+    const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      Response.json({ ok: true }),
+    );
+
+    const res = await onRequestPost(makeContext(makeRequest(validBody), {
+      ...testEnv,
+      LEAD_WEBHOOK_CONFIG: JSON.stringify({
+        url: "https://script.google.com/macros/s/AUTHENTICATED_EXAMPLE/exec",
+        token: "test-only-auth-token-with-32-characters",
+        fallbackUrl: "https://example.invalid/collect",
+      }),
+    }));
+
+    expect(res.status).toBe(502);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("rejects an unsafe authenticated webhook URL without issuing a request", async () => {
+    const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      Response.json({ ok: true }),
+    );
+
+    const res = await onRequestPost(makeContext(makeRequest(validBody), {
+      ...testEnv,
+      LEAD_WEBHOOK_CONFIG: JSON.stringify({
+        url: "https://evil.example/collect",
+        token: "test-only-auth-token-with-32-characters",
+      }),
+    }));
+
+    expect(res.status).toBe(502);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("rejects query parameters on an authenticated webhook URL", async () => {
+    const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      Response.json({ ok: true }),
+    );
+
+    const res = await onRequestPost(makeContext(makeRequest(validBody), {
+      ...testEnv,
+      LEAD_WEBHOOK_CONFIG: JSON.stringify({
+        url: "https://script.google.com/macros/s/AUTHENTICATED_EXAMPLE/exec?redirect=evil",
+        token: "test-only-auth-token-with-32-characters",
+      }),
+    }));
+
+    expect(res.status).toBe(502);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("rejects an unsafe legacy webhook URL without issuing a request", async () => {
+    const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response("{}", { status: 200 }),
+    );
+
+    const res = await onRequestPost(makeContext(makeRequest(validBody), {
+      LEAD_WEBHOOK_URL: "https://example.invalid/collect",
+    }));
+
+    expect(res.status).toBe(502);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("rejects an authenticated config with a weak token", async () => {
+    const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      Response.json({ ok: true }),
+    );
+
+    const res = await onRequestPost(makeContext(makeRequest(validBody), {
+      ...testEnv,
+      LEAD_WEBHOOK_CONFIG: JSON.stringify({
+        url: "https://script.google.com/macros/s/AUTHENTICATED_EXAMPLE/exec",
+        token: "too-short",
+      }),
+    }));
+
+    expect(res.status).toBe(502);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ["HTTP URL", "http://script.google.com/macros/s/AUTHENTICATED_EXAMPLE/exec", "test-only-auth-token-with-32-characters"],
+    ["lookalike host", "https://script.google.com.evil.example/macros/s/AUTHENTICATED_EXAMPLE/exec", "test-only-auth-token-with-32-characters"],
+    ["URL fragment", "https://script.google.com/macros/s/AUTHENTICATED_EXAMPLE/exec#fragment", "test-only-auth-token-with-32-characters"],
+    ["token whitespace", "https://script.google.com/macros/s/AUTHENTICATED_EXAMPLE/exec", " test-only-auth-token-with-32-characters"],
+    ["token control character", "https://script.google.com/macros/s/AUTHENTICATED_EXAMPLE/exec", "test-only-auth-token-with-32-characters\n"],
+    ["oversized token", "https://script.google.com/macros/s/AUTHENTICATED_EXAMPLE/exec", "x".repeat(513)],
+  ])("rejects an authenticated config with %s", async (_case, url, token) => {
+    const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      Response.json({ ok: true }),
+    );
+
+    const res = await onRequestPost(makeContext(makeRequest(validBody), {
+      ...testEnv,
+      LEAD_WEBHOOK_CONFIG: JSON.stringify({ url, token }),
+    }));
+
+    expect(res.status).toBe(502);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("fails without either webhook binding and does not issue a request", async () => {
+    const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response("{}", { status: 200 }),
+    );
+
+    const res = await onRequestPost(makeContext(makeRequest(validBody), {}));
+
+    expect(res.status).toBe(502);
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 
   it("returns 400 on invalid payload without leaking internals", async () => {
@@ -63,7 +219,9 @@ describe("POST /api/lead", () => {
   });
 
   it("silently rejects a filled honeypot without calling the webhook", async () => {
-    const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response("{}", { status: 200 }));
+    const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      Response.json({ ok: true }),
+    );
     const res = await onRequestPost(makeContext(makeRequest({ ...validBody, honeypot: "i-am-a-bot" })));
     expect(res.status).toBe(400);
     expect(fetchMock).not.toHaveBeenCalled();
@@ -71,6 +229,24 @@ describe("POST /api/lead", () => {
 
   it("rejects a foreign Origin", async () => {
     const res = await onRequestPost(makeContext(makeRequest(validBody, { origin: "https://evil.example" })));
+    expect(res.status).toBe(403);
+  });
+
+  it("accepts a same-project Cloudflare Pages preview Origin", async () => {
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response("{}", { status: 200 }));
+    const origin = "https://feature-auth-cutover.hsb-boden.pages.dev";
+
+    const res = await onRequestPost(makeContext(makeRequest(validBody, { origin })));
+
+    expect(res.status).toBe(200);
+    expect(res.headers.get("Access-Control-Allow-Origin")).toBe(origin);
+  });
+
+  it("rejects a lookalike Cloudflare Pages preview Origin", async () => {
+    const res = await onRequestPost(makeContext(makeRequest(validBody, {
+      origin: "https://feature-auth-cutover.hsb-boden.pages.dev.evil.example",
+    })));
+
     expect(res.status).toBe(403);
   });
 
@@ -99,8 +275,60 @@ describe("POST /api/lead", () => {
     });
   });
 
+  it("returns 502 when an HTTP-success response does not acknowledge the lead", async () => {
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      Response.json({ ok: false, error: "unauthorized" }),
+    );
+
+    const res = await onRequestPost(makeContext(makeRequest(validBody), authenticatedEnv));
+
+    expect(res.status).toBe(502);
+    await expect(res.json()).resolves.toEqual({
+      ok: false,
+      error: "webhook_unreachable",
+    });
+  });
+
+  it("rejects an authenticated acknowledgement with unexpected fields", async () => {
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      Response.json({ ok: true, error: "processing_failed" }),
+    );
+
+    const res = await onRequestPost(makeContext(makeRequest(validBody), authenticatedEnv));
+
+    expect(res.status).toBe(502);
+  });
+
+  it("returns 502 when the authenticated webhook response is not JSON", async () => {
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response("ok", { status: 200 }),
+    );
+
+    const res = await onRequestPost(makeContext(makeRequest(validBody), authenticatedEnv));
+
+    expect(res.status).toBe(502);
+    await expect(res.json()).resolves.toEqual({
+      ok: false,
+      error: "webhook_unreachable",
+    });
+  });
+
+  it("does not expose authenticated webhook configuration or lead data on upstream failure", async () => {
+    vi.spyOn(globalThis, "fetch").mockRejectedValue(new Error("network down"));
+    const errorLog = vi.spyOn(console, "error").mockImplementation(() => undefined);
+
+    const res = await onRequestPost(makeContext(makeRequest(validBody), authenticatedEnv));
+    const clientBody = await res.text();
+    const observableOutput = JSON.stringify(errorLog.mock.calls) + clientBody;
+
+    expect(res.status).toBe(502);
+    expect(observableOutput).not.toContain("test-only-auth-token-with-32-characters");
+    expect(observableOutput).not.toContain("AUTHENTICATED_EXAMPLE");
+    expect(observableOutput).not.toContain(validBody.email);
+  });
+
   it("rate-limits after 5 requests from the same IP within 10 minutes", async () => {
-    vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response("{}", { status: 200 }));
+    vi.spyOn(globalThis, "fetch").mockImplementation(async () => Response.json({ ok: true }));
     const ip = "203.0.113.42";
     for (let i = 0; i < 5; i++) {
       const res = await onRequestPost(makeContext(makeRequest({ ...validBody, email: `lead${i}@example.com` }, { ip })));
@@ -111,7 +339,7 @@ describe("POST /api/lead", () => {
   });
 
   it("rate-limits after 2 requests from the same email within 30 minutes regardless of IP", async () => {
-    vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response("{}", { status: 200 }));
+    vi.spyOn(globalThis, "fetch").mockImplementation(async () => Response.json({ ok: true }));
     const email = "repeat-lead@example.com";
     const res1 = await onRequestPost(makeContext(makeRequest({ ...validBody, email }, { ip: "203.0.113.10" })));
     const res2 = await onRequestPost(makeContext(makeRequest({ ...validBody, email }, { ip: "203.0.113.11" })));
@@ -126,6 +354,7 @@ describe("GET/PUT/DELETE /api/lead", () => {
   it("rejects GET with 405", async () => {
     const res = await onRequestGet(makeContext(makeRequest(undefined, { method: "GET" })));
     expect(res.status).toBe(405);
+    expect(res.headers.get("Allow")).toBe("POST, OPTIONS");
   });
 });
 

@@ -28,29 +28,12 @@ const skipLabel = ui[lang].skip;
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <SEOHead title={title} description={description} path={path} jsonLd={jsonLd} alternates={alternates} robots={robots} />
     <meta name="google-site-verification" content="vKVeg5NwhzKj_x1eTTi0bHF_4SmQUgc47r82_lUaz1g" />
-    <!-- Google tag (gtag.js) mit Consent Mode v2 (Advanced): Default "denied",
-         ohne Einwilligung werden keine Analytics-Cookies gesetzt. Gespeicherte
-         Zustimmung (hsb-consent-v1) wird vor dem config-Aufruf wiederhergestellt;
-         CookieConsent.astro meldet Änderungen über das hsb:consent-Event. -->
-    <script is:inline async src="https://www.googletagmanager.com/gtag/js?id=G-VC4BJBEFTV"></script>
-    <script is:inline>
-      window.dataLayer = window.dataLayer || [];
-      function gtag(){window.dataLayer.push(arguments);}
-      var hsbConsent = null;
-      try { hsbConsent = JSON.parse(localStorage.getItem("hsb-consent-v1")); } catch (e) {}
-      gtag('consent', 'default', {
-        ad_storage: 'denied',
-        ad_user_data: 'denied',
-        ad_personalization: 'denied',
-        analytics_storage: hsbConsent && hsbConsent.analytics ? 'granted' : 'denied'
-      });
-      gtag('js', new Date());
-      gtag('config', 'G-VC4BJBEFTV');
-      window.addEventListener('hsb:consent', function (e) {
-        gtag('consent', 'update', {
-          analytics_storage: e.detail && e.detail.analytics ? 'granted' : 'denied'
-        });
-      });
+    <!-- GA4 Basic Consent: Der externe Google-Request entsteht erst nach einer
+         aktiven Statistik-Einwilligung. Der Loader reagiert auf hsb:consent. -->
+    <script>
+      import { initializeAnalytics } from "../lib/analytics";
+
+      initializeAnalytics();
     </script>
   </head>
   <body>

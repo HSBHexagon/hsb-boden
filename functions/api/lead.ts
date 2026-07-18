@@ -151,6 +151,17 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
 
   try {
     if (!webhookUrl) throw new Error("webhook_not_configured");
+
+    // SSRF Protection: Validate webhook URL
+    const parsedUrl = new URL(webhookUrl);
+    if (parsedUrl.protocol !== "https:") {
+      throw new Error("webhook_invalid_protocol");
+    }
+    const allowedHosts = ["script.google.com", "n8n.hsb-boden.de"];
+    if (!allowedHosts.includes(parsedUrl.hostname)) {
+      throw new Error("webhook_invalid_host");
+    }
+
     const webhookResponse = await fetch(webhookUrl, {
       method: "POST",
       headers: { "Content-Type": "application/json" },

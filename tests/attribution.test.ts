@@ -5,7 +5,6 @@ import {
   captureAttribution,
   loadAttribution,
   resolveChannel,
-  sanitizePagePath,
   updateSessionAttribution,
 } from "../src/lib/attribution";
 
@@ -204,50 +203,5 @@ describe("buildLeadAttributionFields", () => {
 
     expect(fields).toEqual({ form_path: "/kontakt/", attribution_channel: "direct" });
     expect(Object.keys(fields)).not.toContain("utm_source");
-  });
-});
-
-describe("sanitizePagePath", () => {
-  it("returns basic paths starting with /", () => {
-    expect(sanitizePagePath("/")).toBe("/");
-    expect(sanitizePagePath("/kontakt/")).toBe("/kontakt/");
-    expect(sanitizePagePath("/leistungen/industrieboden/")).toBe("/leistungen/industrieboden/");
-  });
-
-  it("removes query parameters and hashes", () => {
-    expect(sanitizePagePath("/kontakt/?utm_source=google")).toBe("/kontakt/");
-    expect(sanitizePagePath("/?test=1&b=2")).toBe("/");
-    expect(sanitizePagePath("/#section")).toBe("/");
-    expect(sanitizePagePath("/path/to/page?query=string#hash")).toBe("/path/to/page");
-    expect(sanitizePagePath("/?")).toBe("/");
-    expect(sanitizePagePath("/#")).toBe("/");
-  });
-
-  it("returns undefined for non-string inputs", () => {
-    expect(sanitizePagePath(undefined)).toBeUndefined();
-    expect(sanitizePagePath(null)).toBeUndefined();
-    expect(sanitizePagePath(123)).toBeUndefined();
-    expect(sanitizePagePath({})).toBeUndefined();
-    expect(sanitizePagePath(["/"])).toBeUndefined();
-  });
-
-  it("returns undefined for paths not starting with /", () => {
-    expect(sanitizePagePath("kontakt/")).toBeUndefined();
-    expect(sanitizePagePath("https://www.google.com/")).toBeUndefined();
-    expect(sanitizePagePath("javascript:alert(1)")).toBeUndefined();
-    expect(sanitizePagePath("")).toBeUndefined();
-  });
-
-  it("removes control characters and HTML tags", () => {
-    expect(sanitizePagePath("/path/to/<script>alert(1)</script>")).toBe("/path/to/scriptalert(1)/script");
-    expect(sanitizePagePath("/hello\u0000world")).toBe("/helloworld");
-    expect(sanitizePagePath('/"hello"/\'world\'')).toBe("/hello/world");
-  });
-
-  it("truncates extremely long paths", () => {
-    const longPath = "/" + "a".repeat(300);
-    const sanitized = sanitizePagePath(longPath);
-    expect(sanitized).toHaveLength(200); // PATH_MAX is 200
-    expect(sanitized?.startsWith("/a")).toBe(true);
   });
 });

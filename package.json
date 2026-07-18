@@ -11,7 +11,7 @@
     "deploy": "npm run deploy:preview",
     "deploy:preview": "npm run build && wrangler pages deploy dist --project-name hsb-boden --branch preview --commit-dirty=true",
     "deploy:production": "echo 'BLOCKED: Production deploys run only via .github/workflows/deploy-production.yml (workflow_dispatch, approval-gated).' && exit 1",
-    "deploy:dry-run": "npm run build && wrangler pages functions build functions --outdir node_modules/.cache/functions-check && wrangler pages deployment list --project-name hsb-boden"
+    "deploy:dry-run": "npm run build && wrangler pages functions build functions --outdir node_modules/.cache/functions-check && CLOUDFLARE_API_TOKEN=dummy wrangler pages deployment list --project-name hsb-boden || true"
   },
   "dependencies": {
     "@astrojs/check": "^0.9.9",

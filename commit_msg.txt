@@ -1,0 +1,5 @@
+🔒 Fix: Prevent DoS via excessive JSON nesting
+
+🎯 What: Replaced blind `JSON.parse` with a depth-aware validation loop that prevents overly nested JSON parsing on the Cloudflare Worker.
+⚠️ Risk: An attacker could craft extremely nested JSON (e.g., thousands of array brackets) inside the 16KB payload limit. Passing this to the synchronous `JSON.parse` would trigger deep recursion in the JS engine, blocking the Node/V8 event loop and causing a Denial of Service (DoS) for the Worker function.
+🛡️ Solution: Implemented an upfront iterative depth checker `checkJsonDepth` (max depth 32) before `JSON.parse(rawBody)`. If the '{' or '[' nesting depth exceeds 32, it throws an error immediately, yielding a fast 400 response without triggering recursive V8 parsing. Included string-awareness to prevent false positives for curly braces inside strings.

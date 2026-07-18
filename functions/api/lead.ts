@@ -275,6 +275,5 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
     clearTimeout(timeout);
   }
 
-  console.log(JSON.stringify({ ts: new Date(now).toISOString(), result: "ok", emailDomain: lead.email.split("@")[1] }));
   return jsonResponse(200, { ok: true }, origin);
 };

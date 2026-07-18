@@ -28,3 +28,7 @@
 # The previous Workers config (`main = "@astrojs/cloudflare/entrypoints/server"`,
 # `[env.production]`) was stale drift from the pre-Pages SSR setup and was
 # removed after the Pages migration (see deploy workflows above).
+
+name = "hsb-boden"
+compatibility_date = "2026-06-05"
+main = "src/dummy-worker.ts"

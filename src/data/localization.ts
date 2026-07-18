@@ -21,7 +21,8 @@ export function resolveSuggestedLanguages(locale: string | undefined) {
   const primary = normalized.split("-")[0] as LanguageCode;
   const direct = supportedLanguages.find((language) => language.code === primary);
   const order = direct ? [direct.code, ...fallbackOrder.filter((code) => code !== direct.code)] : fallbackOrder;
-  return order
-    .map((code) => supportedLanguages.find((language) => language.code === code))
-    .filter((language): language is (typeof supportedLanguages)[number] => Boolean(language));
+  return order.flatMap((code) => {
+    const language = supportedLanguages.find((language) => language.code === code);
+    return language ? [language] : [];
+  });
 }

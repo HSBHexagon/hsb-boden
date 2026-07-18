@@ -1,13 +1,15 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { onRequestPost, onRequestOptions, onRequestGet, resetLeadRateLimiter } from "../functions/api/lead";
+import { onRequestPost, onRequestOptions, onRequestGet } from "../functions/api/lead";
+import { env as mockEnv } from "./__mocks__/cloudflare-workers";
 
-const testEnv = { LEAD_WEBHOOK_URL: "https://script.google.com/macros/s/EXAMPLE/exec" };
+const testEnv = { LEAD_WEBHOOK_URL: "https://script.google.com/macros/s/EXAMPLE/exec", RATE_LIMIT_KV: mockEnv.RATE_LIMIT_KV };
 const authenticatedEnv = {
   LEAD_WEBHOOK_URL: "https://script.google.com/macros/s/LEGACY_EXAMPLE/exec",
   LEAD_WEBHOOK_CONFIG: JSON.stringify({
     url: "https://script.google.com/macros/s/AUTHENTICATED_EXAMPLE/exec",
     token: "test-only-auth-token-with-32-characters",
   }),
+  RATE_LIMIT_KV: mockEnv.RATE_LIMIT_KV,
 };
 
 const validBody = {
@@ -46,7 +48,7 @@ function makeContext(request: Request, env: Record<string, unknown> = testEnv) {
 
 describe("POST /api/lead", () => {
   beforeEach(() => {
-    resetLeadRateLimiter();
+    (mockEnv.RATE_LIMIT_KV as any).reset();
     vi.restoreAllMocks();
   });
   afterEach(() => {
@@ -156,6 +158,7 @@ describe("POST /api/lead", () => {
 
     const res = await onRequestPost(makeContext(makeRequest(validBody), {
       LEAD_WEBHOOK_URL: "https://example.invalid/collect",
+      RATE_LIMIT_KV: mockEnv.RATE_LIMIT_KV,
     }));
 
     expect(res.status).toBe(502);
@@ -200,12 +203,28 @@ describe("POST /api/lead", () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
+  it("returns 500 when RATE_LIMIT_KV is missing", async () => {
+    const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(Response.json({ ok: true }));
+    const errorLog = vi.spyOn(console, "error").mockImplementation(() => undefined);
+
+    const res = await onRequestPost(makeContext(makeRequest(validBody), {
+      LEAD_WEBHOOK_URL: testEnv.LEAD_WEBHOOK_URL,
+      // RATE_LIMIT_KV explicitly omitted
+    }));
+
+    expect(res.status).toBe(500);
+    expect(fetchMock).not.toHaveBeenCalled();
+    const json = await res.json();
+    expect(json).toEqual({ ok: false, error: "internal_server_error" });
+    expect(errorLog).toHaveBeenCalled();
+  });
+
   it("fails without either webhook binding and does not issue a request", async () => {
     const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(
       new Response("{}", { status: 200 }),
     );
 
-    const res = await onRequestPost(makeContext(makeRequest(validBody), {}));
+    const res = await onRequestPost(makeContext(makeRequest(validBody), { RATE_LIMIT_KV: mockEnv.RATE_LIMIT_KV }));
 
     expect(res.status).toBe(502);
     expect(fetchMock).not.toHaveBeenCalled();

@@ -27,20 +27,49 @@ interface Props {
 
 const { references, clients = [] } = Astro.props;
 
+// Vorberechnung der Projektionsfaktoren
+const widthFactor = (germanyMapViewBox.width - 8) / (germanyMapBounds.maxLng - germanyMapBounds.minLng);
+const heightFactor = (germanyMapViewBox.height - 8) / (germanyMapBounds.maxLat - germanyMapBounds.minLat);
+const minLng = germanyMapBounds.minLng;
+const maxLat = germanyMapBounds.maxLat;
+
 const project = (lat: number, lng: number) => ({
-  x: 4 + ((lng - germanyMapBounds.minLng) / (germanyMapBounds.maxLng - germanyMapBounds.minLng)) * (germanyMapViewBox.width - 8),
-  y: 4 + ((germanyMapBounds.maxLat - lat) / (germanyMapBounds.maxLat - germanyMapBounds.minLat)) * (germanyMapViewBox.height - 8),
+  x: 4 + (lng - minLng) * widthFactor,
+  y: 4 + (maxLat - lat) * heightFactor,
 });
 
-const points = references.map((reference) => ({
-  ...reference,
-  ...project(reference.lat, reference.lng),
-}));
+// Regionen deduplizieren: kollidierende Inline-Labels auf der Karte ersetzen wir
+// durch eine saubere Chip-Liste. Freigegebene exakte Standorte zuerst.
+// Kombiniere die Schleifen für Projektion und Regionen-Deduplizierung für bessere Performance
+const exactRegions = new Set<string>();
+const otherRegions = new Set<string>();
 
-const clientPoints = clients.map((client) => ({
-  ...client,
-  ...project(client.lat, client.lng),
-}));
+const points = [];
+for (let i = 0; i < references.length; i++) {
+  const reference = references[i];
+
+  if (reference.canShowExactLocation) {
+    exactRegions.add(reference.displayLocation);
+  } else {
+    otherRegions.add(reference.displayLocation);
+  }
+
+  points.push({
+    ...reference,
+    x: 4 + (reference.lng - minLng) * widthFactor,
+    y: 4 + (maxLat - reference.lat) * heightFactor,
+  });
+}
+
+const clientPoints = [];
+for (let i = 0; i < clients.length; i++) {
+  const client = clients[i];
+  clientPoints.push({
+    ...client,
+    x: 4 + (client.lng - minLng) * widthFactor,
+    y: 4 + (maxLat - client.lat) * heightFactor,
+  });
+}
 
 const labelOffsets: Record<string, { dx: number; dy: number; anchor: "start" | "end" }> = {
   Husum: { dx: -2.4, dy: -2.8, anchor: "end" },
@@ -57,22 +86,14 @@ const stateLabelOverrides: Record<string, { x: number; y: number }> = {
   Brandenburg: { x: 78.2, y: 38.7 },
 };
 
-const coveragePoints = germanyTrustMarkers.map((marker) => ({
-  ...marker,
-  ...project(marker.lat, marker.lng),
-  ...(labelOffsets[marker.city] ?? { dx: 2, dy: 0, anchor: "start" as const }),
-}));
-
-// Regionen deduplizieren: kollidierende Inline-Labels auf der Karte ersetzen wir
-// durch eine saubere Chip-Liste. Freigegebene exakte Standorte zuerst.
-const exactRegions = new Set<string>();
-const otherRegions = new Set<string>();
-for (const reference of references) {
-  if (reference.canShowExactLocation) {
-    exactRegions.add(reference.displayLocation);
-  } else {
-    otherRegions.add(reference.displayLocation);
-  }
+const coveragePoints = [];
+for (let i = 0; i < germanyTrustMarkers.length; i++) {
+  const marker = germanyTrustMarkers[i];
+  coveragePoints.push({
+    ...marker,
+    ...project(marker.lat, marker.lng),
+    ...(labelOffsets[marker.city] ?? { dx: 2, dy: 0, anchor: "start" as const }),
+  });
 }
 
 const regions: { label: string; exact: boolean }[] = [];

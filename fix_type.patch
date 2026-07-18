@@ -1,0 +1,12 @@
+diff --git a/src/components/forms/LeadForm.client.ts b/src/components/forms/LeadForm.client.ts
+index 7eb294e..ab41cc9 100644
+--- a/src/components/forms/LeadForm.client.ts
++++ b/src/components/forms/LeadForm.client.ts
+@@ -16,7 +16,7 @@ export function initLeadForm() {
+     }
+   }
+
+-  async function onSubmit(event: Event) {
++  async function onSubmit(event: { preventDefault: () => void }) {
+     event.preventDefault();
+     if (!deliveryConfigured || !form || !submitBtn || !errorMsg) return;

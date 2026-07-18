@@ -29,16 +29,15 @@ jobs:
           node-version: 22
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v3
+        uses: pnpm/action-setup@v4
         with:
           version: 8
-          cache: npm
 
       - name: Install dependencies
-        run: pnpm install --no-audit --no-fund
+        run: pnpm install
 
       - name: Generate Astro types
-        run: npm exec -- astro sync
+        run: pnpm exec astro sync
 
       - name: Confirm setup
         run: echo "Copilot setup complete"

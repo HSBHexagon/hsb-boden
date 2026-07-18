@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildBreadcrumbJsonLd, buildOrganizationJsonLd, buildServiceJsonLd, buildLocalBusinessJsonLd } from "../src/lib/schema";
+import { buildBreadcrumbJsonLd, buildOrganizationJsonLd, buildServiceJsonLd, buildLocalBusinessJsonLd, buildArticleJsonLd } from "../src/lib/schema";
 
 describe("json-ld generation", () => {
   it("returns valid organization json-ld without unsupported partner claims", () => {
@@ -45,5 +45,25 @@ describe("json-ld generation", () => {
 
     expect(graph.itemListElement).toHaveLength(3);
     expect(graph.itemListElement[2].position).toBe(3);
+  });
+
+  it("builds article json-ld with correct properties", () => {
+    const graph = buildArticleJsonLd({
+      headline: "Test Article Headline",
+      description: "Test Article Description",
+      path: "/ratgeber/test-article/",
+    });
+
+    expect(() => JSON.stringify(graph)).not.toThrow();
+    expect(graph["@type"]).toBe("TechArticle");
+    expect(graph.headline).toBe("Test Article Headline");
+    expect(graph.description).toBe("Test Article Description");
+    expect(graph.mainEntityOfPage).toContain("/ratgeber/test-article/");
+
+    // Verify author and publisher structure
+    expect(graph.author["@type"]).toBe("Organization");
+    expect(graph.author.name).toBe("HSB Hexagon Säurebau GmbH");
+    expect(graph.publisher["@type"]).toBe("Organization");
+    expect(graph.publisher.name).toBe("HSB Hexagon Säurebau GmbH");
   });
 });

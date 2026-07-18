@@ -20,15 +20,22 @@ const validBody = {
   legalBasis: "inquiry",
 };
 
-function makeRequest(body: unknown, opts: { ip?: string; origin?: string; method?: string } = {}) {
-  const { ip = "203.0.113.1", origin = "https://hsb-boden.de", method = "POST" } = opts;
+function makeRequest(body: unknown, opts: { ip?: string; origin?: string | null; method?: string } = {}) {
+  const { ip = "203.0.113.1", method = "POST" } = opts;
+  const origin = opts.origin !== undefined ? opts.origin : "https://hsb-boden.de";
+
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    "CF-Connecting-IP": ip,
+  };
+
+  if (origin !== null) {
+    headers.Origin = origin;
+  }
+
   return new Request("https://hsb-boden.de/api/lead", {
     method,
-    headers: {
-      "Content-Type": "application/json",
-      "CF-Connecting-IP": ip,
-      Origin: origin,
-    },
+    headers,
     body: method === "GET" ? undefined : JSON.stringify(body),
   });
 }
@@ -73,6 +80,12 @@ describe("POST /api/lead", () => {
     const res = await onRequestPost(makeContext(makeRequest(validBody, { origin: "https://evil.example" })));
     expect(res.status).toBe(403);
   });
+
+  it("rejects a missing Origin", async () => {
+    const res = await onRequestPost(makeContext(makeRequest(validBody, { origin: null })));
+    expect(res.status).toBe(403);
+  });
+
 
   it("rejects a payload larger than 16 KB", async () => {
     const res = await onRequestPost(makeContext(makeRequest({ ...validBody, message: "x".repeat(20_000) })));

@@ -105,7 +105,7 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
   const { request, env } = context;
   const origin = request.headers.get("Origin");
 
-  if (origin && !ALLOWED_ORIGINS.has(origin)) {
+  if (!origin || !ALLOWED_ORIGINS.has(origin)) {
     return jsonResponse(403, { ok: false, error: "forbidden_origin" }, origin);
   }
 

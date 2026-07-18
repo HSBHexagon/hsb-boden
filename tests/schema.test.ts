@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildBreadcrumbJsonLd, buildOrganizationJsonLd, buildServiceJsonLd, buildLocalBusinessJsonLd } from "../src/lib/schema";
+import { buildBreadcrumbJsonLd, buildOrganizationJsonLd, buildServiceJsonLd, buildLocalBusinessJsonLd, buildFaqJsonLd } from "../src/lib/schema";
 
 describe("json-ld generation", () => {
   it("returns valid organization json-ld without unsupported partner claims", () => {
@@ -45,5 +45,29 @@ describe("json-ld generation", () => {
 
     expect(graph.itemListElement).toHaveLength(3);
     expect(graph.itemListElement[2].position).toBe(3);
+  });
+
+  it("builds valid FAQPage json-ld for a list of FAQs", () => {
+    const faqs = [
+      { question: "What is your return policy?", answer: "We offer a 30-day return policy." },
+      { question: "How long does shipping take?", answer: "Shipping takes 3-5 business days." }
+    ];
+    const graph = buildFaqJsonLd(faqs);
+
+    expect(() => JSON.stringify(graph)).not.toThrow();
+    expect(graph["@type"]).toBe("FAQPage");
+    expect(graph.mainEntity).toHaveLength(2);
+    expect(graph.mainEntity[0]["@type"]).toBe("Question");
+    expect(graph.mainEntity[0].name).toBe("What is your return policy?");
+    expect(graph.mainEntity[0].acceptedAnswer["@type"]).toBe("Answer");
+    expect(graph.mainEntity[0].acceptedAnswer.text).toBe("We offer a 30-day return policy.");
+  });
+
+  it("builds valid FAQPage json-ld for an empty list of FAQs", () => {
+    const graph = buildFaqJsonLd([]);
+
+    expect(() => JSON.stringify(graph)).not.toThrow();
+    expect(graph["@type"]).toBe("FAQPage");
+    expect(graph.mainEntity).toHaveLength(0);
   });
 });

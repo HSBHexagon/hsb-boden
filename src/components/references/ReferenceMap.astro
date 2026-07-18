@@ -65,25 +65,25 @@ const coveragePoints = germanyTrustMarkers.map((marker) => ({
 
 // Regionen deduplizieren: kollidierende Inline-Labels auf der Karte ersetzen wir
 // durch eine saubere Chip-Liste. Freigegebene exakte Standorte zuerst.
-const exactRegions = new Set<string>();
-const otherRegions = new Set<string>();
+const regionMap = new Map<string, boolean>();
 for (const reference of references) {
-  if (reference.canShowExactLocation) {
-    exactRegions.add(reference.displayLocation);
-  } else {
-    otherRegions.add(reference.displayLocation);
+  if (reference.canShowExactLocation || !regionMap.has(reference.displayLocation)) {
+    regionMap.set(reference.displayLocation, reference.canShowExactLocation);
   }
 }
 
-const regions: { label: string; exact: boolean }[] = [];
-for (const label of exactRegions) {
-  regions.push({ label, exact: true });
-}
-for (const label of otherRegions) {
-  if (!exactRegions.has(label)) {
-    regions.push({ label, exact: false });
+const exactRegions: { label: string; exact: boolean }[] = [];
+const otherRegions: { label: string; exact: boolean }[] = [];
+
+for (const [label, exact] of regionMap) {
+  if (exact) {
+    exactRegions.push({ label, exact: true });
+  } else {
+    otherRegions.push({ label, exact: false });
   }
 }
+
+const regions = exactRegions.concat(otherRegions);
 ---
 
 <div class="flex flex-col bg-white" data-testid="reference-map">

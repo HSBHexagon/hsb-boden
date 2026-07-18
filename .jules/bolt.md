@@ -1,0 +1,1 @@
+- Use a single `Map` over multiple `Set`s when deduplicating elements into arrays where possible. This saves multiple redundant array creations and iterative loops.

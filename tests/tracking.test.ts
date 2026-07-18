@@ -55,10 +55,13 @@ describe("trackEvent", () => {
   });
 
   it("feuert das hsb:tracking CustomEvent unabhängig vom Transport", () => {
-    const listener = vi.fn();
-    window.addEventListener("hsb:tracking", listener, { once: true });
+    const dispatchEventSpy = vi.spyOn(window, 'dispatchEvent');
     trackEvent(TrackingEvent.FlyerQrVisit, { source: "qr" });
-    expect(listener).toHaveBeenCalledTimes(1);
+    expect(dispatchEventSpy).toHaveBeenCalledTimes(1);
+    const eventArg = dispatchEventSpy.mock.calls[0][0] as unknown as CustomEvent;
+    expect(eventArg.type).toBe("hsb:tracking");
+    expect(eventArg.detail).toEqual({ event: TrackingEvent.FlyerQrVisit, payload: { source: "qr" } });
+    dispatchEventSpy.mockRestore();
   });
 
   it("wirft nicht, wenn gtag intern eine Exception auslöst", () => {
@@ -66,5 +69,11 @@ describe("trackEvent", () => {
       throw new Error("boom");
     };
     expect(() => trackEvent(TrackingEvent.LeadFormSubmit)).not.toThrow();
+  });
+
+  it("bricht ab, wenn window undefined ist (z.B. im SSR)", () => {
+    vi.stubGlobal('window', undefined);
+    expect(() => trackEvent(TrackingEvent.LeadFormStart)).not.toThrow();
+    vi.unstubAllGlobals();
   });
 });

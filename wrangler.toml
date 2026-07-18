@@ -30,3 +30,5 @@
 # removed after the Pages migration (see deploy workflows above).
 
 main = "src/dummy-worker.ts"
+name = "hsb-boden"
+compatibility_date = "2026-06-05"

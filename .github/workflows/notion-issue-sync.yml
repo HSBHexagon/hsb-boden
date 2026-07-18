@@ -1,0 +1,96 @@
+name: "🐛 Notion Issue Sync"
+
+# Synct GitHub Issues bidirektional nach Notion HSB Boden Datenbank
+# Trigger: Issue erstellt, bearbeitet, geschlossen, wieder geöffnet
+on:
+  issues:
+    types: [opened, edited, closed, reopened, labeled, assigned]
+
+permissions:
+  contents: read
+  issues: read
+
+jobs:
+  sync-issue-to-notion:
+    name: Sync Issue → Notion
+    runs-on: ubuntu-latest
+    steps:
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install Notion SDK
+        run: npm install @notionhq/client
+
+      - name: Sync Issue to Notion
+        env:
+          NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
+          NOTION_ISSUES_DB_ID: ${{ secrets.NOTION_ISSUES_DB_ID }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+          ISSUE_TITLE: ${{ github.event.issue.title }}
+          ISSUE_BODY: ${{ github.event.issue.body }}
+          ISSUE_STATE: ${{ github.event.issue.state }}
+          ISSUE_URL: ${{ github.event.issue.html_url }}
+          ISSUE_AUTHOR: ${{ github.event.issue.user.login }}
+          ISSUE_LABELS: ${{ toJSON(github.event.issue.labels.*.name) }}
+          ISSUE_CREATED: ${{ github.event.issue.created_at }}
+          ACTION: ${{ github.event.action }}
+        run: |
+          node << 'EOF'
+          const { Client } = require('@notionhq/client');
+          const notion = new Client({ auth: process.env.NOTION_TOKEN });
+
+          const stateMap = {
+            'open': '🟢 Offen',
+            'closed': '✅ Geschlossen'
+          };
+
+          const status = stateMap[process.env.ISSUE_STATE] || '❓ Unbekannt';
+          const issueNum = parseInt(process.env.ISSUE_NUMBER);
+          const labels = JSON.parse(process.env.ISSUE_LABELS || '[]');
+          const labelItems = labels.map(l => ({ name: l }));
+
+          async function findExistingPage() {
+            const res = await notion.databases.query({
+              database_id: process.env.NOTION_ISSUES_DB_ID,
+              filter: {
+                property: 'Issue #',
+                number: { equals: issueNum }
+              }
+            });
+            return res.results[0] || null;
+          }
+
+          async function main() {
+            const existing = await findExistingPage();
+            const props = {
+              'Name': { title: [{ text: { content: `#${issueNum}: ${process.env.ISSUE_TITLE}` } }] },
+              'Issue #': { number: issueNum },
+              'Status': { select: { name: status } },
+              'GitHub URL': { url: process.env.ISSUE_URL },
+              'Autor': { rich_text: [{ text: { content: process.env.ISSUE_AUTHOR } }] },
+              'Erstellt Am': { date: { start: process.env.ISSUE_CREATED } },
+            };
+
+            if (labelItems.length > 0) {
+              props['Labels'] = { multi_select: labelItems };
+            }
+
+            if (existing) {
+              await notion.pages.update({ page_id: existing.id, properties: props });
+              console.log(`✅ Issue #${issueNum} in Notion aktualisiert`);
+            } else {
+              await notion.pages.create({
+                parent: { database_id: process.env.NOTION_ISSUES_DB_ID },
+                properties: props
+              });
+              console.log(`✅ Issue #${issueNum} in Notion erstellt`);
+            }
+          }
+
+          main().catch(err => {
+            console.error('❌ Notion Issue Sync fehlgeschlagen:', err.message);
+            process.exit(1);
+          });
+          EOF

@@ -54,6 +54,8 @@ export function buildLocalBusinessJsonLd() {
 export function buildFaqJsonLd(
   faqs: Array<{ question: string; answer: string }>,
 ) {
+  if (!faqs.length) return null;
+
   return {
     "@context": "https://schema.org",
     "@type": "FAQPage",

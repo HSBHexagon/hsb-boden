@@ -204,7 +204,6 @@ const deliveryConfigured = site.hasLeadEndpoint;
       await trackEventAndWait(TrackingEvent.LeadFormSubmit);
       window.location.href = "/danke-projektanfrage/";
     } catch (e) {
-      console.error("Submission error:", e);
       submitBtn.disabled = false;
       submitBtn.textContent = originalBtnText;
       errorMsg.textContent = genericErrorText;

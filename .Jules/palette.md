@@ -1,4 +1,3 @@
-
 ## 2024-05-18 - Improve Required Fields and Focus Styling in Form Component
 **Learning:** In this application's components, native focus outlines are often insufficient or completely stripped out, making keyboard navigation very difficult. Explicit Tailwind `focus-visible` classes (e.g., `focus-visible:ring-1 focus-visible:ring-hsb-red focus-visible:outline-none`) must be explicitly applied to interactive elements like inputs, textareas, and buttons. Additionally, relying solely on the HTML5 `required` attribute is not enough for sighted users; an explicit visual required indicator (such as a red asterisk with `aria-hidden="true"`) needs to be manually added to labels.
 **Action:** When adding or updating form fields or interactive elements, ensure they explicitly include the visual required indicator if applicable and always add explicit `focus-visible` styling to maintain accessibility for keyboard users.

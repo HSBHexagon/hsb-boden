@@ -274,8 +274,13 @@ export function LeadForm() {
           name="privacyConsent"
           className="mt-1 focus-visible:ring-1 focus-visible:ring-hsb-red focus-visible:outline-none"
         />
-        Ich stimme zu, dass meine Angaben zur Bearbeitung der Anfrage
-        verarbeitet werden.
+        <span>
+          Ich stimme zu, dass meine Angaben zur Bearbeitung der Anfrage
+          verarbeitet werden.{" "}
+          <span aria-hidden="true" className="text-hsb-red ml-1">
+            *
+          </span>
+        </span>
       </label>
 
       {status === "error" ? (

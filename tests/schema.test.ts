@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildBreadcrumbJsonLd, buildOrganizationJsonLd, buildServiceJsonLd, buildLocalBusinessJsonLd } from "../src/lib/schema";
+import { buildBreadcrumbJsonLd, buildOrganizationJsonLd, buildServiceJsonLd, buildLocalBusinessJsonLd, buildFaqJsonLd } from "../src/lib/schema";
 
 describe("json-ld generation", () => {
   it("returns valid organization json-ld without unsupported partner claims", () => {
@@ -45,5 +45,27 @@ describe("json-ld generation", () => {
 
     expect(graph.itemListElement).toHaveLength(3);
     expect(graph.itemListElement[2].position).toBe(3);
+  });
+
+  it("builds faq json-ld correctly", () => {
+    // Should return null for empty array
+    expect(buildFaqJsonLd([])).toBeNull();
+
+    // Should return valid schema for non-empty array
+    const faqs = [
+      { question: "What is the meaning of life?", answer: "42" },
+      { question: "Is this a test?", answer: "Yes, it is." },
+    ];
+    const graph = buildFaqJsonLd(faqs);
+
+    expect(graph).not.toBeNull();
+    expect(graph!["@type"]).toBe("FAQPage");
+    expect(graph!.mainEntity).toHaveLength(2);
+
+    const firstQuestion = graph!.mainEntity[0];
+    expect(firstQuestion["@type"]).toBe("Question");
+    expect(firstQuestion.name).toBe("What is the meaning of life?");
+    expect(firstQuestion.acceptedAnswer["@type"]).toBe("Answer");
+    expect(firstQuestion.acceptedAnswer.text).toBe("42");
   });
 });

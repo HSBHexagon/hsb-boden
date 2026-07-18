@@ -16,7 +16,7 @@ const { title, description, path = "/", jsonLd = [], alternates = [], robots } =
 const resolvedTitle = pageTitle(title);
 const socialImage = `${canonical("/")}brand/og-image.png`;
 const socialImageAlt = "HSB Hexagon Säurebau – Industrieböden und Säureschutz";
-const allJsonLd = [buildOrganizationJsonLd(), ...jsonLd];
+const allJsonLd = [buildOrganizationJsonLd(), ...jsonLd].filter(Boolean);
 ---
 
 <title>{resolvedTitle}</title>

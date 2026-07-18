@@ -2,23 +2,27 @@
 import { clientLocations } from "../../data/clientLocations";
 import { getPublicReferences } from "../../lib/content";
 
-const referenceLogos = getPublicReferences()
-  .filter((reference) => reference.canShowLogo && reference.logo)
-  .map((reference) => ({
-    name: reference.publicName,
-    logo: reference.logo,
-    meta: "Freigegebene Referenz",
-  }));
+const logos: { name: string; logo: string; meta: string }[] = [];
 
-const locationLogos = clientLocations
-  .filter((location) => "logo" in location)
-  .map((location) => ({
-    name: location.name,
-    logo: location.logo,
-    meta: location.branche,
-  }));
+for (const reference of getPublicReferences()) {
+  if (reference.canShowLogo && reference.logo) {
+    logos.push({
+      name: reference.publicName,
+      logo: reference.logo,
+      meta: "Freigegebene Referenz",
+    });
+  }
+}
 
-const logos = [...referenceLogos, ...locationLogos];
+for (const location of clientLocations) {
+  if ("logo" in location && location.logo) {
+    logos.push({
+      name: location.name,
+      logo: location.logo as string,
+      meta: location.branche,
+    });
+  }
+}
 ---
 
 <section class="section border-b border-hsb-line bg-white">

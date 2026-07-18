@@ -8,6 +8,7 @@ const PRIORITY_MAP: Record<string, { priority: string; changefreq: string }> = {
   "/branchen/": { priority: "0.9", changefreq: "monthly" },
   "/referenzen/": { priority: "0.8", changefreq: "monthly" },
   "/wissen/": { priority: "0.8", changefreq: "weekly" },
+  "/projektablauf/": { priority: "0.8", changefreq: "monthly" },
   "/kontakt/": { priority: "0.7", changefreq: "monthly" },
   "/karriere/": { priority: "0.6", changefreq: "monthly" },
 };

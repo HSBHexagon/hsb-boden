@@ -86,6 +86,37 @@ function isAllowedOrigin(origin: string): boolean {
   }
 }
 
+
+function isJsonTooDeep(jsonString: string, maxDepth: number): boolean {
+  let depth = 0;
+  let inString = false;
+  let escapeNext = false;
+
+  for (let i = 0; i < jsonString.length; i++) {
+    const char = jsonString[i];
+
+    if (inString) {
+      if (escapeNext) {
+        escapeNext = false;
+      } else if (char === '\\') {
+        escapeNext = true;
+      } else if (char === '"') {
+        inString = false;
+      }
+    } else {
+      if (char === '"') {
+        inString = true;
+      } else if (char === '{' || char === '[') {
+        depth++;
+        if (depth > maxDepth) return true;
+      } else if (char === '}' || char === ']') {
+        depth--;
+      }
+    }
+  }
+  return false;
+}
+
 function jsonResponse(status: number, body: unknown, origin: string | null) {
   return new Response(JSON.stringify(body), { status, headers: corsHeaders(origin) });
 }
@@ -221,6 +252,11 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
       return jsonResponse(413, { ok: false, error: "payload_too_large" }, origin);
     }
     return jsonResponse(400, { ok: false, error: "invalid_body" }, origin);
+  }
+
+
+  if (isJsonTooDeep(rawBody, 32)) {
+    return jsonResponse(400, { ok: false, error: "invalid_json" }, origin);
   }
 
   let parsedBody: unknown;

@@ -45,6 +45,26 @@ function makeContext(request: Request, env: Record<string, unknown> = testEnv) {
 }
 
 describe("POST /api/lead", () => {
+
+  it("rejects excessively deep JSON (DoS prevention)", async () => {
+    // Create an object deeper than 32 levels
+    let deepJson = "1";
+    for (let i = 0; i < 40; i++) {
+      deepJson = `{"a":${deepJson}}`;
+    }
+
+    const request = new Request("https://www.hsb-boden.de/api/lead", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "Content-Length": String(deepJson.length) },
+      body: deepJson,
+    });
+
+    const response = await onRequestPost({ request, env: {} as any } as any) as Response;
+    expect(response.status).toBe(400);
+    const body = await response.json();
+    expect(body).toEqual({ ok: false, error: "invalid_json" });
+  });
+
   beforeEach(() => {
     resetLeadRateLimiter();
     vi.restoreAllMocks();

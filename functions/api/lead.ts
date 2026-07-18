@@ -10,7 +10,10 @@ interface Env {
   RATE_LIMIT_KV?: KVNamespace;
 }
 
-const ALLOWED_ORIGINS = new Set(["https://hsb-boden.de", "https://www.hsb-boden.de"]);
+const ALLOWED_ORIGINS = new Set([
+  "https://hsb-boden.de",
+  "https://www.hsb-boden.de",
+]);
 
 const MAX_PAYLOAD_BYTES = 16 * 1024;
 const IP_LIMIT = { max: 5, windowMs: 10 * 60 * 1000 };
@@ -36,7 +39,12 @@ export function resetLeadRateLimiter() {
   memoryEmailHits = new Map();
 }
 
-function isRateLimitedMemory(key: string, store: Map<string, number[]>, limit: { max: number; windowMs: number }, now: number) {
+function isRateLimitedMemory(
+  key: string,
+  store: Map<string, number[]>,
+  limit: { max: number; windowMs: number },
+  now: number,
+) {
   const hits = (store.get(key) ?? []).filter((t) => now - t < limit.windowMs);
   hits.push(now);
   store.set(key, hits);
@@ -52,9 +60,13 @@ async function isRateLimited(
 ) {
   if (!kv) return isRateLimitedMemory(key, memoryStore, limit, now);
   const raw = await kv.get(key, "json");
-  const hits = ((raw as number[] | null) ?? []).filter((t) => now - t < limit.windowMs);
+  const hits = ((raw as number[] | null) ?? []).filter(
+    (t) => now - t < limit.windowMs,
+  );
   hits.push(now);
-  await kv.put(key, JSON.stringify(hits), { expirationTtl: Math.max(60, Math.ceil(limit.windowMs / 1000)) });
+  await kv.put(key, JSON.stringify(hits), {
+    expirationTtl: Math.max(60, Math.ceil(limit.windowMs / 1000)),
+  });
   return hits.length > limit.max;
 }
 
@@ -87,7 +99,10 @@ function isAllowedOrigin(origin: string): boolean {
 }
 
 function jsonResponse(status: number, body: unknown, origin: string | null) {
-  return new Response(JSON.stringify(body), { status, headers: corsHeaders(origin) });
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: corsHeaders(origin),
+  });
 }
 
 function isAllowedAppsScriptUrl(value: string): boolean {
@@ -118,7 +133,10 @@ function isStrongWebhookToken(value: unknown): value is string {
   );
 }
 
-function parseAuthenticatedWebhookConfig(rawConfig: string): { url: string; token: string } {
+function parseAuthenticatedWebhookConfig(rawConfig: string): {
+  url: string;
+  token: string;
+} {
   const parsed = JSON.parse(rawConfig) as unknown;
   if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
     throw new Error("invalid_webhook_config");
@@ -154,12 +172,19 @@ function resolveWebhookTarget(env: Env, lead: unknown): WebhookTarget {
     throw new Error("webhook_not_configured");
   }
 
-  return { url: env.LEAD_WEBHOOK_URL, body: lead, requireAcknowledgement: false };
+  return {
+    url: env.LEAD_WEBHOOK_URL,
+    body: lead,
+    requireAcknowledgement: false,
+  };
 }
 
 class PayloadTooLargeError extends Error {}
 
-async function readBodyWithLimit(request: Request, limitBytes: number): Promise<string> {
+async function readBodyWithLimit(
+  request: Request,
+  limitBytes: number,
+): Promise<string> {
   const reader = request.body?.getReader();
   if (!reader) return "";
   const chunks: Uint8Array[] = [];
@@ -193,7 +218,11 @@ export const onRequestOptions: PagesFunction<Env> = async ({ request }) => {
 };
 
 export const onRequestGet: PagesFunction<Env> = async ({ request }) => {
-  const response = jsonResponse(405, { ok: false, error: "method_not_allowed" }, request.headers.get("Origin"));
+  const response = jsonResponse(
+    405,
+    { ok: false, error: "method_not_allowed" },
+    request.headers.get("Origin"),
+  );
   response.headers.set("Allow", "POST, OPTIONS");
   return response;
 };
@@ -218,13 +247,43 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
     rawBody = await readBodyWithLimit(request, MAX_PAYLOAD_BYTES);
   } catch (err) {
     if (err instanceof PayloadTooLargeError) {
-      return jsonResponse(413, { ok: false, error: "payload_too_large" }, origin);
+      return jsonResponse(
+        413,
+        { ok: false, error: "payload_too_large" },
+        origin,
+      );
     }
     return jsonResponse(400, { ok: false, error: "invalid_body" }, origin);
   }
 
   let parsedBody: unknown;
   try {
+    let depth = 0;
+    let inString = false;
+    let escapeNext = false;
+    for (let i = 0; i < rawBody.length; i++) {
+      const char = rawBody[i];
+      if (escapeNext) {
+        escapeNext = false;
+        continue;
+      }
+      if (inString) {
+        if (char === "\\") {
+          escapeNext = true;
+        } else if (char === '"') {
+          inString = false;
+        }
+      } else {
+        if (char === '"') {
+          inString = true;
+        } else if (char === "{" || char === "[") {
+          depth++;
+          if (depth > 32) throw new Error("json_too_deep");
+        } else if (char === "}" || char === "]") {
+          depth--;
+        }
+      }
+    }
     parsedBody = JSON.parse(rawBody);
   } catch {
     return jsonResponse(400, { ok: false, error: "invalid_json" }, origin);
@@ -238,8 +297,20 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
 
   const now = Date.now();
   const ip = request.headers.get("CF-Connecting-IP") ?? "unknown";
-  const ipLimited = await isRateLimited(env.RATE_LIMIT_KV, memoryIpHits, `ip:${ip}`, IP_LIMIT, now);
-  const emailLimited = await isRateLimited(env.RATE_LIMIT_KV, memoryEmailHits, `email:${lead.email}`, EMAIL_LIMIT, now);
+  const ipLimited = await isRateLimited(
+    env.RATE_LIMIT_KV,
+    memoryIpHits,
+    `ip:${ip}`,
+    IP_LIMIT,
+    now,
+  );
+  const emailLimited = await isRateLimited(
+    env.RATE_LIMIT_KV,
+    memoryEmailHits,
+    `email:${lead.email}`,
+    EMAIL_LIMIT,
+    now,
+  );
   if (ipLimited || emailLimited) {
     return jsonResponse(429, { ok: false, error: "rate_limited" }, origin);
   }
@@ -257,7 +328,7 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
     });
     if (!webhookResponse.ok) throw new Error("webhook_rejected");
     if (target.requireAcknowledgement) {
-      const acknowledgement = await webhookResponse.json() as unknown;
+      const acknowledgement = (await webhookResponse.json()) as unknown;
       if (
         !acknowledgement ||
         typeof acknowledgement !== "object" ||
@@ -269,12 +340,28 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
       }
     }
   } catch {
-    console.error(JSON.stringify({ ts: new Date(now).toISOString(), result: "error", code: "webhook_unreachable" }));
-    return jsonResponse(502, { ok: false, error: "webhook_unreachable" }, origin);
+    console.error(
+      JSON.stringify({
+        ts: new Date(now).toISOString(),
+        result: "error",
+        code: "webhook_unreachable",
+      }),
+    );
+    return jsonResponse(
+      502,
+      { ok: false, error: "webhook_unreachable" },
+      origin,
+    );
   } finally {
     clearTimeout(timeout);
   }
 
-  console.log(JSON.stringify({ ts: new Date(now).toISOString(), result: "ok", emailDomain: lead.email.split("@")[1] }));
+  console.log(
+    JSON.stringify({
+      ts: new Date(now).toISOString(),
+      result: "ok",
+      emailDomain: lead.email.split("@")[1],
+    }),
+  );
   return jsonResponse(200, { ok: true }, origin);
 };

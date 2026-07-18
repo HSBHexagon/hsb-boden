@@ -1,3 +1,6 @@
+name = "hsb-boden"
+main = "src/dummy-worker.ts"
+
 # wrangler.toml — hsb-boden
 #
 # Deployment reality: this site is a STATIC Astro build deployed to

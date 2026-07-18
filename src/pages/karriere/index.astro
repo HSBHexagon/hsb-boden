@@ -4,8 +4,8 @@ import PageHero from "../../components/sections/PageHero.astro";
 import BaseLayout from "../../layouts/BaseLayout.astro";
 ---
 
-<BaseLayout title="Karriere bei Hexagon Säurebau | Industrieboden-Projekte" description="Karriere bei HSB: Arbeiten an anspruchsvollen Industrieböden, Säureschutzsystemen und Sanierungsprojekten in Produktionsbetrieben." path="/karriere/">
-  <PageHero eyebrow="Karriere" title="Karriere bei Hexagon Säurebau" text="HSB braucht Menschen, die technische Baustellen, saubere Ausführung und industrielle Produktionsumgebungen ernst nehmen." ctaLabel="Kontakt aufnehmen" />
+<BaseLayout title="Karriere bei Hexagon Säurebau | Industrieboden-Projekte" description="Jetzt bewerben: Fliesenleger, Bauhelfer und Projektleitung für Keramik-Industrieböden und Säureschutzsysteme. HSB Hexagon – Ihr Arbeitgeber in der Industrie.">
+  <PageHero eyebrow="Karriere" title="Karriere bei Hexagon Säurebau" text="HSB braucht Verstärkung – für technisch anspruchsvolle Industrieprojekte." />
   <section class="section">
     <div class="container grid-auto">
       {["Fliesenleger (m/w/d)", "Bauhelfer mit Industrieerfahrung", "Projektleitung Industrieboden"].map((role) => (
@@ -17,5 +17,78 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
       ))}
     </div>
   </section>
-  <CTASection title="Team für anspruchsvolle Industrieprojekte" text="Sie wollen an anspruchsvollen Industrieboden-, Säureschutz- und Sanierungsprojekten mitarbeiten? Melden Sie sich – wir suchen Fachkräfte mit Anspruch an saubere, dauerhafte Ausführung." label="Kontakt aufnehmen" />
+  <CTASection title="Team für anspruchsvolle Industrieprojekte" text="Sie wollen an besonderen Projekten arbeiten? Wir freuen uns auf Ihre Kontaktaufnahme." />
+
+  <!-- JobPosting Structured Data -->
+  <script type="application/ld+json" set:html={JSON.stringify([
+    {
+      "@context": "https://schema.org",
+      "@type": "JobPosting",
+      "title": "Fliesenleger (m/w/d) Industrieboden",
+      "description": "Verlegung und Sanierung keramischer Industrieböden, Säureschutzsysteme und technischer Detailpunkte in Lebensmittel-, Getränke- und Industrieproduktion.",
+      "hiringOrganization": {
+        "@type": "Organization",
+        "name": "Hexagon Säurebau GmbH",
+        "sameAs": "https://www.hsb-boden.de"
+      },
+      "jobLocation": {
+        "@type": "Place",
+        "address": {
+          "@type": "PostalAddress",
+          "addressLocality": "Deutschland",
+          "addressCountry": "DE"
+        }
+      },
+      "employmentType": "FULL_TIME",
+      "datePosted": "2026-01-01",
+      "validThrough": "2026-12-31",
+      "occupationalCategory": "Bauwesen"
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "JobPosting",
+      "title": "Bauhelfer mit Industrieerfahrung",
+      "description": "Unterstützung bei Verlegung und Sanierung keramischer Industrieböden und Säureschutzsystemen in Industriebetrieben.",
+      "hiringOrganization": {
+        "@type": "Organization",
+        "name": "Hexagon Säurebau GmbH",
+        "sameAs": "https://www.hsb-boden.de"
+      },
+      "jobLocation": {
+        "@type": "Place",
+        "address": {
+          "@type": "PostalAddress",
+          "addressLocality": "Deutschland",
+          "addressCountry": "DE"
+        }
+      },
+      "employmentType": "FULL_TIME",
+      "datePosted": "2026-01-01",
+      "validThrough": "2026-12-31",
+      "occupationalCategory": "Bauwesen"
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "JobPosting",
+      "title": "Projektleitung Industrieboden",
+      "description": "Planung, Koordination und Leitung von Projekten im Bereich keramische Industrieböden, Säureschutz und Sanierung für Industrie- und Lebensmittelbetriebe.",
+      "hiringOrganization": {
+        "@type": "Organization",
+        "name": "Hexagon Säurebau GmbH",
+        "sameAs": "https://www.hsb-boden.de"
+      },
+      "jobLocation": {
+        "@type": "Place",
+        "address": {
+          "@type": "PostalAddress",
+          "addressLocality": "Deutschland",
+          "addressCountry": "DE"
+        }
+      },
+      "employmentType": "FULL_TIME",
+      "datePosted": "2026-01-01",
+      "validThrough": "2026-12-31",
+      "occupationalCategory": "Bauwesen"
+    }
+  ])} />
 </BaseLayout>

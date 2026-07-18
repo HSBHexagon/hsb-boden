@@ -21,7 +21,12 @@ export function resolveSuggestedLanguages(locale: string | undefined) {
   const primary = normalized.split("-")[0] as LanguageCode;
   const direct = supportedLanguages.find((language) => language.code === primary);
   const order = direct ? [direct.code, ...fallbackOrder.filter((code) => code !== direct.code)] : fallbackOrder;
-  return order
-    .map((code) => supportedLanguages.find((language) => language.code === code))
-    .filter((language): language is (typeof supportedLanguages)[number] => Boolean(language));
+  // Using reduce avoids the intermediate array allocation of map -> filter
+  // Note: While flatMap was considered, micro-benchmarks showed it was slower
+  // than the original map+filter in V8 due to many small array allocations.
+  return order.reduce<typeof supportedLanguages>((acc, code) => {
+    const language = supportedLanguages.find((lang) => lang.code === code);
+    if (language) acc.push(language);
+    return acc;
+  }, []);
 }

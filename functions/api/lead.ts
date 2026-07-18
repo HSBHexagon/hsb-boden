@@ -25,32 +25,19 @@ interface WebhookTarget {
   requireAcknowledgement: boolean;
 }
 
-// Distributed across Worker/Pages Function instances via Cloudflare KV — an
-// in-memory Map resets per instance/cold start and does not enforce a limit
-// reliably across a serverless fleet (see PR #42 / rate-limit-bypass fix).
-let memoryIpHits = new Map<string, number[]>();
-let memoryEmailHits = new Map<string, number[]>();
 
-export function resetLeadRateLimiter() {
-  memoryIpHits = new Map();
-  memoryEmailHits = new Map();
-}
 
-function isRateLimitedMemory(key: string, store: Map<string, number[]>, limit: { max: number; windowMs: number }, now: number) {
-  const hits = (store.get(key) ?? []).filter((t) => now - t < limit.windowMs);
-  hits.push(now);
-  store.set(key, hits);
-  return hits.length > limit.max;
-}
 
 async function isRateLimited(
   kv: KVNamespace | undefined,
-  memoryStore: Map<string, number[]>,
   key: string,
   limit: { max: number; windowMs: number },
   now: number,
 ) {
-  if (!kv) return isRateLimitedMemory(key, memoryStore, limit, now);
+  if (!kv) {
+    console.error("RATE_LIMIT_KV namespace is not bound.");
+    throw new Error("rate_limit_kv_missing");
+  }
   const raw = await kv.get(key, "json");
   const hits = ((raw as number[] | null) ?? []).filter((t) => now - t < limit.windowMs);
   hits.push(now);
@@ -238,8 +225,17 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
 
   const now = Date.now();
   const ip = request.headers.get("CF-Connecting-IP") ?? "unknown";
-  const ipLimited = await isRateLimited(env.RATE_LIMIT_KV, memoryIpHits, `ip:${ip}`, IP_LIMIT, now);
-  const emailLimited = await isRateLimited(env.RATE_LIMIT_KV, memoryEmailHits, `email:${lead.email}`, EMAIL_LIMIT, now);
+  let ipLimited = false;
+  let emailLimited = false;
+  try {
+    ipLimited = await isRateLimited(env.RATE_LIMIT_KV, `ip:${ip}`, IP_LIMIT, now);
+    emailLimited = await isRateLimited(env.RATE_LIMIT_KV, `email:${lead.email}`, EMAIL_LIMIT, now);
+  } catch (err) {
+    if (err instanceof Error && err.message === "rate_limit_kv_missing") {
+      return jsonResponse(500, { ok: false, error: "internal_error" }, origin);
+    }
+    throw err;
+  }
   if (ipLimited || emailLimited) {
     return jsonResponse(429, { ok: false, error: "rate_limited" }, origin);
   }

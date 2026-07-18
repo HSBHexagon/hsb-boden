@@ -366,5 +366,6 @@ describe("OPTIONS /api/lead", () => {
     const res = await onRequestOptions(makeContext(makeRequest(undefined, { method: "OPTIONS" })));
     expect(res.status).toBe(204);
     expect(res.headers.get("Access-Control-Allow-Methods")).toContain("POST");
+    expect(res.headers.get("Vary")).toBe("Origin");
   });
 });

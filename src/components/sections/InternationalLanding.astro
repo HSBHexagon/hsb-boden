@@ -1,6 +1,7 @@
 ---
 import BaseLayout from "../../layouts/BaseLayout.astro";
 import { homeAlternates, landing } from "../../lib/i18n";
+import { toTelephoneHref } from "../../lib/phone";
 import { site } from "../../data/site";
 
 interface Props {
@@ -10,7 +11,7 @@ interface Props {
 const { lang } = Astro.props;
 const t = landing[lang];
 const path = `/${lang}/`;
-const phoneHref = `tel:${site.phone.replace(/[^+\d]/g, "")}`;
+const phoneHref = toTelephoneHref(site.phone);
 ---
 
 <BaseLayout title={t.meta.seoTitle} description={t.meta.description} path={path} lang={lang} alternates={homeAlternates}>

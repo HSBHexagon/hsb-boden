@@ -19,3 +19,4 @@ src/OPTIMIZATION.md
 
 # Reale Lead-/Kontaktdaten - niemals in oeffentliches Repo (PII, DSGVO)
 data/lead-import/
+dist_functions

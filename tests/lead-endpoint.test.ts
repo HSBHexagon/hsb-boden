@@ -239,7 +239,7 @@ describe("POST /api/lead", () => {
     const res = await onRequestPost(makeContext(makeRequest(validBody, { origin })));
 
     expect(res.status).toBe(200);
-    expect(res.headers.get("Access-Control-Allow-Origin")).toBe(origin);
+    expect(res.headers.get("Access-Control-Allow-Origin")).toBeNull();
   });
 
   it("rejects a lookalike Cloudflare Pages preview Origin", async () => {

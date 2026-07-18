@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { onRequestPost, onRequestOptions, onRequestGet, resetLeadRateLimiter } from "../functions/api/lead";
+import { onRequestPost, onRequestOptions, onRequestGet } from "../functions/api/lead";
 
 const testEnv = { LEAD_WEBHOOK_URL: "https://script.google.com/macros/s/EXAMPLE/exec" };
 const authenticatedEnv = {
@@ -41,12 +41,28 @@ function makeRequest(body: unknown, opts: { ip?: string; origin?: string; method
 }
 
 function makeContext(request: Request, env: Record<string, unknown> = testEnv) {
-  return { request, env } as any;
+  return { request, env: { ...env, RATE_LIMIT_KV: mockKV } } as any;
 }
+
+
+class MockKV {
+  store = new Map<string, string>();
+  async get(key: string, type: any) {
+    const val = this.store.get(key);
+    if (!val) return null;
+    if (type === "json") return JSON.parse(val);
+    return val;
+  }
+  async put(key: string, value: any) {
+    this.store.set(key, typeof value === "string" ? value : JSON.stringify(value));
+  }
+}
+
+let mockKV = new MockKV();
 
 describe("POST /api/lead", () => {
   beforeEach(() => {
-    resetLeadRateLimiter();
+    mockKV = new MockKV();
     vi.restoreAllMocks();
   });
   afterEach(() => {

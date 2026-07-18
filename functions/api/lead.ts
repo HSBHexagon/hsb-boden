@@ -244,16 +244,13 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
     return jsonResponse(429, { ok: false, error: "rate_limited" }, origin);
   }
 
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), WEBHOOK_TIMEOUT_MS);
-
   try {
     const target = resolveWebhookTarget(env, lead);
     const webhookResponse = await fetch(target.url, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(target.body),
-      signal: controller.signal,
+      signal: AbortSignal.timeout(WEBHOOK_TIMEOUT_MS),
     });
     if (!webhookResponse.ok) throw new Error("webhook_rejected");
     if (target.requireAcknowledgement) {
@@ -271,8 +268,6 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
   } catch {
     console.error(JSON.stringify({ ts: new Date(now).toISOString(), result: "error", code: "webhook_unreachable" }));
     return jsonResponse(502, { ok: false, error: "webhook_unreachable" }, origin);
-  } finally {
-    clearTimeout(timeout);
   }
 
   console.log(JSON.stringify({ ts: new Date(now).toISOString(), result: "ok", emailDomain: lead.email.split("@")[1] }));

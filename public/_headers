@@ -16,3 +16,11 @@
 # Inhalte sind unveränderlich, Revalidierung ist reine Latenz.
 /_astro/*
   Cache-Control: public, max-age=31536000, immutable
+
+# Preview- und Projekt-Domains dürfen nicht mit der kanonischen Domain
+# konkurrieren. Cloudflare Pages unterstützt Host-Platzhalter in _headers.
+https://hsb-boden.pages.dev/*
+  X-Robots-Tag: noindex, nofollow
+
+https://:version.hsb-boden.pages.dev/*
+  X-Robots-Tag: noindex, nofollow

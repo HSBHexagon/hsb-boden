@@ -355,6 +355,9 @@ describe("GET/PUT/DELETE /api/lead", () => {
     const res = await onRequestGet(makeContext(makeRequest(undefined, { method: "GET" })));
     expect(res.status).toBe(405);
     expect(res.headers.get("Allow")).toBe("POST, OPTIONS");
+    expect(res.headers.get("Cache-Control")).toBe("no-store");
+    expect(res.headers.get("X-Content-Type-Options")).toBe("nosniff");
+    expect(res.headers.get("Referrer-Policy")).toBe("no-referrer");
   });
 });
 

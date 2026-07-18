@@ -1,6 +1,6 @@
 name: "🐛 Notion Issue Sync"
 
-# Synct GitHub Issues bidirektional nach Notion HSB Boden Datenbank
+# Synct GitHub Issues nach Notion HSB Boden Datenbank
 # Trigger: Issue erstellt, bearbeitet, geschlossen, wieder geöffnet
 on:
   issues:
@@ -16,12 +16,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: "22"
 
       - name: Install Notion SDK
-        run: npm install @notionhq/client
+        run: npm install --no-save --ignore-scripts @notionhq/client@4.0.2
 
       - name: Sync Issue to Notion
         env:
@@ -29,13 +29,11 @@ jobs:
           NOTION_ISSUES_DB_ID: ${{ secrets.NOTION_ISSUES_DB_ID }}
           ISSUE_NUMBER: ${{ github.event.issue.number }}
           ISSUE_TITLE: ${{ github.event.issue.title }}
-          ISSUE_BODY: ${{ github.event.issue.body }}
           ISSUE_STATE: ${{ github.event.issue.state }}
           ISSUE_URL: ${{ github.event.issue.html_url }}
           ISSUE_AUTHOR: ${{ github.event.issue.user.login }}
           ISSUE_LABELS: ${{ toJSON(github.event.issue.labels.*.name) }}
           ISSUE_CREATED: ${{ github.event.issue.created_at }}
-          ACTION: ${{ github.event.action }}
         run: |
           node << 'EOF'
           const { Client } = require('@notionhq/client');

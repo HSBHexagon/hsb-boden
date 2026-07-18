@@ -18,23 +18,19 @@ jobs:
     name: Sync Deploy Status → Notion
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: "22"
 
       - name: Install Notion SDK
-        run: npm install @notionhq/client
+        run: npm install --no-save --ignore-scripts @notionhq/client@4.0.2
 
       - name: Sync Deploy to Notion
         env:
           NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
           NOTION_DEPLOY_DB_ID: ${{ secrets.NOTION_DEPLOY_DB_ID }}
-          GITHUB_SHA: ${{ github.sha }}
-          GITHUB_REF: ${{ github.ref }}
+          GITHUB_SHA: ${{ github.event.workflow_run.head_sha }}
           WORKFLOW_NAME: ${{ github.event.workflow_run.name }}
           WORKFLOW_STATUS: ${{ github.event.workflow_run.conclusion }}
           WORKFLOW_URL: ${{ github.event.workflow_run.html_url }}

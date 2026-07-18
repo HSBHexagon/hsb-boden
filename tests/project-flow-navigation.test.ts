@@ -33,7 +33,8 @@ describe("project flow navigation", () => {
     expect(navigation).not.toContain('href: "/#projektablauf"');
     expect(homepage).toContain('href="/projektablauf/"');
     expect(homepage).toContain("Projektablauf im Detail");
-    expect(sitemap).toContain('"/projektablauf/"');
+    expect(sitemap).toContain("getAllPublicPages()");
+    expect(sitemap).toContain("canonical(page.canonicalPath)");
   });
 
   it("builds valid header telephone links from the central site data", () => {

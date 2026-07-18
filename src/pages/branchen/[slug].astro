@@ -60,7 +60,8 @@ const industryImage = industryImages[industry.slug];
     <section class="section-tight">
       <div class="container">
         <figure class="overflow-hidden rounded-[10px] border border-hsb-line">
-          <img src={industryImage.src} alt={industryImage.alt} class="max-h-[480px] w-full object-cover object-center" loading="lazy" width="1200" height="480" />
+          <!-- ⚡ Bolt: LCP Optimization - Eager load hero image with high fetchpriority -->
+          <img src={industryImage.src} alt={industryImage.alt} class="max-h-[480px] w-full object-cover object-center" fetchpriority="high" loading="eager" decoding="async" width="1200" height="480" />
           <figcaption class="border-t border-hsb-line bg-white px-5 py-3 text-xs font-bold text-hsb-steel">
             Reale Projektfläche aus dem HSB-Arbeitsumfeld – keine Stockfotos.
           </figcaption>

@@ -1,6 +1,10 @@
 {
   "name": "hsb-boden",
   "type": "module",
+  "engines": {
+    "node": ">=22.0.0",
+    "pnpm": ">=8.0.0"
+  },
   "version": "1.0.0",
   "scripts": {
     "dev": "astro dev",
@@ -8,10 +12,10 @@
     "preview": "astro preview",
     "check": "astro check --js-only",
     "test:run": "vitest run",
-    "deploy": "npm run deploy:preview",
-    "deploy:preview": "npm run build && wrangler pages deploy dist --project-name hsb-boden --branch preview --commit-dirty=true",
+    "deploy": "pnpm run deploy:preview",
+    "deploy:preview": "pnpm run build && wrangler pages deploy dist --project-name hsb-boden --branch preview --commit-dirty=true",
     "deploy:production": "echo 'BLOCKED: Production deploys run only via .github/workflows/deploy-production.yml (workflow_dispatch, approval-gated).' && exit 1",
-    "deploy:dry-run": "npm run build && wrangler pages functions build functions --outdir node_modules/.cache/functions-check && wrangler pages deployment list --project-name hsb-boden"
+    "deploy:dry-run": "pnpm run build && wrangler pages functions build functions --outdir node_modules/.cache/functions-check && wrangler pages deployment list --project-name hsb-boden"
   },
   "dependencies": {
     "@astrojs/check": "^0.9.9",

@@ -32,11 +32,6 @@ const project = (lat: number, lng: number) => ({
   y: 4 + ((germanyMapBounds.maxLat - lat) / (germanyMapBounds.maxLat - germanyMapBounds.minLat)) * (germanyMapViewBox.height - 8),
 });
 
-const points = references.map((reference) => ({
-  ...reference,
-  ...project(reference.lat, reference.lng),
-}));
-
 const clientPoints = clients.map((client) => ({
   ...client,
   ...project(client.lat, client.lng),
@@ -65,9 +60,16 @@ const coveragePoints = germanyTrustMarkers.map((marker) => ({
 
 // Regionen deduplizieren: kollidierende Inline-Labels auf der Karte ersetzen wir
 // durch eine saubere Chip-Liste. Freigegebene exakte Standorte zuerst.
+const points: Array<ReferenceItem & { x: number; y: number }> = [];
 const exactRegions = new Set<string>();
 const otherRegions = new Set<string>();
+
 for (const reference of references) {
+  points.push({
+    ...reference,
+    ...project(reference.lat, reference.lng),
+  });
+
   if (reference.canShowExactLocation) {
     exactRegions.add(reference.displayLocation);
   } else {

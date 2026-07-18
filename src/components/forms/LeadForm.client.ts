@@ -17,7 +17,7 @@ export function initLeadForm() {
     }
   }
 
-  async function onSubmit(event: SubmitEvent | Event) {
+  async function onSubmit(event: Event) {
     event.preventDefault();
     if (!deliveryConfigured || !form || !submitBtn || !errorMsg) return;
 

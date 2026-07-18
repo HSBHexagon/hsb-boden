@@ -27,13 +27,13 @@ jobs:
           node-version: 22
 
       - name: Install dependencies
-        run: npm ci
+        run: corepack enable pnpm && pnpm install
 
       - name: Typecheck
-        run: npm run check
+        run: pnpm check
 
       - name: Run tests
-        run: npm run test:run
+        run: pnpm test:run
 
       - name: Build project
-        run: npm run build
+        run: pnpm build

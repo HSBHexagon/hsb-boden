@@ -20,15 +20,19 @@ jobs:
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: 22
-          cache: 'npm'
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: 8
 
       - name: Install dependencies
-        run: npm ci
+        run: pnpm install
 
       - name: Quality gate
         run: |
-          npm run check
-          npm run test:run
+          pnpm check
+          pnpm test:run
 
       - name: Build
         # PUBLIC_LEAD_FORM_ENABLED is a build-time flag (site.hasLeadEndpoint):
@@ -38,7 +42,7 @@ jobs:
         # backwards-compatible cutover fallback.
         env:
           PUBLIC_LEAD_FORM_ENABLED: "true"
-        run: npm run build
+        run: pnpm build
 
       - name: Deploy to Cloudflare Pages (Production)
         # Cloudflare Pages is the live architecture since the static-output

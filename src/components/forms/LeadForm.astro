@@ -23,32 +23,32 @@ const deliveryConfigured = site.hasLeadEndpoint;
 
   <div class="grid gap-4 sm:grid-cols-2">
     <label class="grid gap-2 text-sm font-bold">
-      Vorname
-      <input required minlength={2} maxlength={80} name="firstName" class="rounded border border-hsb-line px-3 py-3 font-normal" />
+      <span>Vorname <span class="text-hsb-red" aria-hidden="true">*</span></span>
+      <input required minlength={2} maxlength={80} name="firstName" class="rounded border border-hsb-line px-3 py-3 font-normal focus-visible:ring-1 focus-visible:ring-hsb-red focus-visible:outline-none" />
     </label>
     <label class="grid gap-2 text-sm font-bold">
-      Nachname
-      <input required minlength={2} maxlength={80} name="lastName" class="rounded border border-hsb-line px-3 py-3 font-normal" />
+      <span>Nachname <span class="text-hsb-red" aria-hidden="true">*</span></span>
+      <input required minlength={2} maxlength={80} name="lastName" class="rounded border border-hsb-line px-3 py-3 font-normal focus-visible:ring-1 focus-visible:ring-hsb-red focus-visible:outline-none" />
     </label>
   </div>
   <label class="grid gap-2 text-sm font-bold">
-    Firma
-    <input required minlength={2} maxlength={120} name="company" class="rounded border border-hsb-line px-3 py-3 font-normal" />
+    <span>Firma <span class="text-hsb-red" aria-hidden="true">*</span></span>
+    <input required minlength={2} maxlength={120} name="company" class="rounded border border-hsb-line px-3 py-3 font-normal focus-visible:ring-1 focus-visible:ring-hsb-red focus-visible:outline-none" />
   </label>
   <div class="grid gap-4 sm:grid-cols-2">
     <label class="grid gap-2 text-sm font-bold">
-      E-Mail
-      <input required type="email" name="email" class="rounded border border-hsb-line px-3 py-3 font-normal" />
+      <span>E-Mail <span class="text-hsb-red" aria-hidden="true">*</span></span>
+      <input required type="email" name="email" class="rounded border border-hsb-line px-3 py-3 font-normal focus-visible:ring-1 focus-visible:ring-hsb-red focus-visible:outline-none" />
     </label>
     <label class="grid gap-2 text-sm font-bold">
-      Telefon
-      <input required minlength={5} type="tel" name="phone" class="rounded border border-hsb-line px-3 py-3 font-normal" />
+      <span>Telefon <span class="text-hsb-red" aria-hidden="true">*</span></span>
+      <input required minlength={5} type="tel" name="phone" class="rounded border border-hsb-line px-3 py-3 font-normal focus-visible:ring-1 focus-visible:ring-hsb-red focus-visible:outline-none" />
     </label>
   </div>
   <div class="grid gap-4 sm:grid-cols-2">
     <label class="grid gap-2 text-sm font-bold">
-      Branche
-      <select required name="industry" class="rounded border border-hsb-line px-3 py-3 font-normal">
+      <span>Branche <span class="text-hsb-red" aria-hidden="true">*</span></span>
+      <select required name="industry" class="rounded border border-hsb-line px-3 py-3 font-normal focus-visible:ring-1 focus-visible:ring-hsb-red focus-visible:outline-none">
         <option value="">Bitte wählen</option>
         <option value="lebensmittelindustrie">Lebensmittelindustrie</option>
         <option value="molkerei">Molkerei</option>
@@ -60,8 +60,8 @@ const deliveryConfigured = site.hasLeadEndpoint;
       </select>
     </label>
     <label class="grid gap-2 text-sm font-bold">
-      Projektart
-      <select required name="projectType" class="rounded border border-hsb-line px-3 py-3 font-normal">
+      <span>Projektart <span class="text-hsb-red" aria-hidden="true">*</span></span>
+      <select required name="projectType" class="rounded border border-hsb-line px-3 py-3 font-normal focus-visible:ring-1 focus-visible:ring-hsb-red focus-visible:outline-none">
         <option value="">Bitte wählen</option>
         <option value="neubau">Neubau</option>
         <option value="sanierung">Sanierung</option>
@@ -72,11 +72,11 @@ const deliveryConfigured = site.hasLeadEndpoint;
   <div class="grid gap-4 sm:grid-cols-2">
     <label class="grid gap-2 text-sm font-bold">
       Fläche in m²
-      <input name="areaSize" class="rounded border border-hsb-line px-3 py-3 font-normal" />
+      <input name="areaSize" class="rounded border border-hsb-line px-3 py-3 font-normal focus-visible:ring-1 focus-visible:ring-hsb-red focus-visible:outline-none" />
     </label>
     <label class="grid gap-2 text-sm font-bold">
-      Laufender Betrieb
-      <select required name="liveOperation" class="rounded border border-hsb-line px-3 py-3 font-normal">
+      <span>Laufender Betrieb <span class="text-hsb-red" aria-hidden="true">*</span></span>
+      <select required name="liveOperation" class="rounded border border-hsb-line px-3 py-3 font-normal focus-visible:ring-1 focus-visible:ring-hsb-red focus-visible:outline-none">
         <option value="">Bitte wählen</option>
         <option value="ja">Ja</option>
         <option value="nein">Nein</option>
@@ -89,19 +89,19 @@ const deliveryConfigured = site.hasLeadEndpoint;
     <div class="grid gap-2 sm:grid-cols-2">
       {loadOptions.map((option) => (
         <label class="flex items-center gap-2 text-sm text-hsb-steel">
-          <input type="checkbox" name="loads" value={option} />
+          <input type="checkbox" name="loads" value={option} class="focus-visible:ring-1 focus-visible:ring-hsb-red focus-visible:outline-none" />
           {option}
         </label>
       ))}
     </div>
   </fieldset>
   <label class="grid gap-2 text-sm font-bold">
-    Nachricht
-    <textarea required minlength={10} maxlength={2000} name="message" rows={5} class="rounded border border-hsb-line px-3 py-3 font-normal" />
+    <span>Nachricht <span class="text-hsb-red" aria-hidden="true">*</span></span>
+    <textarea required minlength={10} maxlength={2000} name="message" rows={5} class="rounded border border-hsb-line px-3 py-3 font-normal focus-visible:ring-1 focus-visible:ring-hsb-red focus-visible:outline-none" />
   </label>
   <label class="flex items-start gap-3 text-sm leading-6 text-hsb-steel">
-    <input required type="checkbox" name="privacyConsent" class="mt-1" />
-    Ich stimme zu, dass meine Angaben zur Bearbeitung der Anfrage verarbeitet werden.
+    <input required type="checkbox" name="privacyConsent" class="mt-1 focus-visible:ring-1 focus-visible:ring-hsb-red focus-visible:outline-none" />
+    <span>Ich stimme zu, dass meine Angaben zur Bearbeitung der Anfrage verarbeitet werden. <span class="text-hsb-red" aria-hidden="true">*</span></span>
   </label>
 
   <p id="form-error" role="alert" aria-live="assertive" class="hidden rounded border border-hsb-red/40 bg-hsb-red/5 px-3 py-2 text-sm text-hsb-red">
@@ -110,7 +110,7 @@ const deliveryConfigured = site.hasLeadEndpoint;
 
   <button
     id="form-submit"
-    class="button-primary disabled:cursor-not-allowed disabled:opacity-60"
+    class="button-primary disabled:cursor-not-allowed disabled:opacity-60 focus-visible:ring-1 focus-visible:ring-hsb-red focus-visible:outline-none"
     type="submit"
     disabled={!deliveryConfigured}
   >

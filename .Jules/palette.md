@@ -1,0 +1,3 @@
+## 2024-07-21 - CSS Grid Layout Constraint with Form Labels
+**Learning:** When appending visual indicators (like an asterisk for `required` fields) inline to form labels inside CSS grid layouts, the grid will force raw text and appended child nodes (like `<span class="text-hsb-red">*</span>`) into separate columns/rows if they aren't grouped.
+**Action:** Wrap the entire text content and the visual indicator in a single parent `<span>` within the `<label>` so the CSS grid treats them as one unit. Also explicitly add `focus-visible` to custom form styles since native focus rings might be suppressed by global resets or explicit borders.

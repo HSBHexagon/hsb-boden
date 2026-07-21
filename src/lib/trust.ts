@@ -95,9 +95,10 @@ export interface PublicCaseStudy {
 }
 
 export function getPublishableTeamProfiles(items: TeamProfileDraft[]): PublicTeamProfile[] {
-  return items.flatMap((item) => {
+  // Optimization: use reduce instead of flatMap to avoid intermediate array allocations
+  return items.reduce<PublicTeamProfile[]>((acc, item) => {
     const parsed = teamProfileDraftSchema.safeParse(item);
-    if (!parsed.success) return [];
+    if (!parsed.success) return acc;
 
     const profile = parsed.data;
     if (
@@ -105,26 +106,27 @@ export function getPublishableTeamProfiles(items: TeamProfileDraft[]): PublicTea
       profile.evidenceRefs.length === 0 ||
       !profile.publicationConsentRef
     ) {
-      return [];
+      return acc;
     }
 
-    return [
-      {
-        id: profile.id,
-        name: profile.name,
-        role: profile.role,
-        shortBio: profile.shortBio,
-        image: profile.image && profile.imageRightsRef ? profile.image : undefined,
-        qualifications: profile.qualifications.map(({ label }) => ({ label })),
-      },
-    ];
-  });
+    acc.push({
+      id: profile.id,
+      name: profile.name,
+      role: profile.role,
+      shortBio: profile.shortBio,
+      image: profile.image && profile.imageRightsRef ? profile.image : undefined,
+      qualifications: profile.qualifications.map(({ label }) => ({ label })),
+    });
+
+    return acc;
+  }, []);
 }
 
 export function getPublishableCaseStudies(items: CaseStudyDraft[]): PublicCaseStudy[] {
-  return items.flatMap((item) => {
+  // Optimization: use reduce instead of flatMap to avoid intermediate array allocations
+  return items.reduce<PublicCaseStudy[]>((acc, item) => {
     const parsed = caseStudyDraftSchema.safeParse(item);
-    if (!parsed.success) return [];
+    if (!parsed.success) return acc;
 
     const study = parsed.data;
     if (
@@ -132,29 +134,29 @@ export function getPublishableCaseStudies(items: CaseStudyDraft[]): PublicCaseSt
       study.evidenceRefs.length === 0 ||
       !study.publicationApprovalRef
     ) {
-      return [];
+      return acc;
     }
 
-    return [
-      {
-        id: study.id,
-        industry: study.industry,
-        challenge: study.challenge,
-        solution: study.solution,
-        outcome: study.outcome,
-        customerName: study.approvals.customerName ? study.customerName : undefined,
-        exactLocation: study.approvals.exactLocation ? study.exactLocation : undefined,
-        logo: study.approvals.logo ? study.logo : undefined,
-        metrics: study.approvals.metrics
-          ? (study.metrics ?? []).map(({ label, value }) => ({ label, value }))
-          : [],
-        quote: study.approvals.quote && study.quote
-          ? { text: study.quote.text, source: study.quote.source }
-          : undefined,
-        images: study.approvals.images
-          ? (study.images ?? []).map(({ src, alt }) => ({ src, alt }))
-          : [],
-      },
-    ];
-  });
+    acc.push({
+      id: study.id,
+      industry: study.industry,
+      challenge: study.challenge,
+      solution: study.solution,
+      outcome: study.outcome,
+      customerName: study.approvals.customerName ? study.customerName : undefined,
+      exactLocation: study.approvals.exactLocation ? study.exactLocation : undefined,
+      logo: study.approvals.logo ? study.logo : undefined,
+      metrics: study.approvals.metrics
+        ? (study.metrics ?? []).map(({ label, value }) => ({ label, value }))
+        : [],
+      quote: study.approvals.quote && study.quote
+        ? { text: study.quote.text, source: study.quote.source }
+        : undefined,
+      images: study.approvals.images
+        ? (study.images ?? []).map(({ src, alt }) => ({ src, alt }))
+        : [],
+    });
+
+    return acc;
+  }, []);
 }

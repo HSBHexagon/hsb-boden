@@ -45,7 +45,8 @@ const serviceImage = serviceImages[service.slug];
     <section class="section-tight">
       <div class="container">
         <figure class="overflow-hidden rounded-[10px] border border-hsb-line">
-          <img src={serviceImage.src} alt={serviceImage.alt} class="max-h-[480px] w-full object-cover object-center" loading="lazy" width="1200" height="480" />
+          {/* LCP Optimization: fetchpriority="high" and loading="eager" to improve hero image loading performance */}
+          <img src={serviceImage.src} alt={serviceImage.alt} class="max-h-[480px] w-full object-cover object-center" fetchpriority="high" loading="eager" decoding="async" width="1200" height="480" />
           <figcaption class="border-t border-hsb-line bg-white px-5 py-3 text-xs font-bold text-hsb-steel">
             Reale Projektfläche aus dem HSB-Arbeitsumfeld – keine Stockfotos.
           </figcaption>

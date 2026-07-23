@@ -1,0 +1,3 @@
+## 2024-10-24 - Form Accessibility and Focus Visibility
+**Learning:** In Astro/Tailwind environments relying heavily on CSS grids, appending inline elements like "required" asterisks directly to labels can cause grid layout breaks, putting the text and asterisk on separate rows. Additionally, native `focus-visible` outlines on forms are often insufficient or missing in this project.
+**Action:** Always wrap label text and inline indicators inside a `<span class="flex items-center">` to preserve layout flow in CSS grids. Always explicitly define focus styles (e.g. `focus-visible:ring-1 focus-visible:ring-brand-color focus-visible:outline-none`) on all interactive form elements (`input`, `select`, `textarea`).

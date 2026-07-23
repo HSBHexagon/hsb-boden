@@ -1,0 +1,3 @@
+## 2024-03-24 - [Optimize LCP Image Priorities]
+**Learning:** In Astro implementations, critical above-the-fold images (hero images on Branchen, Leistungen, and Referenzen pages) were being loaded with `loading="lazy"`. This delays the Largest Contentful Paint (LCP) as the browser defers loading them. Applying `fetchpriority="high" loading="eager" decoding="async"` directly in the templates prevents this delay and significantly improves perceived performance.
+**Action:** Always ensure that LCP candidate images in the top viewport are explicitly set to load eagerly with high priority, especially in dynamically routed pages (`[slug].astro`) where the same template serves multiple high-traffic entry points.

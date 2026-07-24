@@ -1,0 +1,3 @@
+## 2024-07-24 - Add accessible required indicators to forms
+**Learning:** Required form inputs need explicit visual indicators combined with `aria-hidden="true"` to ensure sighted users know the field is mandatory without penalizing screen reader users (since the `<input required>` attribute already handles screen reader announcements). Also added `focus-visible` states to improve keyboard navigation visibility for interactive elements.
+**Action:** When creating forms, always wrap text and the visual required asterisk (`*`) in a `<span>` to prevent CSS grid wrapping issues, and ensure the asterisk has `aria-hidden="true"`.

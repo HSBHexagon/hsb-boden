@@ -1,0 +1,3 @@
+## 2024-05-18 - Optimize LCP Image Loading on Content Pages
+**Learning:** In this codebase's architecture, LCP images are often injected as generic figures immediately below textual `PageHero` components (e.g., in `src/pages/leistungen/[slug].astro` and `src/pages/branchen/[slug].astro`). Previously, these were marked with `loading="lazy"`, which delays rendering of the largest above-the-fold element.
+**Action:** Always identify elements appearing immediately below hero components and prioritize their loading. Use `fetchpriority="high" loading="eager" decoding="async"` for these LCP candidates instead of generic lazy loading.

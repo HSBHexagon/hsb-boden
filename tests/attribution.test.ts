@@ -5,6 +5,7 @@ import {
   captureAttribution,
   loadAttribution,
   resolveChannel,
+  sanitizeUtmValue,
   updateSessionAttribution,
 } from "../src/lib/attribution";
 
@@ -20,6 +21,56 @@ function memoryStorage(): Pick<Storage, "getItem" | "setItem"> & { data: Map<str
     },
   };
 }
+
+
+describe("sanitizeUtmValue", () => {
+  it("returns undefined for non-string inputs", () => {
+    expect(sanitizeUtmValue(null)).toBeUndefined();
+    expect(sanitizeUtmValue(undefined)).toBeUndefined();
+    expect(sanitizeUtmValue(42)).toBeUndefined();
+    expect(sanitizeUtmValue({})).toBeUndefined();
+  });
+
+  it("allows valid UTM characters", () => {
+    expect(sanitizeUtmValue("hello world-_.~%+")).toBe("hello world-_.~%+");
+  });
+
+  it("strips characters not in the allowlist", () => {
+    expect(sanitizeUtmValue("test<script>alert(1)</script>")).toBe("testscriptalert1script");
+    expect(sanitizeUtmValue("test 🌟 value")).toBe("test  value");
+  });
+
+  it("removes leading spreadsheet formula injection prefixes", () => {
+    expect(sanitizeUtmValue("=cmd|' /C calc'!A0")).toBe("cmd C calcA0");
+    expect(sanitizeUtmValue("+SUM(1,1)")).toBe("SUM11");
+    expect(sanitizeUtmValue("-1+1")).toBe("1+1");
+    expect(sanitizeUtmValue("@xyz")).toBe("xyz");
+    expect(sanitizeUtmValue("  =test")).toBe("test");
+    expect(sanitizeUtmValue(" 	 +test")).toBe("test");
+    expect(sanitizeUtmValue("==+test")).toBe("test");
+  });
+
+  it("preserves formula characters in the middle of the string", () => {
+    expect(sanitizeUtmValue("test=value")).toBe("testvalue");
+    expect(sanitizeUtmValue("test+value")).toBe("test+value");
+    expect(sanitizeUtmValue("test-value")).toBe("test-value");
+    expect(sanitizeUtmValue("test@value")).toBe("testvalue");
+  });
+
+  it("truncates strings longer than 100 characters", () => {
+    const longString = "a".repeat(150);
+    expect(sanitizeUtmValue(longString)).toHaveLength(100);
+    expect(sanitizeUtmValue(longString)).toBe("a".repeat(100));
+  });
+
+  it("returns undefined if the sanitized string becomes empty", () => {
+    expect(sanitizeUtmValue("")).toBeUndefined();
+    expect(sanitizeUtmValue("   ")).toBeUndefined();
+    expect(sanitizeUtmValue("===+++")).toBeUndefined();
+    expect(sanitizeUtmValue("<>")).toBeUndefined();
+    expect(sanitizeUtmValue(" 🌟 ")).toBeUndefined();
+  });
+});
 
 describe("captureAttribution", () => {
   it("extracts all five utm parameters from a full campaign URL", () => {

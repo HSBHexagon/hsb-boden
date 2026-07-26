@@ -1,0 +1,174 @@
+
+<!doctype html>
+<html lang="en">
+
+<head>
+    <title>Code coverage report for src/data/clientLocations.ts</title>
+    <meta charset="utf-8" />
+    <link rel="stylesheet" href="../../prettify.css" />
+    <link rel="stylesheet" href="../../base.css" />
+    <link rel="shortcut icon" type="image/x-icon" href="../../favicon.png" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style type='text/css'>
+        .coverage-summary .sorter {
+            background-image: url(../../sort-arrow-sprite.png);
+        }
+    </style>
+</head>
+
+<body>
+<div class='wrapper'>
+    <div class='pad1'>
+        <h1><a href="../../index.html">All files</a> / <a href="index.html">src/data</a> clientLocations.ts</h1>
+        <div class='clearfix'>
+
+            <div class='fl pad1y space-right2'>
+                <span class="strong">100% </span>
+                <span class="quiet">Statements</span>
+                <span class='fraction'>1/1</span>
+            </div>
+
+
+            <div class='fl pad1y space-right2'>
+                <span class="strong">100% </span>
+                <span class="quiet">Branches</span>
+                <span class='fraction'>0/0</span>
+            </div>
+
+
+            <div class='fl pad1y space-right2'>
+                <span class="strong">100% </span>
+                <span class="quiet">Functions</span>
+                <span class='fraction'>0/0</span>
+            </div>
+
+
+            <div class='fl pad1y space-right2'>
+                <span class="strong">100% </span>
+                <span class="quiet">Lines</span>
+                <span class='fraction'>1/1</span>
+            </div>
+
+
+        </div>
+        <p class="quiet">
+            Press <em>n</em> or <em>j</em> to go to the next uncovered block, <em>b</em>, <em>p</em> or <em>k</em> for the previous block.
+        </p>
+        <template id="filterTemplate">
+            <div class="quiet">
+                Filter:
+                <input type="search" id="fileSearch">
+            </div>
+        </template>
+    </div>
+    <div class='status-line high'></div>
+    <pre><table class="coverage">
+<tr><td class="line-count quiet"><a name='L1'></a><a href='#L1'>1</a>
+<a name='L2'></a><a href='#L2'>2</a>
+<a name='L3'></a><a href='#L3'>3</a>
+<a name='L4'></a><a href='#L4'>4</a>
+<a name='L5'></a><a href='#L5'>5</a>
+<a name='L6'></a><a href='#L6'>6</a>
+<a name='L7'></a><a href='#L7'>7</a>
+<a name='L8'></a><a href='#L8'>8</a>
+<a name='L9'></a><a href='#L9'>9</a>
+<a name='L10'></a><a href='#L10'>10</a>
+<a name='L11'></a><a href='#L11'>11</a>
+<a name='L12'></a><a href='#L12'>12</a>
+<a name='L13'></a><a href='#L13'>13</a>
+<a name='L14'></a><a href='#L14'>14</a>
+<a name='L15'></a><a href='#L15'>15</a>
+<a name='L16'></a><a href='#L16'>16</a>
+<a name='L17'></a><a href='#L17'>17</a>
+<a name='L18'></a><a href='#L18'>18</a>
+<a name='L19'></a><a href='#L19'>19</a>
+<a name='L20'></a><a href='#L20'>20</a>
+<a name='L21'></a><a href='#L21'>21</a>
+<a name='L22'></a><a href='#L22'>22</a>
+<a name='L23'></a><a href='#L23'>23</a>
+<a name='L24'></a><a href='#L24'>24</a>
+<a name='L25'></a><a href='#L25'>25</a>
+<a name='L26'></a><a href='#L26'>26</a>
+<a name='L27'></a><a href='#L27'>27</a>
+<a name='L28'></a><a href='#L28'>28</a>
+<a name='L29'></a><a href='#L29'>29</a>
+<a name='L30'></a><a href='#L30'>30</a>
+<a name='L31'></a><a href='#L31'>31</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">// Weitere Kundenstandorte (Quelle: interne Referenzkundenliste
+// "Referenzprojekte 2025", Geschäftsführungsfreigabe 2026-06-10).
+// Bewusst ohne Fallbeschreibung/Logo: dient nur der erweiterten Kartendarstellung
+// und der Kundenliste, nicht als ausführliche Fallstudie.
+export const clientLocations = [
+  { name: "HWB-Nussweit GmbH", city: "Husum", region: "Schleswig-Holstein", lat: 54.48, lng: 9.05, branche: "Lebensmittel" },
+  { name: "Salvus Mineralbrunnen GmbH", city: "Emsdetten", region: "Nordrhein-Westfalen", lat: 52.18, lng: 7.53, branche: "Getränke" },
+  { name: "Auerquelle Bissingen", city: "Bissingen an der Teck", region: "Baden-Württemberg", lat: 48.58, lng: 9.49, branche: "Getränke" },
+  { name: "NWT-CT GmbH", city: "Twist", region: "Niedersachsen", lat: 52.61, lng: 6.99, branche: "Lebensmittel" },
+  { name: "Gebr. Bertrams GmbH &amp; Co. KG", city: "Wegberg", region: "Nordrhein-Westfalen", lat: 51.13, lng: 6.28, branche: "Chemie" },
+  { name: "Damhus GmbH &amp; Co. KG", city: "Rosendahl", region: "Nordrhein-Westfalen", lat: 51.93, lng: 7.13, branche: "Getränke" },
+  { name: "Haaner Felsenquelle GmbH", city: "Haan", region: "Nordrhein-Westfalen", lat: 51.19, lng: 7.01, branche: "Getränke" },
+  { name: "Sahnemolkerei H. Wiesehoff GmbH", city: "Schöppingen", region: "Nordrhein-Westfalen", lat: 52.13, lng: 7.20, branche: "Molkerei" },
+  { name: "KESSLER-ZINK GmbH", city: "Flonheim", region: "Rheinland-Pfalz", lat: 49.79, lng: 8.04, branche: "Getränke" },
+  { name: "Weingut Dohlmühle-Genussreich", city: "Flonheim", region: "Rheinland-Pfalz", lat: 49.79, lng: 8.04, branche: "Getränke" },
+  { name: "Rolinck Privatbrauerei", city: "Steinfurt", region: "Nordrhein-Westfalen", lat: 52.15, lng: 7.34, branche: "Brauerei" },
+  { name: "Krombacher Brauerei GmbH &amp; Co. KG", city: "Steinfurt", region: "Nordrhein-Westfalen", lat: 52.16, lng: 7.36, branche: "Brauerei" },
+  { name: "Milchwerke Ingolstadt Thalmässing eG", city: "Thalmässing", region: "Bayern", lat: 49.10, lng: 11.23, branche: "Molkerei" },
+  { name: "Griesson - de Beukelaer GmbH &amp; Co. KG", city: "Polch", region: "Rheinland-Pfalz", lat: 50.30, lng: 7.31, branche: "Lebensmittel" },
+  { name: "Homann Feinkost GmbH", city: "Bad Essen", region: "Niedersachsen", lat: 52.28, lng: 8.48, branche: "Lebensmittel" },
+  { name: "Bäckerei Schrunz GmbH &amp; Co. KG", city: "Münster", region: "Nordrhein-Westfalen", lat: 51.96, lng: 7.63, branche: "Lebensmittel" },
+  { name: "Biovegan GmbH", city: "Bonefeld", region: "Rheinland-Pfalz", lat: 50.42, lng: 7.49, branche: "Lebensmittel", logo: "/logos/biovegan.svg" },
+  { name: "Saalfelder Brauhaus", city: "Saalfeld", region: "Thüringen", lat: 50.65, lng: 11.37, branche: "Brauerei" },
+  { name: "Albers Brauhaus", city: "Weilheim an der Teck", region: "Baden-Württemberg", lat: 48.63, lng: 9.55, branche: "Brauerei" },
+  { name: "Meggle", city: "Gebesee", region: "Thüringen", lat: 51.10, lng: 10.90, branche: "Molkerei", logo: "/logos/meggle.svg" },
+  { name: "Wildbräu", city: "München", region: "Bayern", lat: 48.14, lng: 11.58, branche: "Brauerei" },
+  { name: "Goldmilch", city: "Ingolstadt", region: "Bayern", lat: 48.76, lng: 11.42, branche: "Molkerei" },
+  // Kyritzer Fruchtsäfte (Mosterei/Getränke), Pritzwalker Straße 25, 16866 Kyritz – kyritzer-fruchtsaefte.de
+  { name: "Kyritzer Fruchtsäfte", city: "Kyritz", region: "Brandenburg", lat: 52.94, lng: 12.40, branche: "Getränke", logo: "/logos/kyritzer-fruchtsaefte.png" },
+] as const;
+&nbsp;</pre></td></tr></table></pre>
+
+                <div class='push'></div><!-- for sticky footer -->
+            </div><!-- /wrapper -->
+            <div class='footer quiet pad2 space-top1 center small'>
+                Code coverage generated by
+                <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
+                at 2026-07-26T02:06:52.734Z
+            </div>
+        <script src="../../prettify.js"></script>
+        <script>
+            window.onload = function () {
+                prettyPrint();
+            };
+        </script>
+        <script src="../../sorter.js"></script>
+        <script src="../../block-navigation.js"></script>
+    </body>
+</html>

@@ -5,6 +5,7 @@ import {
   captureAttribution,
   loadAttribution,
   resolveChannel,
+  sanitizeReferrerOrigin,
   updateSessionAttribution,
 } from "../src/lib/attribution";
 
@@ -171,6 +172,35 @@ describe("resolveChannel", () => {
     expect(resolveChannel({ utm_source: "google", referrer: "https://www.google.com" })).toBe("campaign");
     expect(resolveChannel({ referrer: "https://www.google.com" })).toBe("referral");
     expect(resolveChannel({})).toBe("direct");
+  });
+});
+
+describe("sanitizeReferrerOrigin", () => {
+  it("extracts the origin from a valid external HTTP/HTTPS URL", () => {
+    expect(sanitizeReferrerOrigin("https://www.google.com/search?q=test")).toBe("https://www.google.com");
+    expect(sanitizeReferrerOrigin("http://example.com/path")).toBe("http://example.com");
+  });
+
+  it("returns undefined if the referrer matches the ownOrigin", () => {
+    expect(sanitizeReferrerOrigin("https://www.hsb-boden.de/about", "https://www.hsb-boden.de")).toBeUndefined();
+  });
+
+  it("returns undefined for non-HTTP/HTTPS protocols", () => {
+    expect(sanitizeReferrerOrigin("ftp://example.com/file")).toBeUndefined();
+    expect(sanitizeReferrerOrigin("mailto:test@example.com")).toBeUndefined();
+    expect(sanitizeReferrerOrigin("javascript:alert(1)")).toBeUndefined();
+  });
+
+  it("returns undefined for invalid URL strings or non-string inputs", () => {
+    expect(sanitizeReferrerOrigin("not a url")).toBeUndefined();
+    expect(sanitizeReferrerOrigin(null)).toBeUndefined();
+    expect(sanitizeReferrerOrigin(123)).toBeUndefined();
+    expect(sanitizeReferrerOrigin({})).toBeUndefined();
+  });
+
+  it("returns undefined for empty inputs", () => {
+    expect(sanitizeReferrerOrigin("")).toBeUndefined();
+    expect(sanitizeReferrerOrigin(undefined)).toBeUndefined();
   });
 });
 

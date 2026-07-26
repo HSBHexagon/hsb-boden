@@ -17,9 +17,11 @@ export function getStaticPaths() {
 }
 
 const { industry } = Astro.props;
-const services = getServices().filter((service) => industry.relatedServices.includes(service.slug));
+const relatedServicesSet = new Set(industry.relatedServices);
+const services = getServices().filter((service) => relatedServicesSet.has(service.slug));
 const relatedReferences = getReferencesForSlugs(industry.relatedReferences);
-const relatedArticles = getArticles().filter((article) => industry.relatedArticles.includes(article.slug));
+const relatedArticlesSet = new Set(industry.relatedArticles);
+const relatedArticles = getArticles().filter((article) => relatedArticlesSet.has(article.slug));
 const path = `/branchen/${industry.slug}/`;
 
 // Reale Projektfotos aus dem HSB-Arbeitsumfeld (keine Stockfotos) für Branchen,

@@ -5,6 +5,7 @@ import {
   captureAttribution,
   loadAttribution,
   resolveChannel,
+  sanitizePagePath,
   updateSessionAttribution,
 } from "../src/lib/attribution";
 
@@ -203,5 +204,31 @@ describe("buildLeadAttributionFields", () => {
 
     expect(fields).toEqual({ form_path: "/kontakt/", attribution_channel: "direct" });
     expect(Object.keys(fields)).not.toContain("utm_source");
+  });
+});
+
+describe("sanitizePagePath", () => {
+  it("keeps valid paths starting with a slash", () => {
+    expect(sanitizePagePath("/")).toBe("/");
+    expect(sanitizePagePath("/leistungen/industrieboden")).toBe("/leistungen/industrieboden");
+  });
+
+  it("removes query strings and hashes from the path", () => {
+    expect(sanitizePagePath("/kontakt/?utm_source=google&q=1")).toBe("/kontakt/");
+    expect(sanitizePagePath("/referenzen#top")).toBe("/referenzen");
+    expect(sanitizePagePath("/?test=1#hash")).toBe("/");
+  });
+
+  it("returns undefined for values not starting with a slash", () => {
+    expect(sanitizePagePath("https://www.hsb-boden.de/")).toBeUndefined();
+    expect(sanitizePagePath("leistungen/")).toBeUndefined();
+    expect(sanitizePagePath("")).toBeUndefined();
+  });
+
+  it("returns undefined for non-string types", () => {
+    expect(sanitizePagePath(undefined)).toBeUndefined();
+    expect(sanitizePagePath(null)).toBeUndefined();
+    expect(sanitizePagePath(123)).toBeUndefined();
+    expect(sanitizePagePath({})).toBeUndefined();
   });
 });

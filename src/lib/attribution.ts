@@ -45,8 +45,7 @@ export function sanitizeUtmValue(value: unknown): string | undefined {
 /** Pfade/Origins: Steuerzeichen und HTML-relevante Zeichen entfernen, Länge kappen. */
 function sanitizePathValue(value: unknown): string | undefined {
   if (typeof value !== "string") return undefined;
-  // eslint-disable-next-line no-control-regex
-  const cleaned = value.replace(/[\u0000-\u001F\u007F<>"'`\\]/g, "").trim().slice(0, PATH_MAX);
+  const cleaned = value.replace(/[\p{Cc}<>"'`\\]/gu, "").trim().slice(0, PATH_MAX);
   return cleaned.length > 0 ? cleaned : undefined;
 }
 

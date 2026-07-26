@@ -45,7 +45,7 @@ export function sanitizeUtmValue(value: unknown): string | undefined {
 /** Pfade/Origins: Steuerzeichen und HTML-relevante Zeichen entfernen, Länge kappen. */
 function sanitizePathValue(value: unknown): string | undefined {
   if (typeof value !== "string") return undefined;
-  const cleaned = value.replace(/[\p{Cc}<>"'`\\]/gu, "").trim().slice(0, PATH_MAX);
+  const cleaned = value.replace(/[\x00-\x1F\x7F<>"'`\\]/g, "").trim().slice(0, PATH_MAX);
   return cleaned.length > 0 ? cleaned : undefined;
 }
 

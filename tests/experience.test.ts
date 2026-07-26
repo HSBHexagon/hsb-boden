@@ -1,12 +1,6 @@
 import { describe, expect, it } from "vitest";
-import {
-  consentCategories,
-  getRequiredConsentCategories,
-} from "../src/data/consent";
-import {
-  resolveSuggestedLanguages,
-  supportedLanguages,
-} from "../src/data/localization";
+import { consentCategories, getRequiredConsentCategories } from "../src/data/consent";
+import { resolveSuggestedLanguages, supportedLanguages } from "../src/data/localization";
 
 describe("localized consent and language experience", () => {
   it("offers more than Turkish and English for international visitors", () => {
@@ -21,19 +15,18 @@ describe("localized consent and language experience", () => {
   });
 
   it("suggests Turkish first for Turkish browser locales, then English and German", () => {
-    expect(
-      resolveSuggestedLanguages("tr-TR")
-        .map((language) => language.code)
-        .slice(0, 3),
-    ).toEqual(["tr", "en", "de"]);
+    expect(resolveSuggestedLanguages("tr-TR").map((language) => language.code).slice(0, 3)).toEqual([
+      "tr",
+      "en",
+      "de",
+    ]);
   });
 
   it("falls back to English and German for unsupported browser locales", () => {
-    expect(
-      resolveSuggestedLanguages("es-ES")
-        .map((language) => language.code)
-        .slice(0, 2),
-    ).toEqual(["en", "de"]);
+    expect(resolveSuggestedLanguages("es-ES").map((language) => language.code).slice(0, 2)).toEqual([
+      "en",
+      "de",
+    ]);
   });
 
   it("keeps essential cookies as the only mandatory category", () => {

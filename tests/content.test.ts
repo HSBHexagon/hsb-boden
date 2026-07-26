@@ -5,6 +5,7 @@ import {
   getAllPublicPages,
   getPublicReferences,
   validateSiteContent,
+  getReferencesForSlugs,
 } from "../src/lib/content";
 import { services } from "../src/data/services";
 import { industries } from "../src/data/industries";
@@ -31,6 +32,19 @@ describe("site content contract", () => {
       expect(page.canonicalPath.startsWith("/")).toBe(true);
       expect(page.canonicalPath.endsWith("/")).toBe(true);
     }
+  });
+
+  it("returns only requested public references by slug", () => {
+    const existingReferences = getPublicReferences();
+    expect(existingReferences.length).toBeGreaterThanOrEqual(2);
+
+    const requestedSlugs = [existingReferences[0].id, existingReferences[1].id];
+    const result = getReferencesForSlugs(requestedSlugs);
+
+    expect(result.length).toBe(2);
+    expect(result.map(r => r.id).sort()).toEqual(requestedSlugs.sort());
+
+    expect(getReferencesForSlugs(["non-existent-slug"])).toEqual([]);
   });
 
   it("never exposes exact locations or logos for unapproved references", () => {

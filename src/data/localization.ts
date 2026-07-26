@@ -18,7 +18,8 @@ const fallbackOrder: LanguageCode[] = ["en", "de", "tr", "pl", "fr", "nl"];
 
 export function resolveSuggestedLanguages(locale: string | undefined) {
   const normalized = (locale ?? "").toLowerCase();
-  const primary = normalized.split("-")[0] as LanguageCode;
+  const dashIndex = normalized.indexOf("-");
+  const primary = (dashIndex === -1 ? normalized : normalized.substring(0, dashIndex)) as LanguageCode;
   const direct = supportedLanguages.find((language) => language.code === primary);
   const order = direct ? [direct.code, ...fallbackOrder.filter((code) => code !== direct.code)] : fallbackOrder;
   return order

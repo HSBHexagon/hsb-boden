@@ -1,0 +1,3 @@
+## 2024-05-24 - Clear Required Fields and Focus Visibility
+**Learning:** Native focus outlines are often stripped or insufficient, leading to poor keyboard navigation visibility. HTML5 `required` fields lack visual indicators for sighted users. In grid layouts, appending elements directly to labels can break the layout unless wrapped in a container.
+**Action:** Explicitly use Tailwind `focus-visible` classes (e.g., `focus-visible:ring-1 focus-visible:ring-hsb-red focus-visible:outline-none`) for interactive elements. Wrap label text and required indicators (`<span class="text-hsb-red" aria-hidden="true">*</span>`) in a `<span>` to prevent CSS grid layout issues.

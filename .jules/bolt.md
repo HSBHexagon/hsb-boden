@@ -1,0 +1,3 @@
+## 2024-07-24 - LCP Optimization for Hero Images
+**Learning:** In Astro codebases, images immediately following text-based `PageHero` components (e.g., on `leistungen/[slug].astro` and `branchen/[slug].astro` routes) are often Largest Contentful Paint (LCP) candidates. Using default lazy loading (`loading="lazy"`) for these above-the-fold images significantly degrades LCP performance and Lighthouse scores.
+**Action:** Always identify above-the-fold hero images during implementation and configure them with eager loading attributes (`fetchpriority="high" loading="eager" decoding="async"`) to ensure they start fetching as soon as the HTML parser encounters them, maximizing perceived load speed.

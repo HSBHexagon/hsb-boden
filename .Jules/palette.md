@@ -1,0 +1,3 @@
+## 2026-08-02 - Required Field Accessibility and Focus Styles
+**Learning:** The LeadForm.astro uses a CSS Grid structure which forced standard input labels and appended asterisks (`*`) onto separate grid rows unless they were grouped in a wrapper element. Also, using Tailwind `focus-visible` classes is the preferred way to show focus rings without stripping default browser outlines for mouse users.
+**Action:** Always wrap text and inline indicators (like an asterisk) in a `<span>` inside of `<label>`s to avoid unexpected CSS Grid placement, and rely on `focus-visible:` classes to ensure keyboard navigation visibility.

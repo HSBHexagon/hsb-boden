@@ -14,7 +14,7 @@ const deliveryConfigured = site.hasLeadEndpoint;
         Für eine schnelle Ersteinschätzung erreichen Sie HSB direkt:
       </p>
       <p class="mt-2 font-bold">
-        <a class="text-hsb-red hover:underline" href={`tel:${site.phone.replace(/[^+\d]/g, "")}`}>{site.phone}</a>
+        <a class="text-hsb-red hover:underline" href={`tel:${site.phone.replace("(0)", "").replace(/[^+\d]/g, "")}`}>{site.phone}</a>
         <span class="mx-2 text-hsb-line">·</span>
         <a class="text-hsb-red hover:underline" href={`mailto:${site.email}`}>{site.email}</a>
       </p>
@@ -121,7 +121,7 @@ const deliveryConfigured = site.hasLeadEndpoint;
 </form>
 
 <script>
-  import { trackEvent, TrackingEvent } from "../../lib/tracking";
+  import { trackEvent, trackEventAndWait, TrackingEvent } from "../../lib/tracking";
   import { buildLeadAttributionFields, captureAttribution, loadAttribution } from "../../lib/attribution";
 
   const form = document.getElementById("lead-form") as HTMLFormElement | null;
@@ -201,7 +201,7 @@ const deliveryConfigured = site.hasLeadEndpoint;
         body: JSON.stringify(payload),
       });
       if (!res.ok) throw new Error(`Status ${res.status}`);
-      trackEvent(TrackingEvent.LeadFormSubmit);
+      await trackEventAndWait(TrackingEvent.LeadFormSubmit);
       window.location.href = "/danke-projektanfrage/";
     } catch (e) {
       console.error("Submission error:", e);

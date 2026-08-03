@@ -65,8 +65,10 @@ function corsHeaders(origin: string | null) {
     "X-Content-Type-Options": "nosniff",
     "Referrer-Policy": "no-referrer",
   });
-  if (origin && isAllowedOrigin(origin)) {
-    headers.set("Access-Control-Allow-Origin", origin);
+  if (origin === "https://hsb-boden.de") {
+    headers.set("Access-Control-Allow-Origin", "https://hsb-boden.de");
+  } else if (origin === "https://www.hsb-boden.de") {
+    headers.set("Access-Control-Allow-Origin", "https://www.hsb-boden.de");
   }
   return headers;
 }
@@ -204,7 +206,7 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
   const { request, env } = context;
   const origin = request.headers.get("Origin");
 
-  if (origin && !isAllowedOrigin(origin)) {
+  if (!origin || !isAllowedOrigin(origin)) {
     return jsonResponse(403, { ok: false, error: "forbidden_origin" }, origin);
   }
 

@@ -27,15 +27,21 @@ const validBody = {
   legalBasis: "inquiry",
 };
 
-function makeRequest(body: unknown, opts: { ip?: string; origin?: string; method?: string } = {}) {
-  const { ip = "203.0.113.1", origin = "https://hsb-boden.de", method = "POST" } = opts;
+function makeRequest(body: unknown, opts: { ip?: string; origin?: string | null; method?: string } = {}) {
+  const { ip = "203.0.113.1", method = "POST" } = opts;
+  const origin = opts.origin !== undefined ? opts.origin : "https://hsb-boden.de";
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    "CF-Connecting-IP": ip,
+  };
+
+  if (origin !== null) {
+    headers.Origin = origin;
+  }
+
   return new Request("https://hsb-boden.de/api/lead", {
     method,
-    headers: {
-      "Content-Type": "application/json",
-      "CF-Connecting-IP": ip,
-      Origin: origin,
-    },
+    headers,
     body: method === "GET" ? undefined : JSON.stringify(body),
   });
 }
@@ -162,6 +168,20 @@ describe("POST /api/lead", () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
+  it("rejects a non-HTTPS legacy webhook URL without issuing a request", async () => {
+    const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response("{}", { status: 200 }),
+    );
+
+    const res = await onRequestPost(makeContext(makeRequest(validBody), {
+      LEAD_WEBHOOK_URL: "http://169.254.169.254/latest/meta-data",
+    }));
+
+    expect(res.status).toBe(502);
+    await expect(res.json()).resolves.toEqual({ ok: false, error: "webhook_unreachable" });
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
   it("rejects an authenticated config with a weak token", async () => {
     const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(
       Response.json({ ok: true }),
@@ -232,6 +252,12 @@ describe("POST /api/lead", () => {
     expect(res.status).toBe(403);
   });
 
+  it("rejects a missing Origin", async () => {
+    const res = await onRequestPost(makeContext(makeRequest(validBody, { origin: null })));
+    expect(res.status).toBe(403);
+    await expect(res.json()).resolves.toEqual({ ok: false, error: "forbidden_origin" });
+  });
+
   it("accepts a same-project Cloudflare Pages preview Origin", async () => {
     vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response("{}", { status: 200 }));
     const origin = "https://feature-auth-cutover.hsb-boden.pages.dev";
@@ -239,7 +265,7 @@ describe("POST /api/lead", () => {
     const res = await onRequestPost(makeContext(makeRequest(validBody, { origin })));
 
     expect(res.status).toBe(200);
-    expect(res.headers.get("Access-Control-Allow-Origin")).toBe(origin);
+    expect(res.headers.get("Access-Control-Allow-Origin")).toBeNull();
   });
 
   it("rejects a lookalike Cloudflare Pages preview Origin", async () => {

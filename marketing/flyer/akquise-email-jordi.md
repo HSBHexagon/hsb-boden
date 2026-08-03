@@ -29,7 +29,7 @@ Sehr geehrte Damen und Herren,
 
 in Produktions- und Nassbereichen entscheidet der Boden über Stillstand oder Betrieb — offene Fugen, stehendes Wasser und angegriffene Oberflächen führen zu Notreparaturen und Audit-Risiken.
 
-HSB plant und saniert säurebeständige, hygienische Industrieböden (Keramik, PU-Beton, Säureschutz, Entwässerung), auf Wunsch im laufenden Betrieb. Referenzen u. a. Südzucker und Molkerei Gropper; Details im beigefügten Flyer.
+HSB plant und saniert säurebeständige, hygienische Industrieböden (Keramik, PU-Beton, Säureschutz, Entwässerung), auf Wunsch im laufenden Betrieb. Referenzen u. a. Südzucker, Meggle und Biovegan; Details im beigefügten Flyer.
 
 Soll ich Ihnen 2–3 Terminvorschläge für eine kurze, kostenlose Ersteinschätzung Ihrer Flächen senden?
 
@@ -67,7 +67,7 @@ Sehr geehrte Damen und Herren,
 
 *[1 Satz Bezug zum Empfänger.]*
 
-in Lebensmittelbetrieben steht der Boden täglich unter Reinigungschemie, Feuchte und Hygienedruck — offene Fugen und Keimnester werden schnell zum Audit-Thema. HSB plant und saniert hygienische, säurebeständige Industrieböden (Keramik, PU-Beton, Entwässerung), auf HACCP-Anforderungen ausgelegt und auf Wunsch im laufenden Betrieb. Details und Referenzen wie Südzucker und Molkerei Gropper finden Sie im beigefügten Flyer.
+in Lebensmittelbetrieben steht der Boden täglich unter Reinigungschemie, Feuchte und Hygienedruck — offene Fugen und Keimnester werden schnell zum Audit-Thema. HSB plant und saniert hygienische, säurebeständige Industrieböden (Keramik, PU-Beton, Entwässerung), auf HACCP-Anforderungen ausgelegt und auf Wunsch im laufenden Betrieb. Details und Referenzen wie Südzucker, Meggle und Biovegan finden Sie im beigefügten Flyer.
 
 Soll ich Ihnen 2–3 Terminvorschläge für eine kurze Ersteinschätzung Ihrer Flächen senden?
 
@@ -84,7 +84,7 @@ Sehr geehrte Damen und Herren,
 
 *[1 Satz Bezug zum Empfänger.]*
 
-in Abfüll- und Nassbereichen entscheiden Gefälle, Rinnen und Fugen über Hygiene und Standzeit — stehendes Wasser und Fahrverkehr setzen dem Boden hart zu. HSB plant und saniert säurebeständige Industrieböden mit durchdachter Entwässerung und Gefälleplanung, auf Wunsch im laufenden Betrieb. Referenzen u. a. Südzucker, Molkerei Gropper; Details im beigefügten Flyer.
+in Abfüll- und Nassbereichen entscheiden Gefälle, Rinnen und Fugen über Hygiene und Standzeit — stehendes Wasser und Fahrverkehr setzen dem Boden hart zu. HSB plant und saniert säurebeständige Industrieböden mit durchdachter Entwässerung und Gefälleplanung, auf Wunsch im laufenden Betrieb. Referenzen u. a. Südzucker, Meggle, Biovegan; Details im beigefügten Flyer.
 
 Soll ich Ihnen 2–3 Terminvorschläge für eine kurze Ersteinschätzung senden?
 
@@ -143,7 +143,7 @@ Jordi Post
 | sachlich | Industrieböden & Säureschutz für Ihre Produktion |
 | technisch | Säurebeständige Industrieböden: Keramik, PU-Beton, Entwässerung |
 | problemorientiert | Offene Fugen, stehendes Wasser, Keimnester im Produktionsbereich? |
-| referenzorientiert | Industrieböden — u. a. für Südzucker, Molkerei Gropper |
+| referenzorientiert | Industrieböden — u. a. für Südzucker, Meggle, Biovegan |
 | kurz/direkt | Kurze Frage zu Ihren Produktionsböden |
 
 ---

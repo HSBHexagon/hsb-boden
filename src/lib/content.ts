@@ -115,7 +115,7 @@ export function getAllPublicPages() {
       seoTitle:
         "Referenzen für Industrieböden & Säureschutz | HSB Hexagon Säurebau",
       description:
-        "Ausgewählte freigegebene und anonymisierte Referenzen für Industrieböden, Säureschutz, Keramik, Entwässerung und Sanierung.",
+        "Ausgewählte Referenzen für Industrieböden, Säureschutz, Keramik, Entwässerung und Sanierung.",
       canonicalPath: "/referenzen/",
     },
     {

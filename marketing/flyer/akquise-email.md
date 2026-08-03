@@ -16,7 +16,7 @@ Sehr geehrte Damen und Herren,
 
 in Produktions- und Nassbereichen entscheidet der Boden über Stillstand oder Betrieb — offene Fugen, stehendes Wasser und angegriffene Oberflächen führen zu Notreparaturen und Audit-Risiken.
 
-HSB plant und saniert säurebeständige, hygienische Industrieböden (Keramik, PU-Beton, Säureschutz, Entwässerung), auf Wunsch im laufenden Betrieb. Referenzen u. a. Südzucker und Molkerei Gropper; Details im beigefügten Flyer.
+HSB plant und saniert säurebeständige, hygienische Industrieböden (Keramik, PU-Beton, Säureschutz, Entwässerung), auf Wunsch im laufenden Betrieb. Referenzen u. a. Südzucker, Meggle und Biovegan; Details im beigefügten Flyer.
 
 Soll ich Ihnen 2–3 Terminvorschläge für eine kurze, kostenlose Ersteinschätzung Ihrer Flächen senden?
 

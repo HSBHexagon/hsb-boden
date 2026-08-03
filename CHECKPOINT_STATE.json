@@ -148,7 +148,7 @@
     "deploy-production.yml: replaced 'deploy --env production' with 'deploy --name hsb-boden --var ENVIRONMENT:production' per PHASE_C_CUTOVER_RUNBOOK.md"
   ],
   "open_steps": [
-    "ERLEDIGT 2026-07-15: GA4-Lead-Event-Fix (PR #87) gemergt und deployed, live via dataLayer-Hook verifiziert (gtag-Transportsignatur bestaetigt). Verbleibend nur kosmetisch: lead_form_submit als GA4-Key-Event markieren.",
+    "ERLEDIGT 2026-07-15: GA4-Lead-Event-Fix (PR #87) gemergt und deployed, lokal per jsdom-Shim und dem tatsaechlichen gtag()-Aufruf verifiziert. Verbleibend offen: Netzwerk-Empfang, DebugView, Callback-Timing vor Navigation, kanonischer Event-Name, Consent-Verhalten und Key-Event-Markierung in GA4 sind noch nicht real nachgewiesen.",
     "ERLEDIGT 2026-07-15: GA4-GSC-Link von Preview- auf www-Property umgestellt (Details docs/ai_state/TRUTH_MATRIX_2026-07-15.md Abschnitt 3).",
     "ERLEDIGT 2026-07-15: Attribution-Connector-Patch (docs/crm/ATTRIBUTION_CONNECTOR_PATCH.md) live im HSBBODEN Apps Script + HSB CRM Light Sheet eingespielt, Deployment Version 4, End-to-End mit echtem UTM-Test-Lead verifiziert.",
     "P0 Security ohne Ausfall: neuen authentifizierten Apps-Script-Pfad plus dual-kompatible Pages Function vorbereiten. Nach Preview-Test LEAD_WEBHOOK_CONFIG in Production setzen und denselben geprueften Commit approval-gated neu deployen; erst das neue Deployment bindet URL+Token. Alte Deployment-IDs erst nach erfolgreichem Production-E2E invalidieren.",

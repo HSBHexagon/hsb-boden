@@ -390,6 +390,34 @@ describe("POST /api/lead", () => {
     expect(res2.status).toBe(200);
     expect(res3.status).toBe(429);
   });
+
+  it("rejects JSON with nesting depth > 32 with 400 before attempting to parse", async () => {
+    // Create a JSON payload with depth 35 (exceeds max depth of 32)
+    let deepJson = '{"a":';
+    for (let i = 0; i < 34; i++) {
+      deepJson += '{"b":';
+    }
+    deepJson += '1';
+    for (let i = 0; i < 34; i++) {
+      deepJson += '}';
+    }
+    deepJson += '}';
+
+    const req = new Request("https://hsb-boden.de/api/lead", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Origin": "https://hsb-boden.de",
+        "CF-Connecting-IP": "203.0.113.1",
+      },
+      body: deepJson,
+    });
+
+    const res = await onRequestPost(makeContext(req));
+    expect(res.status).toBe(400);
+    const body = JSON.parse(await res.text());
+    expect(body.error).toBe("invalid_json");
+  });
 });
 
 describe("GET/PUT/DELETE /api/lead", () => {

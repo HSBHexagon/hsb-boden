@@ -79,6 +79,40 @@ function jsonResponse(status: number, body: unknown, origin: string | null) {
   return new Response(JSON.stringify(body), { status, headers: corsHeaders(origin) });
 }
 
+function checkJsonDepth(jsonStr: string, maxDepth: number = 32): void {
+  let depth = 0;
+  let inString = false;
+  let escapeNext = false;
+
+  for (let i = 0; i < jsonStr.length; i++) {
+    const char = jsonStr[i];
+
+    if (escapeNext) {
+      escapeNext = false;
+      continue;
+    }
+
+    if (inString) {
+      if (char === "\\") {
+        escapeNext = true;
+      } else if (char === '"') {
+        inString = false;
+      }
+    } else {
+      if (char === '"') {
+        inString = true;
+      } else if (char === "{" || char === "[") {
+        depth++;
+        if (depth > maxDepth) {
+          throw new Error("json_too_deep");
+        }
+      } else if (char === "}" || char === "]") {
+        depth--;
+      }
+    }
+  }
+}
+
 function isAllowedAppsScriptUrl(value: string): boolean {
   try {
     const url = new URL(value);
@@ -214,6 +248,7 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
 
   let parsedBody: unknown;
   try {
+    checkJsonDepth(rawBody);
     parsedBody = JSON.parse(rawBody);
   } catch {
     return jsonResponse(400, { ok: false, error: "invalid_json" }, origin);

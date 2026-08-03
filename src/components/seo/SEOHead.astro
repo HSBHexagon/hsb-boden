@@ -13,10 +13,13 @@ interface Props {
 }
 
 const { title, description, path = "/", jsonLd = [], alternates = [], robots } = Astro.props;
+const resolvedTitle = pageTitle(title);
+const socialImage = `${canonical("/")}brand/og-image.png`;
+const socialImageAlt = "HSB Hexagon Säurebau – Industrieböden und Säureschutz";
 const allJsonLd = [buildOrganizationJsonLd(), ...jsonLd];
 ---
 
-<title>{pageTitle(title)}</title>
+<title>{resolvedTitle}</title>
 <meta name="description" content={description} />
 <meta name="google-site-verification" content="MHo38CCIj_E4hQcveVtWikt5DXNSeBjOs1QmSq6ul0g" />
 <link rel="canonical" href={canonical(path)} />
@@ -27,12 +30,17 @@ const allJsonLd = [buildOrganizationJsonLd(), ...jsonLd];
 <link rel="alternate icon" href="/brand/hsb-boden-logo.png" type="image/png" />
 <link rel="apple-touch-icon" href="/brand/hsb-boden-logo.png" />
 <meta property="og:type" content="website" />
-<meta property="og:title" content={pageTitle(title)} />
+<meta property="og:title" content={resolvedTitle} />
 <meta property="og:description" content={description} />
 <meta property="og:url" content={canonical(path)} />
 <meta property="og:site_name" content="HSB Hexagon Säurebau" />
-<meta property="og:image" content={`${canonical("/")}brand/og-image.png`} />
+<meta property="og:image" content={socialImage} />
 <meta property="og:image:width" content="1200" />
 <meta property="og:image:height" content="630" />
+<meta property="og:image:alt" content={socialImageAlt} />
 <meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content={resolvedTitle} />
+<meta name="twitter:description" content={description} />
+<meta name="twitter:image" content={socialImage} />
+<meta name="twitter:image:alt" content={socialImageAlt} />
 {allJsonLd.map((item) => <script is:inline type="application/ld+json" set:html={sanitizeJsonLd(item)} />)}

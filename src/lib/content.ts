@@ -126,6 +126,13 @@ export function getAllPublicPages() {
       canonicalPath: "/wissen/",
     },
     {
+      h1: "Ein klarer Projektablauf für produktionskritische Bodenflächen",
+      seoTitle: "Projektablauf für Industrieböden und Säureschutz | HSB",
+      description:
+        "Vom Belastungsprofil bis zur Abnahme: So strukturiert HSB Analyse, Systemauslegung, Untergrundvorbereitung, Einbau und Dokumentation von Industriebodenprojekten.",
+      canonicalPath: "/projektablauf/",
+    },
+    {
       h1: "Projektanfrage für Industrieböden",
       seoTitle: "Kontakt & Projektanfrage | HSB Hexagon Säurebau",
       description:

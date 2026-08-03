@@ -11,6 +11,7 @@
   Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=(), usb=()
   Content-Security-Policy: frame-ancestors 'none'; base-uri 'self'; form-action 'self'
   Cross-Origin-Opener-Policy: same-origin
+  Cache-Control: public, max-age=300, must-revalidate
 
 # Astro fingerprintet alles unter /_astro/ (Hash im Dateinamen) —
 # Inhalte sind unveränderlich, Revalidierung ist reine Latenz.

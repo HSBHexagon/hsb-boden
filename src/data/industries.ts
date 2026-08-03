@@ -45,6 +45,8 @@ export const industries: Industry[] = [
       "pu-beton-oder-keramischer-industrieboden",
       "saeurefeste-fliesen-industrieboden",
       "entwaesserung-gefaelle-produktionsbereiche",
+      "rutschhemmklassen-r9-bis-r13-industrieboden",
+      "hohlkehle-sockelausbildung-industrieboden",
     ],
     faqs: [
       {
@@ -99,6 +101,7 @@ export const industries: Industry[] = [
       "warum-industrieboeden-in-molkereien-versagen",
       "entwaesserung-gefaelle-produktionsbereiche",
       "sanierung-ohne-produktionsstillstand",
+      "rutschhemmklassen-r9-bis-r13-industrieboden",
     ],
     faqs: [
       {
@@ -150,6 +153,8 @@ export const industries: Industry[] = [
     relatedArticles: [
       "entwaesserung-gefaelle-produktionsbereiche",
       "sanierung-ohne-produktionsstillstand",
+      "rutschhemmklassen-r9-bis-r13-industrieboden",
+      "hohlkehle-sockelausbildung-industrieboden",
     ],
     faqs: [
       {
@@ -202,6 +207,7 @@ export const industries: Industry[] = [
     relatedArticles: [
       "saeurefeste-fliesen-industrieboden",
       "pu-beton-oder-keramischer-industrieboden",
+      "whg-abdichtung-industrieboden-pflicht",
     ],
     faqs: [
       {
@@ -254,6 +260,7 @@ export const industries: Industry[] = [
     relatedArticles: [
       "pu-beton-oder-keramischer-industrieboden",
       "sanierung-ohne-produktionsstillstand",
+      "whg-abdichtung-industrieboden-pflicht",
     ],
     faqs: [
       {

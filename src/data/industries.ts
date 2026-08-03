@@ -4,7 +4,7 @@ export const industries: Industry[] = [
   {
     slug: "lebensmittelindustrie",
     title: "Lebensmittelindustrie",
-    seoTitle: "Industrieboden für Lebensmittelindustrie | Hexagon Säurebau",
+    seoTitle: "HACCP-konformer Industrieboden Lebensmittelindustrie | HSB",
     description:
       "Hygienische Industrieböden für die Lebensmittelproduktion. Wir planen und realisieren Systeme nach HACCP und IFS-Standards mit Fokus auf Reinigbarkeit und Sicherheit.",
     h1: "Industrieböden für die Lebensmittelindustrie",
@@ -113,8 +113,7 @@ export const industries: Industry[] = [
   {
     slug: "brauerei-getraenkeindustrie",
     title: "Brauerei und Getränkeindustrie",
-    seoTitle:
-      "Industrieboden für Brauereien & Getränkeindustrie | Hexagon Säurebau",
+    seoTitle: "Industrieboden für Brauereien & Getränkeindustrie | HSB",
     description:
       "Hochbelastbare Böden für Abfüllung und Lager. Beständig gegen Zucker, Laugen und massive mechanische Lasten durch Gabelstapler.",
     h1: "Industrieböden für Brauereien und Getränkeproduktion",

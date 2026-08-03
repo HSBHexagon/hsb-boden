@@ -22,23 +22,24 @@ Gemäß `CRM_LIGHT_SCHEMA.md`: Lead-ID, Firma, Standort, Region, Branche, Tier, 
 
 > Revidiert 2026-06-22: n8n + Service Account verworfen (Abo-Kosten), siehe `N8N_HOSTING_DECISION.md` §9b.
 
-Kein Service Account, kein OAuth-Client nötig. Stattdessen ein an das Sheet
-gebundenes Apps Script, das als Web App bereitgestellt wird und unter dem
-Konto des Sheet-Eigentümers läuft (Google-Workspace-Gratis-Kontingente):
+Kein Service Account und kein OAuth-Client nötig. Stattdessen ein an das Sheet
+gebundenes, token-authentifiziertes Apps Script, das als Web App unter dem
+Konto des Sheet-Eigentümers läuft (Google-Workspace-Kontingente). Der verbindliche
+Migrations- und Prüfpfad steht in `docs/crm/WEBHOOK_AUTH_CUTOVER.md`:
 
 1. Sheet „HSB-CRM-Light" öffnen → **Erweiterungen → Apps Script**.
-2. `Code.gs` mit einer `doPost(e)`-Funktion anlegen, die `e.postData.contents`
-   als JSON parst, Pflichtfelder prüft, eine Dublettenprüfung gegen Tab
+2. `Code.gs` mit einer `doPost(e)`-Funktion anlegen, die zuerst den authentifizierten
+   Umschlag gegen `HSB_WEBHOOK_AUTH_TOKEN` aus den Script Properties prüft, danach
+   Pflichtfelder validiert, eine Dublettenprüfung gegen Tab
    „Leads" macht (siehe §6) und per `SpreadsheetApp` eine Zeile anhängt.
    Optional: `MailApp.sendEmail(...)` für die Sofort-Benachrichtigung an
    `info@hsb-boden.de` (ebenfalls kostenlos, im Tagesquota enthalten).
-3. **Bereitstellen → Neue Bereitstellung → Web App**, Zugriff: „Jeder mit der
-   URL" (oder „Jeder", je nach Apps-Script-Domain-Policy). Die resultierende
-   URL (`https://script.google.com/macros/s/…/exec`) ist der Wert für
-   `LEAD_WEBHOOK_URL`.
-4. Die URL ist kein klassisches Geheimnis (sie kann nur Zeilen anhängen, nicht
-   lesen), wird aber dennoch ausschließlich als Server-Secret gehalten, nie im
-   Frontend (`PUBLIC_*`-Variablen).
+3. **Bereitstellen → Neue Bereitstellung → Web App**. Die Plattformfreigabe macht
+   den Pfad technisch öffentlich erreichbar; die Anwendungsauthentifizierung muss
+   deshalb vor jedem Sheet-Zugriff im Script stattfinden.
+4. URL und Token werden gemeinsam als verschlüsseltes Cloudflare-Pages-Secret
+   `LEAD_WEBHOOK_CONFIG` gehalten, nie im Frontend oder Repo. Die URL allein ist
+   ausdrücklich keine Sicherheitsgrenze.
 
 Details zu API-Aktivierung/Scopes: `GOOGLE_API_SETUP.md`.
 
@@ -51,13 +52,16 @@ Details zu API-Aktivierung/Scopes: `GOOGLE_API_SETUP.md`.
 - Treffer → Aktivität anhängen statt neuer Zeile.
 
 ## 7. Schreibtest
-- Mock/Testlauf: eine Test-Zeile per `curl` direkt an die Apps-Script-Web-App-URL senden.
+- Mock/Testlauf zuerst gegen die Pages Function im isolierten Preview. Keine direkte
+  POST-Anfrage an die Apps-Script-Web-App; der echte Pfad ist `/api/lead`.
 - Verifizieren: korrekte Spaltenzuordnung, Dublettenlogik.
 - Testzeile danach kontrolliert markieren/entfernen.
 - Nur nach Freigabe gegen echtes Sheet; vorher Mock.
 
 ## 8. Keine echten Credentials im Repo
-- `LEAD_WEBHOOK_URL` nie committen; Ablage extern (`~/KI-System/05_Secrets/` bzw. Cloudflare-Worker-Secret).
+- `LEAD_WEBHOOK_CONFIG` und den temporären Legacy-Fallback `LEAD_WEBHOOK_URL` nie
+  committen. Echte Werte ausschließlich im vorgesehenen Secret-Tresor beziehungsweise
+  als verschlüsselte Cloudflare-Pages-Secrets halten.
 
 ## 9. Live-Gate
 Keine Live-Anbindung an ein produktives CRM-Sheet ohne ausdrückliche Freigabe.

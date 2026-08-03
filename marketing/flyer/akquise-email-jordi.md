@@ -8,6 +8,12 @@ Struktur, gleiche Kriterien (≤ ~90 Wörter, eine binäre CTA, Flyer als Anhang
 **Signatur-Telefonnummer:** gleiche Firmennummer wie Joel (Nutzerentscheidung 2026-08-03,
 keine separate Nummer für Jordi hinterlegt): Tel. 02562 9463030 · Mobil 0151 21886891
 
+> ⚠️ **Sender-Konflikt mit dem Compliance-Gate:** `docs/launch/PHASE_7_COMPLIANCE_GATE.md`
+> nennt aktuell nur `j-cherino@hsb-boden.de` als bestätigten Absender. Vor dem ersten
+> echten Versand muss entweder `j-post@hsb-boden.de` dort als zusätzlicher genehmigter
+> Absender ergänzt werden, oder dieses Template nutzt stattdessen `j-cherino@hsb-boden.de`.
+> Keine eigenmächtige Entscheidung — Owner-Freigabe nötig.
+
 > ⚠️ Vor Versand den **Personalisierungs-Satz** [in eckigen Klammern] mit einem konkreten
 > Bezug zum Empfänger füllen. Kein generischer Merge-Tag.
 
@@ -23,7 +29,7 @@ Sehr geehrte Damen und Herren,
 
 in Produktions- und Nassbereichen entscheidet der Boden über Stillstand oder Betrieb — offene Fugen, stehendes Wasser und angegriffene Oberflächen führen zu Notreparaturen und Audit-Risiken.
 
-HSB plant und saniert säurebeständige, hygienische Industrieböden (Keramik, PU-Beton, Säureschutz, Entwässerung), auf Wunsch im laufenden Betrieb. Referenzen u. a. Südzucker, Meggle und Biovegan; Details im beigefügten Flyer.
+HSB plant und saniert säurebeständige, hygienische Industrieböden (Keramik, PU-Beton, Säureschutz, Entwässerung), auf Wunsch im laufenden Betrieb. Referenzen u. a. Südzucker und Molkerei Gropper; Details im beigefügten Flyer.
 
 Soll ich Ihnen 2–3 Terminvorschläge für eine kurze, kostenlose Ersteinschätzung Ihrer Flächen senden?
 
@@ -61,7 +67,7 @@ Sehr geehrte Damen und Herren,
 
 *[1 Satz Bezug zum Empfänger.]*
 
-in Lebensmittelbetrieben steht der Boden täglich unter Reinigungschemie, Feuchte und Hygienedruck — offene Fugen und Keimnester werden schnell zum Audit-Thema. HSB plant und saniert hygienische, säurebeständige Industrieböden (Keramik, PU-Beton, Entwässerung), auf HACCP-Anforderungen ausgelegt und auf Wunsch im laufenden Betrieb. Details und Referenzen wie Südzucker, Meggle und Biovegan finden Sie im beigefügten Flyer.
+in Lebensmittelbetrieben steht der Boden täglich unter Reinigungschemie, Feuchte und Hygienedruck — offene Fugen und Keimnester werden schnell zum Audit-Thema. HSB plant und saniert hygienische, säurebeständige Industrieböden (Keramik, PU-Beton, Entwässerung), auf HACCP-Anforderungen ausgelegt und auf Wunsch im laufenden Betrieb. Details und Referenzen wie Südzucker und Molkerei Gropper finden Sie im beigefügten Flyer.
 
 Soll ich Ihnen 2–3 Terminvorschläge für eine kurze Ersteinschätzung Ihrer Flächen senden?
 
@@ -78,7 +84,7 @@ Sehr geehrte Damen und Herren,
 
 *[1 Satz Bezug zum Empfänger.]*
 
-in Abfüll- und Nassbereichen entscheiden Gefälle, Rinnen und Fugen über Hygiene und Standzeit — stehendes Wasser und Fahrverkehr setzen dem Boden hart zu. HSB plant und saniert säurebeständige Industrieböden mit durchdachter Entwässerung und Gefälleplanung, auf Wunsch im laufenden Betrieb. Referenzen u. a. Südzucker, Meggle, Biovegan; Details im beigefügten Flyer.
+in Abfüll- und Nassbereichen entscheiden Gefälle, Rinnen und Fugen über Hygiene und Standzeit — stehendes Wasser und Fahrverkehr setzen dem Boden hart zu. HSB plant und saniert säurebeständige Industrieböden mit durchdachter Entwässerung und Gefälleplanung, auf Wunsch im laufenden Betrieb. Referenzen u. a. Südzucker, Molkerei Gropper; Details im beigefügten Flyer.
 
 Soll ich Ihnen 2–3 Terminvorschläge für eine kurze Ersteinschätzung senden?
 
@@ -137,7 +143,7 @@ Jordi Post
 | sachlich | Industrieböden & Säureschutz für Ihre Produktion |
 | technisch | Säurebeständige Industrieböden: Keramik, PU-Beton, Entwässerung |
 | problemorientiert | Offene Fugen, stehendes Wasser, Keimnester im Produktionsbereich? |
-| referenzorientiert | Industrieböden — u. a. für Südzucker, Meggle, Biovegan |
+| referenzorientiert | Industrieböden — u. a. für Südzucker, Molkerei Gropper |
 | kurz/direkt | Kurze Frage zu Ihren Produktionsböden |
 
 ---
@@ -147,4 +153,8 @@ Jordi Post
 1. Personalisierungs-Satz je Empfänger füllen (kein generischer Merge-Tag).
 2. Testmail an eigenes Seed-Postfach + kurzer Spam-Filter-Check.
 3. **`j-post@hsb-boden.de` muss als sendefähiges Postfach in M365 eingerichtet und DKIM-verifiziert sein** — das ist außerhalb dieses Repos, nicht von mir prüfbar. Vor dem ersten Versand durch Jordi selbst bestätigen.
-4. Kein Serienversand ohne Recht-/Opt-out-Prüfung (siehe `docs/launch/PHASE_7_COMPLIANCE_GATE.md`).
+4. Kein Serienversand ohne vollständig erfüllten Phase-7-Compliance-Gate
+   (`docs/launch/PHASE_7_COMPLIANCE_GATE.md`) — nicht nur Recht-/Opt-out-Prüfung, sondern
+   alle dort gelisteten Freigaben: finale Lead-Liste, dokumentierte Kontaktbasis und
+   Quelle je Empfänger, genehmigter Opt-out-Text, Reply-Handling, CRM-Logging,
+   Owner-Freigabe für das konkrete Batch, dokumentierte Legal/Compliance-Prüfung.

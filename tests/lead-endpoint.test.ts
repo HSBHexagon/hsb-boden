@@ -327,7 +327,7 @@ describe("POST /api/lead", () => {
     );
 
     expect(res.status).toBe(200);
-    expect(res.headers.get("Access-Control-Allow-Origin")).toBe(origin);
+    expect(res.headers.get("Access-Control-Allow-Origin")).toBeNull();
   });
 
   it("rejects a lookalike Cloudflare Pages preview Origin", async () => {

@@ -25,32 +25,19 @@ interface WebhookTarget {
   requireAcknowledgement: boolean;
 }
 
-// Distributed across Worker/Pages Function instances via Cloudflare KV — an
-// in-memory Map resets per instance/cold start and does not enforce a limit
-// reliably across a serverless fleet (see PR #42 / rate-limit-bypass fix).
-let memoryIpHits = new Map<string, number[]>();
-let memoryEmailHits = new Map<string, number[]>();
 
-export function resetLeadRateLimiter() {
-  memoryIpHits = new Map();
-  memoryEmailHits = new Map();
-}
 
-function isRateLimitedMemory(key: string, store: Map<string, number[]>, limit: { max: number; windowMs: number }, now: number) {
-  const hits = (store.get(key) ?? []).filter((t) => now - t < limit.windowMs);
-  hits.push(now);
-  store.set(key, hits);
-  return hits.length > limit.max;
-}
 
 async function isRateLimited(
   kv: KVNamespace | undefined,
-  memoryStore: Map<string, number[]>,
   key: string,
   limit: { max: number; windowMs: number },
   now: number,
 ) {
-  if (!kv) return isRateLimitedMemory(key, memoryStore, limit, now);
+  if (!kv) {
+    console.error("RATE_LIMIT_KV namespace is not bound.");
+    throw new Error("rate_limit_kv_missing");
+  }
   const raw = await kv.get(key, "json");
   const hits = ((raw as number[] | null) ?? []).filter((t) => now - t < limit.windowMs);
   hits.push(now);
@@ -90,6 +77,40 @@ function isAllowedOrigin(origin: string): boolean {
 
 function jsonResponse(status: number, body: unknown, origin: string | null) {
   return new Response(JSON.stringify(body), { status, headers: corsHeaders(origin) });
+}
+
+function checkJsonDepth(jsonStr: string, maxDepth: number = 32): void {
+  let depth = 0;
+  let inString = false;
+  let escapeNext = false;
+
+  for (let i = 0; i < jsonStr.length; i++) {
+    const char = jsonStr[i];
+
+    if (escapeNext) {
+      escapeNext = false;
+      continue;
+    }
+
+    if (inString) {
+      if (char === "\\") {
+        escapeNext = true;
+      } else if (char === '"') {
+        inString = false;
+      }
+    } else {
+      if (char === '"') {
+        inString = true;
+      } else if (char === "{" || char === "[") {
+        depth++;
+        if (depth > maxDepth) {
+          throw new Error("json_too_deep");
+        }
+      } else if (char === "}" || char === "]") {
+        depth--;
+      }
+    }
+  }
 }
 
 function isAllowedAppsScriptUrl(value: string): boolean {
@@ -206,7 +227,7 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
   const { request, env } = context;
   const origin = request.headers.get("Origin");
 
-  if (origin && !isAllowedOrigin(origin)) {
+  if (!origin || !isAllowedOrigin(origin)) {
     return jsonResponse(403, { ok: false, error: "forbidden_origin" }, origin);
   }
 
@@ -227,6 +248,7 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
 
   let parsedBody: unknown;
   try {
+    checkJsonDepth(rawBody);
     parsedBody = JSON.parse(rawBody);
   } catch {
     return jsonResponse(400, { ok: false, error: "invalid_json" }, origin);
@@ -240,8 +262,17 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
 
   const now = Date.now();
   const ip = request.headers.get("CF-Connecting-IP") ?? "unknown";
-  const ipLimited = await isRateLimited(env.RATE_LIMIT_KV, memoryIpHits, `ip:${ip}`, IP_LIMIT, now);
-  const emailLimited = await isRateLimited(env.RATE_LIMIT_KV, memoryEmailHits, `email:${lead.email}`, EMAIL_LIMIT, now);
+  let ipLimited = false;
+  let emailLimited = false;
+  try {
+    ipLimited = await isRateLimited(env.RATE_LIMIT_KV, `ip:${ip}`, IP_LIMIT, now);
+    emailLimited = await isRateLimited(env.RATE_LIMIT_KV, `email:${lead.email}`, EMAIL_LIMIT, now);
+  } catch (err) {
+    if (err instanceof Error && err.message === "rate_limit_kv_missing") {
+      return jsonResponse(500, { ok: false, error: "internal_error" }, origin);
+    }
+    throw err;
+  }
   if (ipLimited || emailLimited) {
     return jsonResponse(429, { ok: false, error: "rate_limited" }, origin);
   }

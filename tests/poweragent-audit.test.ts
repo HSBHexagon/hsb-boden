@@ -11,9 +11,12 @@ describe("PowerAgent audit guardrails", () => {
     expect(existsSync(join(process.cwd(), ".github/workflows/notion-nightly-backup.yml"))).toBe(false);
   });
 
+  it("does not publish the removed, unused Notion deploy-sync workflow", () => {
+    expect(existsSync(join(process.cwd(), ".github/workflows/notion-deploy-sync.yml"))).toBe(false);
+  });
+
   it("pins every third-party GitHub Action to an immutable commit", () => {
     const workflows = [
-      source(".github/workflows/notion-deploy-sync.yml"),
       source(".github/workflows/notion-issue-sync.yml"),
     ];
 
@@ -58,8 +61,8 @@ describe("PowerAgent audit guardrails", () => {
     const cta = source("src/components/sections/CTASection.astro");
 
     expect(leadForm).toContain('site.phone.replace("(0)", "")');
-    expect(cta).toContain('import { site } from "../../data/site"');
-    expect(cta).toContain('site.phone.replace("(0)", "")');
+    expect(cta).toContain('import { toTelephoneHref } from "../../lib/phone"');
+    expect(cta).toContain("toTelephoneHref(site.phone)");
     expect(cta).not.toContain("tel:+4925629463030");
   });
 });

@@ -41,7 +41,7 @@ jobs:
     steps:
       - name: Validate event and caller
         id: route
-        uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3
         env:
           INPUT_PR_NUMBER: ${{ inputs.pr_number }}
         with:
@@ -174,7 +174,7 @@ jobs:
       - name: Review with OpenAI Responses API
         id: review
         continue-on-error: true
-        uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY || secrets.OPENAI }}
           OPENAI_MODEL: ${{ vars.OPENAI_REVIEW_MODEL || 'gpt-5.6-luna' }}
@@ -327,7 +327,7 @@ jobs:
       - name: Review with Gemini Interactions API
         id: review
         continue-on-error: true
-        uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY || secrets.GEMINI }}
           GEMINI_MODEL: ${{ vars.GEMINI_REVIEW_MODEL || 'gemini-3.5-flash' }}

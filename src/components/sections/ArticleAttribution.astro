@@ -1,0 +1,22 @@
+---
+import { site } from "../../data/site";
+
+interface Props {
+  readTime: string;
+  category: string;
+}
+
+const { readTime, category } = Astro.props;
+---
+
+<div class="flex flex-wrap items-center gap-3 border-y border-hsb-mist/60 py-4 text-sm text-hsb-steel">
+  <span class="font-medium text-hsb-ink">HSB Hexagon Säurebau GmbH</span>
+  <span aria-hidden="true">·</span>
+  <span>Fachbeitrag {category}</span>
+  <span aria-hidden="true">·</span>
+  <span>{readTime} Lesezeit</span>
+  <span aria-hidden="true">·</span>
+  <a href={`${site.domain}/referenzen/`} class="underline decoration-hsb-steel/40 underline-offset-4 hover:decoration-hsb-ink">
+    Referenzprojekte ansehen
+  </a>
+</div>

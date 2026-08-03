@@ -258,4 +258,132 @@ export const articles: Article[] = [
       "brauerei-getraenkeindustrie",
     ],
   },
+  {
+    slug: "rutschhemmklassen-r9-bis-r13-industrieboden",
+    title: "Rutschhemmklassen R9 bis R13 für Industrieböden",
+    seoTitle: "Rutschhemmklassen R9-R13 Industrieboden erklärt | HSB Wissen",
+    description:
+      "Welche Rutschhemmklasse (R9 bis R13, mit V4/V6-Verdrängungsraum) für welchen Produktionsbereich vorgeschrieben ist und wie die Klassifizierung praktisch geprüft wird.",
+    h1: "Rutschhemmklassen R9 bis R13: Welche Klasse für welchen Bereich?",
+    category: "Technik",
+    readTime: "8 Minuten",
+    intro:
+      "Die Rutschhemmklasse eines Industriebodens ist keine freie Wahl, sondern ergibt sich aus der Belastung des jeweiligen Arbeitsbereichs. Wer in Ausschreibungen oder Lastenheften auf R9, R12 oder R13 stößt, ohne die Systematik zu kennen, riskiert eine Fehlplanung, die erst bei der Abnahme auffällt.",
+    sections: [
+      {
+        title: "Was die Rutschhemmklasse tatsächlich misst",
+        body: "Die Rutschhemmklasse nach DIN 51130 beschreibt den Neigungswinkel, bei dem eine Testperson auf einer geölten schiefen Ebene noch sicheren Halt hat. Je höher die Klasse (R9 bis R13), desto größer der gemessene Neigungswinkel und desto rutschsicherer die Oberfläche unter Ölbelastung. Für Nassbereiche mit Wasser statt Öl gilt zusätzlich die Bewertungsgruppe A bis C nach DIN 51097.",
+      },
+      {
+        title: "R9 bis R11: Trockene und leicht feuchte Bereiche",
+        body: "R9 ist die niedrigste praxisrelevante Klasse und reicht für überwiegend trockene Lagerbereiche. R10 und R11 werden für Bereiche mit gelegentlicher Nässe oder leichten Verunreinigungen verwendet, etwa Zugangswege oder Nebenräume ohne permanente Nassbelastung. In produktionskritischen Kernbereichen reichen diese Klassen in der Regel nicht aus.",
+      },
+      {
+        title: "R12 und R13: Produktions- und Nassbereiche",
+        body: "R12 ist die häufigste geforderte Klasse für Produktionsbereiche mit regelmäßiger Nässe, Fett oder Reinigungsmitteln — etwa in der Lebensmittelverarbeitung oder bei Brauereien. R13 wird für besonders anspruchsvolle Bereiche mit dauerhaft hoher Nassbelastung und Fettanfall verlangt, etwa in Großküchen oder bei bestimmten Fleischverarbeitungsprozessen.",
+      },
+      {
+        title: "Die Verdrängungsraum-Klassen V4 und V6",
+        body: "Zusätzlich zur Rutschhemmklasse wird bei Nassbereichen ein Verdrängungsraum gefordert, der Flüssigkeit von der Standfläche wegleitet. V4 entspricht mindestens 4 Liter Verdrängungsraum pro Quadratmeter, V6 mindestens 6 Liter. Ein hoher Rutschhemmwert ohne ausreichenden Verdrängungsraum kann in der Praxis trotzdem zu Pfützenbildung und Rutschgefahr führen — beide Werte müssen zusammen betrachtet werden.",
+      },
+      {
+        title: "Typischer Fehler: Eine Klasse für die ganze Fläche",
+        body: "Ein häufiger Planungsfehler ist, eine einzige Rutschhemmklasse für eine gesamte Produktionshalle festzulegen, obwohl einzelne Bereiche unterschiedlich belastet werden. Der Bereich direkt an einer Reinigungsstation braucht typischerweise eine höhere Klasse als ein trockener Lagerbereich im selben Gebäude. Eine bereichsweise Klassifizierung vermeidet unnötige Mehrkosten in gering belasteten Zonen und schließt Sicherheitslücken in Hochrisikozonen.",
+      },
+      {
+        title: "Wie die Klasse in der Praxis geprüft wird",
+        body: "Die Prüfung erfolgt im Labor durch ein akkreditiertes Prüfinstitut nach dem in der jeweiligen Norm festgelegten Verfahren, nicht durch eine Sichtprüfung auf der Baustelle. Für ein Bauvorhaben bedeutet das: Das gewählte Bodensystem muss ein gültiges Prüfzertifikat für die geforderte Klasse besitzen — die Rutschhemmung ist eine Materialeigenschaft des gesamten Systems, nicht nur der obersten Schicht.",
+      },
+      {
+        title: "Was bei nachträglicher Sanierung zu beachten ist",
+        body: "Bei einer Sanierung eines bestehenden Bodens muss die geforderte Rutschhemmklasse neu erreicht werden, unabhängig davon, welche Klasse der Altbelag ursprünglich hatte. Verschleiß, wiederholte Reinigung oder mechanische Beanspruchung können die Rutschhemmung eines Altbelags über die Jahre verringern — eine reine optische Auffrischung ohne Systemwechsel löst dieses Problem nicht.",
+      },
+      {
+        title: "Klassifizierung für Ihren Produktionsbereich klären",
+        body: "Welche Rutschhemmklasse für welchen konkreten Bereich Ihres Betriebs zutrifft, hängt vom Belastungsprofil vor Ort ab. HSB bewertet Nutzung, Reinigungsroutine und Nassbelastung jedes Bereichs einzeln und legt die Systemwahl entsprechend fest, statt eine Standardklasse pauschal anzusetzen.",
+      },
+    ],
+    relatedServices: ["keramische-industrieboeden", "pu-beton-industrieboden"],
+    relatedIndustries: ["lebensmittelindustrie", "molkerei", "brauerei-getraenkeindustrie"],
+  },
+  {
+    slug: "hohlkehle-sockelausbildung-industrieboden",
+    title: "Hohlkehle und Sockelausbildung im Industrieboden",
+    seoTitle: "Hohlkehle & Sockel im Industrieboden: Detail entscheidet | HSB",
+    description:
+      "Warum die Hohlkehle am Wand-Boden-Übergang über die Standzeit eines Industriebodens entscheidet und welche Ausführungsfehler zu wiederkehrenden Schäden führen.",
+    h1: "Hohlkehle und Sockelausbildung: Das unterschätzte Detail",
+    category: "Technik",
+    readTime: "7 Minuten",
+    intro:
+      "Der Übergang zwischen Boden und Wand — die Hohlkehle — wird in der Planung oft als Nebensache behandelt, ist aber in der Praxis eine der häufigsten Schadensursachen in Nassbereichen. Eine fehlerhafte Hohlkehle unterläuft die gesamte Abdichtungsleistung des Bodensystems.",
+    sections: [
+      {
+        title: "Warum die Hohlkehle mechanisch die verwundbarste Stelle ist",
+        body: "Am Wand-Boden-Übergang treffen zwei unterschiedliche Bauteile mit unterschiedlichem Bewegungsverhalten aufeinander. Ohne eine gerundete, kraftschlüssig ausgebildete Hohlkehle entsteht hier eine scharfe Kante, an der sich mechanische Spannungen konzentrieren — genau dort, wo Reinigungsgeräte, Hubwagen und Wasserstrahl am häufigsten auftreffen.",
+      },
+      {
+        title: "Der typische Schadensverlauf bei fehlerhafter Ausführung",
+        body: "Reißt die Abdichtung an der Hohlkehle auch nur minimal ein, wandert Feuchtigkeit hinter die Wandbekleidung oder unter den Bodenbelag. Von außen ist der Schaden zunächst unsichtbar; sichtbar wird er erst, wenn sich Fliesen lösen oder Putz an der Wand aufquillt — zu diesem Zeitpunkt ist die Durchfeuchtung meist bereits weit fortgeschritten.",
+      },
+      {
+        title: "Materialanforderungen an die Hohlkehle",
+        body: "Die Hohlkehle muss aus demselben oder einem systemkompatiblen Material wie die Hauptabdichtung bestehen, mit einem definierten Mindestradius (praxisüblich 3-5 cm), damit Reinigungsflüssigkeit ablaufen kann statt sich in einer scharfen Kante zu sammeln. Eine nachträglich aufgesetzte Silikonfuge ersetzt keine fachgerechte Hohlkehle — sie hält der mechanischen und chemischen Dauerbelastung in Produktionsbereichen nicht stand.",
+      },
+      {
+        title: "Sockelhöhe und Stoßschutz",
+        body: "Die Sockelausbildung sollte über die reine Abdichtung hinaus eine mechanisch belastbare Höhe erreichen, insbesondere in Bereichen mit Hubwagen- oder Gabelstaplerverkehr. Ein zu niedriger oder ungeschützter Sockel wird regelmäßig angefahren, wodurch die Abdichtung an genau dieser Stelle vorzeitig beschädigt wird — ein Schadensbild, das sich ohne baulichen Stoßschutz wiederholt einstellt.",
+      },
+      {
+        title: "Prüfpunkte bei der Bauabnahme",
+        body: "Bei der Abnahme sollte die Hohlkehle auf durchgehende Ausführung ohne Unterbrechung geprüft werden, insbesondere an Ecken, Rohrdurchführungen und Türlaibungen — Stellen, an denen die Ausführung erfahrungsgemäß am häufigsten unvollständig bleibt. Eine lückenlose fotografische Dokumentation der Hohlkehle vor der Inbetriebnahme erleichtert spätere Gewährleistungsfragen erheblich.",
+      },
+      {
+        title: "Hohlkehlen-Ausführung für Ihren Bodenaufbau prüfen lassen",
+        body: "Ob eine bestehende Hohlkehle noch funktionsfähig ist oder bereits Schwachstellen zeigt, lässt sich meist erst bei genauer Prüfung vor Ort feststellen. HSB bewertet den Zustand der Detailanschlüsse als festen Bestandteil jeder Bodenanalyse, nicht als nachgelagerten Punkt.",
+      },
+    ],
+    relatedServices: ["industrieboden-saeureschutz", "keramische-industrieboeden"],
+    relatedIndustries: ["lebensmittelindustrie", "brauerei-getraenkeindustrie"],
+  },
+  {
+    slug: "whg-abdichtung-industrieboden-pflicht",
+    title: "WHG-Abdichtung für Industrieböden — wann ist sie Pflicht",
+    seoTitle: "WHG-Abdichtung Industrieboden: Pflicht oder Kür? | HSB Wissen",
+    description:
+      "Wann eine WHG-konforme Bodenabdichtung nach Wasserhaushaltsgesetz für Ihren Produktionsbereich rechtlich vorgeschrieben ist und was bei der Systemwahl zu beachten ist.",
+    h1: "WHG-Abdichtung für Industrieböden: Wann ist sie Pflicht?",
+    category: "Recht & Technik",
+    readTime: "8 Minuten",
+    intro:
+      "Das Wasserhaushaltsgesetz (WHG) verpflichtet Betreiber bestimmter Anlagen zum Schutz von Boden und Grundwasser vor wassergefährdenden Stoffen. Für Industrieböden bedeutet das: In bestimmten Bereichen ist eine flüssigkeitsdichte, geprüfte Abdichtung keine optionale Zusatzleistung, sondern eine rechtliche Anforderung mit Nachweispflicht.",
+    sections: [
+      {
+        title: "Was das WHG für Bodenflächen verlangt",
+        body: "Das WHG und die zugehörige Anlagenverordnung (AwSV) verpflichten Betreiber von Anlagen zum Umgang mit wassergefährdenden Stoffen dazu, dass keine solchen Stoffe in Boden oder Grundwasser gelangen können. Für den Boden bedeutet das eine flüssigkeitsundurchlässige, beständige und rissüberbrückende Abdichtung, die dem jeweiligen Gefährdungspotenzial standhält.",
+      },
+      {
+        title: "Wann die Pflicht konkret greift",
+        body: "Maßgeblich ist nicht die Branche als solche, sondern ob am jeweiligen Standort mit wassergefährdenden Stoffen umgegangen wird — etwa Lagerung, Abfüllung oder Verarbeitung von Chemikalien, Reinigungsmitteln in relevanter Menge oder bestimmten Betriebsstoffen. Die konkrete Einstufung und die daraus folgenden Anforderungen ergeben sich aus der Gefährdungsstufe der jeweiligen Anlage nach AwSV, die im Einzelfall behördlich oder durch einen Sachverständigen zu klären ist.",
+      },
+      {
+        title: "Prüfnachweis statt Vertrauen auf die Optik",
+        body: "Eine WHG-konforme Abdichtung muss durch einen bauaufsichtlich anerkannten Nachweis (z. B. eine allgemeine bauaufsichtliche Zulassung oder Prüfzeugnis) belegt sein, nicht durch eine augenscheinlich dichte Oberfläche. Optisch unauffällige Böden können bei genauerer Prüfung Undichtigkeiten an Fugen, Durchdringungen oder Rand-anschlüssen aufweisen, die für die WHG-Konformität entscheidend sind.",
+      },
+      {
+        title: "Typische Schwachstellen bei Bestandsflächen",
+        body: "Bei nachträglich geprüften Bestandsflächen zeigen sich Schwachstellen meist an denselben Stellen: Fugenübergänge, Rohrdurchführungen, Anschlüsse an Aufkantungen und Übergänge zu angrenzenden, nicht WHG-pflichtigen Bereichen. Eine punktuelle Nachbesserung ohne Systemprüfung schließt oft nur die sichtbare Stelle, nicht die eigentliche Undichtigkeitsursache.",
+      },
+      {
+        title: "Dokumentationspflicht und Wiederkehrende Prüfung",
+        body: "Je nach Gefährdungsstufe der Anlage sind wiederkehrende Prüfungen durch Sachverständigenorganisationen vorgeschrieben. Eine lückenlose Dokumentation der ursprünglichen Ausführung — verwendete Materialien, Prüfzeugnisse, Ausführungsfotos — erleichtert diese wiederkehrenden Prüfungen erheblich und vermeidet, dass bei jeder Prüfung erneut Grundlagenfragen geklärt werden müssen.",
+      },
+      {
+        title: "Einstufung und Systemwahl für Ihren Standort klären",
+        body: "Ob und in welchem Umfang eine WHG-konforme Abdichtung für einen konkreten Bereich erforderlich ist, hängt von der individuellen Anlagen- und Gefährdungssituation ab und ist keine pauschale Aussage. HSB bewertet die Anforderungen je Produktionsbereich gemeinsam mit den vorhandenen Nachweisen und legt die Systemwahl entsprechend fest.",
+      },
+    ],
+    relatedServices: ["industrieboden-saeureschutz", "whg-abdichtung-industrieboden"],
+    relatedIndustries: ["chemieindustrie", "pharmaindustrie"],
+  },
 ];

@@ -1,14 +1,16 @@
 # GA4_GTM_GSC_MAX_READINESS — HSB-Boden / HEXAFLOOR
 
-Status: `ga4-basic-consent-cutover-in-pr; external-owner-verification-open`
-Stand: 2026-07-15
+Status: `ga4-basic-consent-cutover-live; external-owner-verification-open`
+Stand: 2026-08-03
 
 Kanonische Detaildokumentation: `GA4_GSC_EVENT_TRACKING_READINESS.md`.
 
 ## Nachweisbarer Code-Stand
 
-- Die GA4 Measurement ID ist im Quellcode vorhanden, aber die neue Basic-Consent-
-  Implementierung ist noch nicht in `main` oder Produktion gemergt.
+- Die GA4 Measurement ID ist im Quellcode vorhanden. Die Basic-Consent-
+  Implementierung ist in `main` gemergt und per Production-Deploy (2026-08-03)
+  live; verifiziert per `curl -sI https://www.hsb-boden.de` (siehe Security-Header
+  im Response, `src/lib/analytics.ts` Consent-Gate).
 - `gtag.js` wird nach diesem Cutover ausschließlich nach aktiver Analytics-
   Einwilligung dynamisch geladen; kein externes Google-Skript vor Consent.
 - Erfolgreiche Leads werden als `generate_lead` ohne personenbezogene Nutzdaten

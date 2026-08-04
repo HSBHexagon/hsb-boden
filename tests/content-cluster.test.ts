@@ -65,4 +65,13 @@ describe("content cluster expansion", () => {
       article!.intro + article!.sections.map((s) => s.body).join(" ");
     expect(fullText).not.toMatch(/HACCP-zertifiziert/i);
   });
+
+  it("has the ESD/explosion protection article with required sections", () => {
+    const article = articles.find(
+      (a) => a.slug === "esd-ableitfaehigkeit-explosionsschutz-industrieboden",
+    );
+    expect(article).toBeDefined();
+    expect(article!.sections.length).toBeGreaterThanOrEqual(6);
+    expect(article!.relatedIndustries).toContain("chemieindustrie");
+  });
 });

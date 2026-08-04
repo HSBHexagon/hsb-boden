@@ -209,6 +209,7 @@ export const industries: Industry[] = [
       "saeurefeste-fliesen-industrieboden",
       "pu-beton-oder-keramischer-industrieboden",
       "whg-abdichtung-industrieboden-pflicht",
+      "esd-ableitfaehigkeit-explosionsschutz-industrieboden",
     ],
     faqs: [
       {

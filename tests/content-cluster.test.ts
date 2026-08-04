@@ -74,4 +74,13 @@ describe("content cluster expansion", () => {
     expect(article!.sections.length).toBeGreaterThanOrEqual(6);
     expect(article!.relatedIndustries).toContain("chemieindustrie");
   });
+
+  it("ESD article does not misattribute DIN EN 61340-5-1 as the Ex-zone floor standard", () => {
+    const article = articles.find(
+      (a) => a.slug === "esd-ableitfaehigkeit-explosionsschutz-industrieboden",
+    );
+    const fullText =
+      article!.intro + article!.sections.map((s) => s.body ?? "").join(" ");
+    expect(fullText).not.toMatch(/DIN EN 61340/i);
+  });
 });

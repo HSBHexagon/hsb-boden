@@ -437,14 +437,14 @@ export const articles: Article[] = [
   {
     slug: "esd-ableitfaehigkeit-explosionsschutz-industrieboden",
     title: "ESD-Ableitfähigkeit und Explosionsschutz im Industrieboden",
-    seoTitle: "ESD-Boden: Ableitfähigkeit nach DIN EN 61340 | HSB Wissen",
+    seoTitle: "ESD-Ableitfähigkeit im Industrieboden | HSB Wissen",
     description:
-      "Wann ein ableitfähiger ESD-Boden nach DIN EN 61340-5-1 in Ex-Zonen und explosionsgefährdeten Chemiebereichen vorgeschrieben ist und worauf bei der Systemauswahl zu achten ist.",
+      "Wann ein ableitfähiger ESD-Boden in Ex-Zonen und explosionsgefährdeten Chemiebereichen erforderlich ist und worauf bei der Systemauswahl zu achten ist.",
     h1: "ESD-Ableitfähigkeit: Wann ein Industrieboden elektrostatisch ableiten muss",
     category: "Recht & Technik",
     readTime: "8 Minuten",
     intro:
-      "In explosionsgefährdeten Bereichen der Chemieindustrie kann eine unkontrollierte elektrostatische Aufladung des Bodens zur Zündquelle werden. Die Norm DIN EN 61340-5-1 regelt, welcher Ableitwiderstand ein Bodensystem in solchen Zonen erfüllen muss — eine Anforderung, die weit über normale Rutschhemmung oder Chemikalienbeständigkeit hinausgeht.",
+      "In explosionsgefährdeten Bereichen der Chemieindustrie kann eine unkontrollierte elektrostatische Aufladung des Bodens zur Zündquelle werden. Ob und in welchem Umfang ein Bodensystem ableitfähig sein muss, ergibt sich aus der betriebsspezifischen Ex-Zonen-Einstufung und dem Explosionsschutzdokument — nicht aus einer pauschalen Norm für den gesamten Bodenbelag.",
     sections: [
       {
         title: "Das physikalische Risiko: Elektrostatische Entladung als Zündquelle",
@@ -455,8 +455,8 @@ export const articles: Article[] = [
         body: "Maßgeblich ist die Einstufung des Bereichs nach der Betriebssicherheitsverordnung bzw. den Ex-Zonen (Zone 0, 1, 2 für Gase; Zone 20, 21, 22 für Stäube). Innerhalb dieser klassifizierten Zonen ist ein ableitfähiger Bodenbelag in der Regel zwingend Teil des Explosionsschutzkonzepts, nicht optional. Die konkrete Zoneneinstufung erfolgt durch den Betreiber im Rahmen des Explosionsschutzdokuments, nicht durch den Bodenbauer.",
       },
       {
-        title: "Der geforderte Widerstandsbereich nach DIN EN 61340-5-1",
-        body: "Die Norm definiert einen Ableitwiderstand, der weder zu hoch (keine Ableitung, Ladung baut sich auf) noch zu niedrig (Gefahr des elektrischen Durchschlags bei Kontakt mit spannungsführenden Teilen) sein darf. Ein ESD-Boden muss diesen Fensterbereich dauerhaft einhalten — nicht nur bei der Erstprüfung, sondern über die gesamte Nutzungsdauer, auch nach mechanischer Beanspruchung.",
+        title: "Der geforderte Widerstandsbereich",
+        body: "Ein ableitfähiger Boden muss einen Ableitwiderstand einhalten, der weder zu hoch (keine Ableitung, Ladung baut sich auf) noch zu niedrig (Gefahr des elektrischen Durchschlags bei Kontakt mit spannungsführenden Teilen) ist. Der konkret geforderte Wertebereich ergibt sich aus der Gefährdungsbeurteilung und dem Explosionsschutzdokument des Betreibers, nicht aus einer für alle Ex-Zonen einheitlichen Vorgabe. Ein ESD-Boden muss den festgelegten Fensterbereich dauerhaft einhalten — nicht nur bei der Erstprüfung, sondern über die gesamte Nutzungsdauer, auch nach mechanischer Beanspruchung.",
       },
       {
         title: "Wie die Ableitfähigkeit technisch erreicht wird",

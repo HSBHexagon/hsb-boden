@@ -35,4 +35,15 @@ describe("getAllPublicPages: Standortseiten", () => {
       expect(page.description.length).toBeGreaterThan(20);
     }
   });
+
+  it("every standorte entry seoTitle stays under 60 characters for SERP display", () => {
+    const pages = getAllPublicPages();
+    const standortePages = pages.filter((p) =>
+      p.canonicalPath.startsWith("/standorte/"),
+    );
+
+    for (const page of standortePages) {
+      expect(page.seoTitle.length).toBeLessThanOrEqual(60);
+    }
+  });
 });

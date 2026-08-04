@@ -186,14 +186,14 @@ export function getAllPublicPages() {
     },
     {
       h1: "Industrieboden-Spezialist in Bayern",
-      seoTitle: "Industrieboden Bayern | Keramische Böden & Säureschutz München",
+      seoTitle: "Industrieboden Bayern | Böden & Säureschutz München",
       description:
         "HSB Hexagon – Ihr Spezialist für keramische Industrieböden, Säureschutzsysteme und Entwässerung in Bayern. Projekte in München, Nürnberg, Augsburg, Regensburg und ganz Bayern.",
       canonicalPath: "/standorte/bayern/",
     },
     {
       h1: "Industrieboden-Spezialist in Nordrhein-Westfalen",
-      seoTitle: "Industrieboden NRW | Keramische Böden & Säureschutz Nordrhein-Westfalen",
+      seoTitle: "Industrieboden NRW | Böden & Säureschutz",
       description:
         "HSB Hexagon – Ihr Spezialist für keramische Industrieböden, Säureschutzsysteme und Entwässerung in NRW. Projekte in Köln, Düsseldorf, Dortmund, Essen und ganz Nordrhein-Westfalen.",
       canonicalPath: "/standorte/nrw/",

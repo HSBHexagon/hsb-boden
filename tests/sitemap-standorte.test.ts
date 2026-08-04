@@ -17,6 +17,12 @@ describe("getAllPublicPages: Standortseiten", () => {
     expect(paths).toContain("/standorte/rheinland-pfalz/");
   });
 
+  it("includes the new Baden-Württemberg location page", () => {
+    const pages = getAllPublicPages();
+    const paths = pages.map((p) => p.canonicalPath);
+    expect(paths).toContain("/standorte/baden-wuerttemberg/");
+  });
+
   it("every standorte entry has a non-empty seoTitle and description", () => {
     const pages = getAllPublicPages();
     const standortePages = pages.filter((p) =>

@@ -62,7 +62,7 @@ describe("content cluster expansion", () => {
       (a) => a.slug === "haccp-audit-industrieboden-pruefpunkte",
     );
     const fullText =
-      article!.intro + article!.sections.map((s) => s.body).join(" ");
+      article!.intro + article!.sections.map((s) => s.body ?? "").join(" ");
     expect(fullText).not.toMatch(/HACCP-zertifiziert/i);
   });
 

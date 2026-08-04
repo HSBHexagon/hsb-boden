@@ -47,6 +47,7 @@ export const industries: Industry[] = [
       "entwaesserung-gefaelle-produktionsbereiche",
       "rutschhemmklassen-r9-bis-r13-industrieboden",
       "hohlkehle-sockelausbildung-industrieboden",
+      "haccp-audit-industrieboden-pruefpunkte",
     ],
     faqs: [
       {
@@ -208,6 +209,7 @@ export const industries: Industry[] = [
       "saeurefeste-fliesen-industrieboden",
       "pu-beton-oder-keramischer-industrieboden",
       "whg-abdichtung-industrieboden-pflicht",
+      "esd-ableitfaehigkeit-explosionsschutz-industrieboden",
     ],
     faqs: [
       {

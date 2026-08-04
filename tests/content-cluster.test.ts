@@ -47,4 +47,40 @@ describe("content cluster expansion", () => {
     );
     expect(referencingIndustries.length).toBeGreaterThanOrEqual(2);
   });
+
+  it("has the IFS/BRC audit article with required sections", () => {
+    const article = articles.find(
+      (a) => a.slug === "haccp-audit-industrieboden-pruefpunkte",
+    );
+    expect(article).toBeDefined();
+    expect(article!.sections.length).toBeGreaterThanOrEqual(6);
+    expect(article!.relatedIndustries).toContain("lebensmittelindustrie");
+  });
+
+  it("IFS/BRC audit article does not claim floor itself is HACCP-certified", () => {
+    const article = articles.find(
+      (a) => a.slug === "haccp-audit-industrieboden-pruefpunkte",
+    );
+    const fullText =
+      article!.intro + article!.sections.map((s) => s.body ?? "").join(" ");
+    expect(fullText).not.toMatch(/HACCP-zertifiziert/i);
+  });
+
+  it("has the ESD/explosion protection article with required sections", () => {
+    const article = articles.find(
+      (a) => a.slug === "esd-ableitfaehigkeit-explosionsschutz-industrieboden",
+    );
+    expect(article).toBeDefined();
+    expect(article!.sections.length).toBeGreaterThanOrEqual(6);
+    expect(article!.relatedIndustries).toContain("chemieindustrie");
+  });
+
+  it("ESD article does not misattribute DIN EN 61340-5-1 as the Ex-zone floor standard", () => {
+    const article = articles.find(
+      (a) => a.slug === "esd-ableitfaehigkeit-explosionsschutz-industrieboden",
+    );
+    const fullText =
+      article!.intro + article!.sections.map((s) => s.body ?? "").join(" ");
+    expect(fullText).not.toMatch(/DIN EN 61340/i);
+  });
 });

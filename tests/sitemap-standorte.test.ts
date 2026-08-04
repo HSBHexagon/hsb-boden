@@ -11,6 +11,12 @@ describe("getAllPublicPages: Standortseiten", () => {
     expect(paths).toContain("/standorte/nrw/");
   });
 
+  it("includes the new Rheinland-Pfalz location page", () => {
+    const pages = getAllPublicPages();
+    const paths = pages.map((p) => p.canonicalPath);
+    expect(paths).toContain("/standorte/rheinland-pfalz/");
+  });
+
   it("every standorte entry has a non-empty seoTitle and description", () => {
     const pages = getAllPublicPages();
     const standortePages = pages.filter((p) =>

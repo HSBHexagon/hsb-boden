@@ -198,5 +198,12 @@ export function getAllPublicPages() {
         "HSB Hexagon – Ihr Spezialist für keramische Industrieböden, Säureschutzsysteme und Entwässerung in NRW. Projekte in Köln, Düsseldorf, Dortmund, Essen und ganz Nordrhein-Westfalen.",
       canonicalPath: "/standorte/nrw/",
     },
+    {
+      h1: "Industrieboden-Spezialist in Rheinland-Pfalz",
+      seoTitle: "Industrieboden Rheinland-Pfalz | Böden & Säureschutz",
+      description:
+        "HSB Hexagon – Ihr Spezialist für keramische Industrieböden, Säureschutzsysteme und Entwässerung in Rheinland-Pfalz. Projekte in Mainz, Koblenz, Trier und der gesamten Region.",
+      canonicalPath: "/standorte/rheinland-pfalz/",
+    },
   ];
 }

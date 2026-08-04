@@ -47,4 +47,22 @@ describe("content cluster expansion", () => {
     );
     expect(referencingIndustries.length).toBeGreaterThanOrEqual(2);
   });
+
+  it("has the IFS/BRC audit article with required sections", () => {
+    const article = articles.find(
+      (a) => a.slug === "haccp-audit-industrieboden-pruefpunkte",
+    );
+    expect(article).toBeDefined();
+    expect(article!.sections.length).toBeGreaterThanOrEqual(6);
+    expect(article!.relatedIndustries).toContain("lebensmittelindustrie");
+  });
+
+  it("IFS/BRC audit article does not claim floor itself is HACCP-certified", () => {
+    const article = articles.find(
+      (a) => a.slug === "haccp-audit-industrieboden-pruefpunkte",
+    );
+    const fullText =
+      article!.intro + article!.sections.map((s) => s.body).join(" ");
+    expect(fullText).not.toMatch(/HACCP-zertifiziert/i);
+  });
 });

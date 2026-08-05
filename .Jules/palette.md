@@ -1,0 +1,3 @@
+## 2026-08-03 - Added visual required indicators to LeadForm
+**Learning:** Required form fields were relying solely on HTML5 validation without a clear visual indicator for sighted users. The grid layout used in the form meant simply appending an asterisk could push it to a new line, breaking the design.
+**Action:** Always wrap the label text and the required indicator (e.g., `<span aria-hidden="true" class="text-hsb-red">*</span>`) in a parent `<span>` when used within CSS grid/flex layouts to keep them inline, and ensure interactive elements have explicit focus-visible classes for keyboard accessibility.

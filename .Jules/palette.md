@@ -1,0 +1,3 @@
+## 2026-08-06 - [Astro Types and Escaping in Automation]
+**Learning:** When using programmatic scripts (like Python or Bash sed) to inject new attributes into Astro components (e.g., adding `aria-hidden="true"`), over-escaping quotes (like `\"true\"`) causes the Astro compiler to interpret them literally as `&quot;true&quot;`, leading to type mismatch errors during `pnpm check`. Additionally, using boolean expressions like `aria-hidden={true}` works around string typing issues in Astro.
+**Action:** When automating changes in `.astro` files, ensure quotes are correctly formatted without extra escaping. If type errors occur on attributes, fallback to JSX-style boolean injection `{true}`.

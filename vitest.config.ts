@@ -12,5 +12,15 @@ export default defineConfig({
   test: {
     environment: "jsdom",
     globals: true,
+    // Lokale git-worktrees liegen innerhalb des Repos (.worktrees/, .claude/worktrees/)
+    // und sind gitignored. Ohne diesen Ausschluss sammelt Vitest deren veraltete
+    // Testdateien mit ein: der Lauf ist dann weder deterministisch noch aussagekraeftig
+    // fuer den aktuellen Stand. CI klont frisch und ist davon nicht betroffen.
+    exclude: [
+      "**/node_modules/**",
+      "**/dist/**",
+      "**/.worktrees/**",
+      "**/.claude/worktrees/**",
+    ],
   },
 });

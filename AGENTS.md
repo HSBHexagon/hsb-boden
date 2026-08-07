@@ -2,7 +2,12 @@
 
 ## Purpose
 
-Build a parallel Astro/Cloudflare relaunch for HSB that generates organic B2B leads while preserving the current WordPress live site until final approval.
+Run the Astro/Cloudflare site for HSB that generates organic B2B leads.
+`www.hsb-boden.de` is already served by Cloudflare Pages, and `hsb-boden.de`
+redirects there (HTTP 301) — the relaunch is no longer "parallel to a live
+WordPress site". What remains open is the apex/NS cutover at the registrar
+(All-Inkl); see the Deploy Gate below. The WordPress rule under
+Non-Negotiables stays in force regardless: nothing in this repo touches it.
 
 ## Non-Negotiables
 

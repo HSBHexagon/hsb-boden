@@ -24,25 +24,25 @@ const deliveryConfigured = site.hasLeadEndpoint;
   <div class="grid gap-4 sm:grid-cols-2">
     <label class="grid gap-2 text-sm font-bold">
       Vorname
-      <input required minlength={2} maxlength={80} name="firstName" class="rounded border border-hsb-line px-3 py-3 font-normal" />
+      <input required minlength={2} maxlength={80} name="firstName" autocomplete="given-name" class="rounded border border-hsb-line px-3 py-3 font-normal" />
     </label>
     <label class="grid gap-2 text-sm font-bold">
       Nachname
-      <input required minlength={2} maxlength={80} name="lastName" class="rounded border border-hsb-line px-3 py-3 font-normal" />
+      <input required minlength={2} maxlength={80} name="lastName" autocomplete="family-name" class="rounded border border-hsb-line px-3 py-3 font-normal" />
     </label>
   </div>
   <label class="grid gap-2 text-sm font-bold">
     Firma
-    <input required minlength={2} maxlength={120} name="company" class="rounded border border-hsb-line px-3 py-3 font-normal" />
+    <input required minlength={2} maxlength={120} name="company" autocomplete="organization" class="rounded border border-hsb-line px-3 py-3 font-normal" />
   </label>
   <div class="grid gap-4 sm:grid-cols-2">
     <label class="grid gap-2 text-sm font-bold">
       E-Mail
-      <input required type="email" name="email" class="rounded border border-hsb-line px-3 py-3 font-normal" />
+      <input required type="email" name="email" autocomplete="email" class="rounded border border-hsb-line px-3 py-3 font-normal" />
     </label>
     <label class="grid gap-2 text-sm font-bold">
       Telefon
-      <input required minlength={5} type="tel" name="phone" class="rounded border border-hsb-line px-3 py-3 font-normal" />
+      <input required minlength={5} type="tel" name="phone" autocomplete="tel" class="rounded border border-hsb-line px-3 py-3 font-normal" />
     </label>
   </div>
   <div class="grid gap-4 sm:grid-cols-2">

@@ -4,7 +4,7 @@ export const bodenReparaturInstandsetzung: Service = {
   slug: "boden-reparatur-instandsetzung",
   title: "Reparatur und Instandsetzung",
   seoTitle:
-    "Industrieboden reparieren: Instandsetzung & Schadensbehebung | Hexagon Säurebau",
+    "Industrieboden reparieren & instandsetzen | HSB Hexagon Säurebau",
   description:
     "Fachgerechte Reparatur von Industrieböden: Schadstellen, Fugen, Anschlüsse, Sockel und Teilflächen – auch im laufenden Betrieb. Instandsetzung statt Komplettsanierung, wo es technisch sinnvoll ist.",
   h1: "Reparatur und Instandsetzung von Industrieböden",

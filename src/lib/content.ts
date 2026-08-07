@@ -1,4 +1,5 @@
 import { articles } from "../data/articles";
+import { clientLocations } from "../data/clientLocations";
 import { industries } from "../data/industries";
 import { references } from "../data/references";
 import { services } from "../data/services";
@@ -80,6 +81,66 @@ export function getPublicReferences() {
     });
 }
 
+// Dieselbe Firma kann freigegebene Referenz UND Kundenstandort sein. Beide
+// Quellen zusammenzufuehren erzeugte auf der Startseite Duplikate (LogoCloud,
+// Kartenmarker, Standortliste). Zugeordnet wird ueber die kanonische
+// referenceId aus clientLocations, nicht ueber Namensvergleich; der Guard in
+// tests/reference-deduplication.test.ts erzwingt, dass die ID gesetzt ist.
+
+/**
+ * Logos fuer den LogoCloud der Startseite. Die freigegebene Referenz hat
+ * Vorrang vor dem Kundenstandort-Eintrag derselben Firma.
+ */
+export function getLogoCloudEntries() {
+  // Bewusst nur gegen die Referenzen deduplizieren, die hier tatsaechlich ein
+  // Logo rendern: eine Referenz ohne Logo-Freigabe darf ein separat
+  // freigegebenes Standort-Logo nicht stillschweigend unterdruecken.
+  const referencesWithLogo = getPublicReferences().filter(
+    (reference) => reference.logo,
+  );
+  const renderedReferenceIds = new Set(
+    referencesWithLogo.map((reference) => reference.id),
+  );
+
+  const referenceEntries = referencesWithLogo.map((reference) => ({
+    name: reference.displayName,
+    logo: reference.logo as string,
+    meta: "Referenzprojekt",
+  }));
+
+  const locationEntries = clientLocations
+    .filter((location) => "logo" in location)
+    .filter(
+      (location) =>
+        !("referenceId" in location) ||
+        !renderedReferenceIds.has(location.referenceId),
+    )
+    .map((location) => ({
+      name: location.name,
+      logo: location.logo,
+      meta: location.branche,
+    }));
+
+  return [...referenceEntries, ...locationEntries];
+}
+
+/**
+ * Kundenstandorte ohne die Firmen, die bereits als oeffentliche Referenz
+ * erscheinen — verhindert doppelte Kartenmarker und Doppelnennungen in der
+ * Liste "Weitere Kundenstandorte".
+ */
+export function getSupplementalClientLocations() {
+  const publicReferenceIds = new Set(
+    getPublicReferences().map((reference) => reference.id),
+  );
+
+  return clientLocations.filter(
+    (location) =>
+      !("referenceId" in location) ||
+      !publicReferenceIds.has(location.referenceId),
+  );
+}
+
 export function getReferencesForSlugs(referenceIds: string[]) {
   const allowed = new Set(referenceIds);
   return getPublicReferences().filter((reference) => allowed.has(reference.id));
@@ -152,6 +213,23 @@ export function getAllPublicPages() {
       description:
         "Karriere bei HSB: Arbeiten an anspruchsvollen Industrieböden, Säureschutzsystemen und Sanierungsprojekten in Produktionsbetrieben.",
       canonicalPath: "/karriere/",
+    },
+    // Rechtsseiten: gebaut, indexierbar und im Footer verlinkt — sie gehören
+    // deshalb in die Sitemap. Titel und Beschreibung müssen mit den Werten in
+    // src/pages/impressum/ bzw. src/pages/datenschutz/ übereinstimmen.
+    {
+      h1: "Impressum",
+      seoTitle: "Impressum | HSB Hexagon Säurebau GmbH",
+      description:
+        "Impressum und Anbieterkennzeichnung der HSB Hexagon Säurebau GmbH, Benzstraße 6, 48599 Gronau.",
+      canonicalPath: "/impressum/",
+    },
+    {
+      h1: "Datenschutzinformation",
+      seoTitle: "Datenschutz | HSB Hexagon Säurebau GmbH",
+      description:
+        "Datenschutzinformation der HSB Hexagon Säurebau GmbH nach DSGVO: Verarbeitung personenbezogener Daten, Rechtsgrundlagen, Speicherdauer, Löschung und Ihre Betroffenenrechte.",
+      canonicalPath: "/datenschutz/",
     },
     ...services.map((service) => ({
       h1: service.h1,

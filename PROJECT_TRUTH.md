@@ -1,32 +1,50 @@
 # PROJECT_TRUTH — HSB-Boden / HEXAFLOOR
 
-> Single Source of Truth fuer den **aktuellen** Projektstand. Stand: 2026-07-15, 12:05 CEST.
+> Single Source of Truth fuer den **aktuellen** Projektstand. Stand: 2026-08-07, 18:00 CEST.
 > Historischer Verlauf gehoert in `SESSION_LOG.md` oder Archive, nicht hier hinein.
 > Unklare Punkte sind als `unklar / zu pruefen` markiert.
 >
-> Gesamturteil: `pages-live-core-web-fixed-external-owner-gates-remain`
+> Gesamturteil: `pages-live-website-audit-abgeschlossen-owner-gates-remain`
 >
-> Aktuelle Evidenz und zeitgebundene Detailbefunde stehen in
-> `docs/ai_state/TRUTH_MATRIX_2026-07-15.md`. Historische Worker-, WordPress-,
-> Pages-Migrations- und PR-Snapshots sind nicht mehr handlungsleitend.
+> Historische Worker-, WordPress-, Pages-Migrations- und PR-Snapshots sind nicht
+> mehr handlungsleitend. Zeitgebundene Zahlen (PR-Anzahl, Deployment-Run-IDs)
+> gelten nur zum jeweils genannten Zeitpunkt.
 
 ## 1. Kanonischer Arbeitsort
 - Repo: `/Users/joelcherinodiaz/KI-System/02_Projects/active/hsb-boden`
 - Legacy-Pfade wie `_MERGED_20260613`, alte Klone oder Backups sind **nicht** kanonisch.
 
 ## 2. Aktueller Repo-Zustand
-- Branch: `main`
-- Remote-HEAD: `f202cb6` (`origin/main`, verifiziert 2026-07-15 12:05 CEST).
-- Das lokale Root-Worktree ist bei den getrackten Dateien unveraendert und sechs
-  Commits hinter `origin/main`; zusaetzlich existiert das ungetrackte Verzeichnis
-  `.local-secrets/` aus der laufenden Fable-Sitzung. Es wurde nicht geoeffnet
-  oder veraendert. Nicht waehrend dieser Sitzung ungefragt umschalten.
-- PR #84, #85, #87, #88, #89 und #90 sind gemergt. Der manuelle
-  Production-Deploy-Run `29404977846` fuer `bf0a257` war erfolgreich.
-- PR #86 ist offen, konfliktbehaftet und durch PR #87 funktional teilweise
-  ueberholt; nicht pauschal mergen. PR #74 bleibt Draft und deaktiviert.
-- Zum Snapshot 12:05 CEST sind 40 Pull Requests offen; diese Zahl ist
+- Remote-HEAD: `6dd7095` (`origin/main`, verifiziert 2026-08-07 18:00 CEST).
+  Das lokale Root-Worktree ist auf demselben Commit; getrackte Dateien waren zu
+  Sitzungsbeginn unveraendert.
+- Zum Snapshot 2026-08-07 sind 12 Pull Requests offen; diese Zahl ist
   zeitgebunden und keine dauerhafte Projekteigenschaft.
+- PR #59 (3D-Site-Survey/KAGETEC) ist offen und `MERGEABLE`, bleibt aber bewusst
+  ungemergt, solange die Medien-/Markenfreigaben fehlen. Die Website ist ohne
+  PR #59 vollstaendig.
+- Website-Finalisierungsaudit 2026-08-07: Branch `chore/website-final-audit`
+  (siehe Abschnitt 2a). Nicht gepusht, nicht gemergt, nicht deployt.
+
+### 2a. Website-Finalisierungsaudit 2026-08-07
+Behoben auf `chore/website-final-audit`, ausgehend von `6dd7095`:
+- **Referenz-Duplikate (P0):** `Meggle` und `Biovegan GmbH` waren gleichzeitig
+  freigegebene Referenz und Kundenstandort und erschienen doppelt — im LogoCloud
+  der Startseite, als doppelter Kartenmarker und in der Liste "Weitere
+  Kundenstandorte" auf `/` und `/referenzen/`. Zuordnung laeuft jetzt ueber eine
+  kanonische `referenceId` in `clientLocations.ts`, nicht ueber Namensvergleich;
+  die freigegebene Referenz hat Vorrang. Guard: `tests/reference-deduplication.test.ts`.
+- **Testlauf war nicht aussagekraeftig (P0):** `vitest` sammelte die Testdateien
+  der lokalen `.worktrees/`-Kopien mit ein (136 statt 19 Dateien, zwei Fehler aus
+  altem Worktree-Code). `vitest.config.ts` schliesst diese Pfade jetzt aus.
+- **WebSite-Schema fehlte (P1):** Die Startseite lieferte kein `WebSite`-JSON-LD
+  und damit keinen definierten Sitenamen. Ergaenzt, bewusst ohne `SearchAction`
+  (die Website hat keine Suchfunktion).
+- **Sitemap unvollstaendig (P1):** `/impressum/` und `/datenschutz/` sind
+  indexierbar und im Footer verlinkt, fehlten aber in `sitemap.xml`.
+  `scripts/check-sitemap-consistency.mjs` prueft jetzt beide Richtungen.
+- **Formular (P2):** `autocomplete`-Tokens auf den Personenfeldern ergaenzt
+  (WCAG 1.3.5).
 
 ## 3. Aktueller Projektzustand
 - `www.hsb-boden.de` ist live ueber Cloudflare Pages.
@@ -56,8 +74,11 @@ bleibt auf der Website unveraendert bestehen.
 ## 4. Aktueller Cloudflare- und Domain-Stand
 - Cloudflare Pages Projekt: `hsb-boden`
 - Aktuelle Live-Schiene fuer `www.hsb-boden.de`: Cloudflare Pages (`hsb-boden.pages.dev`)
-- Aktueller Production-Source-Commit: `bf0a257`; Deployment-Run
-  `29404977846` war erfolgreich.
+- Letzter dokumentierter Production-Source-Commit: `bf0a257` (Deployment-Run
+  `29404977846`, Stand 2026-07-15). Seither **nicht erneut verifiziert** — der
+  Audit vom 2026-08-07 hat bewusst nichts deployt. Vor der naechsten Freigabe
+  den tatsaechlichen Production-Stand in Cloudflare Pages selbst nachsehen,
+  diese Zeile nicht als aktuelle Deploy-Wahrheit lesen.
 - Im produktiven Info-Account existieren keine Workers; die Zone
   `hsb-boden.de` bleibt `pending`.
 - Ein alter Preview-Worker und eine doppelte Zone liegen im Alt-Account. Deren

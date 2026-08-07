@@ -1,12 +1,14 @@
 ---
-import { clientLocations } from "../../data/clientLocations";
-import { getPublicReferences } from "../../lib/content";
+import { getPublicReferences, getSupplementalClientLocations } from "../../lib/content";
 import ReferenceCard from "./ReferenceCard.astro";
 import ReferenceMap from "./ReferenceMap.astro";
 
 const allPublic = getPublicReferences();
 const references = allPublic.slice(0, 3);
 const approvedCount = allPublic.filter((r) => r.approvalStatus === "approved").length;
+// Ohne die Standorte, die bereits als Referenz auf der Karte liegen — sonst
+// doppelter Marker und Doppelnennung unter "Weitere Kundenstandorte".
+const supplementalClients = getSupplementalClientLocations();
 ---
 
 <section class="section border-b border-hsb-line bg-[#f8f9fb]">
@@ -36,7 +38,7 @@ const approvedCount = allPublic.filter((r) => r.approvalStatus === "approved").l
         </dl>
       </div>
       <div class="bg-[#f1f3f6] p-1">
-        <ReferenceMap references={getPublicReferences()} clients={clientLocations} />
+        <ReferenceMap references={allPublic} clients={supplementalClients} />
       </div>
     </div>
     <div class="lg:pt-6">

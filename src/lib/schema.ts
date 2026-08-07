@@ -31,6 +31,25 @@ export function buildOrganizationJsonLd() {
   };
 }
 
+// Liefert Google den gewuenschten Sitenamen fuer die Suchergebnisse.
+// Bewusst ohne SearchAction: die Website hat keine eigene Suchfunktion, und
+// ein erfundenes SearchAction-Target waere ein unbelegtes Strukturmerkmal.
+export function buildWebSiteJsonLd() {
+  return {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    name: "HSB Hexagon Säurebau",
+    alternateName: "HSB",
+    url: site.domain,
+    inLanguage: "de-DE",
+    publisher: {
+      "@type": "Organization",
+      name: "HSB Hexagon Säurebau GmbH",
+      url: site.domain,
+    },
+  };
+}
+
 export function buildLocalBusinessJsonLd() {
   return {
     "@context": "https://schema.org",

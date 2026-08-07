@@ -1,5 +1,5 @@
-import { existsSync, readFileSync } from "node:fs";
-import { join } from "node:path";
+import { existsSync, readFileSync, readdirSync } from "node:fs";
+import { join, relative } from "node:path";
 
 const distDir = join(process.cwd(), "dist");
 const sitemapPath = join(distDir, "sitemap.xml");
@@ -39,5 +39,39 @@ if (missing.length > 0) {
   process.exit(1);
 }
 
-console.log(`OK: Alle ${locMatches.length} Sitemap-URLs haben eine entsprechende gebaute Datei.`);
+// Gegenrichtung: jede gebaute, indexierbare Seite muss auch in der Sitemap
+// stehen. Ohne diese Prüfung fällt eine vergessene öffentliche Route nicht auf.
+function walk(dir) {
+  return readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
+    const full = join(dir, entry.name);
+    return entry.isDirectory() ? walk(full) : [full];
+  });
+}
+
+const sitemapPaths = new Set(locMatches.map((m) => new URL(m[1]).pathname));
+const notInSitemap = [];
+
+for (const file of walk(distDir).filter((f) => f.endsWith(".html"))) {
+  const html = readFileSync(file, "utf-8");
+  // Seiten, die sich selbst auf noindex setzen, gehören bewusst nicht hinein.
+  if (/<meta[^>]*name\s*=\s*"robots"[^>]*content\s*=\s*"[^"]*noindex/i.test(html)) continue;
+
+  const rel = relative(distDir, file).replace(/\\/g, "/");
+  if (rel === "404.html") continue;
+
+  const pathname = "/" + rel.replace(/index\.html$/, "");
+  if (!sitemapPaths.has(pathname)) notInSitemap.push(pathname);
+}
+
+if (notInSitemap.length > 0) {
+  console.error(`FEHLER: ${notInSitemap.length} indexierbare Seite(n) fehlen in der Sitemap:`);
+  for (const pathname of notInSitemap) {
+    console.error(`  - ${pathname}`);
+  }
+  process.exit(1);
+}
+
+console.log(
+  `OK: ${locMatches.length} Sitemap-URLs und alle indexierbaren Seiten stimmen überein.`,
+);
 process.exit(0);

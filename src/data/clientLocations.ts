@@ -8,6 +8,12 @@
 // NICHT automatisch eine Erwähnung als Kundenreferenz in Fließtext (z. B.
 // Akquise-Mails, Fallstudien) ab. Diese beiden Verwendungen brauchen jeweils
 // eine eigene Freigabe — nicht aus dieser Liste ableiten.
+//
+// referenceId (2026-08-07): Ist dieselbe Firma zusätzlich eine freigegebene
+// Referenz in references.ts, verweist referenceId auf deren id. Nur so werden
+// LogoCloud, Kartenmarker und Standortliste dedupliziert; die freigegebene
+// Referenz hat dabei Vorrang. Fehlt die ID bei einer Doppelung, schlägt
+// tests/reference-deduplication.test.ts fehl.
 export const clientLocations = [
   { name: "HWB-Nussweit GmbH", city: "Husum", region: "Schleswig-Holstein", lat: 54.48, lng: 9.05, branche: "Lebensmittel" },
   { name: "Salvus Mineralbrunnen GmbH", city: "Emsdetten", region: "Nordrhein-Westfalen", lat: 52.18, lng: 7.53, branche: "Getränke" },
@@ -25,10 +31,10 @@ export const clientLocations = [
   { name: "Griesson - de Beukelaer GmbH & Co. KG", city: "Polch", region: "Rheinland-Pfalz", lat: 50.30, lng: 7.31, branche: "Lebensmittel" },
   { name: "Homann Feinkost GmbH", city: "Bad Essen", region: "Niedersachsen", lat: 52.28, lng: 8.48, branche: "Lebensmittel" },
   { name: "Bäckerei Schrunz GmbH & Co. KG", city: "Münster", region: "Nordrhein-Westfalen", lat: 51.96, lng: 7.63, branche: "Lebensmittel" },
-  { name: "Biovegan GmbH", city: "Bonefeld", region: "Rheinland-Pfalz", lat: 50.42, lng: 7.49, branche: "Lebensmittel", logo: "/logos/biovegan.svg" },
+  { name: "Biovegan GmbH", city: "Bonefeld", region: "Rheinland-Pfalz", lat: 50.42, lng: 7.49, branche: "Lebensmittel", logo: "/logos/biovegan.svg", referenceId: "biovegan-bonefeld" },
   { name: "Saalfelder Brauhaus", city: "Saalfeld", region: "Thüringen", lat: 50.65, lng: 11.37, branche: "Brauerei" },
   { name: "Albers Brauhaus", city: "Weilheim an der Teck", region: "Baden-Württemberg", lat: 48.63, lng: 9.55, branche: "Brauerei" },
-  { name: "Meggle", city: "Gebesee", region: "Thüringen", lat: 51.10, lng: 10.90, branche: "Molkerei", logo: "/logos/meggle.svg" },
+  { name: "Meggle", city: "Gebesee", region: "Thüringen", lat: 51.10, lng: 10.90, branche: "Molkerei", logo: "/logos/meggle.svg", referenceId: "meggle-gebesee" },
   { name: "Wildbräu", city: "München", region: "Bayern", lat: 48.14, lng: 11.58, branche: "Brauerei" },
   { name: "Goldmilch", city: "Ingolstadt", region: "Bayern", lat: 48.76, lng: 11.42, branche: "Molkerei" },
   // Kyritzer Fruchtsäfte (Mosterei/Getränke), Pritzwalker Straße 25, 16866 Kyritz – kyritzer-fruchtsaefte.de

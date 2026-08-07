@@ -1,24 +1,7 @@
 ---
-import { clientLocations } from "../../data/clientLocations";
-import { getPublicReferences } from "../../lib/content";
+import { getLogoCloudEntries } from "../../lib/content";
 
-const referenceLogos = getPublicReferences()
-  .filter((reference) => reference.canShowLogo && reference.logo)
-  .map((reference) => ({
-    name: reference.publicName,
-    logo: reference.logo,
-    meta: "Referenzprojekt",
-  }));
-
-const locationLogos = clientLocations
-  .filter((location) => "logo" in location)
-  .map((location) => ({
-    name: location.name,
-    logo: location.logo,
-    meta: location.branche,
-  }));
-
-const logos = [...referenceLogos, ...locationLogos];
+const logos = getLogoCloudEntries();
 ---
 
 <section class="section border-b border-hsb-line bg-white">

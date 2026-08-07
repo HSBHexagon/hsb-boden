@@ -46,6 +46,21 @@ Behoben auf `chore/website-final-audit`, ausgehend von `6dd7095`:
 - **Formular (P2):** `autocomplete`-Tokens auf den Personenfeldern ergaenzt
   (WCAG 1.3.5).
 
+Gemessen, aber bewusst **nicht** geaendert (Owner-Entscheidung):
+- **CLS beim Sprachbanner.** `LanguageSuggest.astro` ist initial `hidden` und
+  wird per JS eingeblendet, wenn die Browsersprache nicht Deutsch ist. Das
+  schiebt den gesamten Inhalt um 16 px nach unten. Gemessen auf `/`:
+  de-DE 0.092 mobile / 0.004 desktop (beide im gruenen Bereich <= 0.1),
+  en-US 0.264 mobile / 0.046 desktop. Die deutsche Hauptzielgruppe ist also
+  nicht betroffen, internationale Besucher der deutschen Startseite schon.
+  Ein sauberer Fix muesste die Sprachentscheidung vor dem ersten Paint treffen
+  (synchrones `<head>`-Script + CSS-Klasse auf `<html>` statt `hidden`-Toggle)
+  und tauscht damit CLS gegen ein render-blockendes Skript — das ist eine
+  Abwaegung fuer den Owner, kein reines Polishing, deshalb hier nur belegt.
+- **Meta-Descriptions ueber 160 Zeichen** auf 15 Seiten (166–217). Werden in der
+  Suche abgeschnitten, sind aber inhaltlich korrekt; ein Umschreiben aller
+  Texte waere ein Content-Refactoring ausserhalb dieses Audits.
+
 ## 3. Aktueller Projektzustand
 - `www.hsb-boden.de` ist live ueber Cloudflare Pages.
 - `https://www.hsb-boden.de/kontakt/` liefert HTTP 200.

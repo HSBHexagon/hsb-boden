@@ -1,0 +1,3 @@
+## 2026-08-07 - Add accessible required indicators and focus visible styles to LeadForm
+**Learning:** Relied on `aria-hidden="true"` on the red asterisk (`*`) to ensure screen readers don't redundantly read "star" out loud since the `<input>` element already includes the `required` attribute. Added `focus-visible` styles (`focus-visible:ring-2 focus-visible:ring-hsb-red focus-visible:outline-none`) to improve keyboard navigation visibility.
+**Action:** Always include a visual required indicator alongside the `required` attribute on forms to assist sighted users, and always enforce visible focus states for keyboard users. Use `aria-hidden` on purely visual icons or symbols that duplicate semantic meaning.

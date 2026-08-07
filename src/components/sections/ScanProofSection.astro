@@ -1,0 +1,70 @@
+---
+const benefits = [
+  "Zusammenhängende Bestandsaufnahme statt einzelner Stichpunkte",
+  "Planungsgrundlage für Gefälle, Entwässerung und Anschlüsse",
+  "Übergänge und mögliche Konfliktstellen früher erkennen",
+  "Nachvollziehbare Dokumentation für Planung und Bauabschnitte",
+];
+---
+
+<section class="section border-b border-hsb-line bg-hsb-black text-white" id="digitale-bestandsaufnahme">
+  <div class="container grid gap-12 lg:grid-cols-[0.92fr_1.08fr] lg:items-center lg:gap-16">
+    <figure class="relative mx-auto w-full max-w-xl overflow-hidden rounded-[4px] border border-white/10 bg-white/5 shadow-industrial">
+      <div class="aspect-[4/3] overflow-hidden">
+        <img
+          src="/media/hsb/current/industrieboden-baustelle.webp"
+          alt="Industrieboden-Baustelle in einer Produktionshalle als Ausgangspunkt der technischen Bestandsaufnahme"
+          class="h-full w-full object-cover object-center opacity-70"
+          loading="lazy"
+          decoding="async"
+          width="1024"
+          height="768"
+        />
+      </div>
+      <div class="absolute inset-0 bg-gradient-to-t from-black via-black/10 to-transparent"></div>
+      <div class="absolute bottom-5 right-5 w-[42%] overflow-hidden rounded-[3px] border border-white/20 bg-black shadow-2xl sm:bottom-7 sm:right-7">
+        <img
+          src="/media/hsb/projekte/3d-scan/3d-scan-halle-uebersicht.webp"
+          alt="Produktionshalle mit Referenzkugeln und Messgerät für die digitale Bestandsaufnahme"
+          class="aspect-[3/4] h-auto w-full object-cover"
+          loading="lazy"
+          decoding="async"
+          width="240"
+          height="320"
+        />
+        <figcaption class="border-t border-white/10 px-3 py-2 text-[0.62rem] font-bold uppercase tracking-[0.12em] text-white/65">
+          Messaufbau vor Ort
+        </figcaption>
+      </div>
+      <div class="absolute bottom-6 left-6 max-w-[52%] sm:bottom-8 sm:left-8">
+        <p class="text-xs font-black uppercase tracking-[0.16em] text-hsb-red-light">Bestand digital erfassen</p>
+        <p class="mt-2 text-sm leading-6 text-white/70">Mehrere Messpositionen werden zu einer gemeinsamen Planungsgrundlage zusammengeführt.</p>
+      </div>
+    </figure>
+
+    <div>
+      <p class="eyebrow-light mb-5">Digitale Bestandsaufnahme</p>
+      <h2 class="h2 max-w-xl text-white">Gefälle, Höhen und Einbauteile vor der Ausführung präzise erfassen.</h2>
+      <p class="mt-6 max-w-xl text-base leading-8 text-white/70 lg:text-lg">
+        Bei geeigneten Projekten kann die vorhandene Halle per 3D-Laserscan aufgenommen werden. Aus mehreren Messpositionen entsteht eine zusammenhängende digitale Bestandsaufnahme als Grundlage für Gefälle, Entwässerung, Anschlüsse und Bauabschnitte.
+      </p>
+
+      <ul class="mt-8 grid gap-4" aria-label="Vorteile der digitalen Bestandsaufnahme">
+        {benefits.map((benefit) => (
+          <li class="flex items-start gap-4 border-t border-white/10 pt-4 text-sm leading-6 text-white/78">
+            <span class="mt-2 size-2 shrink-0 bg-hsb-red" aria-hidden="true"></span>
+            <span>{benefit}</span>
+          </li>
+        ))}
+      </ul>
+
+      <div class="mt-9 flex flex-wrap items-center gap-4">
+        <a class="button-primary" href="/kontakt/">Technische Bestandsaufnahme anfragen</a>
+        <a class="button-secondary" href="#projektablauf">Projektablauf ansehen</a>
+      </div>
+      <p class="mt-5 max-w-lg text-xs leading-5 text-white/45">
+        Einsatz und Auswertung richten sich nach Projektgröße, Bestandssituation und Planungsanforderung.
+      </p>
+    </div>
+  </div>
+</section>

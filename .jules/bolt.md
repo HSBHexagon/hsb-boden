@@ -1,0 +1,3 @@
+## 2024-08-09 - LCP Image Optimization in Astro Layouts
+**Learning:** Images injected immediately below textual `PageHero` components (e.g., on content routes like service and industry pages) are Largest Contentful Paint (LCP) candidates. Defaulting to `loading="lazy"` for these above-the-fold images causes significant rendering delays and negatively impacts performance metrics, as the browser waits to discover and load them.
+**Action:** When working on Astro layouts with hero sections containing immediate images, always use `fetchpriority="high" loading="eager" decoding="async"` instead of lazy loading to ensure optimal LCP performance.

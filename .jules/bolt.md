@@ -1,0 +1,3 @@
+## 2024-08-10 - LCP Image Loading on Content Routes
+**Learning:** Hero images rendered immediately below the `PageHero` component on core content routes (`/leistungen/` and `/branchen/`) were incorrectly marked with `loading="lazy"`. Because these images are generally above the fold and act as Largest Contentful Paint (LCP) candidates, lazy loading them causes a performance regression by delaying their request.
+**Action:** Always use `fetchpriority="high" loading="eager" decoding="async"` for LCP candidate images in layout templates, particularly those directly following textual heroes. Reserve `loading="lazy"` strictly for images demonstrably below the initial viewport.

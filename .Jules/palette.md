@@ -1,0 +1,3 @@
+## 2026-08-12 - Adding inline indicators to CSS Grid forms
+**Learning:** When appending visual indicators (like required asterisks) to form labels that are styled as flex or grid containers, wrapping the label text and the indicator in a single `<span>` prevents the grid/flex layout from forcing them onto separate rows or disrupting the flow. Additionally, native focus styles in this application's design system are insufficient and require explicit Tailwind `focus-visible` classes (like `focus-visible:ring-hsb-red`) to ensure proper accessibility for keyboard navigation.
+**Action:** Always wrap label text and indicators in a structural `<span>` when modifying forms, and verify that interactive elements use explicit `focus-visible` utilities.

@@ -1,0 +1,3 @@
+## 2024-08-14 - Eager Load LCP Candidates on Content Routes
+**Learning:** Images injected immediately below textual `PageHero` components on content routes (e.g., `/leistungen/[slug]` and `/branchen/[slug]`) act as LCP (Largest Contentful Paint) candidates due to the layout of the application. Using standard `loading="lazy"` on these images significantly degrades perceived performance as the browser delays fetching them.
+**Action:** Always configure critical above-the-fold images in content layouts with `fetchpriority="high" loading="eager" decoding="async"` instead of `loading="lazy"` to optimize render times.

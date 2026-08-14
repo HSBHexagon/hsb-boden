@@ -8,6 +8,11 @@
 //   node scripts/outreach/cli.mjs batch     --owner=joel --count=25 --campaign=kaltakquise-2026-q3 --approved
 //   node scripts/outreach/cli.mjs resume
 //   node scripts/outreach/cli.mjs status
+//   node scripts/outreach/cli.mjs sync-airtable --owner=all
+//
+// Airtable: dry-run/test-batch/batch pushen den Status automatisch (best-
+// effort, no-op ohne AIRTABLE_API_KEY) in die geteilte Live-Ansicht für
+// Joel/Jordi (Base "HSB Outreach CRM"). Details: scripts/outreach/README.md.
 //
 // Quelle: data/lead-import/output/final_2026-08-11/HSB_OUTREACH_{READY,JOEL,JORDI}_2026-08-11.csv
 // (gitignored, siehe docs/crm/CRM_DATENQUELLE_WAHRHEIT.md). Diese Dateien
@@ -19,6 +24,7 @@ import { parseCsvRecords } from "./csv.mjs";
 import { evaluateLead, executeBatch, findResumable, planBatch, STATUS, summarizeState } from "./engine.mjs";
 import { loadState, loadSuppression, saveState, writeRunLog } from "./state.mjs";
 import { resolveProvider } from "./providers.mjs";
+import { readAirtableEnv, syncLeadsToAirtable, recordSyncResult, readLastSyncResult } from "./airtable.mjs";
 
 const SOURCE_DIR = join("data", "lead-import", "output", "final_2026-08-11");
 const SOURCE_FILES = {
@@ -69,6 +75,25 @@ function loadLeads(sourceKey) {
   return records.map(mapRecordToLead);
 }
 
+// Best-effort: pusht den aktuellen Status aller geladenen Leads nach
+// Airtable (geteilte Live-Ansicht für Joel/Jordi). Läuft ohne
+// AIRTABLE_API_KEY klaglos leer (kein Blocker für lokale Läufe), meldet
+// aber klar, dass Airtable nicht konfiguriert ist.
+async function trySyncAirtable(leads, state) {
+  const envConfig = readAirtableEnv();
+  if (!envConfig) {
+    console.log("Airtable-Sync übersprungen: AIRTABLE_API_KEY nicht gesetzt (siehe scripts/outreach/README.md).");
+    return;
+  }
+  const result = await syncLeadsToAirtable(leads, state, envConfig);
+  recordSyncResult(result);
+  if (result.errors?.length) {
+    console.log(`Airtable-Sync: ${result.updated} aktualisiert, ${result.errors.length} Batch(es) fehlgeschlagen.`);
+  } else {
+    console.log(`Airtable-Sync: ${result.updated} Leads aktualisiert (${result.batchCount} Batches).`);
+  }
+}
+
 // Nur Aggregate loggen — niemals E-Mail/Firma/Ansprechpartner in Konsole
 // oder Run-Log ausgeben (PII_IN_GIT/PII-Ausgabe-Verbot).
 function printDecisionSummary(byDecision, total) {
@@ -96,6 +121,7 @@ async function cmdPlanOnly(flags, { dryRun, count }) {
   saveState(state);
   writeRunLog(runId, { runId, mode: dryRun ? "dry-run" : "test-batch", flags, byDecision, resultCount: results.length });
   console.log(`Simuliert (QUEUED, kein echter Versand): ${results.length}. Run-ID: ${runId}`);
+  await trySyncAirtable(leads, state);
 }
 
 async function cmdBatch(flags) {
@@ -115,6 +141,8 @@ async function cmdBatch(flags) {
       "READY_TO_SEND=BLOCKED — kein --approved-Flag gesetzt. Kein Versand ohne explizite Freigabe " +
         "(sicherer Default, siehe Masterauftrag 'PRODUKTIVER VERSAND').",
     );
+    saveState(state);
+    await trySyncAirtable(leads, state);
     return;
   }
 
@@ -149,6 +177,15 @@ function cmdResume() {
   }
 }
 
+async function cmdSyncAirtable(flags) {
+  const sourceKey = (flags.owner || "all").toLowerCase();
+  const leads = loadLeads(sourceKey);
+  const state = loadState();
+  await trySyncAirtable(leads, state);
+  const last = readLastSyncResult();
+  if (last) console.log(`Letzter Sync: ${last.at} · aktualisiert: ${last.updated ?? "n/a"} · Fehler: ${last.errors?.length ?? 0}`);
+}
+
 function cmdStatus() {
   const state = loadState();
   const counts = summarizeState(state);
@@ -177,9 +214,13 @@ async function main() {
     case "status":
       cmdStatus();
       break;
+    case "sync-airtable":
+      await cmdSyncAirtable(flags);
+      break;
     default:
       console.error(
-        "Nutzung: node scripts/outreach/cli.mjs <dry-run|test-batch|batch|resume|status> [--owner=all|joel|jordi] [--campaign=ID] [--count=N] [--limit=N] [--approved]",
+        "Nutzung: node scripts/outreach/cli.mjs <dry-run|test-batch|batch|resume|status|sync-airtable> " +
+          "[--owner=all|joel|jordi] [--campaign=ID] [--count=N] [--limit=N] [--approved]",
       );
       process.exit(1);
   }

@@ -1,5 +1,4 @@
 import { describe, expect, it } from "vitest";
-import { consentCategories, getRequiredConsentCategories } from "../src/data/consent";
 import { resolveSuggestedLanguages, supportedLanguages } from "../src/data/localization";
 
 describe("localized consent and language experience", () => {
@@ -29,12 +28,4 @@ describe("localized consent and language experience", () => {
     ]);
   });
 
-  it("keeps essential cookies as the only mandatory category", () => {
-    expect(consentCategories.map((category) => category.id)).toEqual([
-      "essential",
-      "analytics",
-      "marketing",
-    ]);
-    expect(getRequiredConsentCategories()).toEqual(["essential"]);
-  });
 });

@@ -85,7 +85,16 @@ export function getReferencesForSlugs(referenceIds: string[]) {
   return getPublicReferences().filter((reference) => allowed.has(reference.id));
 }
 
+let cachedPublicPages: ReturnType<typeof generateAllPublicPages> | null = null;
+
 export function getAllPublicPages() {
+  if (!cachedPublicPages) {
+    cachedPublicPages = generateAllPublicPages();
+  }
+  return cachedPublicPages;
+}
+
+function generateAllPublicPages() {
   return [
     {
       h1: "Industrieböden und Säureschutzsysteme für produktionskritische Bereiche",

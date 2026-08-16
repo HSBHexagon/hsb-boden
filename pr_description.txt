@@ -1,0 +1,11 @@
+🧪 Add test for buildFaqJsonLd
+
+🎯 **What:** The testing gap addressed
+Added a unit test for the `buildFaqJsonLd` function in `src/lib/schema.ts` to ensure it generates valid FAQPage JSON-LD schema objects.
+
+📊 **Coverage:** What scenarios are now tested
+- The test verifies that the `@type` is correctly set to `"FAQPage"`.
+- It verifies that the `mainEntity` array correctly maps each FAQ into a `"Question"` and `"Answer"` pair with the expected structure and values.
+
+✨ **Result:** The improvement in test coverage
+The test suite now confidently validates the FAQ schema generation, protecting against regressions and ensuring valid structural output for search engines.

@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { onRequestPost, onRequestOptions, onRequestGet, resetLeadRateLimiter } from "../functions/api/lead";
+import { onRequestPost, onRequestOptions, onRequestGet } from "../functions/api/lead";
 
 const testEnv = { LEAD_WEBHOOK_URL: "https://script.google.com/macros/s/EXAMPLE/exec" };
 const authenticatedEnv = {
@@ -27,26 +27,48 @@ const validBody = {
   legalBasis: "inquiry",
 };
 
-function makeRequest(body: unknown, opts: { ip?: string; origin?: string; method?: string } = {}) {
-  const { ip = "203.0.113.1", origin = "https://hsb-boden.de", method = "POST" } = opts;
+function makeRequest(body: unknown, opts: { ip?: string; origin?: string | null; method?: string } = {}) {
+  const { ip = "203.0.113.1", method = "POST" } = opts;
+  const origin = opts.origin !== undefined ? opts.origin : "https://hsb-boden.de";
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    "CF-Connecting-IP": ip,
+  };
+
+  if (origin !== null) {
+    headers.Origin = origin;
+  }
+
   return new Request("https://hsb-boden.de/api/lead", {
     method,
-    headers: {
-      "Content-Type": "application/json",
-      "CF-Connecting-IP": ip,
-      Origin: origin,
-    },
+    headers,
     body: method === "GET" ? undefined : JSON.stringify(body),
   });
 }
 
 function makeContext(request: Request, env: Record<string, unknown> = testEnv) {
-  return { request, env } as any;
+  return { request, env: { ...env, RATE_LIMIT_KV: mockKV } } as any;
 }
+
+
+class MockKV {
+  store = new Map<string, string>();
+  async get(key: string, type: any) {
+    const val = this.store.get(key);
+    if (!val) return null;
+    if (type === "json") return JSON.parse(val);
+    return val;
+  }
+  async put(key: string, value: any) {
+    this.store.set(key, typeof value === "string" ? value : JSON.stringify(value));
+  }
+}
+
+let mockKV = new MockKV();
 
 describe("POST /api/lead", () => {
   beforeEach(() => {
-    resetLeadRateLimiter();
+    mockKV = new MockKV();
     vi.restoreAllMocks();
   });
   afterEach(() => {
@@ -162,6 +184,20 @@ describe("POST /api/lead", () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
+  it("rejects a non-HTTPS legacy webhook URL without issuing a request", async () => {
+    const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response("{}", { status: 200 }),
+    );
+
+    const res = await onRequestPost(makeContext(makeRequest(validBody), {
+      LEAD_WEBHOOK_URL: "http://169.254.169.254/latest/meta-data",
+    }));
+
+    expect(res.status).toBe(502);
+    await expect(res.json()).resolves.toEqual({ ok: false, error: "webhook_unreachable" });
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
   it("rejects an authenticated config with a weak token", async () => {
     const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(
       Response.json({ ok: true }),
@@ -232,6 +268,12 @@ describe("POST /api/lead", () => {
     expect(res.status).toBe(403);
   });
 
+  it("rejects a missing Origin", async () => {
+    const res = await onRequestPost(makeContext(makeRequest(validBody, { origin: null })));
+    expect(res.status).toBe(403);
+    await expect(res.json()).resolves.toEqual({ ok: false, error: "forbidden_origin" });
+  });
+
   it("accepts a same-project Cloudflare Pages preview Origin", async () => {
     vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response("{}", { status: 200 }));
     const origin = "https://feature-auth-cutover.hsb-boden.pages.dev";
@@ -239,7 +281,7 @@ describe("POST /api/lead", () => {
     const res = await onRequestPost(makeContext(makeRequest(validBody, { origin })));
 
     expect(res.status).toBe(200);
-    expect(res.headers.get("Access-Control-Allow-Origin")).toBe(origin);
+    expect(res.headers.get("Access-Control-Allow-Origin")).toBeNull();
   });
 
   it("rejects a lookalike Cloudflare Pages preview Origin", async () => {
@@ -347,6 +389,34 @@ describe("POST /api/lead", () => {
     expect(res1.status).toBe(200);
     expect(res2.status).toBe(200);
     expect(res3.status).toBe(429);
+  });
+
+  it("rejects JSON with nesting depth > 32 with 400 before attempting to parse", async () => {
+    // Create a JSON payload with depth 35 (exceeds max depth of 32)
+    let deepJson = '{"a":';
+    for (let i = 0; i < 34; i++) {
+      deepJson += '{"b":';
+    }
+    deepJson += '1';
+    for (let i = 0; i < 34; i++) {
+      deepJson += '}';
+    }
+    deepJson += '}';
+
+    const req = new Request("https://hsb-boden.de/api/lead", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Origin": "https://hsb-boden.de",
+        "CF-Connecting-IP": "203.0.113.1",
+      },
+      body: deepJson,
+    });
+
+    const res = await onRequestPost(makeContext(req));
+    expect(res.status).toBe(400);
+    const body = JSON.parse(await res.text());
+    expect(body.error).toBe("invalid_json");
   });
 });
 

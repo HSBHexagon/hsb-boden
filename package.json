@@ -11,7 +11,8 @@
     "deploy": "npm run deploy:preview",
     "deploy:preview": "npm run build && wrangler pages deploy dist --project-name hsb-boden --branch preview --commit-dirty=true",
     "deploy:production": "echo 'BLOCKED: Production deploys run only via .github/workflows/deploy-production.yml (workflow_dispatch, approval-gated).' && exit 1",
-    "deploy:dry-run": "npm run build && wrangler pages functions build functions --outdir node_modules/.cache/functions-check && wrangler pages deployment list --project-name hsb-boden"
+    "deploy:dry-run": "npm run build && wrangler pages functions build functions --outdir node_modules/.cache/functions-check",
+    "check:sitemap": "node scripts/check-sitemap-consistency.mjs"
   },
   "dependencies": {
     "@astrojs/check": "^0.9.9",
@@ -21,6 +22,7 @@
     "astro": "7.1.1",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "serialize-javascript": "^7.0.7",
     "tailwind-merge": "^3.3.1",
     "tailwindcss": "^4.0.0",
     "tailwindcss-animate": "^1.0.7",
@@ -29,11 +31,12 @@
   },
   "devDependencies": {
     "@testing-library/jest-dom": "^5.16.5",
+    "@types/serialize-javascript": "^5.0.4",
     "@vitest/coverage-v8": "^4.1.9",
     "jsdom": "^20.0.0",
     "playwright": "^1.61.1",
     "vite": "8.1.5",
     "vitest": "^4.1.8",
-    "wrangler": "^4.106.0"
+    "wrangler": "^4.118.0"
   }
 }

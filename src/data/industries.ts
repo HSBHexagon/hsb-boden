@@ -4,7 +4,7 @@ export const industries: Industry[] = [
   {
     slug: "lebensmittelindustrie",
     title: "Lebensmittelindustrie",
-    seoTitle: "Industrieboden für Lebensmittelindustrie | Hexagon Säurebau",
+    seoTitle: "HACCP-konformer Industrieboden Lebensmittelindustrie | HSB",
     description:
       "Hygienische Industrieböden für die Lebensmittelproduktion. Wir planen und realisieren Systeme nach HACCP und IFS-Standards mit Fokus auf Reinigbarkeit und Sicherheit.",
     h1: "Industrieböden für die Lebensmittelindustrie",
@@ -45,6 +45,9 @@ export const industries: Industry[] = [
       "pu-beton-oder-keramischer-industrieboden",
       "saeurefeste-fliesen-industrieboden",
       "entwaesserung-gefaelle-produktionsbereiche",
+      "rutschhemmklassen-r9-bis-r13-industrieboden",
+      "hohlkehle-sockelausbildung-industrieboden",
+      "haccp-audit-industrieboden-pruefpunkte",
     ],
     faqs: [
       {
@@ -99,6 +102,7 @@ export const industries: Industry[] = [
       "warum-industrieboeden-in-molkereien-versagen",
       "entwaesserung-gefaelle-produktionsbereiche",
       "sanierung-ohne-produktionsstillstand",
+      "rutschhemmklassen-r9-bis-r13-industrieboden",
     ],
     faqs: [
       {
@@ -113,8 +117,7 @@ export const industries: Industry[] = [
   {
     slug: "brauerei-getraenkeindustrie",
     title: "Brauerei und Getränkeindustrie",
-    seoTitle:
-      "Industrieboden für Brauereien & Getränkeindustrie | Hexagon Säurebau",
+    seoTitle: "Industrieboden für Brauereien & Getränkeindustrie | HSB",
     description:
       "Hochbelastbare Böden für Abfüllung und Lager. Beständig gegen Zucker, Laugen und massive mechanische Lasten durch Gabelstapler.",
     h1: "Industrieböden für Brauereien und Getränkeproduktion",
@@ -151,6 +154,8 @@ export const industries: Industry[] = [
     relatedArticles: [
       "entwaesserung-gefaelle-produktionsbereiche",
       "sanierung-ohne-produktionsstillstand",
+      "rutschhemmklassen-r9-bis-r13-industrieboden",
+      "hohlkehle-sockelausbildung-industrieboden",
     ],
     faqs: [
       {
@@ -203,6 +208,8 @@ export const industries: Industry[] = [
     relatedArticles: [
       "saeurefeste-fliesen-industrieboden",
       "pu-beton-oder-keramischer-industrieboden",
+      "whg-abdichtung-industrieboden-pflicht",
+      "esd-ableitfaehigkeit-explosionsschutz-industrieboden",
     ],
     faqs: [
       {
@@ -255,6 +262,7 @@ export const industries: Industry[] = [
     relatedArticles: [
       "pu-beton-oder-keramischer-industrieboden",
       "sanierung-ohne-produktionsstillstand",
+      "whg-abdichtung-industrieboden-pflicht",
     ],
     faqs: [
       {

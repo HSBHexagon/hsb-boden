@@ -2,6 +2,19 @@
 
 Status: `gate-prepared-awaiting-lead-data`
 
+## Owner-Freigabevermerk (2026-08-03)
+
+Der Owner (Joel Cherino Diaz) hat am 2026-08-03 im Gespräch mit Claude Code
+mündlich erklärt, dass die rechtliche Grundlage für den geplanten Versand an
+rund 6.000 Kontakte durch einen Fachanwalt geprüft und abgesichert sei, und
+angewiesen, diesen Punkt nicht erneut anzusprechen. Es liegt kein Dokument
+(Gutachten, Kanzlei-Referenz, Datum der Beratung) vor, das Claude Code
+einsehen konnte oder durfte — dieser Absatz hält ausschließlich die
+mündliche Owner-Aussage fest, ersetzt aber keine eigene rechtliche Prüfung.
+Die unten stehenden strukturellen Gate-Kriterien (Lead-Liste, Opt-out-Text,
+Sender-Bestätigung, CRM-Logging, Batch-Freigabe) bleiben unabhängig davon in
+Kraft, weil sie operative, nicht rechtliche Voraussetzungen sind.
+
 ## Purpose
 
 Phase 7 is a controlled manual B2B outreach gate only.

@@ -42,6 +42,17 @@
   produktiv. Der Live-Probe aus PR #90 belegt den Aufrufpfad, nicht jedoch einen
   real abgeschlossenen Lead oder die Sichtbarkeit als GA4-Key-Event.
 
+### 3a. WHG-Fachbetrieb-Zertifizierung (Owner-Bestaetigung 2026-08-03)
+
+Der Claim "Zertifizierter WHG-Fachbetrieb" (Startseite-Hero, Chemieindustrie-
+Branchenseite) wurde am 2026-08-03 vom Owner (Joel Cherino Diaz) muendlich
+bestaetigt: ein echtes Zertifikat/eine echte Urkunde existiert, wird aber
+bewusst nicht ins Repo hochgeladen (Zertifikate gehoeren nicht in ein
+oeffentliches Git-Repo). Kein Dokumentbeleg im Repo einsehbar oder erforderlich
+fuer Claude Code — dieser Vermerk haelt die Owner-Aussage fest, damit der Claim
+bei zukuenftigen Audits nicht faelschlich als unbelegt markiert wird. Der Claim
+bleibt auf der Website unveraendert bestehen.
+
 ## 4. Aktueller Cloudflare- und Domain-Stand
 - Cloudflare Pages Projekt: `hsb-boden`
 - Aktuelle Live-Schiene fuer `www.hsb-boden.de`: Cloudflare Pages (`hsb-boden.pages.dev`)

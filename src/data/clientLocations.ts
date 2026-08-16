@@ -2,6 +2,12 @@
 // "Referenzprojekte 2025", Geschäftsführungsfreigabe 2026-06-10).
 // Bewusst ohne Fallbeschreibung/Logo: dient nur der erweiterten Kartendarstellung
 // und der Kundenliste, nicht als ausführliche Fallstudie.
+//
+// Freigabe-Ebenen-Hinweis (2026-08-03): Diese Namensnennung auf der
+// Standortkarte ist eine eigene, hier dokumentierte Freigabeebene und deckt
+// NICHT automatisch eine Erwähnung als Kundenreferenz in Fließtext (z. B.
+// Akquise-Mails, Fallstudien) ab. Diese beiden Verwendungen brauchen jeweils
+// eine eigene Freigabe — nicht aus dieser Liste ableiten.
 export const clientLocations = [
   { name: "HWB-Nussweit GmbH", city: "Husum", region: "Schleswig-Holstein", lat: 54.48, lng: 9.05, branche: "Lebensmittel" },
   { name: "Salvus Mineralbrunnen GmbH", city: "Emsdetten", region: "Nordrhein-Westfalen", lat: 52.18, lng: 7.53, branche: "Getränke" },

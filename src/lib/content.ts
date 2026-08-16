@@ -115,7 +115,7 @@ export function getAllPublicPages() {
       seoTitle:
         "Referenzen für Industrieböden & Säureschutz | HSB Hexagon Säurebau",
       description:
-        "Ausgewählte freigegebene und anonymisierte Referenzen für Industrieböden, Säureschutz, Keramik, Entwässerung und Sanierung.",
+        "Ausgewählte Referenzen für Industrieböden, Säureschutz, Keramik, Entwässerung und Sanierung.",
       canonicalPath: "/referenzen/",
     },
     {
@@ -177,5 +177,40 @@ export function getAllPublicPages() {
       description: content.meta.description,
       canonicalPath: `/${lang}/`,
     })),
+    {
+      h1: "Industrieboden-Spezialist in Norddeutschland",
+      seoTitle: "Industrieboden Hamburg | Keramische Böden & Säureschutz Nord",
+      description:
+        "HSB Hexagon – Ihr Spezialist für keramische Industrieböden, Säureschutzsysteme und Entwässerung in Hamburg, Schleswig-Holstein und Norddeutschland.",
+      canonicalPath: "/standorte/hamburg/",
+    },
+    {
+      h1: "Industrieboden-Spezialist in Bayern",
+      seoTitle: "Industrieboden Bayern | Böden & Säureschutz München",
+      description:
+        "HSB Hexagon – Ihr Spezialist für keramische Industrieböden, Säureschutzsysteme und Entwässerung in Bayern. Projekte in München, Nürnberg, Augsburg, Regensburg und ganz Bayern.",
+      canonicalPath: "/standorte/bayern/",
+    },
+    {
+      h1: "Industrieboden-Spezialist in Nordrhein-Westfalen",
+      seoTitle: "Industrieboden NRW | Böden & Säureschutz",
+      description:
+        "HSB Hexagon – Ihr Spezialist für keramische Industrieböden, Säureschutzsysteme und Entwässerung in NRW. Projekte in Köln, Düsseldorf, Dortmund, Essen und ganz Nordrhein-Westfalen.",
+      canonicalPath: "/standorte/nrw/",
+    },
+    {
+      h1: "Industrieboden-Spezialist in Rheinland-Pfalz",
+      seoTitle: "Industrieboden Rheinland-Pfalz | Böden & Säureschutz",
+      description:
+        "HSB Hexagon – Ihr Spezialist für keramische Industrieböden, Säureschutzsysteme und Entwässerung in Rheinland-Pfalz. Projekte in Mainz, Koblenz, Trier und der gesamten Region.",
+      canonicalPath: "/standorte/rheinland-pfalz/",
+    },
+    {
+      h1: "Industrieboden-Spezialist in Baden-Württemberg",
+      seoTitle: "Industrieboden Baden-Württemberg | Böden & Säureschutz",
+      description:
+        "HSB Hexagon – Ihr Spezialist für keramische Industrieböden, Säureschutzsysteme und Entwässerung in Baden-Württemberg. Projekte in Stuttgart, Karlsruhe, Freiburg und der gesamten Region.",
+      canonicalPath: "/standorte/baden-wuerttemberg/",
+    },
   ];
 }

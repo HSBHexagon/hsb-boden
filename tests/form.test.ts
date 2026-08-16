@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { ZodError } from "zod";
 import { leadFormSchema, serializeLeadPayload } from "../src/lib/validation";
 
 describe("lead form validation", () => {
@@ -40,5 +41,14 @@ describe("lead form validation", () => {
     expect(serialized.source).toBe("website");
     expect(serialized.systemInterest).toContain("Säuren/Laugen");
     expect(serialized.legalBasis).toBe("inquiry");
+  });
+
+  it("throws a ZodError for invalid payloads", () => {
+    const invalidPayload = {
+      firstName: "M", // Too short
+      // Missing other required fields
+    };
+
+    expect(() => serializeLeadPayload(invalidPayload)).toThrow(ZodError);
   });
 });

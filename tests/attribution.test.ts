@@ -5,6 +5,7 @@ import {
   captureAttribution,
   loadAttribution,
   resolveChannel,
+  sanitizePathValue,
   updateSessionAttribution,
 } from "../src/lib/attribution";
 
@@ -203,5 +204,45 @@ describe("buildLeadAttributionFields", () => {
 
     expect(fields).toEqual({ form_path: "/kontakt/", attribution_channel: "direct" });
     expect(Object.keys(fields)).not.toContain("utm_source");
+  });
+});
+
+describe("sanitizePathValue", () => {
+  it("returns undefined for non-string inputs", () => {
+    expect(sanitizePathValue(null)).toBeUndefined();
+    expect(sanitizePathValue(undefined)).toBeUndefined();
+    expect(sanitizePathValue(123)).toBeUndefined();
+    expect(sanitizePathValue({})).toBeUndefined();
+    expect(sanitizePathValue([])).toBeUndefined();
+  });
+
+  it("removes control characters", () => {
+    expect(sanitizePathValue("path\u0000with\u001Fcontrol")).toBe("pathwithcontrol");
+    expect(sanitizePathValue("path\u007Fdel")).toBe("pathdel");
+  });
+
+  it("removes HTML-relevant characters and quotes", () => {
+    expect(sanitizePathValue("<script>alert('x')</script>")).toBe("scriptalert(x)/script");
+    expect(sanitizePathValue('hello"world"')).toBe("helloworld");
+    expect(sanitizePathValue("hello`world`")).toBe("helloworld");
+    expect(sanitizePathValue("hello\\world")).toBe("helloworld");
+  });
+
+  it("trims leading and trailing whitespace", () => {
+    expect(sanitizePathValue("  /some/path/  ")).toBe("/some/path/");
+    expect(sanitizePathValue("\n/path\t")).toBe("/path");
+  });
+
+  it("caps the length at PATH_MAX (200 characters)", () => {
+    const longPath = "/a".repeat(150); // 300 characters
+    const sanitized = sanitizePathValue(longPath);
+    expect(sanitized?.length).toBe(200);
+    expect(sanitized).toBe(longPath.slice(0, 200));
+  });
+
+  it("returns undefined if the sanitized string becomes empty", () => {
+    expect(sanitizePathValue("")).toBeUndefined();
+    expect(sanitizePathValue("   ")).toBeUndefined();
+    expect(sanitizePathValue("<>\"'\\`")).toBeUndefined();
   });
 });

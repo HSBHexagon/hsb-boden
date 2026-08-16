@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildBreadcrumbJsonLd, buildOrganizationJsonLd, buildServiceJsonLd, buildLocalBusinessJsonLd } from "../src/lib/schema";
+import { buildBreadcrumbJsonLd, buildOrganizationJsonLd, buildServiceJsonLd, buildLocalBusinessJsonLd, buildFaqJsonLd } from "../src/lib/schema";
 
 describe("json-ld generation", () => {
   it("returns valid organization json-ld without unsupported partner claims", () => {
@@ -45,5 +45,21 @@ describe("json-ld generation", () => {
 
     expect(graph.itemListElement).toHaveLength(3);
     expect(graph.itemListElement[2].position).toBe(3);
+  });
+
+  it("builds valid FAQ json-ld", () => {
+    const faqs = [
+      { question: "What is A?", answer: "A is a letter." },
+      { question: "What is B?", answer: "B is another letter." },
+    ];
+    const graph = buildFaqJsonLd(faqs);
+
+    expect(() => JSON.stringify(graph)).not.toThrow();
+    expect(graph["@type"]).toBe("FAQPage");
+    expect(graph.mainEntity).toHaveLength(2);
+    expect(graph.mainEntity[0]["@type"]).toBe("Question");
+    expect(graph.mainEntity[0].name).toBe("What is A?");
+    expect(graph.mainEntity[0].acceptedAnswer["@type"]).toBe("Answer");
+    expect(graph.mainEntity[0].acceptedAnswer.text).toBe("A is a letter.");
   });
 });

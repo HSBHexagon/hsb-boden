@@ -262,3 +262,10 @@ a {
     scroll-behavior: auto;
   }
 }
+
+.button-primary:focus-visible,
+.button-secondary:focus-visible,
+.button-secondary-dark:focus-visible {
+  outline: 2px solid #cb0000;
+  outline-offset: 2px;
+}

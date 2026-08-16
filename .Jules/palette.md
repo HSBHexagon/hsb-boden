@@ -1,0 +1,3 @@
+## 2026-08-16 - Form Field Label Indicators & Grid Layouts
+**Learning:** When using CSS Grid for form layout, placing a standalone required asterisk immediately after the text label forces it onto a new grid row. Additionally, native outline styles are often stripped, causing keyboard users to lose focus tracking.
+**Action:** Always wrap label text and the required indicator together in a `<span>` to prevent grid-induced wrapping. Explicitly add Tailwind utility classes (`focus-visible:ring-2 focus-visible:ring-hsb-red focus-visible:outline-none`) to all interactive elements to guarantee focus visibility.

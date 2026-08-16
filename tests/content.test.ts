@@ -4,6 +4,7 @@ import { join } from "node:path";
 import {
   getAllPublicPages,
   getPublicReferences,
+  getReferencesForSlugs,
   validateSiteContent,
 } from "../src/lib/content";
 import { services } from "../src/data/services";
@@ -44,6 +45,12 @@ describe("site content contract", () => {
         expect(reference.canShowExactLocation).toBe(false);
       }
     }
+  });
+
+  it("filters references by provided slugs", () => {
+    const results = getReferencesForSlugs(["suedzucker-zeitz", "non-existent-slug"]);
+    expect(results.length).toBe(1);
+    expect(results[0].id).toBe("suedzucker-zeitz");
   });
 
   it("keeps every visible reference logo backed by a local asset", () => {

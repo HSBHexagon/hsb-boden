@@ -86,14 +86,16 @@ async function cmdBulkStatus(dbId, fromStatus, toStatus) {
     filter: { property: 'Status', select: { equals: fromStatus } }
   });
   console.log(`🔄 ${res.results.length} Seiten: "${fromStatus}" → "${toStatus}"`);
-  for (const page of res.results) {
-    await notion.pages.update({
-      page_id: page.id,
-      properties: { Status: { select: { name: toStatus } } }
-    });
-    const title = page.properties?.Name?.title?.[0]?.text?.content || page.id;
-    console.log(`  ✅ ${title}`);
-  }
+  await Promise.all(
+    res.results.map(async (page) => {
+      await notion.pages.update({
+        page_id: page.id,
+        properties: { Status: { select: { name: toStatus } } }
+      });
+      const title = page.properties?.Name?.title?.[0]?.text?.content || page.id;
+      console.log(`  ✅ ${title}`);
+    })
+  );
   console.log(`\n✅ ${res.results.length} Einträge aktualisiert`);
 }
 

@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { onRequestPost, onRequestOptions, onRequestGet } from "../functions/api/lead";
+import { onRequestPost, onRequestOptions, onRequestGet, onRequestPut, onRequestDelete } from "../functions/api/lead";
 
 const testEnv = { LEAD_WEBHOOK_URL: "https://script.google.com/macros/s/EXAMPLE/exec" };
 const authenticatedEnv = {
@@ -428,6 +428,16 @@ describe("GET/PUT/DELETE /api/lead", () => {
     expect(res.headers.get("Cache-Control")).toBe("no-store");
     expect(res.headers.get("X-Content-Type-Options")).toBe("nosniff");
     expect(res.headers.get("Referrer-Policy")).toBe("no-referrer");
+  });
+
+  it("rejects PUT with 405", async () => {
+    const res = await onRequestPut(makeContext(makeRequest(undefined, { method: "PUT" })));
+    expect(res.status).toBe(405);
+  });
+
+  it("rejects DELETE with 405", async () => {
+    const res = await onRequestDelete(makeContext(makeRequest(undefined, { method: "DELETE" })));
+    expect(res.status).toBe(405);
   });
 });
 

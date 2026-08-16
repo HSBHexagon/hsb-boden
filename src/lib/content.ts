@@ -11,28 +11,53 @@ import {
   type Service,
 } from "./types";
 
-export function validateSiteContent() {
+function validateServices(): string[] {
   const errors: string[] = [];
   for (const service of services) {
     const result = serviceSchema.safeParse(service);
     if (!result.success)
       errors.push(`service:${service.slug}:${result.error.message}`);
   }
+  return errors;
+}
+
+function validateIndustries(): string[] {
+  const errors: string[] = [];
   for (const industry of industries) {
     const result = industrySchema.safeParse(industry);
     if (!result.success)
       errors.push(`industry:${industry.slug}:${result.error.message}`);
   }
+  return errors;
+}
+
+function validateReferences(): string[] {
+  const errors: string[] = [];
   for (const reference of references) {
     const result = referenceSchema.safeParse(reference);
     if (!result.success)
       errors.push(`reference:${reference.id}:${result.error.message}`);
   }
+  return errors;
+}
+
+function validateArticles(): string[] {
+  const errors: string[] = [];
   for (const article of articles) {
     const result = articleSchema.safeParse(article);
     if (!result.success)
       errors.push(`article:${article.slug}:${result.error.message}`);
   }
+  return errors;
+}
+
+export function validateSiteContent() {
+  const errors: string[] = [
+    ...validateServices(),
+    ...validateIndustries(),
+    ...validateReferences(),
+    ...validateArticles(),
+  ];
 
   return { success: errors.length === 0, errors };
 }

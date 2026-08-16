@@ -171,7 +171,7 @@ const deliveryConfigured = site.hasLeadEndpoint;
       attributionFields = {};
     }
 
-    const payload: Record<string, any> = {
+    const payload: Record<string, unknown> = {
       ...attributionFields,
       source: "website",
       legalBasis: "inquiry",

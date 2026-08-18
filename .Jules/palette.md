@@ -1,0 +1,3 @@
+## 2023-10-25 - Form Accessibility Improvements
+**Learning:** HTML5 `required` fields without visual indicators and interactive elements without explicit `focus-visible` classes can hinder accessibility for sighted and keyboard users, especially when native focus rings are suppressed. Furthermore, when appending inline elements (like required asterisks) to text labels within a CSS grid, it is essential to wrap the text and indicator in a `<span>` to prevent them from splitting onto separate grid rows.
+**Action:** Always wrap required label text and asterisks in a `<span>` container within grid layouts, and explicitly apply Tailwind `focus-visible` utility classes to all interactive form elements (`<input>`, `<select>`, `<textarea>`, `<button>`).

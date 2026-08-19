@@ -1,0 +1,3 @@
+## 2026-08-19 - Added clear visual indicators for required fields and focus states
+**Learning:** Native focus outlines are often insufficient or stripped in custom styled forms. Screen readers read `required` attributes, but sighted users need a clear visual indicator. Forms lacking explicit focus-visible states disrupt keyboard navigation accessibility.
+**Action:** Always append `<span class="text-hsb-red" aria-hidden="true">*</span>` explicitly to required form labels. Wrap label texts in a `<span>` to prevent CSS grid layout breaks. Always apply explicit Tailwind `focus-visible:ring-2 focus-visible:ring-hsb-red focus-visible:outline-none` classes to interactive elements like inputs, textareas, selects, and checkboxes to guarantee clear visual focus indication.

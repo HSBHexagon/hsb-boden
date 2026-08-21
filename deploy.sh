@@ -16,6 +16,10 @@
 set -euo pipefail
 
 SHEET_ID="1W-NjwEq0UhDo2TaeS-2qp_qit4YFMz6k-IqKHlPpHmg"
+# Eigentuemer von Sheet und Flyern. clasp MUSS mit diesem Konto angemeldet
+# sein - mit einem anderen scheitert das Anlegen an
+# "The caller does not have permission".
+OWNER_ACCOUNT="cherinodiaz@outlook.com"
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 DEPLOY="$ROOT/deploy"
 SRC="$ROOT/apps_script"
@@ -44,7 +48,30 @@ EOF
   exit 1
 fi
 
-info "Angemeldet als: $(clasp show-authorized-user 2>/dev/null | head -1)"
+CLASP_USER="$(clasp show-authorized-user 2>/dev/null | grep -oE '[^ ]+@[^ .]+\.[^ .]+' | head -1)"
+info "clasp angemeldet als: ${CLASP_USER:-unbekannt}"
+
+if [ "$CLASP_USER" != "$OWNER_ACCOUNT" ]; then
+  cat <<EOF
+
+FALSCHES KONTO.
+
+clasp ist angemeldet als : ${CLASP_USER:-unbekannt}
+Benoetigt wird           : $OWNER_ACCOUNT
+
+Sheet und Flyer gehoeren $OWNER_ACCOUNT. Mit einem anderen Konto
+scheitert das Anlegen an "The caller does not have permission".
+
+Umstellen:
+
+  clasp logout
+  clasp login
+
+Im Anmeldedialog $OWNER_ACCOUNT waehlen, dann dieses Skript erneut starten.
+
+EOF
+  exit 1
+fi
 
 # --- 2. Quelldateien buendeln --------------------------------------------
 info "Buendle Quelldateien ..."
@@ -72,6 +99,18 @@ cp "$SRC/Sidebar.html"    "$DEPLOY/Sidebar.html"
 # und gehoert in die Datei SCRIPT_ID neben diesem Skript.
 
 cd "$DEPLOY"
+if [ ! -f ".clasp.json" ] && [ ! -f "$ROOT/SCRIPT_ID" ]; then
+  # Erst der direkte Weg: als Eigentuemer darf clasp das gebundene
+  # Projekt moeglicherweise selbst anlegen.
+  info "Versuche, das Projekt direkt ans Sheet zu binden ..."
+  if clasp create-script --title "HSB Sales OS" \
+       --parentId "$SHEET_ID" --rootDir "$DEPLOY" 2>/dev/null; then
+    info "Direkt gebunden."
+  else
+    info "Direktes Binden nicht moeglich - der Browserweg wird gebraucht."
+  fi
+fi
+
 if [ ! -f ".clasp.json" ]; then
   [ -f "$ROOT/SCRIPT_ID" ] || cat <<EOF && [ -f "$ROOT/SCRIPT_ID" ] || exit 1
 

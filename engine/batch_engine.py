@@ -156,6 +156,23 @@ def prepare_batch(
         str(l.get("Lead_ID") or ""),
     ))
 
+    # Dublettenschutz auf Adressebene: zwei Datensaetze koennen
+    # unterschiedliche Lead-IDs und dieselbe E-Mail tragen. Ohne diesen
+    # Schritt bekaeme derselbe Empfaenger zwei Mails aus einem Batch.
+    seen_emails: set = set()
+    deduped: list[dict] = []
+    for lead in pool:
+        key = str(lead.get("Email") or "").strip().lower()
+        if key in seen_emails:
+            stats.excluded_count += 1
+            reasons_counter["doppelte E-Mail-Adresse"] = (
+                reasons_counter.get("doppelte E-Mail-Adresse", 0) + 1)
+            stats.eligible_count -= 1
+            continue
+        seen_emails.add(key)
+        deduped.append(lead)
+    pool = deduped
+
     selected = pool[:count]
     stats.selected_count = len(selected)
     stats.shortfall = max(0, count - len(selected))

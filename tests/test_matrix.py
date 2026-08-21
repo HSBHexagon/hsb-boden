@@ -156,13 +156,26 @@ def test_idempotenz() -> None:
 
 
 def test_duplicate_email_in_source() -> None:
+    # Gleiche Adresse, UNTERSCHIEDLICHE Lead-IDs - der Fall, den ein reiner
+    # Lead-ID-Abgleich nicht faengt.
     leads = pool(5, "JORDI")
-    leads.append(make_lead(1, "JORDI"))          # exakte Dublette
+    twin = make_lead(99, "JORDI")
+    twin["Email"] = leads[0]["Email"]
+    leads.append(twin)
+    check("Testaufbau: 6 Leads, 5 eindeutige Adressen",
+          len(leads) == 6 and len({l["Email"] for l in leads}) == 5)
+
     b = prepare_batch(leads, "JORDI", 10)
     emails = [l["Email"] for l in b.leads]
     check("doppelte E-Mail wird nicht doppelt versendet",
-          len(emails) == len(set(emails)) or b.stats.selected_count <= 6,
+          len(emails) == len(set(emails)),
           f"{len(emails)} Adressen, {len(set(emails))} eindeutig")
+    check("genau ein Datensatz je Adresse ausgewaehlt",
+          b.stats.selected_count == 5, f"selected={b.stats.selected_count}")
+
+    ids = [l["Lead_ID"] for l in b.leads]
+    check("Lead-ID-Dubletten ebenfalls ausgeschlossen",
+          len(ids) == len(set(ids)))
 
 
 # --------------------------------------------------------------------------

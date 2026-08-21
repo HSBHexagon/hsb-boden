@@ -116,8 +116,18 @@ Batch anfordert.
 
 ---
 
-## Größenhinweis
+## Größe und Teilpakete
 
-Jeder Flyer ist rund 1,5 MB. Ein Batch mit 100 Entwürfen erzeugt daher ein ZIP
-von etwa 150 MB, bei 250 rund 375 MB. Der Aufbau dauert entsprechend — das ist
-normal, nicht hängengeblieben.
+Jeder Flyer ist rund 1,5 MB und steckt in jedem Entwurf. 100 Entwürfe sind
+also rund 150 MB.
+
+Deshalb entstehen **mehrere ZIP-Dateien statt einer**: je 20 Entwürfe ein
+Paket. Ein einziges großes ZIP würde Google Apps Script überlasten — das ist
+keine Bequemlichkeit, sondern eine harte Grenze.
+
+Für dich heißt das: **jedes Paket einzeln in Outlook importieren.** Bei 100
+Entwürfen sind das fünf Importe.
+
+Erscheint der Hinweis „Noch nicht vollständig", war die Laufzeitgrenze
+erreicht. Ein Klick auf **Weiter ab Eintrag …** setzt genau dort fort — es geht
+nichts verloren und nichts wird doppelt erzeugt.

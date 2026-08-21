@@ -13,6 +13,44 @@ function sheet_(name) {
   return sh;
 }
 
+/**
+ * Cache innerhalb EINER Ausfuehrung.
+ *
+ * Das Blatt hat 6.425 Zeilen x 56 Spalten. Jeder Vollzugriff ist teuer und
+ * das 6-Minuten-Limit von Apps Script ist real. prepareBatch() braucht die
+ * Leads zweimal (Auswahl und aktive Batches) - ohne Cache waere das ein
+ * doppelter Volllesevorgang.
+ */
+var LEADS_CACHE_ = null;
+
+function invalidateLeadsCache_() { LEADS_CACHE_ = null; }
+
+function readLeadsCached_() {
+  if (!LEADS_CACHE_) LEADS_CACHE_ = readLeads_();
+  return LEADS_CACHE_;
+}
+
+/**
+ * Schreibt eine Spalte fuer verstreute Zeilen in EINEM Vorgang.
+ *
+ * Statt N Einzelaufrufen wird der umspannte Bereich einmal gelesen, im
+ * Speicher geaendert und einmal zurueckgeschrieben: 2 Aufrufe statt N.
+ * updates = { zeilennummer: wert }
+ */
+function writeColumnBulk_(sh, col, updates) {
+  const rows = Object.keys(updates).map(Number).sort(function (a, b) {
+    return a - b;
+  });
+  if (!rows.length || !col) return;
+  const first = rows[0];
+  const last = rows[rows.length - 1];
+  const span = last - first + 1;
+  const range = sh.getRange(first, col, span, 1);
+  const values = range.getValues();
+  rows.forEach(function (r) { values[r - first][0] = updates[r]; });
+  range.setValues(values);
+}
+
 function readLeads_() {
   const sh = sheet_(CFG.SHEET_LEADS);
   const values = sh.getDataRange().getValues();
@@ -182,7 +220,7 @@ function activeBatchLeadIds_() {
   data.forEach(function (r) {
     if (!closed[String(r[3]).toUpperCase()]) active[r[0]] = true;
   });
-  const read = readLeads_();
+  const read = readLeadsCached_();
   read.leads.forEach(function (l) {
     if (l.Batch_ID && active[l.Batch_ID]) ids[l.Lead_ID] = true;
   });
@@ -200,7 +238,7 @@ function prepareBatch(opts) {
   // Asset-Gate zuerst - vor jeder Auswahl.
   const verified = getVerifiedFlyer_(ownerKey);
 
-  const read = readLeads_();
+  const read = readLeadsCached_();
   const active = activeBatchLeadIds_();
   const stats = {
     requested_count: count, total_pool: 0, eligible_count: 0,
@@ -249,7 +287,25 @@ function prepareBatch(opts) {
     return String(a.Lead_ID).localeCompare(String(b.Lead_ID));
   });
 
-  const selected = pool.slice(0, count);
+  // Dublettenschutz auf Adressebene: zwei Datensaetze koennen
+  // unterschiedliche Lead-IDs und dieselbe E-Mail tragen. Ohne diesen
+  // Schritt bekaeme derselbe Empfaenger zwei Mails aus einem Batch.
+  const seenEmails = {};
+  const deduped = [];
+  pool.forEach(function (l) {
+    const key = String(l.Email || '').trim().toLowerCase();
+    if (seenEmails[key]) {
+      stats.excluded_count++;
+      stats.eligible_count--;
+      reasons['doppelte E-Mail-Adresse'] =
+        (reasons['doppelte E-Mail-Adresse'] || 0) + 1;
+      return;
+    }
+    seenEmails[key] = true;
+    deduped.push(l);
+  });
+
+  const selected = deduped.slice(0, count);
   stats.selected_count = selected.length;
   stats.shortfall = Math.max(0, count - selected.length);
 
@@ -285,16 +341,23 @@ function prepareBatch(opts) {
 
 function writeBatchToLeads_(read, selected, batchId) {
   const sh = sheet_(CFG.SHEET_LEADS);
-  const cBatch = read.index[FIELD_MAP.Batch_ID] + 1;
-  const cPrep = read.index['Prepared_At'] + 1;
-  const cStat = read.index['Batch_Status'] + 1;
   const ts = nowIso_();
+  const uBatch = {}, uPrep = {}, uStat = {};
   selected.forEach(function (l) {
-    sh.getRange(l._row, cBatch).setValue(batchId);
-    if (cPrep > 0) sh.getRange(l._row, cPrep).setValue(ts);
-    if (cStat > 0) sh.getRange(l._row, cStat).setValue('PREPARED');
+    uBatch[l._row] = batchId;
+    uPrep[l._row] = ts;
+    uStat[l._row] = 'PREPARED';
   });
+  // Drei Bulk-Vorgaenge statt 3xN Einzelaufrufen.
+  writeColumnBulk_(sh, read.index[FIELD_MAP.Batch_ID] + 1, uBatch);
+  if (read.index['Prepared_At'] !== undefined) {
+    writeColumnBulk_(sh, read.index['Prepared_At'] + 1, uPrep);
+  }
+  if (read.index['Batch_Status'] !== undefined) {
+    writeColumnBulk_(sh, read.index['Batch_Status'] + 1, uStat);
+  }
   SpreadsheetApp.flush();
+  invalidateLeadsCache_();
 }
 
 function appendBatchRow_(batchId, owner, campaign, status, stats, sha) {

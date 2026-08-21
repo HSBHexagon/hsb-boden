@@ -52,7 +52,7 @@ function menuCheckAssets() {
 function uiGetDashboard() { return getDashboard(); }
 
 function uiGetFilters() {
-  const read = readLeads_();
+  const read = readLeadsCached_();
   const industries = {}, campaigns = {};
   read.leads.forEach(function (l) {
     if (l.Industry) industries[String(l.Industry).trim()] = true;
@@ -80,9 +80,9 @@ function uiQualify(opts) {
   }
 }
 
-function uiExportEml(batchId) {
+function uiExportEml(batchId, startIndex) {
   try {
-    return { ok: true, data: exportBatchAsEmlZip(batchId) };
+    return { ok: true, data: exportBatchAsEmlZip(batchId, startIndex) };
   } catch (e) {
     return { ok: false, error: String(e.message || e) };
   }

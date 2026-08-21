@@ -29,6 +29,9 @@ SEARCH_ROOTS = [
 SKIP_DIR_PARTS = {
     "node_modules", ".git", "Library", ".Trash", "_SOFT_DELETED",
     ".worktrees", "06_Archiv", "__pycache__", ".venv",
+    # Eigene Verifikations-Artefakte - sonst zaehlt sich die Inventur selbst
+    # mit und blaeht die Zahl "kanonisch korrekt" auf.
+    "drive_verify",
 }
 
 NAME_HINTS = ("hsb-flyer", "hsb_flyer", "flyer")
@@ -88,6 +91,20 @@ def run_inventory(write: bool = False) -> dict:
             "veraltete Fassungen; sie gehoeren in die Quarantaene, nicht in "
             "den Papierkorb. Kanonische Master niemals verschieben."
         ),
+        "reichweite": {
+            "geprueft": "lose .pdf-Dateien unterhalb der Suchwurzeln",
+            "NICHT_geprueft": [
+                "PDFs innerhalb von ZIP-Archiven",
+                "PDFs, die als Anhang in .eml-Dateien eingebettet sind",
+                "Dateien in Drive (nur die zwei kanonischen IDs werden "
+                "beim Asset-Gate geprueft)",
+            ],
+            "konsequenz": (
+                "Ein Ergebnis ohne Treffer beweist nur, dass keine LOSE "
+                "veraltete PDF gefunden wurde. Fuer EML-Anhaenge braucht es "
+                "eine eigene Pruefung - siehe verify_eml_attachments()."
+            ),
+        },
     }
 
     if write:
@@ -99,5 +116,75 @@ def run_inventory(write: bool = False) -> dict:
     return report
 
 
+def verify_eml_attachments(roots: list[Path] | None = None) -> dict:
+    """
+    Prueft die PDF-Anhaenge in .eml-Dateien - die Luecke, die eine reine
+    Dateisuche nach *.pdf nicht schliesst.
+
+    Genau hier steckte der Fehler vom 2026-08-21: die losen PDFs waren
+    korrigiert, die eingebetteten Anhaenge zunaechst nicht.
+    """
+    import email
+    from email import policy
+    from email.parser import BytesParser
+
+    roots = roots or [Path.home() / "Desktop", Path.home() / "ABLAGE"]
+    canonical, outdated, unknown, missing = [], [], [], []
+    checked = 0
+
+    for root in roots:
+        if not root.exists():
+            continue
+        for eml in root.rglob("*.eml"):
+            if any(part in SKIP_DIR_PARTS for part in eml.parts):
+                continue
+            checked += 1
+            try:
+                with open(eml, "rb") as fh:
+                    msg = BytesParser(policy=policy.default).parsebytes(fh.read())
+            except Exception as exc:
+                unknown.append({"path": str(eml), "error": str(exc)})
+                continue
+
+            found = False
+            for part in msg.walk():
+                if (part.get_content_maintype() == "application"
+                        and part.get_filename()):
+                    found = True
+                    data = part.get_payload(decode=True) or b""
+                    digest = hashlib_sha256(data)
+                    entry = {"path": str(eml), "attachment": part.get_filename(),
+                             "sha256": digest}
+                    if digest in CANON_BY_HASH:
+                        entry["owner"] = CANON_BY_HASH[digest].owner_key
+                        canonical.append(entry)
+                    elif digest in KNOWN_BAD_HASHES:
+                        entry["reason"] = KNOWN_BAD_HASHES[digest]
+                        outdated.append(entry)
+                    else:
+                        unknown.append(entry)
+            if not found:
+                missing.append({"path": str(eml), "reason": "kein Anhang"})
+
+    return {
+        "eml_geprueft": checked,
+        "anhang_kanonisch": len(canonical),
+        "anhang_veraltet": len(outdated),
+        "anhang_unbekannt": len(unknown),
+        "ohne_anhang": len(missing),
+        "veraltete_details": outdated[:20],
+        "ohne_anhang_details": missing[:20],
+    }
+
+
+def hashlib_sha256(data: bytes) -> str:
+    import hashlib
+    return hashlib.sha256(data).hexdigest()
+
+
 if __name__ == "__main__":
-    print(json.dumps(run_inventory(write=True), indent=2, ensure_ascii=False))
+    import sys
+    if "--eml" in sys.argv:
+        print(json.dumps(verify_eml_attachments(), indent=2, ensure_ascii=False))
+    else:
+        print(json.dumps(run_inventory(write=True), indent=2, ensure_ascii=False))

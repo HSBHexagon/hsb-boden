@@ -193,22 +193,46 @@ function batchVorbereiten() {
   });
 }
 
-function emlExport() {
+function emlExport(startIndex) {
   const el = document.getElementById('batchErgebnis');
+  const alt = document.getElementById('expLade');
+  if (alt) alt.remove();
   el.insertAdjacentHTML('beforeend',
-    '<div class="lade" id="expLade">Erzeuge ZIP… bei großen Mengen dauert das '
-    + 'etwas (ca. 1,5 MB pro Entwurf).</div>');
+    '<div class="lade" id="expLade">Erzeuge Teilpakete… je ' + esc(20)
+    + ' Entwürfe ein ZIP (rund 1,5 MB pro Entwurf).</div>');
+
   google.script.run.withSuccessHandler(function (r) {
     const l = document.getElementById('expLade');
     if (l) l.remove();
-    if (!r.ok) { el.insertAdjacentHTML('beforeend',
-      '<div class="fehler">' + esc(r.error) + '</div>'); return; }
+    if (!r.ok) {
+      el.insertAdjacentHTML('beforeend',
+        '<div class="fehler">' + esc(r.error) + '</div>');
+      return;
+    }
+    const d = r.data;
+    let h = '<div class="ok"><b>' + d.written + ' von ' + d.total
+      + ' Entwürfen</b> in ' + d.parts.length + ' Paket(en)<br>';
+    d.parts.forEach(function (p) {
+      h += '<a href="' + p.url + '" target="_blank">' + esc(p.name) + '</a> · '
+        + p.count + ' · ' + p.size_mb + ' MB<br>';
+    });
+    h += '<a href="' + d.folder_url + '" target="_blank">Drive-Ordner öffnen</a>';
+    h += '<br><span class="mini">In Outlook: Einstellungen → Dateien → Import → '
+      + 'Ordner wählen → Zielordner „Entwürfe“. Jedes Paket einzeln importieren.'
+      + '</span></div>';
+
+    if (!d.complete) {
+      h += '<div class="warn">Noch nicht vollständig — die Laufzeitgrenze wurde '
+        + 'erreicht.<br><button class="primaer" onclick="emlExport('
+        + d.next_index + ')">Weiter ab Eintrag ' + d.next_index + '</button></div>';
+    }
+    el.insertAdjacentHTML('beforeend', h);
+  }).withFailureHandler(function (e) {
+    const l = document.getElementById('expLade');
+    if (l) l.remove();
     el.insertAdjacentHTML('beforeend',
-      '<div class="ok">' + r.data.count + ' Entwürfe · ' + r.data.size_mb
-      + ' MB<br><a href="' + r.data.url + '" target="_blank">ZIP in Drive öffnen</a>'
-      + '<br><span class="mini">In Outlook: Einstellungen → Dateien → Import → '
-      + 'Ordner wählen → Zielordner „Entwürfe“.</span></div>');
-  }).uiExportEml(aktuellerBatch);
+      '<div class="fehler">' + esc(e.message) + '</div>');
+  }).uiExportEml(aktuellerBatch, startIndex || 0);
 }
 
 function freigeben() {

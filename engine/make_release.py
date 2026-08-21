@@ -41,9 +41,36 @@ def run_tests() -> dict:
             "exit_code": proc.returncode}
 
 
+def run_apps_script_tests() -> dict:
+    """
+    Testet die tatsaechlich ausgelieferte Apps-Script-Logik.
+
+    Die Python-Engine ist eine Zweitimplementierung; Jordi benutzt das
+    Apps Script. Ein gruener Python-Lauf allein sagt nichts ueber den Code,
+    der im Sheet laeuft.
+    """
+    test_file = REPO_ROOT / "tests" / "test_apps_script.js"
+    if not test_file.exists():
+        return {"test_count": None, "test_pass": None, "test_fail": None}
+    try:
+        proc = subprocess.run(["node", str(test_file)], capture_output=True,
+                              text=True, cwd=str(test_file.parent), timeout=300)
+    except (FileNotFoundError, subprocess.TimeoutExpired) as exc:
+        return {"test_count": None, "test_pass": None, "test_fail": None,
+                "error": str(exc)}
+    last = REPO_ROOT / "tests" / "last_run_apps_script.json"
+    if last.exists():
+        data = json.loads(last.read_text())
+        data["exit_code"] = proc.returncode
+        return data
+    return {"test_count": None, "test_pass": None, "test_fail": None,
+            "exit_code": proc.returncode}
+
+
 def main() -> int:
     gate = run_all()
     tests = run_tests()
+    as_tests = run_apps_script_tests()
 
     manifest = {
         "release_id": f"hsb-sales-os-{utc_now_iso()[:10]}",
@@ -64,6 +91,16 @@ def main() -> int:
         "test_pass": tests.get("test_pass"),
         "test_fail": tests.get("test_fail"),
 
+        "apps_script_test_count": as_tests.get("test_count"),
+        "apps_script_test_pass": as_tests.get("test_pass"),
+        "apps_script_test_fail": as_tests.get("test_fail"),
+        "apps_script_installed_in_sheet": False,
+        "apps_script_note": (
+            "Logik in Node mit Google-Stubs geprueft, inklusive echter "
+            "Flyer-Bytes und echter SHA-256-Berechnung. Im Sheet selbst "
+            "noch nicht installiert - siehe docs/INSTALL.md."
+        ),
+
         "real_send_count": 0,
         "dns_write_count": 0,
         "cloudflare_write_count": 0,
@@ -76,7 +113,8 @@ def main() -> int:
     ok = (manifest["jordi_flyer_sha256"] == manifest["jordi_flyer_sha256_expected"]
           and manifest["joel_flyer_sha256"] == manifest["joel_flyer_sha256_expected"]
           and manifest["visual_pdf_gate"] == "PASS"
-          and manifest["test_fail"] == 0)
+          and manifest["test_fail"] == 0
+          and manifest["apps_script_test_fail"] == 0)
     manifest["release_status"] = "READY" if ok else "BLOCKED"
 
     out = REPO_ROOT / "RELEASE_MANIFEST.json"

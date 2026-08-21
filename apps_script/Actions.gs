@@ -22,7 +22,7 @@ function qualifyLeads(opts) {
   }
   const sendable = LEGAL_BASIS_SENDABLE.indexOf(legalBasis) >= 0;
 
-  const read = readLeads_();
+  const read = readLeadsCached_();
   const sh = sheet_(CFG.SHEET_LEADS);
   const cLegal = read.index['Legal_Basis'] + 1;
   const cFreigabe = read.index[FIELD_MAP.Versandfreigabe] + 1;
@@ -30,6 +30,7 @@ function qualifyLeads(opts) {
     throw new Error('Spalten fehlen. Bitte zuerst "Spalten pruefen" ausfuehren.');
   }
 
+  const uLegal = {}, uFreigabe = {};
   let touched = 0;
   for (let i = 0; i < read.leads.length && touched < limit; i++) {
     const l = read.leads[i];
@@ -44,11 +45,17 @@ function qualifyLeads(opts) {
     const optOut = String(l.Opt_Out || '').trim().toLowerCase();
     if (optOut === 'yes' || optOut === 'ja' || optOut === 'opt_out') continue;
 
-    sh.getRange(l._row, cLegal).setValue(legalBasis);
-    sh.getRange(l._row, cFreigabe).setValue(sendable ? 'yes' : 'no');
+    uLegal[l._row] = legalBasis;
+    uFreigabe[l._row] = sendable ? 'yes' : 'no';
     touched++;
   }
+  // Zwei Bulk-Vorgaenge statt 2xN Einzelaufrufen. Das Qualifizieren von
+  // 100 Leads ist die erste Aktion nach der Installation - sie darf nicht
+  // am 6-Minuten-Limit scheitern.
+  writeColumnBulk_(sh, cLegal, uLegal);
+  writeColumnBulk_(sh, cFreigabe, uFreigabe);
   SpreadsheetApp.flush();
+  invalidateLeadsCache_();
   logActivity_('', 'QUALIFY',
     touched + ' Leads auf ' + legalBasis + ' gesetzt (' + ownerKey + ')');
   return { updated: touched, legalBasis: legalBasis, sendable: sendable };
@@ -88,8 +95,14 @@ function renderEmail_(lead, flyer) {
   return { subject: subject, body: body };
 }
 
-/** Baut eine RFC-822 EML mit genau einem korrekten PDF-Anhang. */
-function buildEml_(lead, batchId, flyer, pdfBase64) {
+/**
+ * Baut eine RFC-822 EML mit genau einem korrekten PDF-Anhang.
+ *
+ * `pdfChunked` ist der bereits auf 76 Zeichen umgebrochene Base64-Block.
+ * Er ist fuer jede EML identisch und wird deshalb genau einmal erzeugt -
+ * sonst entstuende pro Lead unnoetig eine weitere 2-MB-Zeichenkette.
+ */
+function buildEml_(lead, batchId, flyer, pdfChunked) {
   const mail = renderEmail_(lead, flyer);
   const boundary = 'HSB-' + Utilities.getUuid();
   const lines = [];
@@ -119,7 +132,7 @@ function buildEml_(lead, batchId, flyer, pdfBase64) {
   lines.push('Content-Transfer-Encoding: base64');
   lines.push('Content-Disposition: attachment; filename="' + flyer.fileName + '"');
   lines.push('');
-  lines.push(chunk76_(pdfBase64));
+  lines.push(pdfChunked);
   lines.push('--' + boundary + '--');
   lines.push('');
   return lines.join('\r\n');
@@ -135,11 +148,22 @@ function chunk76_(b64) {
 }
 
 /**
- * EML-Fallback: erzeugt fuer einen Batch alle Entwuerfe als ZIP in Drive.
+ * EML-Fallback: erzeugt die Entwuerfe eines Batches als ZIP-Pakete in Drive.
  * Funktioniert ohne Outlook-Verbindung, ohne Admin, ohne DNS.
+ *
+ * WICHTIG - warum in Teilpaketen:
+ * Der Flyer ist rund 1,5 MB, base64-kodiert etwa 2 MB. Ein einziges ZIP ueber
+ * 100 Entwuerfe muesste ~200 MB gleichzeitig im Speicher halten; Apps Script
+ * scheitert daran, bevor die Datei fertig ist. Deshalb werden jeweils
+ * CHUNK Entwuerfe zu einem ZIP gebuendelt, sofort nach Drive geschrieben und
+ * der Speicher wieder freigegeben.
+ *
+ * `startIndex` erlaubt das Fortsetzen, falls das 6-Minuten-Limit greift.
  */
-function exportBatchAsEmlZip(batchId) {
-  const read = readLeads_();
+var EML_CHUNK_SIZE = 20;
+
+function exportBatchAsEmlZip(batchId, startIndex) {
+  const read = readLeadsCached_();
   const leads = read.leads.filter(function (l) {
     return String(l.Batch_ID) === String(batchId);
   });
@@ -147,25 +171,51 @@ function exportBatchAsEmlZip(batchId) {
 
   const ownerKey = normalizeOwner_(leads[0].Owner);
   const verified = getVerifiedFlyer_(ownerKey);
-  const pdfBase64 = Utilities.base64Encode(verified.blob.getBytes());
+  // Genau einmal erzeugen - identisch fuer jede EML.
+  const pdfChunked = chunk76_(Utilities.base64Encode(verified.blob.getBytes()));
 
-  const files = [];
-  leads.forEach(function (l) {
-    const eml = buildEml_(l, batchId, verified.flyer, pdfBase64);
-    const safe = String(l.Lead_ID).replace(/[^A-Za-z0-9._-]+/g, '-');
-    files.push(Utilities.newBlob(eml, 'message/rfc822',
-               ownerKey.toLowerCase() + '_' + safe + '.eml'));
-  });
-
-  const zip = Utilities.zip(files, batchId + '_entwuerfe.zip');
   const folder = getOrCreateFolder_('HSB Sales OS Batches');
-  const file = folder.createFile(zip);
+  const started = new Date().getTime();
+  const parts = [];
+  let i = Math.max(0, parseInt(startIndex, 10) || 0);
+  let written = 0;
 
-  logActivity_(batchId, 'EML_EXPORT', leads.length + ' Entwuerfe als ZIP');
+  while (i < leads.length) {
+    // Vor jedem Teilpaket pruefen, ob noch Laufzeit bleibt (Limit 6 Minuten).
+    if (new Date().getTime() - started > 4 * 60 * 1000) break;
+
+    const slice = leads.slice(i, i + EML_CHUNK_SIZE);
+    const files = slice.map(function (l) {
+      const safe = String(l.Lead_ID).replace(/[^A-Za-z0-9._-]+/g, '-');
+      return Utilities.newBlob(
+        buildEml_(l, batchId, verified.flyer, pdfChunked),
+        'message/rfc822', ownerKey.toLowerCase() + '_' + safe + '.eml');
+    });
+
+    const part = Math.floor(i / EML_CHUNK_SIZE) + 1;
+    const name = batchId + '_teil' + ('0' + part).slice(-2) + '.zip';
+    const file = folder.createFile(Utilities.zip(files, name));
+    parts.push({
+      name: name, url: file.getUrl(), count: slice.length,
+      size_mb: Math.round(file.getSize() / 1048576 * 10) / 10
+    });
+    written += slice.length;
+    i += EML_CHUNK_SIZE;
+  }
+
+  const done = i >= leads.length;
+  logActivity_(batchId, 'EML_EXPORT',
+    written + ' von ' + leads.length + ' Entwuerfen in ' + parts.length
+    + ' Teilpaket(en)' + (done ? '' : ' - Fortsetzung noetig ab ' + i));
+
   return {
-    batch_id: batchId, count: leads.length,
-    url: file.getUrl(), name: file.getName(),
-    size_mb: Math.round(file.getSize() / 1048576 * 10) / 10,
+    batch_id: batchId,
+    total: leads.length,
+    written: written,
+    complete: done,
+    next_index: done ? null : i,
+    parts: parts,
+    folder_url: folder.getUrl(),
     asset_sha256: verified.sha256
   };
 }
@@ -179,7 +229,7 @@ function getOrCreateFolder_(name) {
 
 /** Setzt Status und Wiedervorlage fuer einen einzelnen Lead. */
 function setLeadStatus(leadId, status, followUpDays, note) {
-  const read = readLeads_();
+  const read = readLeadsCached_();
   const sh = sheet_(CFG.SHEET_LEADS);
   const lead = read.leads.filter(function (l) {
     return String(l.Lead_ID) === String(leadId);
@@ -229,7 +279,7 @@ function setLeadStatus(leadId, status, followUpDays, note) {
 
 /** Alle heute oder frueher faelligen Wiedervorlagen. */
 function getDueFollowUps(ownerKey) {
-  const read = readLeads_();
+  const read = readLeadsCached_();
   const today = todayStr_();
   const owner = ownerKey ? normalizeOwner_(ownerKey) : null;
   const due = [];
@@ -252,7 +302,7 @@ function getDueFollowUps(ownerKey) {
 
 /** Kennzahlen fuer das Cockpit. */
 function getDashboard() {
-  const read = readLeads_();
+  const read = readLeadsCached_();
   const out = { total: read.leads.length, owners: {}, due_followups: 0 };
   const today = todayStr_();
 

@@ -4,3 +4,4 @@ data/*.xlsx
 batches/
 assets/drive_verify/
 tests/last_run.json
+tests/last_run_apps_script.json

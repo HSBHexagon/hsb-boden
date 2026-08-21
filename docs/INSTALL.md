@@ -12,22 +12,29 @@ keine Domain, kein Admin, keine App-Registrierung.
 2. Menü **Erweiterungen → Apps Script**
 3. Die vorhandene Datei `Code.gs` leeren
 
-## 2. Dateien einfügen
+## 2. Zwei Dateien einfügen
 
-Aus `apps_script/` je eine Datei im Editor anlegen und den Inhalt einfügen:
+Nur zwei Einfügevorgänge nötig — die vier Script-Teile sind gebündelt:
 
-| Im Editor anlegen | Typ | Quelle |
+| Im Editor | Typ | Quelle |
 |---|---|---|
-| `Config` | Script | `apps_script/Config.gs` |
-| `Engine` | Script | `apps_script/Engine.gs` |
-| `Actions` | Script | `apps_script/Actions.gs` |
-| `Code` | Script | `apps_script/Code.gs` |
+| `Code` (die vorhandene Datei) | Script | `apps_script/HSB_SALES_OS.gs` |
 | `Sidebar` | **HTML** | `apps_script/Sidebar.html` |
 
-> `Sidebar` muss als **HTML-Datei** angelegt werden (Plus-Symbol → HTML),
-> nicht als Script.
+1. Inhalt von `HSB_SALES_OS.gs` kopieren, in `Code.gs` einfügen (vorher alles
+   markieren und ersetzen).
+2. Plus-Symbol → **HTML** → Name `Sidebar` (ohne `.html`) → Inhalt von
+   `Sidebar.html` einfügen.
+3. Speichern (⌘S).
 
-Speichern.
+> Der Name muss exakt `Sidebar` lauten und der Typ **HTML** sein — sonst
+> findet `HtmlService.createHtmlOutputFromFile('Sidebar')` die Datei nicht.
+
+Die gebündelte Datei ist mit derselben Testsuite geprüft wie die
+Einzeldateien (62/62). Wer lieber vier getrennte Dateien pflegt, kann
+stattdessen `Config.gs`, `Engine.gs`, `Actions.gs` und `Code.gs` einzeln
+anlegen — die Reihenfolge spielt keine Rolle, Apps Script teilt sich einen
+gemeinsamen Namensraum.
 
 ## 3. Berechtigungen erteilen
 
@@ -102,3 +109,42 @@ Voraussetzungen: Python 3, `openpyxl`, `Pillow`, `poppler` (`brew install popple
 
 Der lokale Snapshot wird per Google-Workspace-MCP erzeugt
 (`export_file`, Format `xlsx`, Ziel `data/`). Das Sheet bleibt System of Record.
+
+---
+
+## Vorab geprüfte Voraussetzungen (2026-08-21)
+
+Diese Punkte sind bereits verifiziert — sie können beim Einbau nicht mehr
+schiefgehen:
+
+| Voraussetzung | Ergebnis | Wie geprüft |
+|---|---|---|
+| Sheet lesbar | **OK** | 6.425 Zeilen, 44 Spalten, 21 Tabs gelesen |
+| Sheet schreibbar | **OK** | Testtab angelegt, beschrieben, zurückgelesen, gelöscht |
+| Flyer in Drive erreichbar | **OK** | Beide Dateien heruntergeladen |
+| Flyer-Bytes korrekt | **OK** | SHA-256 beider Dateien stimmt exakt |
+| Konto mit Vollzugriff | **OK** | `cherinojoel` |
+
+Nicht vorab prüfbar, weil es das installierte Skript braucht:
+
+- Laufzeit beim Erzeugen vieler Entwürfe unter echten Google-Kontingenten
+- `DriveApp`-Zugriff aus dem Skriptkontext heraus (Berechtigungsdialog)
+
+**Deshalb: erster Lauf mit N = 5.** Wenn fünf Entwürfe sauber im
+Outlook-Entwurfsordner landen, ist der Weg bewiesen und die Menge nur noch
+eine Zahl im Feld.
+
+## Warum das nicht ferngesteuert eingebaut werden konnte
+
+Drei Wege wurden geprüft, alle drei sind von hier aus zu:
+
+1. **Sheets-API direkt** — das Anlegen der zwölf Spalten scheitert an den
+   Rastergrenzen (`exceeds grid limits. Max columns: 44`). Ein Apps-Script-
+   Projekt lässt sich über diese API ohnehin nicht anlegen.
+2. **`clasp`** — nicht installiert, und bräuchte zusätzlich das Aktivieren der
+   Apps Script API sowie eine eigene Google-Anmeldung durch dich.
+3. **Browser-Automatisierung** — die Chrome-Erweiterung ist derzeit nicht
+   verbunden.
+
+Ist die Chrome-Erweiterung verbunden, kann der Einbau beim nächsten Mal
+ferngesteuert erfolgen.

@@ -192,3 +192,48 @@ EML-Anhängen fallen nicht darunter — genau dort steckte der Fehler heute
 Morgen. Dafür gibt es `--eml` als eigene Prüfung; die 50 Entwürfe im
 Desktop-Paket wurden damit einzeln verifiziert (50/50 kanonisch, richtiger
 Absender).
+
+---
+
+## Nachtrag: zweites Entwurfspaket mit veraltetem Flyer
+
+Der breite EML-Scan (1.738 Dateien unter Desktop, ABLAGE, Documents) fand nach
+Abschluss der Hauptarbeit **100 Entwürfe mit dem veralteten Flyer** an zwei
+Stellen:
+
+| Ort | Anzahl | Zustand |
+|---|---|---|
+| `~/Desktop/01_HSB_Business/Active/HSB_OUTREACH_ENTWUERFE_50_2026-08-14_KORRIGIERT/` | 50 | veraltet |
+| `~/ABLAGE/04_PROJEKTE/03_HSB_BODEN/05_DOKUMENTATION/` | 50 | veraltet |
+
+Identische Dateinamen — dieselbe Sammlung in zwei Kopien, vom 14.08.
+
+**Warum das gefährlich war:** Der Desktop-Ordner liegt unter `Active/`, heißt
+`…_KORRIGIERT` (war es nicht) und enthält `IMPORT_ENTWUERFE_IN_OUTLOOK.cmd`
+samt PowerShell-Skript, das **alle** EML-Dateien des Ordners direkt in den
+Outlook-Entwurfsordner schreibt. Ein Doppelklick hätte 50 versandfertige
+Entwürfe mit dem falschen Flyer erzeugt.
+
+Enthalten war die Zwischenfassung mit hellem Einzelbild
+(`1745c05d…` / `7c72e932…`) — nicht die Vier-Bilder-Referenzseite.
+
+**Erledigt:** Alle 100 Anhänge auf die kanonische Fassung gezogen. Nichts
+gelöscht, nichts verschoben.
+
+**Stand nach der Korrektur (systemweit geprüft):**
+
+```
+EML-Anhaenge kanonisch korrekt: 150
+EML-Anhaenge VERALTET:            0
+Absender-Verwechslungen:          0
+```
+
+**Offen, deine Entscheidung:** Das Paket vom 14.08. ist jetzt inhaltlich
+korrekt, aber weiterhin eine zweite parallele Ablage neben dem Sales OS —
+genau die Struktur, die diese Fehlerklasse immer wieder erzeugt. Ich habe es
+nicht angerührt. Empfehlung: nach der Installation des Sales OS in Quarantäne,
+nicht löschen.
+
+**Lehre für das System:** Genau deshalb prüft `asset_inventory.py --eml`
+EML-Anhänge getrennt von losen PDFs. Eine Suche nach `*.pdf` hätte diese
+100 Fälle nie gefunden — die Dateien heißen `.eml`.

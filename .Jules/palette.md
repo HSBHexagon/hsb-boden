@@ -1,0 +1,3 @@
+## 2026-08-21 - Visual Indicators for Required Fields and Focus States in LeadForm
+**Learning:** Added `aria-hidden="true"` red asterisks to explicitly required form fields. Native focus states may not be obvious enough, so explicit `focus-visible:ring-2 focus-visible:ring-hsb-red focus-visible:outline-none` classes must be added to all interactive elements to ensure clear keyboard navigation visibility. Used explicit CSS overrides and spans to maintain grid layout stability.
+**Action:** Always add visual asterisks for `required` inputs for sighted users, alongside the `required` HTML attribute, and ensure strong `focus-visible` ring indicators are applied to inputs, selects, and textareas for keyboard a11y.

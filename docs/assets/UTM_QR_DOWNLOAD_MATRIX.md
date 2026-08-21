@@ -1,11 +1,19 @@
 # UTM_QR_DOWNLOAD_MATRIX — HSB-Boden / HEXAFLOOR
 
-Status: `utm-structure-defined-qr-strategy-documented-awaiting-dns`
-Stand: 2026-06-26 | New doc — final pre-go-live documentation wave.
+Status: `utm-structure-verified-live-2026-08-11`
+Stand: 2026-06-26, Host-Korrektur 2026-08-11 | Ursprünglich als "awaiting-dns"
+(voller NS-Cutover) markiert — das ist überholt. Die Website läuft seit dem
+Pages-Cutover live über `www.hsb-boden.de` (Cloudflare Pages), der Apex
+`hsb-boden.de` leitet per 301 unter Erhalt aller Query-Parameter auf `www` um
+(live per `curl -I` verifiziert, 2026-08-11). Die Basis-URLs unten sind daher
+von `hsb-boden.de` auf `https://www.hsb-boden.de` korrigiert — kein separater
+NS-Cutover mehr nötig.
 
-**No URLs activated. No QR codes generated for production use before DNS switch.**
-All production URLs below require `hsb-boden.de` to be live (post-NS-switch).
-Workers.dev URLs are for internal testing only — never for outreach.
+**Live-Status 2026-08-11:** `https://www.hsb-boden.de/kontakt/` → HTTP 200.
+Beide Flyer-PDFs → HTTP 200, `content-type: application/pdf`. UTM-Parameter
+bleiben über den Apex→www-Redirect erhalten (verifiziert mit echtem
+`utm_source=email&utm_medium=outreach&utm_campaign=kaltakquise-2026-q3&utm_content=joel-flyer`-Test).
+Workers.dev URLs sind weiterhin nur für internes Testing — nie für Outreach.
 
 Canonical asset readiness: `docs/assets/ASSET_PACKAGE_AND_PUBLIC_DOWNLOAD_MAX_READINESS.md`
 
@@ -25,30 +33,30 @@ All parameter values must be lowercase with hyphens. No spaces. No special chara
 
 ---
 
-## Production URLs (Active Only After DNS Switch)
+## Production URLs (Live seit Pages-Cutover, verifiziert 2026-08-11)
 
-Base: `https://hsb-boden.de`
+Base: `https://www.hsb-boden.de`
 
 ### PDF Flyer Direct URLs
 
 ```
-https://hsb-boden.de/HSB-Flyer-Joel-Cherino.pdf
-https://hsb-boden.de/HSB-Flyer-Jordi-Post.pdf
-https://hsb-boden.de/HSB-Flyer-Geschaeftsfuehrer.pdf
+https://www.hsb-boden.de/HSB-Flyer-Joel-Cherino.pdf
+https://www.hsb-boden.de/HSB-Flyer-Jordi-Post.pdf
+https://www.hsb-boden.de/HSB-Flyer-Geschaeftsfuehrer.pdf
 ```
 
 ### Homepage with UTM
 
 ```
-https://hsb-boden.de/?utm_source=qr&utm_medium=flyer&utm_campaign=kaltakquise-2026-q3&utm_content=joel-flyer
+https://www.hsb-boden.de/?utm_source=qr&utm_medium=flyer&utm_campaign=kaltakquise-2026-q3&utm_content=joel-flyer
 ```
 
 ### PDF Download with UTM (Linked in Email)
 
 ```
-https://hsb-boden.de/HSB-Flyer-Joel-Cherino.pdf?utm_source=email&utm_medium=outreach&utm_campaign=kaltakquise-2026-q3&utm_content=joel-flyer
+https://www.hsb-boden.de/HSB-Flyer-Joel-Cherino.pdf?utm_source=email&utm_medium=outreach&utm_campaign=kaltakquise-2026-q3&utm_content=joel-flyer
 
-https://hsb-boden.de/HSB-Flyer-Jordi-Post.pdf?utm_source=email&utm_medium=outreach&utm_campaign=kaltakquise-2026-q3&utm_content=jordi-flyer
+https://www.hsb-boden.de/HSB-Flyer-Jordi-Post.pdf?utm_source=email&utm_medium=outreach&utm_campaign=kaltakquise-2026-q3&utm_content=jordi-flyer
 ```
 
 > **Note:** UTM parameters on direct PDF links are captured by GA4 as referral context
@@ -72,9 +80,9 @@ https://hsb-boden.de/HSB-Flyer-Jordi-Post.pdf?utm_source=email&utm_medium=outrea
 
 | Asset | Target URL | QR Points To |
 |-------|-----------|--------------|
-| Joel Cherino flyer | `https://hsb-boden.de/?utm_source=qr&utm_medium=flyer&utm_campaign=kaltakquise-2026-q3&utm_content=joel-flyer` | Homepage with UTM |
-| JORDI Post flyer | `https://hsb-boden.de/?utm_source=qr&utm_medium=flyer&utm_campaign=kaltakquise-2026-q3&utm_content=jordi-flyer` | Homepage with UTM |
-| Geschäftsführer flyer | `https://hsb-boden.de/?utm_source=qr&utm_medium=flyer&utm_campaign=kaltakquise-2026-q3&utm_content=gf-flyer` | Homepage with UTM |
+| Joel Cherino flyer | `https://www.hsb-boden.de/?utm_source=qr&utm_medium=flyer&utm_campaign=kaltakquise-2026-q3&utm_content=joel-flyer` | Homepage with UTM |
+| JORDI Post flyer | `https://www.hsb-boden.de/?utm_source=qr&utm_medium=flyer&utm_campaign=kaltakquise-2026-q3&utm_content=jordi-flyer` | Homepage with UTM |
+| Geschäftsführer flyer | `https://www.hsb-boden.de/?utm_source=qr&utm_medium=flyer&utm_campaign=kaltakquise-2026-q3&utm_content=gf-flyer` | Homepage with UTM |
 
 QR codes on printed flyers should point to the **homepage with UTM**, not directly to the PDF.
 This ensures GA4 fires on the landing page and the session is attributed correctly.
@@ -99,14 +107,14 @@ This ensures GA4 fires on the landing page and the session is attributed correct
 
 ### When to Generate QR Codes
 
-QR codes for the printed flyers must be generated **after DNS switch** using production URLs.
-Do not generate production QR codes with workers.dev URLs.
+Production ist live (verifiziert 2026-08-11) — QR-Codes können mit den
+Production-URLs oben generiert werden. Weiterhin nie mit workers.dev-URLs.
 
 ### Recommended QR Generation Tools
 
 | Tool | Type | Notes |
 |------|------|-------|
-| `qrencode` (CLI) | Local, open-source | `qrencode -o flyer-joel.png "https://hsb-boden.de/?utm_source=qr..."` |
+| `qrencode` (CLI) | Local, open-source | `qrencode -o flyer-joel.png "https://www.hsb-boden.de/?utm_source=qr..."` |
 | qr-code-generator.com | Web | Free, no account needed |
 | Canva QR widget | Design integrated | If flyers are edited in Canva |
 
@@ -162,7 +170,6 @@ GA4 Acquisition report (after 24h data):
 
 ## Forbidden
 
-- No production QR codes before DNS switch
 - No workers.dev URLs in any outreach material, printed flyer, or QR code
 - No UTM parameters capturing PII
 - No campaign names created without documenting in this file or CRM field

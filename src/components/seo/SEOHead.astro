@@ -29,6 +29,12 @@ const allJsonLd = [buildOrganizationJsonLd(), ...jsonLd];
 <link rel="icon" href="/brand/hsb-hexagon-mark.svg" type="image/svg+xml" />
 <link rel="alternate icon" href="/brand/hsb-boden-logo.png" type="image/png" />
 <link rel="apple-touch-icon" href="/brand/hsb-boden-logo.png" />
+
+<!-- Performance & Resource Hints -->
+<link rel="dns-prefetch" href="https://www.googletagmanager.com" />
+<link rel="dns-prefetch" href="https://static.cloudflareinsights.com" />
+<link rel="preconnect" href="https://region1.google-analytics.com" crossorigin />
+
 <meta property="og:type" content="website" />
 <meta property="og:title" content={resolvedTitle} />
 <meta property="og:description" content={description} />
@@ -43,4 +49,18 @@ const allJsonLd = [buildOrganizationJsonLd(), ...jsonLd];
 <meta name="twitter:description" content={description} />
 <meta name="twitter:image" content={socialImage} />
 <meta name="twitter:image:alt" content={socialImageAlt} />
+
+<!-- Google Consent Mode v2 Default Initialization -->
+<script is:inline>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('consent', 'default', {
+    'analytics_storage': 'denied',
+    'ad_storage': 'denied',
+    'ad_user_data': 'denied',
+    'ad_personalization': 'denied',
+    'wait_for_update': 500
+  });
+</script>
+
 {allJsonLd.map((item) => <script is:inline type="application/ld+json" set:html={sanitizeJsonLd(item)} />)}

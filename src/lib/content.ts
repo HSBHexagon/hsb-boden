@@ -1,6 +1,7 @@
 import { articles } from "../data/articles";
 import { clientLocations } from "../data/clientLocations";
 import { industries } from "../data/industries";
+import { jobs } from "../data/jobs";
 import { references } from "../data/references";
 import { services } from "../data/services";
 import { landing } from "./i18n";
@@ -214,6 +215,12 @@ export function getAllPublicPages() {
         "Karriere bei HSB: Arbeiten an anspruchsvollen Industrieböden, Säureschutzsystemen und Sanierungsprojekten in Produktionsbetrieben.",
       canonicalPath: "/karriere/",
     },
+    ...jobs.map((job) => ({
+      h1: job.title,
+      seoTitle: job.seoTitle,
+      description: job.shortDescription,
+      canonicalPath: `/karriere/${job.slug}/`,
+    })),
     // Rechtsseiten: gebaut, indexierbar und im Footer verlinkt — sie gehören
     // deshalb in die Sitemap. Titel und Beschreibung müssen mit den Werten in
     // src/pages/impressum/ bzw. src/pages/datenschutz/ übereinstimmen.

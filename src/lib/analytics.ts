@@ -42,7 +42,12 @@ export function createAnalyticsLoader(
     loaded = true;
 
     const gtag = getGtag();
-    gtag("consent", "update", { analytics_storage: "granted" });
+    gtag("consent", "update", {
+      analytics_storage: "granted",
+      ad_storage: "granted",
+      ad_user_data: "granted",
+      ad_personalization: "granted",
+    });
     gtag("js", new Date());
     gtag("config", measurementId, { send_page_view: true });
 
@@ -62,7 +67,14 @@ export function createAnalyticsLoader(
       return;
     }
 
-    if (loaded) getGtag()("consent", "update", { analytics_storage: "denied" });
+    if (loaded) {
+      getGtag()("consent", "update", {
+        analytics_storage: "denied",
+        ad_storage: "denied",
+        ad_user_data: "denied",
+        ad_personalization: "denied",
+      });
+    }
   }
 
   return {

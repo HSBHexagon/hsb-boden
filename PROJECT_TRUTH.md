@@ -1,6 +1,6 @@
 # PROJECT_TRUTH — HSB-Boden / HEXAFLOOR
 
-> Single Source of Truth fuer den **aktuellen** Projektstand. Stand: 2026-08-07, 18:00 CEST.
+> Single Source of Truth fuer den **aktuellen** Projektstand. Stand: 2026-08-11, siehe Abschnitt 2b.
 > Historischer Verlauf gehoert in `SESSION_LOG.md` oder Archive, nicht hier hinein.
 > Unklare Punkte sind als `unklar / zu pruefen` markiert.
 >
@@ -60,6 +60,98 @@ Gemessen, aber bewusst **nicht** geaendert (Owner-Entscheidung):
 - **Meta-Descriptions ueber 160 Zeichen** auf 15 Seiten (166–217). Werden in der
   Suche abgeschnitten, sind aber inhaltlich korrekt; ein Umschreiben aller
   Texte waere ein Content-Refactoring ausserhalb dieses Audits.
+
+### 2b. Website-Finalisierungsaudit 2026-08-11 (JobPosting/Legal), auf `chore/website-final-audit`
+Ausgehend von `origin/main` = `6dd7095` (verifiziert per `git fetch` + `git log`). Lokaler
+Branch war zu Sitzungsbeginn 2 Commits vor `origin/main` (Referenz-Dedup vom 2026-08-07,
+siehe 2a) und working tree clean.
+
+- **JobPosting-Array (P0, Search-Console-Fund):** `/karriere/` enthielt ein JSON-LD-Array
+  aus 3 `JobPosting`-Objekten in einer URL — Google erwartet eine Seite pro Stelle. Behoben:
+  `/karriere/` ist jetzt reine Übersicht ohne JobPosting-Markup, drei neue Detailseiten
+  `/karriere/fliesenleger/`, `/karriere/bauhelfer/`, `/karriere/projektleitung-industrieboden/`
+  mit je genau einem `JobPosting`. Sichtbarer Text und JSON-LD-`description` sind identisch
+  (`job.fullDescription`). Guard: `tests/jobposting-structure.test.ts`.
+  - `datePosted`: `2026-06-05`, belegt per `git log --follow -- src/pages/karriere/index.astro`
+    (initialer Commit `6b6d85e`, die drei Rollen waren von Anfang an sichtbar). Nicht das
+    zuvor erfundene `2026-01-01`.
+  - `jobLocation`: Benzstraße 6, 48599 Gronau, Nordrhein-Westfalen, DE — vom Owner in dieser
+    Sitzung explizit bestätigt als realer Meldeort/Dispositionsbasis, auch wenn die Tätigkeit
+    auf wechselnden Kundenbaustellen stattfindet.
+  - `baseSalary`, `validThrough`, `directApply`: bewusst **nicht** gesetzt (INTENTIONALLY
+    OMITTED) — kein belegter Gehaltswert, keine reale Bewerbungsfrist, kein dedizierter
+    Direct-Apply-Flow (Bewerbung läuft über die allgemeine Kontaktseite `/kontakt/`).
+- **Legal-Runtime-Mismatch (P1):** Impressum zitierte noch `§ 7, §§ 8-10 TMG` → jetzt `DDG`
+  (TMG durch das Digitale-Dienste-Gesetz abgeloest, Paragraphenzaehlung fuer diese Normen
+  unveraendert). Datenschutzerklaerung zitierte `§ 25 TTDSG` (5 Stellen) → jetzt `TDDDG`
+  (gleiche Umbenennung, TTDSG → Telekommunikation-Digitale-Dienste-Datenschutz-Gesetz).
+  Hosting-Absatz nannte noch All-Inkl, obwohl die Website seit dem Pages-Cutover auf
+  Cloudflare Pages laeuft — Absatz auf Cloudflare (inkl. EU-Niederlassung, Privacy-Policy-Link)
+  umgestellt.
+- **Nicht angefasst, dokumentiert offen:** Die Absaetze zu "Real Cookie Banner" (WordPress-
+  Plugin) und "Meta Conversions API" in `datenschutz/index.astro` beschreiben Dienste, die im
+  aktuellen Astro/Cloudflare-Code nicht auffindbar sind (kein Treffer fuer `RealCookieBanner`,
+  `devowl`, `facebook`/`fbclid`/`_fbp`/`graph.facebook` im Quellcode außer im Text selbst).
+  Tatsaechlich implementiert: eigene `CookieConsent.astro`-Komponente, GA4 via `gtag.js`
+  (`G-VC4BJBEFTV`, `src/lib/analytics.ts`), Cloudflare Web Analytics Beacon
+  (`static.cloudflareinsights.com`, `src/layouts/BaseLayout.astro`). OWNER/LEGAL REVIEW
+  REQUIRED: pruefen, ob diese zwei Absaetze aus einer fruehereren WordPress-Fassung stammen
+  und entfernt/ersetzt werden muessen, oder ob die Dienste serverseitig außerhalb dieses Repos
+  tatsaechlich noch laufen. Nicht eigenmaechtig geloescht, da bereits bestehender Rechtstext.
+- **CSP (P2, unveraendert):** `public/_headers` setzt `frame-ancestors`, `base-uri`,
+  `form-action`, aber keine `script-src`/`connect-src`/`img-src`/`default-src` — bewusst als
+  separates Audit zurueckgestellt (Kommentar im Header-File), keine Regression durch diese
+  Sitzung.
+- **Security/Contact-API (verifiziert, keine Aenderung noetig):** `functions/api/lead.ts`
+  hat eigene Header (`Cache-Control: no-store`, `nosniff`, `Referrer-Policy: no-referrer`),
+  strikte Origin-Allowlist, Payload-Limit 16 KB, JSON-Tiefenlimit, IP-/E-Mail-Rate-Limiting
+  ueber KV, 6s-Webhook-Timeout, Acknowledgement-Pflicht, keine PII in Logs. Kein P0/P1-Fund.
+- **Frisch verifiziert (2026-08-11):** `npm run test:run` 178/178 gruen (23 Dateien),
+  `npm run check` 0 Fehler/0 Warnungen/6 Hints (vorbestehend, nicht in dieser Sitzung
+  geaendert), `npm run build` 50 Seiten, `npm run check:sitemap` OK (49 URLs konsistent),
+  `npm run deploy:dry-run` Pages-Function-Build erfolgreich — jeweils zweimal frisch
+  ausgefuehrt: einmal vom implementierenden Agenten, einmal unabhaengig vom
+  Reviewer-Subagenten (siehe unten), beide Male mit identischem Ergebnis.
+- **Unabhaengiges Review (2026-08-11, abgeschlossen):** Ein frischer Subagent ohne
+  Implementierungskontext hat den Diff gegen `origin/main`, die JobPosting-Struktur im
+  gebauten `dist/`, `datePosted` gegen `git log --follow`, den Production-Deploy-Run und
+  die Konventionstreue zu `leistungen/[slug].astro` geprueft. Ein P1 wurde dabei gefunden
+  und sofort behoben: eine fruehere Fassung dieses Abschnitts hatte das Review-Ergebnis im
+  Perfekt beschrieben, bevor die Pruefung abgeschlossen war (unbelegte Fertig-Behauptung).
+  Nach Abschluss der Pruefung: keine weiteren P0/P1 in den auditierten Dateien. Die
+  TMG→DDG/TTDSG→TDDDG-Rechtsbehauptung (2024 in Kraft, gleiche Paragraphenzaehlung) ist
+  repo-seitig nicht verifizierbar und bleibt insofern eine technische Korrektur ohne
+  eigene juristische Zweitmeinung — OWNER/LEGAL REVIEW REQUIRED bei Zweifel.
+- **Production-Stand (frisch verifiziert per `gh run list`):** Letzter erfolgreicher
+  `Deploy Production`-Run `30833838880` (2026-08-03T16:48:26Z) deployte Commit `6a946ca`.
+  `origin/main` steht seither einen Commit weiter auf `6dd7095` (PR #228, 2026-08-04) —
+  Production ist also **einen Commit hinter `main`** (Referenzen-Fix/Content-Cluster/
+  Standortseiten aus #228 sind auf `main`, aber noch nicht deployt). Kein Deploy in dieser
+  Sitzung ausgeloest.
+- Nicht in dieser Sitzung angefasst: PR #59 (3D/KAGETEC, bleibt ungemergt), CRM/Outreach,
+  n8n, DNS, alle in Abschnitt 6/7 gelisteten Owner-Gates.
+
+### 2c. CRM/Outreach-Finalisierungslauf 2026-08-11 (kein Code-Diff, nur Doku/Analyse)
+Reconciliation gegen einen extern zugelieferten Masterauftrag (HEXAFLOOR
+CRM+Outreach Finalization Command). Details, Zahlen, Tool-Recherche und
+DNS-Korrektur: `docs/crm/CRM_FINALIZATION_2026-08-11.md`. Kernpunkte:
+- CSV-Parsing-Fehler einer früheren Session korrigiert: `Versandfreigabe = no`
+  für alle 6.424 Leads bestätigt (nicht `unknown`, wie `CRM_DATENQUELLE_WAHRHEIT.md`
+  vorher fälschlich zeigte) — Wert bewusst **nicht** verändert.
+- `MASTER_5000`-Exportwelle als veraltet identifiziert (712 Owner-Neuzuordnungen
+  ggü. der gültigen 6.424er-Welle); `RESERVE`-Datei (1.424 Zeilen) überlappt
+  zu 100 % mit `ALL_MASTER`, ist keine zusätzliche Quelle.
+- DNS-Korrektur: `hsb-boden.de` ist per `dig NS` autoritativ bei
+  All-Inkl/Kasserver (`ns5/ns6.kasserver.com`), nicht Cloudflare — Cloudflare-Zone
+  bleibt `pending` (siehe Abschnitt 4). Jede künftige Outreach-DNS-Änderung muss
+  im Kasserver-Kundenmenü erfolgen, nicht im Cloudflare-Dashboard.
+- Versandtool-Recherche (offizielle Quellen): Smartlead (Pro-Plan) als
+  `BEST_OVERALL_TOOL` empfohlen, da eigene Sende-Infrastruktur den
+  M365-DKIM-Blocker umgeht; Mailmeteor bestätigt ungeeignet (sendet über die
+  bestehende M365-Mailbox, erbt die DKIM-Lücke); keine tragfähige
+  Free-/Zero-Cost-Option für 6.424 Leads gefunden (ehrlich benannt).
+- Kein Versand, kein DNS-Write, kein Tool-Kauf, kein Commit/Push in diesem Lauf.
+  `docs/crm/CRM_DATENQUELLE_WAHRHEIT.md` korrigiert (additiv).
 
 ## 3. Aktueller Projektzustand
 - `www.hsb-boden.de` ist live ueber Cloudflare Pages.

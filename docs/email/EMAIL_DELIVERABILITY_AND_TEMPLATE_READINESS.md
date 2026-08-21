@@ -67,7 +67,13 @@ Templates below are structure and placeholder examples.
 No template may be sent without: real lead data, DKIM active, recipient basis documented,
 opt-out wording approved, and batch approved per `docs/launch/PHASE_7_COMPLIANCE_GATE.md`.
 
-### Template 1 — Initial Cold Outreach (Flyer Dispatch)
+**Stabile IDs (vergeben 2026-08-11, für Export-Mapping):**
+`EMAIL_TEMPLATE_JOEL_PRIMARY` (Template 1), `EMAIL_TEMPLATE_JORDI_PRIMARY`
+(Template 2), `EMAIL_TEMPLATE_FOLLOWUP_14D` (Template 3),
+`EMAIL_TEMPLATE_WEBFORM_FOLLOWUP` (Template 4, nicht für Kaltakquise-Batch
+relevant — nur Inbound-Leads).
+
+### Template 1 — Initial Cold Outreach (Flyer Dispatch) — `EMAIL_TEMPLATE_JOEL_PRIMARY`
 
 **Subject:** Industriebodenbeläge für [Firmenname] – Unser Angebot
 
@@ -100,13 +106,13 @@ mit dem Betreff „Abmelden" auf diese E-Mail.
 
 **Attachment:** `HSB-Flyer-Joel-Cherino.pdf` (254 KB)
 
-### Template 2 — JORDI Post Variant
+### Template 2 — JORDI Post Variant — `EMAIL_TEMPLATE_JORDI_PRIMARY`
 
 **Subject:** Industrieböden für [Firmenname] – Beratung von JORDI Post
 
 **Body:** Same structure, adapted to JORDI's role and flyer variant (`HSB-Flyer-Jordi-Post.pdf`).
 
-### Template 3 — Follow-Up (After No Reply, 14 Days)
+### Template 3 — Follow-Up (After No Reply, 14 Days) — `EMAIL_TEMPLATE_FOLLOWUP_14D`
 
 **Subject:** Kurze Nachfrage – Bodenbeläge für [Firmenname]
 
@@ -126,7 +132,7 @@ j-cherino@hsb-boden.de
 Wenn Sie keine Nachrichten mehr erhalten möchten: kurze Antwort genügt.
 ```
 
-### Template 4 — Flyer Download Follow-Up (Website Lead)
+### Template 4 — Flyer Download Follow-Up (Website Lead) — `EMAIL_TEMPLATE_WEBFORM_FOLLOWUP`
 
 For leads who submitted the website form (auto-routed to CRM):
 
@@ -180,17 +186,24 @@ On receipt of an opt-out reply:
 ## Flyer Link Strategy in Emails
 
 PDF flyers may be attached directly (under 300 KB each — within standard attachment limits)
-or linked via the production URL after DNS switch:
+or linked via the live production URL (verified 2026-08-11, `curl -I` → HTTP 200):
 
 ```
-https://hsb-boden.de/HSB-Flyer-Joel-Cherino.pdf
+https://www.hsb-boden.de/HSB-Flyer-Joel-Cherino.pdf
 ```
 
 With UTM parameters for tracking (see `docs/assets/UTM_QR_DOWNLOAD_MATRIX.md`):
 
 ```
-https://hsb-boden.de/HSB-Flyer-Joel-Cherino.pdf?utm_source=email&utm_medium=outreach&utm_campaign=kaltakquise-2026-q3&utm_content=joel-flyer
+https://www.hsb-boden.de/HSB-Flyer-Joel-Cherino.pdf?utm_source=email&utm_medium=outreach&utm_campaign=kaltakquise-2026-q3&utm_content=joel-flyer
 ```
+
+**Landing URL (verifiziert 2026-08-11):** `https://www.hsb-boden.de/kontakt/` —
+HTTP 200, Kontaktformular vorhanden, UTM-Parameter bleiben über den
+Apex→www-301-Redirect erhalten. Die vier Templates unten nutzen aktuell
+Anhang+Telefon als CTA, keinen Landing-Link im Fließtext — das ist eine
+bestehende, bewusste Entscheidung dieses Dokuments (structure-only), nicht in
+dieser Sitzung geändert.
 
 Workers.dev URL must NOT be used in outreach emails — it is for internal testing only.
 

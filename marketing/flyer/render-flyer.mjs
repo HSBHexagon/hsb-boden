@@ -5,8 +5,8 @@ import { dirname, resolve } from "node:path";
 import { statSync } from "node:fs";
 
 const here = dirname(fileURLToPath(import.meta.url));
-const htmlPath = resolve(here, "flyer.html");
-const outPath = resolve(here, "HSB-Industrieboden-Flyer.pdf");
+const htmlPath = resolve(here, process.env.FLYER_HTML ?? "flyer.html");
+const outPath = resolve(here, process.env.FLYER_OUTPUT ?? "HSB-Industrieboden-Flyer.pdf");
 
 const browser = await chromium.launch();
 const page = await browser.newPage();

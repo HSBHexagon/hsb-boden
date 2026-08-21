@@ -2,6 +2,7 @@
 // damit sie ohne echte Lead-Dateien (PII) getestet werden können — siehe
 // tests/outreach-engine.test.ts, das ausschließlich mit synthetischen
 // Fixtures arbeitet.
+import { createHash } from "node:crypto";
 //
 // Statusmodell (aus dem Masterauftrag übernommen, an bestehende
 // `Send_Status`-Spalte angelehnt):
@@ -132,11 +133,12 @@ export async function executeBatch(readyItems, { state, provider, dryRun, campai
     }
 
     const attempt = (prior.attempts || 0) + 1;
-    state.leads[key] = { ...prior, status: STATUS.SENDING, campaignId, lastAttemptAt: now(), lastRunId: runId };
+    const idempotencyKey = createHash("sha256").update(`${key}_${campaignId || "default"}_${attempt}`).digest("hex");
+    state.leads[key] = { ...prior, status: STATUS.SENDING, campaignId, lastAttemptAt: now(), lastRunId: runId, idempotencyKey };
 
     let sendResult;
     try {
-      sendResult = await provider.send(lead, { campaignId });
+      sendResult = await provider.send(lead, { campaignId, idempotencyKey });
     } catch (err) {
       sendResult = { ok: false, error: `PROVIDER_EXCEPTION: ${err.message}` };
     }

@@ -187,3 +187,27 @@ eine Zahl im Feld.
 Beide verbleibenden Schritte sind OAuth-Vorgänge mit deinen Zugangsdaten.
 Die macht der Nutzer selbst — das ist eine feste Regel, keine technische
 Einschränkung.
+
+---
+
+## Eingebaut am 2026-08-21
+
+| | |
+|---|---|
+| Skript-ID | `1Xl6xkMTyn3Hu6UvBoX7gVrdppuyRal04NH6Ei16hnz_Pfuq-JWmh9U4c` |
+| Gebunden an | `1W-NjwEq0UhDo2TaeS-2qp_qit4YFMz6k-IqKHlPpHmg` (HSB CRM MASTER) |
+| Eigentümer | `cherinodiaz@outlook.com` |
+| Editor | <https://script.google.com/d/1Xl6xkMTyn3Hu6UvBoX7gVrdppuyRal04NH6Ei16hnz_Pfuq-JWmh9U4c/edit> |
+
+Serverseitig verifiziert: Manifest `Europe/Berlin` mit allen fünf OAuth-Scopes,
+`HSB_SALES_OS.js` und `Sidebar.html` byte-identisch zur Quelle (SHA-256).
+
+Künftige Änderungen: Quelldateien unter `apps_script/` bearbeiten, dann
+`./deploy.sh`. Kein Browser mehr nötig.
+
+### Gelernt
+
+`clasp` muss mit dem **Eigentümerkonto** angemeldet sein. Mit einem fremden
+Konto scheitert das Binden an `The caller does not have permission` — und
+`--type sheets` legt dann still ein neues, leeres Spreadsheet an, statt den
+Fehler zu melden. `deploy.sh` prüft das Konto deshalb vorab.

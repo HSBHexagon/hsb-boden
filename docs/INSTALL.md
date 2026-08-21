@@ -73,7 +73,7 @@ Nur zwei Einfügevorgänge nötig — die vier Script-Teile sind gebündelt:
 > findet `HtmlService.createHtmlOutputFromFile('Sidebar')` die Datei nicht.
 
 Die gebündelte Datei ist mit derselben Testsuite geprüft wie die
-Einzeldateien (62/62). Wer lieber vier getrennte Dateien pflegt, kann
+Einzeldateien (79/79). Wer lieber vier getrennte Dateien pflegt, kann
 stattdessen `Config.gs`, `Engine.gs`, `Actions.gs` und `Code.gs` einzeln
 anlegen — die Reihenfolge spielt keine Rolle, Apps Script teilt sich einen
 gemeinsamen Namensraum.

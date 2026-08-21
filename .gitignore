@@ -5,3 +5,6 @@ batches/
 assets/drive_verify/
 tests/last_run.json
 tests/last_run_apps_script.json
+SCRIPT_ID
+deploy/.clasp.json
+_FALSCHE_BINDUNG_*

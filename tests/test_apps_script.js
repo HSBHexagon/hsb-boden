@@ -498,6 +498,84 @@ function testDashboard() {
         'eligible=' + d.owners.JORDI.eligible);
 }
 
+
+function testEmlExportChunking() {
+  loadRealFlyers();
+  setupSheet(60, 'JORDI');
+  const b = ctx.prepareBatch({ owner: 'JORDI', count: 45 });
+  check('Batch fuer Export vorbereitet', b.stats.selected_count === 45);
+  ctx.invalidateLeadsCache_();
+
+  const r = ctx.exportBatchAsEmlZip(b.batch_id, 0);
+  check('Export liefert Teilpakete', r.parts.length >= 2,
+        r.parts.length + ' Pakete');
+  check('Export deckt alle Entwuerfe ab', r.written === 45,
+        'written=' + r.written + ' von ' + r.total);
+  check('Export als vollstaendig markiert', r.complete === true);
+  check('kein Fortsetzungsindex noetig', r.next_index === null);
+  const sum = r.parts.reduce(function (s, p) { return s + p.count; }, 0);
+  check('Summe der Teilpakete = Gesamtzahl', sum === 45, 'sum=' + sum);
+  check('kein Teilpaket groesser als das Limit',
+        r.parts.every(function (p) { return p.count <= 20; }));
+  check('Export nennt den Asset-Hash', r.asset_sha256 === FLYERS_.JORDI.sha256);
+
+  // Fortsetzung ab der Mitte darf nicht von vorn beginnen.
+  const r2 = ctx.exportBatchAsEmlZip(b.batch_id, 40);
+  check('Fortsetzung ab Index 40 liefert nur den Rest', r2.written === 5,
+        'written=' + r2.written);
+}
+
+function testFollowUps() {
+  loadRealFlyers();
+  setupSheet(10, 'JORDI');
+  // Zwei Faellige, einer in der Zukunft.
+  ctx.setLeadStatus('TEST-JORDI-1', 'REPLIED', 0, 'Rueckmeldung');
+  ctx.setLeadStatus('TEST-JORDI-2', 'FOLLOWUP', -1, '');
+  ctx.setLeadStatus('TEST-JORDI-3', 'FOLLOWUP', 30, '');
+  ctx.invalidateLeadsCache_();
+
+  const due = ctx.getDueFollowUps('JORDI');
+  const ids = due.map(function (d) { return d.Lead_ID; });
+  check('Wiedervorlage in 30 Tagen ist NICHT faellig',
+        ids.indexOf('TEST-JORDI-3') === -1);
+  check('Wiedervorlage liefert eine Liste', Array.isArray(due));
+
+  // Opt-out darf nie in der Wiedervorlage auftauchen.
+  ctx.setLeadStatus('TEST-JORDI-4', 'FOLLOWUP', -1, '');
+  ctx.setLeadStatus('TEST-JORDI-4', 'OPT_OUT', 0, '');
+  ctx.invalidateLeadsCache_();
+  const due2 = ctx.getDueFollowUps('JORDI');
+  check('abgemeldeter Lead erscheint nicht in der Wiedervorlage',
+        due2.map(function (d) { return d.Lead_ID; }).indexOf('TEST-JORDI-4') === -1);
+}
+
+function testEnsureColumns() {
+  // Blatt ohne die zwoelf Zusatzspalten.
+  const shortHeader = HEADER.slice(0, 19);
+  const data = [shortHeader];
+  for (let i = 1; i <= 5; i++) data.push(row(i, 'JORDI').slice(0, 19));
+  SHEETS = { ALL_LEADS: makeSheet('ALL_LEADS', data), BATCHES: makeSheet('BATCHES', []),
+             ACTIVITIES: makeSheet('ACTIVITIES', []), INBOUND_EVENTS: makeSheet('INBOUND_EVENTS', []) };
+  ctx.invalidateLeadsCache_();
+
+  const r = ctx.ensureColumns();
+  check('ensureColumns ergaenzt zwoelf Spalten', r.added.length === 12,
+        r.added.length + ' ergaenzt');
+
+  const hdr = SHEETS.ALL_LEADS._data[0];
+  check('Legal_Basis angelegt', hdr.indexOf('Legal_Basis') >= 0);
+  check('Suppressed angelegt', hdr.indexOf('Suppressed') >= 0);
+
+  const lbCol = hdr.indexOf('Legal_Basis');
+  check('Legal_Basis fail-closed auf UNKNOWN vorbelegt',
+        SHEETS.ALL_LEADS._data[1][lbCol] === 'UNKNOWN',
+        String(SHEETS.ALL_LEADS._data[1][lbCol]));
+
+  ctx.invalidateLeadsCache_();
+  const r2 = ctx.ensureColumns();
+  check('ensureColumns ist idempotent', r2.added.length === 0, r2.message);
+}
+
 /* ---------------------------------------------------------------- main */
 
 console.log('='.repeat(70));
@@ -507,7 +585,7 @@ console.log('='.repeat(70));
 [testAssetGate, testEligibility, testDynamicCounts, testGateNotBypassable,
  testEmptyBatchExplained, testEmailDedup, testNoCrossSender, testEmlStructure,
  testQualifyAndDedupWrite, testSuppression, testDuplicateBatchProtection,
- testDashboard].forEach(function (fn) {
+ testDashboard, testEmlExportChunking, testFollowUps, testEnsureColumns].forEach(function (fn) {
   console.log('\n--- ' + fn.name + ' ---');
   try { fn(); } catch (e) {
     check(fn.name + ' ohne Ausnahme', false, e.message + '\n' + e.stack);

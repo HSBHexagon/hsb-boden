@@ -1,11 +1,11 @@
 /**
  * HSB Sales OS - Gesamtdatei (Config + Engine + Actions + Code).
  *
- * Alles in einer Datei, damit beim Einbau nur zwei Dateien noetig sind:
- * diese hier als Script und Sidebar.html als HTML.
+ * ERZEUGT von engine/build_single.py - nicht direkt bearbeiten.
+ * Aenderungen gehoeren in die Quelldateien unter apps_script/.
  *
- * Erzeugt aus apps_script/*.gs - nicht direkt bearbeiten, sondern die
- * Quelldateien aendern und neu buendeln (build_single.py).
+ * Apps Script teilt sich einen gemeinsamen Namensraum ueber alle Dateien
+ * eines Projekts; das Buendeln aendert daher nichts am Verhalten.
  */
 
 

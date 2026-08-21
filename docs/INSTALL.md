@@ -1,9 +1,51 @@
-# Installation — einmalig, ca. 10 Minuten
+# Installation
 
 Die Oberfläche läuft als Apps Script direkt im Google Sheet. Kein Server,
 keine Domain, kein Admin, keine App-Registrierung.
 
+Zwei Wege — **Weg A ist der kürzere.**
+
 ---
+
+## Weg A: automatisch per clasp (empfohlen)
+
+`clasp` ist bereits installiert (`@google/clasp` 3.3.0, offizielles
+Google-Paket).
+
+**Zwei einmalige Schritte im Browser — nur du kannst sie machen:**
+
+1. **Apps Script API einschalten**
+   <https://script.google.com/home/usersettings> → Schalter
+   „Google Apps Script API" auf **AN**
+
+2. **Anmelden**
+   ```bash
+   clasp login
+   ```
+   Öffnet den Google-Anmeldedialog. Nimm das Konto, dem das Sheet gehört.
+
+**Danach genügt ein Befehl:**
+
+```bash
+cd ~/KI-System/02_Projects/active/hsb-sales-os
+./deploy.sh
+```
+
+Das Skript bündelt die Quelldateien, legt beim ersten Lauf ein an das Sheet
+gebundenes Apps-Script-Projekt an und lädt Code plus Oberfläche hoch. Jeder
+weitere Lauf aktualisiert nur.
+
+Anschließend im Browser: Sheet neu laden → Menü **HSB Sales OS** →
+**Spalten prüfen / ergänzen** → **Flyer-Pruefung** → **Sales OS öffnen**.
+
+> Warum diese zwei Schritte nicht automatisierbar sind: Beide sind
+> OAuth-Vorgänge mit deinen Zugangsdaten. Die gehören dir, nicht dem Agenten.
+
+---
+
+## Weg B: manuell einfügen (ca. 10 Minuten)
+
+Falls du die Apps Script API nicht einschalten willst.
 
 ## 1. Apps Script anlegen
 
@@ -134,17 +176,14 @@ Nicht vorab prüfbar, weil es das installierte Skript braucht:
 Outlook-Entwurfsordner landen, ist der Weg bewiesen und die Menge nur noch
 eine Zahl im Feld.
 
-## Warum das nicht ferngesteuert eingebaut werden konnte
+## Warum zwei Schritte bei dir bleiben
 
-Drei Wege wurden geprüft, alle drei sind von hier aus zu:
+| Weg | Zustand |
+|---|---|
+| Sheets-API direkt | Zu. Spaltenanlage scheitert an Rastergrenzen (`Max columns: 44`), und ein Apps-Script-Projekt lässt sich darüber ohnehin nicht anlegen. |
+| **clasp** | **Offen** — installiert und vorbereitet. Fehlen nur API-Schalter und `clasp login`. |
+| Browser-Automatisierung | Zu, solange die Chrome-Erweiterung nicht verbunden ist. |
 
-1. **Sheets-API direkt** — das Anlegen der zwölf Spalten scheitert an den
-   Rastergrenzen (`exceeds grid limits. Max columns: 44`). Ein Apps-Script-
-   Projekt lässt sich über diese API ohnehin nicht anlegen.
-2. **`clasp`** — nicht installiert, und bräuchte zusätzlich das Aktivieren der
-   Apps Script API sowie eine eigene Google-Anmeldung durch dich.
-3. **Browser-Automatisierung** — die Chrome-Erweiterung ist derzeit nicht
-   verbunden.
-
-Ist die Chrome-Erweiterung verbunden, kann der Einbau beim nächsten Mal
-ferngesteuert erfolgen.
+Beide verbleibenden Schritte sind OAuth-Vorgänge mit deinen Zugangsdaten.
+Die macht der Nutzer selbst — das ist eine feste Regel, keine technische
+Einschränkung.

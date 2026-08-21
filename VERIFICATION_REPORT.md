@@ -28,7 +28,7 @@ gesehener Ausgabe. Nicht Belegtes ist als solches gekennzeichnet.
 | `INBOUND_SYNC` | **EXTERNAL_BLOCKER** | siehe unten |
 
 **Python-Engine: 76/76 bestanden.**
-**Apps Script (der ausgelieferte Code): 62/62 bestanden.**
+**Apps Script (der ausgelieferte Code): 79/79 bestanden.**
 `RELEASE_MANIFEST.json` → `release_status: READY`.
 
 ### Warum zwei Testsuiten
@@ -178,7 +178,7 @@ weg — reversibel, per Quarantäne.
 cd ~/KI-System/02_Projects/active/hsb-sales-os
 
 python3 tests/test_matrix.py                     # 76/76 (Python-Engine)
-node    tests/test_apps_script.js                # 62/62 (ausgelieferter Code)
+node    tests/test_apps_script.js                # 79/79 (ausgelieferter Code)
 python3 engine/hsb.py gate                       # VISUAL_PDF_GATE: PASS
 python3 engine/hsb.py inventory --write          # 10 kanonisch / 0 veraltet
 python3 engine/asset_inventory.py --eml          # EML-Anhänge separat

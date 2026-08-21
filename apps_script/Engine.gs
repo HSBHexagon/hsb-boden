@@ -229,114 +229,175 @@ function activeBatchLeadIds_() {
 
 /**
  * Bereitet einen Batch mit beliebigem N vor.
- * opts: { owner, count, campaign, industry, tier }
+ * opts: { owner, count, campaign, industry, tier, batch_id }
  */
 function prepareBatch(opts) {
+  opts = opts || {};
   const ownerKey = normalizeOwner_(opts.owner);
   const count = Math.max(0, parseInt(opts.count, 10) || 0);
 
   // Asset-Gate zuerst - vor jeder Auswahl.
   const verified = getVerifiedFlyer_(ownerKey);
 
-  const read = readLeadsCached_();
-  const active = activeBatchLeadIds_();
-  const stats = {
-    requested_count: count, total_pool: 0, eligible_count: 0,
-    selected_count: 0, excluded_count: 0, already_contacted_count: 0,
-    suppressed_count: 0, optout_count: 0, bounce_count: 0,
-    invalid_email_count: 0, no_legal_basis_count: 0, no_release_count: 0,
-    in_active_batch_count: 0, shortfall: 0
-  };
-  const reasons = {};
-  const pool = [];
-
-  read.leads.forEach(function (lead) {
-    if (normalizeOwner_(lead.Owner) !== ownerKey) return;
-    if (opts.industry && String(lead.Industry || '').trim() !== opts.industry) return;
-    if (opts.tier && String(lead.Tier || '').trim().toUpperCase()
-        !== String(opts.tier).trim().toUpperCase()) return;
-    stats.total_pool++;
-
-    if (active[lead.Lead_ID]) {
-      stats.in_active_batch_count++; stats.excluded_count++;
-      reasons['bereits in aktivem Batch'] =
-        (reasons['bereits in aktivem Batch'] || 0) + 1;
-      return;
-    }
-    const res = checkEligibility_(lead);
-    if (res.eligible) { stats.eligible_count++; pool.push(lead); return; }
-
-    stats.excluded_count++;
-    res.reasons.forEach(function (r) {
-      reasons[r] = (reasons[r] || 0) + 1;
-      if (r.indexOf('Legal_Basis') === 0) stats.no_legal_basis_count++;
-      else if (r.indexOf('Versandfreigabe') === 0) stats.no_release_count++;
-      else if (r === 'Suppressed=YES') stats.suppressed_count++;
-      else if (r === 'Opt_Out=YES') stats.optout_count++;
-      else if (r === 'Hard Bounce') stats.bounce_count++;
-      else if (r === 'bereits gesendet') stats.already_contacted_count++;
-      else if (r.indexOf('E-Mail') === 0) stats.invalid_email_count++;
-    });
-  });
-
-  // Deterministisch: Tier A zuerst, dann Lead-ID.
-  pool.sort(function (a, b) {
-    const ta = String(a.Tier || '').toUpperCase() === 'A' ? 0 : 1;
-    const tb = String(b.Tier || '').toUpperCase() === 'A' ? 0 : 1;
-    if (ta !== tb) return ta - tb;
-    return String(a.Lead_ID).localeCompare(String(b.Lead_ID));
-  });
-
-  // Dublettenschutz auf Adressebene: zwei Datensaetze koennen
-  // unterschiedliche Lead-IDs und dieselbe E-Mail tragen. Ohne diesen
-  // Schritt bekaeme derselbe Empfaenger zwei Mails aus einem Batch.
-  const seenEmails = {};
-  const deduped = [];
-  pool.forEach(function (l) {
-    const key = String(l.Email || '').trim().toLowerCase();
-    if (seenEmails[key]) {
-      stats.excluded_count++;
-      stats.eligible_count--;
-      reasons['doppelte E-Mail-Adresse'] =
-        (reasons['doppelte E-Mail-Adresse'] || 0) + 1;
-      return;
-    }
-    seenEmails[key] = true;
-    deduped.push(l);
-  });
-
-  const selected = deduped.slice(0, count);
-  stats.selected_count = selected.length;
-  stats.shortfall = Math.max(0, count - selected.length);
-
-  const batchId = 'HSB-' + Utilities.formatDate(new Date(), CFG.TIMEZONE, 'yyyyMMdd')
-    + '-' + ownerKey + '-'
-    + ('000' + nextBatchSeq_(ownerKey)).slice(-4);
-
-  if (selected.length) {
-    writeBatchToLeads_(read, selected, batchId);
-    appendBatchRow_(batchId, ownerKey, opts.campaign || '', 'PREPARED',
-                    stats, verified.sha256);
-    logActivity_(batchId, 'PREPARED',
-                 selected.length + ' Leads reserviert fuer ' + ownerKey);
+  const lock = (typeof LockService !== 'undefined' && LockService.getDocumentLock)
+    ? LockService.getDocumentLock()
+    : null;
+  const hasLock = lock ? lock.tryLock(30000) : true;
+  if (!hasLock) {
+    throw new Error('LOCK_TIMEOUT: Ein anderer Vorgang greift gerade auf das Sheet zu. Bitte in Kürze erneut versuchen.');
   }
 
-  return {
-    batch_id: batchId,
-    owner: ownerKey,
-    owner_display: verified.flyer.displayName,
-    mailbox: verified.flyer.mailbox,
-    asset_file: verified.flyer.fileName,
-    asset_sha256: verified.sha256,
-    asset_drive_id: verified.flyer.driveId,
-    status: selected.length ? 'PREPARED' : 'EMPTY_NO_ELIGIBLE_LEADS',
-    stats: stats,
-    exclusion_reasons: reasons,
-    leads: selected.map(function (l) {
-      return { Lead_ID: l.Lead_ID, Company: l.Company, Email: l.Email,
-               Contact: l.Contact, Tier: l.Tier };
-    })
-  };
+  try {
+    invalidateLeadsCache_();
+    const read = readLeadsCached_();
+
+    // Idempotenzpruefung bei expliziter Batch_ID
+    const explicitBatchId = opts.batch_id ? String(opts.batch_id).trim() : null;
+    if (explicitBatchId) {
+      const batchesSh = sheet_(CFG.SHEET_BATCHES);
+      if (batchesSh.getLastRow() >= 2) {
+        const bData = batchesSh.getRange(2, 1, batchesSh.getLastRow() - 1, 13).getValues();
+        for (let bi = 0; bi < bData.length; bi++) {
+          if (String(bData[bi][0]) === explicitBatchId) {
+            const existingLeads = read.leads.filter(function (l) {
+              return String(l.Batch_ID) === explicitBatchId;
+            });
+            existingLeads.sort(function (a, b) {
+              const ta = String(a.Tier || '').toUpperCase() === 'A' ? 0 : 1;
+              const tb = String(b.Tier || '').toUpperCase() === 'A' ? 0 : 1;
+              if (ta !== tb) return ta - tb;
+              return String(a.Lead_ID).localeCompare(String(b.Lead_ID));
+            });
+            return {
+              batch_id: explicitBatchId,
+              owner: bData[bi][1],
+              owner_display: (FLYERS[bData[bi][1]] || {}).displayName || bData[bi][1],
+              mailbox: (FLYERS[bData[bi][1]] || {}).mailbox || '',
+              asset_file: (FLYERS[bData[bi][1]] || {}).fileName || '',
+              asset_sha256: bData[bi][9],
+              asset_drive_id: (FLYERS[bData[bi][1]] || {}).driveId || '',
+              status: bData[bi][3],
+              stats: {
+                requested_count: bData[bi][4],
+                selected_count: bData[bi][5],
+                eligible_count: bData[bi][6],
+                excluded_count: bData[bi][7],
+                shortfall: bData[bi][8]
+              },
+              already_processed: true,
+              leads: existingLeads.map(function (l) {
+                return { Lead_ID: l.Lead_ID, Company: l.Company, Email: l.Email,
+                         Contact: l.Contact, Tier: l.Tier };
+              })
+            };
+          }
+        }
+      }
+    }
+
+    const active = activeBatchLeadIds_();
+    const stats = {
+      requested_count: count, total_pool: 0, eligible_count: 0,
+      selected_count: 0, excluded_count: 0, already_contacted_count: 0,
+      suppressed_count: 0, optout_count: 0, bounce_count: 0,
+      invalid_email_count: 0, no_legal_basis_count: 0, no_release_count: 0,
+      in_active_batch_count: 0, shortfall: 0
+    };
+    const reasons = {};
+    const pool = [];
+
+    read.leads.forEach(function (lead) {
+      if (normalizeOwner_(lead.Owner) !== ownerKey) return;
+      if (opts.industry && String(lead.Industry || '').trim() !== opts.industry) return;
+      if (opts.tier && String(lead.Tier || '').trim().toUpperCase()
+          !== String(opts.tier).trim().toUpperCase()) return;
+      stats.total_pool++;
+
+      if (active[lead.Lead_ID]) {
+        stats.in_active_batch_count++; stats.excluded_count++;
+        reasons['bereits in aktivem Batch'] =
+          (reasons['bereits in aktivem Batch'] || 0) + 1;
+        return;
+      }
+      const res = checkEligibility_(lead);
+      if (res.eligible) { stats.eligible_count++; pool.push(lead); return; }
+
+      stats.excluded_count++;
+      res.reasons.forEach(function (r) {
+        reasons[r] = (reasons[r] || 0) + 1;
+        if (r.indexOf('Legal_Basis') === 0) stats.no_legal_basis_count++;
+        else if (r.indexOf('Versandfreigabe') === 0) stats.no_release_count++;
+        else if (r === 'Suppressed=YES') stats.suppressed_count++;
+        else if (r === 'Opt_Out=YES') stats.optout_count++;
+        else if (r === 'Hard Bounce') stats.bounce_count++;
+        else if (r === 'bereits gesendet') stats.already_contacted_count++;
+        else if (r.indexOf('E-Mail') === 0) stats.invalid_email_count++;
+      });
+    });
+
+    // Deterministisch: Tier A zuerst, dann Lead-ID.
+    pool.sort(function (a, b) {
+      const ta = String(a.Tier || '').toUpperCase() === 'A' ? 0 : 1;
+      const tb = String(b.Tier || '').toUpperCase() === 'A' ? 0 : 1;
+      if (ta !== tb) return ta - tb;
+      return String(a.Lead_ID).localeCompare(String(b.Lead_ID));
+    });
+
+    // Dublettenschutz auf Adressebene: zwei Datensaetze koennen
+    // unterschiedliche Lead-IDs und dieselbe E-Mail tragen. Ohne diesen
+    // Schritt bekaeme derselbe Empfaenger zwei Mails aus einem Batch.
+    const seenEmails = {};
+    const deduped = [];
+    pool.forEach(function (l) {
+      const key = String(l.Email || '').trim().toLowerCase();
+      if (seenEmails[key]) {
+        stats.excluded_count++;
+        stats.eligible_count--;
+        reasons['doppelte E-Mail-Adresse'] =
+          (reasons['doppelte E-Mail-Adresse'] || 0) + 1;
+        return;
+      }
+      seenEmails[key] = true;
+      deduped.push(l);
+    });
+
+    const selected = deduped.slice(0, count);
+    stats.selected_count = selected.length;
+    stats.shortfall = Math.max(0, count - selected.length);
+
+    const batchId = explicitBatchId || ('HSB-' + Utilities.formatDate(new Date(), CFG.TIMEZONE, 'yyyyMMdd')
+      + '-' + ownerKey + '-'
+      + ('000' + nextBatchSeq_(ownerKey)).slice(-4));
+
+    if (selected.length) {
+      writeBatchToLeads_(read, selected, batchId);
+      appendBatchRow_(batchId, ownerKey, opts.campaign || '', 'PREPARED',
+                      stats, verified.sha256);
+      logActivity_(batchId, 'PREPARED',
+                   selected.length + ' Leads reserviert fuer ' + ownerKey);
+    }
+
+    return {
+      batch_id: batchId,
+      owner: ownerKey,
+      owner_display: verified.flyer.displayName,
+      mailbox: verified.flyer.mailbox,
+      asset_file: verified.flyer.fileName,
+      asset_sha256: verified.sha256,
+      asset_drive_id: verified.flyer.driveId,
+      status: selected.length ? 'PREPARED' : 'EMPTY_NO_ELIGIBLE_LEADS',
+      stats: stats,
+      exclusion_reasons: reasons,
+      leads: selected.map(function (l) {
+        return { Lead_ID: l.Lead_ID, Company: l.Company, Email: l.Email,
+                 Contact: l.Contact, Tier: l.Tier };
+      })
+    };
+  } finally {
+    if (lock && hasLock) {
+      try { lock.releaseLock(); } catch (_) {}
+    }
+  }
 }
 
 function writeBatchToLeads_(read, selected, batchId) {

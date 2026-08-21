@@ -1,296 +1,737 @@
 <!DOCTYPE html>
-<html>
+<html lang="de">
 <head>
 <base target="_top">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
-  :root { --rot:#c8102e; --dunkel:#1a1d23; --rand:#dadce0; --grau:#5f6368; }
-  * { box-sizing:border-box; }
-  body { font-family:'Google Sans',Roboto,Arial,sans-serif; font-size:13px;
-         margin:0; padding:12px; color:var(--dunkel); }
-  h2 { font-size:15px; margin:0 0 10px; }
-  h3 { font-size:13px; margin:16px 0 6px; color:var(--grau);
-       text-transform:uppercase; letter-spacing:.5px; }
-  .karte { border:1px solid var(--rand); border-radius:8px; padding:12px;
-           margin-bottom:12px; }
-  label { display:block; font-size:12px; color:var(--grau); margin:8px 0 3px; }
-  select,input,textarea { width:100%; padding:7px; border:1px solid var(--rand);
-           border-radius:5px; font-size:13px; font-family:inherit; }
-  button { width:100%; padding:9px; border:0; border-radius:5px; cursor:pointer;
-           font-size:13px; font-weight:600; margin-top:9px; }
-  .primaer { background:var(--rot); color:#fff; }
-  .zweit { background:#f1f3f4; color:var(--dunkel); }
-  .reihe { display:flex; gap:8px; }
-  .reihe > * { flex:1; }
-  table { width:100%; border-collapse:collapse; font-size:12px; }
-  td { padding:3px 0; }
-  td.z { text-align:right; font-weight:600; font-variant-numeric:tabular-nums; }
-  .warn { background:#fef7e0; border:1px solid #f9c74f; border-radius:6px;
-          padding:9px; font-size:12px; margin:9px 0; }
-  .fehler { background:#fce8e6; border:1px solid #e57373; border-radius:6px;
-            padding:9px; font-size:12px; margin:9px 0; }
-  .ok { background:#e6f4ea; border:1px solid #81c995; border-radius:6px;
-        padding:9px; font-size:12px; margin:9px 0; }
-  .mini { font-size:11px; color:var(--grau); }
-  .lade { text-align:center; padding:14px; color:var(--grau); }
-  ul.gruende { margin:6px 0 0 16px; padding:0; font-size:12px; }
-  .faellig { border-bottom:1px solid var(--rand); padding:7px 0; }
-  .faellig b { display:block; }
+/* ------------------------------------------------------------------
+   HSB Sales OS
+
+   Signatur: das Sechseck. Die Firma heisst Hexagon, ihr Logo sind
+   Sechsecke, ihr Produkt sind sechseckige Bodenfliesen. Die
+   Bereitschaftsanzeige fuellt sich deshalb als Sechseck - sie traegt
+   eine echte Groesse (Anteil sendefaehiger Leads), sie schmueckt nicht.
+
+   Schrift: IBM Plex, entworfen fuer technische Dokumentation. Alle
+   Zahlen tabellarisch im Mono-Schnitt, damit sie wie Messwerte lesbar
+   sind und beim Aktualisieren nicht springen.
+
+   Farbe: HSB-Rot ist ausschliesslich die Primaeraktion. Statusfarben
+   konkurrieren nicht mit der Marke.
+   ------------------------------------------------------------------ */
+
+:root {
+  --tinte:      #14171c;
+  --rot:        #c8102e;
+  --rot-tief:   #9d0c24;
+  --papier:     #ffffff;
+  --flaeche:    #f6f7f8;
+  --raster:     #e3e5e8;
+  --grau:       #6b7280;
+  --grau-hell:  #9aa1ab;
+  --bereit:     #1f7a5c;
+  --gesperrt:   #b45309;
+  --gesperrt-f: #fdf6ec;
+  --fehler-f:   #fdf2f2;
+
+  --s1: 4px;  --s2: 8px;  --s3: 12px;
+  --s4: 16px; --s5: 24px; --s6: 32px;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  background: var(--papier);
+  color: var(--tinte);
+  font-family: 'IBM Plex Sans', -apple-system, system-ui, sans-serif;
+  font-size: 13px;
+  line-height: 1.45;
+  -webkit-font-smoothing: antialiased;
+}
+
+body { padding: var(--s4) var(--s4) var(--s6); }
+
+.zahl {
+  font-family: 'IBM Plex Mono', ui-monospace, monospace;
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum';
+}
+
+/* --- Kopf: Absenderwahl ------------------------------------------- */
+
+.kopf {
+  display: flex; align-items: center; gap: var(--s3);
+  padding-bottom: var(--s4);
+  border-bottom: 1px solid var(--raster);
+  margin-bottom: var(--s4);
+}
+
+.wechsel {
+  display: flex; flex: 1; border: 1px solid var(--raster);
+  border-radius: 6px; overflow: hidden; background: var(--flaeche);
+}
+.wechsel button {
+  flex: 1; border: 0; background: transparent; cursor: pointer;
+  padding: 7px 4px; font: inherit; font-weight: 500;
+  color: var(--grau); letter-spacing: .01em;
+  transition: background .12s, color .12s;
+}
+.wechsel button[aria-pressed="true"] {
+  background: var(--tinte); color: #fff; font-weight: 600;
+}
+.wechsel button:focus-visible { outline: 2px solid var(--rot); outline-offset: -2px; }
+
+/* --- Bereitschaft: das Sechseck ----------------------------------- */
+
+.bereitschaft {
+  display: flex; align-items: center; gap: var(--s4);
+  padding: var(--s4); border: 1px solid var(--raster);
+  border-radius: 8px; margin-bottom: var(--s5);
+}
+
+.hex { width: 62px; height: 70px; flex: none; }
+.hex .grund { fill: var(--flaeche); stroke: var(--raster); stroke-width: 2; }
+.hex .fuellung { fill: var(--bereit); transition: none; }
+.hex.leer .fuellung { fill: var(--gesperrt); }
+.hex .wert {
+  font-family: 'IBM Plex Mono', monospace; font-size: 15px;
+  font-weight: 600; fill: var(--tinte); text-anchor: middle;
+}
+
+.bereit-text { min-width: 0; }
+.bereit-text .gross {
+  font-size: 15px; font-weight: 600; line-height: 1.25;
+  letter-spacing: -.01em;
+}
+.bereit-text .klein {
+  font-size: 11.5px; color: var(--grau); margin-top: 3px;
+}
+
+/* --- Schritte ------------------------------------------------------ */
+
+.schritt { border-bottom: 1px solid var(--raster); }
+.schritt:last-of-type { border-bottom: 0; }
+
+.schritt > summary {
+  display: flex; align-items: baseline; gap: var(--s3);
+  padding: var(--s3) 0; cursor: pointer; list-style: none;
+  user-select: none;
+}
+.schritt > summary::-webkit-details-marker { display: none; }
+.schritt > summary:focus-visible { outline: 2px solid var(--rot); outline-offset: 2px; }
+
+.schritt .nr {
+  font-family: 'IBM Plex Mono', monospace; font-size: 11px;
+  font-weight: 500; color: var(--grau-hell); flex: none;
+  min-width: 16px;
+}
+.schritt .titel { font-weight: 600; font-size: 13px; flex: 1; }
+.schritt .marke {
+  font-size: 11px; color: var(--grau); flex: none;
+}
+.schritt .marke.warn { color: var(--gesperrt); font-weight: 600; }
+.schritt .marke.gut  { color: var(--bereit); font-weight: 600; }
+.schritt[open] > summary .titel { color: var(--tinte); }
+.schritt-inhalt { padding: 0 0 var(--s4) 28px; }
+
+/* --- Formular ------------------------------------------------------ */
+
+label {
+  display: block; font-size: 11px; font-weight: 500;
+  color: var(--grau); margin: var(--s3) 0 var(--s1);
+  letter-spacing: .02em;
+}
+select, input[type=text], input[type=number], input[type=search] {
+  width: 100%; padding: 7px 9px; font: inherit; font-size: 13px;
+  border: 1px solid var(--raster); border-radius: 5px;
+  background: var(--papier); color: var(--tinte);
+}
+input[type=number] {
+  font-family: 'IBM Plex Mono', monospace; font-variant-numeric: tabular-nums;
+}
+select:focus, input:focus {
+  outline: 0; border-color: var(--tinte);
+  box-shadow: 0 0 0 3px rgba(20,23,28,.07);
+}
+.paar { display: flex; gap: var(--s2); }
+.paar > * { flex: 1; min-width: 0; }
+
+button.tat {
+  width: 100%; margin-top: var(--s3); padding: 9px 12px;
+  font: inherit; font-weight: 600; font-size: 13px;
+  border: 1px solid transparent; border-radius: 6px; cursor: pointer;
+  transition: background .12s, border-color .12s;
+}
+button.tat:focus-visible { outline: 2px solid var(--tinte); outline-offset: 2px; }
+button.tat[disabled] { opacity: .45; cursor: not-allowed; }
+
+.primaer { background: var(--rot); color: #fff; }
+.primaer:hover:not([disabled]) { background: var(--rot-tief); }
+.zweit {
+  background: var(--papier); color: var(--tinte); border-color: var(--raster);
+}
+.zweit:hover:not([disabled]) { background: var(--flaeche); }
+
+/* --- Meldungen ----------------------------------------------------- */
+
+.meldung {
+  margin-top: var(--s3); padding: var(--s3);
+  border-radius: 6px; font-size: 12px; line-height: 1.5;
+  border-left: 3px solid;
+}
+.m-gut    { background: #f1f8f4; border-color: var(--bereit); }
+.m-warn   { background: var(--gesperrt-f); border-color: var(--gesperrt); }
+.m-fehler { background: var(--fehler-f); border-color: var(--rot); }
+.meldung b { display: block; margin-bottom: 2px; }
+.meldung ul { margin: var(--s2) 0 0; padding-left: 16px; }
+.meldung li { margin-bottom: 2px; }
+.meldung a { color: var(--tinte); }
+
+.arbeit {
+  display: flex; align-items: center; gap: var(--s2);
+  padding: var(--s3) 0; font-size: 12px; color: var(--grau);
+}
+.arbeit::before {
+  content: ''; width: 11px; height: 11px; flex: none;
+  border: 2px solid var(--raster); border-top-color: var(--tinte);
+  border-radius: 50%; animation: dreh .7s linear infinite;
+}
+@keyframes dreh { to { transform: rotate(360deg); } }
+
+/* --- Listen -------------------------------------------------------- */
+
+.zeile {
+  padding: var(--s3) 0; border-bottom: 1px solid var(--raster);
+}
+.zeile:last-child { border-bottom: 0; }
+.zeile .firma { font-weight: 500; }
+.zeile .meta {
+  font-size: 11px; color: var(--grau); margin-top: 1px;
+  word-break: break-word;
+}
+.zeile .knoepfe { display: flex; gap: var(--s1); margin-top: var(--s2); }
+.zeile .knoepfe button {
+  flex: 1; padding: 5px 4px; font: inherit; font-size: 11px;
+  font-weight: 500; border: 1px solid var(--raster);
+  border-radius: 4px; background: var(--papier); cursor: pointer;
+  color: var(--tinte);
+}
+.zeile .knoepfe button:hover { background: var(--flaeche); }
+
+.tabelle { width: 100%; border-collapse: collapse; }
+.tabelle td { padding: 3px 0; font-size: 12px; }
+.tabelle td.z {
+  text-align: right; font-family: 'IBM Plex Mono', monospace;
+  font-variant-numeric: tabular-nums; font-weight: 500;
+}
+.tabelle tr.trenn td { border-top: 1px solid var(--raster); padding-top: 7px; }
+
+.leer-hinweis {
+  padding: var(--s4) 0; font-size: 12px; color: var(--grau);
+}
+
+.fuss {
+  margin-top: var(--s5); padding-top: var(--s3);
+  border-top: 1px solid var(--raster);
+  font-size: 11px; color: var(--grau-hell);
+  display: flex; justify-content: space-between; gap: var(--s2);
+}
+.fuss button {
+  border: 0; background: none; color: var(--grau); cursor: pointer;
+  font: inherit; font-size: 11px; padding: 0; text-decoration: underline;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before { animation: none !important; transition: none !important; }
+}
 </style>
 </head>
 <body>
 
-<div id="cockpit" class="karte">
-  <h2>Cockpit</h2>
-  <div class="lade" id="cockpitInhalt">Lade…</div>
+<div class="kopf">
+  <div class="wechsel" role="group" aria-label="Absender">
+    <button id="wJordi" aria-pressed="true"  onclick="setOwner('JORDI')">Jordi</button>
+    <button id="wJoel"  aria-pressed="false" onclick="setOwner('JOEL')">Joel</button>
+  </div>
 </div>
 
-<div class="karte">
-  <h2>Batch vorbereiten</h2>
-  <label>Absender</label>
-  <select id="owner">
-    <option value="JORDI">Jordi Post</option>
-    <option value="JOEL">Joel Cherino Diaz</option>
-  </select>
-
-  <div class="reihe">
-    <div>
-      <label>Anzahl</label>
-      <input type="number" id="count" value="100" min="1" max="2000">
-    </div>
-    <div>
-      <label>Tier</label>
-      <select id="tier">
-        <option value="">alle</option>
-        <option value="A">A</option>
-        <option value="B">B</option>
-      </select>
-    </div>
+<div class="bereitschaft">
+  <svg class="hex" id="hex" viewBox="0 0 62 70" aria-hidden="true">
+    <defs><clipPath id="hexClip">
+      <path d="M31 1 L60 18 L60 52 L31 69 L2 52 L2 18 Z"/>
+    </clipPath></defs>
+    <path class="grund" d="M31 1 L60 18 L60 52 L31 69 L2 52 L2 18 Z"/>
+    <g clip-path="url(#hexClip)">
+      <rect class="fuellung" id="hexFuell" x="0" y="70" width="62" height="70"/>
+    </g>
+    <text class="wert" id="hexWert" x="31" y="40">–</text>
+  </svg>
+  <div class="bereit-text">
+    <div class="gross" id="bereitGross">Wird geladen…</div>
+    <div class="klein" id="bereitKlein"></div>
   </div>
-
-  <label>Branche</label>
-  <select id="industry"><option value="">alle</option></select>
-
-  <label>Kampagne</label>
-  <input type="text" id="campaign" placeholder="z. B. kaltakquise-2026-q3">
-
-  <button class="primaer" onclick="batchVorbereiten()">Batch vorbereiten</button>
-  <div id="batchErgebnis"></div>
 </div>
 
-<div class="karte">
-  <h2>Wiedervorlage</h2>
-  <button class="zweit" onclick="faelligeLaden()">Heute fällige anzeigen</button>
-  <div id="faellige"></div>
-</div>
+<div id="setupWarnung"></div>
 
-<div class="karte">
-  <h2>Rechtliche Freigabe</h2>
-  <div class="mini">
-    Ohne Rechtsgrundlage darf nicht gesendet werden (§ 7 UWG). Diese
-    Entscheidung trifft eine Person, nicht die Software.
-  </div>
-  <label>Absender</label>
-  <select id="qOwner">
-    <option value="JORDI">Jordi Post</option>
-    <option value="JOEL">Joel Cherino Diaz</option>
-  </select>
-  <div class="reihe">
-    <div>
-      <label>Anzahl</label>
-      <input type="number" id="qCount" value="100" min="1">
+<details class="schritt" id="s1">
+  <summary>
+    <span class="nr zahl">01</span>
+    <span class="titel">Rechtlich freigeben</span>
+    <span class="marke" id="m1"></span>
+  </summary>
+  <div class="schritt-inhalt">
+    <div class="klein" style="font-size:11.5px;color:var(--grau)">
+      Werbung per E-Mail braucht eine Rechtsgrundlage (§ 7 UWG). Diese
+      Entscheidung trifft eine Person, nicht die Software.
     </div>
-    <div>
-      <label>Grundlage</label>
-      <select id="qBasis">
-        <option value="EXISTING_CUSTOMER_7_3">Bestandskunde §7(3)</option>
-        <option value="OPT_IN">Einwilligung</option>
-        <option value="BLOCKED">Sperren</option>
-      </select>
+    <div class="paar">
+      <div>
+        <label for="qCount">Anzahl</label>
+        <input type="number" id="qCount" value="25" min="1" max="6424">
+      </div>
+      <div>
+        <label for="qBasis">Grundlage</label>
+        <select id="qBasis">
+          <option value="EXISTING_CUSTOMER_7_3">Bestandskunde § 7(3)</option>
+          <option value="OPT_IN">Einwilligung liegt vor</option>
+          <option value="BLOCKED">Sperren</option>
+        </select>
+      </div>
     </div>
+    <button class="tat zweit" onclick="qualifizieren()">Freigeben</button>
+    <div id="qErgebnis"></div>
   </div>
-  <button class="zweit" onclick="qualifizieren()">Freigeben</button>
-  <div id="qErgebnis"></div>
+</details>
+
+<details class="schritt" id="s2">
+  <summary>
+    <span class="nr zahl">02</span>
+    <span class="titel">Batch vorbereiten</span>
+    <span class="marke" id="m2"></span>
+  </summary>
+  <div class="schritt-inhalt">
+    <div class="paar">
+      <div>
+        <label for="count">Anzahl</label>
+        <input type="number" id="count" value="25" min="1" max="2000">
+      </div>
+      <div>
+        <label for="tier">Tier</label>
+        <select id="tier">
+          <option value="">alle</option>
+          <option value="A">A</option>
+          <option value="B">B</option>
+        </select>
+      </div>
+    </div>
+    <label for="industry">Branche</label>
+    <select id="industry"><option value="">alle</option></select>
+    <label for="campaign">Kampagne</label>
+    <input type="text" id="campaign" placeholder="optional">
+    <button class="tat primaer" onclick="batchVorbereiten()">Batch vorbereiten</button>
+    <div id="batchErgebnis"></div>
+  </div>
+</details>
+
+<details class="schritt" id="s3">
+  <summary>
+    <span class="nr zahl">03</span>
+    <span class="titel">Entwürfe ausgeben</span>
+    <span class="marke" id="m3"></span>
+  </summary>
+  <div class="schritt-inhalt">
+    <div id="batchListe" class="leer-hinweis">Noch kein Batch vorbereitet.</div>
+  </div>
+</details>
+
+<details class="schritt" id="s4">
+  <summary>
+    <span class="nr zahl">04</span>
+    <span class="titel">Nachfassen</span>
+    <span class="marke" id="m4"></span>
+  </summary>
+  <div class="schritt-inhalt">
+    <button class="tat zweit" onclick="faelligeLaden()">Fällige anzeigen</button>
+    <div id="faellige"></div>
+  </div>
+</details>
+
+<details class="schritt" id="s5">
+  <summary>
+    <span class="nr zahl">05</span>
+    <span class="titel">Kontakt suchen</span>
+    <span class="marke"></span>
+  </summary>
+  <div class="schritt-inhalt">
+    <label for="suche">Firma, E-Mail oder Lead-ID</label>
+    <input type="search" id="suche" placeholder="mindestens 2 Zeichen"
+           oninput="sucheVerzoegert()">
+    <div id="sucheErgebnis"></div>
+  </div>
+</details>
+
+<div class="fuss">
+  <span id="standZeit">–</span>
+  <button onclick="allesLaden()">Aktualisieren</button>
 </div>
 
 <script>
-let aktuellerBatch = null;
+'use strict';
+
+var OWNER = 'JORDI';
+var aktuellerBatch = null;
+var sucheTimer = null;
+var letzteZahlen = null;
 
 function esc(s) {
-  return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) {
-    return { '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;' }[c];
+  return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+    return { '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c];
   });
+}
+function el(id) { return document.getElementById(id); }
+function zeig(id, html) { el(id).innerHTML = html; }
+function laden(id, text) {
+  zeig(id, '<div class="arbeit">' + esc(text || 'Einen Moment…') + '</div>');
+}
+function fehler(id, msg) {
+  zeig(id, '<div class="meldung m-fehler"><b>Das hat nicht geklappt</b>'
+       + esc(msg) + '</div>');
+}
+function nz(n) { return Number(n || 0).toLocaleString('de-DE'); }
+
+/* --- Absender ------------------------------------------------------ */
+
+function setOwner(o) {
+  if (OWNER === o) return;
+  OWNER = o;
+  el('wJordi').setAttribute('aria-pressed', String(o === 'JORDI'));
+  el('wJoel').setAttribute('aria-pressed', String(o === 'JOEL'));
+  aktuellerBatch = null;
+  zeig('batchErgebnis', '');
+  zeig('qErgebnis', '');
+  zeig('faellige', '');
+  zeig('sucheErgebnis', '');
+  el('suche').value = '';
+  allesLaden();
+}
+
+/* --- Sechseck ------------------------------------------------------ */
+
+function hexSetzen(anteil, wertText) {
+  var h = el('hex'), f = el('hexFuell');
+  var hoehe = 70 * Math.max(0, Math.min(1, anteil));
+  f.setAttribute('y', String(70 - hoehe));
+  f.setAttribute('height', String(hoehe));
+  if (anteil <= 0) h.classList.add('leer'); else h.classList.remove('leer');
+  el('hexWert').textContent = wertText;
+}
+
+/* --- Laden --------------------------------------------------------- */
+
+function allesLaden() {
+  cockpitLaden();
+  setupPruefen();
+  batchListeLaden();
+  el('standZeit').textContent = 'Stand ' + new Date().toLocaleTimeString('de-DE',
+    { hour: '2-digit', minute: '2-digit' });
+}
+
+function setupPruefen() {
+  google.script.run.withSuccessHandler(function (r) {
+    if (!r.ok) { fehler('setupWarnung', r.error); return; }
+    var d = r.data, h = '';
+    if (!d.columns_ok) {
+      h += '<div class="meldung m-warn"><b>Einrichtung unvollständig</b>'
+        + 'Es fehlen ' + d.missing_columns.length + ' Spalten. Ohne sie kann '
+        + 'kein Batch vorbereitet werden.'
+        + '<button class="tat zweit" onclick="spaltenAnlegen()" '
+        + 'style="margin-top:8px">Spalten jetzt anlegen</button></div>';
+    }
+    if (!d.flyers_ok) {
+      h += '<div class="meldung m-fehler"><b>Flyer stimmt nicht</b>';
+      Object.keys(d.flyers).forEach(function (k) {
+        if (d.flyers[k] !== 'OK') h += esc(k + ': ' + d.flyers[k]);
+      });
+      h += '<br>Nicht senden, bis das geklärt ist.</div>';
+    }
+    zeig('setupWarnung', h);
+  }).uiGetSetupState();
+}
+
+function spaltenAnlegen() {
+  laden('setupWarnung', 'Spalten werden angelegt…');
+  google.script.run.withSuccessHandler(function (r) {
+    if (!r.ok) { fehler('setupWarnung', r.error); return; }
+    zeig('setupWarnung', '<div class="meldung m-gut"><b>Spalten angelegt</b>'
+      + esc(r.data.message) + '</div>');
+    setTimeout(allesLaden, 900);
+  }).uiEnsureColumns();
 }
 
 function cockpitLaden() {
   google.script.run.withSuccessHandler(function (d) {
-    let h = '<table>';
-    Object.keys(d.owners).sort().forEach(function (o) {
-      const c = d.owners[o];
-      h += '<tr><td colspan="2"><b>' + esc(o) + '</b></td></tr>'
-        + '<tr><td>sendefähig</td><td class="z">' + c.eligible + '</td></tr>'
-        + '<tr><td>gesperrt</td><td class="z">' + c.blocked + '</td></tr>'
-        + '<tr><td>gesendet</td><td class="z">' + c.sent + '</td></tr>'
-        + '<tr><td>Antworten</td><td class="z">' + c.replied + '</td></tr>'
-        + '<tr><td>positiv</td><td class="z">' + c.positive + '</td></tr>'
-        + '<tr><td>Bounces</td><td class="z">' + c.bounced + '</td></tr>'
-        + '<tr><td>Abmeldungen</td><td class="z">' + c.optout + '</td></tr>'
-        + '<tr><td>Wiedervorlage fällig</td><td class="z">' + c.due + '</td></tr>';
-    });
-    h += '</table>';
-    document.getElementById('cockpitInhalt').innerHTML = h;
+    var c = (d.owners && d.owners[OWNER]) || {};
+    var gesamt = c.total || 0, bereit = c.eligible || 0;
+    letzteZahlen = c;
+
+    hexSetzen(gesamt ? bereit / gesamt : 0, nz(bereit));
+    el('bereitGross').textContent = bereit
+      ? nz(bereit) + ' von ' + nz(gesamt) + ' sendebereit'
+      : 'Noch keiner sendebereit';
+    el('bereitKlein').textContent = bereit
+      ? 'Gesendet ' + nz(c.sent) + ' · Antworten ' + nz(c.replied)
+        + ' · Bounces ' + nz(c.bounced)
+      : nz(gesamt) + ' Kontakte warten auf rechtliche Freigabe';
+
+    el('m1').textContent = bereit ? nz(bereit) + ' frei' : 'zuerst hier';
+    el('m1').className = 'marke ' + (bereit ? 'gut' : 'warn');
+    el('m2').textContent = bereit ? '' : 'gesperrt';
+    el('m2').className = 'marke ' + (bereit ? '' : 'warn');
+    el('m4').textContent = c.due ? nz(c.due) + ' fällig' : 'nichts fällig';
+    el('m4').className = 'marke ' + (c.due ? 'warn' : '');
+
+    // Den blockierenden Schritt oeffnen, nicht alle.
+    if (!el('s1').open && !el('s2').open && !el('s3').open && !el('s4').open) {
+      (bereit ? el('s2') : el('s1')).open = true;
+    }
   }).withFailureHandler(function (e) {
-    document.getElementById('cockpitInhalt').innerHTML =
-      '<div class="fehler">' + esc(e.message) + '</div>';
+    el('bereitGross').textContent = 'Fehler';
+    el('bereitKlein').textContent = e.message;
   }).uiGetDashboard();
 }
 
 function filterLaden() {
   google.script.run.withSuccessHandler(function (f) {
-    const sel = document.getElementById('industry');
-    f.industries.forEach(function (i) {
-      const o = document.createElement('option');
+    var sel = el('industry');
+    (f.industries || []).forEach(function (i) {
+      var o = document.createElement('option');
       o.value = i; o.textContent = i; sel.appendChild(o);
     });
   }).uiGetFilters();
 }
 
-function batchVorbereiten() {
-  const el = document.getElementById('batchErgebnis');
-  el.innerHTML = '<div class="lade">Wird vorbereitet…</div>';
-  google.script.run.withSuccessHandler(function (r) {
-    if (!r.ok) { el.innerHTML = '<div class="fehler">' + esc(r.error) + '</div>'; return; }
-    const d = r.data, s = d.stats;
-    aktuellerBatch = d.batch_id;
-    let h = '';
-
-    if (s.selected_count === 0) {
-      h += '<div class="warn"><b>0 von ' + s.total_pool
-        + ' Leads sendefähig.</b><br>Das ist kein Fehler — es fehlt die '
-        + 'rechtliche Freigabe.<ul class="gruende">';
-      Object.keys(d.exclusion_reasons).forEach(function (k) {
-        h += '<li>' + d.exclusion_reasons[k] + '× ' + esc(k) + '</li>';
-      });
-      h += '</ul><br>Nächster Schritt: unten unter „Rechtliche Freigabe“ '
-        + 'die gewünschte Anzahl freigeben.</div>';
-    } else {
-      h += '<div class="ok"><b>' + d.batch_id + '</b><br>'
-        + s.selected_count + ' von ' + s.requested_count + ' Entwürfen bereit'
-        + (s.shortfall ? ' (' + s.shortfall + ' fehlen)' : '') + '<br>'
-        + '<span class="mini">Anhang: ' + esc(d.asset_file) + '<br>'
-        + 'Absender: ' + esc(d.mailbox) + '</span></div>';
-      h += '<button class="primaer" onclick="emlExport()">'
-        + 'Entwürfe als ZIP erzeugen</button>';
-      h += '<button class="zweit" onclick="freigeben()">Batch freigeben</button>';
-    }
-    el.innerHTML = h;
-    cockpitLaden();
-  }).uiPrepareBatch({
-    owner: document.getElementById('owner').value,
-    count: document.getElementById('count').value,
-    tier: document.getElementById('tier').value,
-    industry: document.getElementById('industry').value,
-    campaign: document.getElementById('campaign').value
-  });
-}
-
-function emlExport(startIndex) {
-  const el = document.getElementById('batchErgebnis');
-  const alt = document.getElementById('expLade');
-  if (alt) alt.remove();
-  el.insertAdjacentHTML('beforeend',
-    '<div class="lade" id="expLade">Erzeuge Teilpakete… je ' + esc(20)
-    + ' Entwürfe ein ZIP (rund 1,5 MB pro Entwurf).</div>');
-
-  google.script.run.withSuccessHandler(function (r) {
-    const l = document.getElementById('expLade');
-    if (l) l.remove();
-    if (!r.ok) {
-      el.insertAdjacentHTML('beforeend',
-        '<div class="fehler">' + esc(r.error) + '</div>');
-      return;
-    }
-    const d = r.data;
-    let h = '<div class="ok"><b>' + d.written + ' von ' + d.total
-      + ' Entwürfen</b> in ' + d.parts.length + ' Paket(en)<br>';
-    d.parts.forEach(function (p) {
-      h += '<a href="' + p.url + '" target="_blank">' + esc(p.name) + '</a> · '
-        + p.count + ' · ' + p.size_mb + ' MB<br>';
-    });
-    h += '<a href="' + d.folder_url + '" target="_blank">Drive-Ordner öffnen</a>';
-    h += '<br><span class="mini">In Outlook: Einstellungen → Dateien → Import → '
-      + 'Ordner wählen → Zielordner „Entwürfe“. Jedes Paket einzeln importieren.'
-      + '</span></div>';
-
-    if (!d.complete) {
-      h += '<div class="warn">Noch nicht vollständig — die Laufzeitgrenze wurde '
-        + 'erreicht.<br><button class="primaer" onclick="emlExport('
-        + d.next_index + ')">Weiter ab Eintrag ' + d.next_index + '</button></div>';
-    }
-    el.insertAdjacentHTML('beforeend', h);
-  }).withFailureHandler(function (e) {
-    const l = document.getElementById('expLade');
-    if (l) l.remove();
-    el.insertAdjacentHTML('beforeend',
-      '<div class="fehler">' + esc(e.message) + '</div>');
-  }).uiExportEml(aktuellerBatch, startIndex || 0);
-}
-
-function freigeben() {
-  google.script.run.withSuccessHandler(function (r) {
-    document.getElementById('batchErgebnis').insertAdjacentHTML('beforeend',
-      r.ok ? '<div class="ok">Batch freigegeben.</div>'
-           : '<div class="fehler">' + esc(r.error) + '</div>');
-  }).uiApproveBatch(aktuellerBatch);
-}
-
-function faelligeLaden() {
-  const el = document.getElementById('faellige');
-  el.innerHTML = '<div class="lade">Lade…</div>';
-  google.script.run.withSuccessHandler(function (r) {
-    if (!r.ok) { el.innerHTML = '<div class="fehler">' + esc(r.error) + '</div>'; return; }
-    if (!r.data.length) { el.innerHTML = '<div class="ok">Nichts fällig.</div>'; return; }
-    let h = '<div class="mini">' + r.data.length + ' fällig</div>';
-    r.data.slice(0, 40).forEach(function (d) {
-      h += '<div class="faellig"><b>' + esc(d.Company) + '</b>'
-        + '<span class="mini">' + esc(d.Email) + ' · fällig ' + esc(d.Due)
-        + ' · ' + esc(d.Owner) + '</span>'
-        + '<div class="reihe">'
-        + '<button class="zweit" onclick="status(\'' + esc(d.Lead_ID)
-        + '\',\'REPLIED\',0)">Antwort</button>'
-        + '<button class="zweit" onclick="status(\'' + esc(d.Lead_ID)
-        + '\',\'FOLLOWUP\',7)">+7 Tage</button>'
-        + '<button class="zweit" onclick="status(\'' + esc(d.Lead_ID)
-        + '\',\'OPT_OUT\',0)">Abmeldung</button>'
-        + '</div></div>';
-    });
-    el.innerHTML = h;
-  }).uiGetDue(null);
-}
-
-function status(leadId, st, days) {
-  google.script.run.withSuccessHandler(function (r) {
-    if (r.ok) { faelligeLaden(); cockpitLaden(); }
-    else alert(r.error);
-  }).uiSetStatus(leadId, st, days, '');
-}
+/* --- 01 Freigeben --------------------------------------------------- */
 
 function qualifizieren() {
-  const el = document.getElementById('qErgebnis');
-  el.innerHTML = '<div class="lade">Wird gesetzt…</div>';
+  var n = parseInt(el('qCount').value, 10) || 0;
+  var basis = el('qBasis').value;
+  if (n < 1) { fehler('qErgebnis', 'Bitte eine Anzahl ab 1 eintragen.'); return; }
+  var txt = basis === 'BLOCKED'
+    ? n + ' Kontakte dauerhaft sperren?'
+    : n + ' Kontakte für den Versand freigeben?\n\nDamit bestätigst du, dass '
+      + 'für diese Kontakte eine Rechtsgrundlage vorliegt.';
+  if (!window.confirm(txt)) return;
+
+  laden('qErgebnis', 'Wird gesetzt…');
   google.script.run.withSuccessHandler(function (r) {
-    el.innerHTML = r.ok
-      ? '<div class="ok">' + r.data.updated + ' Leads auf '
-        + esc(r.data.legalBasis) + ' gesetzt.</div>'
-      : '<div class="fehler">' + esc(r.error) + '</div>';
+    if (!r.ok) { fehler('qErgebnis', r.error); return; }
+    zeig('qErgebnis', '<div class="meldung m-gut"><b>'
+      + nz(r.data.updated) + ' freigegeben</b>'
+      + (r.data.updated === 0
+         ? 'Es waren keine passenden Kontakte mehr offen.'
+         : 'Grundlage: ' + esc(r.data.legalBasis)) + '</div>');
+    el('s2').open = true;
     cockpitLaden();
-  }).uiQualify({
-    owner: document.getElementById('qOwner').value,
-    count: document.getElementById('qCount').value,
-    legalBasis: document.getElementById('qBasis').value
+  }).uiQualify({ owner: OWNER, count: n, legalBasis: basis });
+}
+
+/* --- 02 Batch ------------------------------------------------------- */
+
+function batchVorbereiten() {
+  var n = parseInt(el('count').value, 10) || 0;
+  if (n < 1) { fehler('batchErgebnis', 'Bitte eine Anzahl ab 1 eintragen.'); return; }
+  laden('batchErgebnis', 'Kontakte werden ausgewählt…');
+
+  google.script.run.withSuccessHandler(function (r) {
+    if (!r.ok) { fehler('batchErgebnis', r.error); return; }
+    var d = r.data, s = d.stats, h = '';
+
+    if (s.selected_count === 0) {
+      h = '<div class="meldung m-warn"><b>Keiner sendebereit</b>'
+        + 'Von ' + nz(s.total_pool) + ' Kontakten ist derzeit keiner '
+        + 'freigegeben.<ul>';
+      Object.keys(d.exclusion_reasons).forEach(function (k) {
+        h += '<li><span class="zahl">' + nz(d.exclusion_reasons[k])
+          + '</span>× ' + esc(k) + '</li>';
+      });
+      h += '</ul>Schritt 01 erledigt das.</div>';
+      el('s1').open = true;
+    } else {
+      aktuellerBatch = d.batch_id;
+      h = '<div class="meldung m-gut"><b>' + esc(d.batch_id) + '</b>'
+        + '<span class="zahl">' + nz(s.selected_count) + '</span> von '
+        + '<span class="zahl">' + nz(s.requested_count) + '</span> Entwürfen bereit'
+        + (s.shortfall ? ' — <span class="zahl">' + nz(s.shortfall)
+           + '</span> fehlen mangels freigegebener Kontakte' : '')
+        + '<br>Anhang: ' + esc(d.asset_file) + '</div>';
+      el('s3').open = true;
+    }
+    zeig('batchErgebnis', h);
+    cockpitLaden();
+    batchListeLaden();
+  }).uiPrepareBatch({
+    owner: OWNER, count: n, tier: el('tier').value,
+    industry: el('industry').value, campaign: el('campaign').value
   });
 }
 
-cockpitLaden();
+/* --- 03 Entwuerfe --------------------------------------------------- */
+
+function batchListeLaden() {
+  google.script.run.withSuccessHandler(function (r) {
+    if (!r.ok || !r.data.length) {
+      zeig('batchListe', '<div class="leer-hinweis">Noch kein Batch '
+        + 'vorbereitet.</div>');
+      el('m3').textContent = '';
+      return;
+    }
+    var offen = 0, h = '';
+    r.data.forEach(function (b) {
+      if (b.status === 'PREPARED' || b.status === 'APPROVED') offen++;
+      h += '<div class="zeile"><div class="firma zahl">' + esc(b.batch_id)
+        + '</div><div class="meta"><span class="zahl">' + nz(b.selected)
+        + '</span> Entwürfe · ' + esc(b.status)
+        + (b.campaign ? ' · ' + esc(b.campaign) : '') + '</div>'
+        + '<div class="knoepfe">'
+        + '<button onclick="emlExport(\'' + esc(b.batch_id) + '\',0)">'
+        + 'Entwürfe erzeugen</button>'
+        + '<button onclick="freigeben(\'' + esc(b.batch_id) + '\')">'
+        + 'Freigeben</button></div>'
+        + '<div id="exp_' + esc(b.batch_id) + '"></div></div>';
+    });
+    zeig('batchListe', h);
+    el('m3').textContent = offen ? offen + ' offen' : '';
+  }).uiGetBatches(OWNER);
+}
+
+function emlExport(batchId, startIndex) {
+  var ziel = 'exp_' + batchId;
+  if (!el(ziel)) return;
+  laden(ziel, startIndex ? 'Wird fortgesetzt…'
+    : 'Entwürfe werden erzeugt — je 20 ein Paket…');
+
+  google.script.run.withSuccessHandler(function (r) {
+    if (!r.ok) { fehler(ziel, r.error); return; }
+    var d = r.data;
+    var h = '<div class="meldung m-gut"><b><span class="zahl">' + nz(d.written)
+      + '</span> von <span class="zahl">' + nz(d.total) + '</span> Entwürfen</b>';
+    d.parts.forEach(function (p) {
+      h += '<a href="' + p.url + '" target="_blank">' + esc(p.name) + '</a> · '
+        + '<span class="zahl">' + nz(p.count) + '</span> · '
+        + '<span class="zahl">' + p.size_mb + '</span> MB<br>';
+    });
+    h += 'In Outlook: Einstellungen → Dateien → Import → Ordner wählen → '
+      + 'Zielordner „Entwürfe". Jedes Paket einzeln.</div>';
+    if (!d.complete) {
+      h += '<div class="meldung m-warn"><b>Noch nicht fertig</b>'
+        + 'Die Laufzeitgrenze wurde erreicht. Es geht ohne Verlust weiter.'
+        + '<button class="tat zweit" style="margin-top:8px" onclick="emlExport(\''
+        + esc(batchId) + '\',' + d.next_index + ')">Weiter ab '
+        + '<span class="zahl">' + nz(d.next_index) + '</span></button></div>';
+    }
+    zeig(ziel, h);
+  }).withFailureHandler(function (e) { fehler(ziel, e.message); })
+    .uiExportEml(batchId, startIndex || 0);
+}
+
+function freigeben(batchId) {
+  google.script.run.withSuccessHandler(function (r) {
+    if (r.ok) batchListeLaden(); else alert(r.error);
+  }).uiApproveBatch(batchId);
+}
+
+/* --- 04 Nachfassen -------------------------------------------------- */
+
+function faelligeLaden() {
+  laden('faellige', 'Wird geladen…');
+  google.script.run.withSuccessHandler(function (r) {
+    if (!r.ok) { fehler('faellige', r.error); return; }
+    if (!r.data.length) {
+      zeig('faellige', '<div class="meldung m-gut"><b>Nichts fällig</b>'
+        + 'Keine offenen Wiedervorlagen für ' + esc(OWNER) + '.</div>');
+      return;
+    }
+    var h = '';
+    r.data.slice(0, 60).forEach(function (d) { h += zeileHtml(d, true); });
+    if (r.data.length > 60) {
+      h += '<div class="leer-hinweis">… und <span class="zahl">'
+        + nz(r.data.length - 60) + '</span> weitere.</div>';
+    }
+    zeig('faellige', h);
+  }).uiGetDue(OWNER);
+}
+
+function zeileHtml(d, mitDatum) {
+  var id = esc(d.Lead_ID);
+  return '<div class="zeile" id="lz_' + id + '">'
+    + '<div class="firma">' + esc(d.Company || d.Lead_ID) + '</div>'
+    + '<div class="meta">' + esc(d.Email || '')
+    + (mitDatum && d.Due ? ' · fällig ' + esc(d.Due) : '')
+    + (d.Batch_ID ? ' · ' + esc(d.Batch_ID) : '') + '</div>'
+    + '<div class="knoepfe">'
+    + '<button onclick="status(\'' + id + '\',\'REPLIED\',0)">Antwort</button>'
+    + '<button onclick="status(\'' + id + '\',\'FOLLOWUP\',7)">+7 Tage</button>'
+    + '<button onclick="status(\'' + id + '\',\'OPT_OUT\',0)">Abmeldung</button>'
+    + '</div></div>';
+}
+
+function status(leadId, st, tage) {
+  if (st === 'OPT_OUT'
+      && !window.confirm('Kontakt dauerhaft sperren? Das lässt sich über die '
+                         + 'Oberfläche nicht zurücknehmen.')) return;
+  var zeile = el('lz_' + leadId);
+  if (zeile) zeile.style.opacity = '.4';
+  google.script.run.withSuccessHandler(function (r) {
+    if (!r.ok) { alert(r.error); if (zeile) zeile.style.opacity = '1'; return; }
+    if (zeile) zeile.remove();
+    cockpitLaden();
+  }).uiSetStatus(leadId, st, tage, '');
+}
+
+/* --- 05 Suche ------------------------------------------------------- */
+
+function sucheVerzoegert() {
+  clearTimeout(sucheTimer);
+  var q = el('suche').value.trim();
+  if (q.length < 2) { zeig('sucheErgebnis', ''); return; }
+  sucheTimer = setTimeout(function () { sucheAusfuehren(q); }, 350);
+}
+
+function sucheAusfuehren(q) {
+  laden('sucheErgebnis', 'Wird gesucht…');
+  google.script.run.withSuccessHandler(function (r) {
+    if (!r.ok) { fehler('sucheErgebnis', r.error); return; }
+    if (!r.data.length) {
+      zeig('sucheErgebnis', '<div class="leer-hinweis">Nichts gefunden für „'
+        + esc(q) + '".</div>');
+      return;
+    }
+    var h = '';
+    r.data.forEach(function (d) {
+      h += '<div class="zeile" id="lz_' + esc(d.Lead_ID) + '">'
+        + '<div class="firma">' + esc(d.Company || d.Lead_ID) + '</div>'
+        + '<div class="meta">' + esc(d.Email)
+        + ' · ' + (d.eligible ? 'sendebereit'
+                   : 'gesperrt: ' + esc((d.reasons || []).join(', ')))
+        + '</div><div class="knoepfe">'
+        + '<button onclick="status(\'' + esc(d.Lead_ID) + '\',\'REPLIED\',0)">'
+        + 'Antwort</button>'
+        + '<button onclick="status(\'' + esc(d.Lead_ID) + '\',\'FOLLOWUP\',7)">'
+        + '+7 Tage</button>'
+        + '<button onclick="status(\'' + esc(d.Lead_ID) + '\',\'OPT_OUT\',0)">'
+        + 'Abmeldung</button></div></div>';
+    });
+    zeig('sucheErgebnis', h);
+  }).uiSearch(q, OWNER);
+}
+
+/* --- Start ---------------------------------------------------------- */
+
+allesLaden();
 filterLaden();
 </script>
 </body>

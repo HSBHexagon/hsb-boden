@@ -1,6 +1,6 @@
 /**
  * HSB Sales OS - Aktionen: Qualifizierung, Entwuerfe, EML-Fallback,
- * Wiedervorlage, Statusrueckschreibung.
+ * Wiedervorlage, Statusrueckschreibung, Inbound-Events.
  */
 
 /* ------------------------------------------------------- Qualifizierung */
@@ -13,6 +13,7 @@
  * Erfassung, trifft die Entscheidung aber nicht selbst.
  */
 function qualifyLeads(opts) {
+  opts = opts || {};
   const ownerKey = normalizeOwner_(opts.owner);
   const legalBasis = String(opts.legalBasis || '').toUpperCase();
   const limit = Math.max(0, parseInt(opts.count, 10) || 0);
@@ -22,43 +23,56 @@ function qualifyLeads(opts) {
   }
   const sendable = LEGAL_BASIS_SENDABLE.indexOf(legalBasis) >= 0;
 
-  const read = readLeadsCached_();
-  const sh = sheet_(CFG.SHEET_LEADS);
-  const cLegal = read.index['Legal_Basis'] + 1;
-  const cFreigabe = read.index[FIELD_MAP.Versandfreigabe] + 1;
-  if (!cLegal || !cFreigabe) {
-    throw new Error('Spalten fehlen. Bitte zuerst "Spalten pruefen" ausfuehren.');
+  const lock = (typeof LockService !== 'undefined' && LockService.getDocumentLock)
+    ? LockService.getDocumentLock()
+    : null;
+  const hasLock = lock ? lock.tryLock(30000) : true;
+  if (!hasLock) {
+    throw new Error('LOCK_TIMEOUT: Ein anderer Vorgang greift gerade auf das Sheet zu. Bitte in Kürze erneut versuchen.');
   }
 
-  const uLegal = {}, uFreigabe = {};
-  let touched = 0;
-  for (let i = 0; i < read.leads.length && touched < limit; i++) {
-    const l = read.leads[i];
-    if (normalizeOwner_(l.Owner) !== ownerKey) continue;
-    if (opts.industry && String(l.Industry || '').trim() !== opts.industry) continue;
-    if (opts.tier && String(l.Tier || '').trim().toUpperCase()
-        !== String(opts.tier).trim().toUpperCase()) continue;
-    // Bereits Qualifizierte nicht erneut anfassen.
-    if (String(l.Legal_Basis || '').toUpperCase() === legalBasis) continue;
-    // Opt-out und Suppression sind unantastbar.
-    if (isTrue_(l.Suppressed)) continue;
-    const optOut = String(l.Opt_Out || '').trim().toLowerCase();
-    if (optOut === 'yes' || optOut === 'ja' || optOut === 'opt_out') continue;
+  try {
+    invalidateLeadsCache_();
+    const read = readLeadsCached_();
+    const sh = sheet_(CFG.SHEET_LEADS);
+    const cLegal = read.index['Legal_Basis'] + 1;
+    const cFreigabe = read.index[FIELD_MAP.Versandfreigabe] + 1;
+    if (!cLegal || !cFreigabe) {
+      throw new Error('Spalten fehlen. Bitte zuerst "Spalten pruefen" ausfuehren.');
+    }
 
-    uLegal[l._row] = legalBasis;
-    uFreigabe[l._row] = sendable ? 'yes' : 'no';
-    touched++;
+    const uLegal = {}, uFreigabe = {};
+    let touched = 0;
+    for (let i = 0; i < read.leads.length && touched < limit; i++) {
+      const l = read.leads[i];
+      if (normalizeOwner_(l.Owner) !== ownerKey) continue;
+      if (opts.industry && String(l.Industry || '').trim() !== opts.industry) continue;
+      if (opts.tier && String(l.Tier || '').trim().toUpperCase()
+          !== String(opts.tier).trim().toUpperCase()) continue;
+      // Bereits Qualifizierte nicht erneut anfassen.
+      if (String(l.Legal_Basis || '').toUpperCase() === legalBasis) continue;
+      // Opt-out und Suppression sind unantastbar.
+      if (isTrue_(l.Suppressed)) continue;
+      const optOut = String(l.Opt_Out || '').trim().toLowerCase();
+      if (optOut === 'yes' || optOut === 'ja' || optOut === 'opt_out') continue;
+
+      uLegal[l._row] = legalBasis;
+      uFreigabe[l._row] = sendable ? 'yes' : 'no';
+      touched++;
+    }
+    // Zwei Bulk-Vorgaenge statt 2xN Einzelaufrufen.
+    writeColumnBulk_(sh, cLegal, uLegal);
+    writeColumnBulk_(sh, cFreigabe, uFreigabe);
+    SpreadsheetApp.flush();
+    invalidateLeadsCache_();
+    logActivity_('', 'QUALIFY',
+      touched + ' Leads auf ' + legalBasis + ' gesetzt (' + ownerKey + ')');
+    return { updated: touched, legalBasis: legalBasis, sendable: sendable };
+  } finally {
+    if (lock && hasLock) {
+      try { lock.releaseLock(); } catch (_) {}
+    }
   }
-  // Zwei Bulk-Vorgaenge statt 2xN Einzelaufrufen. Das Qualifizieren von
-  // 100 Leads ist die erste Aktion nach der Installation - sie darf nicht
-  // am 6-Minuten-Limit scheitern.
-  writeColumnBulk_(sh, cLegal, uLegal);
-  writeColumnBulk_(sh, cFreigabe, uFreigabe);
-  SpreadsheetApp.flush();
-  invalidateLeadsCache_();
-  logActivity_('', 'QUALIFY',
-    touched + ' Leads auf ' + legalBasis + ' gesetzt (' + ownerKey + ')');
-  return { updated: touched, legalBasis: legalBasis, sendable: sendable };
 }
 
 /* ----------------------------------------------------- E-Mail-Erzeugung */
@@ -150,15 +164,6 @@ function chunk76_(b64) {
 /**
  * EML-Fallback: erzeugt die Entwuerfe eines Batches als ZIP-Pakete in Drive.
  * Funktioniert ohne Outlook-Verbindung, ohne Admin, ohne DNS.
- *
- * WICHTIG - warum in Teilpaketen:
- * Der Flyer ist rund 1,5 MB, base64-kodiert etwa 2 MB. Ein einziges ZIP ueber
- * 100 Entwuerfe muesste ~200 MB gleichzeitig im Speicher halten; Apps Script
- * scheitert daran, bevor die Datei fertig ist. Deshalb werden jeweils
- * CHUNK Entwuerfe zu einem ZIP gebuendelt, sofort nach Drive geschrieben und
- * der Speicher wieder freigegeben.
- *
- * `startIndex` erlaubt das Fortsetzen, falls das 6-Minuten-Limit greift.
  */
 var EML_CHUNK_SIZE = 20;
 
@@ -229,6 +234,7 @@ function getOrCreateFolder_(name) {
 
 /** Setzt Status und Wiedervorlage fuer einen einzelnen Lead. */
 function setLeadStatus(leadId, status, followUpDays, note) {
+  invalidateLeadsCache_();
   const read = readLeadsCached_();
   const sh = sheet_(CFG.SHEET_LEADS);
   const lead = read.leads.filter(function (l) {
@@ -244,7 +250,7 @@ function setLeadStatus(leadId, status, followUpDays, note) {
   const s = String(status).toUpperCase();
   set(FIELD_MAP.Send_Status, s === 'SENT' ? 'sent' : lead.Send_Status);
   if (s === 'SENT') set(FIELD_MAP.Sent_At, todayStr_());
-  if (s === 'REPLIED' || s === 'POSITIVE_REPLY' || s === 'NEGATIVE_REPLY') {
+  if (s === 'REPLY' || s === 'REPLIED' || s === 'POSITIVE_REPLY' || s === 'NEGATIVE_REPLY') {
     set(FIELD_MAP.Reply_Status, s.toLowerCase());
     set('Last_Reply_At', todayStr_());
   }
@@ -273,6 +279,7 @@ function setLeadStatus(leadId, status, followUpDays, note) {
         String(lead.Notes || '') + '\n[' + todayStr_() + '] ' + note);
   }
   SpreadsheetApp.flush();
+  invalidateLeadsCache_();
   logActivity_(lead.Batch_ID || '', s, leadId + (note ? ' - ' + note : ''));
   return { lead_id: leadId, status: s };
 }
@@ -378,4 +385,229 @@ function setupDailyTrigger() {
   });
   ScriptApp.newTrigger('dailyDigest').timeBased().atHour(7).everyDays(1).create();
   return 'Taegliche Erinnerung um 7 Uhr eingerichtet.';
+}
+
+/* ------------------------------------------------- Batch-Uebersicht */
+
+/** Liste der Batches, neueste zuerst. */
+function getBatches(ownerKey, limit) {
+  const sh = sheet_(CFG.SHEET_BATCHES);
+  if (sh.getLastRow() < 2) return [];
+  const owner = ownerKey ? normalizeOwner_(ownerKey) : null;
+  const rows = sh.getRange(2, 1, sh.getLastRow() - 1, 13).getValues();
+  const out = [];
+  for (let i = rows.length - 1; i >= 0; i--) {
+    const r = rows[i];
+    if (owner && normalizeOwner_(r[1]) !== owner) continue;
+    out.push({
+      batch_id: r[0], owner: r[1], campaign: r[2], status: r[3],
+      requested: r[4], selected: r[5], eligible: r[6],
+      created_at: r[10], approved_at: r[11], sent_at: r[12]
+    });
+    if (limit && out.length >= limit) break;
+  }
+  return out;
+}
+
+/* --------------------------------------------------------- Suche */
+
+/** Sucht Leads nach Firma oder E-Mail. Liefert hoechstens `limit` Treffer. */
+function searchLeads(query, ownerKey, limit) {
+  const q = String(query || '').trim().toLowerCase();
+  if (q.length < 2) return [];
+  const owner = ownerKey ? normalizeOwner_(ownerKey) : null;
+  const max = limit || 25;
+  const read = readLeadsCached_();
+  const hits = [];
+  for (let i = 0; i < read.leads.length && hits.length < max; i++) {
+    const l = read.leads[i];
+    if (owner && normalizeOwner_(l.Owner) !== owner) continue;
+    const hay = (String(l.Company || '') + ' ' + String(l.Email || '')
+                 + ' ' + String(l.Lead_ID || '')).toLowerCase();
+    if (hay.indexOf(q) === -1) continue;
+    const el = checkEligibility_(l);
+    hits.push({
+      Lead_ID: l.Lead_ID, Company: l.Company, Email: l.Email,
+      Owner: normalizeOwner_(l.Owner), Tier: l.Tier,
+      Send_Status: l.Send_Status, Reply_Status: l.Reply_Status,
+      Batch_ID: l.Batch_ID, Next_Action_At: l.Next_Action_At,
+      eligible: el.eligible, reasons: el.reasons
+    });
+  }
+  return hits;
+}
+
+/* ------------------------------------------------ Setup-Zustand */
+
+/**
+ * Sagt der Oberflaeche, ob die Einrichtung abgeschlossen ist.
+ * Ohne die Zusatzspalten kann nichts vorbereitet werden.
+ */
+function getSetupState() {
+  const sh = sheet_(CFG.SHEET_LEADS);
+  const lastCol = sh.getLastColumn();
+  const header = sh.getRange(1, 1, 1, lastCol).getValues()[0].map(String);
+  const missing = ADDITIONAL_FIELDS.filter(function (f) {
+    return header.indexOf(f) === -1;
+  });
+  const flyers = {};
+  Object.keys(FLYERS).forEach(function (k) {
+    try { getVerifiedFlyer_(k); flyers[k] = 'OK'; }
+    catch (e) { flyers[k] = String(e.message || e); }
+  });
+  return {
+    columns_ok: missing.length === 0,
+    missing_columns: missing,
+    flyers: flyers,
+    flyers_ok: Object.keys(flyers).every(function (k) { return flyers[k] === 'OK'; })
+  };
+}
+
+/* --------------------------------------------------- Inbound-Verarbeitung */
+
+/**
+ * Verarbeitet ein Inbound-Event (Antwort, Bounce, Opt-out).
+ *
+ * Regeln:
+ * 1. Deduplizierung: Gleiche Event-ID oder Message-ID fuehrt nicht zu
+ *    mehrfachen Statusaenderungen (Idempotenz).
+ * 2. Deterministische Zuordnung:
+ *    a) Explizite Lead_ID
+ *    b) In-Reply-To oder Message-ID gegen Internet_Message_ID / Outlook_Message_ID
+ *    c) E-Mail-Adresse gegen ALL_LEADS
+ * 3. Kein Raten: Nicht zuordenbare Events erhalten Status 'NEEDS_REVIEW' und
+ *    werden niemals auf Verdacht einem Lead zugeordnet.
+ */
+function processInboundEvent(event) {
+  if (!event || typeof event !== 'object') {
+    throw new Error('Ungueltiges Event-Objekt');
+  }
+  const eventId = String(event.event_id || ('EVT-' + Utilities.getUuid()));
+  const eventType = String(event.event_type || 'REPLY').toUpperCase();
+  const email = String(event.email || '').trim().toLowerCase();
+  const messageId = String(event.message_id || '').trim();
+  const inReplyTo = String(event.in_reply_to || '').trim();
+  const explicitLeadId = String(event.lead_id || '').trim();
+
+  const lock = (typeof LockService !== 'undefined' && LockService.getDocumentLock)
+    ? LockService.getDocumentLock()
+    : null;
+  const hasLock = lock ? lock.tryLock(30000) : true;
+  if (!hasLock) {
+    throw new Error('LOCK_TIMEOUT: Ein anderer Vorgang greift gerade auf das Sheet zu.');
+  }
+
+  try {
+    const eventsSh = sheet_(CFG.SHEET_EVENTS);
+    if (eventsSh.getLastRow() === 0) {
+      eventsSh.appendRow(['Event_ID', 'Timestamp', 'Type', 'Lead_ID', 'Owner',
+                          'Email', 'Message_ID', 'In_Reply_To', 'Status', 'Details']);
+      eventsSh.getRange(1, 1, 1, 10).setFontWeight('bold').setBackground('#e8eaed');
+      eventsSh.setFrozenRows(1);
+    } else if (eventsSh.getLastRow() >= 2) {
+      // Deduplizierungspruefung
+      const existingEvents = eventsSh.getRange(2, 1, eventsSh.getLastRow() - 1, 7).getValues();
+      for (let ei = 0; ei < existingEvents.length; ei++) {
+        const rowEvtId = String(existingEvents[ei][0]);
+        const rowMsgId = String(existingEvents[ei][6]);
+        if (rowEvtId === eventId || (messageId && rowMsgId === messageId)) {
+          return {
+            ok: true,
+            duplicate: true,
+            event_id: rowEvtId,
+            status: 'DUPLICATE_IGNORED',
+            lead_id: existingEvents[ei][3] || ''
+          };
+        }
+      }
+    }
+
+    // Lead-Zuordnung
+    const read = readLeadsCached_();
+    let matchedLead = null;
+
+    if (explicitLeadId) {
+      matchedLead = read.leads.filter(function (l) {
+        return String(l.Lead_ID) === explicitLeadId;
+      })[0];
+    }
+
+    if (!matchedLead && (inReplyTo || messageId)) {
+      const searchRef = inReplyTo || messageId;
+      matchedLead = read.leads.filter(function (l) {
+        return (l.Internet_Message_ID && String(l.Internet_Message_ID) === searchRef)
+            || (l.Outlook_Message_ID && String(l.Outlook_Message_ID) === searchRef)
+            || (l.Draft_ID && String(l.Draft_ID) === searchRef);
+      })[0];
+    }
+
+    if (!matchedLead && email) {
+      const candidates = read.leads.filter(function (l) {
+        return String(l.Email || '').trim().toLowerCase() === email;
+      });
+      if (candidates.length === 1) {
+        matchedLead = candidates[0];
+      } else if (candidates.length > 1 && event.owner) {
+        const oNorm = normalizeOwner_(event.owner);
+        const ownerCandidates = candidates.filter(function (l) {
+          return normalizeOwner_(l.Owner) === oNorm;
+        });
+        if (ownerCandidates.length === 1) matchedLead = ownerCandidates[0];
+      }
+    }
+
+    const ts = nowIso_();
+    if (!matchedLead) {
+      // UNMATCHED: Niemals raten, in Review-Warteschlange legen
+      eventsSh.appendRow([
+        eventId, ts, eventType, '', event.owner || '',
+        email, messageId, inReplyTo, 'NEEDS_REVIEW',
+        event.subject || event.details || 'Nicht eindeutig zuordenbar'
+      ]);
+      logActivity_('', 'INBOUND_UNMATCHED',
+        eventType + ' von ' + (email || 'unbekannt') + ' (NEEDS_REVIEW)');
+      return {
+        ok: true,
+        matched: false,
+        event_id: eventId,
+        status: 'NEEDS_REVIEW'
+      };
+    }
+
+    // MATCHED: Lead-Status aktualisieren
+    const leadId = matchedLead.Lead_ID;
+    const owner = normalizeOwner_(matchedLead.Owner);
+
+    if (eventType === 'REPLY' || eventType === 'POSITIVE_REPLY' || eventType === 'NEGATIVE_REPLY') {
+      setLeadStatus(leadId, eventType, 0, 'Inbound-Antwort empfangen');
+    } else if (eventType === 'HARD_BOUNCE') {
+      setLeadStatus(leadId, 'HARD_BOUNCE', 0, 'Hard Bounce: Empfaenger unzustellbar');
+    } else if (eventType === 'SOFT_BOUNCE') {
+      setLeadStatus(leadId, 'SOFT_BOUNCE', 3, 'Soft Bounce: Wiedervorlage in 3 Tagen');
+    } else if (eventType === 'OPT_OUT') {
+      setLeadStatus(leadId, 'OPT_OUT', 0, 'Opt-out: Abmeldung vermerkt');
+    }
+
+    eventsSh.appendRow([
+      eventId, ts, eventType, leadId, owner,
+      email, messageId, inReplyTo, 'PROCESSED',
+      event.subject || event.details || 'Erfolgreich zugeordnet'
+    ]);
+
+    logActivity_(matchedLead.Batch_ID || '', 'INBOUND_' + eventType,
+      leadId + ' (' + email + ') verarbeitet');
+
+    return {
+      ok: true,
+      matched: true,
+      lead_id: leadId,
+      owner: owner,
+      event_type: eventType,
+      status: 'PROCESSED'
+    };
+  } finally {
+    if (lock && hasLock) {
+      try { lock.releaseLock(); } catch (_) {}
+    }
+  }
 }

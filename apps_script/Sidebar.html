@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html>
+<head>
+<base target="_top">
+<style>
+  :root { --rot:#c8102e; --dunkel:#1a1d23; --rand:#dadce0; --grau:#5f6368; }
+  * { box-sizing:border-box; }
+  body { font-family:'Google Sans',Roboto,Arial,sans-serif; font-size:13px;
+         margin:0; padding:12px; color:var(--dunkel); }
+  h2 { font-size:15px; margin:0 0 10px; }
+  h3 { font-size:13px; margin:16px 0 6px; color:var(--grau);
+       text-transform:uppercase; letter-spacing:.5px; }
+  .karte { border:1px solid var(--rand); border-radius:8px; padding:12px;
+           margin-bottom:12px; }
+  label { display:block; font-size:12px; color:var(--grau); margin:8px 0 3px; }
+  select,input,textarea { width:100%; padding:7px; border:1px solid var(--rand);
+           border-radius:5px; font-size:13px; font-family:inherit; }
+  button { width:100%; padding:9px; border:0; border-radius:5px; cursor:pointer;
+           font-size:13px; font-weight:600; margin-top:9px; }
+  .primaer { background:var(--rot); color:#fff; }
+  .zweit { background:#f1f3f4; color:var(--dunkel); }
+  .reihe { display:flex; gap:8px; }
+  .reihe > * { flex:1; }
+  table { width:100%; border-collapse:collapse; font-size:12px; }
+  td { padding:3px 0; }
+  td.z { text-align:right; font-weight:600; font-variant-numeric:tabular-nums; }
+  .warn { background:#fef7e0; border:1px solid #f9c74f; border-radius:6px;
+          padding:9px; font-size:12px; margin:9px 0; }
+  .fehler { background:#fce8e6; border:1px solid #e57373; border-radius:6px;
+            padding:9px; font-size:12px; margin:9px 0; }
+  .ok { background:#e6f4ea; border:1px solid #81c995; border-radius:6px;
+        padding:9px; font-size:12px; margin:9px 0; }
+  .mini { font-size:11px; color:var(--grau); }
+  .lade { text-align:center; padding:14px; color:var(--grau); }
+  ul.gruende { margin:6px 0 0 16px; padding:0; font-size:12px; }
+  .faellig { border-bottom:1px solid var(--rand); padding:7px 0; }
+  .faellig b { display:block; }
+</style>
+</head>
+<body>
+
+<div id="cockpit" class="karte">
+  <h2>Cockpit</h2>
+  <div class="lade" id="cockpitInhalt">Lade…</div>
+</div>
+
+<div class="karte">
+  <h2>Batch vorbereiten</h2>
+  <label>Absender</label>
+  <select id="owner">
+    <option value="JORDI">Jordi Post</option>
+    <option value="JOEL">Joel Cherino Diaz</option>
+  </select>
+
+  <div class="reihe">
+    <div>
+      <label>Anzahl</label>
+      <input type="number" id="count" value="100" min="1" max="2000">
+    </div>
+    <div>
+      <label>Tier</label>
+      <select id="tier">
+        <option value="">alle</option>
+        <option value="A">A</option>
+        <option value="B">B</option>
+      </select>
+    </div>
+  </div>
+
+  <label>Branche</label>
+  <select id="industry"><option value="">alle</option></select>
+
+  <label>Kampagne</label>
+  <input type="text" id="campaign" placeholder="z. B. kaltakquise-2026-q3">
+
+  <button class="primaer" onclick="batchVorbereiten()">Batch vorbereiten</button>
+  <div id="batchErgebnis"></div>
+</div>
+
+<div class="karte">
+  <h2>Wiedervorlage</h2>
+  <button class="zweit" onclick="faelligeLaden()">Heute fällige anzeigen</button>
+  <div id="faellige"></div>
+</div>
+
+<div class="karte">
+  <h2>Rechtliche Freigabe</h2>
+  <div class="mini">
+    Ohne Rechtsgrundlage darf nicht gesendet werden (§ 7 UWG). Diese
+    Entscheidung trifft eine Person, nicht die Software.
+  </div>
+  <label>Absender</label>
+  <select id="qOwner">
+    <option value="JORDI">Jordi Post</option>
+    <option value="JOEL">Joel Cherino Diaz</option>
+  </select>
+  <div class="reihe">
+    <div>
+      <label>Anzahl</label>
+      <input type="number" id="qCount" value="100" min="1">
+    </div>
+    <div>
+      <label>Grundlage</label>
+      <select id="qBasis">
+        <option value="EXISTING_CUSTOMER_7_3">Bestandskunde §7(3)</option>
+        <option value="OPT_IN">Einwilligung</option>
+        <option value="BLOCKED">Sperren</option>
+      </select>
+    </div>
+  </div>
+  <button class="zweit" onclick="qualifizieren()">Freigeben</button>
+  <div id="qErgebnis"></div>
+</div>
+
+<script>
+let aktuellerBatch = null;
+
+function esc(s) {
+  return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) {
+    return { '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;' }[c];
+  });
+}
+
+function cockpitLaden() {
+  google.script.run.withSuccessHandler(function (d) {
+    let h = '<table>';
+    Object.keys(d.owners).sort().forEach(function (o) {
+      const c = d.owners[o];
+      h += '<tr><td colspan="2"><b>' + esc(o) + '</b></td></tr>'
+        + '<tr><td>sendefähig</td><td class="z">' + c.eligible + '</td></tr>'
+        + '<tr><td>gesperrt</td><td class="z">' + c.blocked + '</td></tr>'
+        + '<tr><td>gesendet</td><td class="z">' + c.sent + '</td></tr>'
+        + '<tr><td>Antworten</td><td class="z">' + c.replied + '</td></tr>'
+        + '<tr><td>positiv</td><td class="z">' + c.positive + '</td></tr>'
+        + '<tr><td>Bounces</td><td class="z">' + c.bounced + '</td></tr>'
+        + '<tr><td>Abmeldungen</td><td class="z">' + c.optout + '</td></tr>'
+        + '<tr><td>Wiedervorlage fällig</td><td class="z">' + c.due + '</td></tr>';
+    });
+    h += '</table>';
+    document.getElementById('cockpitInhalt').innerHTML = h;
+  }).withFailureHandler(function (e) {
+    document.getElementById('cockpitInhalt').innerHTML =
+      '<div class="fehler">' + esc(e.message) + '</div>';
+  }).uiGetDashboard();
+}
+
+function filterLaden() {
+  google.script.run.withSuccessHandler(function (f) {
+    const sel = document.getElementById('industry');
+    f.industries.forEach(function (i) {
+      const o = document.createElement('option');
+      o.value = i; o.textContent = i; sel.appendChild(o);
+    });
+  }).uiGetFilters();
+}
+
+function batchVorbereiten() {
+  const el = document.getElementById('batchErgebnis');
+  el.innerHTML = '<div class="lade">Wird vorbereitet…</div>';
+  google.script.run.withSuccessHandler(function (r) {
+    if (!r.ok) { el.innerHTML = '<div class="fehler">' + esc(r.error) + '</div>'; return; }
+    const d = r.data, s = d.stats;
+    aktuellerBatch = d.batch_id;
+    let h = '';
+
+    if (s.selected_count === 0) {
+      h += '<div class="warn"><b>0 von ' + s.total_pool
+        + ' Leads sendefähig.</b><br>Das ist kein Fehler — es fehlt die '
+        + 'rechtliche Freigabe.<ul class="gruende">';
+      Object.keys(d.exclusion_reasons).forEach(function (k) {
+        h += '<li>' + d.exclusion_reasons[k] + '× ' + esc(k) + '</li>';
+      });
+      h += '</ul><br>Nächster Schritt: unten unter „Rechtliche Freigabe“ '
+        + 'die gewünschte Anzahl freigeben.</div>';
+    } else {
+      h += '<div class="ok"><b>' + d.batch_id + '</b><br>'
+        + s.selected_count + ' von ' + s.requested_count + ' Entwürfen bereit'
+        + (s.shortfall ? ' (' + s.shortfall + ' fehlen)' : '') + '<br>'
+        + '<span class="mini">Anhang: ' + esc(d.asset_file) + '<br>'
+        + 'Absender: ' + esc(d.mailbox) + '</span></div>';
+      h += '<button class="primaer" onclick="emlExport()">'
+        + 'Entwürfe als ZIP erzeugen</button>';
+      h += '<button class="zweit" onclick="freigeben()">Batch freigeben</button>';
+    }
+    el.innerHTML = h;
+    cockpitLaden();
+  }).uiPrepareBatch({
+    owner: document.getElementById('owner').value,
+    count: document.getElementById('count').value,
+    tier: document.getElementById('tier').value,
+    industry: document.getElementById('industry').value,
+    campaign: document.getElementById('campaign').value
+  });
+}
+
+function emlExport() {
+  const el = document.getElementById('batchErgebnis');
+  el.insertAdjacentHTML('beforeend',
+    '<div class="lade" id="expLade">Erzeuge ZIP… bei großen Mengen dauert das '
+    + 'etwas (ca. 1,5 MB pro Entwurf).</div>');
+  google.script.run.withSuccessHandler(function (r) {
+    const l = document.getElementById('expLade');
+    if (l) l.remove();
+    if (!r.ok) { el.insertAdjacentHTML('beforeend',
+      '<div class="fehler">' + esc(r.error) + '</div>'); return; }
+    el.insertAdjacentHTML('beforeend',
+      '<div class="ok">' + r.data.count + ' Entwürfe · ' + r.data.size_mb
+      + ' MB<br><a href="' + r.data.url + '" target="_blank">ZIP in Drive öffnen</a>'
+      + '<br><span class="mini">In Outlook: Einstellungen → Dateien → Import → '
+      + 'Ordner wählen → Zielordner „Entwürfe“.</span></div>');
+  }).uiExportEml(aktuellerBatch);
+}
+
+function freigeben() {
+  google.script.run.withSuccessHandler(function (r) {
+    document.getElementById('batchErgebnis').insertAdjacentHTML('beforeend',
+      r.ok ? '<div class="ok">Batch freigegeben.</div>'
+           : '<div class="fehler">' + esc(r.error) + '</div>');
+  }).uiApproveBatch(aktuellerBatch);
+}
+
+function faelligeLaden() {
+  const el = document.getElementById('faellige');
+  el.innerHTML = '<div class="lade">Lade…</div>';
+  google.script.run.withSuccessHandler(function (r) {
+    if (!r.ok) { el.innerHTML = '<div class="fehler">' + esc(r.error) + '</div>'; return; }
+    if (!r.data.length) { el.innerHTML = '<div class="ok">Nichts fällig.</div>'; return; }
+    let h = '<div class="mini">' + r.data.length + ' fällig</div>';
+    r.data.slice(0, 40).forEach(function (d) {
+      h += '<div class="faellig"><b>' + esc(d.Company) + '</b>'
+        + '<span class="mini">' + esc(d.Email) + ' · fällig ' + esc(d.Due)
+        + ' · ' + esc(d.Owner) + '</span>'
+        + '<div class="reihe">'
+        + '<button class="zweit" onclick="status(\'' + esc(d.Lead_ID)
+        + '\',\'REPLIED\',0)">Antwort</button>'
+        + '<button class="zweit" onclick="status(\'' + esc(d.Lead_ID)
+        + '\',\'FOLLOWUP\',7)">+7 Tage</button>'
+        + '<button class="zweit" onclick="status(\'' + esc(d.Lead_ID)
+        + '\',\'OPT_OUT\',0)">Abmeldung</button>'
+        + '</div></div>';
+    });
+    el.innerHTML = h;
+  }).uiGetDue(null);
+}
+
+function status(leadId, st, days) {
+  google.script.run.withSuccessHandler(function (r) {
+    if (r.ok) { faelligeLaden(); cockpitLaden(); }
+    else alert(r.error);
+  }).uiSetStatus(leadId, st, days, '');
+}
+
+function qualifizieren() {
+  const el = document.getElementById('qErgebnis');
+  el.innerHTML = '<div class="lade">Wird gesetzt…</div>';
+  google.script.run.withSuccessHandler(function (r) {
+    el.innerHTML = r.ok
+      ? '<div class="ok">' + r.data.updated + ' Leads auf '
+        + esc(r.data.legalBasis) + ' gesetzt.</div>'
+      : '<div class="fehler">' + esc(r.error) + '</div>';
+    cockpitLaden();
+  }).uiQualify({
+    owner: document.getElementById('qOwner').value,
+    count: document.getElementById('qCount').value,
+    legalBasis: document.getElementById('qBasis').value
+  });
+}
+
+cockpitLaden();
+filterLaden();
+</script>
+</body>
+</html>

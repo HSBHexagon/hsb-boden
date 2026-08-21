@@ -1,0 +1,6 @@
+__pycache__/
+*.pyc
+data/*.xlsx
+batches/
+assets/drive_verify/
+tests/last_run.json

@@ -1,0 +1,26 @@
+{
+  "release_id": "hsb-sales-os-2026-08-21",
+  "created_at_utc": "2026-08-21T09:56:06Z",
+  "git_commit": "d4e4667493eaaa13702f0372b612ef6c46e4c326",
+  "sheet_id": "1W-NjwEq0UhDo2TaeS-2qp_qit4YFMz6k-IqKHlPpHmg",
+  "sheet_role": "System of Record",
+  "jordi_flyer_drive_id": "1BHx9TmtGomgslTNhi2_1VoBVPer20zkT",
+  "jordi_flyer_sha256": "e0aa76c1ffec5cf89289e6ab141691d42ea81ffd13db2f08f045342531f39acc",
+  "jordi_flyer_sha256_expected": "e0aa76c1ffec5cf89289e6ab141691d42ea81ffd13db2f08f045342531f39acc",
+  "joel_flyer_drive_id": "16Kt-eRk1uY0HorZCrEmGt3QfGcRpYadS",
+  "joel_flyer_sha256": "2bccadacc77b531057583d2d650963c30deceed36c8be1fd90ca64e8b8cde5fb",
+  "joel_flyer_sha256_expected": "2bccadacc77b531057583d2d650963c30deceed36c8be1fd90ca64e8b8cde5fb",
+  "drive_ids_verified_against_bytes": true,
+  "test_count": 73,
+  "test_pass": 73,
+  "test_fail": 0,
+  "real_send_count": 0,
+  "dns_write_count": 0,
+  "cloudflare_write_count": 0,
+  "admin_action_count": 0,
+  "visual_pdf_gate": "PASS",
+  "visual_pdf_gate_warnings": [
+    "JORDI: kein_fremder_absender_textebene: 'j-cherino@hsb-boden.de' liegt verdeckt in der Textebene (sichtbar korrekt, aber bei Copy-Paste/PDF-Suche sichtbar)"
+  ],
+  "release_status": "READY"
+}

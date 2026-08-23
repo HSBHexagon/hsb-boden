@@ -1,0 +1,3 @@
+## 2026-08-23 - Focus indicators & Required field asterisks in Forms
+**Learning:** In Astro forms using CSS grid layouts, label text and visual required indicators (asterisks) must be wrapped together in a `<span>` to prevent the grid from forcing them onto separate rows. Additionally, explicitly adding tailwind `focus-visible` classes improves keyboard navigation accessibility by avoiding inconsistent native focus outlines.
+**Action:** Always wrap label text and inline indicators together when using CSS grid, and ensure interactive elements have explicit focus-visible classes for consistent accessibility.

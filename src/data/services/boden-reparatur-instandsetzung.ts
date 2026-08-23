@@ -4,9 +4,9 @@ export const bodenReparaturInstandsetzung: Service = {
   slug: "boden-reparatur-instandsetzung",
   title: "Reparatur und Instandsetzung",
   seoTitle:
-    "Industrieboden reparieren & instandsetzen | HSB Hexagon Säurebau",
+    "Industrieboden reparieren & instandsetzen | HSB",
   description:
-    "Fachgerechte Reparatur von Industrieböden: Schadstellen, Fugen, Anschlüsse, Sockel und Teilflächen – auch im laufenden Betrieb. Instandsetzung statt Komplettsanierung, wo es technisch sinnvoll ist.",
+    "Industrieböden reparieren & instandsetzen: Fugen-Sanierung, Hohlstellen, Risse & Kantenbrüche schnell beheben im laufenden Betrieb ohne Stillstand.",
   h1: "Reparatur und Instandsetzung von Industrieböden",
   primaryKeyword: "Industrieboden reparieren",
   secondaryKeywords: [
@@ -46,7 +46,10 @@ export const bodenReparaturInstandsetzung: Service = {
   ],
   relatedIndustries: ["lebensmittelindustrie", "molkerei"],
   relatedReferences: ["suedzucker-zeitz"],
-  relatedArticles: ["sanierung-ohne-produktionsstillstand"],
+  relatedArticles: [
+    "sanierung-ohne-produktionsstillstand",
+    "hohlkehle-sockelausbildung-industrieboden",
+  ],
   faqs: [
     {
       question:

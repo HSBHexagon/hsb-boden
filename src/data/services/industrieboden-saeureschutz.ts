@@ -3,9 +3,9 @@ import type { Service } from "../../lib/types";
 export const industriebodenSaeureschutz: Service = {
   slug: "industrieboden-saeureschutz",
   title: "Industrieboden-Säureschutz",
-  seoTitle: "Säureschutz für Industrieböden | Hexagon Säurebau",
+  seoTitle: "Säureschutz für Industrieböden & Säurebau | HSB",
   description:
-    "Säurebeständige Industriebodensysteme für Lebensmittel-, Getränke-, Pharma- und Chemieproduktion mit Fokus auf Fugen, Abdichtung, Entwässerung und Lebensdauer.",
+    "Säurebeständige Industrieböden & Säureschutzbau für Lebensmittel-, Getränke-, Pharma- und Chemieproduktion. Beständig gegen Säuren, Laugen und Heißwasser.",
   h1: "Säureschutz für chemisch belastete Industrieböden",
   primaryKeyword: "Säureschutz Industrieboden",
   secondaryKeywords: [
@@ -49,6 +49,8 @@ export const industriebodenSaeureschutz: Service = {
   relatedArticles: [
     "saeurefeste-fliesen-industrieboden",
     "pu-beton-oder-keramischer-industrieboden",
+    "whg-abdichtung-industrieboden-pflicht",
+    "warum-industrieboeden-in-molkereien-versagen",
   ],
   faqs: [
     {

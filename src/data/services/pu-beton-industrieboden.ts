@@ -3,9 +3,9 @@ import type { Service } from "../../lib/types";
 export const puBetonIndustrieboden: Service = {
   slug: "pu-beton-industrieboden",
   title: "PU-Beton Industrieboden",
-  seoTitle: "PU-Beton & Polyurethan-Zement-Estrich | Hexagon Säurebau",
+  seoTitle: "PU-Beton & Polyurethanbeton Industrieböden | HSB",
   description:
-    "Fugenlose Hochleistungsböden für Lebensmittel und Pharma. Extrem thermoschockbeständig, hygienisch und schnell belastbar.",
+    "Fugenlose PU-Beton-Böden für Lebensmittel & Pharma: Extrem thermoschockbeständig bis 130°C, chemisch resistent, hygienisch und schnell belastbar.",
   h1: "PU-Beton: fugenloser Hochleistungsboden für Thermoschock-Belastung",
   primaryKeyword: "PU-Beton Industrieboden",
   secondaryKeywords: [
@@ -50,7 +50,11 @@ export const puBetonIndustrieboden: Service = {
     "backwarenproduktion-grosskueche",
   ],
   relatedReferences: ["feinkost-nrw"],
-  relatedArticles: ["pu-beton-oder-keramischer-industrieboden"],
+  relatedArticles: [
+    "pu-beton-oder-keramischer-industrieboden",
+    "rutschhemmklassen-r9-bis-r13-industrieboden",
+    "sanierung-ohne-produktionsstillstand",
+  ],
   faqs: [
     {
       question: "Ist PU-Beton dampfstrahlfest?",

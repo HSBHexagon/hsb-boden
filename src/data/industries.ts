@@ -6,7 +6,7 @@ export const industries: Industry[] = [
     title: "Lebensmittelindustrie",
     seoTitle: "HACCP-konformer Industrieboden Lebensmittelindustrie | HSB",
     description:
-      "Hygienische Industrieböden für die Lebensmittelproduktion. Wir planen und realisieren Systeme nach HACCP und IFS-Standards mit Fokus auf Reinigbarkeit und Sicherheit.",
+      "Hygienische Industrieböden für die Lebensmittelproduktion: R11–R13 Rutschhemmung, dichte Hohlkehlen, Beständigkeit gegen Fette & Säuren nach HACCP/IFS.",
     h1: "Industrieböden für die Lebensmittelindustrie",
     searchIntent:
       "Entscheider suchen nach hygienischen, reinigungsbeständigen und dauerhaft belastbaren Böden für Nass- und Produktionsbereiche unter Einhaltung strenger Audits.",
@@ -61,9 +61,9 @@ export const industries: Industry[] = [
   {
     slug: "molkerei",
     title: "Molkerei",
-    seoTitle: "Industrieboden für Molkereien & Käsereien | Hexagon Säurebau",
+    seoTitle: "Molkereiboden: Milchsäurebeständig & Säurefest | HSB",
     description:
-      "Spezial-Industrieböden für Molkereien. Beständig gegen Milchsäure, Fette und Heißwasserreinigung. Wir sanieren im laufenden Betrieb ohne Staubbelastung.",
+      "Spezial-Industrieböden für Molkereien: Beständig gegen Milchsäure, Fette & CIP-Heißwasserreinigung. Wir sanieren im laufenden Betrieb ohne Staubbelastung.",
     h1: "Industrieböden für Molkereien und Milchverarbeitung",
     searchIntent:
       "Molkereien benötigen Bodensysteme, die den extremen chemischen Angriff von Milchsäure und die thermische Last der CIP-Reinigung dauerhaft bestehen.",
@@ -117,9 +117,9 @@ export const industries: Industry[] = [
   {
     slug: "brauerei-getraenkeindustrie",
     title: "Brauerei und Getränkeindustrie",
-    seoTitle: "Industrieboden für Brauereien & Getränkeindustrie | HSB",
+    seoTitle: "Brauereiböden & Fliesen für Getränkeindustrie | HSB",
     description:
-      "Hochbelastbare Böden für Abfüllung und Lager. Beständig gegen Zucker, Laugen und massive mechanische Lasten durch Gabelstapler.",
+      "Säurebeständige Feinsteinzeugböden & Fliesen für Brauereien und Getränkeproduktion: Beständig gegen Laugen, Zucker und schwere Staplerlasten.",
     h1: "Industrieböden für Brauereien und Getränkeproduktion",
     searchIntent:
       "Betriebe suchen Böden für Abfülllinien und Gärbereiche, die chemische Reinigung (Laugen) und schwere dynamische Lasten im Nassbereich kombinieren.",

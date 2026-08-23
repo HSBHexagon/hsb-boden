@@ -482,4 +482,76 @@ export const articles: Article[] = [
     relatedServices: ["industrieboden-saeureschutz", "whg-abdichtung-industrieboden", "epoxidharz-bodenbeschichtung"],
     relatedIndustries: ["chemieindustrie", "pharmaindustrie"],
   },
+  {
+    slug: "lebenszykluskosten-industrieboden-fliese-vs-beschichtung",
+    title: "Lebenszykluskosten im Industrieboden: Fliese vs. Beschichtung",
+    seoTitle: "Lebenszykluskosten Industrieboden: TCO-Vergleich | HSB",
+    description:
+      "TCO-Vergleich über 20 Jahre: Warum keramische Industrieböden trotz höherer Initialkosten oft wirtschaftlicher sind als wiederkehrende Beschichtungen.",
+    h1: "Lebenszykluskosten (TCO): Keramischer Industrieboden vs. Beschichtung",
+    category: "Wirtschaftlichkeit",
+    readTime: "9 Minuten",
+    intro:
+      "Bei der Investitionsentscheidung für einen Industrieboden steht oft der Quadratmeterpreis der Erstverlegung im Vordergrund. Für kaufmännische Entscheider und Betriebsleiter zählt jedoch die Total Cost of Ownership (TCO) über den gesamten Lebenszyklus inklusive Sanierungszyklen und Ausfallzeiten.",
+    sections: [
+      {
+        title: "Der Unterschied zwischen Anschaffungs- und Gesamtkosten",
+        body: "Eine Beschichtung (z. B. Epoxidharz) hat geringere Anschaffungskosten, muss jedoch in hochbelasteten Bereichen typischerweise alle 5 bis 8 Jahre erneuert oder überarbeitet werden. Keramische Rüttelböden erfordern eine höhere Anfangsinvestition, erreichen aber Standzeiten von 25 bis 30 Jahren bei minimalem Wartungsaufwand.",
+      },
+      {
+        title: "Der versteckte Kostenfaktor: Produktionsstillstand bei Sanierungen",
+        body: "Der größte Kostenfaktor bei wiederkehrenden Sanierungen ist meist nicht das Material, sondern der Produktionsausfall. Muss eine Halle für das Abschleifen und Aushärten einer Beschichtung mehrere Tage geräumt werden, übersteigen die Stillstandskosten oft den Gesamtwert des Bodens.",
+      },
+      {
+        title: "Reparaturfreundlichkeit im laufenden Betrieb",
+        body: "Bei punktuellen mechanischen Beschädigungen können bei keramischen Belägen einzelne Fliesen gezielt und staubarm getauscht werden. Bei Beschichtungen führt ein lokaler Schaden häufig zu Unterläufigkeit und erfordert flächige Nacharbeiten.",
+      },
+      {
+        title: "Wann sich welches System amortisiert",
+        body: "In reinen Trockenlagern oder Technikräumen mit geringer chemischer Last ist eine Epoxidharzbeschichtung wirtschaftlich optimal. In produktionskritischen Nass- und Chemiezones (Molkereien, Brauereien, Chemie) amortisiert sich ein keramischer Rüttelboden meist bereits nach dem ersten vermiedenen Sanierungszyklus.",
+      },
+      {
+        title: "TCO-Berechnung für Ihr Projekt",
+        body: "HSB berechnet die Lebenszykluskosten herstellerunabhängig auf Basis Ihres konkreten Belastungsprofils, Ihrer Schichtzeiten und der geforderten Nutzungsdauer.",
+      },
+    ],
+    relatedServices: ["keramische-industrieboeden", "epoxidharz-bodenbeschichtung", "bodensanierung-laufender-betrieb"],
+    relatedIndustries: ["lebensmittelindustrie", "chemieindustrie", "molkerei"],
+  },
+  {
+    slug: "industrieboden-tiefkuehllager-frostbereiche",
+    title: "Industrieböden in Tiefkühllagern und Frostbereichen (-30°C)",
+    seoTitle: "Tiefkühllager-Böden: Anforderungen bei -30°C | HSB Wissen",
+    description:
+      "Welche extremen Anforderungen Tiefkühlböden bei -30°C an Kälteflexibilität, Fugenprofile und Thermoschocks stellen und wie Schäden vermieden werden.",
+    h1: "Industrieböden in Tiefkühllagern: Belastbarkeit bei bis zu -30°C",
+    category: "Technik",
+    readTime: "8 Minuten",
+    intro:
+      "Tiefkühllager und Schockfroster stellen Extrembedingungen für Bodenbeläge dar. Permanente Minusgrade bis -30°C, hohe Punktlasten durch Schwerlastregale und dynamische Kräfte durch Flurförderzeuge erfordern spezialisierte Systeme, die auch bei Frost nicht verspröden.",
+    sections: [
+      {
+        title: "Das Materialverhalten bei dauerhaften Minustemperaturen",
+        body: "Herkömmliche Kunstharzbeschichtungen verlieren bei extremen Minusgraden ihre Elastizität und verspröden. Treffen dann schwere Staplerräder auf Fugen oder Kanten, entstehen sofort Risse und Abplatzungen, die sich durch Eisbildung rasch vergrößern.",
+      },
+      {
+        title: "Dehnungsfugen und Schleusenübergänge",
+        body: "Besonders kritisch sind die Übergangsbereiche zwischen Tiefkühlzone (-25°C) und Vorkühlbereich (+4°C). Hier entstehen massive thermische Längenänderungen und Kondenswasser, die durch vibrationsfreie Edelstahl-Schwerlastprofile dauerhaft abgefangen werden müssen.",
+      },
+      {
+        title: "PU-Beton und Spezial-Rüttelkeramik im Kälteeinsatz",
+        body: "Spezialisierter PU-Beton und im Rüttelverfahren verlegte Klinker zeichnen sich durch temperaturstabile Ausdehnungskoeffizienten aus, die dem Unterbeton sehr nahe kommen. Dadurch bleibt der Haftverbund auch bei extremen Temperaturdifferenzen intakt.",
+      },
+      {
+        title: "Sanierung bei laufenden Minustemperaturen",
+        body: "Das Abtauen eines Tiefkühllagers für eine Bodensanierung ist extrem teuer und logistisch aufwendig. Mit spezialisierten kalthärtenden Systemen (z. B. modifizierten Reaktionsharzen) können Instandsetzungen teils auch bei Minustemperaturen durchgeführt werden.",
+      },
+      {
+        title: "Tiefkühlboden-Planung mit HSB",
+        body: "Wir analysieren die Temperaturzonen, Regalstützenlasten und Verkehrsachsen Ihres Tiefkühllagers und dimensionieren ein System, das Kälte, Eis und Staplerverkehr dauerhaft standhält.",
+      },
+    ],
+    relatedServices: ["pu-beton-industrieboden", "keramische-industrieboeden", "dehnungsfugen-rammschutz-industrieboden"],
+    relatedIndustries: ["lebensmittelindustrie", "molkerei", "backwarenproduktion-grosskueche"],
+  },
 ];

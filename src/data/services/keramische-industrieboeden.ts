@@ -3,9 +3,9 @@ import type { Service } from "../../lib/types";
 export const keramischeIndustrieboeden: Service = {
   slug: "keramische-industrieboeden",
   title: "Keramische Industrieböden",
-  seoTitle: "Keramische Industrieböden & Rüttelkeramik | Hexagon Säurebau",
+  seoTitle: "Keramische Industrieböden & Rüttelkeramik | HSB",
   description:
-    "Hochbelastbare keramische Industrieböden im Rüttelverfahren. Ideal für Lebensmittelindustrie, Brauereien und Chemie mit Fokus auf mechanische Härte.",
+    "Hochbelastbare keramische Industrieböden im Rüttelverfahren: Extrem druckfest, säurebeständig, langlebig und ideal für Lebensmittel-, Molkerei- und Chemiebetriebe.",
   h1: "Keramische Industrieböden für mechanische Höchstlasten",
   primaryKeyword: "keramischer Industrieboden",
   secondaryKeywords: [
@@ -55,6 +55,8 @@ export const keramischeIndustrieboeden: Service = {
     "pu-beton-oder-keramischer-industrieboden",
     "saeurefeste-fliesen-industrieboden",
     "warum-industrieboeden-in-molkereien-versagen",
+    "rutschhemmklassen-r9-bis-r13-industrieboden",
+    "hohlkehle-sockelausbildung-industrieboden",
   ],
   faqs: [
     {

@@ -4,9 +4,9 @@ export const dehnungsfugenRammschutzIndustrieboden: Service = {
   slug: "dehnungsfugen-rammschutz-industrieboden",
   title: "Dehnungsfugen und Rammschutz",
   seoTitle:
-    "Dehnungsfugen & Rammschutz für Industrieböden | Hexagon Säurebau",
+    "Dehnungsfugen & Rammschutz für Industrieböden | HSB",
   description:
-    "Schutz der kritischen Details. Wir planen und bauen wartungsarme Fugenprofile und robusten Rammschutz für langlebige Böden.",
+    "Schutz kritischer Bodendetails: Wartungsarme Edelstahl-Fugenprofile und robuster Rammschutz für langlebige Industrieböden unter Staplerverkehr.",
   h1: "Dehnungsfugen und Rammschutz: Schutz für Details",
   primaryKeyword: "Dehnungsfugen Industrieboden",
   secondaryKeywords: [
@@ -45,7 +45,11 @@ export const dehnungsfugenRammschutzIndustrieboden: Service = {
   ],
   relatedIndustries: ["lebensmittelindustrie", "chemieindustrie"],
   relatedReferences: ["suedzucker-zeitz"],
-  relatedArticles: ["entwaesserung-gefaelle-produktionsbereiche"],
+  relatedArticles: [
+    "entwaesserung-gefaelle-produktionsbereiche",
+    "hohlkehle-sockelausbildung-industrieboden",
+    "sanierung-ohne-produktionsstillstand",
+  ],
   faqs: [
     {
       question: "Können Fugenprofile auch nachträglich eingebaut werden?",

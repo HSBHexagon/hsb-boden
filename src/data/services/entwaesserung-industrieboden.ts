@@ -3,9 +3,9 @@ import type { Service } from "../../lib/types";
 export const entwaesserungIndustrieboden: Service = {
   slug: "entwaesserung-industrieboden",
   title: "Entwässerung im Industrieboden",
-  seoTitle: "Industrie-Entwässerung & Rinnensysteme | Hexagon Säurebau",
+  seoTitle: "Industrie-Entwässerung & Rinnensysteme | HSB",
   description:
-    "Hygienische Edelstahlrinnen und Gefälleplanung. Wir liefern Rinnen und Boden als ein integriertes, dichtes Gesamtsystem.",
+    "Hygienische Edelstahlrinnen & Gefälleplanung für Industrieböden. Wir liefern Rinnen und Boden als ein integriertes, lückenlos dichtes Gesamtsystem.",
   h1: "Integrierte Entwässerung und Gefälleplanung",
   primaryKeyword: "Entwässerung Industrieboden",
   secondaryKeywords: [
@@ -53,6 +53,7 @@ export const entwaesserungIndustrieboden: Service = {
   relatedArticles: [
     "entwaesserung-gefaelle-produktionsbereiche",
     "warum-industrieboeden-in-molkereien-versagen",
+    "hohlkehle-sockelausbildung-industrieboden",
   ],
   faqs: [
     {

@@ -3,9 +3,9 @@ import type { Service } from "../../lib/types";
 export const bodensanierungLaufenderBetrieb: Service = {
   slug: "bodensanierung-laufender-betrieb",
   title: "Bodensanierung im laufenden Betrieb",
-  seoTitle: "Bodensanierung ohne Produktionsstillstand | Hexagon Säurebau",
+  seoTitle: "Bodensanierung ohne Stillstand | HSB Fachbetrieb",
   description:
-    "Wir sanieren Ihren Industrieboden ohne Stillstand. Taktgenaue Planung, Staubschutzwände und Schnellsysteme für minimale Ausfallzeiten.",
+    "Wir sanieren Ihren Industrieboden ohne Stillstand: Taktgenaue Planung, Staubschutzwände und Schnellsysteme für minimale Ausfallzeiten im laufenden Betrieb.",
   h1: "Professionelle Bodensanierung ohne Produktionsstillstand",
   primaryKeyword: "Bodensanierung laufender Betrieb",
   secondaryKeywords: [

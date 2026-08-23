@@ -6,6 +6,10 @@ export default defineConfig({
   site: "https://www.hsb-boden.de",
   output: "static",
   integrations: [],
+  prefetch: {
+    prefetchAll: true,
+    defaultStrategy: "hover",
+  },
   devToolbar: { enabled: false },
   server: {
     allowedHosts: true,

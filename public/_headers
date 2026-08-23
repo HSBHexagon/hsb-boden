@@ -17,6 +17,12 @@
 /brand/*
   Cache-Control: public, max-age=86400, stale-while-revalidate=604800
 
+/media/*
+  Cache-Control: public, max-age=604800, stale-while-revalidate=2592000
+
+/logos/*
+  Cache-Control: public, max-age=604800, stale-while-revalidate=2592000
+
 # Canonical PDF Flyers
 /*.pdf
   Cache-Control: public, max-age=3600, stale-while-revalidate=86400

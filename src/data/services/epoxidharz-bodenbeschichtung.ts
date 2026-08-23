@@ -3,9 +3,9 @@ import type { Service } from "../../lib/types";
 export const epoxidharzBodenbeschichtung: Service = {
   slug: "epoxidharz-bodenbeschichtung",
   title: "Epoxidharz-Bodenbeschichtung",
-  seoTitle: "Epoxidharz-Bodenbeschichtung Industrie | Hexagon Säurebau",
+  seoTitle: "Epoxidharz-Bodenbeschichtung Industrie | HSB",
   description:
-    "Industrielle Beschichtungssysteme für Lager, Technik und Produktion. Wirtschaftlich, chemisch beständig und individuell konfigurierbar.",
+    "Industrielle Epoxidharz-Beschichtungen für Lager, Technik & Produktion. Wirtschaftlich, chemisch beständig und auf Wunsch ableitfähig (ESD).",
   h1: "Epoxidharz-Systeme für industrielle Anforderungen",
   primaryKeyword: "Epoxidharz Bodenbeschichtung Industrie",
   secondaryKeywords: [
@@ -45,7 +45,11 @@ export const epoxidharzBodenbeschichtung: Service = {
   ],
   relatedIndustries: ["chemieindustrie", "pharmaindustrie"],
   relatedReferences: ["chemie-region-west"],
-  relatedArticles: ["pu-beton-oder-keramischer-industrieboden"],
+  relatedArticles: [
+    "pu-beton-oder-keramischer-industrieboden",
+    "esd-ableitfaehigkeit-explosionsschutz-industrieboden",
+    "whg-abdichtung-industrieboden-pflicht",
+  ],
   faqs: [
     {
       question: "Kann man Epoxidharz auf alten Fliesen verlegen?",

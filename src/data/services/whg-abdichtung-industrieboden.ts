@@ -3,9 +3,9 @@ import type { Service } from "../../lib/types";
 export const whgAbdichtungIndustrieboden: Service = {
   slug: "whg-abdichtung-industrieboden",
   title: "WHG-Abdichtung im Industrieboden",
-  seoTitle: "WHG-Abdichtung & Gewässerschutzböden | Hexagon Säurebau",
+  seoTitle: "WHG-Abdichtung & Fugen für Industrieböden | HSB",
   description:
-    "Zertifizierte Abdichtung nach § 62/63 WHG. Wir sichern Ihre Anlagen gegen wassergefährdende Stoffe ab – technisch belegt und rechtssicher.",
+    "Zertifizierte WHG-Abdichtung (§ 62 WHG) & säurefeste Fugen für Chemie- & Industrieanlagen. Vollständige DIBt-Dokumentation für Behörden & Sachverständige.",
   h1: "WHG-konforme Abdichtungssysteme für die Industrie",
   primaryKeyword: "WHG Abdichtung Industrieboden",
   secondaryKeywords: [
@@ -45,7 +45,10 @@ export const whgAbdichtungIndustrieboden: Service = {
   ],
   relatedIndustries: ["chemieindustrie", "pharmaindustrie"],
   relatedReferences: ["chemie-region-west"],
-  relatedArticles: ["saeurefeste-fliesen-industrieboden"],
+  relatedArticles: [
+    "saeurefeste-fliesen-industrieboden",
+    "whg-abdichtung-industrieboden-pflicht",
+  ],
   faqs: [
     {
       question: "Muss jede chemisch belastete Fläche WHG-konform sein?",

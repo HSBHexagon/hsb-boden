@@ -3,6 +3,24 @@
 Stand 2026-08-21. Jede Aussage unten stammt aus einem gelaufenen Befehl mit
 gesehener Ausgabe. Nicht Belegtes ist als solches gekennzeichnet.
 
+> **Gültigkeitshinweis (2026-08-23).** Dieses Dokument ist das gewachsene
+> Messprotokoll und wird bewusst nicht umgeschrieben. Den kanonischen
+> Kurzstatus führt seit dem 2026-08-23 **`PROJECT_STATE.md`**; bei Widerspruch
+> gilt diese Datei nur noch als Historie.
+>
+> Konkret überholt sind:
+> - `OUTLOOK_DRAFT_PATH = EXTERNAL_BLOCKER` — für `j-cherino@hsb-boden.de`
+>   aufgelöst, siehe Abschnitt 9.
+> - Der Satz, der verbundene Connector gehöre `cherinodiaz@outlook.com` —
+>   dieser Weg ist historisch und **nicht** der Geschäfts-Adapter.
+> - `Remote Clasp Round-Trip … 0 diff` — trifft wörtlich nicht mehr zu,
+>   siehe Abschnitt 9.
+> - Die Angabe `VERIFIER_SUITE = 13/13` — die Suite gibt keine Gesamtzahl aus;
+>   belegbar sind nur `VERDICT PASS` und Exit-Code 0 (siehe Abschnitt 9).
+>
+> Unverändert gültig bleiben die fachlichen Gates, die Flyer-Warnung und der
+> Grundsatz `REAL_EXTERNAL_SEND_COUNT = 0`.
+
 ---
 
 ## Gates
@@ -334,3 +352,247 @@ EML-Anhänge getrennt von losen PDFs. Eine Suche nach `*.pdf` hätte diese
 4. **Projektchronologie & System-Evidenz**:
    - `SYSTEM_EVIDENCE_FINAL_STATE = PASS`: Alle zuvor als `E2E OFFEN` markierten Prüfpunkte (dynamisches N, Reply/Bounce) sind durch die Verifier-Suite formal belegt und supersedet.
    - `PROJECT_CHRONOLOGY_FINAL_ENTRY = PASS`: Finaler Verifier-Eintrag für `c376f16` mit 135/135 + 76/76 Tests und 0 externen Sends dokumentiert.
+
+
+---
+
+## 9. Finalisierung und frische Verifikation (2026-08-23)
+
+**Datum:** 2026-08-23
+**Git HEAD vor der Finalisierung:** `46f7437`
+**Abschlussklassifikation:** `PASS_WITH_DEFERRED_JORDI_OPERATOR_ACCEPTANCE`
+**Realer externer Prospektversand:** `REAL_EXTERNAL_PROSPECT_SEND_COUNT = 0`
+
+Alle Zahlen unten stammen aus Läufen dieses Tages. Ältere PASS-Zahlen wurden
+nicht übernommen.
+
+### Testsuiten
+
+| Prüffeld | Befehl | Ergebnis | Exit |
+|---|---|---|---|
+| Apps-Script-Suite | `node tests/test_apps_script.js` | 135/135, 0 Fehler | 0 |
+| Python-Testmatrix | `python3 tests/test_matrix.py` | 76/76, 0 Fehler | 0 |
+| Verifier-Suite | `node tests/verifier_suite.js` | VERDICT PASS | 0 |
+
+Der Treffer `LOCK_TIMEOUT_BEHAVIOR=FAIL_CLOSED_PASS` ist ein **bestandener**
+Fail-Closed-Test und kein Fehlschlag — eine reine Textsuche nach `FAIL` führt
+hier in die Irre.
+
+### Remote-Abgleich Apps Script
+
+`clasp pull` in ein Temp-Verzeichnis, danach SHA-256 je Datei:
+
+| Datei | Ergebnis |
+|---|---|
+| `Sidebar.html` | byte-identisch |
+| `appsscript.json` | byte-identisch |
+| `HSB_SALES_OS.js` | 6 Byte Differenz — 3 Zeilenenden mit je 2 Leerzeichen |
+
+Nach `sed 's/[[:space:]]*$//'` ergibt sich auf beiden Seiten derselbe Hash
+`ac746992b8e0899d…`, und `diff -w` ist leer. Bewertung:
+`REMOTE_SCRIPT_MATCH = SEMANTISCH IDENTISCH`, nicht byte-identisch. Kein
+Redeploy nötig; der Unterschied stammt mit hoher Wahrscheinlichkeit aus einem
+Speichern im Apps-Script-Editor.
+
+### Secret-Scan und Assets
+
+- `git grep` über alle getrackten Dateien auf Token-, API-Key- und
+  Private-Key-Muster: **0 Treffer**.
+- Flyer-Hashes gegen `RELEASE_MANIFEST.json`: Jordi `e0aa76c1ffec5cf8…`,
+  Joel `2bccadacc77b5310…` — beide identisch.
+
+### Power Automate (read-only nachgelesen)
+
+| Feld | Wert |
+|---|---|
+| Konto | `j-cherino@hsb-boden.de` |
+| Umgebung | Hexagonal Säurebau GmbH (default), Region germany |
+| Connection | `shared-office365-819bd473`, Connected, silent first-party auth |
+| Testflow | `ff3c1317-ca21-440b-8bdb-f01d860c411f`, State `Stopped` |
+| Läufe | genau 1, `Succeeded` |
+| Draft-Action | `DraftEmail`, `Succeeded`, code `OK` |
+| Send-Action | nicht vorhanden |
+
+Empfänger des Testentwurfs war das eigene Postfach, keine Prospektadresse.
+
+### Dokumentationsabgleich im Live-Sheet
+
+Bereinigt wurde die Pilot-Drift, ohne Historie zu löschen:
+
+- `CONTROL_CENTER`: Stand auf 23.08.2026; „Dynamische Batchgröße“ von
+  `IN VERIFIKATION` auf `PASS / VERIFIZIERT`; der Privatkonto-Konnektor als
+  `HISTORISCH – ÜBERHOLT` gekennzeichnet; vier Zeilen zu Power Automate,
+  Send-Verhalten, Jordis aufgeschobener Abnahme und dem Fallback ergänzt.
+- `BATCH_PLAN`: Zeile `DYNAMIC` von „E2E-Nachweis noch offen“ auf
+  `VERIFIED / PASS`. `JORDI-20260821-001` unverändert erhalten.
+- `RUNBOOK`: von „JORDI 50 / OUTLOOK“ auf den aktuellen Betriebsablauf mit
+  beliebigem N umgestellt, inklusive `KEIN AUTOMATISCHER PROSPEKTVERSAND` und
+  der ausdrücklichen Kennzeichnung, dass Jordis Power-Automate-Abnahme
+  aussteht.
+- `SYSTEM_EVIDENCE`: 13 neue Belegzeilen angehängt; die alte Zeile
+  „Outlook-Verbindung / persönliches Konto“ als `BLOCKED (HISTORISCH –
+  ÜBERHOLT)` markiert statt gelöscht.
+- `PROJECT_CHRONOLOGY`: **am 23.08. zunächst NICHT ergänzt** — nachgeholt in
+  Abschnitt 10. Die frühere Formulierung an dieser Stelle war falsch.
+
+Vor jeder überschreibenden Änderung wurden die Tabs `CONTROL_CENTER`,
+`RUNBOOK` und `BATCH_PLAN` als `*_BACKUP_20260823` gesichert. `ALL_LEADS` und
+bestehende Batch-Reservierungen wurden nicht angefasst.
+
+### Was bewusst offen bleibt
+
+- `JORDI_OPERATOR_ACCEPTANCE = DEFERRED`
+- `JORDI_POWER_AUTOMATE = NOT_TESTED_DEFERRED`
+- `DEPLOYED_RUNTIME_CONCURRENCY = UNVERIFIED` (nicht blockierend)
+- `REAL_PROSPECT_CAMPAIGN_TEST = NOT_EXECUTED_BY_DESIGN`
+
+---
+
+## 10. Abschluss-Verifikation E-Mail-Entwürfe (2026-08-23, zweiter Durchgang)
+
+Auftrag: nachweisen, dass ein Batch mit N Leads genau N vollständige
+Outlook-Entwürfe ergibt — richtiger Text, richtiger Flyer, richtige
+Personalisierung, kein automatischer Versand.
+
+### 10.1 Frische Suiten
+
+| Befehl | Ergebnis | Exit |
+|---|---|---|
+| `node tests/test_apps_script.js` | 135 bestanden, 0 fehlgeschlagen | 0 |
+| `python3 tests/test_matrix.py` | 76 bestanden, 0 fehlgeschlagen | 0 |
+| `node tests/verifier_suite.js` | VERDICT PASS | 0 |
+
+### 10.2 N-zu-N-Nachweis
+
+Ausgeführt offline über `prepare_batch` + `write_batch(root=<Scratchpad>)` mit
+synthetischen Leads. Bewusst **keine** Batch-Reservierung und **kein**
+Schreibzugriff auf `ALL_LEADS` — bestehende Reservierungen bleiben unberührt.
+
+| Owner | N | Erzeugte `.eml` |
+|---|---|---|
+| Joel | 17 | 17 |
+| Jordi | 17 | 17 |
+| Joel | 250 | 250 |
+| Jordi | 1 | 1 |
+
+Je Entwurf geprüft und bestanden: `X-Unsent: 1` (Outlook öffnet als Entwurf),
+genau ein PDF-Anhang, Anhang-SHA-256 gleich dem Owner-Flyer, Dateiname gleich
+dem kanonischen Flyer, `To` gleich der Lead-Adresse, Firmenname im Betreff,
+Ansprechpartner in der Anrede, Anzeigename und Mailbox des Owners in Absender
+und Signatur, Opt-out-Hinweis vorhanden. In keinem der 285 Entwürfe taucht der
+Flyer-Hash des jeweils anderen Owners auf.
+
+### 10.3 FAIL-CLOSED-Matrix
+
+Alle sieben Ausschlussgründe wurden einzeln ausgelöst und einzeln gezählt:
+`Opt_Out=YES`, `Suppressed=YES`, `Hard Bounce`, ungültige E-Mail,
+`Legal_Basis=UNKNOWN`, `Versandfreigabe=no`, bereits gesendet. Ein Lead mit
+fremdem Owner fällt bereits aus dem Auswahlpool. Dublettenschutz: fünf Leads in
+einem aktiven Batch ergaben `selected=0`, `shortfall=5` — keine stille
+Ersatzauswahl.
+
+### 10.4 Flyer-Hash-Gate
+
+`shasum -a 256` auf `assets/canonical/` stimmt zeichengenau mit den beiden im
+Auftrag genannten Soll-Hashes überein.
+
+### 10.5 Send-Action, systemweit
+
+Der Scan über den gesamten Baum (`sendEmail`, `MailApp`, `GmailApp`,
+`SendEmailV2`, `SendDraftEmail`, `Mail.Send`, `smtplib`) liefert **drei**
+Fundstellen ausserhalb der Testdateien:
+
+| Fundstelle | Live? |
+|---|---|
+| `deploy/HSB_SALES_OS.js:935` | ja — dies ist der gepushte Stand |
+| `apps_script/HSB_SALES_OS.gs:935` | nein — erzeugte Bündeldatei, identische Kopie |
+| `apps_script/Actions.gs:375` | nein — Quelldatei derselben Funktion |
+
+Alle drei sind dieselbe Funktion `dailyDigest`. Live ist nur `deploy/`:
+`deploy/.clasp.json` setzt `rootDir: ""` und `deploy/.claspignore` schliesst
+mit `**/**` alles aus ausser `appsscript.json`, `HSB_SALES_OS.js` und
+`Sidebar.html`.
+
+In allen drei Fundstellen ist der Empfänger fest
+`Session.getActiveUser().getEmail()` — die eigene Adresse des ausführenden
+Operators. Es ist eine Wiedervorlage-Erinnerung an sich selbst und kann
+konstruktionsbedingt keine Prospektadresse erreichen. Auf dem Prospekt-Pfad
+existiert keine Send-Action.
+
+Die frühere Formulierung „liefert einen echten Treffer" war falsch gezählt und
+wurde im unabhängigen Review beanstandet.
+
+`SEND_ACTION_PRESENT = false` ist damit für den Prospekt-Pfad korrekt, aber
+nicht als „das System versendet nirgends E-Mail" zu lesen.
+
+### 10.6 Befund: der Batch-Schreibvorgang ist nicht transaktional
+
+`write_batch` prüft den Flyer-Hash **einmal vor** der Schleife und schreibt die
+Entwürfe anschließend sequentiell. Ein simulierter Abbruch bei Lead 6 von 10
+hinterließ 5 `.eml` auf der Platte.
+
+Entlastend, ebenfalls gemessen: `manifest.json` und `status.csv` werden erst
+**nach** der Schleife geschrieben und fehlten nach dem Abbruch. Der
+Wiederholungslauf baute wegen deterministischer Dateinamen sauber auf 10 auf.
+
+Zwei Randfälle, die der unabhängige Review ergänzt hat und die die reine
+Existenzprüfung nicht abdeckt:
+
+- Beide Dateien werden mit `write_text` ohne Temp-und-Rename geschrieben. Ein
+  Abbruch genau während dieses Schreibvorgangs kann eine **vorhandene, aber
+  abgeschnittene** Datei hinterlassen.
+- Läuft `write_batch` zweimal unter derselben `batch_id` mit **kleinerer**
+  Lead-Auswahl, bleiben die `.eml` des ersten Laufs liegen; `status.csv` nennt
+  dann weniger Zeilen als Dateien vorhanden sind. Im normalen CLI-Betrieb ist
+  das nicht erreichbar, weil `_next_seq` je Lauf eine neue `batch_id` vergibt.
+
+Deshalb genügt „Datei vorhanden" **nicht** als Prüfung. Die Runbook-Regel
+verlangt zusätzlich den Abgleich der `.eml`-Anzahl mit N — dieser Abgleich deckt
+beide Randfälle auf.
+
+Der Docstring „Prüft den Anhang-Hash pro Datei" ist ungenau: geprüft wird
+einmal, danach werden dieselben `pdf_bytes` wiederverwendet — was Cross-Sender
+tatsächlich unmöglich macht, aber anders begründet als dort beschrieben.
+
+Kein Versandrisiko, da der Versand ohnehin ein manueller Schritt ist. Die
+operative Konsequenz steht jetzt als Pflichtprüfschritt in `RUNBOOK`,
+`CONTROL_CENTER` und `BATCH_PLAN`: **einen Batch nur importieren, wenn
+`manifest.json` und `status.csv` vorhanden sind und die `.eml`-Anzahl N
+entspricht.** Der Code wurde nicht geändert.
+
+### 10.7 Befund: Template-Mapping zeigte auf ein Archiv-Dokument
+
+`EMAIL_TEMPLATE_MAPPING` verwies für `EMAIL_TEMPLATE_JOEL_PRIMARY` und
+`EMAIL_TEMPLATE_JORDI_PRIMARY` auf
+`docs/email/EMAIL_DELIVERABILITY_AND_TEMPLATE_READINESS.md`. Diese Datei liegt
+**nicht** in diesem Repo, sondern nur im Archiv des getrennten Projekts
+`hsb-boden`. Sie ist eine Entwurfsspezifikation, kein Produktionstext: sie
+enthält den offenen Platzhalter `[Telefonnummer einfügen]`, nennt den alten
+Flyernamen ohne `_FINAL`, und ihr „Template 2" ist gar kein Text, sondern der
+Satz „Same structure, adapted to JORDI's role".
+
+Der tatsächlich versendete Text ist die realisierte Fassung in
+`render_email` / `renderEmail_` — ein gemeinsamer, ownerparametrisierter Text.
+Er ist seit Commit `46f7437` unverändert; `git diff 46f7437` gegen den
+Arbeitsbaum ist für `engine/`, `deploy/` und `apps_script/` leer. Es wurde
+nichts neu geschrieben.
+
+Die veraltete Betreffzeile für Joel im Mapping wurde auf den tatsächlich
+erzeugten Betreff korrigiert und die Herkunft dokumentiert.
+`EMAIL_TEMPLATE_FOLLOWUP_14D` ist als `ENTWURF – NICHT IMPLEMENTIERT`
+gekennzeichnet: eine Folge-Mail-Erzeugung gibt es im Sales OS nicht.
+
+### 10.8 Power Automate, nur lesend geprüft
+
+Weder publiziert noch ausgeführt. Frisch gelesen am 2026-08-23:
+
+```
+OUTLOOK_CONNECTION  = shared-office365-819bd473, Connected, j-cherino@HSB-Boden.de
+TEST_FLOW_STATE     = Stopped
+TEST_FLOW_RUN_COUNT = 1 (08584141336961779204694342550CU03, Succeeded)
+ACTIONS             = genau eine: DraftEmail
+SEND_ACTION         = nicht vorhanden
+EMPFAENGER          = j-cherino@hsb-boden.de (eigenes Postfach)
+```
+
+Der Testentwurf im Postfach wurde nicht angefasst.

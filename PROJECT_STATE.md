@@ -301,3 +301,26 @@ VERIFIER_SUITE    = PASS
 REAL_EXTERNAL_SEND_COUNT = 0
 DEPLOY            = clasp push 2026-08-26 18:43, live zurueckgelesen
 ```
+
+### Offener Punkt: zwei Batches halten 119 Kontakte
+
+`HSB-20260826-JORDI-0001` (94, Shortfall 6) und `HSB-20260826-JORDI-0003` (25)
+stammen vom 26.08. gegen 16:06/16:12, also aus dem alten Ablauf vor der
+Reparatur. Beide sind `PREPARED`, keiner wurde freigegeben oder versendet.
+Zusammen reservieren sie 119 Kontakte und verkleinern damit den Pool für den
+nächsten 100er-Batch.
+
+Bewusst nicht aufgeräumt: das Zurücksetzen von `Batch_ID` löscht die Zuordnung
+von Nutzerdaten, und es ist von hier aus nicht erkennbar, ob zu 0001 bereits
+Entwürfe im Umlauf sind. Entscheidung liegt beim Nutzer.
+
+### Was live verifiziert ist und was nicht
+
+| Pfad | Stand |
+|---|---|
+| Freigabe/Reservierung (`uiJordi100`) | deployed, live zurückgelesen, Test grün |
+| Erzeugung in Apps Script (`uiExportEml`) | Signatur korrigiert, **nur im Test grün** — nicht live durchlaufen |
+| Lokale Erzeugung (`make_drafts.py`) | 100/100 Datei für Datei belegt |
+| Postfach-Weg (`graph_drafts.py`) | Code fertig, ohne App-Registrierung nicht lauffähig |
+
+Die 100 Entwürfe, die heute vorliegen, stammen aus dem lokalen Lauf.

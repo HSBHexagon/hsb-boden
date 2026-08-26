@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import argparse
 import csv
+import json
 import email
 import email.policy
 import sys
@@ -126,6 +127,27 @@ def _pakete(entwuerfe: Path, ziel: Path, groesse: int) -> list[Path]:
     return raus
 
 
+def _rueckschreiben(leads: list[dict], ziel: Path, datum: str) -> str:
+    """Beschreibt, wo im Sheet das Entwurfsdatum einzutragen ist.
+
+    Dieses Werkzeug hat selbst keinen Schreibzugriff auf das Sheet - es
+    arbeitet auf einem Export. Damit die Spalte "Entwurf erstellt" nicht
+    stillschweigend leer bleibt und VERSAND faelschlich "kein Entwurf" zeigt,
+    wird der genaue Bereich hier ausgegeben und als Datei hinterlegt.
+    """
+    zeilen = sorted(l.get("_row", 0) for l in leads if l.get("_row"))
+    if not zeilen:
+        return ""
+    lueckenlos = zeilen == list(range(zeilen[0], zeilen[-1] + 1))
+    bereich = (f"ALL_LEADS!AX{zeilen[0]}:AX{zeilen[-1]}" if lueckenlos
+               else "mehrere Bereiche - siehe " + str(ziel / "sheet_update.json"))
+    (ziel / "sheet_update.json").write_text(json.dumps(
+        {"spalte": "Drafted_At (AX)", "wert": datum, "zeilen": zeilen,
+         "zusammenhaengend": lueckenlos, "bereich": bereich},
+        ensure_ascii=False, indent=2), encoding="utf-8")
+    return bereich
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -203,6 +225,14 @@ def main() -> int:
         gesamt = sum(p.stat().st_size for p in pakete) / 1e6
         print(f"Pakete     : {len(pakete)} ZIP-Dateien, zusammen "
               f"{gesamt:.0f} MB, in {ziel / 'Pakete'}")
+    heute = utc_now_iso()[:10]
+    bereich = _rueckschreiben(leads, ziel, heute)
+    if bereich:
+        print(f"\nNoch im Sheet einzutragen: Spalte 'Drafted_At' auf {heute}")
+        print(f"  Bereich: {bereich}")
+        print("  Sonst zeigt das Blatt VERSAND fuer diese Kontakte weiterhin "
+              "'kein Entwurf'.")
+
     print("\nEs wurde nichts versendet.")
     print("Zum Import: die Dateien in Outlook in den Ordner 'Entwuerfe' des "
           "Postfachs ziehen.")

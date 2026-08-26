@@ -8,7 +8,9 @@ Für Jordi und Joel. Kein Terminal, kein Mac, keine Installation nötig.
 
 Ein Blatt: **VERSAND**. Es steht ganz vorn in der Datei und aktualisiert sich
 selbst. Eine Zeile pro vorbereitetem Kontakt, mit Firma, Ansprechpartner,
-E-Mail, Betreff, Verantwortlichem, Entwurfsdatum, Versanddatum und Antwort.
+E-Mail, Verantwortlichem, **Rechtsgrundlage**, **Versandfreigabe**,
+Entwurfsdatum, Versanddatum und Antwort. Die beiden fettgedruckten Spalten
+sagen dir auf einen Blick, ob ein Kontakt überhaupt angeschrieben werden darf.
 
 Die übrigen Blätter bleiben als Arbeitsstände erhalten, werden im Alltag aber
 nicht mehr gebraucht.
@@ -96,6 +98,11 @@ Erzeugt eine `.eml` pro Kontakt, **liest jede Datei wieder ein** und vergleicht
 Empfänger, Anrede, Firma im Betreff und den SHA-256 des Anhangs gegen die
 Sheet-Daten. Bei einer einzigen Abweichung endet der Lauf mit `PRUEFUNG=FAIL`.
 Ergebnis liegt unter `~/Desktop/HSB-Entwuerfe/<BATCH>/`.
+
+Das Werkzeug arbeitet auf einem Sheet-Export und hat selbst keinen
+Schreibzugriff. Es nennt deshalb am Ende den genauen Bereich, in dem die Spalte
+`Drafted_At` auf das Datum zu setzen ist (auch als `sheet_update.json`).
+**Ohne diesen Eintrag zeigt VERSAND für die Kontakte weiterhin „kein Entwurf".**
 
 ---
 

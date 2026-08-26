@@ -17,7 +17,7 @@ SPREADSHEET_ID = "1W-NjwEq0UhDo2TaeS-2qp_qit4YFMz6k-IqKHlPpHmg"
 SHEET_NAME = "HSB CRM MASTER 6424 - Sales OS"
 
 
-def _map_row(header: list[str], row: tuple) -> dict:
+def _map_row(header: list[str], row: tuple, zeile: int = 0) -> dict:
     raw = {h: (row[i] if i < len(row) else None) for i, h in enumerate(header)}
     lead = {}
     for logical, sheet_col in FIELD_MAP.items():
@@ -25,6 +25,9 @@ def _map_row(header: list[str], row: tuple) -> dict:
     for extra in ADDITIONAL_FIELDS:
         lead[extra] = raw.get(extra)
     lead["_raw"] = raw
+    # Zeilennummer im Sheet (1-basiert, Kopfzeile ist 1) - noetig, um
+    # Ergebnisse gezielt zurueckschreiben zu koennen.
+    lead["_row"] = zeile
     return lead
 
 
@@ -38,10 +41,10 @@ def load_from_xlsx(path: str | Path | None = None,
     rows = ws.iter_rows(values_only=True)
     header = [str(h) if h is not None else "" for h in next(rows)]
     out = []
-    for row in rows:
+    for nr, row in enumerate(rows, start=2):
         if row is None or not any(row):
             continue
-        out.append(_map_row(header, row))
+        out.append(_map_row(header, row, nr))
     wb.close()
     return out
 
@@ -50,7 +53,8 @@ def load_from_csv(path: str | Path) -> list[dict]:
     with open(path, newline="", encoding="utf-8") as fh:
         reader = csv.reader(fh)
         header = next(reader)
-        return [_map_row(header, tuple(r)) for r in reader if any(r)]
+        return [_map_row(header, tuple(r), nr)
+                for nr, r in enumerate(reader, start=2) if any(r)]
 
 
 def _newest_xlsx() -> Path:

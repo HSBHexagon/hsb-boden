@@ -475,12 +475,28 @@ function testJordi100OneClick() {
         r.ok ? 'approved=' + r.data.batch.approval.newly_approved : 'kein Batch');
   check('Jordi-100: Status bleibt PREPARED',
         r.ok && r.data.batch.status === 'PREPARED');
-  check('Jordi-100: 100 Outlook-Entwuerfe erzeugt',
-        r.ok && r.data.export && r.data.export.written === 100,
-        r.ok && r.data.export ? 'written=' + r.data.export.written : 'kein Export');
-  check('Jordi-100: fuenf ZIP-Pakete zu je hoechstens 20',
-        r.ok && r.data.export && r.data.export.parts.length === 5
-          && r.data.export.parts.every(function (p) { return p.count <= 20; }));
+  // Die Freigabe erzeugt bewusst noch keine Pakete: 100 Mails mit je 1,5 MB
+  // Anhang sind rund 200 MB Base64 und sprengen die Laufzeitgrenze von Apps
+  // Script. Die Oberflaeche holt sie anschliessend in Bloecken zu 20 nach.
+  check('Jordi-100: Freigabe erzeugt noch keine Pakete',
+        r.ok && r.data.export === null,
+        r.ok ? 'export=' + JSON.stringify(r.data.export) : 'kein Batch');
+
+  // uiExportEml wird von der Seitenleiste mit zwei Einzelwerten aufgerufen,
+  // nicht mit einem Objekt. Genau diese Abweichung liess den Knopf
+  // "Entwuerfe erzeugen" frueher immer scheitern.
+  const x = ctx.uiExportEml(r.data.batch.batch_id, 0);
+  check('Export: Aufruf mit Einzelwerten funktioniert', x.ok === true,
+        x.error || 'ok');
+  check('Export: 100 Outlook-Entwuerfe erzeugt',
+        x.ok && x.data.written === 100,
+        x.ok ? 'written=' + x.data.written : 'kein Export');
+  check('Export: fuenf ZIP-Pakete zu je hoechstens 20',
+        x.ok && x.data.parts.length === 5
+          && x.data.parts.every(function (p) { return p.count <= 20; }));
+  check('Export: ohne Batch-Kennung sauberer Fehler statt Absturz',
+        ctx.uiExportEml('', 0).ok === false);
+
   check('Jordi-100: keine Send-Action aufgerufen', REAL_SEND_CALLS === 0,
         'send calls=' + REAL_SEND_CALLS);
 
@@ -623,6 +639,39 @@ function testSidebarServerContract() {
     check('Sidebar-Contract: ' + name + ' serverseitig definiert',
           typeof ctx[name] === 'function');
   });
+
+  // Nicht nur ob die Funktion existiert, sondern ob sie so aufgerufen wird,
+  // wie sie deklariert ist. uiExportEml wurde mit zwei Einzelwerten gerufen,
+  // erwartete aber ein Objekt - der Knopf konnte nie funktionieren, und der
+  // reine Existenztest oben hat das nicht bemerkt.
+  aufrufe.__stellen__ = undefined;
+  delete aufrufe.__stellen__;
+  const argRe = /\.\s*(ui[A-Za-z0-9_]*)\s*\(/g;
+  let a;
+  while ((a = argRe.exec(sidebar)) !== null) {
+    const name = a[1];
+    if (typeof ctx[name] !== 'function') continue;
+    // Argumenttext bis zur passenden schliessenden Klammer einsammeln.
+    let tiefe = 1, i = argRe.lastIndex, text = '';
+    while (i < sidebar.length && tiefe > 0) {
+      const c = sidebar[i];
+      if (c === '(') tiefe++;
+      else if (c === ')') tiefe--;
+      if (tiefe > 0) text += c;
+      i++;
+    }
+    // Kommas nur auf oberster Ebene zaehlen.
+    let ebene = 0, uebergeben = text.trim() ? 1 : 0;
+    for (const c of text) {
+      if ('([{'.indexOf(c) >= 0) ebene++;
+      else if (')]}'.indexOf(c) >= 0) ebene--;
+      else if (c === ',' && ebene === 0) uebergeben++;
+    }
+    const erwartet = ctx[name].length;
+    check('Sidebar-Contract: ' + name + ' Argumentzahl passt',
+          uebergeben <= erwartet,
+          'uebergeben=' + uebergeben + ' deklariert=' + erwartet);
+  }
 
   // Beide Handler muessen das {ok,data}-Format auspacken.
   check('Sidebar-Contract: cockpitLaden prueft r.ok',

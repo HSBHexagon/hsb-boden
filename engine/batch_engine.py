@@ -232,34 +232,72 @@ def _safe(value: str, maxlen: int = 48) -> str:
     return SAFE_RE.sub("-", str(value or "")).strip("-")[:maxlen] or "lead"
 
 
+NAMENSZUSAETZE = {"van", "von", "de", "der", "den", "du", "di", "da",
+                  "del", "dos", "el", "zu", "zum", "ter"}
+
+
+def anrede(contact: str | None) -> str:
+    """Geschaeftsuebliche Anrede: "Frau Franziska Koch" -> "Frau Koch".
+
+    Der volle Vorname wirkt maschinell. Gekuerzt wird aber nur dort, wo die
+    Zerlegung eindeutig ist: bei genau zwei Namensteilen, oder wenn direkt
+    nach dem Vornamen ein Namenszusatz wie "van" oder "von" folgt. In jedem
+    anderen Fall bleibt der Name vollstaendig - ein etwas laengerer Gruss ist
+    harmlos, eine falsch abgeschnittene Anrede an einen Kunden nicht.
+    """
+    roh = " ".join(str(contact or "").split())
+    if not roh:
+        return ""
+    m = re.match(r"^(Herr|Frau)\s+(.+)$", roh, re.IGNORECASE)
+    if not m:
+        return roh
+    form, teile = m.group(1), m.group(2).split()
+    # Endstuecke ohne Buchstaben (Zaehler, Kuerzel) sind keine Nachnamen.
+    while len(teile) > 1 and not any(c.isalpha() for c in teile[-1]):
+        teile.pop()
+    if len(teile) == 1:
+        return f"{form} {teile[0]}"
+    if len(teile) == 2:
+        return f"{form} {teile[1]}"
+    # Namenszusatz direkt nach dem Vornamen: alles ab dort ist der Nachname.
+    if teile[1].lower() in NAMENSZUSAETZE:
+        return f"{form} {' '.join(teile[1:])}"
+    # Zusatz weiter hinten (z. B. "Wrocklage-aus der Fuenten") - hier laesst
+    # sich der Nachname nicht sicher abgrenzen, also bleibt der Name ganz.
+    if any(t.lower() in NAMENSZUSAETZE for t in teile[2:]):
+        return f"{form} {' '.join(teile)}"
+    # Mehrere Vornamen ohne Zusatz: das letzte Wort ist der Nachname.
+    return f"{form} {teile[-1]}"
+
+
 def render_email(lead: dict, batch: Batch, template: str | None = None) -> tuple[str, str]:
     """Gibt (subject, body) zurueck."""
     company = str(lead.get("Company") or "Ihr Unternehmen").strip()
-    contact = str(lead.get("Contact") or "").strip()
+    contact = anrede(lead.get("Contact"))
     greeting = f"Guten Tag {contact}," if contact else "Guten Tag,"
     owner = batch.owner_display
-    subject = f"Industrieboeden fuer {company} - Beratung von {owner}"
+    subject = f"Industrieböden für {company} – Beratung von {owner}"
 
     body = template or (
         "{greeting}\n\n"
-        "mein Name ist {owner} von der HSB Hexagon Saeurebau GmbH. Wir planen, "
-        "bauen und sanieren saeurebestaendige, hygienische Industrieboeden - "
+        "mein Name ist {owner} von der HSB Hexagon Säurebau GmbH. Wir planen, "
+        "bauen und sanieren säurebeständige, hygienische Industrieböden – "
         "ausgelegt auf das reale Belastungsprofil statt auf ein Standardprodukt.\n\n"
         "Typische Themen bei Produktionsbetrieben:\n"
-        "- Risse, Abloesungen und offene Fugen\n"
+        "- Risse, Ablösungen und offene Fugen\n"
         "- Keimnester in Nassbereichen\n"
-        "- stehendes Wasser durch falsches Gefaelle\n"
-        "- defekte Rinnen und Ablaeufe\n\n"
-        "Im angehaengten Flyer sehen Sie ausgefuehrte Projektflaechen und unser "
-        "Vorgehen von der Analyse bis zur dokumentierten Uebergabe.\n\n"
-        "Gerne pruefen wir Ihr Belastungsprofil unverbindlich und vor Ort.\n\n"
-        "Mit freundlichen Gruessen\n"
+        "- stehendes Wasser durch falsches Gefälle\n"
+        "- defekte Rinnen und Abläufe\n\n"
+        "Im angehängten Flyer sehen Sie ausgeführte Projektflächen und unser "
+        "Vorgehen von der Analyse bis zur dokumentierten Übergabe.\n\n"
+        "Gerne prüfen wir Ihr Belastungsprofil unverbindlich und vor Ort.\n\n"
+        "Mit freundlichen Grüßen\n"
         "{owner}\n"
-        "HSB Hexagon Saeurebau GmbH\n"
+        "HSB Hexagon Säurebau GmbH\n"
         "{mailbox}\n"
         "Tel. +49 (0)2562 9463030\n\n"
         "---\n"
-        "Wenn Sie keine weiteren Informationen erhalten moechten, antworten Sie "
+        "Wenn Sie keine weiteren Informationen erhalten möchten, antworten Sie "
         "bitte mit dem Betreff \"Abmelden\" auf diese E-Mail."
     )
     body = body.format(greeting=greeting, owner=owner, mailbox=batch.mailbox,

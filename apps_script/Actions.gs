@@ -77,33 +77,73 @@ function qualifyLeads(opts) {
 
 /* ----------------------------------------------------- E-Mail-Erzeugung */
 
+var NAMENSZUSAETZE = ['van', 'von', 'de', 'der', 'den', 'du', 'di', 'da',
+                      'del', 'dos', 'el', 'zu', 'zum', 'ter'];
+
+/**
+ * Geschaeftsuebliche Anrede: "Frau Franziska Koch" -> "Frau Koch".
+ *
+ * Der volle Vorname wirkt maschinell. Gekuerzt wird aber nur dort, wo die
+ * Zerlegung eindeutig ist: bei genau zwei Namensteilen, oder wenn direkt nach
+ * dem Vornamen ein Namenszusatz wie "van" oder "von" folgt. Sonst bleibt der
+ * Name vollstaendig - ein etwas laengerer Gruss ist harmlos, eine falsch
+ * abgeschnittene Anrede an einen Kunden nicht.
+ */
+function anrede_(contact) {
+  const roh = String(contact || '').trim().replace(/\s+/g, ' ');
+  if (!roh) return '';
+  const m = roh.match(/^(Herr|Frau)\s+(.+)$/i);
+  if (!m) return roh;
+  const form = m[1];
+  const teile = m[2].split(' ').filter(function (s) { return s; });
+  // Endstuecke ohne Buchstaben (Zaehler, Kuerzel) sind keine Nachnamen.
+  while (teile.length > 1 && !/[A-Za-zÀ-ÿ]/.test(teile[teile.length - 1])) {
+    teile.pop();
+  }
+  if (teile.length === 1) return form + ' ' + teile[0];
+  if (teile.length === 2) return form + ' ' + teile[1];
+  // Namenszusatz direkt nach dem Vornamen: alles ab dort ist der Nachname.
+  if (NAMENSZUSAETZE.indexOf(teile[1].toLowerCase()) >= 0) {
+    return form + ' ' + teile.slice(1).join(' ');
+  }
+  // Zusatz weiter hinten - der Nachname laesst sich nicht sicher abgrenzen,
+  // also bleibt der Name vollstaendig stehen.
+  for (let i = 2; i < teile.length; i++) {
+    if (NAMENSZUSAETZE.indexOf(teile[i].toLowerCase()) >= 0) {
+      return form + ' ' + teile.join(' ');
+    }
+  }
+  // Mehrere Vornamen ohne Zusatz: das letzte Wort ist der Nachname.
+  return form + ' ' + teile[teile.length - 1];
+}
+
 function renderEmail_(lead, flyer) {
   const company = String(lead.Company || 'Ihr Unternehmen').trim();
-  const contact = String(lead.Contact || '').trim();
+  const contact = anrede_(lead.Contact);
   const greeting = contact ? 'Guten Tag ' + contact + ',' : 'Guten Tag,';
-  const subject = 'Industrieboeden fuer ' + company + ' - Beratung von '
+  const subject = 'Industrieböden für ' + company + ' – Beratung von '
     + flyer.displayName;
 
   const body = greeting + '\n\n'
-    + 'mein Name ist ' + flyer.displayName + ' von der HSB Hexagon Saeurebau '
-    + 'GmbH. Wir planen, bauen und sanieren saeurebestaendige, hygienische '
-    + 'Industrieboeden - ausgelegt auf das reale Belastungsprofil statt auf '
+    + 'mein Name ist ' + flyer.displayName + ' von der HSB Hexagon Säurebau '
+    + 'GmbH. Wir planen, bauen und sanieren säurebeständige, hygienische '
+    + 'Industrieböden – ausgelegt auf das reale Belastungsprofil statt auf '
     + 'ein Standardprodukt.\n\n'
     + 'Typische Themen bei Produktionsbetrieben:\n'
-    + '- Risse, Abloesungen und offene Fugen\n'
+    + '- Risse, Ablösungen und offene Fugen\n'
     + '- Keimnester in Nassbereichen\n'
-    + '- stehendes Wasser durch falsches Gefaelle\n'
-    + '- defekte Rinnen und Ablaeufe\n\n'
-    + 'Im angehaengten Flyer sehen Sie ausgefuehrte Projektflaechen und unser '
-    + 'Vorgehen von der Analyse bis zur dokumentierten Uebergabe.\n\n'
-    + 'Gerne pruefen wir Ihr Belastungsprofil unverbindlich und vor Ort.\n\n'
-    + 'Mit freundlichen Gruessen\n'
+    + '- stehendes Wasser durch falsches Gefälle\n'
+    + '- defekte Rinnen und Abläufe\n\n'
+    + 'Im angehängten Flyer sehen Sie ausgeführte Projektflächen und unser '
+    + 'Vorgehen von der Analyse bis zur dokumentierten Übergabe.\n\n'
+    + 'Gerne prüfen wir Ihr Belastungsprofil unverbindlich und vor Ort.\n\n'
+    + 'Mit freundlichen Grüßen\n'
     + flyer.displayName + '\n'
-    + 'HSB Hexagon Saeurebau GmbH\n'
+    + 'HSB Hexagon Säurebau GmbH\n'
     + flyer.mailbox + '\n'
     + 'Tel. +49 (0)2562 9463030\n\n'
     + '---\n'
-    + 'Wenn Sie keine weiteren Informationen erhalten moechten, antworten Sie '
+    + 'Wenn Sie keine weiteren Informationen erhalten möchten, antworten Sie '
     + 'bitte mit dem Betreff "Abmelden" auf diese E-Mail.';
 
   return { subject: subject, body: body };

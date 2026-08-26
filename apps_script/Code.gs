@@ -47,34 +47,37 @@ function uiQualify(opts) {
  */
 function uiJordi100(opts) {
   try {
+    // Bewusst nur Freigabe und Reservierung, ohne Erzeugung der Pakete.
+    //
+    // Frueher lief beides in einem einzigen Aufruf. Ein Paket aus 100 Mails
+    // mit je 1,5 MB Anhang ergibt rund 200 MB Base64 im Arbeitsspeicher -
+    // das ueberschreitet die Sechs-Minuten-Grenze von Apps Script
+    // zuverlaessig, und der Nutzer sah nur eine Fehlermeldung. Die
+    // Reservierung selbst dauert Sekunden; die Pakete holt die Oberflaeche
+    // anschliessend in Bloecken zu 20 ueber uiExportEml nach.
     const batch = approveAndPrepareJordi100(opts || {});
-    if (batch.status !== 'PREPARED' || batch.already_processed) {
-      return { ok: true, data: { batch: batch, export: null } };
-    }
-    try {
-      const exported = exportBatchAsEmlZip(batch.batch_id, 0);
-      return { ok: true, data: { batch: batch, export: exported } };
-    } catch (exportError) {
-      // Der Batch ist bereits sicher reserviert. Die UI bietet den bestehenden
-      // manuellen Exportknopf als verlustfreie Fortsetzung an.
-      return {
-        ok: true,
-        data: {
-          batch: batch,
-          export: null,
-          export_error: String(exportError.message || exportError)
-        }
-      };
-    }
+    return { ok: true, data: { batch: batch, export: null } };
   } catch (e) {
     return { ok: false, error: String(e.message || e) };
   }
 }
 
-function uiExportEml(opts) {
+/**
+ * Erzeugt die EML-Pakete eines Batches.
+ *
+ * Die Seitenleiste ruft diese Funktion mit zwei Einzelwerten auf, nicht mit
+ * einem Objekt. Frueher stand hier `opts.batch_id`, was bei einem uebergebenen
+ * String immer `undefined` ergab - der Knopf "Entwuerfe erzeugen" konnte
+ * dadurch nie funktionieren.
+ */
+function uiExportEml(batchId, startIndex) {
   try {
-    const res = exportBatchAsEmlZip(opts.batch_id, opts.folder_name, opts.start_index);
-    return { ok: true, data: res };
+    const id = String(batchId && batchId.batch_id ? batchId.batch_id : batchId || '');
+    if (!id) {
+      return { ok: false, error: 'Keine Batch-Kennung uebergeben.' };
+    }
+    const von = Number(startIndex) || 0;
+    return { ok: true, data: exportBatchAsEmlZip(id, von) };
   } catch (e) {
     return { ok: false, error: String(e.message || e) };
   }

@@ -236,3 +236,68 @@ Kontoentscheidung des Nutzers, keine automatische Korrektur.
 Das verifizierte Sales OS operativ nutzen. Jordi kann seine eigene
 Power-Automate-/Operator-Abnahme später nachholen; bis dahin nutzt er den
 verifizierten EML-/Outlook-nativen Fallback. Keine Architekturänderung nötig.
+
+
+---
+
+## Korrektur und Ausbau 2026-08-26 (Abend)
+
+### Zwei echte Fehler im Entwurfsknopf gefunden und behoben
+
+`uiExportEml` war als `uiExportEml(opts)` deklariert und las `opts.batch_id`.
+Die Seitenleiste rief sie aber mit zwei Einzelwerten auf
+(`.uiExportEml(batchId, startIndex || 0)`). `opts.batch_id` war damit immer
+`undefined` — der Knopf „Entwürfe erzeugen" **konnte nie funktionieren**.
+Zusätzlich reichte sie drei Argumente an `exportBatchAsEmlZip(batchId,
+startIndex)` weiter, das nur zwei annimmt.
+
+Der bisherige Contract-Test prüfte nur, *ob* die Serverfunktion existiert. Er
+ist jetzt um eine Prüfung der Argumentzahl für alle 13 Aufrufe der Seitenleiste
+erweitert; der alte Fehler wäre damit sofort aufgefallen.
+
+### Freigabe und Erzeugung getrennt
+
+`uiJordi100` erledigte Freigabe **und** ZIP-Erzeugung in einem Aufruf. Lokal
+gemessen: 100 Entwürfe mit dem Jordi-Flyer sind **207 MB**. Das überschreitet
+die Sechs-Minuten-Grenze von Apps Script zuverlässig. `uiJordi100` reserviert
+jetzt nur noch; die Pakete holt die Oberfläche in Blöcken zu 20 nach.
+
+### Mailtext
+
+Der ausgehende Text war durchgehend ASCII-verstümmelt („Industrieboeden",
+„saeurebestaendige", „Gruessen"). Die MIME-Kodierung war bereits korrekt
+(`charset="UTF-8"`, Base64, RFC 2047 im Betreff), der Text ist jetzt
+orthografisch korrekt.
+
+Neu ist eine geschäftsübliche Anrede: „Frau Franziska Koch" → „Frau Koch".
+Gekürzt wird nur bei eindeutiger Zerlegung; bei Namenszusätzen in der Mitte
+(„Wrocklage-aus der Fünten") bleibt der Name vollständig. Über alle 6.424
+realen Kontakte gilt die Zusicherung: die Anrede ist immer die Anredeform plus
+ein zusammenhängendes Namensende — geprüft im Test.
+
+### Blatt VERSAND
+
+Die Datei hatte 29 Tabellenblätter. Neu ist **VERSAND** an Position 2: eine
+Live-Ansicht per `QUERY` über `ALL_LEADS`, eine Zeile pro reserviertem Kontakt.
+Kein Blatt wurde gelöscht.
+
+### Entwurfserzeugung mit Selbstprüfung
+
+`engine/make_drafts.py` erzeugt die Entwürfe lokal und liest **jede** Datei
+zurück (Empfänger, Anrede, Firma im Betreff, Anhang-SHA-256, genau ein Anhang).
+Für Batch `HSB-20260826-JORDI-0002`: `PRUEFUNG=PASS`, 100/100.
+
+### X-Unsent ist kein verlässlicher Weg mehr
+
+Recherche-Befund: `X-Unsent: 1` wird von Outlook für Mac ignoriert und im neuen
+Outlook für Windows nicht mehr zuverlässig ausgewertet. Der dokumentierte Weg
+ist `POST /users/{id}/messages` mit Base64-MIME. `engine/graph_drafts.py`
+implementiert genau das — ohne jede Send-Aktion im Code.
+
+```
+APPS_SCRIPT_TESTS = 203/203
+PYTHON_TESTS      = 91/91
+VERIFIER_SUITE    = PASS
+REAL_EXTERNAL_SEND_COUNT = 0
+DEPLOY            = clasp push 2026-08-26 18:43, live zurueckgelesen
+```

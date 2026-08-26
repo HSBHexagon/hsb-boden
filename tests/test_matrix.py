@@ -256,7 +256,9 @@ def test_eml_structure() -> None:
         check("Betreff enthaelt Firma", "Beispiel Firma" in str(msg["Subject"]))
         body = msg.get_body(preferencelist=("plain",)).get_content()
         check("Abmeldehinweis im Text", "Abmelden" in body)
-        check("Ansprechpartner personalisiert", "Herr Muster" in body)
+        # Geschaeftsuebliche Anrede: Vorname/Zaehler entfaellt.
+        check("Ansprechpartner personalisiert",
+              "Guten Tag Herr Muster," in body)
 
         check("manifest.json vorhanden", (out / "manifest.json").exists())
         check("status.csv vorhanden", (out / "status.csv").exists())
@@ -321,6 +323,56 @@ def test_owner_normalisation() -> None:
 # 7. Reale Daten
 # --------------------------------------------------------------------------
 
+def test_anrede() -> None:
+    """Die Anrede darf kuerzen, aber niemals falsch kuerzen."""
+    from batch_engine import anrede
+    faelle = [
+        # (Eingabe, Erwartung, Begruendung)
+        ("Frau Franziska Koch", "Frau Koch", "Vor- und Nachname"),
+        ("Herr Ulrich Robert Hägele", "Herr Hägele", "zweiter Vorname"),
+        ("Herr Jan van den Berg", "Herr van den Berg", "Namenszusatz vorn"),
+        ("Frau Birgit Wrocklage-aus der Fünten",
+         "Frau Birgit Wrocklage-aus der Fünten", "Zusatz mittig: unklar"),
+        ("Herr Muster 1", "Herr Muster", "Zaehler am Ende"),
+        ("Frau Koch", "Frau Koch", "bereits kurz"),
+        ("Dr. Meier", "Dr. Meier", "keine Anredeform erkennbar"),
+        ("Muhtesim Dumlu", "Muhtesim Dumlu", "kein Herr/Frau"),
+        ("  Frau   Franziska   Koch  ", "Frau Koch", "Mehrfach-Leerzeichen"),
+        ("", "", "leer"),
+        (None, "", "None"),
+    ]
+    for eingabe, erwartet, warum in faelle:
+        ist = anrede(eingabe)
+        check(f"Anrede ({warum})", ist == erwartet,
+              f"{eingabe!r} -> {ist!r}, erwartet {erwartet!r}")
+
+    # Zusicherung ueber die realen Daten: die Anrede ist immer die Anredeform
+    # plus ein zusammenhaengendes Ende des Namens. Damit kann nie ein Stueck
+    # aus der Mitte stehenbleiben und nie ein fremder Name entstehen.
+    from sheet_loader import load_from_xlsx
+    verstoesse, leer = [], 0
+    for lead in load_from_xlsx():
+        roh = " ".join(str(lead.get("Contact") or "").split())
+        if not roh:
+            continue
+        ist = anrede(roh)
+        if not ist:
+            leer += 1
+            continue
+        if ist == roh:
+            continue
+        teile_roh, teile_ist = roh.split(), ist.split()
+        passt = (teile_ist[0] == teile_roh[0]
+                 and teile_roh[-len(teile_ist) + 1:] == teile_ist[1:])
+        if not passt:
+            verstoesse.append((roh, ist))
+    check("reale Daten: Anrede nie leer bei vorhandenem Kontakt", leer == 0,
+          f"{leer} leere Anreden")
+    check("reale Daten: Anrede ist immer Anredeform + Namensende",
+          not verstoesse,
+          f"{len(verstoesse)} Verstoesse, z. B. {verstoesse[:2]}")
+
+
 def test_real_data_snapshot() -> None:
     try:
         from sheet_loader import load_from_xlsx, summarize
@@ -338,9 +390,18 @@ def test_real_data_snapshot() -> None:
           f"JORDI={jordi.get('total')} JOEL={joel.get('total')}")
 
     b = prepare_batch(leads, "JORDI", 100)
-    check("reale Daten: Gate blockiert korrekt (noch nicht qualifiziert)",
-          b.stats.selected_count == 0,
-          f"eligible={b.stats.eligible_count} von {b.stats.total_pool}")
+    # Frueher stand hier selected_count == 0. Das war keine Regel, sondern der
+    # damalige Datenstand: es war noch nichts qualifiziert. Inzwischen sind
+    # Kontakte freigegeben, und die Zahl aendert sich weiter. Geprueft wird
+    # deshalb die eigentliche Zusicherung: es wird nie mehr ausgewaehlt als
+    # tatsaechlich sendefaehig ist, und jeder Ausgewaehlte traegt Rechts-
+    # grundlage und Versandfreigabe.
+    check("reale Daten: nie mehr ausgewaehlt als sendefaehig",
+          b.stats.selected_count <= b.stats.eligible_count,
+          f"selected={b.stats.selected_count} eligible={b.stats.eligible_count}")
+    unerlaubt = [l for l in b.leads if not check_eligibility(l).eligible]
+    check("reale Daten: kein Ausgewaehlter ohne Rechtsgrundlage/Freigabe",
+          not unerlaubt, f"{len(unerlaubt)} unerlaubte Treffer")
 
     # Nach Qualifizierung muss derselbe Aufruf 100 liefern.
     qualified = []
@@ -372,6 +433,7 @@ def main() -> int:
         test_eml_structure, test_malformed_recipients,
         test_filters, test_empty_batch_is_explained,
         test_batch_id_format, test_owner_normalisation,
+        test_anrede,
         test_real_data_snapshot,
     ]:
         print(f"\n--- {fn.__name__} ---")

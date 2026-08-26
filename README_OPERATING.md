@@ -4,6 +4,22 @@ Für Jordi und Joel. Kein Terminal, kein Mac, keine Installation nötig.
 
 ---
 
+## Wo du nachsiehst, was rausgegangen ist
+
+Ein Blatt: **VERSAND**. Es steht ganz vorn in der Datei und aktualisiert sich
+selbst. Eine Zeile pro vorbereitetem Kontakt, mit Firma, Ansprechpartner,
+E-Mail, Betreff, Verantwortlichem, Entwurfsdatum, Versanddatum und Antwort.
+
+Die übrigen Blätter bleiben als Arbeitsstände erhalten, werden im Alltag aber
+nicht mehr gebraucht.
+
+Eine Einschränkung, die du kennen musst: **„Versendet am" kann das System nicht
+messen.** Gesendet wird von Hand in Outlook, und auf dem Prospekt-Pfad gibt es
+systemweit keine Send-Aktion — das ist das zentrale Sicherheitsgate. Die Spalte
+ist deshalb eine Bestätigung, die gesetzt wird, kein Messwert.
+
+---
+
 ## Der tägliche Ablauf
 
 **Jordi will heute 100 anschreiben:**
@@ -11,9 +27,12 @@ Für Jordi und Joel. Kein Terminal, kein Mac, keine Installation nötig.
 1. Google Sheet öffnen → Menü **HSB Sales OS → Seitenleiste öffnen**
 2. Absender **Jordi** wählen
 3. Oben **100 freigeben & Entwürfe erzeugen** klicken
-4. Die fünf ZIP-Pakete aus Drive herunterladen
-5. In Neues Outlook unter `j-post@hsb-boden.de` in **Entwürfe** importieren
-6. Entwürfe prüfen und manuell senden
+
+Der Vorgang läuft in zwei Stufen: zuerst die Freigabe und die Reservierung von
+exakt 100 Kontakten — das dauert Sekunden. Danach holt die Seitenleiste die
+Entwürfe in Paketen zu 20 nach. Diese Trennung ist notwendig: 100 Mails mit je
+1,5 MB Anhang ergeben rund 200 MB, und Apps Script bricht nach sechs Minuten ab.
+Vorher lief beides in einem Aufruf, was den Knopf zuverlässig scheitern ließ.
 
 Der Schnellstart arbeitet exakt: Sind nicht mindestens 100 sichere, eindeutige
 Jordi-Kontakte verfügbar, verändert er **null** Zeilen und legt keinen Batch an.
@@ -22,8 +41,61 @@ aktiv reservierte Kontakte sowie falsche Owner/Flyer bleiben gesperrt.
 
 **Joel will 12:** dasselbe, Absender *Joel*, Anzahl **12**.
 
-Die Anzahl ist frei: 3, 17, 25, 100, 250. Nie wieder ein neuer Programmierauftrag,
-nur weil eine andere Menge gebraucht wird.
+---
+
+## Wie die Entwürfe ins Postfach kommen
+
+Es gibt zwei Wege. Der zweite ist der belastbare.
+
+### Weg 1 — ZIP-Pakete, ohne jede Einrichtung
+
+Die Pakete herunterladen, entpacken und die `.eml`-Dateien in Outlook **in den
+Ordner „Entwürfe" des Postfachs ziehen**.
+
+Wichtig: **nicht doppelklicken.** Die Kopfzeile `X-Unsent: 1`, die Outlook zum
+Öffnen als unversendeten Entwurf bewegen soll, wird von Outlook für Mac
+ignoriert und im neuen Outlook für Windows nicht mehr zuverlässig ausgewertet.
+Ein Doppelklick zeigt die Datei dann als *empfangene* Nachricht — ohne
+Sende-Knopf. Das Hineinziehen in den Ordner funktioniert unabhängig davon.
+
+### Weg 2 — direkt ins Postfach (empfohlen)
+
+`engine/graph_drafts.py` legt jeden Entwurf über Microsoft Graph serverseitig
+im Ordner „Entwürfe" an. Kein Ziehen, kein Client-Verhalten, kein
+`X-Unsent`-Trick — und es funktioniert für jeden Outlook-Client gleich.
+
+Einmalig nötig: eine App-Registrierung in Entra ID mit der
+*Anwendungsberechtigung* `Mail.ReadWrite` und Administratorzustimmung. Danach:
+
+```sh
+export HSB_GRAPH_TENANT_ID=...
+export HSB_GRAPH_CLIENT_ID=...
+export HSB_GRAPH_CLIENT_SECRET=...
+
+python3 engine/graph_drafts.py --batch HSB-... --pruefen        # nur Prüfung
+python3 engine/graph_drafts.py --batch HSB-... --limit 1        # ein Probelauf
+python3 engine/graph_drafts.py --batch HSB-...                  # alle
+```
+
+Das Werkzeug ruft ausschließlich `POST /users/{postfach}/messages` auf. Die
+Graph-Aktion `.../send` kommt im Code nicht vor.
+
+Empfehlenswert ist zusätzlich eine Anwendungszugriffsrichtlinie
+(`New-ApplicationAccessPolicy`), die die App auf genau die beiden HSB-Postfächer
+begrenzt statt auf den gesamten Tenant.
+
+---
+
+## Entwürfe am Rechner erzeugen
+
+```sh
+python3 engine/make_drafts.py --batch HSB-20260826-JORDI-0002
+```
+
+Erzeugt eine `.eml` pro Kontakt, **liest jede Datei wieder ein** und vergleicht
+Empfänger, Anrede, Firma im Betreff und den SHA-256 des Anhangs gegen die
+Sheet-Daten. Bei einer einzigen Abweichung endet der Lauf mit `PRUEFUNG=FAIL`.
+Ergebnis liegt unter `~/Desktop/HSB-Entwuerfe/<BATCH>/`.
 
 ---
 

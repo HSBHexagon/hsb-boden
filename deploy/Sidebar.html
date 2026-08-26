@@ -195,6 +195,7 @@ button.tat[disabled] { opacity: .45; cursor: not-allowed; }
 .m-gut    { background: #f1f8f4; border-color: var(--bereit); }
 .m-warn   { background: var(--gesperrt-f); border-color: var(--gesperrt); }
 .m-fehler { background: var(--fehler-f); border-color: var(--rot); }
+.m-info   { background: #eef4fb; border-color: #4a7ab5; }
 .meldung b { display: block; margin-bottom: 2px; }
 .meldung ul { margin: var(--s2) 0 0; padding-left: 16px; }
 .meldung li { margin-bottom: 2px; }
@@ -625,31 +626,15 @@ function jordi100Start() {
       + '<span class="zahl">' + nz(b.approval.already_eligible)
       + '</span> bereits freigegeben<br>Anhang: ' + esc(b.asset_file) + '</div>';
 
-    if (r.data.export) {
-      var x = r.data.export;
-      h += '<div class="meldung m-gut"><b><span class="zahl">'
-        + nz(x.written) + '</span> von <span class="zahl">'
-        + nz(x.total) + '</span> Outlook-Entwürfen erzeugt</b>';
-      x.parts.forEach(function (p) {
-        h += '<a href="' + p.url + '" target="_blank">' + esc(p.name)
-          + '</a> · <span class="zahl">' + nz(p.count) + '</span><br>';
-      });
-      h += 'Alle fünf Pakete herunterladen und in Neues Outlook unter '
-        + '<b>j-post@hsb-boden.de → Entwürfe</b> importieren.</div>';
-      if (!x.complete) {
-        h += '<div class="meldung m-warn"><b>Fortsetzung nötig</b>'
-          + '<button class="tat zweit" onclick="emlExport(\''
-          + esc(b.batch_id) + '\',' + x.next_index + ')">Weiter ab '
-          + '<span class="zahl">' + nz(x.next_index) + '</span></button></div>';
-      }
-    } else if (b.already_processed) {
+    if (b.already_processed) {
       h += '<div class="meldung m-warn"><b>Aufruf bereits verarbeitet</b>'
-        + 'Es wurde bewusst kein zweiter Batch und kein doppeltes ZIP erzeugt. '
-        + 'Nutze unten beim bestehenden Batch „Entwürfe erzeugen“.</div>';
+        + 'Es wurde bewusst kein zweiter Batch angelegt. Die Entwürfe zu '
+        + 'diesem Batch erzeugst du unten in Schritt 03.</div>';
     } else {
-      h += '<div class="meldung m-warn"><b>Batch sicher reserviert</b>'
-        + 'Die ZIP-Erzeugung meldete: ' + esc(r.data.export_error || 'unbekannter Fehler')
-        + '. Nutze unten beim Batch „Entwürfe erzeugen“.</div>';
+      // Die Pakete werden bewusst in einem eigenen Aufruf geholt: 100 Mails
+      // mit Anhang sprengen sonst die Laufzeitgrenze von Apps Script.
+      h += '<div class="meldung m-info"><b>Entwürfe werden erzeugt</b>'
+        + 'Je 20 Stück ein Paket. Das Fenster bitte offen lassen.</div>';
     }
     h += '<div id="exp_' + esc(b.batch_id) + '"></div>';
     zeig('jordi100Ergebnis', h);
@@ -658,6 +643,7 @@ function jordi100Start() {
     cockpitLaden();
     batchListeLaden();
     el('s3').open = true;
+    if (!b.already_processed) emlExport(b.batch_id, 0);
   }).withFailureHandler(function (e) {
     btn.disabled = false;
     btn.textContent = 'Vorgang sicher erneut versuchen';

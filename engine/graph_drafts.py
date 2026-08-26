@@ -48,6 +48,7 @@ import base64
 import json
 import os
 import sys
+import time
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -96,18 +97,36 @@ def token_holen() -> str:
 
 
 def _graph(methode: str, pfad: str, token: str, koerper: bytes | None = None,
-           typ: str = "application/json") -> dict:
-    req = urllib.request.Request(f"{GRAPH}{pfad}", data=koerper, method=methode)
-    req.add_header("Authorization", f"Bearer {token}")
-    if koerper is not None:
-        req.add_header("Content-Type", typ)
-    try:
-        with urllib.request.urlopen(req, timeout=120) as antwort:
-            roh = antwort.read()
-            return json.loads(roh) if roh else {}
-    except urllib.error.HTTPError as e:
-        text = e.read().decode("utf-8", "replace")[:500]
-        raise GraphFehler(f"{methode} {pfad} -> {e.code}: {text}") from e
+           typ: str = "application/json", versuche: int = 5) -> dict:
+    """Ein Graph-Aufruf mit der von Microsoft vorgeschriebenen Drosselung.
+
+    Bei HTTP 429 nennt Graph im Kopf `Retry-After` die Wartezeit in Sekunden.
+    Microsoft verlangt ausdruecklich, diese Zeit abzuwarten und *keine*
+    sofortige Wiederholung zu senden - jeder Versuch zaehlt gegen das
+    Kontingent und verlaengert die Drosselung. Fehlt der Kopf, wird
+    exponentiell zurueckgestuft. 503 und 504 werden gleich behandelt.
+
+      https://learn.microsoft.com/en-us/graph/throttling
+    """
+    for versuch in range(1, versuche + 1):
+        req = urllib.request.Request(f"{GRAPH}{pfad}", data=koerper, method=methode)
+        req.add_header("Authorization", f"Bearer {token}")
+        if koerper is not None:
+            req.add_header("Content-Type", typ)
+        try:
+            with urllib.request.urlopen(req, timeout=120) as antwort:
+                roh = antwort.read()
+                return json.loads(roh) if roh else {}
+        except urllib.error.HTTPError as e:
+            text = e.read().decode("utf-8", "replace")[:500]
+            if e.code not in (429, 503, 504) or versuch == versuche:
+                raise GraphFehler(f"{methode} {pfad} -> {e.code}: {text}") from e
+            warte = e.headers.get("Retry-After")
+            sekunden = int(warte) if (warte or "").isdigit() else 2 ** versuch
+            print(f"    gedrosselt ({e.code}), warte {sekunden}s "
+                  f"[Versuch {versuch}/{versuche - 1}]")
+            time.sleep(sekunden)
+    raise GraphFehler(f"{methode} {pfad}: nach {versuche} Versuchen aufgegeben.")
 
 
 def postfach_pruefen(token: str, postfach: str) -> None:
@@ -143,6 +162,8 @@ def main() -> int:
                     help="Nur Anmeldung und Postfach pruefen, nichts anlegen")
     ap.add_argument("--limit", type=int, default=0,
                     help="Nur die ersten N Entwuerfe anlegen (Probelauf)")
+    ap.add_argument("--erneut", action="store_true",
+                    help="Trotz bereits angelegter Entwuerfe erneut laufen")
     args = ap.parse_args()
 
     quelle = Path(args.ordner).expanduser() / args.batch / "Entwuerfe"
@@ -164,6 +185,19 @@ def main() -> int:
     print(f"Postfach : {postfach}")
     print(f"Dateien  : {len(dateien)}\n")
 
+    # Ein zweiter Lauf wuerde stillschweigend 100 weitere Entwuerfe anlegen.
+    # Graph kennt kein natuerliches Schluesselfeld dafuer, deshalb dient das
+    # Protokoll des letzten Laufs als Sperre.
+    protokoll = quelle.parent / "graph_entwuerfe.json"
+    if protokoll.exists() and not args.pruefen and not args.erneut:
+        vorher = json.loads(protokoll.read_text(encoding="utf-8"))
+        raise SystemExit(
+            f"ABBRUCH: Fuer {args.batch} wurden bereits "
+            f"{vorher.get('angelegt', '?')} Entwuerfe in "
+            f"{vorher.get('postfach', '?')} angelegt "
+            f"(siehe {protokoll}).\nEin zweiter Lauf wuerde sie verdoppeln. "
+            "Bewusst wiederholen mit --erneut.")
+
     token = token_holen()
     postfach_pruefen(token, postfach)
     print("Anmeldung und Postfach geprueft.")
@@ -181,7 +215,6 @@ def main() -> int:
         if i % 10 == 0 or i == len(ziel):
             print(f"  {i}/{len(ziel)} angelegt, {len(fehler)} Fehler")
 
-    protokoll = quelle.parent / "graph_entwuerfe.json"
     protokoll.write_text(json.dumps(
         {"batch": args.batch, "postfach": postfach,
          "angelegt": len(kennungen), "fehler": fehler,

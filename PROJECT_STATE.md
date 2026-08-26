@@ -44,8 +44,8 @@ des Systems.
 
 Auf dem Prospekt-Pfad existiert systemweit keine Send-Action. Die einzige
 Ausnahme im Code ist die Funktion `dailyDigest` — sie kommt an drei Stellen im
-Baum vor (`deploy/HSB_SALES_OS.js:935` live, dazu die nicht gepushten Kopien
-`apps_script/HSB_SALES_OS.gs:935` und `apps_script/Actions.gs:375`). In allen
+Baum vor (`deploy/HSB_SALES_OS.js:1177`, dazu die lokalen Kopien
+`apps_script/HSB_SALES_OS.gs:1177` und `apps_script/Actions.gs:375`). In allen
 drei Fassungen ist der Empfänger fest `Session.getActiveUser().getEmail()`,
 also der ausführende Operator selbst. Sie kann konstruktionsbedingt keine
 Prospektadresse erreichen.
@@ -55,19 +55,58 @@ Prospektadresse erreichen.
 ## Operator-Abnahme
 
 ```
-JORDI_OPERATOR_ACCEPTANCE = DEFERRED
-JORDI_POWER_AUTOMATE      = NOT_TESTED_DEFERRED
-JORDI_FALLBACK            = EML / Outlook-nativ (verifiziert)
+JORDI_OPERATOR_ACCESS     = USER_REPORTED_GRANTED_NOT_LIVE_VERIFIED
+JORDI_POWER_AUTOMATE      = NOT_CONFIGURED_NOT_REQUIRED_FOR_EML
+JORDI_FALLBACK            = EML / Outlook-nativ (lokal verifiziert)
 ```
 
-Jordis technisches Paket ist verifiziert (Flyer-Hash, EML-Byte-Gleichheit,
-reservierter Batch). Seine **eigene** Power-Automate-/Mailbox-Abnahme wurde
-bewusst nicht durchgeführt und ist kein Blocker für den technischen Abschluss.
-Sie kann später als normales Onboarding erfolgen und darf das Projekt nicht
-wieder öffnen.
+Der Nutzer meldet Mailbox- und Apps-Script-Zugang für Jordi als aktiviert.
+Lokal sind Flyer-Hash, EML-Byte-Gleichheit und der atomare 100er-Batch
+verifiziert. Eine frische Live-Abnahme des neuen Buttons ist erst nach dem noch
+nicht freigegebenen Deploy möglich. Power Automate ist für den EML-/Outlook-
+nativen Betriebsweg kein Blocker.
 
-Zu unterscheiden: `TECHNICAL_PACKAGE_VERIFIED` ist erfüllt,
-`OPERATOR_ACCEPTANCE` steht aus.
+### Korrektur 2026-08-26 — Seitenleiste war live nicht ladefähig
+
+Frühere Einträge bezeichneten die ausgelieferte Seitenleiste als verifiziert.
+Das war für die Oberfläche falsch. Im gebundenen Skript rief `Sidebar.html`
+`uiGetDashboard()` und `uiGetFilters()` auf; beide Serverfunktionen existierten
+dort nicht (Nachweis: `git show HEAD:deploy/HSB_SALES_OS.js | grep -c
+'function uiGetDashboard\|function uiGetFilters'` → `0`, live-Pull vor dem
+Upload ebenfalls `0`). `allesLaden()` brach dadurch schon beim ersten Aufruf ab,
+sodass **auch `setupWarnung` nie gerendert wurde** — also weder die
+Spaltenwarnung noch der Flyer-Alarm. Verifiziert waren Engine, Compliance-Gate
+und EML-Erzeugung, nicht die Oberfläche.
+
+Behoben durch `getFilters()` in `Actions.gs`, die Wrapper `uiGetDashboard` und
+`uiGetFilters` in `Code.gs` sowie das Auspacken von `{ok,data}` in
+`cockpitLaden`/`filterLaden`. `testSidebarServerContract` prüft jetzt generisch
+jeden `ui*`-Aufruf der Seitenleiste gegen die Serverdefinitionen und schließt
+diese Fehlerklasse.
+
+### Jordi-100-Schnellstart — lokaler Stand 2026-08-26
+
+```
+JORDI_MAILBOX_ACCESS             = USER_REPORTED_GRANTED
+JORDI_APPS_SCRIPT_ACCESS         = USER_REPORTED_ACTIVE
+JORDI_100_LOCAL_IMPLEMENTATION   = PASS
+JORDI_100_LIVE_DEPLOY            = PUSHED_2026-08-26T16:37 (clasp push, verifiziert)
+POWER_AUTOMATE_REQUIRED          = NO (EML-/Outlook-nativer Pfad)
+POWER_AUTOMATE_JORDI_LIVE_FLOW   = NOT_CONFIGURED
+AUTOMATIC_PROSPECT_SEND          = NO
+```
+
+Der obere Sidebar-Button **„100 freigeben & Entwürfe erzeugen“** führt jetzt
+lokal einen serverseitigen Vorgang aus: Jordi-Flyer prüfen, exakt 100 sichere
+Kontakte unter einem `DocumentLock` neutral als `OWNER_APPROVED` protokollieren,
+reservieren und fünf ZIP-Pakete mit insgesamt 100 Outlook-EML-Entwürfen
+erzeugen. Weniger als 100 sichere Kandidaten führen zu null Änderungen.
+
+Der vorhandene lokale Outlook-Connector gehört weiterhin zum privaten Konto
+`cherinodiaz@outlook.com` und wird nicht mit HSB vermischt. Für den geprüften
+EML-Import unter `j-post@hsb-boden.de` ist Power Automate nicht erforderlich.
+Direkte Outlook-Erzeugung per Power Automate bleibt eine getrennte optionale
+Live-Integration.
 
 ---
 
@@ -79,7 +118,7 @@ Diese Punkte sind bewusst offen und dürfen nicht zu PASS erhoben werden:
   Mehrbenutzerlast getestet. Verifiziert ist das lokale Nebenläufigkeitsmodell
   (0 überlappende Leads, Lock-Timeout fail-closed). Das Design stützt sich
   fail-closed auf `LockService.getDocumentLock()`.
-- **Jordis Operator-Abnahme** steht aus, siehe oben.
+- **Jordis Live-Abnahme des neuen Schnellstarts** steht bis zum Deploy aus.
 - **Keine echte Prospektkampagne** wurde zur Verifikation gesendet — das ist
   Absicht, kein Versäumnis.
 - **Nicht blockierender Kleinbefund:** zwei funktionsgleiche Bedingte-

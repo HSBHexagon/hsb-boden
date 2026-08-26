@@ -20,6 +20,7 @@ const AS = path.join(ROOT, 'apps_script');
 /* ------------------------------------------------------- Google-Stubs */
 
 let SHEETS = {};
+let REAL_SEND_CALLS = 0;
 
 function makeRange(sheet, row, col, numRows, numCols) {
   numRows = numRows || 1; numCols = numCols || 1;
@@ -187,7 +188,7 @@ const sandbox = {
   },
 
   Session: { getActiveUser: function () { return { getEmail: function () { return 'test@invalid'; } }; } },
-  MailApp: { sendEmail: function () {} },
+  MailApp: { sendEmail: function () { REAL_SEND_CALLS++; } },
   ScriptApp: {
     getProjectTriggers: function () { return []; },
     newTrigger: function () {
@@ -455,6 +456,179 @@ function testQualifyAndDedupWrite() {
   setupSheet(5, 'JORDI', { 'Opt_Out': 'yes', 'Suppressed': 'yes', 'Legal_Basis': 'UNKNOWN' });
   const r2 = ctx.qualifyLeads({ owner: 'JORDI', count: 5, legalBasis: 'OPT_IN' });
   check('Opt-out wird bei Qualifizierung nicht angetastet', r2.updated === 0, 'updated=' + r2.updated);
+}
+
+function testJordi100OneClick() {
+  loadRealFlyers();
+  setupSheet(120, 'JORDI', {
+    'Versandfreigabe': 'no', 'Legal_Basis': 'UNKNOWN'
+  });
+
+  const r = ctx.uiJordi100({ request_id: 'test-one-click-1' });
+  check('Jordi-100: UI-Aufruf erfolgreich', r.ok === true,
+        r.error || 'ok');
+  check('Jordi-100: exakt 100 reserviert',
+        r.ok && r.data.batch.stats.selected_count === 100,
+        r.ok ? 'selected=' + r.data.batch.stats.selected_count : 'kein Batch');
+  check('Jordi-100: exakt 100 neutral freigegeben',
+        r.ok && r.data.batch.approval.newly_approved === 100,
+        r.ok ? 'approved=' + r.data.batch.approval.newly_approved : 'kein Batch');
+  check('Jordi-100: Status bleibt PREPARED',
+        r.ok && r.data.batch.status === 'PREPARED');
+  check('Jordi-100: 100 Outlook-Entwuerfe erzeugt',
+        r.ok && r.data.export && r.data.export.written === 100,
+        r.ok && r.data.export ? 'written=' + r.data.export.written : 'kein Export');
+  check('Jordi-100: fuenf ZIP-Pakete zu je hoechstens 20',
+        r.ok && r.data.export && r.data.export.parts.length === 5
+          && r.data.export.parts.every(function (p) { return p.count <= 20; }));
+  check('Jordi-100: keine Send-Action aufgerufen', REAL_SEND_CALLS === 0,
+        'send calls=' + REAL_SEND_CALLS);
+
+  const legalCol = HEADER.indexOf('Legal_Basis');
+  const releaseCol = HEADER.indexOf('Versandfreigabe');
+  const batchCol = HEADER.indexOf('Batch_ID');
+  const rows = SHEETS.ALL_LEADS._data.slice(1);
+  const reserved = rows.filter(function (x) { return x[batchCol]; });
+  const untouched = rows.filter(function (x) { return !x[batchCol]; });
+  check('Jordi-100: reservierte Leads tragen OWNER_APPROVED',
+        reserved.length === 100
+          && reserved.every(function (x) { return x[legalCol] === 'OWNER_APPROVED'; }));
+  check('Jordi-100: reservierte Leads tragen Versandfreigabe=yes',
+        reserved.every(function (x) { return x[releaseCol] === 'yes'; }));
+  check('Jordi-100: Rest bleibt unveraendert fail-closed',
+        untouched.length === 20
+          && untouched.every(function (x) {
+            return x[legalCol] === 'UNKNOWN' && x[releaseCol] === 'no';
+          }));
+
+  const batchesBefore = SHEETS.BATCHES._data.length;
+  const retry = ctx.uiJordi100({ request_id: 'test-one-click-1' });
+  check('Jordi-100: Retry ist idempotent',
+        retry.ok && retry.data.batch.already_processed === true);
+  check('Jordi-100: Retry legt keinen zweiten Batch an',
+        SHEETS.BATCHES._data.length === batchesBefore);
+  check('Jordi-100: Retry erzeugt keine doppelten ZIPs',
+        retry.ok && retry.data.export === null);
+}
+
+function testJordi100SafetyGates() {
+  loadRealFlyers();
+  setupSheet(110, 'JORDI', {
+    'Versandfreigabe': 'no', 'Legal_Basis': 'UNKNOWN'
+  });
+  const idx = function (name) { return HEADER.indexOf(name); };
+  const data = SHEETS.ALL_LEADS._data;
+
+  data[1][idx('Opt-out-Status')] = 'yes';
+  data[2][idx('Suppressed')] = 'yes';
+  data[3][idx('Bounce_Status')] = 'hard_bounce';
+  data[4][idx('Send_Status')] = 'sent';
+  data[5][idx('E-Mail')] = 'ungueltig';
+  data[6][idx('Verantwortlicher')] = 'Joel Cherino Diaz';
+  data[7][idx('Legal_Basis')] = 'BLOCKED';
+  data[8][idx('E-Mail')] = data[9][idx('E-Mail')];
+  data[10][idx('Batch_ID')] = 'ACTIVE-JORDI-1';
+  SHEETS.BATCHES._data = [
+    ['Batch_ID', 'Owner', 'Campaign', 'Status', 'Requested', 'Selected',
+     'Eligible', 'Excluded', 'Shortfall', 'Asset_SHA256', 'Created_At',
+     'Approved_At', 'Sent_At'],
+    ['ACTIVE-JORDI-1', 'JORDI', '', 'PREPARED', 1, 1, 1, 0, 0, '', '', '', '']
+  ];
+  ctx.invalidateLeadsCache_();
+
+  const r = ctx.approveAndPrepareJordi100({ request_id: 'safety-gates-1' });
+  const ids = new Set(r.leads.map(function (l) { return l.Lead_ID; }));
+  check('Jordi-100 Gates: trotz Sperrfaellen exakt 100 sichere Leads',
+        r.stats.selected_count === 100, 'selected=' + r.stats.selected_count);
+  [1, 2, 3, 4, 5, 6, 7, 8, 10].forEach(function (n) {
+    check('Jordi-100 Gates: TEST-JORDI-' + n + ' ausgeschlossen',
+          !ids.has('TEST-JORDI-' + n));
+  });
+  const emails = r.leads.map(function (l) { return l.Email.toLowerCase(); });
+  check('Jordi-100 Gates: E-Mail-Dedupe aktiv',
+        emails.length === new Set(emails).size);
+
+  setupSheet(99, 'JORDI', {
+    'Versandfreigabe': 'no', 'Legal_Basis': 'UNKNOWN'
+  });
+  const short = ctx.approveAndPrepareJordi100({ request_id: 'shortfall-1' });
+  check('Jordi-100 Shortfall: Vorgang blockiert',
+        short.status === 'BLOCKED_EXACT_100');
+  check('Jordi-100 Shortfall: null Zeilen veraendert',
+        SHEETS.ALL_LEADS._data.slice(1).every(function (x) {
+          return x[idx('Legal_Basis')] === 'UNKNOWN'
+            && x[idx('Versandfreigabe')] === 'no'
+            && !x[idx('Batch_ID')];
+        }));
+  check('Jordi-100 Shortfall: kein Batch angelegt',
+        SHEETS.BATCHES._data.length === 0);
+
+  setupSheet(120, 'JORDI', {
+    'Versandfreigabe': 'no', 'Legal_Basis': 'UNKNOWN'
+  });
+  sandbox.LockService._forceTimeout = true;
+  let lockBlocked = false;
+  try {
+    ctx.approveAndPrepareJordi100({ request_id: 'lock-timeout-1' });
+  } catch (e) {
+    lockBlocked = /LOCK_TIMEOUT/.test(e.message);
+  } finally {
+    sandbox.LockService._forceTimeout = false;
+  }
+  check('Jordi-100 Lock: Timeout blockiert fail-closed', lockBlocked);
+  check('Jordi-100 Lock: Timeout hinterlaesst null Writes',
+        SHEETS.ALL_LEADS._data.slice(1).every(function (x) {
+          return x[idx('Legal_Basis')] === 'UNKNOWN'
+            && x[idx('Versandfreigabe')] === 'no'
+            && !x[idx('Batch_ID')];
+        }));
+}
+
+function testJordi100UiContract() {
+  const sidebar = fs.readFileSync(path.join(AS, 'Sidebar.html'), 'utf8');
+  check('Jordi-100 UI: Schnellstart oben vorhanden',
+        /Jordi · 100 Outlook-Entwürfe/.test(sidebar));
+  check('Jordi-100 UI: eindeutiger Ein-Klick-Button',
+        /100 freigeben &amp; Entwürfe erzeugen/.test(sidebar));
+  check('Jordi-100 UI: serverseitiger Wrapper verdrahtet',
+        /\.uiJordi100\(\{ request_id: jordi100RequestId \}\)/.test(sidebar));
+  check('Jordi-100 UI: alter Freigabedialog fuer Jordi initial verborgen',
+        /<details class="schritt" id="s1" style="display:none">/.test(sidebar));
+  check('Jordi-100 UI: keine Prospect-Send-Action eingebaut',
+        !/(sendEmail|SendEmailV2|GmailApp|SendDraftEmail)/.test(sidebar));
+}
+
+function testSidebarServerContract() {
+  setupSheet(3, 'JORDI');
+  const dashboard = ctx.uiGetDashboard();
+  check('Sidebar-Contract: uiGetDashboard vorhanden und erfolgreich',
+        dashboard.ok && dashboard.data.owners.JORDI.total === 3);
+  const filters = ctx.uiGetFilters();
+  check('Sidebar-Contract: uiGetFilters vorhanden und erfolgreich',
+        filters.ok && Array.isArray(filters.data.industries)
+          && filters.data.industries.indexOf('Lebensmittelindustrie') >= 0);
+
+  // Jeder Serveraufruf der Seitenleiste muss existieren. Fehlt einer, wirft
+  // google.script.run synchron und die gesamte Ladekette bricht ab -
+  // einschliesslich der Sicherheitswarnungen.
+  const sidebar = fs.readFileSync(path.join(AS, 'Sidebar.html'), 'utf8');
+  const aufrufe = {};
+  const re = /\.\s*(ui[A-Za-z0-9_]*)\s*\(/g;
+  let m;
+  while ((m = re.exec(sidebar)) !== null) aufrufe[m[1]] = true;
+  const namen = Object.keys(aufrufe).sort();
+  check('Sidebar-Contract: mindestens zehn Serveraufrufe geprueft',
+        namen.length >= 10, 'gefunden=' + namen.length);
+  namen.forEach(function (name) {
+    check('Sidebar-Contract: ' + name + ' serverseitig definiert',
+          typeof ctx[name] === 'function');
+  });
+
+  // Beide Handler muessen das {ok,data}-Format auspacken.
+  check('Sidebar-Contract: cockpitLaden prueft r.ok',
+        /function cockpitLaden\(\)[\s\S]{0,220}if \(!r\.ok\)/.test(sidebar));
+  check('Sidebar-Contract: filterLaden prueft r.ok',
+        /function filterLaden\(\)[\s\S]{0,200}if \(!r \|\| !r\.ok\)/.test(sidebar));
 }
 
 function testSuppression() {
@@ -818,7 +992,9 @@ console.log('='.repeat(70));
 
 [testAssetGate, testEligibility, testDynamicCounts, testGateNotBypassable,
  testEmptyBatchExplained, testEmailDedup, testNoCrossSender, testEmlStructure,
- testQualifyAndDedupWrite, testSuppression, testDuplicateBatchProtection,
+ testQualifyAndDedupWrite, testJordi100OneClick, testJordi100SafetyGates,
+ testJordi100UiContract, testSidebarServerContract,
+ testSuppression, testDuplicateBatchProtection,
  testDashboard, testEmlExportChunking, testFollowUps, testEnsureColumns,
  testSetupState, testBatchListe, testSuche,
  testLockServiceAndConcurrency, testIdempotency, testInboundEvents,

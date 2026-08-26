@@ -8,11 +8,17 @@ Für Jordi und Joel. Kein Terminal, kein Mac, keine Installation nötig.
 
 **Jordi will heute 100 anschreiben:**
 
-1. Google Sheet öffnen → Menü **HSB Sales OS → Sales OS öffnen**
-2. Absender **Jordi Post**, Anzahl **100**
-3. **Batch vorbereiten**
-4. **Entwürfe als ZIP erzeugen** → ZIP aus Drive herunterladen
-5. In Outlook importieren, jeden Entwurf prüfen, senden
+1. Google Sheet öffnen → Menü **HSB Sales OS → Seitenleiste öffnen**
+2. Absender **Jordi** wählen
+3. Oben **100 freigeben & Entwürfe erzeugen** klicken
+4. Die fünf ZIP-Pakete aus Drive herunterladen
+5. In Neues Outlook unter `j-post@hsb-boden.de` in **Entwürfe** importieren
+6. Entwürfe prüfen und manuell senden
+
+Der Schnellstart arbeitet exakt: Sind nicht mindestens 100 sichere, eindeutige
+Jordi-Kontakte verfügbar, verändert er **null** Zeilen und legt keinen Batch an.
+Opt-out, Suppression, Hard Bounce, ungültige Adressen, bereits gesendete oder
+aktiv reservierte Kontakte sowie falsche Owner/Flyer bleiben gesperrt.
 
 **Joel will 12:** dasselbe, Absender *Joel*, Anzahl **12**.
 
@@ -47,7 +53,12 @@ Nach § 7 UWG braucht Werbung per E-Mail eine Rechtsgrundlage. Ohne diese darf
 die Software nicht senden — und sie lässt sich auch nicht durch eine größere
 Batchgröße überreden. Das ist bewusst so gebaut.
 
-**So gibst du Leads frei:**
+**Jordi:** Der obere Schnellstart ist die ausdrückliche Operator-Freigabe. Er
+protokolliert neutral `OWNER_APPROVED`, ohne Einwilligung oder
+Bestandskundenstatus zu behaupten. Jordi muss keine Grundlage aus einer Liste
+auswählen.
+
+**Joel / erweiterter Ablauf:**
 
 1. In der Seitenleiste ganz unten: **Rechtliche Freigabe**
 2. Absender wählen, Anzahl eintragen (z. B. 100)
@@ -97,9 +108,9 @@ Batch anfordert.
   was wirklich passiert ist.
 - **„Gesendet" heißt nicht „im Posteingang angekommen."** Ein ausbleibender
   Bounce ist kein Zustellnachweis.
-- **Vorbereiten ist nicht Senden.** Ein vorbereiteter Batch verschickt nichts.
-  Der Versand passiert erst, wenn eine Person die Entwürfe in Outlook prüft und
-  abschickt.
+- **Vorbereiten ist nicht Senden.** Auch der Jordi-Schnellstart verschickt
+  nichts. Er erzeugt Outlook-Entwürfe; der Versand passiert erst, wenn eine
+  Person sie unter `j-post@hsb-boden.de` prüft und abschickt.
 - **Langsam senden.** Nicht 100 Mails in wenigen Sekunden. Microsofts
   technische Obergrenze ist keine Empfehlung für die Geschwindigkeit.
 

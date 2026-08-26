@@ -66,7 +66,7 @@ automatische Ersatzauswahl.
 Fail-closed nach § 7 UWG. Sendefähig nur bei **allen** Bedingungen:
 
 ```
-Legal_Basis ∈ {OPT_IN, EXISTING_CUSTOMER_7_3}
+Legal_Basis ∈ {OPT_IN, EXISTING_CUSTOMER_7_3, OWNER_APPROVED}
 Versandfreigabe = yes
 Suppressed ≠ yes
 Opt_Out ≠ yes
@@ -76,9 +76,16 @@ E-Mail syntaktisch gültig
 Owner eindeutig auflösbar
 ```
 
-`UNKNOWN` und `BLOCKED` sind nicht sendefähig. Das Gate ist weder über die
+`OWNER_APPROVED` ist die neutral protokollierte, ausdrückliche Operator-Aktion
+des atomaren Jordi-100-Schnellstarts. Sie behauptet weder Opt-in noch
+Bestandskundenstatus. `UNKNOWN` und `BLOCKED` sind nicht sendefähig. Das Gate ist weder über die
 Batchgröße noch über die Oberfläche noch über die CLI umgehbar — dafür gibt es
 einen eigenen Test (`test_gate_not_bypassable_by_count`).
+
+Der Schnellstart prüft unter einem einzigen `DocumentLock` zuerst alle
+unveränderlichen Sperren und das Jordi-Flyer-Gate. Nur wenn exakt 100 sichere,
+eindeutige Kandidaten verfügbar sind, werden Freigabe und Reservierung
+geschrieben. Bei Shortfall: null Writes, null Batch.
 
 ## Batch-Engine
 

@@ -110,6 +110,16 @@ body { padding: var(--s4) var(--s4) var(--s6); }
   font-size: 11.5px; color: var(--grau); margin-top: 3px;
 }
 
+.schnellstart {
+  margin: 0 0 var(--s4); padding: var(--s4);
+  border: 1px solid var(--raster); border-radius: 8px;
+  background: var(--flaeche);
+}
+.schnellstart .titel { font-weight: 700; font-size: 14px; }
+.schnellstart .erklaerung {
+  margin-top: var(--s1); color: var(--grau); font-size: 11.5px;
+}
+
 /* --- Schritte ------------------------------------------------------ */
 
 .schritt { border-bottom: 1px solid var(--raster); }
@@ -277,7 +287,19 @@ button.tat[disabled] { opacity: .45; cursor: not-allowed; }
 
 <div id="setupWarnung"></div>
 
-<details class="schritt" id="s1">
+<section class="schnellstart" id="jordi100Box" aria-labelledby="jordi100Titel">
+  <div class="titel" id="jordi100Titel">Jordi · 100 Outlook-Entwürfe</div>
+  <div class="erklaerung">
+    Ein Klick gibt exakt 100 sichere Jordi-Kontakte frei, reserviert den Batch
+    und erzeugt fünf Outlook-Pakete. Es wird nichts automatisch versendet.
+  </div>
+  <button class="tat primaer" id="jordi100Button" onclick="jordi100Start()">
+    100 freigeben &amp; Entwürfe erzeugen
+  </button>
+  <div id="jordi100Ergebnis"></div>
+</section>
+
+<details class="schritt" id="s1" style="display:none">
   <summary>
     <span class="nr zahl">01</span>
     <span class="titel">Rechtlich freigeben</span>
@@ -386,6 +408,7 @@ var OWNER = 'JORDI';
 var aktuellerBatch = null;
 var sucheTimer = null;
 var letzteZahlen = null;
+var jordi100RequestId = null;
 
 function esc(s) {
   return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
@@ -416,7 +439,14 @@ function setOwner(o) {
   zeig('faellige', '');
   zeig('sucheErgebnis', '');
   el('suche').value = '';
+  ownerUiAktualisieren();
   allesLaden();
+}
+
+function ownerUiAktualisieren() {
+  var istJordi = OWNER === 'JORDI';
+  el('jordi100Box').style.display = istJordi ? 'block' : 'none';
+  el('s1').style.display = istJordi ? 'none' : 'block';
 }
 
 /* --- Sechseck ------------------------------------------------------ */
@@ -473,7 +503,13 @@ function spaltenAnlegen() {
 }
 
 function cockpitLaden() {
-  google.script.run.withSuccessHandler(function (d) {
+  google.script.run.withSuccessHandler(function (r) {
+    if (!r.ok) {
+      el('bereitGross').textContent = 'Fehler';
+      el('bereitKlein').textContent = r.error;
+      return;
+    }
+    var d = r.data;
     var c = (d.owners && d.owners[OWNER]) || {};
     var gesamt = c.total || 0, bereit = c.eligible || 0;
     letzteZahlen = c;
@@ -485,7 +521,9 @@ function cockpitLaden() {
     el('bereitKlein').textContent = bereit
       ? 'Gesendet ' + nz(c.sent) + ' · Antworten ' + nz(c.replied)
         + ' · Bounces ' + nz(c.bounced)
-      : nz(gesamt) + ' Kontakte warten auf rechtliche Freigabe';
+      : (OWNER === 'JORDI'
+        ? nz(gesamt) + ' Kontakte · Schnellstart gibt exakt 100 sicher frei'
+        : nz(gesamt) + ' Kontakte warten auf rechtliche Freigabe');
 
     el('m1').textContent = bereit ? nz(bereit) + ' frei' : 'zuerst hier';
     el('m1').className = 'marke ' + (bereit ? 'gut' : 'warn');
@@ -496,7 +534,8 @@ function cockpitLaden() {
 
     // Den blockierenden Schritt oeffnen, nicht alle.
     if (!el('s1').open && !el('s2').open && !el('s3').open && !el('s4').open) {
-      (bereit ? el('s2') : el('s1')).open = true;
+      if (bereit || OWNER === 'JORDI') el('s2').open = true;
+      else el('s1').open = true;
     }
   }).withFailureHandler(function (e) {
     el('bereitGross').textContent = 'Fehler';
@@ -505,12 +544,15 @@ function cockpitLaden() {
 }
 
 function filterLaden() {
-  google.script.run.withSuccessHandler(function (f) {
+  google.script.run.withSuccessHandler(function (r) {
+    if (!r || !r.ok) return;
     var sel = el('industry');
-    (f.industries || []).forEach(function (i) {
+    (r.data.industries || []).forEach(function (i) {
       var o = document.createElement('option');
       o.value = i; o.textContent = i; sel.appendChild(o);
     });
+  }).withFailureHandler(function () {
+    // Branchenfilter ist optional; ohne ihn bleibt "alle" bestehen.
   }).uiGetFilters();
 }
 
@@ -537,6 +579,90 @@ function qualifizieren() {
     el('s2').open = true;
     cockpitLaden();
   }).uiQualify({ owner: OWNER, count: n, legalBasis: basis });
+}
+
+/* --- Jordi Schnellstart --------------------------------------------- */
+
+function jordi100Start() {
+  if (OWNER !== 'JORDI') {
+    fehler('jordi100Ergebnis', 'Bitte zuerst Jordi als Absender wählen.');
+    return;
+  }
+  var btn = el('jordi100Button');
+  btn.disabled = true;
+  btn.textContent = '100 werden vorbereitet…';
+  if (!jordi100RequestId) {
+    jordi100RequestId = 'ui-' + Date.now().toString(36) + '-'
+      + Math.random().toString(36).slice(2, 10);
+  }
+  laden('jordi100Ergebnis',
+    'Sicherheitsprüfung, Reservierung und Entwurfserzeugung laufen…');
+
+  google.script.run.withSuccessHandler(function (r) {
+    btn.disabled = false;
+    if (!r.ok) {
+      btn.textContent = 'Vorgang sicher erneut versuchen';
+      fehler('jordi100Ergebnis', r.error);
+      return;
+    }
+
+    var b = r.data.batch;
+    if (b.status === 'BLOCKED_EXACT_100') {
+      zeig('jordi100Ergebnis', '<div class="meldung m-warn"><b>Keine Änderung</b>'
+        + 'Es sind nur <span class="zahl">' + nz(b.approval.safe_available)
+        + '</span> sichere Kontakte verfügbar. Benötigt werden exakt '
+        + '<span class="zahl">100</span>. Es wurde nichts freigegeben und '
+        + 'kein Batch angelegt.</div>');
+      btn.textContent = '100 freigeben & Entwürfe erzeugen';
+      jordi100RequestId = null;
+      return;
+    }
+
+    var h = '<div class="meldung m-gut"><b><span class="zahl">100</span> '
+      + 'Jordi-Entwürfe vorbereitet</b>Batch <span class="zahl">'
+      + esc(b.batch_id) + '</span><br><span class="zahl">'
+      + nz(b.approval.newly_approved) + '</span> neu freigegeben · '
+      + '<span class="zahl">' + nz(b.approval.already_eligible)
+      + '</span> bereits freigegeben<br>Anhang: ' + esc(b.asset_file) + '</div>';
+
+    if (r.data.export) {
+      var x = r.data.export;
+      h += '<div class="meldung m-gut"><b><span class="zahl">'
+        + nz(x.written) + '</span> von <span class="zahl">'
+        + nz(x.total) + '</span> Outlook-Entwürfen erzeugt</b>';
+      x.parts.forEach(function (p) {
+        h += '<a href="' + p.url + '" target="_blank">' + esc(p.name)
+          + '</a> · <span class="zahl">' + nz(p.count) + '</span><br>';
+      });
+      h += 'Alle fünf Pakete herunterladen und in Neues Outlook unter '
+        + '<b>j-post@hsb-boden.de → Entwürfe</b> importieren.</div>';
+      if (!x.complete) {
+        h += '<div class="meldung m-warn"><b>Fortsetzung nötig</b>'
+          + '<button class="tat zweit" onclick="emlExport(\''
+          + esc(b.batch_id) + '\',' + x.next_index + ')">Weiter ab '
+          + '<span class="zahl">' + nz(x.next_index) + '</span></button></div>';
+      }
+    } else if (b.already_processed) {
+      h += '<div class="meldung m-warn"><b>Aufruf bereits verarbeitet</b>'
+        + 'Es wurde bewusst kein zweiter Batch und kein doppeltes ZIP erzeugt. '
+        + 'Nutze unten beim bestehenden Batch „Entwürfe erzeugen“.</div>';
+    } else {
+      h += '<div class="meldung m-warn"><b>Batch sicher reserviert</b>'
+        + 'Die ZIP-Erzeugung meldete: ' + esc(r.data.export_error || 'unbekannter Fehler')
+        + '. Nutze unten beim Batch „Entwürfe erzeugen“.</div>';
+    }
+    h += '<div id="exp_' + esc(b.batch_id) + '"></div>';
+    zeig('jordi100Ergebnis', h);
+    btn.textContent = 'Nächste 100 freigeben & Entwürfe erzeugen';
+    jordi100RequestId = null;
+    cockpitLaden();
+    batchListeLaden();
+    el('s3').open = true;
+  }).withFailureHandler(function (e) {
+    btn.disabled = false;
+    btn.textContent = 'Vorgang sicher erneut versuchen';
+    fehler('jordi100Ergebnis', e.message);
+  }).uiJordi100({ request_id: jordi100RequestId });
 }
 
 /* --- 02 Batch ------------------------------------------------------- */
@@ -731,6 +857,7 @@ function sucheAusfuehren(q) {
 
 /* --- Start ---------------------------------------------------------- */
 
+ownerUiAktualisieren();
 allesLaden();
 filterLaden();
 </script>

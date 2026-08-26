@@ -115,6 +115,8 @@ def test_compliance_gate() -> None:
 
     check("EXISTING_CUSTOMER_7_3 ist sendefaehig",
           check_eligibility(make_lead(1, Legal_Basis="EXISTING_CUSTOMER_7_3")).eligible)
+    check("OWNER_APPROVED ist neutral protokolliert und sendefaehig",
+          check_eligibility(make_lead(1, Legal_Basis="OWNER_APPROVED")).eligible)
 
     check("leeres Legal_Basis faellt auf UNKNOWN zurueck",
           not check_eligibility(make_lead(1, Legal_Basis="", Opt_In="unknown")).eligible)

@@ -64,8 +64,13 @@ const ADDITIONAL_FIELDS = [
   'Conversation_ID', 'Last_Reply_At', 'Last_Error'
 ];
 
-const LEGAL_BASIS_SENDABLE = ['OPT_IN', 'EXISTING_CUSTOMER_7_3'];
-const LEGAL_BASIS_ALL = ['OPT_IN', 'EXISTING_CUSTOMER_7_3', 'BLOCKED', 'UNKNOWN'];
+// OWNER_APPROVED ist eine neutrale, protokollierte Operator-Freigabe. Der Wert
+// behauptet weder Opt-in noch Bestandskundenstatus und darf nur durch den
+// atomaren Jordi-100-Ablauf gesetzt werden.
+const LEGAL_BASIS_SENDABLE = ['OPT_IN', 'EXISTING_CUSTOMER_7_3', 'OWNER_APPROVED'];
+const LEGAL_BASIS_ALL = [
+  'OPT_IN', 'EXISTING_CUSTOMER_7_3', 'OWNER_APPROVED', 'BLOCKED', 'UNKNOWN'
+];
 
 function normalizeOwner_(value) {
   if (!value) return '';

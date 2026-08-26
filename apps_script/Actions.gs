@@ -345,6 +345,23 @@ function getDashboard() {
   return out;
 }
 
+/**
+ * Filterwerte fuer die Seitenleiste. Die Oberflaeche liest ausschliesslich
+ * `industries`; weitere Felder werden bewusst nicht geliefert.
+ */
+function getFilters() {
+  const read = readLeadsCached_();
+  const seen = {};
+  read.leads.forEach(function (l) {
+    const v = String(l.Industry || '').trim();
+    if (v) seen[v] = true;
+  });
+  const industries = Object.keys(seen).sort(function (a, b) {
+    return a.localeCompare(b, 'de');
+  });
+  return { industries: industries };
+}
+
 /* ------------------------------------------------ Taegliche Erinnerung */
 
 /**

@@ -8,3 +8,6 @@ tests/last_run_apps_script.json
 SCRIPT_ID
 deploy/.clasp.json
 _FALSCHE_BINDUNG_*
+
+# Deployment-Rueckfallpunkte
+.backup_appsscript_*/

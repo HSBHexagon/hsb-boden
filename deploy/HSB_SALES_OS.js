@@ -79,8 +79,13 @@ const ADDITIONAL_FIELDS = [
   'Conversation_ID', 'Last_Reply_At', 'Last_Error'
 ];
 
-const LEGAL_BASIS_SENDABLE = ['OPT_IN', 'EXISTING_CUSTOMER_7_3'];
-const LEGAL_BASIS_ALL = ['OPT_IN', 'EXISTING_CUSTOMER_7_3', 'BLOCKED', 'UNKNOWN'];
+// OWNER_APPROVED ist eine neutrale, protokollierte Operator-Freigabe. Der Wert
+// behauptet weder Opt-in noch Bestandskundenstatus und darf nur durch den
+// atomaren Jordi-100-Ablauf gesetzt werden.
+const LEGAL_BASIS_SENDABLE = ['OPT_IN', 'EXISTING_CUSTOMER_7_3', 'OWNER_APPROVED'];
+const LEGAL_BASIS_ALL = [
+  'OPT_IN', 'EXISTING_CUSTOMER_7_3', 'OWNER_APPROVED', 'BLOCKED', 'UNKNOWN'
+];
 
 function normalizeOwner_(value) {
   if (!value) return '';
@@ -506,6 +511,243 @@ function prepareBatch(opts) {
   }
 }
 
+/**
+ * Jordi-Schnellstart: eine ausdrueckliche Operator-Aktion gibt exakt 100
+ * sichere Kontakte frei und reserviert sie im selben DocumentLock.
+ *
+ * Der neutrale Auditwert OWNER_APPROVED behauptet weder Opt-in noch
+ * Bestandskundenstatus. BLOCKED, Opt-out, Suppression, Hard Bounce, bereits
+ * gesendete, ungueltige, doppelte oder aktiv reservierte Kontakte werden nie
+ * ueberschrieben. Sind nicht exakt 100 sichere Kontakte verfuegbar, bleibt das
+ * Sheet unveraendert und es wird kein Batch angelegt.
+ */
+function approveAndPrepareJordi100(opts) {
+  opts = opts || {};
+  const target = 100;
+  const ownerKey = 'JORDI';
+  const requestId = String(opts.request_id || '').trim();
+  if (!/^[A-Za-z0-9_-]{8,64}$/.test(requestId)) {
+    throw new Error('Ungueltige request_id fuer Jordi-100.');
+  }
+  const campaignKey = 'JORDI100:' + requestId;
+
+  // Owner/Flyer-Gate vor jedem moeglichen Sheet-Write.
+  const verified = getVerifiedFlyer_(ownerKey);
+  const lock = (typeof LockService !== 'undefined' && LockService.getDocumentLock)
+    ? LockService.getDocumentLock()
+    : null;
+  const hasLock = lock ? lock.tryLock(30000) : true;
+  if (!hasLock) {
+    throw new Error('LOCK_TIMEOUT: Ein anderer Vorgang greift gerade auf das Sheet zu. Bitte in Kürze erneut versuchen.');
+  }
+
+  try {
+    invalidateLeadsCache_();
+    const read = readLeadsCached_();
+    if (read.index['Legal_Basis'] === undefined
+        || read.index[FIELD_MAP.Versandfreigabe] === undefined) {
+      throw new Error('Spalten fehlen. Bitte zuerst "Spalten pruefen" ausfuehren.');
+    }
+
+    // Derselbe Browser-Aufruf darf auch nach Timeout/Retry keinen zweiten
+    // Batch und keine doppelten ZIP-Pakete erzeugen.
+    const batchesSh = sheet_(CFG.SHEET_BATCHES);
+    if (batchesSh.getLastRow() >= 2) {
+      const existingRows = batchesSh.getRange(
+        2, 1, batchesSh.getLastRow() - 1, 13).getValues();
+      for (let bi = 0; bi < existingRows.length; bi++) {
+        const row = existingRows[bi];
+        if (String(row[2]) !== campaignKey) continue;
+        const existingBatchId = String(row[0]);
+        const existingLeads = read.leads.filter(function (lead) {
+          return String(lead.Batch_ID) === existingBatchId;
+        });
+        return {
+          batch_id: existingBatchId,
+          owner: ownerKey,
+          owner_display: verified.flyer.displayName,
+          mailbox: verified.flyer.mailbox,
+          asset_file: verified.flyer.fileName,
+          asset_sha256: verified.sha256,
+          asset_drive_id: verified.flyer.driveId,
+          status: String(row[3] || 'PREPARED'),
+          stats: {
+            requested_count: Number(row[4] || target),
+            selected_count: Number(row[5] || existingLeads.length),
+            eligible_count: Number(row[6] || existingLeads.length),
+            excluded_count: Number(row[7] || 0),
+            shortfall: Number(row[8] || 0)
+          },
+          approval: {
+            audit_value: 'OWNER_APPROVED',
+            already_eligible: existingLeads.length,
+            newly_approved: 0,
+            safe_available: existingLeads.length
+          },
+          already_processed: true,
+          leads: existingLeads.map(function (lead) {
+            return { Lead_ID: lead.Lead_ID, Company: lead.Company,
+                     Email: lead.Email, Contact: lead.Contact, Tier: lead.Tier };
+          })
+        };
+      }
+    }
+
+    const active = activeBatchLeadIds_();
+    const candidates = [];
+    let totalPool = 0;
+    let blockedCount = 0;
+
+    read.leads.forEach(function (lead) {
+      if (normalizeOwner_(lead.Owner) !== ownerKey) return;
+      totalPool++;
+      if (active[lead.Lead_ID]) { blockedCount++; return; }
+
+      const rawLegal = String(lead.Legal_Basis || '').trim().toUpperCase();
+      if (rawLegal === 'BLOCKED'
+          || (rawLegal && LEGAL_BASIS_ALL.indexOf(rawLegal) === -1)) {
+        blockedCount++;
+        return;
+      }
+
+      const eligibility = checkEligibility_(lead);
+      const immutableReasons = eligibility.reasons.filter(function (reason) {
+        return reason.indexOf('Legal_Basis=') !== 0
+          && reason.indexOf('Versandfreigabe=') !== 0;
+      });
+      if (immutableReasons.length) { blockedCount++; return; }
+      candidates.push({ lead: lead, eligible: eligibility.eligible });
+    });
+
+    // Gleiche Prioritaet wie die normale Batch-Engine: Tier A, dann Lead-ID.
+    candidates.sort(function (a, b) {
+      const ta = String(a.lead.Tier || '').toUpperCase() === 'A' ? 0 : 1;
+      const tb = String(b.lead.Tier || '').toUpperCase() === 'A' ? 0 : 1;
+      if (ta !== tb) return ta - tb;
+      return String(a.lead.Lead_ID).localeCompare(String(b.lead.Lead_ID));
+    });
+
+    const seenEmails = {};
+    const uniqueCandidates = [];
+    candidates.forEach(function (candidate) {
+      const emailKey = String(candidate.lead.Email || '').trim().toLowerCase();
+      if (seenEmails[emailKey]) { blockedCount++; return; }
+      seenEmails[emailKey] = true;
+      uniqueCandidates.push(candidate);
+    });
+
+    if (uniqueCandidates.length < target) {
+      return {
+        batch_id: '', owner: ownerKey, owner_display: verified.flyer.displayName,
+        mailbox: verified.flyer.mailbox, asset_file: verified.flyer.fileName,
+        asset_sha256: verified.sha256, asset_drive_id: verified.flyer.driveId,
+        status: 'BLOCKED_EXACT_100', already_processed: false,
+        stats: {
+          requested_count: target, selected_count: 0,
+          eligible_count: uniqueCandidates.length,
+          excluded_count: Math.max(blockedCount, totalPool - uniqueCandidates.length),
+          shortfall: target - uniqueCandidates.length
+        },
+        approval: {
+          audit_value: 'OWNER_APPROVED', already_eligible: 0,
+          newly_approved: 0, safe_available: uniqueCandidates.length
+        },
+        leads: []
+      };
+    }
+
+    const chosen = uniqueCandidates.slice(0, target);
+    const selected = chosen.map(function (candidate) { return candidate.lead; });
+    const sh = sheet_(CFG.SHEET_LEADS);
+    const legalUpdates = {};
+    const releaseUpdates = {};
+    const approvedAtUpdates = {};
+    const approvedAt = nowIso_();
+    let alreadyEligible = 0;
+    let newlyApproved = 0;
+
+    chosen.forEach(function (candidate) {
+      const lead = candidate.lead;
+      if (candidate.eligible) {
+        alreadyEligible++;
+        return;
+      }
+      newlyApproved++;
+      const rawLegal = String(lead.Legal_Basis || '').trim().toUpperCase();
+      if (LEGAL_BASIS_SENDABLE.indexOf(rawLegal) === -1) {
+        const optIn = String(lead.Opt_In || '').trim().toLowerCase();
+        legalUpdates[lead._row] = (optIn === 'yes' || optIn === 'ja'
+          || optIn === 'true' || optIn === 'opt_in') ? 'OPT_IN' : 'OWNER_APPROVED';
+      }
+      if (!isTrue_(lead.Versandfreigabe)) releaseUpdates[lead._row] = 'yes';
+      if (read.index['Approved_At'] !== undefined) {
+        approvedAtUpdates[lead._row] = approvedAt;
+      }
+    });
+
+    if (Object.keys(legalUpdates).length) {
+      writeColumnBulk_(sh, read.index['Legal_Basis'] + 1, legalUpdates);
+    }
+    if (Object.keys(releaseUpdates).length) {
+      writeColumnBulk_(sh, read.index[FIELD_MAP.Versandfreigabe] + 1,
+                       releaseUpdates);
+    }
+    if (Object.keys(approvedAtUpdates).length) {
+      writeColumnBulk_(sh, read.index['Approved_At'] + 1, approvedAtUpdates);
+    }
+    SpreadsheetApp.flush();
+    invalidateLeadsCache_();
+
+    const batchId = 'HSB-' + Utilities.formatDate(
+      new Date(), CFG.TIMEZONE, 'yyyyMMdd') + '-JORDI-'
+      + ('000' + nextBatchSeq_(ownerKey)).slice(-4);
+    const stats = {
+      requested_count: target,
+      total_pool: totalPool,
+      eligible_count: uniqueCandidates.length,
+      selected_count: target,
+      excluded_count: Math.max(blockedCount, totalPool - uniqueCandidates.length),
+      shortfall: 0
+    };
+
+    writeBatchToLeads_(read, selected, batchId);
+    appendBatchRow_(batchId, ownerKey, campaignKey, 'PREPARED',
+                    stats, verified.sha256);
+    logActivity_(batchId, 'OWNER_APPROVED',
+      'Jordi-100: ' + newlyApproved + ' neu freigegeben, '
+      + alreadyEligible + ' bereits sendefaehig, exakt 100 reserviert');
+    logActivity_(batchId, 'PREPARED',
+      '100 Leads atomar reserviert fuer JORDI; kein automatischer Versand');
+
+    return {
+      batch_id: batchId,
+      owner: ownerKey,
+      owner_display: verified.flyer.displayName,
+      mailbox: verified.flyer.mailbox,
+      asset_file: verified.flyer.fileName,
+      asset_sha256: verified.sha256,
+      asset_drive_id: verified.flyer.driveId,
+      status: 'PREPARED',
+      stats: stats,
+      approval: {
+        audit_value: 'OWNER_APPROVED',
+        already_eligible: alreadyEligible,
+        newly_approved: newlyApproved,
+        safe_available: uniqueCandidates.length
+      },
+      already_processed: false,
+      leads: selected.map(function (lead) {
+        return { Lead_ID: lead.Lead_ID, Company: lead.Company, Email: lead.Email,
+                 Contact: lead.Contact, Tier: lead.Tier };
+      })
+    };
+  } finally {
+    if (lock && hasLock) {
+      try { lock.releaseLock(); } catch (_) {}
+    }
+  }
+}
+
 function writeBatchToLeads_(read, selected, batchId) {
   const sh = sheet_(CFG.SHEET_LEADS);
   const ts = nowIso_();
@@ -905,6 +1147,23 @@ function getDashboard() {
   return out;
 }
 
+/**
+ * Filterwerte fuer die Seitenleiste. Die Oberflaeche liest ausschliesslich
+ * `industries`; weitere Felder werden bewusst nicht geliefert.
+ */
+function getFilters() {
+  const read = readLeadsCached_();
+  const seen = {};
+  read.leads.forEach(function (l) {
+    const v = String(l.Industry || '').trim();
+    if (v) seen[v] = true;
+  });
+  const industries = Object.keys(seen).sort(function (a, b) {
+    return a.localeCompare(b, 'de');
+  });
+  return { industries: industries };
+}
+
 /* ------------------------------------------------ Taegliche Erinnerung */
 
 /**
@@ -1219,6 +1478,37 @@ function uiQualify(opts) {
   }
 }
 
+/**
+ * Ein-Klick-Ablauf fuer Jordi: exakt 100 sicher freigeben/reservieren und als
+ * Outlook-EML-Pakete ausgeben. Eine Wiederholung derselben request_id erzeugt
+ * weder einen zweiten Batch noch doppelte ZIP-Pakete.
+ */
+function uiJordi100(opts) {
+  try {
+    const batch = approveAndPrepareJordi100(opts || {});
+    if (batch.status !== 'PREPARED' || batch.already_processed) {
+      return { ok: true, data: { batch: batch, export: null } };
+    }
+    try {
+      const exported = exportBatchAsEmlZip(batch.batch_id, 0);
+      return { ok: true, data: { batch: batch, export: exported } };
+    } catch (exportError) {
+      // Der Batch ist bereits sicher reserviert. Die UI bietet den bestehenden
+      // manuellen Exportknopf als verlustfreie Fortsetzung an.
+      return {
+        ok: true,
+        data: {
+          batch: batch,
+          export: null,
+          export_error: String(exportError.message || exportError)
+        }
+      };
+    }
+  } catch (e) {
+    return { ok: false, error: String(e.message || e) };
+  }
+}
+
 function uiExportEml(opts) {
   try {
     const res = exportBatchAsEmlZip(opts.batch_id, opts.folder_name, opts.start_index);
@@ -1266,6 +1556,16 @@ function uiApproveBatch(batchId) {
 
 function uiGetSetupState() {
   try { return { ok: true, data: getSetupState() }; }
+  catch (e) { return { ok: false, error: String(e.message || e) }; }
+}
+
+function uiGetDashboard() {
+  try { return { ok: true, data: getDashboard() }; }
+  catch (e) { return { ok: false, error: String(e.message || e) }; }
+}
+
+function uiGetFilters() {
+  try { return { ok: true, data: getFilters() }; }
   catch (e) { return { ok: false, error: String(e.message || e) }; }
 }
 

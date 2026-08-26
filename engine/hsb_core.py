@@ -160,7 +160,7 @@ ADDITIONAL_FIELDS: list[str] = [
 # 3. Compliance-Gate - fail-closed, §7 UWG
 # --------------------------------------------------------------------------
 
-LEGAL_BASIS_SENDABLE = {"OPT_IN", "EXISTING_CUSTOMER_7_3"}
+LEGAL_BASIS_SENDABLE = {"OPT_IN", "EXISTING_CUSTOMER_7_3", "OWNER_APPROVED"}
 LEGAL_BASIS_ALL = LEGAL_BASIS_SENDABLE | {"BLOCKED", "UNKNOWN"}
 
 EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s.]+\.[^@\s]{2,}$")

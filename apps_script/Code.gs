@@ -40,6 +40,37 @@ function uiQualify(opts) {
   }
 }
 
+/**
+ * Ein-Klick-Ablauf fuer Jordi: exakt 100 sicher freigeben/reservieren und als
+ * Outlook-EML-Pakete ausgeben. Eine Wiederholung derselben request_id erzeugt
+ * weder einen zweiten Batch noch doppelte ZIP-Pakete.
+ */
+function uiJordi100(opts) {
+  try {
+    const batch = approveAndPrepareJordi100(opts || {});
+    if (batch.status !== 'PREPARED' || batch.already_processed) {
+      return { ok: true, data: { batch: batch, export: null } };
+    }
+    try {
+      const exported = exportBatchAsEmlZip(batch.batch_id, 0);
+      return { ok: true, data: { batch: batch, export: exported } };
+    } catch (exportError) {
+      // Der Batch ist bereits sicher reserviert. Die UI bietet den bestehenden
+      // manuellen Exportknopf als verlustfreie Fortsetzung an.
+      return {
+        ok: true,
+        data: {
+          batch: batch,
+          export: null,
+          export_error: String(exportError.message || exportError)
+        }
+      };
+    }
+  } catch (e) {
+    return { ok: false, error: String(e.message || e) };
+  }
+}
+
 function uiExportEml(opts) {
   try {
     const res = exportBatchAsEmlZip(opts.batch_id, opts.folder_name, opts.start_index);
@@ -87,6 +118,16 @@ function uiApproveBatch(batchId) {
 
 function uiGetSetupState() {
   try { return { ok: true, data: getSetupState() }; }
+  catch (e) { return { ok: false, error: String(e.message || e) }; }
+}
+
+function uiGetDashboard() {
+  try { return { ok: true, data: getDashboard() }; }
+  catch (e) { return { ok: false, error: String(e.message || e) }; }
+}
+
+function uiGetFilters() {
+  try { return { ok: true, data: getFilters() }; }
   catch (e) { return { ok: false, error: String(e.message || e) }; }
 }
 

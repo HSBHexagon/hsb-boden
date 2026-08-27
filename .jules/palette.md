@@ -1,0 +1,3 @@
+## 2026-08-27 - [LeadForm Accessibility Improvements]
+**Learning:** Adding visual asterisks with aria-hidden="true" on form labels and wrapping the label text and indicator in a `<span>` container within CSS grid layouts provides a clear and accessible indication of required fields. Interactive elements need explicit Tailwind `focus-visible` classes to ensure keyboard navigation visibility, as native focus outlines are often insufficient or stripped.
+**Action:** Always wrap label text and required indicators in a `<span>` for grid layout forms and explicitly apply `focus-visible:ring-2 focus-visible:ring-[color]` utilities on inputs, selects, and buttons.

@@ -81,11 +81,10 @@ const skipLabel = ui[lang].skip;
         // Attribution ist optional — Seitenfunktion darf nie daran scheitern.
       }
     </script>
-    <!-- Cloudflare Web Analytics: privacy-first RUM beacon, no application secret. -->
-    <script
-      type="module"
-      src="https://static.cloudflareinsights.com/beacon.min.js"
-      data-cf-beacon='{"token":"8631653d94cb4fcead06570ed2275043"}'
-    ></script>
+    <script>
+      import { initializeCloudflareAnalytics } from "../lib/cloudflareAnalytics";
+
+      initializeCloudflareAnalytics(window, document);
+    </script>
   </body>
 </html>

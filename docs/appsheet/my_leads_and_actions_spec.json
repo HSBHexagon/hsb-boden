@@ -1,0 +1,43 @@
+{
+  "view_name": "MY LEADS",
+  "view_type": "Deck",
+  "data_source": "Leads",
+  "card_layout": {
+    "primary_header": "[Firma]",
+    "secondary_header": "[Ansprechpartner]",
+    "summary_column": "[Tier]",
+    "subheader": "CONCATENATE([Branche], \" · \", [Standort])"
+  },
+  "allowed_actions": [
+    {
+      "name": "CALL_PHONE",
+      "type": "External: call",
+      "target": "CONCATENATE(\"tel:\", [Telefon])",
+      "condition": "ISNOTBLANK([Telefon])",
+      "icon": "phone",
+      "prominence": "Inline"
+    },
+    {
+      "name": "OPEN_WEBSITE",
+      "type": "External: website",
+      "target": "[Website]",
+      "condition": "ISNOTBLANK([Website])",
+      "icon": "language",
+      "prominence": "Inline"
+    },
+    {
+      "name": "EDIT_NOTE",
+      "type": "App: go to view",
+      "target": "LINKTOROW([Lead-ID], \"Lead_Detail_Edit\")",
+      "icon": "edit",
+      "prominence": "Inline"
+    }
+  ],
+  "prohibited_actions": [
+    "DELETE_ROW",
+    "SEND_PROSPECT_EMAIL",
+    "CHANGE_BATCH_ID"
+  ],
+  "status": "CONFIGURED",
+  "updated_at": "2026-08-28T01:30:25+02:00"
+}

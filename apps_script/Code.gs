@@ -7,6 +7,7 @@ function onOpen() {
     .createMenu('HSB Sales OS')
     .addItem('Seitenleiste öffnen', 'showSidebar')
     .addSeparator()
+    .addItem('✨ Premium Sheet UX & Cockpit einrichten', 'uiSetupPremiumSheetUX')
     .addItem('🧹 Ansicht aufräumen (nur Hauptblätter)', 'uiTidyTabs')
     .addItem('👁️ Alle Blätter wieder einblenden', 'uiShowAllTabs')
     .addSeparator()
@@ -21,6 +22,15 @@ function showSidebar() {
     .setTitle('HSB Sales OS')
     .setWidth(420);
   SpreadsheetApp.getUi().showSidebar(html);
+}
+
+function uiSetupPremiumSheetUX() {
+  try {
+    const res = setupPremiumSheetUX();
+    return { ok: true, data: res };
+  } catch (e) {
+    return { ok: false, error: String(e.message || e) };
+  }
 }
 
 /**

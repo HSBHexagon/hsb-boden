@@ -1670,6 +1670,125 @@ function confirmBatchSent(batchId, startIndex) {
   };
 }
 
+/* ------------------------------------------------ Premium Sheet UX */
+
+/**
+ * Richtet das gesamte Google Sheet mit Live-Formeln, dynamischem Cockpit
+ * und aufgeraeumter Spaltenstruktur ein.
+ */
+function setupPremiumSheetUX() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+
+  // 1. Sichtbare Tabs einstellen
+  const keepVisible = ['README', 'VERSAND', 'ALL_LEADS', 'DASHBOARD', 'BATCHES'];
+  ss.getSheets().forEach(function (sh) {
+    const name = sh.getName();
+    if (keepVisible.indexOf(name) === -1) {
+      try { sh.hideSheet(); } catch (_) {}
+    } else {
+      try { sh.showSheet(); } catch (_) {}
+    }
+  });
+
+  // 2. README Startseite dynamisieren
+  const readme = ss.getSheetByName('README');
+  if (readme) {
+    readme.clear();
+    readme.setTabColor('#1a73e8');
+
+    const readmeData = [
+      ['HSB Sales OS · Leitstand', ''],
+      ['Status', 'PRODUKTIV EINSATZBEREIT'],
+      ['', ''],
+      ['LIVE-KENNZAHLEN (Echtzeit)', ''],
+      ['Gesamte Leads im System', '=COUNTA(ALL_LEADS!A2:A)'],
+      ['Leads von Jordi Post', '=COUNTIF(ALL_LEADS!AA2:AA, "*Jordi*")'],
+      ['Leads von Joel Cherino Diaz', '=COUNTIF(ALL_LEADS!AA2:AA, "*Joel*")'],
+      ['Vorbereitete Batches', '=COUNTA(BATCHES!A2:A)'],
+      ['In Batches reservierte Kontakte', '=COUNTIF(ALL_LEADS!AN2:AN, "<>")'],
+      ['Tatsächlich versendete E-Mails', '=COUNTIF(ALL_LEADS!AP2:AP, "sent")'],
+      ['Eingegangene Antworten', '=COUNTIF(ALL_LEADS!AR2:AR, "replied")'],
+      ['Offene Klärungsfälle (Review)', '=COUNTIF(ALL_LEADS!BD2:BD, "<>")'],
+      ['', ''],
+      ['SCHNELLSTART-ANLEITUNG FÜR JORDI & JOEL', ''],
+      ['1. Seitenleiste öffnen', 'Klicke oben im Menü auf "HSB Sales OS" -> "Seitenleiste öffnen".'],
+      ['2. Absender wählen', 'Wähle in der Seitenleiste oben deinen Reiter ("Jordi" oder "Joel").'],
+      ['3. Paketgröße wählen', 'Unterstützt: 1, 25, 100 oder 150 Kontakte (Schnellstart: "100 freigeben & Entwürfe erzeugen").'],
+      ['4. Outlook-Entwürfe laden', 'Die Seitenleiste lädt die ZIP-Pakete herunter. Mails in Outlook in "Entwürfe" ziehen.'],
+      ['5. Nach manuellem Versand', 'In der Seitenleiste beim Batch auf "Versand bestätigen" klicken.'],
+      ['', ''],
+      ['TABELLEN-ÜBERSICHT', ''],
+      ['ALL_LEADS', 'Die zentrale Kontaktdatenbank (6.424 geprüfte Kontakte).'],
+      ['BATCHES', 'Historie aller vorbereiteten und freigegebenen Kampagnen-Pakete.'],
+      ['VERSAND', 'Projektionsansicht aller aktuell in Vorbereitung/Versand befindlichen Leads.'],
+      ['DASHBOARD', 'Kompakte Chef-Übersicht & Vergleich zwischen Jordi und Joel.']
+    ];
+
+    readme.getRange(1, 1, readmeData.length, 2).setValues(readmeData);
+    readme.getRange('A1:B1').merge().setFontSize(16).setFontWeight('bold').setBackground('#1a73e8').setFontColor('#ffffff');
+    readme.getRange('A4:B4').merge().setFontSize(12).setFontWeight('bold').setBackground('#e8eaed');
+    readme.getRange('A14:B14').merge().setFontSize(12).setFontWeight('bold').setBackground('#e8eaed');
+    readme.getRange('A21:B21').merge().setFontSize(12).setFontWeight('bold').setBackground('#e8eaed');
+    readme.setColumnWidth(1, 300);
+    readme.setColumnWidth(2, 550);
+  }
+
+  // 3. DASHBOARD formatieren
+  const dash = ss.getSheetByName('DASHBOARD');
+  if (dash) {
+    dash.clear();
+    dash.setTabColor('#0d652d');
+
+    const dashData = [
+      ['HSB SALES OS · VERTRIEBS-COCKPIT', '', '', '', ''],
+      ['', '', '', '', ''],
+      ['Metrik / Kennzahl', 'Gesamt', 'Jordi Post', 'Joel Cherino Diaz', 'Status / Ziel'],
+      ['Kontakte gesamt', '=COUNTA(ALL_LEADS!A2:A)', '=COUNTIF(ALL_LEADS!AA2:AA, "*Jordi*")', '=COUNTIF(ALL_LEADS!AA2:AA, "*Joel*")', '6.424 verifiziert'],
+      ['Tier A Kontakte', '=COUNTIF(ALL_LEADS!F2:F, "A")', '=COUNTIFS(ALL_LEADS!AA2:AA, "*Jordi*", ALL_LEADS!F2:F, "A")', '=COUNTIFS(ALL_LEADS!AA2:AA, "*Joel*", ALL_LEADS!F2:F, "A")', 'Prio 1 Kaltakquise'],
+      ['Tier B Kontakte', '=COUNTIF(ALL_LEADS!F2:F, "B")', '=COUNTIFS(ALL_LEADS!AA2:AA, "*Jordi*", ALL_LEADS!F2:F, "B")', '=COUNTIFS(ALL_LEADS!AA2:AA, "*Joel*", ALL_LEADS!F2:F, "B")', 'Prio 2 Kaltakquise'],
+      ['In Batches reserviert', '=COUNTIF(ALL_LEADS!AN2:AN, "<>")', '=COUNTIFS(ALL_LEADS!AA2:AA, "*Jordi*", ALL_LEADS!AN2:AN, "<>")', '=COUNTIFS(ALL_LEADS!AA2:AA, "*Joel*", ALL_LEADS!AN2:AN, "<>")', 'Vorbereitet'],
+      ['Tatsächlich versendet', '=COUNTIF(ALL_LEADS!AP2:AP, "sent")', '=COUNTIFS(ALL_LEADS!AA2:AA, "*Jordi*", ALL_LEADS!AP2:AP, "sent")', '=COUNTIFS(ALL_LEADS!AA2:AA, "*Joel*", ALL_LEADS!AP2:AP, "sent")', 'Bestaetigt'],
+      ['Antworten erhalten', '=COUNTIF(ALL_LEADS!AR2:AR, "replied")', '=COUNTIFS(ALL_LEADS!AA2:AA, "*Jordi*", ALL_LEADS!AR2:AR, "replied")', '=COUNTIFS(ALL_LEADS!AA2:AA, "*Joel*", ALL_LEADS!AR2:AR, "replied")', 'Inbound'],
+      ['Opt-Outs / Bounces', '=COUNTIF(ALL_LEADS!AS2:AS, "yes")', '=COUNTIFS(ALL_LEADS!AA2:AA, "*Jordi*", ALL_LEADS!AS2:AS, "yes")', '=COUNTIFS(ALL_LEADS!AA2:AA, "*Joel*", ALL_LEADS!AS2:AS, "yes")', 'Gesperrt'],
+      ['', '', '', '', ''],
+      ['ERZEUGTE BATCHES (Letzte 10)', '', '', '', ''],
+      ['Batch ID', 'Owner', 'Status', 'Anzahl Leads', 'Erstellt am']
+    ];
+
+    dash.getRange(1, 1, dashData.length, 5).setValues(dashData);
+    dash.getRange('A1:E1').merge().setFontSize(16).setFontWeight('bold').setBackground('#0d652d').setFontColor('#ffffff');
+    dash.getRange('A3:E3').setFontWeight('bold').setBackground('#e8eaed');
+    dash.getRange('A12:E12').merge().setFontSize(12).setFontWeight('bold').setBackground('#e8eaed');
+    dash.getRange('A13:E13').setFontWeight('bold').setBackground('#f1f3f4');
+
+    for (let b = 1; b <= 10; b++) {
+      const rowNum = 13 + b;
+      dash.getRange(rowNum, 1).setFormula('=IF(ISBLANK(BATCHES!A' + (b + 1) + '), "", BATCHES!A' + (b + 1) + ')');
+      dash.getRange(rowNum, 2).setFormula('=IF(ISBLANK(BATCHES!B' + (b + 1) + '), "", BATCHES!B' + (b + 1) + ')');
+      dash.getRange(rowNum, 3).setFormula('=IF(ISBLANK(BATCHES!D' + (b + 1) + '), "", BATCHES!D' + (b + 1) + ')');
+      dash.getRange(rowNum, 4).setFormula('=IF(ISBLANK(BATCHES!F' + (b + 1) + '), "", BATCHES!F' + (b + 1) + ')');
+      dash.getRange(rowNum, 5).setFormula('=IF(ISBLANK(BATCHES!K' + (b + 1) + '), "", BATCHES!K' + (b + 1) + ')');
+    }
+
+    dash.setColumnWidth(1, 240);
+    dash.setColumnWidth(2, 130);
+    dash.setColumnWidth(3, 150);
+    dash.setColumnWidth(4, 150);
+    dash.setColumnWidth(5, 180);
+  }
+
+  // 4. ALL_LEADS formatieren
+  const allLeads = ss.getSheetByName('ALL_LEADS');
+  if (allLeads) {
+    allLeads.setFrozenRows(1);
+    allLeads.setTabColor('#f29900');
+    allLeads.getRange(1, 1, 1, 56).setFontWeight('bold').setBackground('#1f2937').setFontColor('#ffffff');
+  }
+
+  SpreadsheetApp.flush();
+  return { ok: true, message: 'Premium Sheet UX erfolgreich eingerichtet.' };
+}
+
 
 /* ==================================================================
    Code.gs
@@ -1684,6 +1803,7 @@ function onOpen() {
     .createMenu('HSB Sales OS')
     .addItem('Seitenleiste öffnen', 'showSidebar')
     .addSeparator()
+    .addItem('✨ Premium Sheet UX & Cockpit einrichten', 'uiSetupPremiumSheetUX')
     .addItem('🧹 Ansicht aufräumen (nur Hauptblätter)', 'uiTidyTabs')
     .addItem('👁️ Alle Blätter wieder einblenden', 'uiShowAllTabs')
     .addSeparator()
@@ -1698,6 +1818,15 @@ function showSidebar() {
     .setTitle('HSB Sales OS')
     .setWidth(420);
   SpreadsheetApp.getUi().showSidebar(html);
+}
+
+function uiSetupPremiumSheetUX() {
+  try {
+    const res = setupPremiumSheetUX();
+    return { ok: true, data: res };
+  } catch (e) {
+    return { ok: false, error: String(e.message || e) };
+  }
 }
 
 /**

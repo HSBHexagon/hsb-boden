@@ -1682,11 +1682,14 @@ function confirmBatchSent(batchId, startIndex) {
 function onOpen() {
   SpreadsheetApp.getUi()
     .createMenu('HSB Sales OS')
-    .addItem('Seitenleiste oeffnen', 'showSidebar')
+    .addItem('Seitenleiste öffnen', 'showSidebar')
     .addSeparator()
-    .addItem('Spalten pruefen / ergaenzen', 'uiEnsureColumns')
-    .addItem('Wiedervorlage pruefen', 'uiGetDue')
-    .addItem('Taeglichen Trigger einrichten (7 Uhr)', 'setupDailyTrigger')
+    .addItem('🧹 Ansicht aufräumen (nur Hauptblätter)', 'uiTidyTabs')
+    .addItem('👁️ Alle Blätter wieder einblenden', 'uiShowAllTabs')
+    .addSeparator()
+    .addItem('Spalten prüfen / ergänzen', 'uiEnsureColumns')
+    .addItem('Wiedervorlage prüfen', 'uiGetDue')
+    .addItem('Täglichen Trigger einrichten (7 Uhr)', 'setupDailyTrigger')
     .addToUi();
 }
 
@@ -1695,6 +1698,60 @@ function showSidebar() {
     .setTitle('HSB Sales OS')
     .setWidth(420);
   SpreadsheetApp.getUi().showSidebar(html);
+}
+
+/**
+ * Räumt das Google Sheet auf, indem alle internen Hintergrund-/Diagnose-
+ * und Backup-Blätter ausgeblendet werden.
+ *
+ * Sichtbar bleiben nur die für den Nutzer wesentlichen Hauptblätter:
+ * - ALL_LEADS (alle 6.424 Kontakte)
+ * - BATCHES (die erzeugten und versendeten Batches)
+ * - VERSAND (oder README als Erklärung)
+ *
+ * Apps Script und die Seitenleiste greifen weiterhin ganz normal auf alle
+ * ausgeblendeten Blätter zu. Nichts wird gelöscht.
+ */
+function uiTidyTabs() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheets = ss.getSheets();
+  const keepVisible = ['ALL_LEADS', 'BATCHES', 'VERSAND', 'README', 'DASHBOARD'];
+  let hiddenCount = 0;
+
+  sheets.forEach(function (sh) {
+    const name = sh.getName();
+    if (keepVisible.indexOf(name) === -1) {
+      try {
+        sh.hideSheet();
+        hiddenCount++;
+      } catch (_) {}
+    } else {
+      try {
+        sh.showSheet();
+      } catch (_) {}
+    }
+  });
+
+  SpreadsheetApp.getUi().alert(
+    'Ansicht aufgeräumt',
+    'Es wurden ' + hiddenCount + ' Hintergrund- und Backup-Blätter ausgeblendet.\n\n' +
+    'Sichtbar bleiben nur noch die wesentlichen Arbeitsblätter (ALL_LEADS, BATCHES, VERSAND).\n\n' +
+    'Alle Daten und Funktionen bleiben im Hintergrund zu 100% erhalten.',
+    SpreadsheetApp.getUi().ButtonSet.OK
+  );
+}
+
+function uiShowAllTabs() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheets = ss.getSheets();
+  sheets.forEach(function (sh) {
+    try { sh.showSheet(); } catch (_) {}
+  });
+  SpreadsheetApp.getUi().alert(
+    'Alle Blätter sichtbar',
+    'Alle Blätter wurden wieder eingeblendet.',
+    SpreadsheetApp.getUi().ButtonSet.OK
+  );
 }
 
 /* ------------------------------------------------ UI-Wrapper */
@@ -1724,14 +1781,6 @@ function uiQualify(opts) {
  */
 function uiJordi100(opts) {
   try {
-    // Bewusst nur Freigabe und Reservierung, ohne Erzeugung der Pakete.
-    //
-    // Frueher lief beides in einem einzigen Aufruf. Ein Paket aus 100 Mails
-    // mit je 1,5 MB Anhang ergibt rund 200 MB Base64 im Arbeitsspeicher -
-    // das ueberschreitet die Sechs-Minuten-Grenze von Apps Script
-    // zuverlaessig, und der Nutzer sah nur eine Fehlermeldung. Die
-    // Reservierung selbst dauert Sekunden; die Pakete holt die Oberflaeche
-    // anschliessend in Bloecken zu 20 ueber uiExportEml nach.
     const batch = approveAndPrepareJordi100(opts || {});
     return { ok: true, data: { batch: batch, export: null } };
   } catch (e) {
@@ -1741,11 +1790,6 @@ function uiJordi100(opts) {
 
 /**
  * Erzeugt die EML-Pakete eines Batches.
- *
- * Die Seitenleiste ruft diese Funktion mit zwei Einzelwerten auf, nicht mit
- * einem Objekt. Frueher stand hier `opts.batch_id`, was bei einem uebergebenen
- * String immer `undefined` ergab - der Knopf "Entwuerfe erzeugen" konnte
- * dadurch nie funktionieren.
  */
 function uiExportEml(batchId, startIndex) {
   try {
@@ -1833,8 +1877,6 @@ function uiProcessInboundEvent(event) {
 
 /**
  * Betreiber-Bestaetigung: "Ich habe diesen Batch tatsaechlich versendet."
- * Siehe confirmBatchSent in Actions.gs - kein automatischer Nachweis, eine
- * bewusste, protokollierte menschliche Aussage.
  */
 function uiConfirmBatchSent(batchId, startIndex) {
   try { return { ok: true, data: confirmBatchSent(batchId, startIndex) }; }
@@ -1846,7 +1888,6 @@ function uiConfirmBatchSent(batchId, startIndex) {
 function updateLiveEvidenceAndChronology() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
 
-  // 1. SYSTEM_EVIDENCE
   let sysSh = ss.getSheetByName('SYSTEM_EVIDENCE');
   if (!sysSh) {
     sysSh = ss.insertSheet('SYSTEM_EVIDENCE');
@@ -1854,7 +1895,6 @@ function updateLiveEvidenceAndChronology() {
     sysSh.getRange(1, 1, 1, 8).setFontWeight('bold').setBackground('#e8eaed');
     sysSh.setFrozenRows(1);
   } else {
-    // Mark prior OPEN rows as SUPERSEDED
     const lastRow = sysSh.getLastRow();
     if (lastRow >= 2) {
       const data = sysSh.getRange(2, 1, lastRow - 1, 8).getValues();
@@ -1868,7 +1908,6 @@ function updateLiveEvidenceAndChronology() {
     }
   }
 
-  // Fresh Evidence rows
   const freshRows = [
     ['Dynamisches beliebiges N', 'PASS', '2026-08-21T21:45:00Z', 'N in {1,17,100,250} für Jordi & Joel bewiesen (135/135 + 76/76 Tests)', 'tests/verifier_suite.js', 'keines', 'deterministisch & idempotent', 'PASS'],
     ['Reply/Bounce Automatik', 'PASS', '2026-08-21T21:45:00Z', 'Inbound Matching via Message-ID / Email + Fallback NEEDS_REVIEW ohne Raten', 'apps_script/Actions.gs', 'keines', 'fail-closed Event-Handling', 'PASS'],
@@ -1883,7 +1922,6 @@ function updateLiveEvidenceAndChronology() {
     sysSh.appendRow(row);
   });
 
-  // 2. PROJECT_CHRONOLOGY
   let chronSh = ss.getSheetByName('PROJECT_CHRONOLOGY');
   if (!chronSh) {
     chronSh = ss.insertSheet('PROJECT_CHRONOLOGY');

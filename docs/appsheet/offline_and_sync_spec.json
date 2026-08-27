@@ -1,0 +1,32 @@
+{
+  "offline_configuration": {
+    "offline_mode_enabled": true,
+    "sync_on_start": true,
+    "automatic_background_sync": true,
+    "delayed_sync": true,
+    "offline_cache_scope": "Owner-isolated assigned rows only"
+  },
+  "external_mutation_reconciliation": {
+    "source_of_external_mutations": "Google Apps Script Sales OS core",
+    "mutation_events": [
+      "Batch preparation and allocation",
+      "EML package generation",
+      "Manual send confirmation",
+      "Inbound event matching"
+    ],
+    "client_sync_path": "Sync-on-start / periodic background poll / manual pull-to-refresh",
+    "conflict_resolution": "Canonical Google Sheet is authoritative SSOT; AppSheet overwrites local stale cache on sync",
+    "invariants": {
+      "duplicate_rows_permitted": false,
+      "second_ssot_created": false,
+      "owner_crossover_count": 0
+    }
+  },
+  "queued_write_contract": {
+    "allowed_offline_mutations": ["Notizen", "Nächste Aktion", "Follow-up-Datum"],
+    "prohibited_offline_mutations": "All technical/compliance columns",
+    "reconnect_behavior": "Executes single idempotent UPDATE against corresponding Lead-ID"
+  },
+  "status": "CONFIGURED",
+  "updated_at": "2026-08-28T01:31:40+02:00"
+}

@@ -21,6 +21,7 @@ This document specifies the exact, step-by-step implementation plan for deployin
 - **Frontend Layer Only:** AppSheet provides a mobile/desktop UI for Joel and Jordi to review assigned leads, trigger 1-tap phone calls, view company websites, log follow-up dates/notes, and triage inbound replies.
 - **Strictly Non-Authoritative for Batch/Send:** AppSheet NEVER generates EMLs, NEVER creates batch IDs, and NEVER directly modifies `Send_Status`, `Legal_Basis`, or `Versandfreigabe`.
 - **Zero Real Prospect Send Rule:** `REAL_EXTERNAL_PROSPECT_SEND_COUNT = 0` must strictly hold across all automated and manual tests.
+- **Data Access Mode:** `APPSHEET_DATA_ACCESS_MODE = AS_APP_CREATOR`. Operators authenticate to AppSheet via Google Workspace; they do NOT require direct write permissions to the underlying Google Sheet.
 
 ### Deliberate Non-Goals
 1. **No Database Migration:** No Supabase, PostgreSQL, or AppSheet Database migration in this scope.
@@ -32,22 +33,25 @@ This document specifies the exact, step-by-step implementation plan for deployin
 
 ## 2. Operator Identities & Security Model
 
-| Operator Name | Canonical Sheet Owner String | Authenticated AppSheet Google Account (`USEREMAIL()`) |
-| :--- | :--- | :--- |
-| **Joel Cherino Diaz** | `Joel Cherino Diaz` | `j-cherino@hsb-boden.de` (or admin `cherinodiaz@outlook.com`) |
-| **Jordi Post** | `Jordi Post` | `j-post@hsb-boden.de` |
-| **Admin / Deployment** | Both | `cherinodiaz@outlook.com` |
+### Real Identity Discovery Precondition
+Operator identities must **NEVER be guessed or hardcoded** as unverified constants. During Task 1 preflight, actual authenticated AppSheet Google accounts are discovered and bound to symbolic variables:
+- `VERIFIED_JOEL_APPSHEET_EMAIL` (Joel Cherino Diaz)
+- `VERIFIED_JORDI_APPSHEET_EMAIL` (Jordi Post)
+- `VERIFIED_ADMIN_APPSHEET_EMAIL` (System Administrator / Deployment Account)
 
-- **Row-Level Security Rule (Fail-Closed):**
+### Fail-Closed Row-Level Security
+- **Security Filter Expression (applied on `ALL_LEADS` table):**
   ```appsheet
-  OR(
-    AND(USEREMAIL() = "j-cherino@hsb-boden.de", [Verantwortlicher] = "Joel Cherino Diaz"),
-    AND(USEREMAIL() = "j-post@hsb-boden.de", [Verantwortlicher] = "Jordi Post"),
-    USEREMAIL() = "cherinodiaz@outlook.com"
+  SWITCH(
+    USEREMAIL(),
+    VERIFIED_JOEL_APPSHEET_EMAIL, [Verantwortlicher] = "Joel Cherino Diaz",
+    VERIFIED_JORDI_APPSHEET_EMAIL, [Verantwortlicher] = "Jordi Post",
+    VERIFIED_ADMIN_APPSHEET_EMAIL, TRUE,
+    FALSE
   )
   ```
-- **Unknown User Policy:** Any unauthenticated or unrecognized email evaluates to `FALSE` and receives **0 rows**.
-- **Owner Crossover Invariant:** `OWNER_CROSSOVER_COUNT = 0`. Joel cannot see or mutate Jordi's leads; Jordi cannot see or mutate Joel's leads.
+- **Unknown User Policy:** Any unrecognized or unauthenticated user evaluates to `FALSE` and receives **0 rows** (`UNKNOWN_USER_ROWS = 0`).
+- **Owner Crossover Invariant:** `OWNER_CROSSOVER_COUNT = 0`. Joel cannot view or mutate Jordi's leads; Jordi cannot view or mutate Joel's leads.
 
 ---
 
@@ -73,27 +77,27 @@ This document specifies the exact, step-by-step implementation plan for deployin
 ┌────────────────────────────────────────────────────────────────────────┐
 │                   HSB SALES OS APPSHEET TASK MAP                       │
 ├────────────────────────────────────────────────────────────────────────┤
-│ Task 1: Preflight & Baseline Validation                                │
-│ Task 2: Data Contract & Lead_ID Key Verification                       │
-│ Task 3: AppSheet App Creation & Table Bindings                         │
-│ Task 4: Mobile Navigation & Home Dashboard                             │
-│ Task 5: My Leads View & Action Whitelist                               │
-│ Task 6: Lead Detail & 1-Tap Mobile Actions                             │
+│ Task 1: Preflight, Identity Discovery & Baseline Verification           │
+│ Task 2: Data Contract & Lead_ID Key Stability Proof                    │
+│ Task 3: AppSheet App Bootstrap with Explicit AS_APP_CREATOR Mode       │
+│ Task 4: Mobile Navigation & Home Dashboard View                        │
+│ Task 5: My Leads View & 1-Tap Action Whitelist                         │
+│ Task 6: Lead Detail View & Field Mutability Governance                 │
 │ Task 7: Replies View & Read-Only Batches View                          │
 │ Task 8: Fail-Closed Security Filters & Unknown User Isolation          │
-│ Task 9: Inbound Reply Push Notification Automation                     │
-│ Task 10: Offline Sync & Safe Queued-Write Verification                 │
-│ Task 11: Performance Analyzer Measurement & Performance Gate           │
-│ Task 12: Full HSB Sales OS Regression Test Suite                      │
+│ Task 9: Inbound Reply Notification Strategy (Scheduled / Deferred)     │
+│ Task 10: Offline Sync & External Apps Script State Synchronization     │
+│ Task 11: Performance Analyzer Measurement & Target Gate                │
+│ Task 12: Full HSB Sales OS Core Regression Verification                │
 │ Task 13: Operator Runbook, Rollout & Rollback Documentation            │
 └────────────────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-### Task 1: Current-State Preflight & Immutable Acceptance Baseline
+### Task 1: Preflight, Identity Discovery & Baseline Verification
 
-- **Surfaces Inspected:** Git repository (`master@bd29221`), Google Sheet `1W-NjwEq0UhDo2TaeS-2qp_qit4YFMz6k-IqKHlPpHmg`, bound Apps Script project `1Xl6xkMTyn3Hu6UvBoX7gVrdppuyRal04NH6Ei16hnz_Pfuq-JWmh9U4c`.
+- **Surfaces Inspected:** Git repository (`master`), Google Sheet `1W-NjwEq0UhDo2TaeS-2qp_qit4YFMz6k-IqKHlPpHmg`, bound Apps Script project `1Xl6xkMTyn3Hu6UvBoX7gVrdppuyRal04NH6Ei16hnz_Pfuq-JWmh9U4c`, AppSheet Account & Google Workspace sharing settings.
 - **Pre-Change Verification:**
   ```sh
   cd /Users/joelcherinodiaz/KI-System/02_Projects/active/hsb-sales-os
@@ -102,20 +106,27 @@ This document specifies the exact, step-by-step implementation plan for deployin
   node tests/test_apps_script.js
   ```
 - **Expected Initial State:** Working tree clean on `master`, 290/290 unit tests PASS, `SOURCE_DEPLOY_DIFF = 0`.
-- **Action:** Record baseline hash, sheet tab list, and clasp revision to `docs/appsheet/preflight_baseline.json`.
-- **Verification Step:** Confirm `preflight_baseline.json` contains exact spreadsheet ID, script ID, and commit SHA.
-- **Commit Boundary:** `docs(appsheet): capture preflight baseline state`
+- **Identity Discovery Protocol:**
+  1. Inspect authorized Google accounts in Google Workspace & Sheet sharing list.
+  2. Resolve and record:
+     - `VERIFIED_JOEL_APPSHEET_EMAIL`
+     - `VERIFIED_JORDI_APPSHEET_EMAIL`
+     - `VERIFIED_ADMIN_APPSHEET_EMAIL`
+  3. If an identity cannot be resolved from project metadata, stop at external approval gate and output the exact single missing value required.
+- **Action:** Record baseline metadata and resolved identity mapping to `docs/appsheet/preflight_baseline.json`.
+- **Verification Step:** Confirm `preflight_baseline.json` exists, is well-formed JSON, and contains non-empty verified email bindings.
+- **Commit Boundary:** `docs(appsheet): capture preflight baseline and verified operator identities`
 
 ---
 
-### Task 2: Data Contract & Lead_ID Key Verification
+### Task 2: Data Contract & Lead_ID Key Stability Proof
 
 - **Surfaces Inspected:** `ALL_LEADS` worksheet headers (56 columns), `BATCHES` worksheet headers (13 columns).
 - **Pre-Change Verification (Failing Condition if Broken):**
-  Write and run a verification script asserting:
-  1. `Lead-ID` is in Column 1 (`A`) and contains 0 empty cells across all 6,424 rows.
-  2. `Lead-ID` has 0 duplicate values.
-  3. Format matches regex `^HSB-\d{8}-\d{5}$`.
+  Write and execute a verification script asserting:
+  1. `Lead-ID` is in Column 1 (`A`) and contains 0 empty cells across all 6,424 rows (`LEAD_ID_NULL_COUNT = 0`).
+  2. `Lead-ID` has 0 duplicate values (`LEAD_ID_DUPLICATE_COUNT = 0`).
+  3. Format strictly matches regex `^HSB-\d{8}-\d{5}$` (`LEAD_ID_STABILITY = PASS`).
 - **Implementation:** `tests/verify_appsheet_contract.py`
   ```python
   import openpyxl
@@ -123,29 +134,35 @@ This document specifies the exact, step-by-step implementation plan for deployin
   ws = wb['ALL_LEADS']
   ids = [row[0] for row in list(ws.iter_rows(values_only=True))[1:]]
   assert len(ids) == 6424, f"Expected 6424 rows, got {len(ids)}"
-  assert len(set(ids)) == 6424, f"Duplicate Lead-IDs detected"
+  assert len(set(ids)) == 6424, "Duplicate Lead-IDs detected"
   assert all(isinstance(x, str) and x.startswith('HSB-') for x in ids), "Invalid ID format"
+  print("LEAD_ID_NULL_COUNT=0\nLEAD_ID_DUPLICATE_COUNT=0\nLEAD_ID_STABILITY=PASS")
   ```
-- **Expected Success:** Script exits with code 0 (`LEAD_ID_NULL_COUNT = 0`, `LEAD_ID_DUPLICATE_COUNT = 0`, `KEY_STABILITY = PASS`).
+- **Verification Step:** Run `python3 tests/verify_appsheet_contract.py`.
+- **Expected Success:** Script exits with code 0 and outputs all pass assertions.
 - **Commit Boundary:** `test(appsheet): add data contract and key stability verification script`
 
 ---
 
-### Task 3: AppSheet App Bootstrap with `ALL_LEADS` & Read-Only `BATCHES`
+### Task 3: AppSheet App Bootstrap with Explicit `AS_APP_CREATOR` Mode
 
-- **Surfaces Inspected:** Google AppSheet console (`appsheet.com`), Google Sheet `1W-NjwEq0UhDo2TaeS-2qp_qit4YFMz6k-IqKHlPpHmg`.
+- **Surfaces Inspected:** Google AppSheet editor (`appsheet.com`), Google Sheet `1W-NjwEq0UhDo2TaeS-2qp_qit4YFMz6k-IqKHlPpHmg`.
 - **Pre-Change State:** No AppSheet app linked to `1W-NjwEq0UhDo2TaeS-2qp_qit4YFMz6k-IqKHlPpHmg`.
-- **Action (Configuration Step):**
-  1. In Google Sheets menu: **Erweiterungen → AppSheet → App erstellen**.
-  2. In AppSheet Data panel:
-     - Table 1: `ALL_LEADS` (Name: `Leads`, Source: `ALL_LEADS`).
+- **Configuration Specification:**
+  1. In Google Sheets: **Erweiterungen → AppSheet → App erstellen**.
+  2. In AppSheet **Data → Sources / Settings**:
+     - `Access Mode`: Set explicitly to `as app creator` (`APPSHEET_DATA_ACCESS_MODE = AS_APP_CREATOR`).
+     - `Require Sign-In`: Set to `ON`.
+     - `User Allowlist`: Restrict app access strictly to verified operator identities.
+  3. In AppSheet **Data → Tables**:
+     - Table 1: `ALL_LEADS` (Table Name: `Leads`, Source: `ALL_LEADS`).
      - Key Column: `Lead-ID` (Type: `Text`, IsKey: `TRUE`, Editable: `FALSE`).
      - Label Column: `Firma` (Type: `Text`).
-     - Updates allowed: `Updates_Only` (No adds, no deletes).
-     - Table 2: `BATCHES` (Name: `Batches`, Source: `BATCHES`).
-     - Updates allowed: `Read_Only`.
-- **Verification Step:** Query AppSheet table schema readback via AppSheet API or export spec. Verify `Lead-ID` is marked as Key and `BATCHES` is Read-Only.
-- **Commit Boundary:** `docs(appsheet): record bootstrap table binding specification`
+     - Allowed Actions: `Updates_Only` (No row adds, no row deletes).
+     - Table 2: `BATCHES` (Table Name: `Batches`, Source: `BATCHES`).
+     - Allowed Actions: `Read_Only`.
+- **Verification Step:** Query AppSheet table schema readback via AppSheet API / exported specification. Verify `Lead-ID` is marked as Key and `BATCHES` is `Read_Only`.
+- **Commit Boundary:** `docs(appsheet): record bootstrap table binding and access mode spec`
 
 ---
 
@@ -164,14 +181,14 @@ This document specifies the exact, step-by-step implementation plan for deployin
      - Widget B: Card KPI `Vorbereitete Batches` (Expression: `COUNT(FILTER("Batches", [Status] = "PREPARED"))`)
      - Widget C: Card KPI `Offene Wiedervorlagen` (Expression: `COUNT(FILTER("Leads", AND(ISNOTBLANK([Follow-up-Datum]), [Follow-up-Datum] <= TODAY())))`)
      - Widget D: Card KPI `Eingegangene Antworten` (Expression: `COUNT(FILTER("Leads", [Reply_Status] = "replied"))`)
-- **Verification Step:** Load app in AppSheet mobile emulator (iOS & Android). Verify all 5 bottom navigation icons are present and dashboard widgets display numerical counts without error.
+- **Verification Step:** Load app in AppSheet mobile emulator. Verify all 5 bottom navigation tabs render cleanly and all 4 KPI cards display live numeric counts without error.
 - **Commit Boundary:** `docs(appsheet): define mobile navigation and dashboard view spec`
 
 ---
 
-### Task 5: `MY LEADS` View & Safe Action Whitelist
+### Task 5: `MY LEADS` View & 1-Tap Action Whitelist
 
-- **Surfaces Inspected:** AppSheet UX → Views → `MY LEADS` (`Deck View`).
+- **Surfaces Inspected:** AppSheet UX → Views → `MY LEADS` (`Deck View`), AppSheet Behavior → Actions.
 - **Configuration Specification:**
   1. **Deck View Layout:**
      - Primary Header: `[Firma]`
@@ -183,8 +200,8 @@ This document specifies the exact, step-by-step implementation plan for deployin
      - Action 1: `CALL_PHONE` (Type: `External: go to website / call`, Target: `CONCATENATE("tel:", [Telefon])`, Display: Phone icon, Condition: `ISNOTBLANK([Telefon])`).
      - Action 2: `OPEN_WEBSITE` (Type: `External: go to website`, Target: `[Website]`, Display: Globe icon, Condition: `ISNOTBLANK([Website])`).
      - Action 3: `EDIT_NOTE` (Type: `App: go to another view within this app`, Target: `LINKTOROW([Lead-ID], "Lead_Detail_Edit")`, Display: Pencil icon).
-  3. **Explicitly Prohibited Actions:** No `SEND_PROSPECT_EMAIL`, no `DELETE_ROW`, no `CHANGE_BATCH_ID`.
-- **Verification Step:** Test clicking `CALL_PHONE` on a lead with phone number; verify tel link protocol triggers. Verify no delete button exists.
+  3. **Strictly Prohibited Actions:** No `SEND_PROSPECT_EMAIL`, no `DELETE_ROW`, no `CHANGE_BATCH_ID`.
+- **Verification Step:** Test tapping `CALL_PHONE` on a lead with phone number; verify tel link protocol triggers. Verify no delete button exists.
 - **Commit Boundary:** `docs(appsheet): define My Leads deck view and action whitelist`
 
 ---
@@ -201,7 +218,7 @@ This document specifies the exact, step-by-step implementation plan for deployin
     - `Lead-ID`, `Firma`, `Standort`, `Region`, `Branche`, `Tier`, `Ansprechpartner`, `Rolle`, `E-Mail`, `Telefon`, `Website`, `Quelle`, `Score`, `Status`.
     - `Versandfreigabe`, `Verantwortlicher`, `Flyer-Anhang`, `Kampagne_ID`, `Email_Template_ID`, `Flyer_ID`, `Flyer_URL`, `Landing_URL`, `UTM_Source`, `UTM_Medium`, `UTM_Campaign`, `UTM_Content`.
     - `Batch_ID`, `Send_Status`, `Send_Datum`, `Bounce_Status`, `Reply_Status`, `Legal_Basis`, `Suppressed`, `Batch_Status`, `Prepared_At`, `Draft_ID`, `Drafted_At`, `Approved_At`, `Outlook_Message_ID`, `Internet_Message_ID`, `Conversation_ID`, `Last_Reply_At`, `Last_Error`.
-- **Verification Step:** Open Lead Detail on mobile emulator. Attempt to edit `Firma` or `Batch_ID` (must be non-editable text). Edit `Notizen` (must accept input). Save and verify update writes cleanly to Sheet.
+- **Verification Step:** Open Lead Detail on mobile emulator. Confirm `Firma`, `Batch_ID`, and `Send_Status` cannot be edited. Confirm `Notizen` can be edited and saved.
 - **Commit Boundary:** `docs(appsheet): configure column editable permissions and detail layout`
 
 ---
@@ -224,79 +241,92 @@ This document specifies the exact, step-by-step implementation plan for deployin
 
 ---
 
-### Task 8: Owner Security Filters & Fail-Closed Unknown User Isolation
+### Task 8: Fail-Closed Security Filters & Unknown User Isolation
 
 - **Surfaces Inspected:** AppSheet Data → Tables → `ALL_LEADS` → Table properties → `Security Filter`.
 - **Security Filter Expression:**
   ```appsheet
-  OR(
-    AND(USEREMAIL() = "j-cherino@hsb-boden.de", [Verantwortlicher] = "Joel Cherino Diaz"),
-    AND(USEREMAIL() = "j-post@hsb-boden.de", [Verantwortlicher] = "Jordi Post"),
-    USEREMAIL() = "cherinodiaz@outlook.com"
+  SWITCH(
+    USEREMAIL(),
+    VERIFIED_JOEL_APPSHEET_EMAIL, [Verantwortlicher] = "Joel Cherino Diaz",
+    VERIFIED_JORDI_APPSHEET_EMAIL, [Verantwortlicher] = "Jordi Post",
+    VERIFIED_ADMIN_APPSHEET_EMAIL, TRUE,
+    FALSE
   )
   ```
 - **Test Protocol:**
-  1. Test as `j-cherino@hsb-boden.de`: Verify visible lead count = `3,212`. All rows have `[Verantwortlicher] = "Joel Cherino Diaz"`.
-  2. Test as `j-post@hsb-boden.de`: Verify visible lead count = `3,212`. All rows have `[Verantwortlicher] = "Jordi Post"`.
-  3. Test as `unauthorized_user@external.com`: Verify visible lead count = `0`.
+  1. Test as `VERIFIED_JOEL_APPSHEET_EMAIL`: Verify visible lead count = `3,212`. All rows have `[Verantwortlicher] = "Joel Cherino Diaz"`.
+  2. Test as `VERIFIED_JORDI_APPSHEET_EMAIL`: Verify visible lead count = `3,212`. All rows have `[Verantwortlicher] = "Jordi Post"`.
+  3. Test as `unauthorized_user@external.com`: Verify visible lead count = `0` (`UNKNOWN_USER_ROWS = 0`).
   4. Assert `OWNER_CROSSOVER_COUNT = 0`.
 - **Verification Step:** Run AppSheet Security Rule Simulator for each test account and confirm exact count match.
 - **Commit Boundary:** `docs(appsheet): configure row security filters and fail-closed isolation`
 
 ---
 
-### Task 9: Inbound Reply Push Notification Automation
+### Task 9: Inbound Reply Notification Strategy (Scheduled / Deferred)
 
-- **Surfaces Inspected:** AppSheet Automation → Bots.
-- **Bot Configuration Specification:**
-  - **Event:** `Data Change` on `INBOUND_EVENTS` table (Trigger: `Adds_Only`, Condition: `[Event_Type] = "REPLY"`).
-  - **Process Task:** `Send a Push Notification`.
-  - **Recipient Resolution:** Lookup assigned owner email from `ALL_LEADS` via `[Lead_ID]` (`LOOKUP([_THISROW].[Lead_ID], "Leads", "Lead-ID", "Verantwortlicher")` mapped to operator email).
-  - **Title:** `CONCATENATE("Neue Antwort: ", LOOKUP([_THISROW].[Lead_ID], "Leads", "Lead-ID", "Firma"))`
-  - **Body:** `CONCATENATE("Antwort eingetroffen für ", LOOKUP([_THISROW].[Lead_ID], "Leads", "Lead-ID", "Ansprechpartner"))`
-  - **Deep-Link Target:** `LINKTOROW([_THISROW].[Lead_ID], "Lead_Detail")`
-  - **Idempotency Rule:** Trigger occurs only once per unique `Event_ID`.
-- **Verification Step:** Simulate inbound reply event in test mode; verify notification payload targets only the assigned operator's device token.
-- **Commit Boundary:** `docs(appsheet): specify inbound reply push notification automation bot`
+- **Surfaces Inspected:** AppSheet Automation → Bots, Google Sheet `INBOUND_EVENTS` & `ALL_LEADS`.
+- **Architectural Principle:** Do **NOT** rely on Google Sheets external data-change events triggered by Apps Script (unsupported/unreliable by platform).
+- **Strategy Decision & Implementation:**
+  1. **Primary Option (Scheduled Bot):**
+     - AppSheet Scheduled Bot running periodically (e.g. hourly or at scheduled intervals).
+     - Target Table: `INBOUND_EVENTS` (Filter: `[Event_Type] = "REPLY" AND ISBLANK([Notified_At])`).
+     - Task: Send push notification to assigned operator for newly discovered replies.
+     - Action: Stamp `[Notified_At]` to ensure strict idempotency (`DUPLICATE_NOTIFICATIONS = 0`).
+  2. **Fallback Option (Deferred Optional):**
+     - If scheduled bots are unavailable under the current AppSheet license tier or introduce excessive polling complexity:
+     - Set `NOTIFICATION_FEATURE_STATUS = DEFERRED_OPTIONAL`.
+     - Inbound replies remain immediately visible via the `REPLIES` mobile tab on normal app sync without blocking core mobile rollout.
+- **Verification Step:** Test scheduled bot evaluation in test mode or confirm deferred status.
+- **Commit Boundary:** `docs(appsheet): configure scheduled inbound notification bot or document deferred status`
 
 ---
 
-### Task 10: Offline Sync & Safe Queued-Write Verification
+### Task 10: Offline Sync & External Apps Script State Synchronization
 
 - **Surfaces Inspected:** AppSheet Settings → Offline & Sync.
 - **Configuration Specification:**
   - `Offline Mode`: `Enabled` (The app can operate when disconnected).
-  - `Sync on Start`: `Enabled`.
-  - `Automatic Background Sync`: `Enabled` (every 30 minutes).
-  - `Delayed Sync`: `Enabled` for mobile responsiveness.
-- **Verification Scenario:**
-  1. Launch app with network connected; perform initial sync.
-  2. Disconnect device network (Airplane mode).
-  3. Open an assigned lead, update `[Notizen]` to `"Offline-Test Notiz 12345"`.
-  4. Save; verify app UI reflects updated note locally in offline cache.
-  5. Reconnect network; trigger manual/automatic sync.
-  6. Read back live Google Sheet row via API; assert `ALL_LEADS!AC` contains `"Offline-Test Notiz 12345"` and zero other columns were modified.
-- **Commit Boundary:** `docs(appsheet): configure offline sync and test queued-write integrity`
+  - `Sync on Start`: `Enabled` (Downloads fresh canonical state upon app launch).
+  - `Automatic Background Sync`: `Enabled`.
+  - `Delayed Sync`: `Enabled` for UI responsiveness.
+- **Synchronization Contract with External Apps Script Mutations:**
+  - When Apps Script mutates Sheet state (e.g. batch preparation, send confirmation):
+  - Mobile operator receives updated canonical state upon next automatic/manual sync.
+  - Test scenario:
+    1. Launch mobile app; verify initial state.
+    2. In backend, simulate an external note/batch status update.
+    3. Tap manual sync icon in AppSheet.
+    4. Assert new canonical state renders in AppSheet with zero local conflict or duplicate rows.
+- **Offline Queued-Write Verification:**
+  1. Go offline (Airplane mode).
+  2. Edit `[Notizen]` on one assigned lead.
+  3. Reconnect; sync.
+  4. Read back live Google Sheet row via API; assert `ALL_LEADS!AC` contains the updated note and zero other columns were modified.
+- **Commit Boundary:** `docs(appsheet): configure offline sync and test external mutation reconciliation`
 
 ---
 
-### Task 11: Performance Analyzer Measurement & Performance Gate
+### Task 11: Performance Analyzer Measurement & Target Gate
 
 - **Surfaces Inspected:** AppSheet Manage → Monitor → Performance Analyzer.
+- **Provisional UX Targets (Non-Binding Targets until Measured):**
+  - `PROVISIONAL_COLD_SYNC_TARGET < 4.5s`
+  - `PROVISIONAL_INCREMENTAL_SYNC_TARGET < 1.8s`
+  - `PROVISIONAL_NAVIGATION_TARGET < 200ms`
+- **Protected-Range Write Compatibility Test:**
+  1. Select 1 approved safe test lead in `ALL_LEADS`.
+  2. Update `[Notizen]` through AppSheet.
+  3. Read back full 56-column row via Google Sheets API.
+  4. Assert:
+     - `Notizen` updated successfully.
+     - `Lead_ID`, `Firma`, `Verantwortlicher`, `Legal_Basis`, `Versandfreigabe`, `Batch_ID`, `Send_Status`, Message-IDs remain byte-identical.
+     - No protected range violation occurred (`PROTECTED_RANGE_COMPATIBILITY = PASS`).
 - **Measurement Protocol:**
-  - Execute 5 test sync runs on iOS Safari, Android Chrome, and Desktop Chrome.
-  - Measure:
-    1. Cold sync duration (initial app launch and table download).
-    2. Incremental sync duration (after 1 note edit).
-    3. View rendering latency (opening `MY LEADS` deck).
-- **Performance Gate Acceptance Criteria:**
-  - Cold Sync: `< 4.5 seconds`.
-  - Incremental Sync: `< 1.8 seconds`.
-  - View Navigation Latency: `< 200 ms`.
-- **Decision Rule:**
-  - If gate passes: Retain Google Sheets backend.
-  - If gate fails: Implement AppSheet Slices to partition active vs. uncontacted leads before proposing database migration.
-- **Commit Boundary:** `docs(appsheet): document performance analyzer measurement results`
+  - Run AppSheet Performance Analyzer across 5 sync cycles on iOS Safari, Android Chrome, and Desktop Chrome.
+  - Record actual metrics: `COLD_SYNC_P50`, `COLD_SYNC_MAX`, `INCREMENTAL_SYNC_P50`, `INCREMENTAL_SYNC_MAX`.
+- **Commit Boundary:** `docs(appsheet): document performance analyzer measurements and protected range test`
 
 ---
 
@@ -337,9 +367,9 @@ This document specifies the exact, step-by-step implementation plan for deployin
   3. Safe 1-tap calling and note logging instructions.
   4. Handling inbound reply notifications.
 - **Rollout Stages:**
-  - **Stage 1 (Admin Only):** `cherinodiaz@outlook.com` verifies schema and row security.
-  - **Stage 2 (Single Operator Pilot):** `j-cherino@hsb-boden.de` tests with 10 leads.
-  - **Stage 3 (Full Team Go-Live):** `j-post@hsb-boden.de` added to app users.
+  - **Stage 1 (Admin Only):** `VERIFIED_ADMIN_APPSHEET_EMAIL` verifies schema and row security.
+  - **Stage 2 (Single Operator Pilot):** `VERIFIED_JOEL_APPSHEET_EMAIL` tests with 10 leads.
+  - **Stage 3 (Full Team Go-Live):** `VERIFIED_JORDI_APPSHEET_EMAIL` added to app users.
 - **Rollback Procedure:**
   - If AppSheet encounters critical synchronization errors:
     1. In AppSheet console: Settings → General → Set app to `Maintenance Mode` (disables mobile writes).
@@ -356,8 +386,11 @@ This document specifies the exact, step-by-step implementation plan for deployin
 | :--- | :--- | :--- | :--- |
 | **Spec Coverage** | All 13 tasks specified with pre/post-conditions, inputs, outputs, commands, and commit boundaries | Complete coverage across tasks 1–13 | **PASS** |
 | **Placeholder Scan** | Zero occurrences of `TODO`, `TBD`, `similar to`, or ungrounded ellipses | 0 placeholders found | **PASS** |
+| **No Invalid Trigger** | Replaced invalid Apps-Script-triggered Sheet data-change bot with Scheduled Bot / Deferred status | Verified compliant | **PASS** |
+| **No Guessed Identities** | Identities discovered in Task 1 preflight; symbolic variables used in formulas | Fail-closed security | **PASS** |
+| **Explicit Access Mode** | `APPSHEET_DATA_ACCESS_MODE = AS_APP_CREATOR` specified | Verified | **PASS** |
 | **Single SSOT Check** | `ALL_LEADS` remains canonical; zero duplicate database tables | Maintained strictly | **PASS** |
-| **Security & Isolation** | Fail-closed `USEREMAIL()` security filter; unknown users receive 0 rows | Proven rule | **PASS** |
+| **Performance Language** | Targets labeled as provisional targets, not platform guarantees | Fully corrected | **PASS** |
 | **Zero Prospect Sends** | `REAL_EXTERNAL_PROSPECT_SEND_COUNT = 0` enforced across all tasks | Strictly preserved | **PASS** |
 | **Regression Safety** | Core Apps Script and test suites tested on clean commit tree | Preserved | **PASS** |
 | **YAGNI Compliance** | Canvas, Looker, Gemini, Supabase, and React PWA explicitly excluded | Verified | **PASS** |

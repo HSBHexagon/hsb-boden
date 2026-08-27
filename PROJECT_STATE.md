@@ -6,8 +6,12 @@ Google Sheet.
 
 ```
 PROJECT = HSB Sales OS
-STATUS  = PASS_WITH_DEFERRED_JORDI_OPERATOR_ACCEPTANCE
-DATE    = 2026-08-23
+STATUS  = READY_FOR_DEPLOY (software-kontrollierte Gates PASS, inkl.
+          Post-Send-Reconciliation; einziger verbleibender Blocker ist die
+          echte Postfach-Anmeldung von Jordi bei Power Automate sowie eine
+          noch nicht konfigurierte Sent-Trigger-Integration, siehe Abschnitt
+          "Post-Send-Reconciliation — Nachtrag 2026-08-27")
+DATE    = 2026-08-27
 ```
 
 ---
@@ -291,8 +295,9 @@ Für Batch `HSB-20260826-JORDI-0002`: `PRUEFUNG=PASS`, 100/100.
 
 Recherche-Befund: `X-Unsent: 1` wird von Outlook für Mac ignoriert und im neuen
 Outlook für Windows nicht mehr zuverlässig ausgewertet. Der dokumentierte Weg
-ist `POST /users/{id}/messages` mit Base64-MIME. `engine/graph_drafts.py`
-implementiert genau das — ohne jede Send-Aktion im Code.
+ist `POST /me/messages` mit Base64-MIME. `engine/graph_drafts.py`
+implementiert genau das — ohne jede Send-Aktion im Code. (Auth-Fluss seit
+2026-08-27 delegiert statt Anwendungsberechtigung, siehe Nachtrag unten.)
 
 ```
 APPS_SCRIPT_TESTS = 203/203
@@ -321,6 +326,307 @@ Entwürfe im Umlauf sind. Entscheidung liegt beim Nutzer.
 | Freigabe/Reservierung (`uiJordi100`) | deployed, live zurückgelesen, Test grün |
 | Erzeugung in Apps Script (`uiExportEml`) | Signatur korrigiert, **nur im Test grün** — nicht live durchlaufen |
 | Lokale Erzeugung (`make_drafts.py`) | 100/100 Datei für Datei belegt |
-| Postfach-Weg (`graph_drafts.py`) | Code fertig, ohne App-Registrierung nicht lauffähig |
+| Postfach-Weg (`graph_drafts.py`) | Code fertig, App-Registrierung weiterhin einmalig nötig — seit 2026-08-27 delegiert ohne Admin-Zustimmung (siehe Nachtrag unten) |
 
 Die 100 Entwürfe, die heute vorliegen, stammen aus dem lokalen Lauf.
+
+---
+
+## Reparatur und Abschlussverifikation 2026-08-27
+
+Fortsetzung der am 26.08. abends begonnenen, unfertig liegen gebliebenen
+Aenderung an `exportBatchAsEmlZip` (Chunk-Groesse 20→10, ein Teilpaket pro
+Serveraufruf statt einer internen Schleife). Root-Cause-Fixes, TDD und eine
+unabhaengige, gegnerisch gefuehrte Review (fremder Subagent, kein eigener
+Kontext) wurden bis PASS durchgezogen. Kein Push, kein Deploy.
+
+### Behobene Fehlerklassen
+
+1. **Serverseitig unvollstaendige Umstellung.** `exportBatchAsEmlZip` war
+   bereits auf "ein Teilpaket pro Aufruf" umgebaut (Chunk 10 statt 20, wegen
+   ca. 70 MB Spitzenspeicherbedarf bei Chunk 20 gegenueber ca. 19,5 MB
+   gemessenem Base64-Rohumfang bei Chunk 10), aber die generierte
+   Buendeldatei `apps_script/HSB_SALES_OS.gs` war nicht neu gebaut worden und
+   zeigte noch den alten Stand. `python3 engine/build_single.py` erneut
+   ausgefuehrt; seither bei jeder Aenderung an den vier Quelldateien
+   wiederholt. `deploy/` bewusst nicht angeruehrt — dort steht weiterhin
+   exakt das, was zuletzt tatsaechlich gepusht wurde.
+2. **Fehlender Client-seitiger Nachzieh-Mechanismus.** `Sidebar.html` erwartete
+   noch das alte Verhalten: ein manueller "Weiter ab X"-Klick pro Teilpaket —
+   bei Chunk 10 waeren das bei N=100 neun Klicks gewesen. `emlExport()` ruft
+   sich jetzt bei Erfolg automatisch mit dem naechsten Index erneut auf
+   (`CLIENT_SEQUENTIAL_ORCHESTRATION`), zeigt echten Fortschritt
+   (Paket X von Y) und sammelt alle Paketlinks statt sie zu ueberschreiben.
+   Immer nur ein Serveraufruf gleichzeitig pro Batch, per `exportLaufend`
+   auch gegen Doppelklick/Parallelaufruf im selben Tab abgesichert.
+3. **Fuenf kritische `google.script.run`-Aufrufe ohne Fehlerbehandlung.**
+   `uiEnsureColumns`, `uiQualify`, `uiPrepareBatch`, `uiApproveBatch`,
+   `uiSetStatus` setzten teils eine Ladeanzeige oder aendern Zustand, hatten
+   aber keinen `.withFailureHandler(...)` — ein Plattformfehler (Timeout,
+   Ausnahme ausserhalb des serverseitigen try/catch) liess die Anzeige ohne
+   erkennbaren Endzustand stehen. Ergaenzt, ebenso bei `uiGetSetupState`,
+   `uiGetBatches`, `uiGetDue`, `uiSearch` (informativ, aber derselbe
+   Fehlerklasse). Bei `uiSetStatus` setzt der Fehlerfall zusaetzlich die
+   abgedunkelte Zeile zurueck, statt sie dauerhaft halbtransparent stehen zu
+   lassen.
+4. **Wettlaufsituation ohne Sperre in `exportBatchAsEmlZip`.** Die Pruefung
+   "Datei vorhanden?" und das Anlegen der ZIP-Datei waren zwei getrennte,
+   ungeschuetzte Schritte — anders als jede andere zustandsaendernde Funktion
+   in `Actions.gs`. Zwei echte Parallelaufrufe fuer denselben Batch (zwei
+   offene Sidebar-Tabs) haetten beide "nicht vorhanden" sehen und zwei
+   gleichnamige ZIPs anlegen koennen. Jetzt im selben `LockService`-Muster
+   wie `qualifyLeads`/`prepareBatch`/`processInboundEvent`
+   (`tryLock(30000)`, Release im `finally`, `LOCK_TIMEOUT` fail-closed mit
+   eigener, auf den Drive-Vorgang zutreffender Fehlermeldung statt der
+   falsch uebernommenen Sheet-Formulierung).
+5. **Test-Stub war ein Scheingruen.** Der Node-Testharness fuer `DriveApp`
+   gab bei `getFoldersByName` immer "nicht gefunden" zurueck; jeder Aufruf
+   von `getOrCreateFolder_` legte deshalb einen neuen, leeren Ordner an. Der
+   bestehende "Wiederholung legt kein zweites ZIP an"-Test pruefte dadurch
+   nie echte Persistenz ueber mehrere Aufruf hinweg. Behoben: Ordner werden
+   im Stub jetzt wie in echtem Drive nach Namen persistiert.
+
+### Neue/erweiterte Tests
+
+- Arbitrary-N-Nachweis um **N=25 und N=150** fuer JORDI **und** JOEL
+  erweitert (zusaetzlich zu 1/17/100).
+- Mitten-in-der-Paketfolge-Fehlschlag + gezielter Retry (nur das
+  fehlgeschlagene Teilpaket wird nachgelegt, keine Duplikate).
+- Verlorene Erfolgsantwort / Reload-Neustart bei Index 0: bereits erzeugte
+  Teilpakete werden wiedererkannt statt neu angelegt.
+- Batch-Wiederauffindung nach verlorenem Client-Callback: `prepareBatch`
+  committet server-seitig, `getBatches` findet ihn nach simuliertem Reload,
+  ein zweiter `prepareBatch`-Aufruf mit derselben Batch-ID legt keinen
+  zweiten Datensatz an.
+- `LockService`-Timeout jetzt auch fuer `exportBatchAsEmlZip` selbst
+  nachgewiesen (fail-closed, danach normaler Ablauf nach Freigabe).
+- Statische Sidebar-Vertragspruefung: alle elf kritischen
+  `google.script.run`-Aufrufe haben nachweislich einen Fehlerhandler; kein
+  manueller Klick fuer den Normalfall der Paketfolge; keine veraltete feste
+  Paketgroesse mehr im Text.
+
+### Frische Verifikation vom 2026-08-27
+
+| Prüffeld | Befehl | Ergebnis | Exit |
+|---|---|---|---|
+| Apps-Script-Suite | `node tests/test_apps_script.js` | 258/258, 0 Fehler | 0 |
+| Python-Testmatrix | `python3 tests/test_matrix.py` | 91/91, 0 Fehler | 0 |
+| Verifier-Suite | `node tests/verifier_suite.js` | VERDICT PASS | 0 |
+| Diff-Hygiene | `git diff --check` | sauber | 0 |
+| Secret-Scan | `git grep` ueber alle getrackten Dateien | 0 Treffer | — |
+| Send-Audit | `grep` auf Sende-Funktionen | nur `dailyDigest` (Empfaenger = eigener Operator) | — |
+
+Geaenderter Umfang: genau vier Dateien (`apps_script/Actions.gs`,
+`apps_script/HSB_SALES_OS.gs` als Buendel-Neubau,
+`apps_script/Sidebar.html`, `tests/test_apps_script.js`). `deploy/`
+unangetastet. Kein Commit, kein Push, kein clasp-Deploy.
+`REAL_EXTERNAL_PROSPECT_SEND_COUNT = 0`.
+
+**Unabhaengige Review:** ein frischer, read-only Subagent ohne eigene
+Implementierungs-Vorgeschichte hat den vollstaendigen Diff gegnerisch
+geprueft. Erste Runde: zwei CRITICAL-Befunde (fehlende Fehlerbehandlung bei
+`freigeben`/`uiApproveBatch` und `status`/`uiSetStatus`), ein begleitender
+IMPORTANT-Befund (Test-Allowlist unvollstaendig) und drei MINOR-Befunde.
+Alle behoben, zweite Runde: **PASS, keine offenen CRITICAL/IMPORTANT
+Befunde.**
+
+### Was weiterhin bewusst offen bleibt
+
+- `JORDI_OPERATOR_ACCEPTANCE` bleibt `DEFERRED` — eine echte Anmeldung von
+  Jordi bei Power Automate ist ein externer, durch Software nicht
+  aufloesbarer Schritt (`EXTERNAL_BLOCKER = USER_MAILBOX_LOGIN`).
+  Der EML-/Outlook-native Fallback bleibt unabhaengig davon voll nutzbar.
+- Echte Nebenlaeufigkeit zweier tatsaechlich gleichzeitiger Apps-Script-
+  Ausfuehrungen bleibt `UNVERIFIED` im Sinn von "beobachtet" — das Design
+  stuetzt sich weiterhin fail-closed auf `LockService.getDocumentLock()`;
+  im Node-Stub ist echte Parallelitaet nicht herstellbar, nur die
+  Sperrlogik selbst ist getestet.
+- Sidebar.html besitzt weiterhin keinen ausfuehrbaren Browser-Test, nur
+  statische Text-/Regex-Pruefung gegen die Datei — dokumentiert, kein neuer
+  Mangel.
+
+---
+
+## Post-Send-Reconciliation — Nachtrag 2026-08-27
+
+Eng abgegrenzte Nachlieferung zum obigen Stand: Beweis der Reconciliation
+nach einem echten Versand (PREPARED != DRAFTED != SENT), ohne die bereits
+verifizierten Teile erneut zu pruefen.
+
+### Root Cause
+
+`processInboundEvent` kannte im Dispatch kein `event_type: 'SENT'` (nur
+REPLY/POSITIVE_REPLY/NEGATIVE_REPLY/HARD_BOUNCE/SOFT_BOUNCE/OPT_OUT). Ein
+echter Sendenachweis wurde als Event protokolliert, aenderte aber nie
+`Send_Status`/`Sent_At`/`Batch_Status`. Die `Sent_At`-Spalte im BATCHES-Blatt
+war seit Anlage des Sheets vollstaendig tot — nirgends beschrieben.
+
+### Fix (TDD, minimal, bestehende Architektur)
+
+1. **Korrelation nur ueber starke, bewegungsstabile Evidenz.** Fuer
+   `event_type === 'SENT'` zaehlt ausschliesslich eine explizite Lead-ID oder
+   `Internet_Message_ID` (RFC-5322 Message-ID, Teil des MIME-Inhalts).
+   `Outlook_Message_ID`/`Draft_ID` allein zaehlen fuer SENT nicht (Microsoft
+   dokumentiert, dass die normale Element-ID sich beim Verschieben
+   Drafts → Sent Items aendern kann) und die E-Mail-Adresse allein auch
+   nicht (beweist keinen bestimmten Versand). Alles Schwaechere geht
+   fail-closed nach `NEEDS_REVIEW`.
+2. **Exactly-once zusaetzlich zur bestehenden Event-/Message-ID-Dedup.**
+   Ein zweites, technisch anderes Sendesignal (andere Event-/Message-ID,
+   z. B. erneuter Automatisierungslauf) fuer einen bereits als `sent`
+   markierten Lead erzeugt `ALREADY_SENT_IGNORED` statt einer zweiten
+   Statusaenderung/Aktivitaet.
+3. **Neue Funktion `stampBatchSentAt_`.** Stempelt `Sent_At` im
+   BATCHES-Blatt genau einmal je Batch (erster bestaetigter Sendenachweis).
+   Die Status-Spalte des Batches bleibt bewusst unangetastet:
+   `activeBatchLeadIds_` behandelt nur `SENT`/`CANCELLED` als
+   abgeschlossen — ein verfrueht auf `SENT` gesetzter Batch wuerde seine
+   noch nicht bestaetigten Leads faelschlich fuer einen neuen Batch
+   freigeben.
+4. **Fund der unabhaengigen Review, sofort behoben:** Die bestehende
+   generische Dedup-Pruefung verglich `event_id`/`message_id` gegen JEDE
+   fruehere `INBOUND_EVENTS`-Zeile unabhaengig von deren Status. Eine
+   zunaechst unklare `NEEDS_REVIEW`-Zeile (z. B. weil dem Lead noch keine
+   `Internet_Message_ID` zugeordnet war) blockierte dadurch einen spaeter —
+   nach Nachtrag der `Internet_Message_ID` — tatsaechlich zuordenbaren
+   Sendenachweis dauerhaft als „Duplikat"; der Nachweis ging still
+   verloren. Behoben: Die Status-Spalte wird jetzt mitgelesen, nur Zeilen
+   mit einem terminalen Status (alles ausser `NEEDS_REVIEW`) zaehlen als
+   echtes Duplikat.
+
+### Neue Tests
+
+`testPostSendReconciliation` (tests/test_apps_script.js) deckt ab: echter
+Sendenachweis ueber `Internet_Message_ID` setzt `Send_Status=sent` +
+`Sent_At` + `Batch_Status=SENT` + Batch-`Sent_At`; Replay derselben
+Message-ID = generische Dedup; zweites technisches Sendesignal fuer
+bereits gesendeten Lead = `ALREADY_SENT_IGNORED`, null zusaetzliche
+Aktivitaeten; reine `Outlook_Message_ID` und reine E-Mail-Adresse reichen
+fuer SENT nicht (`NEEDS_REVIEW`); EML-Export impliziert niemals SENT;
+Retry nach nachtraeglicher `Internet_Message_ID`-Zuordnung wird korrekt
+verarbeitet statt verschluckt.
+
+### Frische Verifikation
+
+| Prüffeld | Befehl | Ergebnis | Exit |
+|---|---|---|---|
+| Apps-Script-Suite | `node tests/test_apps_script.js` | 276/276, 0 Fehler | 0 |
+| Python-Testmatrix | `python3 tests/test_matrix.py` | 91/91, 0 Fehler | 0 |
+| Verifier-Suite | `node tests/verifier_suite.js` | VERDICT PASS | 0 |
+| Diff-Hygiene | `git diff --check` | sauber | 0 |
+| Send-Audit | `grep sendEmail` | nur `dailyDigest` (Empfaenger = eigener Operator) | — |
+
+Geaenderter Umfang gegenueber dem Stand oben: `apps_script/Actions.gs`,
+`apps_script/HSB_SALES_OS.gs` (Buendel-Neubau), `tests/test_apps_script.js`
+sowie diese Datei. `apps_script/Sidebar.html` unveraendert in dieser
+Nachlieferung. `deploy/` unangetastet. HEAD unveraendert bei
+`b5f73ab8abe2883db42d07dae4b8d96defd9b28a`. Kein Commit, kein Push, kein
+clasp-Deploy. `REAL_EXTERNAL_PROSPECT_SEND_COUNT = 0`.
+
+**Unabhaengige Reviews:** `validation-auditor` (read-only) hat alle acht
+gepruefte Behauptungen als VERIFIED bestaetigt. `implementation-reviewer`
+(read-only, kein Bash-Zugriff, rein per Lesen/Grep) meldete im ersten
+Durchlauf FAIL wegen des oben unter Punkt 4 beschriebenen Dedup-Fundes —
+behoben, Testfall ergaenzt, Gesamtsuite erneut GREEN. Ein zweiter Punkt des
+Reviewers (die Staerke der SENT-Korrelation haengt letztlich davon ab, dass
+die externe Automatisierung selbst niemals eine aus einer instabilen ID
+abgeleitete Lead-ID einschleust) wurde vom Reviewer selbst ausdruecklich
+als „Beleglücke, kein bestaetigter Defekt" eingestuft — das liegt
+ausserhalb dieses Repos (kein interner SENT-Event-Erzeuger vorhanden, nur
+ein Passthrough fuer ein extern geliefertes Event-Objekt) und ist hier nur
+dokumentiert, nicht code-seitig loesbar.
+
+### Was weiterhin bewusst offen bleibt
+
+- Es existiert **keine lebende Power-Automate/Graph-„Sent"-Trigger-
+  Integration**, die echte `Internet_Message_ID`-Werte bei einem
+  tatsaechlichen Versand an das System liefert. Der Reconciliation-Pfad ist
+  software-seitig durchgaengig mit synthetischen Testdaten bewiesen; ein
+  echter Live-Trigger aus Outlook/Graph ist nicht konfiguriert. Externer
+  Integrationsblocker, kein Softwaredefekt.
+- Die Korrektheit der von aussen gelieferten `lead_id`/`message_id`-Werte
+  liegt ausserhalb der Kontrolle dieses Repos (siehe Review-Punkt oben).
+
+---
+
+## Graph-Auth-Vereinfachung — Nachtrag 2026-08-27
+
+Frage: Ist die Einrichtung von `engine/graph_drafts.py` ohne Admin-Zugang
+moeglich? Antwort: teilweise, und der bisherige Code nutzte unnoetig genau
+den Teil, der immer einen Admin braucht.
+
+### Befund
+
+`token_holen()` nutzte den Client-Credentials-Fluss (`grant_type:
+client_credentials`, Scope `.default`) — das ist eine *Anwendungsberechtigung*.
+Application-Permissions wirken unbeaufsichtigt und tenant-weit; Microsoft
+laesst sie deshalb grundsaetzlich nur von einer Person mit einer Entra-
+Admin-Rolle freischalten (Global Administrator, Privileged Role
+Administrator, Application Administrator, Cloud Application Administrator).
+Das ist Sicherheitsdesign, kein Konfigurationsdetail, und war fuer diesen
+Berechtigungstyp nicht zu umgehen.
+
+Das Werkzeug braucht aber gar keine tenant-weite Wirkung — jede Person legt
+ohnehin nur Entwuerfe im eigenen Postfach an. Dafuer reicht eine *delegierte*
+Berechtigung mit Self-Consent der angemeldeten Person selbst.
+
+### Aenderung
+
+`engine/graph_drafts.py`: Client-Credentials-Fluss ersetzt durch einen
+delegierten Geraetecode-Fluss (OAuth Device Authorization Grant) mit lokalem
+Refresh-Token-Cache (`~/.hsb_graph_token_cache.json`, `chmod 600`):
+
+- Erster Lauf: Werkzeug zeigt Anmelde-URL + Code, Person meldet sich selbst
+  im Browser an und stimmt selbst zu (Self-Consent) — keine
+  Administratorbeteiligung, sofern der Tenant Nutzerzustimmung fuer
+  delegierte Berechtigungen nicht generell gesperrt hat.
+- Spaetere Laeufe: stiller Refresh-Versuch mit dem gecachten Token, nur bei
+  Fehlschlag erneute interaktive Anmeldung.
+- `HSB_GRAPH_CLIENT_SECRET` entfaellt vollstaendig — delegierte Public-
+  Client-Registrierungen brauchen kein Geheimnis.
+- Alle Graph-Aufrufe laufen jetzt gegen `/me/...` statt `/users/{postfach}/...`;
+  `identitaet_pruefen()` (vormals `postfach_pruefen()`) prueft weiterhin
+  fail-closed, dass die angemeldete Person zum erwarteten Postfach passt.
+
+Damit lautet die ehrliche Antwort auf die Ausgangsfrage: Die App-
+Registrierung selbst kann jede Person mit gewoehnlichem Nutzerkonto anlegen
+(Standardeinstellung, kein Admin). Ob die anschliessende Selbstzustimmung
+ohne Admin durchgeht, zeigt erst der echte Anmeldeversuch — das ist jetzt
+der einzige verbleibende Unsicherheitsfaktor, nicht mehr eine von vornherein
+sichere Anforderung an einen Administrator.
+
+### Neue Tests
+
+`tests/test_graph_drafts.py` (neu, 19 Assertionen, kein echter Netzwerk-
+zugriff): Cache-leer -> Geraetecode; gueltiges Refresh-Token umgeht die
+Geraetecode-Anmeldung (kein Login-Zwang bei jedem Lauf); ungueltiges
+Refresh-Token faellt genau einmal auf Geraetecode zurueck; kein
+`HSB_GRAPH_CLIENT_SECRET` mehr erforderlich; Polling-Zustandsmaschine
+(`authorization_pending` -> Erfolg, `authorization_declined` -> fail-closed
+Abbruch ohne Endlosschleife); `identitaet_pruefen` akzeptiert/verweigert
+`/me` korrekt; `entwurf_anlegen` ruft nachweislich `/me/messages` auf.
+
+### Verifikation
+
+| Prüffeld | Befehl | Ergebnis |
+|---|---|---|
+| Neue Auth-Tests | `python3 tests/test_graph_drafts.py` | 19/19 PASS |
+| Python-Testmatrix (unveraendert betroffen) | `python3 tests/test_matrix.py` | 91/91 PASS |
+| Apps-Script-Suite (nicht betroffen) | `node tests/test_apps_script.js` | 277/277 PASS |
+| Verifier-Suite (nicht betroffen) | `node tests/verifier_suite.js` | VERDICT PASS |
+| Diff-Hygiene | `git diff --check` | sauber |
+
+Geaenderter Umfang: `engine/graph_drafts.py`, `tests/test_graph_drafts.py`
+(neu), `README_OPERATING.md`, diese Datei. Kein Commit, kein Push, kein
+clasp-Deploy. `REAL_EXTERNAL_PROSPECT_SEND_COUNT = 0` (dieses Werkzeug legt
+ohnehin nur Entwuerfe an, nie einen Versand).
+
+### Was weiterhin offen bleibt
+
+- Ob der HSB-Tenant Self-Consent fuer delegierte Berechtigungen erlaubt,
+  ist von hier aus nicht pruefbar — nur der echte Anmeldeversuch zeigt es.
+  Zeigt Entra „Genehmigung durch Administrator erforderlich", ist das ein
+  echter, dann konkret benennbarer externer Blocker (wer genau freigeben
+  muss), kein Softwaredefekt.
+- Die App-Registrierung selbst (Client-ID/Tenant-ID) ist weiterhin einmalig
+  in Entra ID anzulegen — das ist Konfiguration, kein Code.

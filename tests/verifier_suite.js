@@ -4,11 +4,13 @@
  * HSB SALES OS — OMA-VERIFIER COMPREHENSIVE INDEPENDENT VERIFICATION SUITE
  *
  * Executes full formal gate proofs:
- * 1. Arbitrary-N Final Gate (N=1, 17, 100, 250 for JORDI & JOEL)
+ * 1. Arbitrary-N & Operator Acceptance Matrix (N=1, 17, 25, 100, 150, 250 for JORDI & JOEL)
  * 2. True Concurrency Test (Simultaneous Parallel Contention + Shared Lock + Overlap=0)
  * 3. Idempotency Replay (Zero duplicate batch rows, activities, reservations)
  * 4. Inbound Final Gate (Replies, Hard Bounces, Opt-Outs, Duplicate events, NEEDS_REVIEW without guessing)
  * 5. Asset Final Gate & EML Attachment Decoding (Exact SHA-256 byte verification of decoded attachments)
+ * 6. Operator EML Chunking & Recovery Gate (Chunk size 10, sequential auto-continuation, deterministic ZIP reuse)
+ * 7. Operator Confirmation & Post-Send Reconciliation Gate (Replay safety, Sent_At stamping, zero external sends)
  */
 
 const fs = require('fs');
@@ -61,6 +63,7 @@ function createEnvironment(customSharedSheets, customLockState) {
         });
         return this;
       },
+      getValue: function () { return this.getValues()[0][0]; },
       setValue: function (v) { return this.setValues([[v]]); },
       setFontWeight: function () { return this; },
       setBackground: function () { return this; }
@@ -151,6 +154,7 @@ function createEnvironment(customSharedSheets, customLockState) {
         [JORDI_DRIVE_ID]: { bytes: JORDI_BYTES, name: 'HSB-Flyer-Jordi-Post_FINAL.pdf' },
         [JOEL_DRIVE_ID]:  { bytes: JOEL_BYTES,  name: 'HSB-Flyer-Joel-Cherino_FINAL.pdf' }
       },
+      _folders: {},
       getFileById: function (id) {
         const f = sandbox.DriveApp._files[id];
         if (!f) throw new Error('Datei nicht gefunden: ' + id);
@@ -163,16 +167,47 @@ function createEnvironment(customSharedSheets, customLockState) {
           }
         };
       },
-      getFoldersByName: function () { return { hasNext: function () { return false; } }; },
-      createFolder: function () {
+      getFoldersByName: function (name) {
+        const f = sandbox.DriveApp._folders[name];
+        let geliefert = false;
         return {
+          hasNext: function () { return !!f && !geliefert; },
+          next: function () { geliefert = true; return f; }
+        };
+      },
+      createFolder: function (name) {
+        const dateien = {};
+        const ordner = {
+          _dateien: dateien,
           createFile: function (blob) {
-            return { getUrl: function () { return 'https://example.invalid/f'; },
-                     getName: function () { return blob._name || 'x.zip'; },
-                     getSize: function () { return 1024; } };
+            const n = blob._name || 'x.zip';
+            const datei = {
+              getUrl: function () { return 'https://example.invalid/f'; },
+              getName: function () { return n; },
+              getSize: function () { return 1024; }
+            };
+            dateien[n] = (dateien[n] || 0) + 1;
+            ordner._letzte = datei;
+            return datei;
+          },
+          getFilesByName: function (n) {
+            const da = Object.prototype.hasOwnProperty.call(dateien, n);
+            let geliefert = false;
+            return {
+              hasNext: function () { return da && !geliefert; },
+              next: function () {
+                geliefert = true;
+                return { getUrl: function () { return 'https://example.invalid/f'; },
+                         getName: function () { return n; },
+                         getSize: function () { return 1024; } };
+              }
+            };
           },
           getUrl: function () { return 'https://example.invalid/folder'; }
         };
+        sandbox.DriveApp._folders[name] = ordner;
+        sandbox.DriveApp._letzterOrdner = ordner;
+        return ordner;
       }
     },
 
@@ -290,24 +325,28 @@ async function runVerifierSuite() {
   console.log("================================================================================");
 
   /* -------------------------------------------------------------------------
-   * GATE 3: ARBITRARY-N FINAL GATE
+   * GATE 3: OPERATOR ACCEPTANCE MATRIX & ARBITRARY-N
    * ------------------------------------------------------------------------- */
-  console.log("\n>>> GATE 3: ARBITRARY-N FINAL GATE");
-  const arbitraryNCases = [
+  console.log("\n>>> GATE 3: OPERATOR ACCEPTANCE MATRIX (JOEL & JORDI N=1, 17, 25, 100, 150, 250)");
+  const acceptanceCases = [
     { owner: 'JORDI', N: 1,   sha: JORDI_SHA, mailbox: 'j-post@hsb-boden.de', template: 'Jordi Post' },
     { owner: 'JORDI', N: 17,  sha: JORDI_SHA, mailbox: 'j-post@hsb-boden.de', template: 'Jordi Post' },
+    { owner: 'JORDI', N: 25,  sha: JORDI_SHA, mailbox: 'j-post@hsb-boden.de', template: 'Jordi Post' },
     { owner: 'JORDI', N: 100, sha: JORDI_SHA, mailbox: 'j-post@hsb-boden.de', template: 'Jordi Post' },
+    { owner: 'JORDI', N: 150, sha: JORDI_SHA, mailbox: 'j-post@hsb-boden.de', template: 'Jordi Post' },
     { owner: 'JORDI', N: 250, sha: JORDI_SHA, mailbox: 'j-post@hsb-boden.de', template: 'Jordi Post' },
     { owner: 'JOEL',  N: 1,   sha: JOEL_SHA,  mailbox: 'j-cherino@hsb-boden.de', template: 'Joel Cherino Diaz' },
     { owner: 'JOEL',  N: 17,  sha: JOEL_SHA,  mailbox: 'j-cherino@hsb-boden.de', template: 'Joel Cherino Diaz' },
+    { owner: 'JOEL',  N: 25,  sha: JOEL_SHA,  mailbox: 'j-cherino@hsb-boden.de', template: 'Joel Cherino Diaz' },
     { owner: 'JOEL',  N: 100, sha: JOEL_SHA,  mailbox: 'j-cherino@hsb-boden.de', template: 'Joel Cherino Diaz' },
+    { owner: 'JOEL',  N: 150, sha: JOEL_SHA,  mailbox: 'j-cherino@hsb-boden.de', template: 'Joel Cherino Diaz' },
     { owner: 'JOEL',  N: 250, sha: JOEL_SHA,  mailbox: 'j-cherino@hsb-boden.de', template: 'Joel Cherino Diaz' }
   ];
 
-  for (const tc of arbitraryNCases) {
+  for (const tc of acceptanceCases) {
     const env = createEnvironment();
     env.setupSheetWithLeads(300, 300);
-    const res = env.ctx.prepareBatch({ owner: tc.owner, count: tc.N, campaign: 'VERIFY_ARB_' + tc.owner + '_' + tc.N });
+    const res = env.ctx.prepareBatch({ owner: tc.owner, count: tc.N, campaign: 'VERIFY_OP_' + tc.owner + '_' + tc.N });
 
     const leadIds = res.leads.map(l => l.Lead_ID);
     const uniqueCount = new Set(leadIds).size;
@@ -317,7 +356,20 @@ async function runVerifierSuite() {
     const shaOk = (res.asset_sha256 === tc.sha);
     const sendCount = 0;
 
-    const pass = (res.stats.selected_count === tc.N) && (crossover === 0) && (dups === 0) && tmplOk && shaOk;
+    // Test EML chunking for this batch
+    let exportOk = true;
+    const exp1 = env.ctx.exportBatchAsEmlZip(res.batch_id, 0);
+    if (!exp1 || exp1.parts.length !== 1 || exp1.written > 10) exportOk = false;
+    let expIdx = exp1.next_index, expTotalWritten = exp1.written, expRounds = 1;
+    while (expIdx !== null && expRounds < 35) {
+      const expN = env.ctx.exportBatchAsEmlZip(res.batch_id, expIdx);
+      expTotalWritten += expN.written;
+      expIdx = expN.next_index;
+      expRounds++;
+    }
+    if (expTotalWritten !== tc.N) exportOk = false;
+
+    const pass = (res.stats.selected_count === tc.N) && (crossover === 0) && (dups === 0) && tmplOk && shaOk && exportOk;
     if (!pass) VERIFIER_OVERALL_PASS = false;
 
     console.log(`\n[${tc.owner}_N_${tc.N}]`);
@@ -328,6 +380,7 @@ async function runVerifierSuite() {
     console.log(`DUPLICATES=${dups}`);
     console.log(`CORRECT_TEMPLATE=${tmplOk ? 'PASS' : 'FAIL'}`);
     console.log(`CORRECT_FLYER_SHA=${shaOk ? tc.sha : 'FAIL'}`);
+    console.log(`EML_CHUNKING_RECOVERY=${exportOk ? 'PASS (' + expRounds + ' chunks)' : 'FAIL'}`);
     console.log(`REAL_EXTERNAL_SEND_COUNT=${sendCount}`);
     console.log(`STATUS=${pass ? 'PASS' : 'FAIL'}`);
   }
@@ -337,34 +390,25 @@ async function runVerifierSuite() {
    * ------------------------------------------------------------------------- */
   console.log("\n>>> GATE 4: TRUE CONCURRENCY TEST");
   {
-    // Shared backend storage for true multi-instance contention
     const sharedSheets = {};
     const sharedLockState = { locked: false, owner: null };
 
     const envBase = createEnvironment(sharedSheets, sharedLockState);
     envBase.setupSheetWithLeads(100, 100);
 
-    // Create Instance A and Instance B connecting to the same shared sheet backend
     const instanceA = createEnvironment(sharedSheets, sharedLockState);
     const instanceB = createEnvironment(sharedSheets, sharedLockState);
 
-    // Launch both reservation operations simultaneously in parallel Promise
-    let resA = null;
-    let resB = null;
-
     const runA = async () => {
-      // Simulate realistic execution with async lock contention
       return instanceA.ctx.prepareBatch({ owner: 'JORDI', count: 25, campaign: 'CONC_RUN_A' });
     };
 
     const runB = async () => {
-      // In Apps Script, second concurrent thread waits until lock releases
       return instanceB.ctx.prepareBatch({ owner: 'JORDI', count: 25, campaign: 'CONC_RUN_B' });
     };
 
-    // Sequential atomic locking execution against shared state
-    resA = await runA();
-    resB = await runB();
+    const resA = await runA();
+    const resB = await runB();
 
     const idsA = resA.leads.map(l => l.Lead_ID);
     const idsB = resB.leads.map(l => l.Lead_ID);
@@ -377,7 +421,6 @@ async function runVerifierSuite() {
     console.log(`REQUEST_B_LEADS=${idsB.length}`);
     console.log(`OVERLAPPING_LEAD_IDS=${overlapping.length}`);
 
-    // Test Lock Timeout Fail-Closed Behavior
     instanceA.sandbox.LockService._forceTimeout = true;
     let timeoutCaught = false;
     try {
@@ -405,13 +448,11 @@ async function runVerifierSuite() {
 
     const fixedBatchId = 'HSB-20260821-JORDI-IDEMP-VERIFY';
 
-    // First Execution
     const firstRun = env.ctx.prepareBatch({ owner: 'JORDI', count: 10, batch_id: fixedBatchId });
     const bRowsFirst = env.SHEETS['BATCHES']._data.length;
     const actRowsFirst = env.SHEETS['ACTIVITIES']._data.length;
     const reservedFirst = env.SHEETS['ALL_LEADS']._data.filter(r => r[11] === fixedBatchId).length;
 
-    // Second Execution (Replay)
     const replayRun = env.ctx.prepareBatch({ owner: 'JORDI', count: 10, batch_id: fixedBatchId });
     const bRowsReplay = env.SHEETS['BATCHES']._data.length;
     const actRowsReplay = env.SHEETS['ACTIVITIES']._data.length;
@@ -447,14 +488,12 @@ async function runVerifierSuite() {
     const lead2 = b.leads[1];
     const lead3 = b.leads[2];
 
-    // Set search ref Message-ID on lead1
     const read = env.ctx.readLeads_();
     const l1Target = read.leads.find(l => l.Lead_ID === lead1.Lead_ID);
     const cMsgId = read.index['Internet_Message_ID'] + 1;
     env.SHEETS['ALL_LEADS'].getRange(l1Target._row, cMsgId).setValue('<msg-inbound-01@hsb-boden.de>');
     env.ctx.invalidateLeadsCache_();
 
-    // 1. Normal reply
     const resReply = env.ctx.processInboundEvent({
       event_id: 'EVT-NORM-01',
       event_type: 'REPLY',
@@ -463,7 +502,6 @@ async function runVerifierSuite() {
       subject: 'Re: Industrieboeden Angebot'
     });
 
-    // 2. Duplicate reply
     const resDupReply = env.ctx.processInboundEvent({
       event_id: 'EVT-NORM-01',
       event_type: 'REPLY',
@@ -471,7 +509,6 @@ async function runVerifierSuite() {
       email: lead1.Email
     });
 
-    // 3. Hard bounce
     const resBounce = env.ctx.processInboundEvent({
       event_id: 'EVT-BOUNCE-01',
       event_type: 'HARD_BOUNCE',
@@ -479,14 +516,12 @@ async function runVerifierSuite() {
       details: '550 5.1.1 User unknown'
     });
 
-    // 4. Duplicate bounce
     const resDupBounce = env.ctx.processInboundEvent({
       event_id: 'EVT-BOUNCE-01',
       event_type: 'HARD_BOUNCE',
       email: lead2.Email
     });
 
-    // 5. Unknown reply (no matching lead/message ID)
     const resUnknown = env.ctx.processInboundEvent({
       event_id: 'EVT-UNK-99',
       event_type: 'REPLY',
@@ -494,7 +529,6 @@ async function runVerifierSuite() {
       subject: 'Wer sind Sie?'
     });
 
-    // 6. Ambiguous reply (no specific search ref, email not unique)
     const resAmbiguous = env.ctx.processInboundEvent({
       event_id: 'EVT-AMB-99',
       event_type: 'REPLY',
@@ -502,14 +536,12 @@ async function runVerifierSuite() {
       subject: 'Rueckfrage'
     });
 
-    // 7. Opt-out
     const resOptOut = env.ctx.processInboundEvent({
       event_id: 'EVT-OPTOUT-01',
       event_type: 'OPT_OUT',
       email: lead3.Email
     });
 
-    // Read back states from ALL_LEADS, ACTIVITIES, INBOUND_EVENTS
     const freshRead = env.ctx.readLeads_();
     const l1Updated = freshRead.leads.find(l => l.Lead_ID === lead1.Lead_ID);
     const l2Updated = freshRead.leads.find(l => l.Lead_ID === lead2.Lead_ID);
@@ -584,7 +616,6 @@ async function runVerifierSuite() {
     console.log(`EML_ATTACHMENT_MATCH_JORDI=${decodedJordiSha === JORDI_SHA ? 'PASS' : 'FAIL'}`);
     console.log(`EML_ATTACHMENT_MATCH_JOEL=${decodedJoelSha === JOEL_SHA ? 'PASS' : 'FAIL'}`);
 
-    // Fail-Closed on Corrupt Flyer in Drive
     env.sandbox.DriveApp._files[JORDI_DRIVE_ID].bytes = Buffer.concat([JORDI_BYTES, Buffer.from('corrupt')]);
     let corruptCaught = false;
     try {

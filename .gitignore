@@ -11,3 +11,6 @@ _FALSCHE_BINDUNG_*
 
 # Deployment-Rueckfallpunkte
 .backup_appsscript_*/
+
+# Orchestration & Runtime State
+.omg/

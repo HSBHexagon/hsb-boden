@@ -292,7 +292,8 @@ button.tat[disabled] { opacity: .45; cursor: not-allowed; }
   <div class="titel" id="jordi100Titel">Jordi · 100 Outlook-Entwürfe</div>
   <div class="erklaerung">
     Ein Klick gibt exakt 100 sichere Jordi-Kontakte frei, reserviert den Batch
-    und erzeugt fünf Outlook-Pakete. Es wird nichts automatisch versendet.
+    und erzeugt die Outlook-Pakete automatisch nacheinander. Es wird nichts
+    automatisch versendet.
   </div>
   <button class="tat primaer" id="jordi100Button" onclick="jordi100Start()">
     100 freigeben &amp; Entwürfe erzeugen
@@ -490,6 +491,11 @@ function setupPruefen() {
       h += '<br>Nicht senden, bis das geklärt ist.</div>';
     }
     zeig('setupWarnung', h);
+  }).withFailureHandler(function (e) {
+    // Ohne diesen Handler bliebe ein Plattformfehler (Timeout, Ausnahme
+    // ausserhalb try/catch) unsichtbar - inklusive eines moeglichen
+    // ASSET_GATE=FAIL, der genau hier gemeldet wuerde.
+    fehler('setupWarnung', e.message);
   }).uiGetSetupState();
 }
 
@@ -500,6 +506,8 @@ function spaltenAnlegen() {
     zeig('setupWarnung', '<div class="meldung m-gut"><b>Spalten angelegt</b>'
       + esc(r.data.message) + '</div>');
     setTimeout(allesLaden, 900);
+  }).withFailureHandler(function (e) {
+    fehler('setupWarnung', e.message);
   }).uiEnsureColumns();
 }
 
@@ -579,6 +587,8 @@ function qualifizieren() {
          : 'Grundlage: ' + esc(r.data.legalBasis)) + '</div>');
     el('s2').open = true;
     cockpitLaden();
+  }).withFailureHandler(function (e) {
+    fehler('qErgebnis', e.message);
   }).uiQualify({ owner: OWNER, count: n, legalBasis: basis });
 }
 
@@ -631,10 +641,11 @@ function jordi100Start() {
         + 'Es wurde bewusst kein zweiter Batch angelegt. Die Entwürfe zu '
         + 'diesem Batch erzeugst du unten in Schritt 03.</div>';
     } else {
-      // Die Pakete werden bewusst in einem eigenen Aufruf geholt: 100 Mails
-      // mit Anhang sprengen sonst die Laufzeitgrenze von Apps Script.
+      // Die Pakete werden bewusst in eigenen Aufrufen geholt: 100 Mails mit
+      // Anhang in einem Rutsch sprengen sonst die Laufzeitgrenze von Apps
+      // Script. Die Oberflaeche holt sie automatisch nacheinander nach.
       h += '<div class="meldung m-info"><b>Entwürfe werden erzeugt</b>'
-        + 'Je 20 Stück ein Paket. Das Fenster bitte offen lassen.</div>';
+        + 'In mehreren Paketen nacheinander. Das Fenster bitte offen lassen.</div>';
     }
     h += '<div id="exp_' + esc(b.batch_id) + '"></div>';
     zeig('jordi100Ergebnis', h);
@@ -685,6 +696,8 @@ function batchVorbereiten() {
     zeig('batchErgebnis', h);
     cockpitLaden();
     batchListeLaden();
+  }).withFailureHandler(function (e) {
+    fehler('batchErgebnis', e.message);
   }).uiPrepareBatch({
     owner: OWNER, count: n, tier: el('tier').value,
     industry: el('industry').value, campaign: el('campaign').value
@@ -707,53 +720,200 @@ function batchListeLaden() {
       h += '<div class="zeile"><div class="firma zahl">' + esc(b.batch_id)
         + '</div><div class="meta"><span class="zahl">' + nz(b.selected)
         + '</span> Entwürfe · ' + esc(b.status)
-        + (b.campaign ? ' · ' + esc(b.campaign) : '') + '</div>'
+        + (b.campaign ? ' · ' + esc(b.campaign) : '')
+        + (b.sent_at ? ' · versendet ' + esc(b.sent_at) : '') + '</div>'
         + '<div class="knoepfe">'
         + '<button onclick="emlExport(\'' + esc(b.batch_id) + '\',0)">'
         + 'Entwürfe erzeugen</button>'
         + '<button onclick="freigeben(\'' + esc(b.batch_id) + '\')">'
-        + 'Freigeben</button></div>'
-        + '<div id="exp_' + esc(b.batch_id) + '"></div></div>';
+        + 'Freigeben</button>'
+        + '<button onclick="versandBestaetigen(\'' + esc(b.batch_id) + '\',0)">'
+        + 'Versand bestätigen</button></div>'
+        + '<div id="exp_' + esc(b.batch_id) + '"></div>'
+        + '<div id="conf_' + esc(b.batch_id) + '"></div></div>';
     });
     zeig('batchListe', h);
     el('m3').textContent = offen ? offen + ' offen' : '';
+  }).withFailureHandler(function (e) {
+    fehler('batchListe', e.message);
   }).uiGetBatches(OWNER);
+}
+
+/**
+ * Erzeugt die Outlook-Entwuerfe eines Batches.
+ *
+ * Der Server liefert pro Aufruf GENAU EIN Teilpaket (siehe
+ * exportBatchAsEmlZip in Actions.gs) - fuer 100 Kontakte waeren das sonst
+ * neun manuelle Klicks auf "Weiter". Diese Funktion ruft sich deshalb bei
+ * Erfolg selbst mit dem naechsten Index erneut auf, bis complete=true;
+ * dabei ist immer hoechstens ein Aufruf fuer denselben Batch unterwegs.
+ * `exportLaufend` ist eine reine Tab-lokale JS-Sperre gegen Doppelklick
+ * und rekursive Ueberschneidung in diesem einen Sidebar-Fenster - keine
+ * serverseitige Serialisierung ueber mehrere Tabs oder Sitzungen hinweg
+ * (die uebernimmt der Wiederverwendungs-Check in exportBatchAsEmlZip).
+ *
+ * Ein Fehlschlag stoppt die automatische Kette und zeigt einen "Erneut
+ * versuchen"-Knopf, der ab genau dem fehlgeschlagenen Index weitermacht -
+ * nicht bei 0. Server-seitig ist jedes Teilpaket deterministisch benannt
+ * und wird bei Wiederholung wiederverwendet statt doppelt angelegt; ein
+ * Neustart bei Index 0 (z. B. nach einem Reload, wenn die Oberflaeche den
+ * Fortschritt vergessen hat) ist deshalb ebenfalls gefahrlos - bereits
+ * vorhandene Pakete werden dabei nur erkannt, nicht neu erzeugt.
+ */
+var exportLaufend = {};   // batchId -> true, waehrend ein Aufruf unterwegs ist
+var exportPakete = {};    // batchId -> bereits eingesammelte Paketlinks
+var exportFortschritt = {}; // batchId -> bisher erzeugte Entwuerfe insgesamt
+
+function exportZeigen(batchId, d) {
+  var h = '<div class="meldung m-gut"><b><span class="zahl">'
+    + nz(exportFortschritt[batchId] || d.written)
+    + '</span> von <span class="zahl">' + nz(d.total) + '</span> Entwürfen</b>';
+  (exportPakete[batchId] || []).forEach(function (p) {
+    h += '<a href="' + p.url + '" target="_blank">' + esc(p.name) + '</a> · '
+      + '<span class="zahl">' + nz(p.count) + '</span> · '
+      + '<span class="zahl">' + p.size_mb + '</span> MB<br>';
+  });
+  if (d.complete) {
+    h += 'In Outlook: Einstellungen → Dateien → Import → Ordner wählen → '
+      + 'Zielordner „Entwürfe". Jedes Paket einzeln.</div>';
+  } else {
+    h += '<span class="zahl">' + nz(d.part_index) + '</span> von '
+      + '<span class="zahl">' + nz(d.part_total)
+      + '</span> Paketen fertig.</div>'
+      + '<div class="arbeit">Nächstes Paket wird erzeugt…</div>';
+  }
+  zeig('exp_' + batchId, h);
 }
 
 function emlExport(batchId, startIndex) {
   var ziel = 'exp_' + batchId;
   if (!el(ziel)) return;
-  laden(ziel, startIndex ? 'Wird fortgesetzt…'
-    : 'Entwürfe werden erzeugt — je 20 ein Paket…');
+  if (exportLaufend[batchId]) return;   // Doppelklick/Parallelaufruf abwehren
+  exportLaufend[batchId] = true;
+
+  var von = startIndex || 0;
+  if (!von) {
+    // Frischer Start (Knopf-Klick oder Reload) - Anzeige und Zaehler neu
+    // aufbauen. Server-seitig bereits vorhandene Pakete werden trotzdem nur
+    // erkannt, nie doppelt angelegt (siehe Funktionskommentar).
+    exportPakete[batchId] = [];
+    exportFortschritt[batchId] = 0;
+    laden(ziel, 'Entwürfe werden erzeugt…');
+  } else {
+    laden(ziel, 'Nächstes Paket wird erzeugt…');
+  }
 
   google.script.run.withSuccessHandler(function (r) {
-    if (!r.ok) { fehler(ziel, r.error); return; }
-    var d = r.data;
-    var h = '<div class="meldung m-gut"><b><span class="zahl">' + nz(d.written)
-      + '</span> von <span class="zahl">' + nz(d.total) + '</span> Entwürfen</b>';
-    d.parts.forEach(function (p) {
-      h += '<a href="' + p.url + '" target="_blank">' + esc(p.name) + '</a> · '
-        + '<span class="zahl">' + nz(p.count) + '</span> · '
-        + '<span class="zahl">' + p.size_mb + '</span> MB<br>';
-    });
-    h += 'In Outlook: Einstellungen → Dateien → Import → Ordner wählen → '
-      + 'Zielordner „Entwürfe". Jedes Paket einzeln.</div>';
-    if (!d.complete) {
-      h += '<div class="meldung m-warn"><b>Noch nicht fertig</b>'
-        + 'Die Laufzeitgrenze wurde erreicht. Es geht ohne Verlust weiter.'
-        + '<button class="tat zweit" style="margin-top:8px" onclick="emlExport(\''
-        + esc(batchId) + '\',' + d.next_index + ')">Weiter ab '
-        + '<span class="zahl">' + nz(d.next_index) + '</span></button></div>';
+    if (!r.ok) {
+      exportLaufend[batchId] = false;
+      fehler(ziel, r.error);
+      return;
     }
-    zeig(ziel, h);
-  }).withFailureHandler(function (e) { fehler(ziel, e.message); })
-    .uiExportEml(batchId, startIndex || 0);
+    var d = r.data;
+    exportFortschritt[batchId] = (exportFortschritt[batchId] || 0) + d.written;
+    (d.parts || []).forEach(function (p) {
+      exportPakete[batchId].push(p);
+    });
+
+    if (!d.complete) {
+      exportZeigen(batchId, d);
+      // Automatische Fortsetzung: kein Klick noetig, aber immer nur ein
+      // Serveraufruf gleichzeitig - der naechste startet erst, wenn dieser
+      // hier abgeschlossen ist.
+      exportLaufend[batchId] = false;
+      emlExport(batchId, d.next_index);
+      return;
+    }
+    exportLaufend[batchId] = false;
+    exportZeigen(batchId, d);
+  }).withFailureHandler(function (e) {
+    exportLaufend[batchId] = false;
+    var bisher = exportFortschritt[batchId] || 0;
+    zeig(ziel, '<div class="meldung m-fehler"><b>Paket fehlgeschlagen</b>'
+      + 'Bereits fertig: <span class="zahl">' + nz(bisher)
+      + '</span> Entwürfe. ' + esc(e.message)
+      + '<button class="tat zweit" style="margin-top:8px" onclick="emlExport(\''
+      + esc(batchId) + '\',' + von + ')">Erneut versuchen</button></div>');
+  }).uiExportEml(batchId, von);
 }
 
 function freigeben(batchId) {
   google.script.run.withSuccessHandler(function (r) {
     if (r.ok) batchListeLaden(); else alert(r.error);
+  }).withFailureHandler(function (e) {
+    alert(e.message);
   }).uiApproveBatch(batchId);
+}
+
+/**
+ * Betreiber-Bestaetigung "Ich habe diesen Batch tatsaechlich in Outlook
+ * versendet." Es gibt (noch) keine lebende Sent-Trigger-Integration, die
+ * einen echten Versand automatisch beobachten koennte - ohne diesen Knopf
+ * bliebe Send_Status nach einem echten, von Hand in Outlook abgeschickten
+ * Batch fuer immer "nicht gesendet". Gleiches Bloecke-mit-Auto-Fortsetzung-
+ * Muster wie emlExport: der Server bestaetigt jeweils einen Abschnitt
+ * (siehe confirmBatchSent in Actions.gs), die Seitenleiste haengt sich bei
+ * Erfolg automatisch an den naechsten Abschnitt, ein Fehlschlag zeigt einen
+ * Wiederholen-Knopf ab genau dem fehlgeschlagenen Index.
+ */
+var versandLaufend = {};
+var versandFortschritt = {};
+
+function versandZeigen(batchId, d) {
+  var gesamt = versandFortschritt[batchId] || 0;
+  var h = '<div class="meldung m-gut"><b><span class="zahl">' + nz(gesamt)
+    + '</span> von <span class="zahl">' + nz(d.total) + '</span> bestätigt</b>';
+  if (d.complete) {
+    h += '<br>Als tatsächlich versendet vermerkt. Kein automatischer '
+       + 'Nachweis - diese Bestätigung ist eine bewusste, protokollierte '
+       + 'Aussage von dir, kein Systembeleg.</div>';
+  } else {
+    h += '<div class="arbeit">Nächster Abschnitt wird bestätigt…</div>';
+  }
+  zeig('conf_' + batchId, h);
+}
+
+function versandBestaetigen(batchId, startIndex) {
+  var ziel = 'conf_' + batchId;
+  if (!el(ziel)) return;
+  if (versandLaufend[batchId]) return;   // Doppelklick/Parallelaufruf abwehren
+  versandLaufend[batchId] = true;
+
+  var von = startIndex || 0;
+  if (!von) {
+    versandFortschritt[batchId] = 0;
+    laden(ziel, 'Versand wird bestätigt…');
+  } else {
+    laden(ziel, 'Nächster Abschnitt wird bestätigt…');
+  }
+
+  google.script.run.withSuccessHandler(function (r) {
+    if (!r.ok) {
+      versandLaufend[batchId] = false;
+      fehler(ziel, r.error);
+      return;
+    }
+    var d = r.data;
+    versandFortschritt[batchId] = (versandFortschritt[batchId] || 0) + d.verarbeitet;
+
+    if (!d.complete) {
+      versandZeigen(batchId, d);
+      versandLaufend[batchId] = false;
+      versandBestaetigen(batchId, d.next_index);
+      return;
+    }
+    versandLaufend[batchId] = false;
+    versandZeigen(batchId, d);
+    batchListeLaden();   // aktualisiert "versendet am" in der Batch-Zeile
+  }).withFailureHandler(function (e) {
+    versandLaufend[batchId] = false;
+    var bisher = versandFortschritt[batchId] || 0;
+    zeig(ziel, '<div class="meldung m-fehler"><b>Abschnitt fehlgeschlagen</b>'
+      + 'Bereits bestätigt: <span class="zahl">' + nz(bisher)
+      + '</span>. ' + esc(e.message)
+      + '<button class="tat zweit" style="margin-top:8px" onclick="versandBestaetigen(\''
+      + esc(batchId) + '\',' + von + ')">Erneut versuchen</button></div>');
+  }).uiConfirmBatchSent(batchId, von);
 }
 
 /* --- 04 Nachfassen -------------------------------------------------- */
@@ -774,6 +934,8 @@ function faelligeLaden() {
         + nz(r.data.length - 60) + '</span> weitere.</div>';
     }
     zeig('faellige', h);
+  }).withFailureHandler(function (e) {
+    fehler('faellige', e.message);
   }).uiGetDue(OWNER);
 }
 
@@ -801,6 +963,9 @@ function status(leadId, st, tage) {
     if (!r.ok) { alert(r.error); if (zeile) zeile.style.opacity = '1'; return; }
     if (zeile) zeile.remove();
     cockpitLaden();
+  }).withFailureHandler(function (e) {
+    alert(e.message);
+    if (zeile) zeile.style.opacity = '1';
   }).uiSetStatus(leadId, st, tage, '');
 }
 
@@ -838,6 +1003,8 @@ function sucheAusfuehren(q) {
         + 'Abmeldung</button></div></div>';
     });
     zeig('sucheErgebnis', h);
+  }).withFailureHandler(function (e) {
+    fehler('sucheErgebnis', e.message);
   }).uiSearch(q, OWNER);
 }
 

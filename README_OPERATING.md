@@ -32,9 +32,14 @@ ist deshalb eine Bestätigung, die gesetzt wird, kein Messwert.
 
 Der Vorgang läuft in zwei Stufen: zuerst die Freigabe und die Reservierung von
 exakt 100 Kontakten — das dauert Sekunden. Danach holt die Seitenleiste die
-Entwürfe in Paketen zu 20 nach. Diese Trennung ist notwendig: 100 Mails mit je
-1,5 MB Anhang ergeben rund 200 MB, und Apps Script bricht nach sechs Minuten ab.
-Vorher lief beides in einem Aufruf, was den Knopf zuverlässig scheitern ließ.
+Entwürfe **automatisch nacheinander** in kleinen Paketen nach, ohne dass du
+klicken musst. Diese Trennung ist notwendig: 100 Mails mit je 1,5 MB Anhang
+ergeben rund 150 MB, und Apps Script bricht nach sechs Minuten ab. Vorher lief
+beides in einem Aufruf, was den Knopf zuverlässig scheitern ließ.
+
+Schlägt ein Teilpaket fehl (z. B. Zeitüberschreitung), stoppt die Seitenleiste
+und zeigt **„Vorgang sicher erneut versuchen"** — ein Klick setzt genau ab dem
+fehlgeschlagenen Paket fort, nichts wird doppelt angelegt oder übersprungen.
 
 Der Schnellstart arbeitet exakt: Sind nicht mindestens 100 sichere, eindeutige
 Jordi-Kontakte verfügbar, verändert er **null** Zeilen und legt keinen Batch an.
@@ -66,25 +71,34 @@ Sende-Knopf. Das Hineinziehen in den Ordner funktioniert unabhängig davon.
 im Ordner „Entwürfe" an. Kein Ziehen, kein Client-Verhalten, kein
 `X-Unsent`-Trick — und es funktioniert für jeden Outlook-Client gleich.
 
-Einmalig nötig: eine App-Registrierung in Entra ID mit der
-*Anwendungsberechtigung* `Mail.ReadWrite` und Administratorzustimmung. Danach:
+Einmalig nötig — **ohne Administrator möglich**: eine App-Registrierung in
+Entra ID mit der *delegierten* Berechtigung `Mail.ReadWrite` (nicht
+Anwendungsberechtigung — die würde tenant-weit wirken und bräuchte deshalb
+zwingend einen Admin). Delegiert heißt: du meldest dich einmalig selbst an
+und wirkst danach nur in deinem eigenen Postfach — genau das, was hier
+gebraucht wird. Details und die genauen Klick-Schritte stehen im Kopf von
+`engine/graph_drafts.py`. Danach:
 
 ```sh
 export HSB_GRAPH_TENANT_ID=...
 export HSB_GRAPH_CLIENT_ID=...
-export HSB_GRAPH_CLIENT_SECRET=...
 
 python3 engine/graph_drafts.py --batch HSB-... --pruefen        # nur Prüfung
 python3 engine/graph_drafts.py --batch HSB-... --limit 1        # ein Probelauf
 python3 engine/graph_drafts.py --batch HSB-...                  # alle
 ```
 
-Das Werkzeug ruft ausschließlich `POST /users/{postfach}/messages` auf. Die
-Graph-Aktion `.../send` kommt im Code nicht vor.
+Beim ersten Lauf zeigt das Werkzeug eine Internetadresse und einen kurzen
+Code — im Browser öffnen, Code eingeben, fertig. Merkt sich danach eine
+Anmeldung lokal, damit du dich nicht bei jedem Lauf neu anmelden musst.
 
-Empfehlenswert ist zusätzlich eine Anwendungszugriffsrichtlinie
-(`New-ApplicationAccessPolicy`), die die App auf genau die beiden HSB-Postfächer
-begrenzt statt auf den gesamten Tenant.
+Zeigt der Anmeldebildschirm „Genehmigung durch Administrator erforderlich",
+hat eure IT die Selbstzustimmung tenant-weit gesperrt — dann bitte kurz
+Rücksprache halten, wer die Berechtigung einmalig freigibt.
+
+Das Werkzeug ruft ausschließlich `POST /me/messages` auf, also im Postfach
+der gerade angemeldeten Person. Die Graph-Aktion `.../send` kommt im Code
+nicht vor.
 
 ---
 
@@ -211,13 +225,16 @@ Batch anfordert.
 Jeder Flyer ist rund 1,5 MB und steckt in jedem Entwurf. 100 Entwürfe sind
 also rund 150 MB.
 
-Deshalb entstehen **mehrere ZIP-Dateien statt einer**: je 20 Entwürfe ein
-Paket. Ein einziges großes ZIP würde Google Apps Script überlasten — das ist
-keine Bequemlichkeit, sondern eine harte Grenze.
+Deshalb entstehen **mehrere ZIP-Dateien statt einer**, je höchstens zehn
+Entwürfe ein Paket. Ein einziges großes ZIP würde Google Apps Script
+überlasten — das ist keine Bequemlichkeit, sondern eine harte Grenze.
 
 Für dich heißt das: **jedes Paket einzeln in Outlook importieren.** Bei 100
-Entwürfen sind das fünf Importe.
+Entwürfen sind das zehn Importe. Die Seitenleiste holt die Pakete beim
+Jordi-Schnellstart automatisch nacheinander; du musst nur noch jedes fertige
+Paket importieren.
 
-Erscheint der Hinweis „Noch nicht vollständig", war die Laufzeitgrenze
-erreicht. Ein Klick auf **Weiter ab Eintrag …** setzt genau dort fort — es geht
-nichts verloren und nichts wird doppelt erzeugt.
+Bricht ein Teilschritt ab (Laufzeitgrenze erreicht oder ein anderer Fehler),
+zeigt die Seitenleiste **„Vorgang sicher erneut versuchen"**. Ein Klick setzt
+genau ab dem fehlgeschlagenen Paket fort — es geht nichts verloren und nichts
+wird doppelt erzeugt.

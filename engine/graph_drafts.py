@@ -10,10 +10,10 @@ als unversendeten Entwurf oeffnen soll, wird von Outlook fuer Mac ignoriert
 und im neuen Outlook fuer Windows nicht mehr zuverlaessig ausgewertet.
 
 Der dokumentierte Weg von Microsoft ist stattdessen
-`POST /users/{postfach}/messages` mit `Content-Type: text/plain` und dem
-Base64-kodierten MIME der Nachricht. Der Entwurf entsteht dabei serverseitig
-im Ordner "Entwuerfe" des Postfachs - unabhaengig davon, welchen Outlook-
-Client der Bearbeiter benutzt.
+`POST /me/messages` mit `Content-Type: text/plain` und dem Base64-kodierten
+MIME der Nachricht. Der Entwurf entsteht dabei serverseitig im Ordner
+"Entwuerfe" des Postfachs der angemeldeten Person - unabhaengig davon,
+welchen Outlook-Client sie benutzt.
 
   https://learn.microsoft.com/en-us/graph/outlook-create-send-messages
 
@@ -23,18 +23,44 @@ Dieses Werkzeug ruft ausschliesslich `POST .../messages` auf. Die Graph-
 Aktion `POST .../messages/{id}/send` kommt hier nicht vor - der Versand
 bleibt ein bewusster Schritt eines Menschen in Outlook.
 
-Einmalige Einrichtung
----------------------
-Eine App-Registrierung in Entra ID mit der *Anwendungsberechtigung*
-`Mail.ReadWrite` und erteilter Administratorzustimmung. Danach:
+Einmalige Einrichtung - OHNE Administrator moeglich
+----------------------------------------------------
+Fruehere Fassungen dieses Werkzeugs nutzten eine *Anwendungsberechtigung*
+(Client-Credentials-Fluss). Application-Permissions wirken unbeaufsichtigt
+und tenant-weit - Microsoft laesst sie deshalb grundsaetzlich nur von einer
+Person mit einer Entra-Admin-Rolle freischalten (Global Administrator,
+Privileged Role Administrator, Application Administrator oder Cloud
+Application Administrator). Das ist Sicherheitsdesign, kein Konfigurations-
+detail, und laesst sich fuer diesen Berechtigungstyp nicht umgehen.
+
+Dieses Werkzeug braucht aber gar keine tenant-weite Wirkung - jede Person legt
+ohnehin nur Entwuerfe im EIGENEN Postfach an. Dafuer reicht eine *delegierte*
+Berechtigung, bei der sich die Person einmalig selbst per Geraetecode anmeldet
+und selbst zustimmt (Self-Consent) - ohne jede Administratorbeteiligung,
+sofern der Tenant Nutzerzustimmung fuer delegierte Berechtigungen nicht
+generell gesperrt hat. Ob das der Fall ist, zeigt erst der echte Versuch:
+zeigt der Anmeldebildschirm einen normalen Zustimmungsdialog, ist kein Admin
+noetig; zeigt er "Genehmigung durch Administrator erforderlich", ist das ein
+echter, hier dokumentierter externer Blocker.
+
+Einmalig in Entra ID (jede Person mit gewoehnlichem Nutzerkonto kann eine
+App-Registrierung anlegen - auch das braucht standardmaessig keinen Admin):
+
+  1. App-Registrierung anlegen, Typ "Mobile and desktop applications" bzw.
+     "Public client flows" = Ja aktivieren (kein Client-Secret noetig).
+  2. Unter "API permissions": Microsoft Graph -> Delegated permissions ->
+     `Mail.ReadWrite` hinzufuegen.
+  3. Client-ID und Tenant-ID aus der Uebersichtsseite der Registrierung
+     eintragen:
 
     export HSB_GRAPH_TENANT_ID=...
     export HSB_GRAPH_CLIENT_ID=...
-    export HSB_GRAPH_CLIENT_SECRET=...
 
-Empfehlenswert ist zusaetzlich eine Anwendungszugriffsrichtlinie
-(`New-ApplicationAccessPolicy`), die die App auf genau die beiden HSB-
-Postfaecher begrenzt, statt ihr den gesamten Tenant zu oeffnen.
+Beim ersten Lauf zeigt das Werkzeug eine URL und einen kurzen Code; nach der
+Anmeldung im Browser laeuft es automatisch weiter und merkt sich ein
+Refresh-Token lokal (`~/.hsb_graph_token_cache.json`, nur fuer den
+aktuellen Nutzer lesbar), damit spaetere Laeufe ohne erneute Anmeldung
+funktionieren, bis das Refresh-Token ablaeuft oder widerrufen wird.
 
 Aufruf
 ------
@@ -76,24 +102,137 @@ def _umgebung(name: str) -> str:
     return wert
 
 
-def token_holen() -> str:
-    """Client-Credentials-Fluss. Das Geheimnis verlaesst diese Funktion nicht."""
-    tenant = _umgebung("HSB_GRAPH_TENANT_ID")
-    daten = urllib.parse.urlencode({
-        "client_id": _umgebung("HSB_GRAPH_CLIENT_ID"),
-        "client_secret": _umgebung("HSB_GRAPH_CLIENT_SECRET"),
-        "scope": "https://graph.microsoft.com/.default",
-        "grant_type": "client_credentials",
-    }).encode()
+SCOPE = "https://graph.microsoft.com/Mail.ReadWrite offline_access"
+TOKEN_CACHE = Path.home() / ".hsb_graph_token_cache.json"
+
+
+def _cache_lesen() -> dict:
+    if not TOKEN_CACHE.exists():
+        return {}
+    try:
+        return json.loads(TOKEN_CACHE.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return {}
+
+
+def _cache_schreiben(daten: dict) -> None:
+    TOKEN_CACHE.write_text(json.dumps(daten), encoding="utf-8")
+    try:
+        os.chmod(TOKEN_CACHE, 0o600)
+    except OSError:
+        pass  # z. B. auf Dateisystemen ohne Unix-Rechte - kein harter Abbruch
+
+
+def _token_anfrage(tenant: str, felder: dict) -> dict | None:
+    """Einzelner Aufruf des Token-Endpunkts. `None` bei HTTP-Fehler statt
+    Ausnahme, weil Aufrufer (Refresh-Versuch, Geraetecode-Polling) selbst
+    entscheiden, ob ein Fehlschlag ein Abbruch oder nur ein "noch nicht" ist.
+    """
+    daten = urllib.parse.urlencode(felder).encode()
     req = urllib.request.Request(f"{LOGIN}/{tenant}/oauth2/v2.0/token", data=daten)
     try:
         with urllib.request.urlopen(req, timeout=30) as antwort:
-            return json.load(antwort)["access_token"]
+            return json.load(antwort)
+    except urllib.error.HTTPError as e:
+        try:
+            fehler = json.loads(e.read().decode("utf-8", "replace") or "{}")
+        except json.JSONDecodeError:
+            fehler = {}
+        fehler["_http_status"] = e.code
+        return fehler
+
+
+def _device_code_anfordern(tenant: str, client_id: str) -> dict:
+    daten = urllib.parse.urlencode({
+        "client_id": client_id, "scope": SCOPE,
+    }).encode()
+    req = urllib.request.Request(f"{LOGIN}/{tenant}/oauth2/v2.0/devicecode", data=daten)
+    try:
+        with urllib.request.urlopen(req, timeout=30) as antwort:
+            return json.load(antwort)
     except urllib.error.HTTPError as e:
         raise GraphFehler(
-            f"Anmeldung fehlgeschlagen ({e.code}). Pruefe Tenant, Client-ID "
-            f"und Geheimnis: {e.read().decode('utf-8', 'replace')[:400]}"
+            f"Geraetecode konnte nicht angefordert werden ({e.code}): "
+            f"{e.read().decode('utf-8', 'replace')[:400]}"
         ) from e
+
+
+def _mit_refresh_token(tenant: str, client_id: str, refresh_token: str) -> dict | None:
+    """Stiller Anmeldeversuch mit dem gespeicherten Refresh-Token. Gibt `None`
+    zurueck (statt eine Ausnahme zu werfen), wenn er nicht (mehr) gueltig ist -
+    das ist dann kein Fehler, sondern der Auftrag, sich erneut per
+    Geraetecode anzumelden.
+    """
+    antwort = _token_anfrage(tenant, {
+        "client_id": client_id,
+        "grant_type": "refresh_token",
+        "refresh_token": refresh_token,
+        "scope": SCOPE,
+    })
+    if antwort is None or "access_token" not in antwort:
+        return None
+    return antwort
+
+
+def _interaktive_geraetecode_anmeldung(tenant: str, client_id: str) -> dict:
+    """Einmalige, von einer Person durchgefuehrte Anmeldung. Delegierte
+    Berechtigung, Self-Consent der angemeldeten Person - keine
+    Administratorbeteiligung noetig, sofern der Tenant das zulaesst (siehe
+    Kopf dieser Datei).
+    """
+    code = _device_code_anfordern(tenant, client_id)
+    print("\nEinmalige Anmeldung noetig:")
+    print(f"  1. Im Browser oeffnen: {code['verification_uri']}")
+    print(f"  2. Diesen Code eingeben: {code['user_code']}\n")
+    print("  Warte auf Anmeldung ...")
+
+    intervall = int(code.get("interval", 5))
+    ablauf = time.time() + int(code.get("expires_in", 900))
+    while time.time() < ablauf:
+        time.sleep(intervall)
+        antwort = _token_anfrage(tenant, {
+            "client_id": client_id,
+            "grant_type": "urn:ietf:params:oauth:grant-type:device_code",
+            "device_code": code["device_code"],
+        })
+        if antwort and "access_token" in antwort:
+            return antwort
+        fehlercode = (antwort or {}).get("error", "")
+        if fehlercode == "authorization_pending":
+            continue
+        if fehlercode == "slow_down":
+            intervall += 5
+            continue
+        raise GraphFehler(
+            "Geraetecode-Anmeldung fehlgeschlagen: "
+            + (antwort or {}).get("error_description", fehlercode or "unbekannt")
+        )
+    raise GraphFehler("Geraetecode-Anmeldung: Zeit abgelaufen. Bitte erneut versuchen.")
+
+
+def token_holen() -> str:
+    """Delegierter Fluss: zuerst stiller Refresh-Versuch mit dem lokal
+    gemerkten Token, nur bei Bedarf eine neue interaktive Geraetecode-
+    Anmeldung. Kein Geheimnis in dieser Datei oder in Umgebungsvariablen -
+    anders als beim frueheren Client-Credentials-Fluss ist hier nichts
+    Tenant-weit Wirksames zu schuetzen.
+    """
+    tenant = _umgebung("HSB_GRAPH_TENANT_ID")
+    client_id = _umgebung("HSB_GRAPH_CLIENT_ID")
+
+    cache = _cache_lesen()
+    antwort = None
+    refresh_token = cache.get("refresh_token")
+    if refresh_token:
+        antwort = _mit_refresh_token(tenant, client_id, refresh_token)
+    if antwort is None:
+        antwort = _interaktive_geraetecode_anmeldung(tenant, client_id)
+
+    if antwort.get("refresh_token"):
+        _cache_schreiben({"refresh_token": antwort["refresh_token"]})
+    if "access_token" not in antwort:
+        raise GraphFehler(f"Anmeldung ohne Zugriffstoken abgeschlossen: {antwort}")
+    return antwort["access_token"]
 
 
 def _graph(methode: str, pfad: str, token: str, koerper: bytes | None = None,
@@ -129,22 +268,25 @@ def _graph(methode: str, pfad: str, token: str, koerper: bytes | None = None,
     raise GraphFehler(f"{methode} {pfad}: nach {versuche} Versuchen aufgegeben.")
 
 
-def postfach_pruefen(token: str, postfach: str) -> None:
-    """Fail-closed: ohne erreichbares Postfach wird nichts angelegt."""
-    p = urllib.parse.quote(postfach)
-    info = _graph("GET", f"/users/{p}?$select=mail,userPrincipalName", token)
+def identitaet_pruefen(token: str, erwartetes_postfach: str) -> None:
+    """Fail-closed: mit delegierter Berechtigung wirkt jeder Aufruf im
+    Postfach der ANGEMELDETEN Person (`/me`), nie in einem beliebigen
+    anderen. Diese Pruefung stellt sicher, dass sich die richtige Person
+    angemeldet hat, bevor irgendein Entwurf angelegt wird - sonst koennte
+    sich z. B. Joel anmelden, waehrend fuer Jordi Entwuerfe gedacht waren.
+    """
+    info = _graph("GET", "/me?$select=mail,userPrincipalName", token)
     erreicht = (info.get("mail") or info.get("userPrincipalName") or "").lower()
-    if postfach.lower() not in erreicht:
+    if erwartetes_postfach.lower() not in erreicht:
         raise GraphFehler(
-            f"Postfach {postfach} aufgeloest auf {erreicht!r} - abgebrochen, "
-            "damit keine Entwuerfe im falschen Postfach landen."
+            f"Angemeldet als {erreicht!r}, erwartet wurde {erwartetes_postfach} "
+            "- abgebrochen, damit keine Entwuerfe im falschen Postfach landen."
         )
 
 
-def entwurf_anlegen(token: str, postfach: str, mime: bytes) -> str:
-    """Legt genau einen Entwurf an und gibt dessen Kennung zurueck."""
-    p = urllib.parse.quote(postfach)
-    ergebnis = _graph("POST", f"/users/{p}/messages", token,
+def entwurf_anlegen(token: str, mime: bytes) -> str:
+    """Legt genau einen Entwurf im Postfach der angemeldeten Person an."""
+    ergebnis = _graph("POST", "/me/messages", token,
                       base64.b64encode(mime), typ="text/plain")
     return str(ergebnis.get("id", ""))
 
@@ -168,13 +310,21 @@ def main() -> int:
 
     quelle = Path(args.ordner).expanduser() / args.batch / "Entwuerfe"
     dateien = sorted(quelle.glob("*.eml"))
-    if not dateien:
-        raise SystemExit(
-            f"ABBRUCH: Keine EML-Dateien in {quelle}. Zuerst erzeugen mit:\n"
-            f"  python3 engine/make_drafts.py --batch {args.batch}")
-
     postfach = args.postfach
-    if not postfach:
+
+    if not dateien:
+        # --pruefen soll einen reinen Anmelde-/Verbindungstest ermoeglichen,
+        # OHNE dass vorher schon ein Batch erzeugt sein muss - genau dafuer
+        # ist der Modus da. Ohne Dateien laesst sich das Postfach nur nicht
+        # automatisch aus dem "From"-Kopf ableiten, deshalb dann --postfach
+        # explizit verlangen statt zu raten.
+        if not (args.pruefen and postfach):
+            raise SystemExit(
+                f"ABBRUCH: Keine EML-Dateien in {quelle}. Zuerst erzeugen mit:\n"
+                f"  python3 engine/make_drafts.py --batch {args.batch}\n"
+                "Fuer einen reinen Anmelde-Probelauf ohne vorhandene Entwuerfe:"
+                " --pruefen zusammen mit --postfach angeben.")
+    elif not postfach:
         import email
         import email.policy
         kopf = email.message_from_bytes(dateien[0].read_bytes(),
@@ -199,7 +349,7 @@ def main() -> int:
             "Bewusst wiederholen mit --erneut.")
 
     token = token_holen()
-    postfach_pruefen(token, postfach)
+    identitaet_pruefen(token, postfach)
     print("Anmeldung und Postfach geprueft.")
     if args.pruefen:
         print("Probelauf beendet - es wurde nichts angelegt.")
@@ -209,7 +359,7 @@ def main() -> int:
     kennungen, fehler = [], []
     for i, pfad in enumerate(ziel, 1):
         try:
-            kennungen.append(entwurf_anlegen(token, postfach, pfad.read_bytes()))
+            kennungen.append(entwurf_anlegen(token, pfad.read_bytes()))
         except GraphFehler as e:
             fehler.append((pfad.name, str(e)))
         if i % 10 == 0 or i == len(ziel):

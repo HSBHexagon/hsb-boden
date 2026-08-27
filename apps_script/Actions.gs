@@ -205,8 +205,24 @@ function chunk76_(b64) {
  * EML-Fallback: erzeugt die Entwuerfe eines Batches als ZIP-Pakete in Drive.
  * Funktioniert ohne Outlook-Verbindung, ohne Admin, ohne DNS.
  */
-var EML_CHUNK_SIZE = 20;
+// Zehn statt zwanzig: eine EML traegt den kompletten Flyer als Base64 und ist
+// damit rund 2 MB gross. Zehn Stueck sind etwa 20 MB Zeichenketten plus das
+// ZIP - das haelt Apps Script aus. Bei zwanzig lag der Spitzenbedarf bereits
+// bei rund 70 MB.
+var EML_CHUNK_SIZE = 10;
 
+/**
+ * Erzeugt GENAU EIN Teilpaket eines Batches und kehrt zurueck.
+ *
+ * Frueher lief diese Funktion in einer Schleife, bis der Batch fertig war
+ * oder vier Minuten um waren. Fuer 100 Kontakte hiess das fuenf Pakete in
+ * einem einzigen Lauf, also fuenfmal rund 40 MB Zeichenketten nacheinander -
+ * die haeufigste Ursache fuer einen Abbruch ohne verwertbare Meldung.
+ *
+ * Jetzt macht ein Aufruf ein Paket. Die Oberflaeche ruft so lange nach, bis
+ * `complete` wahr ist; der Nutzer sieht dabei den Fortschritt. Jeder Aufruf
+ * ist fuer sich kurz genug, und ein Abbruch kostet hoechstens ein Paket.
+ */
 function exportBatchAsEmlZip(batchId, startIndex) {
   const read = readLeadsCached_();
   const leads = read.leads.filter(function (l) {
@@ -214,52 +230,86 @@ function exportBatchAsEmlZip(batchId, startIndex) {
   });
   if (!leads.length) throw new Error('Keine Leads fuer Batch ' + batchId);
 
-  const ownerKey = normalizeOwner_(leads[0].Owner);
-  const verified = getVerifiedFlyer_(ownerKey);
-  // Genau einmal erzeugen - identisch fuer jede EML.
-  const pdfChunked = chunk76_(Utilities.base64Encode(verified.blob.getBytes()));
+  const von = Math.max(0, parseInt(startIndex, 10) || 0);
 
-  const folder = getOrCreateFolder_('HSB Sales OS Batches');
-  const started = new Date().getTime();
-  const parts = [];
-  let i = Math.max(0, parseInt(startIndex, 10) || 0);
-  let written = 0;
-
-  while (i < leads.length) {
-    // Vor jedem Teilpaket pruefen, ob noch Laufzeit bleibt (Limit 6 Minuten).
-    if (new Date().getTime() - started > 4 * 60 * 1000) break;
-
-    const slice = leads.slice(i, i + EML_CHUNK_SIZE);
-    const files = slice.map(function (l) {
-      const safe = String(l.Lead_ID).replace(/[^A-Za-z0-9._-]+/g, '-');
-      return Utilities.newBlob(
-        buildEml_(l, batchId, verified.flyer, pdfChunked),
-        'message/rfc822', ownerKey.toLowerCase() + '_' + safe + '.eml');
-    });
-
-    const part = Math.floor(i / EML_CHUNK_SIZE) + 1;
-    const name = batchId + '_teil' + ('0' + part).slice(-2) + '.zip';
-    const file = folder.createFile(Utilities.zip(files, name));
-    parts.push({
-      name: name, url: file.getUrl(), count: slice.length,
-      size_mb: Math.round(file.getSize() / 1048576 * 10) / 10
-    });
-    written += slice.length;
-    i += EML_CHUNK_SIZE;
+  if (von >= leads.length) {
+    const folderFertig = getOrCreateFolder_('HSB Sales OS Batches');
+    return {
+      batch_id: batchId, total: leads.length, written: 0, complete: true,
+      next_index: null, parts: [], folder_url: folderFertig.getUrl(),
+      asset_sha256: getVerifiedFlyer_(normalizeOwner_(leads[0].Owner)).sha256
+    };
   }
 
-  const done = i >= leads.length;
+  const ownerKey = normalizeOwner_(leads[0].Owner);
+  const verified = getVerifiedFlyer_(ownerKey);
+  const teil = Math.floor(von / EML_CHUNK_SIZE) + 1;
+  const gesamtTeile = Math.ceil(leads.length / EML_CHUNK_SIZE);
+  const name = batchId + '_teil' + ('0' + teil).slice(-2) + '.zip';
+  const slice = leads.slice(von, von + EML_CHUNK_SIZE);
+
+  // Denselben Document-Lock nehmen wie jede andere zustandsaendernde
+  // Funktion in dieser Datei (qualifyLeads, prepareBatch,
+  // processInboundEvent): ohne ihn waeren "Datei vorhanden?" und "Datei
+  // anlegen" zwei getrennte Schritte - zwei echte Parallelaufrufe fuer
+  // denselben Batch (z. B. zwei geoeffnete Sidebar-Tabs) koennten beide
+  // "nicht vorhanden" sehen und zwei gleichnamige ZIPs anlegen. Der
+  // clientseitige exportLaufend-Schutz in Sidebar.html verhindert nur
+  // Doppelklicks im selben Tab, keine Parallelitaet ueber Tabs/Sitzungen
+  // hinweg.
+  const lock = (typeof LockService !== 'undefined' && LockService.getDocumentLock)
+    ? LockService.getDocumentLock()
+    : null;
+  const hasLock = lock ? lock.tryLock(30000) : true;
+  if (!hasLock) {
+    // Anders als bei den drei Sheet-Schreibvorgaengen oben schuetzt dieser
+    // Lock die Drive-Ordnerpruefung/-Anlage, nicht Zellen im Sheet - die
+    // Meldung nennt deshalb bewusst das Batch-Paket statt "Sheet".
+    throw new Error('LOCK_TIMEOUT: Ein anderer Vorgang legt gerade ein Paket fuer diesen Batch an. Bitte in Kürze erneut versuchen.');
+  }
+
+  let file, folder;
+  try {
+    folder = getOrCreateFolder_('HSB Sales OS Batches');
+    // Ein Wiederholungsversuch darf kein zweites, gleichnamiges ZIP anlegen.
+    const vorhanden = folder.getFilesByName(name);
+    if (vorhanden.hasNext()) {
+      file = vorhanden.next();
+    } else {
+      // Genau einmal erzeugen - identisch fuer jede EML dieses Pakets.
+      const pdfChunked = chunk76_(Utilities.base64Encode(verified.blob.getBytes()));
+      const files = slice.map(function (l) {
+        const safe = String(l.Lead_ID).replace(/[^A-Za-z0-9._-]+/g, '-');
+        return Utilities.newBlob(
+          buildEml_(l, batchId, verified.flyer, pdfChunked),
+          'message/rfc822', ownerKey.toLowerCase() + '_' + safe + '.eml');
+      });
+      file = folder.createFile(Utilities.zip(files, name));
+    }
+  } finally {
+    if (lock && hasLock) {
+      try { lock.releaseLock(); } catch (_) {}
+    }
+  }
+
+  const weiter = von + slice.length;
+  const fertig = weiter >= leads.length;
   logActivity_(batchId, 'EML_EXPORT',
-    written + ' von ' + leads.length + ' Entwuerfen in ' + parts.length
-    + ' Teilpaket(en)' + (done ? '' : ' - Fortsetzung noetig ab ' + i));
+    'Teil ' + teil + ' von ' + gesamtTeile + ' mit ' + slice.length
+    + ' Entwuerfen' + (fertig ? ' - vollstaendig' : ''));
 
   return {
     batch_id: batchId,
     total: leads.length,
-    written: written,
-    complete: done,
-    next_index: done ? null : i,
-    parts: parts,
+    written: slice.length,
+    part_index: teil,
+    part_total: gesamtTeile,
+    complete: fertig,
+    next_index: fertig ? null : weiter,
+    parts: [{
+      name: name, url: file.getUrl(), count: slice.length,
+      size_mb: Math.round(file.getSize() / 1048576 * 10) / 10
+    }],
     folder_url: folder.getUrl(),
     asset_sha256: verified.sha256
   };
@@ -268,6 +318,32 @@ function exportBatchAsEmlZip(batchId, startIndex) {
 function getOrCreateFolder_(name) {
   const it = DriveApp.getFoldersByName(name);
   return it.hasNext() ? it.next() : DriveApp.createFolder(name);
+}
+
+/**
+ * Stempelt Sent_At (BATCHES-Blatt, Spalte 13) genau einmal je Batch - beim
+ * ersten bestaetigten Sendenachweis eines Leads aus diesem Batch. Spaetere
+ * Sendenachweise weiterer Leads desselben Batches ueberschreiben den
+ * Zeitpunkt nicht mehr.
+ *
+ * Der Status in Spalte 4 bleibt dabei bewusst unveraendert: activeBatchLeadIds_
+ * behandelt nur SENT/CANCELLED als abgeschlossen. Wuerde ein Batch schon beim
+ * ersten bestaetigten Lead auf SENT gesetzt, wuerden seine noch nicht
+ * bestaetigten Leads faelschlich als "nicht mehr aktiv" gelten und koennten in
+ * einen neuen Batch aufgenommen werden.
+ */
+function stampBatchSentAt_(batchId) {
+  if (!batchId) return;
+  const sh = sheet_(CFG.SHEET_BATCHES);
+  if (sh.getLastRow() < 2) return;
+  const ids = sh.getRange(2, 1, sh.getLastRow() - 1, 1).getValues();
+  for (let i = 0; i < ids.length; i++) {
+    if (String(ids[i][0]) === String(batchId)) {
+      const cell = sh.getRange(i + 2, 13);
+      if (!cell.getValue()) cell.setValue(nowIso_());
+      return;
+    }
+  }
 }
 
 /* --------------------------------------------------- Wiedervorlage / CRM */
@@ -563,11 +639,24 @@ function processInboundEvent(event) {
       eventsSh.setFrozenRows(1);
     } else if (eventsSh.getLastRow() >= 2) {
       // Deduplizierungspruefung
-      const existingEvents = eventsSh.getRange(2, 1, eventsSh.getLastRow() - 1, 7).getValues();
+      //
+      // Spalte 9 (Status) zaehlt bewusst mit: eine fruehere Zeile mit
+      // NEEDS_REVIEW hat NIE einen Lead-Zustand veraendert (Abschnitt 3 oben,
+      // "Kein Raten"). Sie ist deshalb kein abgeschlossenes Ereignis, sondern
+      // ein offener Klaerfall - wird dieselbe Event-/Message-ID spaeter
+      // erneut geliefert (z. B. weil inzwischen Internet_Message_ID am Lead
+      // nachgetragen wurde), muss die Zuordnung ERNEUT versucht werden.
+      // Ohne diese Ausnahme wuerde ein einmal unklarer Sendenachweis
+      // dauerhaft als "DUPLICATE_IGNORED" verschluckt, obwohl er inzwischen
+      // zuordenbar waere - das widerspraeche der Exactly-once-Garantie fuer
+      // SENT ebenso wie einer spaeteren Korrektur bei REPLY/BOUNCE.
+      const existingEvents = eventsSh.getRange(2, 1, eventsSh.getLastRow() - 1, 9).getValues();
       for (let ei = 0; ei < existingEvents.length; ei++) {
         const rowEvtId = String(existingEvents[ei][0]);
         const rowMsgId = String(existingEvents[ei][6]);
-        if (rowEvtId === eventId || (messageId && rowMsgId === messageId)) {
+        const rowStatus = String(existingEvents[ei][8] || '');
+        const isTerminal = rowStatus !== 'NEEDS_REVIEW';
+        if (isTerminal && (rowEvtId === eventId || (messageId && rowMsgId === messageId))) {
           return {
             ok: true,
             duplicate: true,
@@ -589,27 +678,46 @@ function processInboundEvent(event) {
       })[0];
     }
 
-    if (!matchedLead && (inReplyTo || messageId)) {
-      const searchRef = inReplyTo || messageId;
-      matchedLead = read.leads.filter(function (l) {
-        return (l.Internet_Message_ID && String(l.Internet_Message_ID) === searchRef)
-            || (l.Outlook_Message_ID && String(l.Outlook_Message_ID) === searchRef)
-            || (l.Draft_ID && String(l.Draft_ID) === searchRef);
-      })[0];
-    }
+    if (!matchedLead && eventType === 'SENT') {
+      // Sendenachweis-Korrelation: Microsoft dokumentiert, dass die normale
+      // Element-ID (hier Outlook_Message_ID/Draft_ID) sich aendern kann,
+      // wenn ein Element die Ordner wechselt - und genau das passiert beim
+      // Versand eines Entwurfs (Drafts -> Sent Items). Nur die
+      // Internet_Message_ID (RFC-5322 Message-ID, Teil des MIME-Inhalts)
+      // bleibt dabei inhaltsbedingt stabil. Ein SENT-Ereignis darf deshalb
+      // NUR ueber eine explizite Lead-ID oder ueber Internet_Message_ID
+      // zugeordnet werden - nie ueber Outlook_Message_ID/Draft_ID allein und
+      // nie ueber die E-Mail-Adresse (die beweist keinen bestimmten Versand,
+      // nur eine Adresse). Alles andere geht fail-closed nach NEEDS_REVIEW.
+      const ref = messageId || inReplyTo;
+      if (ref) {
+        matchedLead = read.leads.filter(function (l) {
+          return l.Internet_Message_ID && String(l.Internet_Message_ID) === ref;
+        })[0];
+      }
+    } else {
+      if (!matchedLead && (inReplyTo || messageId)) {
+        const searchRef = inReplyTo || messageId;
+        matchedLead = read.leads.filter(function (l) {
+          return (l.Internet_Message_ID && String(l.Internet_Message_ID) === searchRef)
+              || (l.Outlook_Message_ID && String(l.Outlook_Message_ID) === searchRef)
+              || (l.Draft_ID && String(l.Draft_ID) === searchRef);
+        })[0];
+      }
 
-    if (!matchedLead && email) {
-      const candidates = read.leads.filter(function (l) {
-        return String(l.Email || '').trim().toLowerCase() === email;
-      });
-      if (candidates.length === 1) {
-        matchedLead = candidates[0];
-      } else if (candidates.length > 1 && event.owner) {
-        const oNorm = normalizeOwner_(event.owner);
-        const ownerCandidates = candidates.filter(function (l) {
-          return normalizeOwner_(l.Owner) === oNorm;
+      if (!matchedLead && email) {
+        const candidates = read.leads.filter(function (l) {
+          return String(l.Email || '').trim().toLowerCase() === email;
         });
-        if (ownerCandidates.length === 1) matchedLead = ownerCandidates[0];
+        if (candidates.length === 1) {
+          matchedLead = candidates[0];
+        } else if (candidates.length > 1 && event.owner) {
+          const oNorm = normalizeOwner_(event.owner);
+          const ownerCandidates = candidates.filter(function (l) {
+            return normalizeOwner_(l.Owner) === oNorm;
+          });
+          if (ownerCandidates.length === 1) matchedLead = ownerCandidates[0];
+        }
       }
     }
 
@@ -643,6 +751,35 @@ function processInboundEvent(event) {
       setLeadStatus(leadId, 'SOFT_BOUNCE', 3, 'Soft Bounce: Wiedervorlage in 3 Tagen');
     } else if (eventType === 'OPT_OUT') {
       setLeadStatus(leadId, 'OPT_OUT', 0, 'Opt-out: Abmeldung vermerkt');
+    } else if (eventType === 'SENT') {
+      // Geschaeftsseitige Idempotenz zusaetzlich zur Event-/Message-ID-
+      // Dedup-Pruefung oben: Diese greift nur, wenn Event- ODER Message-ID
+      // identisch wiederkehren. Ein zweites, technisch anderes Sendesignal
+      // fuer denselben bereits bestaetigten Lead (z. B. ein erneuter
+      // Automatisierungslauf mit neuer Event-/Message-ID) darf trotzdem
+      // keine zweite Statusaenderung oder Aktivitaet erzeugen - SENT ist ein
+      // Einwegzustand.
+      if (String(matchedLead.Send_Status || '').toLowerCase() === 'sent') {
+        eventsSh.appendRow([
+          eventId, ts, eventType, leadId, owner,
+          email, messageId, inReplyTo, 'ALREADY_SENT_IGNORED',
+          'Lead bereits als SENT vermerkt - keine erneute Statusaenderung/Aktivitaet'
+        ]);
+        return {
+          ok: true, matched: true, lead_id: leadId, owner: owner,
+          event_type: eventType, status: 'ALREADY_SENT_IGNORED'
+        };
+      }
+      // Zwei Beweisstufen, die im Audit-Trail unterscheidbar bleiben muessen:
+      // ein technischer Nachweis (Message-Korrelation) sagt "das System hat
+      // es gesehen", eine reine Lead-ID-Bestaetigung ohne Message-Bezug
+      // (siehe confirmBatchSent unten) sagt nur "ein Mensch hat es erklaert".
+      const beleg = messageId || inReplyTo;
+      const hinweis = beleg
+        ? 'Sendenachweis abgeglichen (' + beleg + ')'
+        : 'Betreiber-Bestaetigung: manueller Versand ohne automatischen Nachweis';
+      setLeadStatus(leadId, 'SENT', 0, hinweis);
+      stampBatchSentAt_(matchedLead.Batch_ID);
     }
 
     eventsSh.appendRow([
@@ -667,4 +804,66 @@ function processInboundEvent(event) {
       try { lock.releaseLock(); } catch (_) {}
     }
   }
+}
+
+/**
+ * Betreiber-Bestaetigung: "Ich habe diesen Batch tatsaechlich in Outlook
+ * versendet." Es gibt (noch) keine lebende Power-Automate/Graph-Sent-
+ * Trigger-Integration, die einen echten Versand automatisch beobachten und
+ * melden koennte (siehe PROJECT_STATE.md) - bis dahin ist das hier die
+ * einzige Moeglichkeit, SENT ueberhaupt zu setzen. Bewusst KEIN direktes
+ * Schreiben auf Send_Status: jeder Lead laeuft durch dieselbe
+ * processInboundEvent()-Logik wie ein technischer Sendenachweis und erbt
+ * damit alle dort bereits gebauten und getesteten Garantien - dieselbe
+ * Exactly-once-Sperre (ALREADY_SENT_IGNORED bei Wiederholung), denselben
+ * INBOUND_EVENTS-Audit-Eintrag, dieselbe Batch-Sent_At-Stempelung. Die
+ * explizite Lead-ID ist dabei die staerkste Korrelationsstufe, die
+ * processInboundEvent kennt - hier zu Recht, denn ein Mensch bestaetigt
+ * direkt, nicht ein System ueber eine Message-ID.
+ *
+ * In Bloecken statt auf einmal, aus demselben Grund wie beim EML-Export:
+ * jeder processInboundEvent()-Aufruf liest ueber readLeadsCached_() das
+ * komplette ALL_LEADS-Blatt neu ein, weil der Cache nach jeder erfolgreichen
+ * Statusaenderung ungueltig wird. Hundert Wiederholungen in einem einzigen
+ * Serveraufruf waeren unnoetig nah an der Sechs-Minuten-Grenze.
+ */
+var CONFIRM_CHUNK_SIZE = 20;
+
+function confirmBatchSent(batchId, startIndex) {
+  const id = String(batchId || '').trim();
+  if (!id) throw new Error('Keine Batch-Kennung uebergeben.');
+  const alleLeads = readLeadsCached_().leads.filter(function (l) {
+    return String(l.Batch_ID) === id;
+  });
+  if (!alleLeads.length) throw new Error('Keine Leads fuer Batch ' + id);
+
+  const von = Math.max(0, parseInt(startIndex, 10) || 0);
+  const slice = alleLeads.slice(von, von + CONFIRM_CHUNK_SIZE);
+  let neuBestaetigt = 0;
+  let bereitsGesendet = 0;
+
+  slice.forEach(function (lead) {
+    const res = processInboundEvent({
+      event_id: 'OPCONFIRM-' + id + '-' + lead.Lead_ID,
+      event_type: 'SENT',
+      lead_id: lead.Lead_ID
+    });
+    if (res.status === 'ALREADY_SENT_IGNORED' || res.status === 'DUPLICATE_IGNORED' || res.duplicate) {
+      bereitsGesendet++;
+    } else if (res.matched) {
+      neuBestaetigt++;
+    }
+  });
+
+  const weiter = von + slice.length;
+  const fertig = weiter >= alleLeads.length;
+  return {
+    batch_id: id,
+    total: alleLeads.length,
+    verarbeitet: slice.length,
+    neu_bestaetigt: neuBestaetigt,
+    bereits_gesendet: bereitsGesendet,
+    complete: fertig,
+    next_index: fertig ? null : weiter
+  };
 }

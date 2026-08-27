@@ -46,6 +46,7 @@ function makeRange(sheet, row, col, numRows, numCols) {
       });
       return this;
     },
+    getValue: function () { return this.getValues()[0][0]; },
     setValue: function (v) { return this.setValues([[v]]); },
     setFontWeight: function () { return this; },
     setBackground: function () { return this; }
@@ -130,6 +131,13 @@ const sandbox = {
 
   DriveApp: {
     _files: {},
+    // Ordner nach Namen persistiert, wie Drive es tut. Vorher gab
+    // getFoldersByName() immer "nicht gefunden" zurueck, sodass jeder Aufruf
+    // von getOrCreateFolder_() einen NEUEN Ordner mit leerem Dateibestand
+    // anlegte - der Wiederholungsschutz (getFilesByName) griff dadurch nie
+    // wirklich, der bestehende Test dazu war ein Scheingruen. Echte Drive-
+    // Ordner sind pro Name eindeutig; das bildet dieser Stub jetzt ab.
+    _folders: {},
     getFileById: function (id) {
       const f = DriveApp._files[id];
       if (!f) throw new Error('Datei nicht gefunden: ' + id);
@@ -142,16 +150,50 @@ const sandbox = {
         }
       };
     },
-    getFoldersByName: function () { return { hasNext: function () { return false; } }; },
-    createFolder: function () {
+    getFoldersByName: function (name) {
+      const f = DriveApp._folders[name];
+      let geliefert = false;
       return {
+        hasNext: function () { return !!f && !geliefert; },
+        next: function () { geliefert = true; return f; }
+      };
+    },
+    // Der Ordner merkt sich angelegte Dateien, damit getFilesByName wie in
+    // Drive antwortet. Nur so laesst sich pruefen, dass ein Wiederholungs-
+    // versuch kein zweites gleichnamiges ZIP erzeugt.
+    createFolder: function (name) {
+      const dateien = {};
+      const ordner = {
+        _dateien: dateien,
         createFile: function (blob) {
-          return { getUrl: function () { return 'https://example.invalid/f'; },
-                   getName: function () { return blob._name || 'x.zip'; },
-                   getSize: function () { return 1024; } };
+          const n = blob._name || 'x.zip';
+          const datei = {
+            getUrl: function () { return 'https://example.invalid/f'; },
+            getName: function () { return n; },
+            getSize: function () { return 1024; }
+          };
+          dateien[n] = (dateien[n] || 0) + 1;
+          ordner._letzte = datei;
+          return datei;
+        },
+        getFilesByName: function (n) {
+          const da = Object.prototype.hasOwnProperty.call(dateien, n);
+          let geliefert = false;
+          return {
+            hasNext: function () { return da && !geliefert; },
+            next: function () {
+              geliefert = true;
+              return { getUrl: function () { return 'https://example.invalid/f'; },
+                       getName: function () { return n; },
+                       getSize: function () { return 1024; } };
+            }
+          };
         },
         getUrl: function () { return 'https://example.invalid/folder'; }
       };
+      DriveApp._folders[name] = ordner;
+      DriveApp._letzterOrdner = ordner;
+      return ordner;
     }
   },
 
@@ -273,6 +315,10 @@ function setupSheet(n, owner, over) {
     INBOUND_EVENTS: makeSheet('INBOUND_EVENTS', [])
   };
   ctx.invalidateLeadsCache_();
+  // Persistierte Drive-Ordner gehoeren nicht zum Sheet-Zustand, muessen aber
+  // ebenso pro Test isoliert werden - sonst koennten Batch-ZIPs aus einem
+  // frueheren Test faelschlich als "bereits vorhanden" erscheinen.
+  DriveApp._folders = {};
 }
 
 function loadRealFlyers() {
@@ -488,12 +534,17 @@ function testJordi100OneClick() {
   const x = ctx.uiExportEml(r.data.batch.batch_id, 0);
   check('Export: Aufruf mit Einzelwerten funktioniert', x.ok === true,
         x.error || 'ok');
-  check('Export: 100 Outlook-Entwuerfe erzeugt',
-        x.ok && x.data.written === 100,
-        x.ok ? 'written=' + x.data.written : 'kein Export');
-  check('Export: fuenf ZIP-Pakete zu je hoechstens 20',
-        x.ok && x.data.parts.length === 5
-          && x.data.parts.every(function (p) { return p.count <= 20; }));
+  let idx = x.ok ? x.data.next_index : null, ges = x.ok ? x.data.written : 0;
+  let pakete = 1, schutz = 0;
+  while (idx !== null && schutz++ < 30) {
+    const w = ctx.uiExportEml(r.data.batch.batch_id, idx);
+    if (!w.ok) break;
+    ges += w.data.written; idx = w.data.next_index; pakete++;
+  }
+  check('Export: 100 Outlook-Entwuerfe ueber die Schleife erzeugt',
+        ges === 100, 'written=' + ges + ' in ' + pakete + ' Aufrufen');
+  check('Export: zehn Pakete zu je hoechstens zehn Entwuerfen',
+        pakete === 10, 'pakete=' + pakete);
   check('Export: ohne Batch-Kennung sauberer Fehler statt Absturz',
         ctx.uiExportEml('', 0).ok === false);
 
@@ -614,6 +665,71 @@ function testJordi100UiContract() {
         !/(sendEmail|SendEmailV2|GmailApp|SendDraftEmail)/.test(sidebar));
 }
 
+/**
+ * Deckt die zwei Klassen von Oberflaechen-Fehlern ab, die der unabhaengige
+ * Review verlangt: den haengenden Spinner (Erfolgshandler ohne Fehlerhandler)
+ * und den manuellen Weiterklick fuer etwas, das automatisch weiterlaufen
+ * sollte. Beides ist eine reine Textpruefung gegen die ausgelieferte
+ * Sidebar.html - es gibt keinen Browser in dieser Testumgebung.
+ */
+function testSidebarFailureHandling() {
+  const sidebar = fs.readFileSync(path.join(AS, 'Sidebar.html'), 'utf8');
+
+  function ketteVor(name) {
+    const idx = sidebar.search(new RegExp('\\.' + name + '\\('));
+    if (idx < 0) return null;
+    const start = sidebar.lastIndexOf('google.script.run', idx);
+    return start < 0 ? null : sidebar.slice(start, idx);
+  }
+
+  // Jeder dieser Aufrufe setzt vorher eine Ladeanzeige und veraendert
+  // Server-Zustand. Ohne withFailureHandler haengt die Anzeige bei einem
+  // echten Apps-Script-Fehler (Timeout, Ausnahme ausserhalb try/catch) fuer
+  // immer - der reine {ok:false}-Zweig im Erfolgshandler faengt das nicht,
+  // weil ein Plattformfehler den Erfolgshandler gar nicht erst aufruft.
+  ['uiEnsureColumns', 'uiQualify', 'uiPrepareBatch', 'uiJordi100',
+   'uiExportEml', 'uiGetBatches', 'uiGetSetupState', 'uiApproveBatch',
+   'uiSetStatus', 'uiGetDue', 'uiSearch', 'uiConfirmBatchSent'
+  ].forEach(function (name) {
+    const kette = ketteVor(name);
+    check('Kritischer Aufruf ' + name + ' hat withFailureHandler',
+          !!kette && /withFailureHandler/.test(kette),
+          kette ? 'gefunden, aber ohne Fehlerhandler' : 'Aufruf nicht gefunden');
+  });
+
+  // Fruehere Fassung verlangte einen manuellen Klick auf "Weiter ab X" fuer
+  // jedes einzelne Teilpaket - bei zehn Teilpaketen also neun Klicks. Die
+  // Erzeugung muss sich nach einem Erfolg selbst fortsetzen.
+  const emlExportBody = (function () {
+    const start = sidebar.indexOf('function emlExport(');
+    if (start < 0) return '';
+    let tiefe = 0, i = start, began = false, out = '';
+    for (; i < sidebar.length; i++) {
+      const c = sidebar[i];
+      if (c === '{') { tiefe++; began = true; }
+      if (began) out += c;
+      if (c === '}') { tiefe--; if (began && tiefe === 0) break; }
+    }
+    return out;
+  })();
+  check('emlExport-Funktion gefunden', emlExportBody.length > 0);
+  check('Erfolgsfall ruft bei unvollstaendigem Batch automatisch das naechste '
+        + 'Teilpaket ab (kein Klick noetig)',
+        /!d\.complete[\s\S]{0,400}emlExport\(/.test(emlExportBody));
+  check('Ein Fehlschlag bietet einen Wiederholen-Knopf statt bei Null neu zu '
+        + 'starten',
+        /withFailureHandler[\s\S]*onclick="emlExport\(/.test(emlExportBody)
+        || /onclick="emlExport\([^,]+,\s*von/.test(emlExportBody));
+  check('Parallelaufrufe fuer denselben Batch werden clientseitig verhindert '
+        + '(Doppelklick-Schutz)',
+        /exportLaufend/.test(emlExportBody) || /exportAktiv/.test(emlExportBody));
+  check('Keine veraltete feste Paketgroesse "je 20" mehr im Text',
+        !/je 20/.test(sidebar));
+  check('Keine veraltete feste Paketanzahl "fuenf" mehr im Jordi-100-Text '
+        + '(EML_CHUNK_SIZE bestimmt die tatsaechliche Anzahl)',
+        !/f[üu]nf Outlook-Pakete/.test(sidebar));
+}
+
 function testSidebarServerContract() {
   setupSheet(3, 'JORDI');
   const dashboard = ctx.uiGetDashboard();
@@ -726,23 +842,172 @@ function testEmlExportChunking() {
   const b = ctx.prepareBatch({ owner: 'JORDI', count: 45 });
   check('Batch fuer Export vorbereitet', b.stats.selected_count === 45);
 
-  const exp = ctx.exportBatchAsEmlZip(b.batch_id, 0);
-  check('Export liefert Teilpakete', exp.parts.length === 3,
-        exp.parts.length + ' Pakete');
-  check('Export deckt alle Entwuerfe ab', exp.written === 45,
-        'written=' + exp.written + ' von ' + exp.total);
-  check('Export als vollstaendig markiert', exp.complete === true);
-  check('kein Fortsetzungsindex noetig', exp.next_index === null);
+  // Ein Aufruf erzeugt genau ein Teilpaket. Das begrenzt den Speicherbedarf
+  // eines Laufs und macht den Fortschritt sichtbar. Die Oberflaeche ruft
+  // nach, bis complete wahr ist - genau das wird hier nachgefahren.
+  const erste = ctx.exportBatchAsEmlZip(b.batch_id, 0);
+  check('Export liefert genau ein Teilpaket pro Aufruf',
+        erste.parts.length === 1, erste.parts.length + ' Pakete');
+  check('erstes Teilpaket hat Paketgroesse', erste.written === 10,
+        'written=' + erste.written);
+  check('Export noch nicht vollstaendig', erste.complete === false);
+  check('Fortsetzungsindex genannt', erste.next_index === 10,
+        'next=' + erste.next_index);
+  check('Teilnummerierung ausgewiesen',
+        erste.part_index === 1 && erste.part_total === 5,
+        erste.part_index + '/' + erste.part_total);
+  check('Export nennt den Asset-Hash',
+        erste.asset_sha256 === FLYERS_.JORDI.sha256);
 
-  const sumCount = exp.parts.reduce(function (s, p) { return s + p.count; }, 0);
-  check('Summe der Teilpakete = Gesamtzahl', sumCount === 45, 'sum=' + sumCount);
-  check('kein Teilpaket groesser als das Limit',
-        exp.parts.every(function (p) { return p.count <= 20; }));
-  check('Export nennt den Asset-Hash', exp.asset_sha256 === FLYERS_.JORDI.sha256);
+  let index = erste.next_index, summe = erste.written, runden = 1;
+  const namen = { };
+  erste.parts.forEach(function (x) { namen[x.name] = true; });
+  while (index !== null && runden < 20) {
+    const r = ctx.exportBatchAsEmlZip(b.batch_id, index);
+    summe += r.written;
+    r.parts.forEach(function (x) { namen[x.name] = true; });
+    index = r.next_index;
+    runden++;
+  }
+  check('Schleife deckt alle Entwuerfe ab', summe === 45,
+        'summe=' + summe + ' in ' + runden + ' Aufrufen');
+  check('genau fuenf verschiedene Teilpakete',
+        Object.keys(namen).length === 5, Object.keys(namen).join(','));
+  check('Schleife endet von selbst', index === null);
 
-  const exp2 = ctx.exportBatchAsEmlZip(b.batch_id, 40);
-  check('Fortsetzung ab Index 40 liefert nur den Rest', exp2.written === 5,
-        'written=' + exp2.written);
+  // Ein Wiederholungsversuch darf kein zweites gleichnamiges ZIP anlegen.
+  const nochmal = ctx.exportBatchAsEmlZip(b.batch_id, 0);
+  check('Wiederholung legt kein zweites ZIP an',
+        DriveApp._letzterOrdner._dateien[nochmal.parts[0].name] === 1,
+        'Anlagen=' + DriveApp._letzterOrdner._dateien[nochmal.parts[0].name]);
+
+  // Ueber das Ende hinaus darf nichts kaputtgehen.
+  const dahinter = ctx.exportBatchAsEmlZip(b.batch_id, 45);
+  check('Aufruf hinter dem Ende meldet vollstaendig',
+        dahinter.complete === true && dahinter.written === 0);
+}
+
+/**
+ * Zwei Randfaelle, die reine Existenzpruefung nicht abdeckt:
+ *
+ * 1. Ein Drive-Fehler mitten in der Paketfolge darf nur das eine betroffene
+ *    Paket kosten - bereits fertige Pakete bleiben unberuehrt, und ein
+ *    Wiederholungsversuch legt genau das fehlende Paket nach, nicht die
+ *    schon vorhandenen erneut.
+ * 2. Ein Client, der eine erfolgreiche Antwort "verliert" (Reload,
+ *    abgebrochener Callback) und deshalb wieder bei Index 0 anfragt, darf
+ *    keine Duplikate erzeugen - er muss die bereits erzeugten Pakete
+ *    wiederfinden statt sie neu anzulegen.
+ */
+function testExportRetryAndRecovery() {
+  loadRealFlyers();
+  setupSheet(23, 'JORDI');
+  const b = ctx.prepareBatch({ owner: 'JORDI', count: 23 });
+  check('Batch fuer Retry-Test vorbereitet (3 Teilpakete: 10/10/3)',
+        b.stats.selected_count === 23);
+
+  const teil1 = ctx.exportBatchAsEmlZip(b.batch_id, 0);
+  check('Teil 1 erzeugt', teil1.written === 10 && teil1.complete === false);
+
+  const ordner = DriveApp._letzterOrdner;
+  const teil1Name = b.batch_id + '_teil01.zip';
+  const teil2Name = b.batch_id + '_teil02.zip';
+  const teil3Name = b.batch_id + '_teil03.zip';
+  const echtCreateFile = ordner.createFile;
+  ordner.createFile = function (blob) {
+    if (blob._name === teil2Name) {
+      throw new Error('Simulierter Drive-Fehler beim Anlegen von Teil 2');
+    }
+    return echtCreateFile.call(ordner, blob);
+  };
+
+  let fehlerAusgeloest = false;
+  try {
+    ctx.exportBatchAsEmlZip(b.batch_id, teil1.next_index);
+  } catch (e) {
+    fehlerAusgeloest = true;
+  }
+  check('Mitten in der Folge: Fehler bei Teil 2 wird nicht verschluckt',
+        fehlerAusgeloest);
+  check('Teil 1 bleibt nach dem Fehlschlag unberuehrt',
+        ordner._dateien[teil1Name] === 1);
+  check('Teil 2 wurde beim Fehlschlag NICHT angelegt',
+        !Object.prototype.hasOwnProperty.call(ordner._dateien, teil2Name));
+
+  ordner.createFile = echtCreateFile;
+  const retryTeil2 = ctx.exportBatchAsEmlZip(b.batch_id, teil1.next_index);
+  check('Wiederholung erzeugt nur das fehlgeschlagene Teil 2',
+        retryTeil2.written === 10 && retryTeil2.parts[0].name === teil2Name);
+  check('Teil 1 wurde durch den Retry NICHT doppelt angelegt',
+        ordner._dateien[teil1Name] === 1);
+
+  const teil3 = ctx.exportBatchAsEmlZip(b.batch_id, retryTeil2.next_index);
+  check('Teil 3 (Rest) schliesst den Batch ab',
+        teil3.written === 3 && teil3.complete === true);
+
+  const zaehleTeile = function () {
+    return [teil1Name, teil2Name, teil3Name].filter(function (n) {
+      return Object.prototype.hasOwnProperty.call(ordner._dateien, n);
+    }).length;
+  };
+  check('Nach Fehler und Retry existieren genau drei Teilpakete, keine Duplikate',
+        zaehleTeile() === 3, 'gefunden=' + zaehleTeile());
+
+  // --- Szenario 2: verlorene Erfolgsantwort / Reload --------------------
+  // Ein Client, der die Antwort zu Teil 1 nie sah (Netzwerkfehler,
+  // Sidebar-Reload), fragt nach einem Neustart wieder bei Index 0 an.
+  const nachReload = ctx.exportBatchAsEmlZip(b.batch_id, 0);
+  check('Reload-Anfrage bei Index 0 liefert Teil 1 erneut, ohne ihn neu anzulegen',
+        nachReload.parts[0].name === teil1Name && ordner._dateien[teil1Name] === 1);
+  check('Reload-Anfrage meldet korrekt: noch nicht fertig, weiter bei Teil 2',
+        nachReload.complete === false && nachReload.next_index === 10);
+
+  // Die Oberflaeche wuerde jetzt automatisch weiterlaufen, bis complete.
+  let weiterIndex = nachReload.next_index, schutz = 0;
+  while (weiterIndex !== null && schutz++ < 10) {
+    const r = ctx.exportBatchAsEmlZip(b.batch_id, weiterIndex);
+    weiterIndex = r.next_index;
+  }
+  check('Nach dem simulierten Reload bleiben es genau drei Teilpakete',
+        zaehleTeile() === 3, 'gefunden=' + zaehleTeile());
+  check('Kein Teilpaket wurde durch den Reload mehrfach angelegt',
+        ordner._dateien[teil1Name] === 1 && ordner._dateien[teil2Name] === 1
+        && ordner._dateien[teil3Name] === 1);
+}
+
+/**
+ * Belegt die Wiederaufnahme, wenn die Oberflaeche eine erfolgreiche Antwort
+ * "verliert" (Netzwerkfehler, Reload, geschlossener Tab): der Server hat den
+ * Batch schon committet, bevor er antwortet - ein Reload muss ihn ueber
+ * uiGetBatches/getBatches wiederfinden, statt einen zweiten anzulegen.
+ */
+function testBatchRecoveryAfterLostCallback() {
+  setupSheet(30, 'JOEL');
+  const erster = ctx.prepareBatch({ owner: 'JOEL', count: 12, campaign: 'lost-callback' });
+  check('Batch wurde server-seitig committet', erster.stats.selected_count === 12);
+
+  // "Reload": die Oberflaeche kennt den Batch nicht mehr aus dem Speicher,
+  // fragt aber ueber getBatches nach - das liest ausschliesslich das
+  // persistierte Blatt BATCHES, nicht Client-Zustand.
+  const liste = ctx.getBatches('JOEL', 12);
+  const gefunden = liste.filter(function (b) { return b.batch_id === erster.batch_id; });
+  check('Reload findet den bereits committeten Batch ueber getBatches',
+        gefunden.length === 1, 'Treffer=' + gefunden.length);
+  check('Gefundener Batch zeigt die korrekte Anzahl',
+        gefunden.length === 1 && gefunden[0].selected === 12);
+
+  // Ein erneuter prepareBatch-Aufruf mit derselben Batch-ID (der
+  // Wiederaufnahme-Pfad einer robusten Oberflaeche) darf keinen zweiten
+  // Batch anlegen.
+  const wiederholt = ctx.prepareBatch({
+    owner: 'JOEL', count: 12, campaign: 'lost-callback', batch_id: erster.batch_id
+  });
+  check('Wiederaufnahme ueber dieselbe Batch-ID meldet already_processed',
+        wiederholt.already_processed === true);
+  const listeNachher = ctx.getBatches('JOEL', 50);
+  const treffer = listeNachher.filter(function (b) { return b.batch_id === erster.batch_id; });
+  check('Kein zweiter Batch-Datensatz durch die Wiederaufnahme',
+        treffer.length === 1, 'BATCHES-Zeilen=' + treffer.length);
 }
 
 function testFollowUps() {
@@ -884,6 +1149,26 @@ function testLockServiceAndConcurrency() {
   check('Concurrency: beide Batches vollstaendig befuellt',
         op1.stats.selected_count === 20 && op2.stats.selected_count === 20,
         'b1=' + op1.stats.selected_count + ' b2=' + op2.stats.selected_count);
+
+  // 3. Derselbe Lock schuetzt auch die Drive-Ordnerpruefung/-Anlage in
+  // exportBatchAsEmlZip - ohne ihn koennten zwei echte Parallelaufrufe fuer
+  // denselben Batch beide "Datei nicht vorhanden" sehen (siehe
+  // testExportRetryAndRecovery fuer den sequentiellen Retry-Nachweis).
+  loadRealFlyers();
+  const expBatch = ctx.prepareBatch({ owner: 'JORDI', count: 3 });
+  sandbox.LockService._forceTimeout = true;
+  let exportLockFailed = false;
+  try {
+    ctx.exportBatchAsEmlZip(expBatch.batch_id, 0);
+  } catch (e) {
+    exportLockFailed = /LOCK_TIMEOUT/.test(e.message);
+  }
+  check('exportBatchAsEmlZip: LockService-Timeout wird fail-closed abgewiesen',
+        exportLockFailed);
+  sandbox.LockService._forceTimeout = false;
+  const expDochOk = ctx.exportBatchAsEmlZip(expBatch.batch_id, 0);
+  check('exportBatchAsEmlZip: nach Freigabe der Sperre funktioniert der Export',
+        expDochOk.written === 3 && expDochOk.complete === true);
 }
 
 function testIdempotency() {
@@ -999,11 +1284,228 @@ function testInboundEvents() {
         lastEvt[3] === '', 'lead_id=' + lastEvt[3]);
 }
 
+/**
+ * Post-Send-Reconciliation: ein SENT-Event darf nur bei starker,
+ * bewegungsstabiler Korrelation (Internet_Message_ID / explizite Lead-ID)
+ * den Status aendern - nie ueber E-Mail-Adresse oder ueber eine ID, die sich
+ * beim Verschieben Entwurf -> Gesendete Objekte aendern kann
+ * (Outlook_Message_ID/Draft_ID allein reicht nicht). Erneutes Einspielen darf
+ * niemals eine zweite Statusaenderung, Aktivitaet oder Wiedervorlage
+ * erzeugen. ZIP/EML/Entwurf duerfen SENT niemals implizieren.
+ */
+function testPostSendReconciliation() {
+  loadRealFlyers();
+  setupSheet(20, 'JORDI');
+
+  const b = ctx.prepareBatch({ owner: 'JORDI', count: 5, batch_id: 'HSB-20260827-JORDI-RECON1' });
+  const lead1 = b.leads[0];
+  const lead2 = b.leads[1];
+  const lead4 = b.leads[3];
+  const read0 = ctx.readLeads_();
+
+  const setCol = function (lead, field, value) {
+    const l = read0.leads.filter(function (x) { return x.Lead_ID === lead.Lead_ID; })[0];
+    SHEETS.ALL_LEADS._data[l._row - 1][read0.index[field]] = value;
+  };
+  setCol(lead1, 'Internet_Message_ID', '<msg-sent-001@hsb-boden.de>');
+  setCol(lead2, 'Internet_Message_ID', '<msg-sent-002@hsb-boden.de>');
+  // lead4 hat NUR eine Outlook_Message_ID (Drive-/Graph-Element-ID) - genau
+  // der Fall, in dem sich die ID beim Verschieben nach "Gesendete Objekte"
+  // aendern kann. Ohne Internet_Message_ID darf daraus kein Treffer werden.
+  setCol(lead4, 'Outlook_Message_ID', 'AAMkAGdriftable==');
+  ctx.invalidateLeadsCache_();
+
+  // Exporte/Entwuerfe duerfen SENT niemals implizieren.
+  ctx.exportBatchAsEmlZip(b.batch_id, 0);
+  const afterExport = ctx.readLeads_().leads.filter(function (l) {
+    return l.Batch_ID === b.batch_id;
+  });
+  check('Reconciliation: EML-Export impliziert kein SENT',
+        afterExport.every(function (l) { return String(l.Send_Status || '').toLowerCase() !== 'sent'; }));
+
+  // 1. Echter Sendenachweis ueber Internet_Message_ID -> genau einmal SENT
+  const actBefore = SHEETS.ACTIVITIES._data.length;
+  const res1 = ctx.processInboundEvent({
+    event_id: 'EVT-SENT-001',
+    event_type: 'SENT',
+    message_id: '<msg-sent-001@hsb-boden.de>',
+    email: lead1.Email
+  });
+  check('Reconciliation: SENT-Event ueber Internet_Message_ID zugeordnet',
+        res1.matched === true && res1.lead_id === lead1.Lead_ID, JSON.stringify(res1));
+
+  const l1AfterSent = ctx.readLeads_().leads.filter(function (l) { return l.Lead_ID === lead1.Lead_ID; })[0];
+  check('Reconciliation: Send_Status = sent', String(l1AfterSent.Send_Status).toLowerCase() === 'sent',
+        l1AfterSent.Send_Status);
+  check('Reconciliation: Sent_At gesetzt', !!l1AfterSent.Sent_At);
+  check('Reconciliation: Batch_Status = SENT', l1AfterSent.Batch_Status === 'SENT', l1AfterSent.Batch_Status);
+
+  const batchRow1 = SHEETS.BATCHES._data.filter(function (r) { return r[0] === b.batch_id; })[0];
+  check('Reconciliation: Batch-Sent_At (Spalte 13) gestempelt', !!batchRow1[12]);
+  const stampedAt = batchRow1[12];
+
+  // 2. Wiederholung DERSELBEN Message-ID -> generische Dedup, 0 neue Aktivitaeten
+  const res1Replay = ctx.processInboundEvent({
+    event_id: 'EVT-SENT-001B',
+    event_type: 'SENT',
+    message_id: '<msg-sent-001@hsb-boden.de>',
+    email: lead1.Email
+  });
+  check('Reconciliation: Replay derselben Message-ID = DUPLICATE_IGNORED',
+        res1Replay.duplicate === true && res1Replay.status === 'DUPLICATE_IGNORED');
+
+  // 3. Zweites, technisch anderes SENT-Event fuer DENSELBEN bereits
+  //    gesendeten Lead (andere Event-/Message-ID, z.B. erneuter
+  //    Power-Automate-Lauf) -> businessseitig idempotent, 0 doppelte
+  //    Aktivitaeten/Statusaenderungen (SENT_STATUS geschieht genau einmal).
+  const res1SecondTechnical = ctx.processInboundEvent({
+    event_id: 'EVT-SENT-001C',
+    event_type: 'SENT',
+    lead_id: lead1.Lead_ID,
+    message_id: '<msg-sent-001-retrigger@hsb-boden.de>'
+  });
+  check('Reconciliation: zweites Sendesignal fuer bereits gesendeten Lead ohne erneute Statusaenderung',
+        res1SecondTechnical.status === 'ALREADY_SENT_IGNORED');
+  check('Reconciliation: DUPLICATE_SEND_ACTIVITY_COUNT = 0',
+        SHEETS.ACTIVITIES._data.length === actBefore + 2,
+        'activities=' + (SHEETS.ACTIVITIES._data.length - actBefore));
+
+  const batchRow1b = SHEETS.BATCHES._data.filter(function (r) { return r[0] === b.batch_id; })[0];
+  check('Reconciliation: Batch-Sent_At bleibt nach erneutem Signal unveraendert',
+        batchRow1b[12] === stampedAt);
+
+  // 4. Zweiter GENUINE Sendenachweis (anderer Lead, andere Message-ID) im
+  //    selben Batch -> ebenfalls genau einmal SENT, Batch-Sent_At bleibt der
+  //    Zeitpunkt des ERSTEN Nachweises (nicht ueberschrieben).
+  const res2 = ctx.processInboundEvent({
+    event_id: 'EVT-SENT-002',
+    event_type: 'SENT',
+    message_id: '<msg-sent-002@hsb-boden.de>',
+    email: lead2.Email
+  });
+  check('Reconciliation: zweiter echter Sendenachweis zugeordnet',
+        res2.matched === true && res2.lead_id === lead2.Lead_ID);
+  const batchRow2 = SHEETS.BATCHES._data.filter(function (r) { return r[0] === b.batch_id; })[0];
+  check('Reconciliation: Batch-Sent_At bleibt der erste Zeitstempel',
+        batchRow2[12] === stampedAt);
+
+  // 5. Nur bewegungsanfaellige ID (Outlook_Message_ID) vorhanden -> fail-closed
+  const res4 = ctx.processInboundEvent({
+    event_id: 'EVT-SENT-004',
+    event_type: 'SENT',
+    message_id: 'AAMkAGdriftable=='
+  });
+  check('Reconciliation: reine Outlook_Message_ID reicht fuer SENT nicht (NEEDS_REVIEW)',
+        res4.matched === false && res4.status === 'NEEDS_REVIEW', JSON.stringify(res4));
+  const l4AfterAttempt = ctx.readLeads_().leads.filter(function (l) { return l.Lead_ID === lead4.Lead_ID; })[0];
+  check('Reconciliation: Lead4 bleibt unveraendert (kein Raten)',
+        String(l4AfterAttempt.Send_Status || '').toLowerCase() !== 'sent');
+
+  // 6. Reine E-Mail-Adresse ohne jede Message-Korrelation -> ebenfalls
+  //    fail-closed fuer SENT (kein Beweis, welcher Versand gemeint ist).
+  const res5 = ctx.processInboundEvent({
+    event_id: 'EVT-SENT-005',
+    event_type: 'SENT',
+    email: b.leads[2].Email
+  });
+  check('Reconciliation: E-Mail allein reicht fuer SENT nicht (NEEDS_REVIEW)',
+        res5.matched === false && res5.status === 'NEEDS_REVIEW', JSON.stringify(res5));
+
+  // 7. Ein zunaechst unklarer Sendenachweis (NEEDS_REVIEW, weil dem Lead noch
+  //    keine Internet_Message_ID zugeordnet war) darf NICHT dauerhaft als
+  //    Duplikat verschluckt werden, sobald die Zuordnung nachtraeglich moeglich
+  //    wird (z. B. Internet_Message_ID wird nachgetragen und dieselbe
+  //    Message-ID kommt mit neuer Event-ID erneut herein - realistisches
+  //    Retry-Verhalten einer externen Automatisierung).
+  const lead5 = b.leads[4];
+  const resFirstUnclear = ctx.processInboundEvent({
+    event_id: 'EVT-SENT-006',
+    event_type: 'SENT',
+    message_id: '<msg-sent-late-linked@hsb-boden.de>'
+  });
+  check('Reconciliation: Sendenachweis ohne bekannte Internet_Message_ID zunaechst NEEDS_REVIEW',
+        resFirstUnclear.matched === false && resFirstUnclear.status === 'NEEDS_REVIEW',
+        JSON.stringify(resFirstUnclear));
+
+  setCol(lead5, 'Internet_Message_ID', '<msg-sent-late-linked@hsb-boden.de>');
+  ctx.invalidateLeadsCache_();
+
+  const resRetryAfterFix = ctx.processInboundEvent({
+    event_id: 'EVT-SENT-006B',
+    event_type: 'SENT',
+    message_id: '<msg-sent-late-linked@hsb-boden.de>'
+  });
+  check('Reconciliation: nach Nachtrag der Internet_Message_ID wird derselbe Nachweis erneut versucht statt als Duplikat verschluckt',
+        resRetryAfterFix.matched === true && resRetryAfterFix.lead_id === lead5.Lead_ID,
+        JSON.stringify(resRetryAfterFix));
+  const l5AfterRetry = ctx.readLeads_().leads.filter(function (l) { return l.Lead_ID === lead5.Lead_ID; })[0];
+  check('Reconciliation: Lead5 nach nachtraeglich moeglicher Zuordnung korrekt SENT',
+        String(l5AfterRetry.Send_Status).toLowerCase() === 'sent', l5AfterRetry.Send_Status);
+}
+
+/**
+ * Betreiber-Bestaetigung ohne jede Microsoft-Integration: confirmBatchSent
+ * ist der einzige Weg, SENT ueberhaupt zu setzen, solange kein lebender
+ * Sent-Trigger existiert. Muss in Bloecken (CONFIRM_CHUNK_SIZE) laufen,
+ * exactly-once sein und den Unterschied zu einem technischen Nachweis im
+ * Notiztext erkennbar lassen.
+ */
+function testOperatorSendConfirmation() {
+  loadRealFlyers();
+  setupSheet(30, 'JORDI');
+
+  const b = ctx.prepareBatch({ owner: 'JORDI', count: 25, batch_id: 'HSB-20260827-JORDI-CONFIRM1' });
+  check('Betreiber-Bestaetigung: Testbatch hat 25 Leads', b.leads.length === 25);
+
+  const actBefore = SHEETS.ACTIVITIES._data.length;
+
+  const teil1 = ctx.confirmBatchSent(b.batch_id, 0);
+  check('Betreiber-Bestaetigung: erster Abschnitt bestaetigt genau CONFIRM_CHUNK_SIZE',
+        teil1.verarbeitet === 20 && teil1.neu_bestaetigt === 20 && teil1.complete === false,
+        JSON.stringify(teil1));
+  check('Betreiber-Bestaetigung: next_index zeigt auf den Rest',
+        teil1.next_index === 20, teil1.next_index);
+
+  const teil2 = ctx.confirmBatchSent(b.batch_id, teil1.next_index);
+  check('Betreiber-Bestaetigung: zweiter Abschnitt schliesst den Batch ab',
+        teil2.verarbeitet === 5 && teil2.neu_bestaetigt === 5 && teil2.complete === true
+          && teil2.next_index === null, JSON.stringify(teil2));
+
+  const alleNachher = ctx.readLeads_().leads.filter(function (l) {
+    return l.Batch_ID === b.batch_id;
+  });
+  check('Betreiber-Bestaetigung: alle 25 Leads jetzt Send_Status=sent',
+        alleNachher.length === 25 && alleNachher.every(function (l) {
+          return String(l.Send_Status).toLowerCase() === 'sent';
+        }));
+  check('Betreiber-Bestaetigung: alle 25 Leads haben Sent_At',
+        alleNachher.every(function (l) { return !!l.Sent_At; }));
+  check('Betreiber-Bestaetigung: Notiz unterscheidet sich klar von einem '
+        + 'technischen Sendenachweis (kein Systembeleg vorgetaeuscht)',
+        alleNachher.every(function (l) {
+          return String(l.Notes || '').indexOf('Betreiber-Bestaetigung') >= 0;
+        }));
+
+  const batchRow = SHEETS.BATCHES._data.filter(function (r) { return r[0] === b.batch_id; })[0];
+  check('Betreiber-Bestaetigung: Batch-Sent_At gestempelt', !!batchRow[12]);
+
+  // Replay des ersten Abschnitts (z. B. versehentlicher Doppelklick nach
+  // Seitenreload) darf keine einzige zusaetzliche Aktivitaet erzeugen.
+  const teil1Replay = ctx.confirmBatchSent(b.batch_id, 0);
+  check('Betreiber-Bestaetigung: Replay meldet alle als bereits gesendet',
+        teil1Replay.bereits_gesendet === 20 && teil1Replay.neu_bestaetigt === 0,
+        JSON.stringify(teil1Replay));
+  check('Betreiber-Bestaetigung: Replay erzeugt keine zusaetzlichen ACTIVITIES-Zeilen '
+        + 'ueber die urspruenglichen 25 Bestaetigungen hinaus',
+        SHEETS.ACTIVITIES._data.length === actBefore + 25 * 2,
+        'activities=' + (SHEETS.ACTIVITIES._data.length - actBefore));
+}
+
 function testDryRunsAndArbitraryN() {
   loadRealFlyers();
 
-  // Jordi Dry Runs N=1, N=17, N=100
-  [1, 17, 100].forEach(function (n) {
+  // Jordi Dry Runs N=1, N=17, N=25, N=100, N=150
+  [1, 17, 25, 100, 150].forEach(function (n) {
     setupSheet(150, 'JORDI');
     const b = ctx.prepareBatch({ owner: 'JORDI', count: n, campaign: 'dryrun-jordi-' + n });
     const ids = b.leads.map(function (l) { return l.Lead_ID; });
@@ -1017,8 +1519,8 @@ function testDryRunsAndArbitraryN() {
           b.asset_sha256 === FLYERS_.JORDI.sha256);
   });
 
-  // Joel Dry Runs N=1, N=17, N=100
-  [1, 17, 100].forEach(function (n) {
+  // Joel Dry Runs N=1, N=17, N=25, N=100, N=150
+  [1, 17, 25, 100, 150].forEach(function (n) {
     setupSheet(150, 'JOEL');
     const b = ctx.prepareBatch({ owner: 'JOEL', count: n, campaign: 'dryrun-joel-' + n });
     const ids = b.leads.map(function (l) { return l.Lead_ID; });
@@ -1042,11 +1544,14 @@ console.log('='.repeat(70));
 [testAssetGate, testEligibility, testDynamicCounts, testGateNotBypassable,
  testEmptyBatchExplained, testEmailDedup, testNoCrossSender, testEmlStructure,
  testQualifyAndDedupWrite, testJordi100OneClick, testJordi100SafetyGates,
- testJordi100UiContract, testSidebarServerContract,
+ testJordi100UiContract, testSidebarServerContract, testSidebarFailureHandling,
  testSuppression, testDuplicateBatchProtection,
- testDashboard, testEmlExportChunking, testFollowUps, testEnsureColumns,
+ testDashboard, testEmlExportChunking, testExportRetryAndRecovery,
+ testBatchRecoveryAfterLostCallback,
+ testFollowUps, testEnsureColumns,
  testSetupState, testBatchListe, testSuche,
  testLockServiceAndConcurrency, testIdempotency, testInboundEvents,
+ testPostSendReconciliation, testOperatorSendConfirmation,
  testDryRunsAndArbitraryN].forEach(function (fn) {
   console.log('\n--- ' + fn.name + ' ---');
   try { fn(); } catch (e) {
@@ -1066,7 +1571,9 @@ if (fail) {
     console.log('  FAIL: ' + r.name + ' ' + r.detail);
   });
 }
-fs.writeFileSync(path.join(__dirname, 'last_run_apps_script.json'),
-  JSON.stringify({ test_count: RESULTS.length, test_pass: pass,
-                   test_fail: fail }, null, 2) + '\n');
+try {
+  fs.writeFileSync(path.join(__dirname, 'last_run_apps_script.json'),
+    JSON.stringify({ test_count: RESULTS.length, test_pass: pass,
+                     test_fail: fail }, null, 2) + '\n');
+} catch (_) {}
 process.exit(fail ? 1 : 0);

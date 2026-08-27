@@ -154,6 +154,16 @@ function uiProcessInboundEvent(event) {
   catch (e) { return { ok: false, error: String(e.message || e) }; }
 }
 
+/**
+ * Betreiber-Bestaetigung: "Ich habe diesen Batch tatsaechlich versendet."
+ * Siehe confirmBatchSent in Actions.gs - kein automatischer Nachweis, eine
+ * bewusste, protokollierte menschliche Aussage.
+ */
+function uiConfirmBatchSent(batchId, startIndex) {
+  try { return { ok: true, data: confirmBatchSent(batchId, startIndex) }; }
+  catch (e) { return { ok: false, error: String(e.message || e) }; }
+}
+
 /* ------------------------------------------------ Evidence & Chronology */
 
 function updateLiveEvidenceAndChronology() {

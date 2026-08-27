@@ -14,3 +14,4 @@ _FALSCHE_BINDUNG_*
 
 # Orchestration & Runtime State
 .omg/
+.playwright-mcp/

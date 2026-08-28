@@ -672,14 +672,59 @@ function appendBatchRow_(batchId, owner, campaign, status, stats, sha) {
                 stats.excluded_count, stats.shortfall, sha, nowIso_(), '', '']);
 }
 
-function logActivity_(batchId, type, message) {
+function appendActivityRow_(entry) {
   const sh = sheet_(CFG.SHEET_ACTIVITY);
   if (sh.getLastRow() === 0) {
-    sh.appendRow(['Timestamp', 'Batch_ID', 'Type', 'Message', 'User']);
-    sh.getRange(1, 1, 1, 5).setFontWeight('bold').setBackground('#e8eaed');
+    sh.appendRow([
+      'Activity_ID', 'Lead_ID', 'Timestamp', 'Owner', 'Activity_Type',
+      'Channel', 'Result', 'Template_ID', 'Batch_ID', 'Note',
+      'Next_Action', 'Next_Action_Date'
+    ]);
+    sh.getRange(1, 1, 1, 12).setFontWeight('bold').setBackground('#e8eaed');
     sh.setFrozenRows(1);
   }
+  const actId = entry.activityId || ('ACT-' + Utilities.formatDate(new Date(), 'UTC', 'yyyyMMdd') + '-' + Utilities.getUuid().substring(0, 8).toUpperCase());
+  const ts = entry.timestamp || nowIso_();
+  let owner = entry.owner || '';
+  if (!owner) {
+    try { owner = Session.getActiveUser().getEmail(); } catch (e) { owner = 'unbekannt'; }
+  }
+  const row = [
+    actId,
+    entry.leadId || '',
+    ts,
+    normalizeOwner_(owner),
+    entry.activityType || 'SYSTEM_EVENT',
+    entry.channel || 'SYSTEM',
+    entry.result || 'SUCCESS',
+    entry.templateId || '',
+    entry.batchId || '',
+    entry.note || '',
+    entry.nextAction || '',
+    entry.nextActionDate || ''
+  ];
+  sh.appendRow(row);
+  return actId;
+}
+
+function logActivity_(batchId, type, message) {
   let user = '';
   try { user = Session.getActiveUser().getEmail(); } catch (e) { user = 'unbekannt'; }
-  sh.appendRow([nowIso_(), batchId, type, message, user]);
+  
+  let leadId = '';
+  let actualBatchId = batchId || '';
+  if (String(batchId || '').match(/^HSB-\d{8}-\d{5}$/)) {
+    leadId = batchId;
+    actualBatchId = '';
+  }
+  
+  appendActivityRow_({
+    leadId: leadId,
+    batchId: actualBatchId,
+    owner: user,
+    activityType: type,
+    channel: 'SYSTEM',
+    result: 'SUCCESS',
+    note: message
+  });
 }

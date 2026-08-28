@@ -1535,6 +1535,53 @@ function testDryRunsAndArbitraryN() {
   });
 }
 
+
+function testActivity12ColumnContract() {
+  setupSheet(10, 'JORDI');
+  SHEETS.ACTIVITIES._data = [];
+  
+  // Test direct logActivity_ call
+  ctx.logActivity_('HSB-20260828-JORDI-0001', 'PREPARED', 'Test Batch Prepared');
+  
+  check('ACTIVITIES: Header wird mit 12 Spalten angelegt',
+        SHEETS.ACTIVITIES._data.length >= 2 && SHEETS.ACTIVITIES._data[0].length === 12);
+  
+  const header = SHEETS.ACTIVITIES._data[0];
+  const expectedHeader = [
+    'Activity_ID', 'Lead_ID', 'Timestamp', 'Owner', 'Activity_Type',
+    'Channel', 'Result', 'Template_ID', 'Batch_ID', 'Note',
+    'Next_Action', 'Next_Action_Date'
+  ];
+  check('ACTIVITIES: Exakte 12-Spalten-Namen',
+        expectedHeader.every(function (h, idx) { return header[idx] === h; }));
+        
+  const firstRow = SHEETS.ACTIVITIES._data[1];
+  check('ACTIVITIES: Erste Zeile hat genau 12 Felder', firstRow.length === 12);
+  check('ACTIVITIES: Activity_ID beginnt mit ACT-', firstRow[0].startsWith('ACT-'));
+  check('ACTIVITIES: Batch_ID korrekt zugeordnet', firstRow[8] === 'HSB-20260828-JORDI-0001');
+  check('ACTIVITIES: Activity_Type gesetzt', firstRow[4] === 'PREPARED');
+  check('ACTIVITIES: Note gesetzt', firstRow[9] === 'Test Batch Prepared');
+  
+  // Test appendActivityRow_ directly with Lead_ID
+  ctx.appendActivityRow_({
+    leadId: 'HSB-20260708-00001',
+    owner: 'JORDI',
+    activityType: 'NOTE_EDITED',
+    channel: 'MANUAL',
+    result: 'SAVED',
+    note: 'Kunde angerufen',
+    nextAction: 'Wiedervorlage',
+    nextActionDate: '2026-09-01'
+  });
+  
+  const secondRow = SHEETS.ACTIVITIES._data[2];
+  check('ACTIVITIES: Zweite Zeile hat genau 12 Felder', secondRow.length === 12);
+  check('ACTIVITIES: Lead_ID gesetzt', secondRow[1] === 'HSB-20260708-00001');
+  check('ACTIVITIES: Owner normalisiert', secondRow[3] === 'JORDI');
+  check('ACTIVITIES: Next_Action gesetzt', secondRow[10] === 'Wiedervorlage');
+  check('ACTIVITIES: Next_Action_Date gesetzt', secondRow[11] === '2026-09-01');
+}
+
 /* ---------------------------------------------------------------- main */
 
 console.log('='.repeat(70));
@@ -1552,7 +1599,7 @@ console.log('='.repeat(70));
  testSetupState, testBatchListe, testSuche,
  testLockServiceAndConcurrency, testIdempotency, testInboundEvents,
  testPostSendReconciliation, testOperatorSendConfirmation,
- testDryRunsAndArbitraryN].forEach(function (fn) {
+ testDryRunsAndArbitraryN, testActivity12ColumnContract].forEach(function (fn) {
   console.log('\n--- ' + fn.name + ' ---');
   try { fn(); } catch (e) {
     check(fn.name + ' ohne Ausnahme', false, e.message + '\n' + e.stack);

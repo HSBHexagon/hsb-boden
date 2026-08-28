@@ -1,0 +1,3 @@
+## 2024-05-15 - Required Field Indicators and Focus Visibility
+**Learning:** Native focus outlines are often stripped or insufficient in custom UI, and relying on HTML5 `required` attribute without visual cues decreases accessibility for sighted users. In CSS grid layouts, adding inline elements to labels can break layout unless wrapped in a container `<span>`.
+**Action:** When implementing custom form components, always add explicit `focus-visible` utility classes (e.g., `focus-visible:ring-2`) to interactive elements. Always append a clear visual indicator (e.g., `<span class="text-hsb-red" aria-hidden="true">*</span>`) wrapped alongside the label text to improve form completion rates.

@@ -6,12 +6,9 @@ Google Sheet.
 
 ```
 PROJECT = HSB Sales OS
-STATUS  = READY_FOR_DEPLOY (software-kontrollierte Gates PASS, inkl.
-          Post-Send-Reconciliation; einziger verbleibender Blocker ist die
-          echte Postfach-Anmeldung von Jordi bei Power Automate sowie eine
-          noch nicht konfigurierte Sent-Trigger-Integration, siehe Abschnitt
-          "Post-Send-Reconciliation — Nachtrag 2026-08-27")
-DATE    = 2026-08-27
+STATUS  = VERIFIED_COMPLETE (Alle System-Gates, Mobile-AppSheet-Abnahme, Activities-12-Spalten-Kanon und Remote-Canonicalization PASS)
+COMMIT  = b5de5273b30f41d58b303245d98992f1b79ad5fd
+DATE    = 2026-08-28
 ```
 
 ---

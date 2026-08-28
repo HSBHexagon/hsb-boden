@@ -783,59 +783,92 @@ function appendBatchRow_(batchId, owner, campaign, status, stats, sha) {
                 stats.excluded_count, stats.shortfall, sha, nowIso_(), '', '']);
 }
 
+const CANONICAL_ACTIVITY_HEADERS = [
+  'Activity_ID', 'Lead_ID', 'Timestamp', 'Owner', 'Activity_Type',
+  'Channel', 'Result', 'Template_ID', 'Batch_ID', 'Note',
+  'Next_Action', 'Next_Action_Date'
+];
+
+function inferOwnerFromBatchId_(batchId) {
+  if (!batchId || typeof batchId !== 'string') return '';
+  if (batchId.indexOf('-JORDI-') !== -1 || batchId.endsWith('-JORDI')) return 'JORDI';
+  if (batchId.indexOf('-JOEL-') !== -1 || batchId.endsWith('-JOEL')) return 'JOEL';
+  return '';
+}
+
 function appendActivityRow_(entry) {
   const sh = sheet_(CFG.SHEET_ACTIVITY);
-  if (sh.getLastRow() === 0) {
-    sh.appendRow([
-      'Activity_ID', 'Lead_ID', 'Timestamp', 'Owner', 'Activity_Type',
-      'Channel', 'Result', 'Template_ID', 'Batch_ID', 'Note',
-      'Next_Action', 'Next_Action_Date'
-    ]);
+  const lastRow = sh.getLastRow();
+  if (lastRow === 0) {
+    sh.appendRow(CANONICAL_ACTIVITY_HEADERS);
     sh.getRange(1, 1, 1, 12).setFontWeight('bold').setBackground('#e8eaed');
     sh.setFrozenRows(1);
   }
+
+  const headerRow = sh.getRange(1, 1, 1, Math.max(sh.getLastColumn(), 12)).getValues()[0];
+  const colMap = {};
+  for (let c = 0; c < headerRow.length; c++) {
+    const colName = String(headerRow[c] || '').trim();
+    if (colName) colMap[colName] = c;
+  }
+
+  for (let i = 0; i < CANONICAL_ACTIVITY_HEADERS.length; i++) {
+    const reqCol = CANONICAL_ACTIVITY_HEADERS[i];
+    if (colMap[reqCol] === undefined) {
+      throw new Error('ACTIVITY_SCHEMA_MISMATCH: Missing canonical column ' + reqCol);
+    }
+  }
+
   const actId = entry.activityId || ('ACT-' + Utilities.formatDate(new Date(), 'UTC', 'yyyyMMdd') + '-' + Utilities.getUuid().substring(0, 8).toUpperCase());
   const ts = entry.timestamp || nowIso_();
   let owner = entry.owner || '';
-  if (!owner) {
-    try { owner = Session.getActiveUser().getEmail(); } catch (e) { owner = 'unbekannt'; }
+  if (!owner && entry.batchId) {
+    owner = inferOwnerFromBatchId_(entry.batchId);
   }
-  const row = [
-    actId,
-    entry.leadId || '',
-    ts,
-    normalizeOwner_(owner),
-    entry.activityType || 'SYSTEM_EVENT',
-    entry.channel || 'SYSTEM',
-    entry.result || 'SUCCESS',
-    entry.templateId || '',
-    entry.batchId || '',
-    entry.note || '',
-    entry.nextAction || '',
-    entry.nextActionDate || ''
-  ];
+  const normalizedOwner = owner ? normalizeOwner_(owner) : '';
+
+  const record = {
+    'Activity_ID': actId,
+    'Lead_ID': entry.leadId || '',
+    'Timestamp': ts,
+    'Owner': normalizedOwner,
+    'Activity_Type': entry.activityType || 'SYSTEM_EVENT',
+    'Channel': entry.channel || 'SYSTEM',
+    'Result': entry.result || '',
+    'Template_ID': entry.templateId || '',
+    'Batch_ID': entry.batchId || '',
+    'Note': entry.note || '',
+    'Next_Action': entry.nextAction || '',
+    'Next_Action_Date': entry.nextActionDate || ''
+  };
+
+  const row = new Array(headerRow.length);
+  for (let c = 0; c < headerRow.length; c++) {
+    const colName = String(headerRow[c] || '').trim();
+    row[c] = record[colName] !== undefined ? record[colName] : '';
+  }
+
   sh.appendRow(row);
   return actId;
 }
 
 function logActivity_(batchId, type, message) {
-  let user = '';
-  try { user = Session.getActiveUser().getEmail(); } catch (e) { user = 'unbekannt'; }
-  
   let leadId = '';
   let actualBatchId = batchId || '';
   if (String(batchId || '').match(/^HSB-\d{8}-\d{5}$/)) {
     leadId = batchId;
     actualBatchId = '';
   }
-  
-  appendActivityRow_({
+
+  const owner = inferOwnerFromBatchId_(actualBatchId);
+
+  return appendActivityRow_({
     leadId: leadId,
     batchId: actualBatchId,
-    owner: user,
+    owner: owner,
     activityType: type,
     channel: 'SYSTEM',
-    result: 'SUCCESS',
+    result: '',
     note: message
   });
 }

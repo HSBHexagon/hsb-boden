@@ -1540,8 +1540,8 @@ function testActivity12ColumnContract() {
   setupSheet(10, 'JORDI');
   SHEETS.ACTIVITIES._data = [];
   
-  // Test direct logActivity_ call
-  ctx.logActivity_('HSB-20260828-JORDI-0001', 'PREPARED', 'Test Batch Prepared');
+  // Test direct logActivity_ call with PREPARED event and structured batch ID
+  ctx.logActivity_('HSB-20260826-JORDI-0001', 'PREPARED', '94 Leads reserviert fuer JORDI');
   
   check('ACTIVITIES: Header wird mit 12 Spalten angelegt',
         SHEETS.ACTIVITIES._data.length >= 2 && SHEETS.ACTIVITIES._data[0].length === 12);
@@ -1558,11 +1558,29 @@ function testActivity12ColumnContract() {
   const firstRow = SHEETS.ACTIVITIES._data[1];
   check('ACTIVITIES: Erste Zeile hat genau 12 Felder', firstRow.length === 12);
   check('ACTIVITIES: Activity_ID beginnt mit ACT-', firstRow[0].startsWith('ACT-'));
-  check('ACTIVITIES: Batch_ID korrekt zugeordnet', firstRow[8] === 'HSB-20260828-JORDI-0001');
+  check('ACTIVITIES: Lead_ID ist leer', firstRow[1] === '');
+  check('ACTIVITIES: Timestamp ist ISO-String', /^\d{4}-\d{2}-\d{2}T/.test(firstRow[2]));
+  check('ACTIVITIES: Owner deterministisch als JORDI abgeleitet', firstRow[3] === 'JORDI');
   check('ACTIVITIES: Activity_Type gesetzt', firstRow[4] === 'PREPARED');
-  check('ACTIVITIES: Note gesetzt', firstRow[9] === 'Test Batch Prepared');
+  check('ACTIVITIES: Channel ist SYSTEM', firstRow[5] === 'SYSTEM');
+  check('ACTIVITIES: Result ist leer', firstRow[6] === '');
+  check('ACTIVITIES: Template_ID ist leer', firstRow[7] === '');
+  check('ACTIVITIES: Batch_ID korrekt zugeordnet', firstRow[8] === 'HSB-20260826-JORDI-0001');
+  check('ACTIVITIES: Note gesetzt', firstRow[9] === '94 Leads reserviert fuer JORDI');
+  check('ACTIVITIES: Next_Action ist leer', firstRow[10] === '');
+  check('ACTIVITIES: Next_Action_Date ist leer', firstRow[11] === '');
   
-  // Test appendActivityRow_ directly with Lead_ID
+  // Test direct logActivity_ call with QUALIFY event (empty batch ID)
+  ctx.logActivity_('', 'QUALIFY', '50 Leads qualifiziert');
+  const qualifyRow = SHEETS.ACTIVITIES._data[2];
+  check('ACTIVITIES: QUALIFY Zeile hat genau 12 Felder', qualifyRow.length === 12);
+  check('ACTIVITIES: QUALIFY Owner ist fail-safe leer (kein Raten)', qualifyRow[3] === '');
+  check('ACTIVITIES: QUALIFY Activity_Type ist QUALIFY', qualifyRow[4] === 'QUALIFY');
+  check('ACTIVITIES: QUALIFY Result ist leer', qualifyRow[6] === '');
+  check('ACTIVITIES: QUALIFY Batch_ID ist leer', qualifyRow[8] === '');
+  check('ACTIVITIES: QUALIFY Note ist 50 Leads qualifiziert', qualifyRow[9] === '50 Leads qualifiziert');
+
+  // Test appendActivityRow_ directly with Lead_ID and explicit fields
   ctx.appendActivityRow_({
     leadId: 'HSB-20260708-00001',
     owner: 'JORDI',
@@ -1574,12 +1592,42 @@ function testActivity12ColumnContract() {
     nextActionDate: '2026-09-01'
   });
   
-  const secondRow = SHEETS.ACTIVITIES._data[2];
-  check('ACTIVITIES: Zweite Zeile hat genau 12 Felder', secondRow.length === 12);
-  check('ACTIVITIES: Lead_ID gesetzt', secondRow[1] === 'HSB-20260708-00001');
-  check('ACTIVITIES: Owner normalisiert', secondRow[3] === 'JORDI');
-  check('ACTIVITIES: Next_Action gesetzt', secondRow[10] === 'Wiedervorlage');
-  check('ACTIVITIES: Next_Action_Date gesetzt', secondRow[11] === '2026-09-01');
+  const thirdRow = SHEETS.ACTIVITIES._data[3];
+  check('ACTIVITIES: Dritte Zeile hat genau 12 Felder', thirdRow.length === 12);
+  check('ACTIVITIES: Lead_ID gesetzt', thirdRow[1] === 'HSB-20260708-00001');
+  check('ACTIVITIES: Owner normalisiert', thirdRow[3] === 'JORDI');
+  check('ACTIVITIES: Result ist SAVED', thirdRow[6] === 'SAVED');
+  check('ACTIVITIES: Next_Action gesetzt', thirdRow[10] === 'Wiedervorlage');
+  check('ACTIVITIES: Next_Action_Date gesetzt', thirdRow[11] === '2026-09-01');
+
+  // Test Schema Mismatch Fail-Closed
+  const brokenSheet = {
+    _data: [['Timestamp', 'Batch_ID', 'Type', 'Message', 'User']],
+    getLastRow: function () { return this._data.length; },
+    getLastColumn: function () { return this._data[0].length; },
+    getRange: function () {
+      const self = this;
+      return {
+        getValues: function () { return [self._data[0]]; },
+        setFontWeight: function () { return this; },
+        setBackground: function () { return this; }
+      };
+    },
+    setFrozenRows: function () {},
+    appendRow: function (r) { this._data.push(r); }
+  };
+  const oldActSheet = SHEETS.ACTIVITIES;
+  SHEETS.ACTIVITIES = brokenSheet;
+  let mismatchCaught = false;
+  try {
+    ctx.logActivity_('HSB-20260826-JORDI-0001', 'PREPARED', 'Test');
+  } catch (err) {
+    if (err.message && err.message.indexOf('ACTIVITY_SCHEMA_MISMATCH') !== -1) {
+      mismatchCaught = true;
+    }
+  }
+  SHEETS.ACTIVITIES = oldActSheet;
+  check('ACTIVITIES: Schema-Mismatch fuehrt zu fail-closed ACTIVITY_SCHEMA_MISMATCH', mismatchCaught);
 }
 
 /* ---------------------------------------------------------------- main */

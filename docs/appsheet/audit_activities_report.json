@@ -1,7 +1,7 @@
 {
   "engine_file": "/Users/joelcherinodiaz/KI-System/02_Projects/active/hsb-sales-os/tests/../apps_script/Engine.gs",
-  "has_legacy_header": true,
-  "has_legacy_append": true,
+  "has_legacy_header": false,
+  "has_legacy_append": false,
   "canonical_columns_count": 12,
   "legacy_columns_count": 5,
   "mismatch_detected": true

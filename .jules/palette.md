@@ -1,0 +1,3 @@
+## 2026-08-29 - Form focus and required states
+**Learning:** Native focus outlines are often insufficient or stripped in Tailwind CSS. Required inputs in Astro forms benefit from explicitly added red asterisks (with `aria-hidden="true"`) wrapped correctly with `<span>` inside grid layouts, and `focus-visible:ring-2 focus-visible:ring-hsb-red` for accessibility.
+**Action:** When creating forms, proactively add explicit `focus-visible` styles to all interactive inputs, selects, and checkboxes to guarantee keyboard navigation visibility. Ensure required indicators have `aria-hidden="true"` so screen readers rely on the native `required` attribute.

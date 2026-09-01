@@ -1,0 +1,3 @@
+## 2026-09-01 - Form Accessibility and UX Polish
+**Learning:** Native browser form handling relies on HTML5 validation attributes, but visual indicators for `required` fields were missing, and focus rings for keyboard navigation weren't explicitly defined. The label texts directly adjacent to the input tags were difficult for some users (and assistive tech) to distinguish when focus tracking.
+**Action:** Added visual asterisks wrapped in a `span` (with `aria-hidden="true"`) to all required form field labels. Explicitly defined `focus-visible:ring-2 focus-visible:ring-hsb-red focus-visible:outline-none` on all inputs, select elements, textareas, checkboxes, and buttons to improve keyboard navigation accessibility.

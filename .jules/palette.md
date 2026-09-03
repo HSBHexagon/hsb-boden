@@ -1,0 +1,3 @@
+## 2026-09-03 - Required Field Indicators and Focus States
+**Learning:** The LeadForm component lacked visual indicators for required fields, relying solely on the HTML5 `required` attribute. Additionally, native focus states were insufficient for clear keyboard navigation visibility. Wrapping form labels with an inline `<span>` ensures that CSS Grid layouts do not break the alignment of the text and the required asterisk indicator.
+**Action:** Always append an `aria-hidden="true"` asterisk to required form fields and explicitly define `focus-visible` classes (e.g., `focus-visible:ring-2 focus-visible:ring-hsb-red`) for all interactive elements in the design system to ensure accessible keyboard navigation.

@@ -899,3 +899,29 @@ Nutzer im Editor (Comet-Browser, als `j-cherino@hsb-boden.de` angemeldet)
 selbst antriggern. Batch-Schleife ueber die restlichen Leads bleibt
 weiterhin ausdruecklich auf Nutzer-Freigabe wartend, nicht Teil dieses
 Fixes.
+
+---
+
+## Echter End-to-End-Test nach den Fixes, 2026-09-04 (Abend)
+
+Manueller Testlauf ueber `mcp__plugin_power-automate_flowagent__run_flow`
+gegen den Joel-Flow (`137601e8-...`), SAS-Callback (Request/Http-Trigger),
+Payload nach dem gefixten Vertrag (`flyerUrl` statt Bytes). Ziel: echter
+Entwurf von `j-cherino@hsb-boden.de` an `j-post@hsb-boden.de` mit Joels
+Flyer, ausdruecklicher Nutzerwunsch als abschliessender Funktionstest.
+
+```
+runId    = 08584130779761046927823429779CU27
+status   = Succeeded
+Get_Flyer            -> Succeeded (Website-Fetch von hsb-boden.de)
+Draft_an_email_message -> Succeeded
+Antwort_OK           -> Succeeded
+Antwort_Fehler       -> Skipped (korrekt, kein Fehlerpfad ausgeloest)
+```
+
+Bestaetigt: der reparierte Payload-Vertrag (flache Felder, `flyerUrl` fuer
+Joel) funktioniert live gegen den echten Flow, nicht nur im Mock-Test.
+Entwurf liegt in `j-cherino@hsb-boden.de` / Ordner Entwuerfe, adressiert an
+Jordi, ungesendet. Kein Sheet-Write (dieser Aufruf ging direkt an den Flow,
+nicht ueber `createDraftsForBatch`, daher keine Batch_ID/Draft_ID-Zeile im
+Sheet betroffen - Nebenwirkungsfrei fuer die echten 100 Leads).

@@ -627,3 +627,108 @@ ohnehin nur Entwuerfe an, nie einen Versand).
   muss), kein Softwaredefekt.
 - Die App-Registrierung selbst (Client-ID/Tenant-ID) ist weiterhin einmalig
   in Entra ID anzulegen — das ist Konfiguration, kein Code.
+
+---
+
+## Power Automate — beide Konten live verifiziert, 2026-09-04
+
+Fortsetzung von „Power Automate — verifizierter Stand" oben: statt eines
+Testentwurfs ans eigene Postfach jetzt zwei echte Entwürfe an echte
+Prospektadressen, für beide Owner-Konten getrennt, mit echten Draft-IDs.
+
+### Zwei Flows statt einem
+
+```
+JOEL_FLOW_ID        = 137601e8-7369-4a74-9564-959f1551e48d ("HSB Sales OS Draft Adapter")
+JOEL_TRIGGER         = Request/Http (Premium — bei j-cherino vorhanden)
+JOEL_CONNECTION      = shared-office365-819bd473 (j-cherino@hsb-boden.de)
+JOEL_STATE           = Started
+
+JORDI_FLOW_ID        = 47ee3d7a-626c-4fff-9e16-6d938949e4bd ("HSB Sales OS Draft Adapter (Jordi)")
+JORDI_TRIGGER        = Button (Free-Tier — j-post hat KEINE Premium-Lizenz)
+JORDI_CONNECTION     = 3d152ea7ddb24e9286fe006cb9f5069b (j-post@hsb-boden.de)
+JORDI_STATE          = Started
+```
+
+Beide Flows: nur `DraftEmail`, keine Send-Action. `SEND_ACTION_PRESENT = false`
+gilt weiterhin für beide.
+
+### Warum zwei verschiedene Flow-Definitionen nötig waren
+
+1. **Connections sind nicht personenübergreifend nutzbar.** Ein Flow, den
+   Person A erstellt hat, kann Person B nicht per `update_flow` auf ihre
+   eigene Connection umbiegen — `ConnectionAuthorizationFailed`. Jeder Owner
+   braucht seinen eigenen, unter der eigenen Identität erstellten Flow.
+2. **j-post hat kein Power-Automate-Premium.** Der `Request/Http`-Trigger-
+   *Typ selbst* ist premium-pflichtig (nicht nur einzelne Premium-
+   Connectoren) — `MissingAdequateQuotaPolicy` beim Aktivieren, Flow bleibt
+   `Suspended`/`BillingConsumption`. Fix: Trigger-Kind auf `Button`
+   (Free-Tier) statt `Request`/`Http`. Einmal mit einer Premium-Aktion
+   angelegte Flow-Instanzen bleiben dauerhaft markiert — Löschen und mit der
+   korrigierten Definition neu anlegen war nötig, ein nachträgliches
+   `update_flow` genügte nicht.
+3. **Kein `Http`-Download-Trick für Jordi möglich.** Der Joel-Flow lädt den
+   Flyer serverseitig per generischer `Http`-Aktion von der HSB-Website
+   (`Get_Flyer` → `@body('Get_Flyer')?['$content']`) — das ist selbst
+   wieder ein Premium-Connector. Für Jordis Flow kommen die Flyer-Bytes
+   deshalb direkt Base64-kodiert im Trigger-Body (`attachmentContentBytes`),
+   wie ursprünglich bei `graph_drafts.py`.
+4. **SAS-Callback-URL ist für `Button`-Trigger gesperrt.** `listCallbackUrl`
+   liefert `ListCallbackUrlOperationBlocked`. Für Jordis Flow bleibt nur der
+   authentifizierte Logic-Flows-Connector-Endpunkt (siehe unten) — für
+   Joels `Request/Http`-Flow funktioniert die SAS-URL dagegen.
+
+### Direkter Aufrufweg (umgeht das MCP-Tool-Limit bei großen Anhängen)
+
+`mcp__plugin_power-automate_flowagent__run_flow` verlangt den Trigger-Body
+als Werkzeugparameter — bei ~2 MB Base64-Flyer nicht praktikabel als
+einzelner Tool-Aufruf. Reproduzierbarer Weg stattdessen:
+
+```
+1. GET  {PPAPI_BASE}/powerautomate/apis/shared_logicflows?api-version=1
+   Token-Ressource: https://service.powerapps.com/
+   -> properties.primaryRuntimeUrl entnehmen (NICHT Top-Level - Bug in einer
+      ersten Skriptfassung, siehe engine/pa_direct_drafts.py Git-Historie)
+
+2. POST {primaryRuntimeUrl}/{flowId}/triggers/manual/run?api-version=2016-11-01
+   Token-Ressource: https://apihub.azure.com  (OHNE Trailing-Slash — mit
+   Trailing-Slash: "Audience ... is not found in list of allowed audiences")
+   Body: das Trigger-Payload-JSON
+```
+
+Implementiert und lokal verifiziert in `engine/pa_direct_drafts.py`
+(`_runtime_url()`, `entwurf_anlegen()`, `payload_fuer_lead()`). Das Skript
+selbst führt noch keine Batch-Schleife gegen das Sheet aus — es stellt die
+geprüften Bausteine bereit; eine Schleife über `READY_CANDIDATES` ist
+bewusst noch nicht gebaut (siehe „Nächster Schritt" unten).
+
+### Frische Verifikation vom 2026-09-04
+
+| Prüffeld | Befehl/Aufruf | Ergebnis |
+|---|---|---|
+| Joel-Flow, Testentwurf an echten Lead | `run_flow` (MCP) gegen `137601e8...`, Lead `HSB-20260708-03307` | `status=DRAFTED`, `draftId=AAMkADkyNjcwMzZjLTg1NzItNDVjNS04NDA5LTA0MjE3NjNiYjUzMQBG...` |
+| Jordi-Flow, Testentwurf an echten Lead (curl, Logic-Flows-Endpunkt) | Lead `HSB-20260708-03307` | `status=DRAFTED`, `draftId=AAMkADQzMGFmYWE4LTk2YTItNDlkOS05ODgwLWNkNTdhZDdmMTVlNABG...` |
+| `engine/pa_direct_drafts.py --pruefen` | `python3 engine/pa_direct_drafts.py --owner JORDI --batch HSB-20260826-JORDI-0002 --pruefen` | Identität + Runtime-URL OK, exit 0 |
+| `engine/pa_direct_drafts.py`, echter zweiter Testlead über die Skript-Bausteine | Lead `HSB-20260708-03308` (Hägele + Partner) | `status=DRAFTED`, `draftId=AAMkADQzMGFmYWE4LTk2YTItNDlkOS05ODgwLWNkNTdhZDdmMTVlNABG...` (anderer Suffix) |
+
+Drei von 100 Leads aus Batch `HSB-20260826-JORDI-0002` haben jetzt echte
+Entwürfe (die zwei oben plus der allererste Konnektivitätstest an
+j-cherinos eigenes Postfach). `Draft_ID`/`Drafted_At` im Sheet sind dafür
+noch **nicht** zurückgeschrieben — offener Punkt, siehe unten.
+
+### Bekannter Rest — ungefährlich, aber unaufgeräumt
+
+`e0a2a6ec-cd27-41cf-853e-39fd44d408c0` ("HSB Sales OS Draft Adapter
+(Jordi)", Duplikat-Name) ist eine verworfene Zwischenversion: von
+j-cherino angelegt, Connection nie korrekt auf j-post verdrahtet, Zustand
+`Stopped`. Braucht zum Löschen eine erneute Anmeldung als j-cherino —
+bewusst nicht gemacht, weil der Flow inaktiv ist und niemanden stört.
+Löschen, sobald ohnehin wieder als j-cherino angemeldet.
+
+### Nächster Schritt
+
+Batch-Schleife über die verbleibenden 97 Leads in `HSB-20260826-JORDI-0002`
+bauen (liest `READY_CANDIDATES`, ruft `pa_direct_drafts.entwurf_anlegen()`
+je Zeile, schreibt `Draft_ID`/`Drafted_At` zurück) — noch nicht begonnen,
+ausdrücklich auf Nutzer-Freigabe wartend (echte Anschreiben an 97 weitere
+reale Firmenkontakte). Kein automatischer Versand in keinem Szenario.

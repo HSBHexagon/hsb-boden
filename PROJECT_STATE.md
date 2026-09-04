@@ -980,3 +980,21 @@ tatsaechliche Root Cause pro Zeile identifiziert - nicht geraten.
 **Gepusht und live re-verifiziert:** `clasp push` + frischer `clasp pull` in
 Temp-Verzeichnis, `deploy/HSB_SALES_OS.js` byte-identisch bestaetigt. Alle drei
 Test-Suiten weiterhin gruen (318 JS + 91 Python + Verifier-Suite PASS).
+
+---
+
+## `entwurfTesten()`-Äquivalent für Joel getestet, 2026-09-04 (spät)
+
+Kein `clasp run` möglich (weiterhin Privatkonto). Stattdessen direkter Flow-Test
+gegen Joels neu umgestellten Flow (embedded bytes). **Wichtiger Aufrufweg-Fund:**
+Der authentifizierte PPAPI-Weg (`primaryRuntimeUrl` + AAD-Bearer-Token,
+`triggers/manual/run?api-version=2016-11-01` — funktioniert zuverlässig für
+Jordis `Button`-Trigger, siehe 25er-Batch) liefert für Joels `Http`-Trigger
+**deterministisch HTTP 500** (`Unable to cast ... Dictionary ... JObject`,
+unabhängig von Payload-Größe/-Inhalt, mit Mini-Payload reproduziert). Der
+`mcp__plugin_power-automate_flowagent__run_flow`-Tool-Weg (SAS-Callback,
+`invocationPath: "callback"`) funktioniert dagegen einwandfrei für Joel.
+**Für künftige direkte Joel-Flow-Aufrufe: `run_flow`-MCP-Tool nutzen, nicht
+den PPAPI-Runtime-Url-Weg** — der bleibt nur für Jordis Button-Trigger geeignet.
+Testentwurf erfolgreich (`Draft_an_email_message` Succeeded, `runId`
+`08584130706838311578933603428CU27`), Flow-seitig also verifiziert korrekt.

@@ -925,3 +925,58 @@ Entwurf liegt in `j-cherino@hsb-boden.de` / Ordner Entwuerfe, adressiert an
 Jordi, ungesendet. Kein Sheet-Write (dieser Aufruf ging direkt an den Flow,
 nicht ueber `createDraftsForBatch`, daher keine Batch_ID/Draft_ID-Zeile im
 Sheet betroffen - Nebenwirkungsfrei fuer die echten 100 Leads).
+
+---
+
+## Joel-Flow auf eingebettete Bytes umgestellt + 25 echte Jordi-Entwürfe + Dashboard-Bugfixes, 2026-09-04 (Abend)
+
+**Joel-Flow (`137601e8-...`):** `Get_Flyer`-HTTP-Action entfernt, `Draft_an_email_message`
+liest jetzt `attachmentContentBytes` direkt aus dem Trigger-Body (wie Jordis Flow) statt
+den Flyer per URL von der Website zu laden. Grund: die Website-Kopie war eine aeltere,
+andere Fassung als der kanonische Outreach-Flyer (Content-Mismatch-Risiko). Per
+`edit_flow`-Dry-Run + Diff-Bestaetigung geaendert (kein blinder Full-Overwrite), Code
+(`deploy/HSB_DraftAdapter.gs.js`, `flyerFelderFuer_`) entsprechend vereinheitlicht,
+318/318 Tests weiterhin gruen, gepusht und live re-verifiziert.
+
+**25 echte Entwuerfe fuer Jordi, Batch `HSB-20260826-JORDI-0002`:** Direkt ueber
+`run_flow`/den verifizierten PPAPI-Weg erzeugt (Leads `HSB-20260708-03309` bis `-03333`,
+die zwei bereits am 4.9. informell getesteten Leads `03307`/`03308` bewusst uebersprungen
+um keine Doppel-Entwuerfe zu erzeugen). Text/HTML exakt mit der echten `renderEmail_()`
+aus `HSB_SALES_OS.js` gerendert (Node-vm, kein Nachbau). Ein Netzwerk-Timeout nach den
+ersten 11 Laeufen (kein Server-Fehler) unterbrach das erste Skript, bevor Ergebnisse
+gespeichert wurden - Draft-IDs ueber die Run-History des Flows vollstaendig
+wiederhergestellt (Zeit-/LeadId-Korrelation), keine verlorenen Daten. Alle 25 Zeilen
+(3310-3334) im Sheet zurueckgeschrieben: `Draft_ID`, `Internet_Message_ID`,
+`Conversation_ID`, `Drafted_At`, `Batch_Status=DRAFTED`, `Send_Status=drafted`.
+`REAL_EXTERNAL_SEND_COUNT` bleibt 0 - nur Entwuerfe, kein Versand.
+
+**BATCHES-Sheet: Live-Fortschrittsspalten ergaenzt** (`Gedraftet`/`Offen`/`Fortschritt`,
+Spalten N-P, reine COUNTIFS-Formeln gegen `ALL_LEADS`) - der bestehende `Status`-Wert
+(PREPARED/APPROVED/SENT) wird von keiner Code-Funktion aus dem Lead-Fortschritt
+neu berechnet (bewusst so, `aktivenBatchFinden_()` verlangt fuer weitere Laeufe
+`Status=PREPARED`) - die neuen Spalten sind rein informativ, nichts Bestehendes wurde
+angefasst.
+
+**Drei echte Dashboard-Bugs gefunden und gefixt** (in `deploy/HSB_SALES_OS.js` UND
+`apps_script/HSB_SALES_OS.gs`, README- und DASHBOARD-Block):
+1. "Tatsächlich versendet(e E-Mails)" zaehlte `AP2:AP` (Send_Datum) statt `AO2:AO`
+   (Send_Status) - haette nie "sent" getroffen.
+2. "Opt-Outs / Bounces" zaehlte `AS2:AS` (Legal_Basis) statt der Kombination aus
+   `Y2:Y` (Opt-out-Status) und `AQ2:AQ` (Bounce_Status) - falsche Spalte komplett.
+3. "Technische Fehler" / "Offene Klärungsfälle" nutzten `COUNTIF(...,"<>")` gegen
+   `Last_Error` (`BD`) - eine per API explizit auf `''` gesetzte Zelle (macht
+   `writeBackDraft_()` bei jedem Erfolg) zaehlt dabei faelschlich als "hat Inhalt".
+   Zeigte nach dem 25er-Batch faelschlich "25 Fehler" bei tatsaechlich 0. Fix:
+   `COUNTIF(...,"?*")` (verlangt mindestens ein Zeichen).
+Zusaetzlich drei Dashboard-Zeilen ("Automationsbereit", "Outlook-Entwürfe erstellt",
+"Technische Fehler"), die nur manuell live im Sheet nachgetragen waren (nie im Code),
+jetzt in beiden Code-Kopien verankert - eine kuenftige Dashboard-Regenerierung wuerde
+sie sonst stillschweigend verwerfen. Live auf dem Dashboard-Sheet sofort korrigiert
+(vor dem Code-Fix), per Scratch-Formeln (`Dashboard!H1:H6`, danach entfernt) gegen
+`ALL_LEADS!AW2:BD1002` echten Nullbefund verifiziert, dann durch eine XLSX-Export-
+Analyse (`export_file` + `openpyxl`, Formeltext statt nur berechneter Wert) die
+tatsaechliche Root Cause pro Zeile identifiziert - nicht geraten.
+
+**Gepusht und live re-verifiziert:** `clasp push` + frischer `clasp pull` in
+Temp-Verzeichnis, `deploy/HSB_SALES_OS.js` byte-identisch bestaetigt. Alle drei
+Test-Suiten weiterhin gruen (318 JS + 91 Python + Verifier-Suite PASS).

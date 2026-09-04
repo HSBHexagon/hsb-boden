@@ -1784,9 +1784,9 @@ function setupPremiumSheetUX() {
       ['Leads von Joel Cherino Diaz', '=COUNTIF(ALL_LEADS!AA2:AA, "*Joel*")'],
       ['Vorbereitete Batches', '=COUNTA(BATCHES!A2:A)'],
       ['In Batches reservierte Kontakte', '=COUNTIF(ALL_LEADS!AN2:AN, "<>")'],
-      ['Tatsächlich versendete E-Mails', '=COUNTIF(ALL_LEADS!AP2:AP, "sent")'],
+      ['Tatsächlich versendete E-Mails', '=COUNTIF(ALL_LEADS!AO2:AO, "sent")'],
       ['Eingegangene Antworten', '=COUNTIF(ALL_LEADS!AR2:AR, "replied")'],
-      ['Offene Klärungsfälle (Review)', '=COUNTIF(ALL_LEADS!BD2:BD, "<>")'],
+      ['Offene Klärungsfälle (Review)', '=COUNTIF(ALL_LEADS!BD2:BD, "?*")'],
       ['', ''],
       ['SCHNELLSTART-ANLEITUNG FÜR JORDI & JOEL', ''],
       ['1. Seitenleiste öffnen', 'Klicke oben im Menü auf "HSB Sales OS" -> "Seitenleiste öffnen".'],
@@ -1825,9 +1825,35 @@ function setupPremiumSheetUX() {
       ['Tier A Kontakte', '=COUNTIF(ALL_LEADS!F2:F, "A")', '=COUNTIFS(ALL_LEADS!AA2:AA, "*Jordi*", ALL_LEADS!F2:F, "A")', '=COUNTIFS(ALL_LEADS!AA2:AA, "*Joel*", ALL_LEADS!F2:F, "A")', 'Prio 1 Kaltakquise'],
       ['Tier B Kontakte', '=COUNTIF(ALL_LEADS!F2:F, "B")', '=COUNTIFS(ALL_LEADS!AA2:AA, "*Jordi*", ALL_LEADS!F2:F, "B")', '=COUNTIFS(ALL_LEADS!AA2:AA, "*Joel*", ALL_LEADS!F2:F, "B")', 'Prio 2 Kaltakquise'],
       ['In Batches reserviert', '=COUNTIF(ALL_LEADS!AN2:AN, "<>")', '=COUNTIFS(ALL_LEADS!AA2:AA, "*Jordi*", ALL_LEADS!AN2:AN, "<>")', '=COUNTIFS(ALL_LEADS!AA2:AA, "*Joel*", ALL_LEADS!AN2:AN, "<>")', 'Vorbereitet'],
-      ['Tatsächlich versendet', '=COUNTIF(ALL_LEADS!AP2:AP, "sent")', '=COUNTIFS(ALL_LEADS!AA2:AA, "*Jordi*", ALL_LEADS!AP2:AP, "sent")', '=COUNTIFS(ALL_LEADS!AA2:AA, "*Joel*", ALL_LEADS!AP2:AP, "sent")', 'Bestaetigt'],
+      ['Tatsächlich versendet', '=COUNTIF(ALL_LEADS!AO2:AO, "sent")', '=COUNTIFS(ALL_LEADS!AA2:AA, "*Jordi*", ALL_LEADS!AO2:AO, "sent")', '=COUNTIFS(ALL_LEADS!AA2:AA, "*Joel*", ALL_LEADS!AO2:AO, "sent")', 'Bestaetigt'],
       ['Antworten erhalten', '=COUNTIF(ALL_LEADS!AR2:AR, "replied")', '=COUNTIFS(ALL_LEADS!AA2:AA, "*Jordi*", ALL_LEADS!AR2:AR, "replied")', '=COUNTIFS(ALL_LEADS!AA2:AA, "*Joel*", ALL_LEADS!AR2:AR, "replied")', 'Inbound'],
-      ['Opt-Outs / Bounces', '=COUNTIF(ALL_LEADS!AS2:AS, "yes")', '=COUNTIFS(ALL_LEADS!AA2:AA, "*Jordi*", ALL_LEADS!AS2:AS, "yes")', '=COUNTIFS(ALL_LEADS!AA2:AA, "*Joel*", ALL_LEADS!AS2:AS, "yes")', 'Gesperrt'],
+      ['Opt-Outs / Bounces',
+       '=COUNTIF(ALL_LEADS!Y2:Y, "yes")+COUNTIFS(ALL_LEADS!AQ2:AQ, "<>", ALL_LEADS!Y2:Y, "<>yes")',
+       '=COUNTIFS(ALL_LEADS!AA2:AA, "*Jordi*", ALL_LEADS!Y2:Y, "yes")+COUNTIFS(ALL_LEADS!AA2:AA, "*Jordi*", ALL_LEADS!AQ2:AQ, "<>", ALL_LEADS!Y2:Y, "<>yes")',
+       '=COUNTIFS(ALL_LEADS!AA2:AA, "*Joel*", ALL_LEADS!Y2:Y, "yes")+COUNTIFS(ALL_LEADS!AA2:AA, "*Joel*", ALL_LEADS!AQ2:AQ, "<>", ALL_LEADS!Y2:Y, "<>yes")',
+       'Gesperrt'],
+      // Diese drei Zeilen liefen bisher nur als manuell im Live-Sheet
+      // nachgetragene Formeln (Fund 2026-09-04) - jetzt im Code verankert,
+      // damit eine erneute Dashboard-Regenerierung sie nicht verwirft.
+      // "?*" statt "<>" bei Draft_ID/Last_Error: ein per API explizit auf ''
+      // gesetztes Feld (writeBackDraft_ tut das immer bei Erfolg) zaehlt bei
+      // "<>" faelschlich als "hat Inhalt" - "?*" verlangt mindestens ein
+      // Zeichen und unterscheidet damit "leer" von "wirklich beschrieben".
+      ['Automationsbereit (Sheet-Gates)',
+       '=COUNTIFS(ALL_LEADS!Z2:Z, "yes", ALL_LEADS!AS2:AS, "<>UNKNOWN", ALL_LEADS!AT2:AT, "no", ALL_LEADS!Y2:Y, "<>yes")',
+       '=COUNTIFS(ALL_LEADS!AA2:AA, "*Jordi*", ALL_LEADS!Z2:Z, "yes", ALL_LEADS!AS2:AS, "<>UNKNOWN", ALL_LEADS!AT2:AT, "no", ALL_LEADS!Y2:Y, "<>yes")',
+       '=COUNTIFS(ALL_LEADS!AA2:AA, "*Joel*", ALL_LEADS!Z2:Z, "yes", ALL_LEADS!AS2:AS, "<>UNKNOWN", ALL_LEADS!AT2:AT, "no", ALL_LEADS!Y2:Y, "<>yes")',
+       'Aktuelles Sheet-Gate'],
+      ['Outlook-Entwürfe erstellt',
+       '=COUNTIF(ALL_LEADS!AW2:AW, "?*")',
+       '=COUNTIFS(ALL_LEADS!AA2:AA, "*Jordi*", ALL_LEADS!AW2:AW, "?*")',
+       '=COUNTIFS(ALL_LEADS!AA2:AA, "*Joel*", ALL_LEADS!AW2:AW, "?*")',
+       'Draft-ID vorhanden'],
+      ['Technische Fehler',
+       '=COUNTIF(ALL_LEADS!BD2:BD, "?*")',
+       '=COUNTIFS(ALL_LEADS!AA2:AA, "*Jordi*", ALL_LEADS!BD2:BD, "?*")',
+       '=COUNTIFS(ALL_LEADS!AA2:AA, "*Joel*", ALL_LEADS!BD2:BD, "?*")',
+       'Muss 0 sein'],
       ['', '', '', '', ''],
       ['ERZEUGTE BATCHES (Letzte 10)', '', '', '', ''],
       ['Batch ID', 'Owner', 'Status', 'Anzahl Leads', 'Erstellt am']
@@ -1836,11 +1862,11 @@ function setupPremiumSheetUX() {
     dash.getRange(1, 1, dashData.length, 5).setValues(dashData);
     dash.getRange('A1:E1').merge().setFontSize(16).setFontWeight('bold').setBackground('#0d652d').setFontColor('#ffffff');
     dash.getRange('A3:E3').setFontWeight('bold').setBackground('#e8eaed');
-    dash.getRange('A12:E12').merge().setFontSize(12).setFontWeight('bold').setBackground('#e8eaed');
-    dash.getRange('A13:E13').setFontWeight('bold').setBackground('#f1f3f4');
+    dash.getRange('A15:E15').merge().setFontSize(12).setFontWeight('bold').setBackground('#e8eaed');
+    dash.getRange('A16:E16').setFontWeight('bold').setBackground('#f1f3f4');
 
     for (let b = 1; b <= 10; b++) {
-      const rowNum = 13 + b;
+      const rowNum = 16 + b;
       dash.getRange(rowNum, 1).setFormula('=IF(ISBLANK(BATCHES!A' + (b + 1) + '), "", BATCHES!A' + (b + 1) + ')');
       dash.getRange(rowNum, 2).setFormula('=IF(ISBLANK(BATCHES!B' + (b + 1) + '), "", BATCHES!B' + (b + 1) + ')');
       dash.getRange(rowNum, 3).setFormula('=IF(ISBLANK(BATCHES!D' + (b + 1) + '), "", BATCHES!D' + (b + 1) + ')');

@@ -98,26 +98,23 @@ function textToHtml_(text) {
 }
 
 /**
- * Baut die flow-spezifischen Flyer-Felder fuer den Payload.
- * Vertrag identisch zu engine/pa_direct_drafts.py:payload_fuer_lead()
- * (dort verifiziert) — Jordi-Flow (Button/Free-Tier) erwartet die Bytes
- * direkt im Body, Joel-Flow (Request/Http, Premium) laedt den Flyer
- * selbst per HTTP-Aktion und erwartet nur eine oeffentliche URL.
+ * Baut die Flyer-Felder fuer den Payload. Beide Flows (Joel, Jordi)
+ * bekommen die verifizierten Bytes direkt im Body — kein Http-Download-
+ * Umweg mehr fuer Joel: die oeffentliche Website-Kopie war nachweislich
+ * eine aeltere, andere Fassung als der kanonische Outreach-Flyer
+ * (Befund 2026-09-04). Bytes direkt einbetten schliesst diese
+ * Content-Mismatch-Klasse strukturell aus, statt sie durch Pflege einer
+ * zweiten oeffentlichen Kopie offenzuhalten.
  */
 function flyerFelderFuer_(key, owner) {
   var verified = getVerifiedFlyer_(owner);
   if (!verified) throw new Error('ASSET_GATE_FAIL: kein verifizierter Flyer fuer ' + owner);
   var blob = verified.blob || DriveApp.getFileById(verified.fileId).getBlob();
 
-  var felder = (key === 'JOEL')
-    ? {
-        attachmentName: blob.getName(),
-        flyerUrl: 'https://www.hsb-boden.de/HSB-Flyer-Joel-Cherino.pdf'
-      }
-    : {
-        attachmentName: blob.getName(),
-        attachmentContentBytes: Utilities.base64Encode(blob.getBytes())
-      };
+  var felder = {
+    attachmentName: blob.getName(),
+    attachmentContentBytes: Utilities.base64Encode(blob.getBytes())
+  };
   felder._flyer = verified.flyer; // fuer renderEmail_(lead, flyer) — nicht Teil des Payloads
   return felder;
 }

@@ -52,8 +52,14 @@ hat am 2026-08-21 dreimal die falsche Fassung ausgeliefert.
 
 | Absender | Datei | Drive-ID | SHA-256 |
 |---|---|---|---|
-| Jordi Post | `HSB-Flyer-Jordi-Post_FINAL.pdf` | `1UMX-fi2lJ9bo14KwuClqgfZQWECdE_XV` | `e0aa76c1…2585d`¹ |
+| Jordi Post | `HSB-Flyer-Jordi-Post_FINAL.pdf` | `1BHx9TmtGomgslTNhi2_1VoBVPer20zkT` | `e0aa76c1…2585d`¹ |
 | Joel Cherino Diaz | `HSB-Flyer-Joel-Cherino_FINAL.pdf` | `16Kt-eRk1uY0HorZCrEmGt3QfGcRpYadS` | `2bccadac…de5fb`¹ |
+
+² Stand dieser Tabelle: 2026-08-21. Am 2026-09-04 wurde Jordis Flyer neu
+gebaut (Handynummer korrigiert, toter Textlayer entfernt) — aktuelle
+Drive-ID `1UMX-fi2lJ9bo14KwuClqgfZQWECdE_XV`, aktueller Hash
+`f343ff05d1e7353a3a91a60f5475c054e1af958ea72e466445e60b9f69059a21`.
+Maßgeblich ist `RELEASE_MANIFEST.json`, Details in `PROJECT_STATE.md`.
 
 ¹ Vollständige Werte in `RELEASE_MANIFEST.json`. Beide Drive-IDs wurden gegen
 die tatsächlichen Bytes verifiziert, nicht aus einer Textquelle übernommen.

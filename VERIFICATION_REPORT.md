@@ -304,7 +304,7 @@ EML-Anhänge getrennt von losen PDFs. Eine Suche nach `*.pdf` hätte diese
    - Unbekannte / mehrdeutige Events: `Lead_ID = ''` (leer), `Status = NEEDS_REVIEW` in `INBOUND_EVENTS` (kein Raten!).
 5. **Asset Integrity & EML Decoding**:
    - Decodierte Base64-Anhang-Bytes aus erzeugter EML extrahiert und per SHA-256 verifiziert:
-     - Jordi EML Anhang: `f343ff05d1e7353a3a91a60f5475c054e1af958ea72e466445e60b9f69059a21` (**PASS**)
+     - Jordi EML Anhang: `e0aa76c1ffec5cf89289e6ab141691d42ea81ffd13db2f08f045342531f39acc` (**PASS**)
      - Joel EML Anhang: `2bccadacc77b531057583d2d650963c30deceed36c8be1fd90ca64e8b8cde5fb` (**PASS**)
    - Manipulierte Flyer werden fail-closed mit `ASSET_GATE=FAIL` blockiert.
 6. **Bekannte Mängel / Warnings**:

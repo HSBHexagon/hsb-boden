@@ -24,8 +24,7 @@
   "cloudflare_write_count": 0,
   "admin_action_count": 0,
   "visual_pdf_gate": "PASS",
-  "visual_pdf_gate_warnings": [
-    "JORDI: kein_fremder_absender_textebene: 'j-cherino@hsb-boden.de' liegt verdeckt in der Textebene (sichtbar korrekt, aber bei Copy-Paste/PDF-Suche sichtbar)"
-  ],
+  "visual_pdf_gate_warnings": [],
+  "visual_pdf_gate_note": "2026-09-04: fruehere Warnung (verdeckte 'j-cherino@hsb-boden.de'-Textebene + falscher mailto-Link auf Jordis Flyer) durch Neuaufbau des Kontaktblocks behoben und verifiziert (pdftotext/PyMuPDF: keine Reste, korrekte Link-Annotation auf j-post@). Zusaetzlich Handynummer korrigiert (0170 2340904). Historische Zaehlfelder oben (test_count/apps_script_test_count, Stand 2026-08-21) sind veraltet - aktueller Stand: 318 JS + 91 Python + Verifier-Suite PASS, siehe PROJECT_STATE.md.",
   "release_status": "READY"
 }

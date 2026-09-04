@@ -998,3 +998,34 @@ unabhängig von Payload-Größe/-Inhalt, mit Mini-Payload reproduziert). Der
 den PPAPI-Runtime-Url-Weg** — der bleibt nur für Jordis Button-Trigger geeignet.
 Testentwurf erfolgreich (`Draft_an_email_message` Succeeded, `runId`
 `08584130706838311578933603428CU27`), Flow-seitig also verifiziert korrekt.
+
+---
+
+## Power-Automate-Weg an den Sidebar angeschlossen, 2026-09-04 (spät)
+
+Fund: Der Sidebar-Button „Entwürfe erzeugen" rief bisher ausschließlich den
+alten ZIP/EML-Export (`emlExport` → `exportBatchAsEmlZip`) auf - der heute
+reparierte Power-Automate-Weg (`entwurfTesten`/`entwuerfeErzeugen` in
+`HSB_DraftAdapter.gs.js`) war an KEINEN Sidebar-Button angeschlossen, nur
+manuell im Apps-Script-Editor erreichbar. Auf Nutzerwunsch behoben, ohne den
+bestehenden ZIP-Weg zu entfernen:
+
+- Neue Server-Funktion `uiCreateDraftsForBatch(batchId, limit)` in
+  `HSB_DraftAdapter.gs.js` - nimmt den Batch explizit als Parameter (nicht
+  ueber die Skripteigenschaft `HSB_ACTIVE_BATCH_ID`, die fuer den manuellen
+  Editor-Testlauf gedacht ist), `{ok,data|error}`-Rueckgabe wie die uebrigen
+  `ui*`-Funktionen.
+- Neuer Sidebar-Button „Direkt-Entwürfe (Power Automate)" neben „Entwürfe
+  erzeugen (ZIP-Import)". Erster Klick erzeugt bewusst nur einen Testentwurf
+  (limit=1), erst nach explizitem Bestaetigungsdialog laeuft der Rest des
+  Batches - kein Automatismus, der ohne Zwischenschritt gleich alle
+  Entwuerfe fuer echte Kontakte anlegt.
+- Verifiziert: Node-Mock-Smoke-Test (`uiCreateDraftsForBatch` liefert
+  korrekte Payload/Writeback-Struktur), 318 JS + 91 Python + Verifier-Suite
+  weiterhin PASS, `clasp push` + frischer Re-Pull byte-identisch bestaetigt.
+
+**Nicht verifiziert, weil nicht moeglich:** der tatsaechliche Button-Klick
+im Browser selbst - dafuer fehlt sowohl Apps-Script-Ausfuehrungsrecht
+(`clasp run`, Privatkonto) als auch Browsersteuerung (Comet). Der Nutzer
+muss den neuen Button einmal selbst klicken, um den echten UI-Pfad zu
+bestaetigen.

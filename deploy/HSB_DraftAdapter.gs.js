@@ -338,6 +338,26 @@ function entwuerfeErzeugen() {
   return createDraftsForBatch(batch, { limit: 9999 });
 }
 
+/**
+ * Sidebar-Einstieg: direkte Power-Automate-Entwuerfe fuer einen konkret
+ * benannten, bereits vorbereiteten Batch — unabhaengig von der
+ * Skripteigenschaft HSB_ACTIVE_BATCH_ID (die ist fuer den manuellen
+ * Editor-Testlauf gedacht, nicht fuer den Sidebar-Button). {ok,data|error}
+ * wie die uebrigen ui*-Funktionen, damit google.script.run sie einheitlich
+ * behandeln kann.
+ */
+function uiCreateDraftsForBatch(batchId, limit) {
+  try {
+    if (!batchId) throw new Error('Kein Batch angegeben.');
+    var n = parseInt(limit, 10);
+    if (!n || n < 1) n = 9999;
+    var summary = createDraftsForBatch(String(batchId), { limit: n });
+    return { ok: true, data: { summary: summary } };
+  } catch (e) {
+    return { ok: false, error: String(e.message || e) };
+  }
+}
+
 /** Verifiziert den explizit konfigurierten Batch und nimmt nie automatisch einen anderen. */
 function aktivenBatchFinden_() {
   var batchId = PropertiesService.getScriptProperties().getProperty(ACTIVE_BATCH_PROP);

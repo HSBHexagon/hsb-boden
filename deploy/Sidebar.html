@@ -724,12 +724,15 @@ function batchListeLaden() {
         + (b.sent_at ? ' · versendet ' + esc(b.sent_at) : '') + '</div>'
         + '<div class="knoepfe">'
         + '<button onclick="emlExport(\'' + esc(b.batch_id) + '\',0)">'
-        + 'Entwürfe erzeugen</button>'
+        + 'Entwürfe erzeugen (ZIP-Import)</button>'
+        + '<button onclick="direktEntwuerfe(\'' + esc(b.batch_id) + '\')">'
+        + 'Direkt-Entwürfe (Power Automate)</button>'
         + '<button onclick="freigeben(\'' + esc(b.batch_id) + '\')">'
         + 'Freigeben</button>'
         + '<button onclick="versandBestaetigen(\'' + esc(b.batch_id) + '\',0)">'
         + 'Versand bestätigen</button></div>'
         + '<div id="exp_' + esc(b.batch_id) + '"></div>'
+        + '<div id="direkt_' + esc(b.batch_id) + '"></div>'
         + '<div id="conf_' + esc(b.batch_id) + '"></div></div>';
     });
     zeig('batchListe', h);
@@ -843,6 +846,53 @@ function freigeben(batchId) {
   }).withFailureHandler(function (e) {
     alert(e.message);
   }).uiApproveBatch(batchId);
+}
+
+/**
+ * Direkter Power-Automate-Entwurf statt ZIP-Export. Erster Klick pro Batch
+ * erzeugt bewusst nur EINEN Testentwurf (limit=1) - genau wie
+ * entwurfTesten() im Editor. Erst nach ausdruecklicher Bestaetigung im
+ * Dialog laeuft der Rest des Batches (limit=9999). Kein Automatismus, der
+ * ohne Zwischenschritt gleich alle Entwuerfe fuer echte Kontakte anlegt.
+ */
+var direktLaufend = {};
+
+function direktEntwuerfe(batchId) {
+  if (direktLaufend[batchId]) return;
+  var ziel = 'direkt_' + batchId;
+  if (!el(ziel)) return;
+  direktLaufend[batchId] = true;
+  laden(ziel, 'Testentwurf wird erzeugt…');
+
+  google.script.run.withSuccessHandler(function (r) {
+    direktLaufend[batchId] = false;
+    if (!r.ok) { fehler(ziel, r.error); return; }
+    var weiter = confirm(
+      'Testentwurf erstellt:\n\n' + r.data.summary
+      + '\n\nJetzt den REST dieses Batches als echte Entwürfe anlegen?'
+      + ' (Reale Kontakte, nur Entwurf, kein Versand.)'
+    );
+    if (!weiter) {
+      zeig(ziel, '<div class="meldung m-gut">Testentwurf angelegt. '
+        + 'Rest nicht ausgelöst.</div>');
+      return;
+    }
+    direktLaufend[batchId] = true;
+    zeig(ziel, '<div class="arbeit">Restliche Entwürfe werden erzeugt…</div>');
+    google.script.run.withSuccessHandler(function (r2) {
+      direktLaufend[batchId] = false;
+      if (!r2.ok) { fehler(ziel, r2.error); return; }
+      zeig(ziel, '<div class="meldung m-gut"><pre>' + esc(r2.data.summary)
+        + '</pre></div>');
+      batchListeLaden();
+    }).withFailureHandler(function (e) {
+      direktLaufend[batchId] = false;
+      fehler(ziel, e.message);
+    }).uiCreateDraftsForBatch(batchId, 9999);
+  }).withFailureHandler(function (e) {
+    direktLaufend[batchId] = false;
+    fehler(ziel, e.message);
+  }).uiCreateDraftsForBatch(batchId, 1);
 }
 
 /**

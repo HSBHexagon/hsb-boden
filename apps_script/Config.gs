@@ -22,8 +22,8 @@ const FLYERS = {
     displayName: 'Jordi Post',
     mailbox: 'j-post@hsb-boden.de',
     fileName: 'HSB-Flyer-Jordi-Post_FINAL.pdf',
-    driveId: '1BHx9TmtGomgslTNhi2_1VoBVPer20zkT',
-    sha256: 'e0aa76c1ffec5cf89289e6ab141691d42ea81ffd13db2f08f045342531f39acc'
+    driveId: '1UMX-fi2lJ9bo14KwuClqgfZQWECdE_XV',
+    sha256: 'f343ff05d1e7353a3a91a60f5475c054e1af958ea72e466445e60b9f69059a21'
   },
   JOEL: {
     key: 'JOEL',

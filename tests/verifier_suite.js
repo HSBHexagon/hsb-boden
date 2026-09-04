@@ -30,7 +30,7 @@ const JOEL_BYTES  = fs.readFileSync(JOEL_PDF_PATH);
 const JORDI_SHA = crypto.createHash('sha256').update(JORDI_BYTES).digest('hex');
 const JOEL_SHA  = crypto.createHash('sha256').update(JOEL_BYTES).digest('hex');
 
-const JORDI_DRIVE_ID = "1BHx9TmtGomgslTNhi2_1VoBVPer20zkT";
+const JORDI_DRIVE_ID = "1UMX-fi2lJ9bo14KwuClqgfZQWECdE_XV";
 const JOEL_DRIVE_ID  = "16Kt-eRk1uY0HorZCrEmGt3QfGcRpYadS";
 
 let VERIFIER_OVERALL_PASS = true;

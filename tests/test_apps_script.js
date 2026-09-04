@@ -323,7 +323,7 @@ function setupSheet(n, owner, over) {
 
 function loadRealFlyers() {
   const map = {
-    '1BHx9TmtGomgslTNhi2_1VoBVPer20zkT': 'HSB-Flyer-Jordi-Post_FINAL.pdf',
+    '1UMX-fi2lJ9bo14KwuClqgfZQWECdE_XV': 'HSB-Flyer-Jordi-Post_FINAL.pdf',
     '16Kt-eRk1uY0HorZCrEmGt3QfGcRpYadS': 'HSB-Flyer-Joel-Cherino_FINAL.pdf'
   };
   Object.keys(map).forEach(function (id) {
@@ -347,15 +347,15 @@ function testAssetGate() {
   });
 
   // Manipulierte Datei muss abgewiesen werden.
-  const orig = DriveApp._files['1BHx9TmtGomgslTNhi2_1VoBVPer20zkT'].bytes;
-  DriveApp._files['1BHx9TmtGomgslTNhi2_1VoBVPer20zkT'] =
+  const orig = DriveApp._files['1UMX-fi2lJ9bo14KwuClqgfZQWECdE_XV'].bytes;
+  DriveApp._files['1UMX-fi2lJ9bo14KwuClqgfZQWECdE_XV'] =
     { bytes: Buffer.concat([orig, Buffer.from('x')]) };
   let threw = false;
   try { ctx.getVerifiedFlyer_('JORDI'); } catch (e) {
     threw = /ASSET_GATE=FAIL/.test(e.message);
   }
   check('veraenderter Flyer wird abgewiesen (ASSET_GATE=FAIL)', threw);
-  DriveApp._files['1BHx9TmtGomgslTNhi2_1VoBVPer20zkT'] = { bytes: orig };
+  DriveApp._files['1UMX-fi2lJ9bo14KwuClqgfZQWECdE_XV'] = { bytes: orig };
 
   let threw2 = false;
   try { ctx.getVerifiedFlyer_('NIEMAND'); } catch (e) { threw2 = true; }

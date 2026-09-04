@@ -34,7 +34,7 @@ function hsbAdapterSelbsttest() {
   // Flyer über dieselbe Drive-ID wie das Asset-Gate
   var flyerId = {
     JOEL:  '16Kt-eRk1uY0HorZCrEmGt3QfGcRpYadS',
-    JORDI: '1BHx9TmtGomgslTNhi2_1VoBVPer20zkT'
+    JORDI: '1UMX-fi2lJ9bo14KwuClqgfZQWECdE_XV'
   }[OWNER];
   var datei  = DriveApp.getFileById(flyerId);
   var bytes  = datei.getBlob().getBytes();

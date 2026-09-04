@@ -830,3 +830,72 @@ weiteren Änderung entfernt gehört.
   Muss vor Ort geprüft werden (Apps-Script-Editor → Projekteinstellungen →
   Skripteigenschaften) oder durch Ausführen von `preflight()` nach der
   Re-Autorisierung.
+
+---
+
+## Jordi-Flyer-Fix + Befund 3/4 behoben, 2026-09-04
+
+Ausgangspunkt: Nutzer meldet fehlerhafte Handynummer auf Jordis Flyer und
+bittet um finalen Abschluss von Power Automate.
+
+**Flyer:** `HSB-Flyer-Jordi-Post_FINAL.pdf` neu gebaut (PyMuPDF) — Handynummer
+`0151 21886891` -> `0170 2340904`, toter Ghost-Text-Layer entfernt (Joels
+Name/Telefon/Mail lagen unsichtbar unter Jordis Overlay, verursachte
+Kopier-/Screenreader-Vermischung), `mailto:`-Link zeigte faelschlich auf
+`j-cherino@hsb-boden.de` statt `j-post@hsb-boden.de` — gefixt. Seite 1
+pixel-identisch verifiziert. Alte Datei in Drive nach
+`ARCHIV_2026-09-04_vor_Handynummer-Ghostlayer-Fix_...pdf` umbenannt (nicht
+geloescht), neue Datei-ID `1UMX-fi2lJ9bo14KwuClqgfZQWECdE_XV`, neuer SHA-256
+`f343ff05d1e7353a3a91a60f5475c054e1af958ea72e466445e60b9f69059a21` — in
+allen Referenzen ersetzt (RELEASE_MANIFEST.json, HSB_SALES_OS.js/.gs,
+HSB_DraftAdapter.gs.js, Config.gs, hsb_core.py, Tests, Docs).
+
+**Code (deploy/HSB_DraftAdapter.gs.js), vier zusaetzliche Bugs gefunden und
+behoben, keiner davon war vorher bekannt:**
+1. Befund 3 (dokumentiert): Payload schickte `attachments`-Array statt
+   flacher Felder — jetzt `flyerFelderFuer_()` nach dem verifizierten
+   Vertrag aus `engine/pa_direct_drafts.py` (JORDI: attachmentName +
+   attachmentContentBytes; JOEL: attachmentName + flyerUrl).
+2. Befund 4 (dokumentiert): Datei war komplett doppelt (682 Zeilen, 1:1
+   Kopie) — auf 343 Zeilen dedupliziert.
+3. NEU: `readLeads_({batchId})` — die echte Engine-Funktion nimmt keinen
+   Parameter, liefert `{header,index,rows,leads}`. Der Adapter behandelte
+   das Rueckgabeobjekt wie ein Array; `entwurfTesten()` haette in jedem
+   Batch still "keine Leads" gemeldet. Jetzt: `readLeads_().leads` lesen,
+   selbst nach `Batch_ID` filtern.
+4. NEU: `aktivenBatchFinden_()` suchte Spalte `Batch`, das BATCHES-Sheet
+   heisst sie `Batch_ID` — waere immer mit "Spalten nicht gefunden"
+   abgebrochen. Gefixt.
+5. NEU: `renderEmail_(lead)` aufgerufen, echte Signatur ist
+   `renderEmail_(lead, flyer)` — haette mit "Cannot read properties of
+   undefined (reading 'displayName')" geworfen. Gefixt: Flyer-Objekt aus
+   `getVerifiedFlyer_()` wird jetzt durchgereicht.
+6. NEU: `logActivity_('DRAFTED', lead.Lead_ID, draftId)` — echte Signatur
+   ist `logActivity_(batchId_or_leadId, type, message)`. Die vertauschte
+   Reihenfolge haette Activity-Type und Lead-Referenz im Log vertauscht,
+   ohne Fehler zu werfen (stiller Datenfehler). Gefixt: `logActivity_(lead.Lead_ID, 'DRAFTED', draftId)`.
+
+**Verifikation vor Push:** `.claspignore` hatte `HSB_DraftAdapter.gs.js`
+gar nicht freigegeben (`**/**` blockte alles bis auf eine Whitelist) — ohne
+diesen Fund waere keiner der obigen Fixes je live angekommen. Ergaenzt.
+Test-Suite 318/318 (JS) + 91/91 (Python) + Verifier-Suite PASS mit neuem
+Hash. Zusaetzlich ein Node-Trockentest gegen eine Mock-Engine mit den
+ECHTEN Signaturen aus `HSB_SALES_OS.js` gebaut (nicht im Repo persistiert,
+nur als Nachweis) — bestaetigt korrekten Payload, korrekte Batch-Filterung,
+korrekte `logActivity_`-Reihenfolge und korrekten Sheet-Writeback.
+`clasp push` durchgefuehrt und per frischem `clasp pull` in ein Temp-Verzeichnis
+byte-identisch gegen den Live-Stand verifiziert.
+
+**Bewusst nicht behoben:** Die oeffentliche Website-Kopie
+(`https://www.hsb-boden.de/HSB-Flyer-Jordi-Post.pdf`) ist ein komplett
+anderes, aelteres Flyer-Layout (kein Handynummer-Feld) — separates Thema,
+nicht Teil dieses Auftrags, unangetastet gelassen.
+
+**Weiterhin offen, nicht automatisch ausgefuehrt:** `entwurfTesten()` selbst
+im Apps-Script-Editor auszufuehren — `clasp` laeuft lokal als Privatkonto
+(`cherinodiaz@outlook.com`), `clasp run` schlaegt mit
+"Unable to run script function" fehl (keine Ausfuehrungsrechte). Muss der
+Nutzer im Editor (Comet-Browser, als `j-cherino@hsb-boden.de` angemeldet)
+selbst antriggern. Batch-Schleife ueber die restlichen Leads bleibt
+weiterhin ausdruecklich auf Nutzer-Freigabe wartend, nicht Teil dieses
+Fixes.

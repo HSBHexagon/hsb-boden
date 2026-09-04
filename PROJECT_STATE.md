@@ -732,3 +732,101 @@ bauen (liest `READY_CANDIDATES`, ruft `pa_direct_drafts.entwurf_anlegen()`
 je Zeile, schreibt `Draft_ID`/`Drafted_At` zurück) — noch nicht begonnen,
 ausdrücklich auf Nutzer-Freigabe wartend (echte Anschreiben an 97 weitere
 reale Firmenkontakte). Kein automatischer Versand in keinem Szenario.
+
+---
+
+## Apps-Script-Sidebar zeigt „Berechtigung erforderlich" — Diagnose 2026-09-04
+
+Live-Symptom (Screenshot, Jordi-Tab): Klick auf „100 freigeben & Entwürfe
+erzeugen" zeigt eine Fehler-Karte „Für die Ausführung dieser Aktion ist eine
+Berechtigung erforderlich".
+
+### Befund 1 — Drift zwischen git und dem live gebundenen Skript
+
+`clasp pull` gegen den echten gebundenen Stand (Script-ID
+`1Xl6xkMTyn3Hu6UvBoX7gVrdppuyRal04NH6Ei16hnz_Pfuq-JWmh9U4c`) zeigte eine
+Datei, die **nie in git existierte**: `HSB_DraftAdapter.gs.js` (682 Zeilen,
+offenbar direkt im Apps-Script-Web-Editor angelegt, nie per `clasp push` aus
+diesem Repo ausgerollt, nie zurückgeholt). Jetzt nachträglich gesichert
+(Commit `def72ec`), als reiner Fund — **nicht bereinigt**. `HSB_SALES_OS.js`
+und `Sidebar.html` sind dagegen live byte-identisch zum lokalen Stand.
+
+Ebenfalls live bereits aktiv, lokal vorher unversioniert: die Manifest-
+Erweiterung um `script.external_request` (nötig, weil `HSB_DraftAdapter.gs.js`
+`UrlFetchApp.fetch()` gegen eine externe Domain aufruft) und die
+Selbsttest-Funktion `HSB_AdapterSelbsttest.gs`.
+
+### Befund 2 — wahrscheinliche Ursache des Fehlers: fehlende Re-Autorisierung
+
+Eine neu hinzugefügte OAuth-Scope (`script.external_request`) verlangt von
+**jeder Person**, die das Skript bereits vorher autorisiert hatte, eine
+erneute, explizite Zustimmung — Google erzwingt das serverseitig, keine
+Code-Änderung umgeht das. Wird eine Server-Funktion aus einer Sidebar/Karte
+per `google.script.run` aufgerufen, **kann der Consent-Dialog dort nicht
+erscheinen** (iframe-Einschränkung) — die Aktion schlägt statt dessen mit
+genau der beobachteten generischen Meldung fehl. Das erklärt das Symptom,
+unabhängig vom Code-Bug unten.
+
+**Fix ist keine Code-Änderung, sondern eine einmalige manuelle Aktion pro
+betroffener Person** (hier: Jordi): Google Sheet → Erweiterungen → Apps
+Script → im Editor irgendeine Funktion direkt über „Ausführen" starten (z. B.
+`preflight()`) → im erscheinenden echten Vollbild-Consent-Dialog die neuen
+Berechtigungen bestätigen. Danach sollte die Sidebar-Karte wieder
+funktionieren, *sofern* der Code-Bug unten ebenfalls behoben ist.
+
+### Befund 3 — echter Code-Bug: Payload passt nicht zu den verifizierten Flows (kritisch)
+
+`HSB_DraftAdapter.gs.js` (`createDraftsForBatch`) baut den Trigger-Payload
+so:
+
+```js
+var payload = {
+  leadId: lead.Lead_ID,
+  batchId: batchId,
+  to: lead['E-Mail'] || lead.Email,
+  subject: rendered.subject,
+  bodyHtml: textToHtml_(rendered.body),
+  attachments: [flyerAttachment_(owner)]   // <- Array mit {Name, ContentBytes}
+};
+```
+
+Beide oben verifizierten Flows erwarten aber **flache** Felder, nicht das
+Array `attachments`:
+
+- Jordi-Flow (`47ee3d7a-...`, Button/Free-Tier): `attachmentName` +
+  `attachmentContentBytes` als eigene Top-Level-Strings.
+- Joel-Flow (`137601e8-...`, Request/Http): `flyerUrl` (der Flow lädt den
+  Flyer selbst per HTTP-Aktion) + `attachmentName` — `attachmentContentBytes`
+  wird dort komplett ignoriert.
+
+Mit dem aktuellen Payload liefe `Draft_an_email_message` in beiden Flows mit
+leerem `attachmentName`/`attachmentContentBytes` (bzw. leerem `flyerUrl` bei
+Joel) — der Entwurf würde vermutlich ohne Flyer-Anhang erzeugt oder ganz
+fehlschlagen. **Noch nicht live gegen einen echten Batch getestet, weil
+Befund 2 das ohnehin blockiert** — die Reihenfolge zum Beheben ist also:
+zuerst Befund 3 fixen, dann Re-Autorisierung (Befund 2), dann erst
+`entwurfTesten()` versuchen.
+
+### Befund 4 — Datei ist komplett doppelt eingefügt (kein Crash, aber Code-Leiche)
+
+`HSB_DraftAdapter.gs.js` enthält denselben Inhalt **zweimal hintereinander**
+(Zeilen 1–342 und 343–683 sind identisch — vermutlich ein Copy-Paste-Fehler
+im Web-Editor, ganzer Dateiinhalt beim Bearbeiten erneut angehängt statt
+ersetzt). `var`- und `function`-Redeklaration ist in Apps Script (V8) kein
+Syntaxfehler (letzte Deklaration gewinnt), verursacht also nicht den
+beobachteten Fehler — aber es ist tote, verwirrende Doppelung, die vor jeder
+weiteren Änderung entfernt gehört.
+
+### Bewusst noch nicht gemacht
+
+- **Keine Korrektur gepusht.** Diese Diagnose ist die Grundlage für eine
+  separat vorbereitete Korrekturanweisung (an ChatGPT gerichtet, siehe
+  Chat-Verlauf des Sessions oben) — bewusst nicht selbst durchgeführt, auf
+  ausdrücklichen Wunsch des Nutzers.
+- **Skripteigenschaften nicht verifiziert.** `preflight()` prüft u. a.
+  `HSB_ADAPTER_URL_JORDI`, `HSB_ADAPTER_URL_JOEL`, `HSB_ACTIVE_BATCH_ID` —
+  ob diese drei Properties tatsächlich gesetzt sind, ist von hier aus nicht
+  einsehbar (kein Lesezugriff auf Script Properties ohne Skriptausführung).
+  Muss vor Ort geprüft werden (Apps-Script-Editor → Projekteinstellungen →
+  Skripteigenschaften) oder durch Ausführen von `preflight()` nach der
+  Re-Autorisierung.

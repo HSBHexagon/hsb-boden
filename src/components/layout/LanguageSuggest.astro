@@ -22,7 +22,7 @@ const { lang = "de" } = Astro.props;
       <p class="text-xs font-bold text-hsb-black"><span id="lang-suggest-text"></span></p>
       <div class="flex items-center gap-2">
         <a id="lang-suggest-link" class="button-primary !px-3 !py-1.5 text-xs" href="/en/"></a>
-        <button id="lang-suggest-dismiss" class="text-xs font-bold text-hsb-steel underline hover:text-hsb-black"></button>
+        <button id="lang-suggest-dismiss" aria-label="Dismiss language suggestion" class="text-xs font-bold text-hsb-steel underline hover:text-hsb-black focus-visible:ring-2 focus-visible:ring-hsb-red focus-visible:outline-none"></button>
       </div>
     </div>
   </div>

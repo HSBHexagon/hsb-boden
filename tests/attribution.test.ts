@@ -6,6 +6,7 @@ import {
   loadAttribution,
   resolveChannel,
   updateSessionAttribution,
+  sanitizeReferrerOrigin,
 } from "../src/lib/attribution";
 
 const ORIGIN = "https://www.hsb-boden.de";
@@ -163,6 +164,22 @@ describe("updateSessionAttribution / loadAttribution", () => {
     const loaded = loadAttribution(storage);
     expect(loaded?.utm_source).toBeUndefined();
     expect(loaded?.landing_page).toBeUndefined();
+  });
+});
+
+
+describe("sanitizeReferrerOrigin", () => {
+  it("returns undefined for invalid URLs instead of throwing", () => {
+    // Passes an invalid URL string that will cause new URL() to throw
+    expect(sanitizeReferrerOrigin("this-is-not-a-valid-url")).toBeUndefined();
+    // A string with missing parts that causes new URL to fail
+    expect(sanitizeReferrerOrigin("http://[::1")).toBeUndefined();
+  });
+
+  it("returns undefined for empty or non-string inputs", () => {
+    expect(sanitizeReferrerOrigin("")).toBeUndefined();
+    expect(sanitizeReferrerOrigin(null)).toBeUndefined();
+    expect(sanitizeReferrerOrigin(undefined)).toBeUndefined();
   });
 });
 

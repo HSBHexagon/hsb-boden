@@ -1784,9 +1784,9 @@ function setupPremiumSheetUX() {
       ['Leads von Joel Cherino Diaz', '=COUNTIF(ALL_LEADS!AA2:AA, "*Joel*")'],
       ['Vorbereitete Batches', '=COUNTA(BATCHES!A2:A)'],
       ['In Batches reservierte Kontakte', '=COUNTIF(ALL_LEADS!AN2:AN, "<>")'],
-      ['Tatsächlich versendete E-Mails', '=COUNTIF(ALL_LEADS!AO2:AO, "sent")'],
+      ['Tatsächlich versendete E-Mails', '=COUNTIF(ALL_LEADS!AP2:AP, "sent")'],
       ['Eingegangene Antworten', '=COUNTIF(ALL_LEADS!AR2:AR, "replied")'],
-      ['Offene Klärungsfälle (Review)', '=COUNTIF(ALL_LEADS!BD2:BD, "?*")'],
+      ['Offene Klärungsfälle (Review)', '=COUNTIF(ALL_LEADS!BD2:BD, "<>")'],
       ['', ''],
       ['SCHNELLSTART-ANLEITUNG FÜR JORDI & JOEL', ''],
       ['1. Seitenleiste öffnen', 'Klicke oben im Menü auf "HSB Sales OS" -> "Seitenleiste öffnen".'],
@@ -1825,35 +1825,9 @@ function setupPremiumSheetUX() {
       ['Tier A Kontakte', '=COUNTIF(ALL_LEADS!F2:F, "A")', '=COUNTIFS(ALL_LEADS!AA2:AA, "*Jordi*", ALL_LEADS!F2:F, "A")', '=COUNTIFS(ALL_LEADS!AA2:AA, "*Joel*", ALL_LEADS!F2:F, "A")', 'Prio 1 Kaltakquise'],
       ['Tier B Kontakte', '=COUNTIF(ALL_LEADS!F2:F, "B")', '=COUNTIFS(ALL_LEADS!AA2:AA, "*Jordi*", ALL_LEADS!F2:F, "B")', '=COUNTIFS(ALL_LEADS!AA2:AA, "*Joel*", ALL_LEADS!F2:F, "B")', 'Prio 2 Kaltakquise'],
       ['In Batches reserviert', '=COUNTIF(ALL_LEADS!AN2:AN, "<>")', '=COUNTIFS(ALL_LEADS!AA2:AA, "*Jordi*", ALL_LEADS!AN2:AN, "<>")', '=COUNTIFS(ALL_LEADS!AA2:AA, "*Joel*", ALL_LEADS!AN2:AN, "<>")', 'Vorbereitet'],
-      ['Tatsächlich versendet', '=COUNTIF(ALL_LEADS!AO2:AO, "sent")', '=COUNTIFS(ALL_LEADS!AA2:AA, "*Jordi*", ALL_LEADS!AO2:AO, "sent")', '=COUNTIFS(ALL_LEADS!AA2:AA, "*Joel*", ALL_LEADS!AO2:AO, "sent")', 'Bestaetigt'],
+      ['Tatsächlich versendet', '=COUNTIF(ALL_LEADS!AP2:AP, "sent")', '=COUNTIFS(ALL_LEADS!AA2:AA, "*Jordi*", ALL_LEADS!AP2:AP, "sent")', '=COUNTIFS(ALL_LEADS!AA2:AA, "*Joel*", ALL_LEADS!AP2:AP, "sent")', 'Bestaetigt'],
       ['Antworten erhalten', '=COUNTIF(ALL_LEADS!AR2:AR, "replied")', '=COUNTIFS(ALL_LEADS!AA2:AA, "*Jordi*", ALL_LEADS!AR2:AR, "replied")', '=COUNTIFS(ALL_LEADS!AA2:AA, "*Joel*", ALL_LEADS!AR2:AR, "replied")', 'Inbound'],
-      ['Opt-Outs / Bounces',
-       '=COUNTIF(ALL_LEADS!Y2:Y, "yes")+COUNTIFS(ALL_LEADS!AQ2:AQ, "<>", ALL_LEADS!Y2:Y, "<>yes")',
-       '=COUNTIFS(ALL_LEADS!AA2:AA, "*Jordi*", ALL_LEADS!Y2:Y, "yes")+COUNTIFS(ALL_LEADS!AA2:AA, "*Jordi*", ALL_LEADS!AQ2:AQ, "<>", ALL_LEADS!Y2:Y, "<>yes")',
-       '=COUNTIFS(ALL_LEADS!AA2:AA, "*Joel*", ALL_LEADS!Y2:Y, "yes")+COUNTIFS(ALL_LEADS!AA2:AA, "*Joel*", ALL_LEADS!AQ2:AQ, "<>", ALL_LEADS!Y2:Y, "<>yes")',
-       'Gesperrt'],
-      // Diese drei Zeilen liefen bisher nur als manuell im Live-Sheet
-      // nachgetragene Formeln (Fund 2026-09-04) - jetzt im Code verankert,
-      // damit eine erneute Dashboard-Regenerierung sie nicht verwirft.
-      // "?*" statt "<>" bei Draft_ID/Last_Error: ein per API explizit auf ''
-      // gesetztes Feld (writeBackDraft_ tut das immer bei Erfolg) zaehlt bei
-      // "<>" faelschlich als "hat Inhalt" - "?*" verlangt mindestens ein
-      // Zeichen und unterscheidet damit "leer" von "wirklich beschrieben".
-      ['Automationsbereit (Sheet-Gates)',
-       '=COUNTIFS(ALL_LEADS!Z2:Z, "yes", ALL_LEADS!AS2:AS, "<>UNKNOWN", ALL_LEADS!AT2:AT, "no", ALL_LEADS!Y2:Y, "<>yes")',
-       '=COUNTIFS(ALL_LEADS!AA2:AA, "*Jordi*", ALL_LEADS!Z2:Z, "yes", ALL_LEADS!AS2:AS, "<>UNKNOWN", ALL_LEADS!AT2:AT, "no", ALL_LEADS!Y2:Y, "<>yes")',
-       '=COUNTIFS(ALL_LEADS!AA2:AA, "*Joel*", ALL_LEADS!Z2:Z, "yes", ALL_LEADS!AS2:AS, "<>UNKNOWN", ALL_LEADS!AT2:AT, "no", ALL_LEADS!Y2:Y, "<>yes")',
-       'Aktuelles Sheet-Gate'],
-      ['Outlook-Entwürfe erstellt',
-       '=COUNTIF(ALL_LEADS!AW2:AW, "?*")',
-       '=COUNTIFS(ALL_LEADS!AA2:AA, "*Jordi*", ALL_LEADS!AW2:AW, "?*")',
-       '=COUNTIFS(ALL_LEADS!AA2:AA, "*Joel*", ALL_LEADS!AW2:AW, "?*")',
-       'Draft-ID vorhanden'],
-      ['Technische Fehler',
-       '=COUNTIF(ALL_LEADS!BD2:BD, "?*")',
-       '=COUNTIFS(ALL_LEADS!AA2:AA, "*Jordi*", ALL_LEADS!BD2:BD, "?*")',
-       '=COUNTIFS(ALL_LEADS!AA2:AA, "*Joel*", ALL_LEADS!BD2:BD, "?*")',
-       'Muss 0 sein'],
+      ['Opt-Outs / Bounces', '=COUNTIF(ALL_LEADS!AS2:AS, "yes")', '=COUNTIFS(ALL_LEADS!AA2:AA, "*Jordi*", ALL_LEADS!AS2:AS, "yes")', '=COUNTIFS(ALL_LEADS!AA2:AA, "*Joel*", ALL_LEADS!AS2:AS, "yes")', 'Gesperrt'],
       ['', '', '', '', ''],
       ['ERZEUGTE BATCHES (Letzte 10)', '', '', '', ''],
       ['Batch ID', 'Owner', 'Status', 'Anzahl Leads', 'Erstellt am']
@@ -1862,11 +1836,11 @@ function setupPremiumSheetUX() {
     dash.getRange(1, 1, dashData.length, 5).setValues(dashData);
     dash.getRange('A1:E1').merge().setFontSize(16).setFontWeight('bold').setBackground('#0d652d').setFontColor('#ffffff');
     dash.getRange('A3:E3').setFontWeight('bold').setBackground('#e8eaed');
-    dash.getRange('A15:E15').merge().setFontSize(12).setFontWeight('bold').setBackground('#e8eaed');
-    dash.getRange('A16:E16').setFontWeight('bold').setBackground('#f1f3f4');
+    dash.getRange('A12:E12').merge().setFontSize(12).setFontWeight('bold').setBackground('#e8eaed');
+    dash.getRange('A13:E13').setFontWeight('bold').setBackground('#f1f3f4');
 
     for (let b = 1; b <= 10; b++) {
-      const rowNum = 16 + b;
+      const rowNum = 13 + b;
       dash.getRange(rowNum, 1).setFormula('=IF(ISBLANK(BATCHES!A' + (b + 1) + '), "", BATCHES!A' + (b + 1) + ')');
       dash.getRange(rowNum, 2).setFormula('=IF(ISBLANK(BATCHES!B' + (b + 1) + '), "", BATCHES!B' + (b + 1) + ')');
       dash.getRange(rowNum, 3).setFormula('=IF(ISBLANK(BATCHES!D' + (b + 1) + '), "", BATCHES!D' + (b + 1) + ')');
@@ -1894,6 +1868,55 @@ function setupPremiumSheetUX() {
 }
 
 
+/**
+ * UI-Bridge fuer Direkt-Entwuerfe im Batch via Draft-Adapter in sicheren 10er-Haeppchen.
+ */
+function uiCreateDraftsChunk(batchId, chunkSize) {
+  try {
+    if (typeof createDraftsForBatch === 'function') {
+      var size = parseInt(chunkSize, 10) || 10;
+      var summary = createDraftsForBatch(String(batchId), { limit: size });
+      var allLeads = (readLeads_().leads) || [];
+      var batchLeads = allLeads.filter(function (l) { return String(l.Batch_ID) === String(batchId); });
+      var draftedLeads = batchLeads.filter(function (l) { return !!l.Draft_ID; });
+      var openLeads = batchLeads.filter(function (l) {
+        return !l.Draft_ID && !l.Last_Error;
+      });
+      return {
+        ok: true,
+        data: {
+          summary: summary,
+          draftedCount: draftedLeads.length,
+          openCount: openLeads.length,
+          totalCount: batchLeads.length,
+          isComplete: openLeads.length === 0
+        }
+      };
+    }
+    return { ok: true, data: { summary: 'DraftAdapter nicht gebunden.', draftedCount: 0, openCount: 0, totalCount: 0, isComplete: true } };
+  } catch (e) {
+    return { ok: false, error: String(e.message || e) };
+  }
+}
+
+/**
+ * UI-Bridge fuer Direkt-Entwuerfe mit globalem Limit (Fallback/Kompatibilitaet).
+ */
+function uiCreateDraftsForBatch(batchId, limit) {
+  try {
+    if (typeof createDraftsForBatch === 'function') {
+      var n = parseInt(limit, 10);
+      if (!n || n < 1) n = 9999;
+      var summary = createDraftsForBatch(String(batchId), { limit: n });
+      return { ok: true, data: { summary: summary } };
+    }
+    return { ok: true, data: { summary: 'DraftAdapter nicht gebunden.' } };
+  } catch (e) {
+    return { ok: false, error: String(e.message || e) };
+  }
+}
+
+
 /* ==================================================================
    Code.gs
    ================================================================== */
@@ -1907,6 +1930,8 @@ function onOpen() {
     .createMenu('HSB Sales OS')
     .addItem('Seitenleiste öffnen', 'showSidebar')
     .addSeparator()
+    .addItem('🔑 Berechtigungen erteilen / prüfen', 'autorisieren')
+    .addSeparator()
     .addItem('✨ Premium Sheet UX & Cockpit einrichten', 'uiSetupPremiumSheetUX')
     .addItem('🧹 Ansicht aufräumen (nur Hauptblätter)', 'uiTidyTabs')
     .addItem('👁️ Alle Blätter wieder einblenden', 'uiShowAllTabs')
@@ -1918,10 +1943,31 @@ function onOpen() {
 }
 
 function showSidebar() {
-  const html = HtmlService.createHtmlOutputFromFile('Sidebar')
-    .setTitle('HSB Sales OS')
-    .setWidth(420);
-  SpreadsheetApp.getUi().showSidebar(html);
+  try {
+    const html = HtmlService.createHtmlOutputFromFile('Sidebar')
+      .setTitle('HSB Sales OS')
+      .setWidth(420);
+    SpreadsheetApp.getUi().showSidebar(html);
+  } catch (e) {
+    Logger.log('INFO: showSidebar() kann nur direkt im Google Sheet über das Menü "HSB Sales OS -> Seitenleiste öffnen" ausgeführt werden.');
+  }
+}
+
+/**
+ * Sicherer Test- und Autorisierungs-Einstiegspunkt für das Google Sheet.
+ * Zeigt eine klare Bestätigung, sobald die Berechtigungen erteilt sind.
+ */
+function autorisieren() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const user = Session.getActiveUser().getEmail();
+  const name = ss ? ss.getName() : "Verbunden";
+  const msg = "HSB Sales OS ist jetzt vollstaendig autorisiert fuer " + (user || "dieses Google-Konto") + ".\n\nTabelle: " + name + "\n\nDu kannst jetzt die Seitenleiste oeffnen und 100 Entwuerfe erzeugen.";
+  try {
+    SpreadsheetApp.getUi().alert("✅ Berechtigungen erfolgreich erteilt!", msg, SpreadsheetApp.getUi().ButtonSet.OK);
+  } catch (e) {
+    Logger.log("AUTORISIERUNG_ERFOLGREICH: " + msg);
+  }
+  return "AUTORISIERUNG_ERFOLGREICH";
 }
 
 function uiSetupPremiumSheetUX() {

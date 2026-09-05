@@ -7,6 +7,8 @@ function onOpen() {
     .createMenu('HSB Sales OS')
     .addItem('Seitenleiste öffnen', 'showSidebar')
     .addSeparator()
+    .addItem('🔑 Berechtigungen erteilen / prüfen', 'autorisieren')
+    .addSeparator()
     .addItem('✨ Premium Sheet UX & Cockpit einrichten', 'uiSetupPremiumSheetUX')
     .addItem('🧹 Ansicht aufräumen (nur Hauptblätter)', 'uiTidyTabs')
     .addItem('👁️ Alle Blätter wieder einblenden', 'uiShowAllTabs')
@@ -18,10 +20,31 @@ function onOpen() {
 }
 
 function showSidebar() {
-  const html = HtmlService.createHtmlOutputFromFile('Sidebar')
-    .setTitle('HSB Sales OS')
-    .setWidth(420);
-  SpreadsheetApp.getUi().showSidebar(html);
+  try {
+    const html = HtmlService.createHtmlOutputFromFile('Sidebar')
+      .setTitle('HSB Sales OS')
+      .setWidth(420);
+    SpreadsheetApp.getUi().showSidebar(html);
+  } catch (e) {
+    Logger.log('INFO: showSidebar() kann nur direkt im Google Sheet über das Menü "HSB Sales OS -> Seitenleiste öffnen" ausgeführt werden.');
+  }
+}
+
+/**
+ * Sicherer Test- und Autorisierungs-Einstiegspunkt für das Google Sheet.
+ * Zeigt eine klare Bestätigung, sobald die Berechtigungen erteilt sind.
+ */
+function autorisieren() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const user = Session.getActiveUser().getEmail();
+  const name = ss ? ss.getName() : "Verbunden";
+  const msg = "HSB Sales OS ist jetzt vollstaendig autorisiert fuer " + (user || "dieses Google-Konto") + ".\n\nTabelle: " + name + "\n\nDu kannst jetzt die Seitenleiste oeffnen und 100 Entwuerfe erzeugen.";
+  try {
+    SpreadsheetApp.getUi().alert("✅ Berechtigungen erfolgreich erteilt!", msg, SpreadsheetApp.getUi().ButtonSet.OK);
+  } catch (e) {
+    Logger.log("AUTORISIERUNG_ERFOLGREICH: " + msg);
+  }
+  return "AUTORISIERUNG_ERFOLGREICH";
 }
 
 function uiSetupPremiumSheetUX() {

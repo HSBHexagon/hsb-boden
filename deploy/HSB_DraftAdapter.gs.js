@@ -358,6 +358,40 @@ function uiCreateDraftsForBatch(batchId, limit) {
   }
 }
 
+/**
+ * Verarbeitet atomar genau einen Block un-gedrafteter Leads fuer den angegebenen Batch.
+ * Gibt openCount, draftedCount, totalCount und isComplete an die UI zurueck,
+ * damit die Seitenleiste den Batch in sicheren 10er-Haeppchen abarbeiten kann,
+ * ohne in das 6-Minuten-Timeout von Google Apps Script zu laufen.
+ */
+function uiCreateDraftsChunk(batchId, chunkSize) {
+  try {
+    if (!batchId) throw new Error('Kein Batch angegeben.');
+    var size = parseInt(chunkSize, 10) || 10;
+    var summary = createDraftsForBatch(String(batchId), { limit: size });
+
+    var allLeads = (readLeads_().leads) || [];
+    var batchLeads = allLeads.filter(function (l) { return String(l.Batch_ID) === String(batchId); });
+    var draftedLeads = batchLeads.filter(function (l) { return !!l[WRITEBACK.draftId]; });
+    var openLeads = batchLeads.filter(function (l) {
+      return !l[WRITEBACK.draftId] && !l[WRITEBACK.lastError];
+    });
+
+    return {
+      ok: true,
+      data: {
+        summary: summary,
+        draftedCount: draftedLeads.length,
+        openCount: openLeads.length,
+        totalCount: batchLeads.length,
+        isComplete: openLeads.length === 0
+      }
+    };
+  } catch (e) {
+    return { ok: false, error: String(e.message || e) };
+  }
+}
+
 /** Verifiziert den explizit konfigurierten Batch und nimmt nie automatisch einen anderen. */
 function aktivenBatchFinden_() {
   var batchId = PropertiesService.getScriptProperties().getProperty(ACTIVE_BATCH_PROP);

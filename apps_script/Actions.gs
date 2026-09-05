@@ -986,3 +986,52 @@ function setupPremiumSheetUX() {
   SpreadsheetApp.flush();
   return { ok: true, message: 'Premium Sheet UX erfolgreich eingerichtet.' };
 }
+
+
+/**
+ * UI-Bridge fuer Direkt-Entwuerfe im Batch via Draft-Adapter in sicheren 10er-Haeppchen.
+ */
+function uiCreateDraftsChunk(batchId, chunkSize) {
+  try {
+    if (typeof createDraftsForBatch === 'function') {
+      var size = parseInt(chunkSize, 10) || 10;
+      var summary = createDraftsForBatch(String(batchId), { limit: size });
+      var allLeads = (readLeads_().leads) || [];
+      var batchLeads = allLeads.filter(function (l) { return String(l.Batch_ID) === String(batchId); });
+      var draftedLeads = batchLeads.filter(function (l) { return !!l.Draft_ID; });
+      var openLeads = batchLeads.filter(function (l) {
+        return !l.Draft_ID && !l.Last_Error;
+      });
+      return {
+        ok: true,
+        data: {
+          summary: summary,
+          draftedCount: draftedLeads.length,
+          openCount: openLeads.length,
+          totalCount: batchLeads.length,
+          isComplete: openLeads.length === 0
+        }
+      };
+    }
+    return { ok: true, data: { summary: 'DraftAdapter nicht gebunden.', draftedCount: 0, openCount: 0, totalCount: 0, isComplete: true } };
+  } catch (e) {
+    return { ok: false, error: String(e.message || e) };
+  }
+}
+
+/**
+ * UI-Bridge fuer Direkt-Entwuerfe mit globalem Limit (Fallback/Kompatibilitaet).
+ */
+function uiCreateDraftsForBatch(batchId, limit) {
+  try {
+    if (typeof createDraftsForBatch === 'function') {
+      var n = parseInt(limit, 10);
+      if (!n || n < 1) n = 9999;
+      var summary = createDraftsForBatch(String(batchId), { limit: n });
+      return { ok: true, data: { summary: summary } };
+    }
+    return { ok: true, data: { summary: 'DraftAdapter nicht gebunden.' } };
+  } catch (e) {
+    return { ok: false, error: String(e.message || e) };
+  }
+}

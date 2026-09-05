@@ -423,6 +423,20 @@ function laden(id, text) {
   zeig(id, '<div class="arbeit">' + esc(text || 'Einen Moment…') + '</div>');
 }
 function fehler(id, msg) {
+  var s = String(msg || '');
+  if (s.indexOf('Berechtigung') >= 0 || s.indexOf('Authorization') >= 0 || s.indexOf('rechten') >= 0) {
+    zeig(id, '<div class="meldung m-warn" style="background:#fffbeb;border:2px solid #f59e0b;padding:12px;border-radius:6px;margin:8px 0;text-align:left;">'
+      + '<b style="color:#b45309;font-size:13px;">⚠️ Einmalige Google-Freigabe erforderlich</b>'
+      + '<p style="margin:6px 0;font-size:11px;color:#78350f;line-height:1.4;">'
+      + 'Google verlangt vor dem ersten Lauf deine Zustimmung.<br>'
+      + '<b>So schaltest du es in 5 Sekunden frei:</b><br>'
+      + '1. Oben im Menü auf <b>HSB Sales OS</b> klicken<br>'
+      + '2. Auf <b>🔑 Berechtigungen erteilen / prüfen</b> klicken<br>'
+      + '3. Im Google-Dialog auf <i>Erweitert ➔ Zu HSB Sales OS wechseln ➔ Zulassen</i> klicken.<br><br>'
+      + 'Danach läuft dieser Vorgang hier sofort durch!'
+      + '</p></div>');
+    return;
+  }
   zeig(id, '<div class="meldung m-fehler"><b>Das hat nicht geklappt</b>'
        + esc(msg) + '</div>');
 }
@@ -867,32 +881,48 @@ function direktEntwuerfe(batchId) {
   google.script.run.withSuccessHandler(function (r) {
     direktLaufend[batchId] = false;
     if (!r.ok) { fehler(ziel, r.error); return; }
-    var weiter = confirm(
-      'Testentwurf erstellt:\n\n' + r.data.summary
-      + '\n\nJetzt den REST dieses Batches als echte Entwürfe anlegen?'
-      + ' (Reale Kontakte, nur Entwurf, kein Versand.)'
-    );
-    if (!weiter) {
-      zeig(ziel, '<div class="meldung m-gut">Testentwurf angelegt. '
-        + 'Rest nicht ausgelöst.</div>');
+    var msg = 'Testentwurf erstellt:\n\n' + r.data.summary + '\n\nJetzt den REST dieses Batches als echte Entwürfe anlegen? (Reale Kontakte, nur Entwurf, kein Versand.)';
+    if (!confirm(msg)) {
+      zeig(ziel, '<div class="meldung m-gut">Testentwurf angelegt. Rest nicht ausgelöst.</div>');
       return;
     }
     direktLaufend[batchId] = true;
-    zeig(ziel, '<div class="arbeit">Restliche Entwürfe werden erzeugt…</div>');
-    google.script.run.withSuccessHandler(function (r2) {
-      direktLaufend[batchId] = false;
-      if (!r2.ok) { fehler(ziel, r2.error); return; }
-      zeig(ziel, '<div class="meldung m-gut"><pre>' + esc(r2.data.summary)
-        + '</pre></div>');
-      batchListeLaden();
-    }).withFailureHandler(function (e) {
-      direktLaufend[batchId] = false;
-      fehler(ziel, e.message);
-    }).uiCreateDraftsForBatch(batchId, 9999);
+    direktEntwuerfeSchleife(batchId, ziel);
   }).withFailureHandler(function (e) {
     direktLaufend[batchId] = false;
     fehler(ziel, e.message);
-  }).uiCreateDraftsForBatch(batchId, 1);
+  }).uiCreateDraftsChunk(batchId, 1);
+}
+
+function direktEntwuerfeSchleife(batchId, ziel) {
+  zeig(ziel, '<div class="arbeit">Erzeuge Entwürfe in 10er-Blöcken… Bitte warten.</div>');
+  google.script.run.withSuccessHandler(function (r) {
+    if (!r.ok) {
+      direktLaufend[batchId] = false;
+      var retryBtn = '<br><button class="sekundaer" style="margin-top:6px;" onclick="direktEntwuerfeSchleife(\'' + esc(batchId) + '\',\'' + esc(ziel) + '\')">Ab aktuellem Stand fortsetzen</button>';
+      fehler(ziel, r.error + retryBtn);
+      return;
+    }
+    var d = r.data;
+    var total = d.totalCount || 0;
+    var open = d.openCount || 0;
+    var drafted = d.draftedCount || (total - open);
+    var pct = total > 0 ? Math.round((drafted / total) * 100) : 100;
+
+    if (d.isComplete || open === 0) {
+      direktLaufend[batchId] = false;
+      zeig(ziel, '<div class="meldung m-gut"><b>✅ Alle ' + total + ' Entwürfe angelegt!</b><br>Die Entwürfe liegen jetzt mit Flyer in Outlook bereit.<br><small>Bitte in Outlook prüfen und manuell versenden.</small></div>');
+      batchListeLaden();
+    } else {
+      var bar = '<div style="background:#e5e7eb;border-radius:4px;height:8px;margin:6px 0;overflow:hidden;"><div style="background:#10b981;height:100%;width:' + pct + '%;"></div></div>';
+      zeig(ziel, '<div class="arbeit"><b>' + drafted + ' von ' + total + ' Entwürfen</b> angelegt (' + pct + '%)…' + bar + '<small>Nächster 10er-Block läuft automatisch weiter…</small></div>');
+      direktEntwuerfeSchleife(batchId, ziel);
+    }
+  }).withFailureHandler(function (e) {
+    direktLaufend[batchId] = false;
+    var retryBtn = '<br><button class="sekundaer" style="margin-top:6px;" onclick="direktEntwuerfeSchleife(\'' + esc(batchId) + '\',\'' + esc(ziel) + '\')">Ab aktuellem Stand fortsetzen</button>';
+    fehler(ziel, e.message + retryBtn);
+  }).uiCreateDraftsChunk(batchId, 10);
 }
 
 /**

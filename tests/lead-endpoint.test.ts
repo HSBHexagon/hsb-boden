@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { onRequestPost, onRequestOptions, onRequestGet } from "../functions/api/lead";
+import { onRequestPost, onRequestOptions, onRequestGet, checkJsonDepth } from "../functions/api/lead";
 
 const testEnv = { LEAD_WEBHOOK_URL: "https://script.google.com/macros/s/EXAMPLE/exec" };
 const authenticatedEnv = {
@@ -436,5 +436,51 @@ describe("OPTIONS /api/lead", () => {
     const res = await onRequestOptions(makeContext(makeRequest(undefined, { method: "OPTIONS" })));
     expect(res.status).toBe(204);
     expect(res.headers.get("Access-Control-Allow-Methods")).toContain("POST");
+  });
+});
+
+describe("checkJsonDepth", () => {
+  it("allows flat JSON objects and arrays", () => {
+    expect(() => checkJsonDepth('{}', 32)).not.toThrow();
+    expect(() => checkJsonDepth('{"a": 1}', 32)).not.toThrow();
+    expect(() => checkJsonDepth('[]', 32)).not.toThrow();
+    expect(() => checkJsonDepth('[1, 2, 3]', 32)).not.toThrow();
+  });
+
+  it("allows nested JSON within the depth limit", () => {
+    // Depth 2
+    expect(() => checkJsonDepth('{"a": {"b": 1}}', 32)).not.toThrow();
+    // Depth 3
+    expect(() => checkJsonDepth('{"a": [{"b": 1}]}', 32)).not.toThrow();
+    // Depth 5
+    expect(() => checkJsonDepth('{"a": [[{"b": {"c": 1}}]]}', 32)).not.toThrow();
+  });
+
+  it("throws when depth limit is exceeded", () => {
+    // maxDepth = 2, actual depth 3
+    expect(() => checkJsonDepth('{"a": {"b": {"c": 1}}}', 2)).toThrow("json_too_deep");
+    // maxDepth = 1, actual depth 2
+    expect(() => checkJsonDepth('{"a": [1]}', 1)).toThrow("json_too_deep");
+    // maxDepth = 0, actual depth 1
+    expect(() => checkJsonDepth('{}', 0)).toThrow("json_too_deep");
+  });
+
+  it("does not count braces or brackets inside strings", () => {
+    // Even though there are many braces, they are all inside a string value
+    const jsonStr = '{"a": "{[[[[{[[[[}]]]]}]]]]}"}';
+    expect(() => checkJsonDepth(jsonStr, 1)).not.toThrow();
+  });
+
+  it("correctly handles escaped quotes inside strings", () => {
+    // The string contains an escaped quote which should not terminate the string early
+    const jsonStr = '{"a": "hello \\" world { { { { { "}';
+    // The actual depth is 1. If escaped quote was mishandled, the braces would count as object depth.
+    expect(() => checkJsonDepth(jsonStr, 1)).not.toThrow();
+  });
+
+  it("correctly handles escaped characters", () => {
+    // Example: string with an escaped backslash before a quote
+    const jsonStr = '{"a": "hello \\\\", "b": 1}';
+    expect(() => checkJsonDepth(jsonStr, 1)).not.toThrow();
   });
 });

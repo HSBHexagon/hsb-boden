@@ -79,7 +79,7 @@ function jsonResponse(status: number, body: unknown, origin: string | null) {
   return new Response(JSON.stringify(body), { status, headers: corsHeaders(origin) });
 }
 
-function checkJsonDepth(jsonStr: string, maxDepth: number = 32): void {
+export function checkJsonDepth(jsonStr: string, maxDepth: number = 32): void {
   let depth = 0;
   let inString = false;
   let escapeNext = false;

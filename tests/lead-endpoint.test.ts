@@ -393,15 +393,7 @@ describe("POST /api/lead", () => {
 
   it("rejects JSON with nesting depth > 32 with 400 before attempting to parse", async () => {
     // Create a JSON payload with depth 35 (exceeds max depth of 32)
-    let deepJson = '{"a":';
-    for (let i = 0; i < 34; i++) {
-      deepJson += '{"b":';
-    }
-    deepJson += '1';
-    for (let i = 0; i < 34; i++) {
-      deepJson += '}';
-    }
-    deepJson += '}';
+    const deepJson = '{"a":' + '{"b":'.repeat(34) + '1' + '}'.repeat(35);
 
     const req = new Request("https://hsb-boden.de/api/lead", {
       method: "POST",

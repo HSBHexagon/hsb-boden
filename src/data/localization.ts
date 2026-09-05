@@ -14,14 +14,23 @@ export const supportedLanguages: Array<{
   { code: "nl", label: "Dutch", nativeLabel: "Nederlands", shortHint: "Voor bezoekers uit Nederland" },
 ];
 
+
+const supportedLanguagesByCode = supportedLanguages.reduce((acc, lang) => {
+  acc[lang.code] = lang;
+  return acc;
+}, {} as Record<LanguageCode, (typeof supportedLanguages)[number]>);
+
 const fallbackOrder: LanguageCode[] = ["en", "de", "tr", "pl", "fr", "nl"];
 
 export function resolveSuggestedLanguages(locale: string | undefined) {
   const normalized = (locale ?? "").toLowerCase();
   const primary = normalized.split("-")[0] as LanguageCode;
-  const direct = supportedLanguages.find((language) => language.code === primary);
+  const direct = supportedLanguagesByCode[primary];
   const order = direct ? [direct.code, ...fallbackOrder.filter((code) => code !== direct.code)] : fallbackOrder;
-  return order
-    .map((code) => supportedLanguages.find((language) => language.code === code))
-    .filter((language): language is (typeof supportedLanguages)[number] => Boolean(language));
+  const result = [];
+  for (let i = 0; i < order.length; i++) {
+    const lang = supportedLanguagesByCode[order[i]];
+    if (lang) result.push(lang);
+  }
+  return result;
 }

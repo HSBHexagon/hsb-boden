@@ -34,11 +34,40 @@ describe("lead form validation", () => {
     expect(result.success).toBe(false);
   });
 
-  it("serializes CRM-compatible payload fields", () => {
-    const serialized = serializeLeadPayload(validPayload);
+describe("serializeLeadPayload", () => {
+    it("maps all provided fields correctly", () => {
+      const serialized = serializeLeadPayload(validPayload);
+      expect(serialized).toEqual({
+        source: "website",
+        legalBasis: "inquiry",
+        optOutStatus: "not_applicable",
+        firstName: "Max",
+        lastName: "Mustermann",
+        company: "Muster Produktion GmbH",
+        email: "max@example.com",
+        phone: "+49 123 456789",
+        industry: "molkerei",
+        projectType: "sanierung",
+        areaSize: "450",
+        currentFloor: "Keramik mit Fugenschäden",
+        systemInterest: "Säuren/Laugen, Hochdruckreinigung",
+        liveOperation: "ja",
+        timeframe: "Q3 2026",
+        message: "Bitte Belastungsprofil prüfen.",
+      });
+    });
 
-    expect(serialized.source).toBe("website");
-    expect(serialized.systemInterest).toContain("Säuren/Laugen");
-    expect(serialized.legalBasis).toBe("inquiry");
+    it("handles missing optional fields with empty strings", () => {
+      const { areaSize, currentFloor, timeframe, ...payloadWithoutOptionals } = validPayload;
+      const serialized = serializeLeadPayload(payloadWithoutOptionals);
+      expect(serialized.areaSize).toBe("");
+      expect(serialized.currentFloor).toBe("");
+      expect(serialized.timeframe).toBe("");
+    });
+
+    it("throws when invalid payload is passed", () => {
+      const invalidPayload = { ...validPayload, email: "invalid-email" };
+      expect(() => serializeLeadPayload(invalidPayload)).toThrow();
+    });
   });
 });

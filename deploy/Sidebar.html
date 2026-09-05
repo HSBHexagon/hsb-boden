@@ -292,7 +292,7 @@ button.tat[disabled] { opacity: .45; cursor: not-allowed; }
   <div class="titel" id="jordi100Titel">Jordi · 100 Outlook-Entwürfe</div>
   <div class="erklaerung">
     Ein Klick gibt exakt 100 sichere Jordi-Kontakte frei, reserviert den Batch
-    und erzeugt die Outlook-Pakete automatisch nacheinander. Es wird nichts
+    und erzeugt die Entwürfe direkt im Outlook-Postfach. Es wird nichts
     automatisch versendet.
   </div>
   <button class="tat primaer" id="jordi100Button" onclick="jordi100Start()">
@@ -668,7 +668,7 @@ function jordi100Start() {
     cockpitLaden();
     batchListeLaden();
     el('s3').open = true;
-    if (!b.already_processed) emlExport(b.batch_id, 0);
+    if (!b.already_processed) direktEntwuerfe(b.batch_id);
   }).withFailureHandler(function (e) {
     btn.disabled = false;
     btn.textContent = 'Vorgang sicher erneut versuchen';
@@ -737,10 +737,8 @@ function batchListeLaden() {
         + (b.campaign ? ' · ' + esc(b.campaign) : '')
         + (b.sent_at ? ' · versendet ' + esc(b.sent_at) : '') + '</div>'
         + '<div class="knoepfe">'
-        + '<button onclick="emlExport(\'' + esc(b.batch_id) + '\',0)">'
-        + 'Entwürfe erzeugen (ZIP-Import)</button>'
-        + '<button onclick="direktEntwuerfe(\'' + esc(b.batch_id) + '\')">'
-        + 'Direkt-Entwürfe (Power Automate)</button>'
+        + '<button class="tat primaer" onclick="direktEntwuerfe(\'' + esc(b.batch_id) + '\')">'
+        + 'Outlook-Entwürfe direkt anlegen</button>'
         + '<button onclick="freigeben(\'' + esc(b.batch_id) + '\')">'
         + 'Freigeben</button>'
         + '<button onclick="versandBestaetigen(\'' + esc(b.batch_id) + '\',0)">'

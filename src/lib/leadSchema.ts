@@ -4,7 +4,7 @@ import { resolveChannel, sanitizePagePath, sanitizeReferrerOrigin, sanitizeUtmVa
 
 // Bewusst NICHT aus src/data/site.ts importiert: site.ts liest import.meta.env,
 // das im Pages-Function-Bundle nicht existiert (Publish-Crash). Muss mit
-// site.domain übereinstimmen — abgesichert durch Test in lead-endpoint-schema.
+// site.domain übereinstimmen — abgesichert durch Test in leadSchema.
 export const SITE_ORIGIN = "https://www.hsb-boden.de";
 
 // Schema für POST /api/lead (serverseitig). Bewusst getrennt von leadFormSchema

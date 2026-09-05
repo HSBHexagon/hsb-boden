@@ -1,0 +1,3 @@
+## 2026-09-05 - Required field indicator accessibility and layout
+**Learning:** Adding visual indicators (like asterisks) to form labels requires specific attention to both accessibility and CSS grid layouts. If a label is part of a CSS grid, simply appending a `span` with an asterisk might push it to a new grid cell, breaking the intended layout.
+**Action:** When adding inline visual indicators to form labels within CSS grids, always wrap the main label text and the indicator in a common `<span>` container to keep them on the same grid track. Ensure the indicator uses `aria-hidden="true"` so it is ignored by screen readers, which already announce the `required` HTML attribute.

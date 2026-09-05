@@ -29,6 +29,61 @@ describe("leadEndpointSchema", () => {
     expect(result.success).toBe(true);
   });
 
+  it("rejects firstName shorter than 2 characters", () => {
+    const result = leadEndpointSchema.safeParse({ ...validPayload, firstName: "A" });
+    expect(result.success).toBe(false);
+  });
+
+  it("rejects firstName longer than 80 characters", () => {
+    const result = leadEndpointSchema.safeParse({ ...validPayload, firstName: "A".repeat(81) });
+    expect(result.success).toBe(false);
+  });
+
+  it("rejects lastName shorter than 2 characters", () => {
+    const result = leadEndpointSchema.safeParse({ ...validPayload, lastName: "B" });
+    expect(result.success).toBe(false);
+  });
+
+  it("rejects lastName longer than 80 characters", () => {
+    const result = leadEndpointSchema.safeParse({ ...validPayload, lastName: "B".repeat(81) });
+    expect(result.success).toBe(false);
+  });
+
+  it("rejects company shorter than 2 characters", () => {
+    const result = leadEndpointSchema.safeParse({ ...validPayload, company: "C" });
+    expect(result.success).toBe(false);
+  });
+
+  it("rejects company longer than 120 characters", () => {
+    const result = leadEndpointSchema.safeParse({ ...validPayload, company: "C".repeat(121) });
+    expect(result.success).toBe(false);
+  });
+
+  it("rejects phone shorter than 5 characters", () => {
+    const result = leadEndpointSchema.safeParse({ ...validPayload, phone: "1234" });
+    expect(result.success).toBe(false);
+  });
+
+  it("rejects industry shorter than 2 characters", () => {
+    const result = leadEndpointSchema.safeParse({ ...validPayload, industry: "A" });
+    expect(result.success).toBe(false);
+  });
+
+  it("rejects areaSize longer than 80 characters", () => {
+    const result = leadEndpointSchema.safeParse({ ...validPayload, areaSize: "A".repeat(81) });
+    expect(result.success).toBe(false);
+  });
+
+  it("rejects source shorter than 1 character", () => {
+    const result = leadEndpointSchema.safeParse({ ...validPayload, source: "" });
+    expect(result.success).toBe(false);
+  });
+
+  it("rejects legalBasis shorter than 1 character", () => {
+    const result = leadEndpointSchema.safeParse({ ...validPayload, legalBasis: "" });
+    expect(result.success).toBe(false);
+  });
+
   it("rejects when privacyConsent is not true", () => {
     const result = leadEndpointSchema.safeParse({ ...validPayload, privacyConsent: false });
     expect(result.success).toBe(false);
@@ -46,6 +101,11 @@ describe("leadEndpointSchema", () => {
 
   it("rejects message shorter than 10 characters", () => {
     const result = leadEndpointSchema.safeParse({ ...validPayload, message: "zu kurz" });
+    expect(result.success).toBe(false);
+  });
+
+  it("rejects message longer than 2000 characters", () => {
+    const result = leadEndpointSchema.safeParse({ ...validPayload, message: "M".repeat(2001) });
     expect(result.success).toBe(false);
   });
 

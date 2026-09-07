@@ -1,0 +1,3 @@
+## 2026-09-07 - Improved Form Accessibility and Polish
+**Learning:** Native form validation required fields should have visible markers for sighted users, and custom focus-visible states ensure keyboard navigation is clear, particularly in interactive form controls inside Astro components.
+**Action:** When working on forms, add `focus-visible` states to all interactive elements (`input`, `select`, `textarea`, `button`) using existing design system classes, and explicitly mark required fields with visually distinct indicators (e.g. `aria-hidden` asterisks) inside labels. Ensure visual indicators don't break flex/grid layouts by grouping text and indicators inside structural `span`s where appropriate.

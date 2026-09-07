@@ -50,7 +50,8 @@ function preflight() {
   var props = PropertiesService.getScriptProperties();
   Object.keys(ADAPTER_PROPS).forEach(function (owner) {
     var key = ADAPTER_PROPS[owner];
-    var url = props.getProperty(key);
+    var raw = props.getProperty(key);
+    var url = raw ? String(raw).trim() : '';
     var good = !!url && url.indexOf('https://') === 0;
     report.push((good ? 'OK   ' : 'FEHLT') + '  Skripteigenschaft ' + key);
     if (!good) ok = false;
@@ -84,13 +85,89 @@ function textToHtml_(text) {
     .join('');
 }
 
+/**
+ * Pflichtangaben nach §35a GmbHG. Quelle: hsb-boden.de/impressum (2026-09-07).
+ * Ohne diese Angaben ist eine Geschaefts-E-Mail formal angreifbar.
+ */
+var FIRMA = {
+  name: 'HSB Hexagon Säurebau GmbH',
+  strasse: 'Benzstraße 6',
+  plzOrt: '48599 Gronau',
+  telefon: '+49 (0)2562 9463030',
+  web: 'www.hsb-boden.de',
+  sitz: 'Gronau',
+  registergericht: 'Amtsgericht Coesfeld',
+  hrb: 'HRB 21481',
+  geschaeftsfuehrer: 'Jordi Post'
+};
+
+function htmlEscape_(text) {
+  return String(text == null ? '' : text)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+/**
+ * Signatur als HTML. Bewusst ohne externe Bilder: Outlook blockiert extern
+ * geladene Logos standardmaessig und sie erhoehen die Spam-Bewertung.
+ * Inline-Styles, weil Outlook Desktop CSS im <head> weitgehend ignoriert.
+ */
+function signaturHtml_(ownerDisplay, mailbox, mobile) {
+  var mobilZeile = mobile ? ('Mobil ' + htmlEscape_(mobile) + '<br>') : '';
+  return '<p style="margin:16px 0 0 0;font-family:Arial,Helvetica,sans-serif;'
+    + 'font-size:10pt;color:#222222;line-height:1.45;">'
+    + '<strong>' + htmlEscape_(ownerDisplay) + '</strong><br>'
+    + htmlEscape_(FIRMA.name) + '<br>'
+    + htmlEscape_(FIRMA.strasse) + ' &middot; ' + htmlEscape_(FIRMA.plzOrt) + '<br>'
+    + mobilZeile
+    + 'Tel. ' + htmlEscape_(FIRMA.telefon) + '<br>'
+    + '<a href="mailto:' + htmlEscape_(mailbox) + '" style="color:#1155cc;">'
+    + htmlEscape_(mailbox) + '</a> &middot; '
+    + '<a href="https://' + FIRMA.web + '" style="color:#1155cc;">' + FIRMA.web + '</a>'
+    + '</p>'
+    + '<p style="margin:10px 0 0 0;font-family:Arial,Helvetica,sans-serif;'
+    + 'font-size:8pt;color:#777777;line-height:1.4;">'
+    + 'Sitz der Gesellschaft: ' + htmlEscape_(FIRMA.sitz) + ' &middot; '
+    + htmlEscape_(FIRMA.registergericht) + ' ' + htmlEscape_(FIRMA.hrb) + ' &middot; '
+    + 'Geschäftsführer: ' + htmlEscape_(FIRMA.geschaeftsfuehrer)
+    + '</p>';
+}
+
+/**
+ * HTML-Body: derselbe Text wie renderEmail_(), aber der Klartext-Signaturteil
+ * wird abgeschnitten und durch signaturHtml_ ersetzt, damit dieselbe
+ * Information nicht doppelt erscheint. Der Abmelde-Hinweis bleibt erhalten -
+ * er dokumentiert die Widerspruchsmoeglichkeit nach §7 UWG.
+ */
+function bodyHtmlMitSignatur_(mail, flyer) {
+  var marker = 'Mit freundlichen Grüßen';
+  var teile = String(mail.body).split(marker);
+  var haupttext = teile[0];
+  var rest = teile.length > 1 ? teile[1] : '';
+  var abmelde = rest.indexOf('---') >= 0 ? rest.split('---')[1].trim() : '';
+
+  var absaetze = haupttext.trim().split(/\n{2,}/).map(function (p) {
+    return '<p style="margin:0 0 12px 0;">'
+      + htmlEscape_(p).replace(/\n/g, '<br>') + '</p>';
+  }).join('');
+
+  return '<div style="font-family:Arial,Helvetica,sans-serif;font-size:11pt;'
+    + 'color:#222222;line-height:1.5;">'
+    + absaetze
+    + '<p style="margin:0 0 4px 0;">' + marker + '</p>'
+    + signaturHtml_(flyer.displayName, flyer.mailbox, flyer.mobile)
+    + '<p style="margin:16px 0 0 0;font-family:Arial,Helvetica,sans-serif;'
+    + 'font-size:8pt;color:#999999;">' + htmlEscape_(abmelde) + '</p>'
+    + '</div>';
+}
+
 function flyerFelderFuer_(key, owner) {
   var verified = getVerifiedFlyer_(owner);
   if (!verified) throw new Error('ASSET_GATE_FAIL: kein verifizierter Flyer fuer ' + owner);
   var blob = verified.blob || DriveApp.getFileById(verified.fileId).getBlob();
 
   var felder = {
-    attachmentName: blob.getName(),
+    // Empfaengersichtbarer Name, nicht der interne Dateiname.
+    attachmentName: (FLYERS[key] && FLYERS[key].attachmentName) || blob.getName(),
     attachmentContentBytes: Utilities.base64Encode(blob.getBytes())
   };
   felder._flyer = verified.flyer;
@@ -131,8 +208,12 @@ function flyerPruefen(owner) {
 
 function adapterUrlFor_(owner) {
   var key = ADAPTER_PROPS[String(owner).toUpperCase().indexOf('JORDI') >= 0 ? 'JORDI' : 'JOEL'];
-  var url = PropertiesService.getScriptProperties().getProperty(key);
-  if (!url) throw new Error('Skripteigenschaft ' + key + ' ist nicht gesetzt.');
+  var raw = PropertiesService.getScriptProperties().getProperty(key);
+  if (!raw) throw new Error('Skripteigenschaft ' + key + ' ist nicht gesetzt.');
+  var url = String(raw).trim();
+  if (url.indexOf('https://') !== 0) {
+    throw new Error('Skripteigenschaft ' + key + ' ist keine gueltige HTTPS-URL.');
+  }
   return url;
 }
 
@@ -182,7 +263,7 @@ function createDraftsForBatch(batchId, options) {
       owner: ownerKey,
       to: lead.Email,
       subject: rendered.subject,
-      bodyHtml: textToHtml_(rendered.body)
+      bodyHtml: bodyHtmlMitSignatur_(rendered, flyerFelder._flyer)
     };
     Object.keys(flyerFelder).forEach(function (k) {
       if (k !== '_flyer') payload[k] = flyerFelder[k];

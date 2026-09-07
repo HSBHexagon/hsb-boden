@@ -37,6 +37,12 @@ const FLYERS = {
     displayName: 'Jordi Post',
     mailbox: 'j-post@hsb-boden.de',
     fileName: 'HSB-Flyer-Jordi-Post_FINAL.pdf',
+    // Name im Anhang beim Empfaenger. Getrennt von fileName, weil dieser an
+    // Hash-Gate und Drive-Ablage haengt und nicht umbenannt werden darf.
+    attachmentName: 'HSB-HEXAGON-Industrieboeden-Flyer.pdf',
+    // Persoenliche Mobilnummer fuer die Signatur, Quelle ist der kanonische
+    // Flyer. Das Impressum traegt nur die zentrale Durchwahl.
+    mobile: '0170 2340904',
     driveId: '1UMX-fi2lJ9bo14KwuClqgfZQWECdE_XV',
     sha256: 'f343ff05d1e7353a3a91a60f5475c054e1af958ea72e466445e60b9f69059a21'
   },
@@ -45,6 +51,8 @@ const FLYERS = {
     displayName: 'Joel Cherino Diaz',
     mailbox: 'j-cherino@hsb-boden.de',
     fileName: 'HSB-Flyer-Joel-Cherino_FINAL.pdf',
+    attachmentName: 'HSB-HEXAGON-Industrieboeden-Flyer.pdf',
+    mobile: '0151 21886891',
     driveId: '16Kt-eRk1uY0HorZCrEmGt3QfGcRpYadS',
     sha256: '2bccadacc77b531057583d2d650963c30deceed36c8be1fd90ca64e8b8cde5fb'
   }

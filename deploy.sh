@@ -80,6 +80,10 @@ python3 "$ROOT/engine/build_single.py" || fail "Buendeln fehlgeschlagen"
 mkdir -p "$DEPLOY"
 cp "$SRC/HSB_SALES_OS.gs" "$DEPLOY/HSB_SALES_OS.js"
 cp "$SRC/Sidebar.html"    "$DEPLOY/Sidebar.html"
+# HSB_DraftAdapter.gs steckt NICHT im Buendel von build_single.py (das
+# umfasst nur Config/Engine/Actions/Code). Ohne diese Zeile blieben
+# Aenderungen am Draft-Adapter beim Deploy stillschweigend liegen.
+cp "$SRC/HSB_DraftAdapter.gs" "$DEPLOY/HSB_DraftAdapter.gs.js"
 [ -f "$ROOT/deploy_manifest.json" ] || fail "deploy_manifest.json fehlt"
 
 # --- 3. Projekt verwenden -------------------------------------------------

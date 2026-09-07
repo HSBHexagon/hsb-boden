@@ -58,6 +58,7 @@ class Batch:
     owner_key: str
     owner_display: str
     mailbox: str
+    mobile: str
     campaign: str
     created_at: str
     asset_filename: str
@@ -186,6 +187,7 @@ def prepare_batch(
         owner_key=owner_key,
         owner_display=flyer.display_name,
         mailbox=flyer.mailbox,
+        mobile=flyer.mobile,
         campaign=campaign,
         created_at=utc_now_iso(),
         asset_filename=flyer.filename,
@@ -303,6 +305,99 @@ def render_email(lead: dict, batch: Batch, template: str | None = None) -> tuple
     body = body.format(greeting=greeting, owner=owner, mailbox=batch.mailbox,
                        company=company)
     return subject, body
+
+
+# --------------------------------------------------------------------------
+# HTML-Fassung inkl. Signatur
+# --------------------------------------------------------------------------
+
+# Pflichtangaben nach §35a GmbHG. Quelle: https://www.hsb-boden.de/impressum/
+# (abgerufen 2026-09-07). Ohne diese Angaben ist eine Geschaefts-E-Mail
+# formal angreifbar - deshalb stehen sie fest im Code und nicht im Template.
+FIRMA = {
+    "name": "HSB Hexagon Säurebau GmbH",
+    "strasse": "Benzstraße 6",
+    "plz_ort": "48599 Gronau",
+    "telefon": "+49 (0)2562 9463030",
+    "web": "www.hsb-boden.de",
+    "sitz": "Gronau",
+    "registergericht": "Amtsgericht Coesfeld",
+    "hrb": "HRB 21481",
+    "geschaeftsfuehrer": "Jordi Post",
+}
+
+
+def _html_escape(text: str) -> str:
+    return (str(text or "")
+            .replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;"))
+
+
+def signatur_html(owner_display: str, mailbox: str, mobile: str = "") -> str:
+    """E-Mail-Signatur als HTML.
+
+    Bewusst ohne externe Bilder: extern geladene Logos werden von Outlook
+    standardmaessig blockiert und erhoehen die Spam-Bewertung. Inline-Styles
+    statt <style>-Block, weil Outlook Desktop CSS im Head weitgehend ignoriert.
+
+    `mobile` ist die persoenliche Nummer des Absenders und steht bewusst
+    ueber der zentralen Durchwahl - im Vertrieb ist der direkte Rueckruf
+    der haeufigere Fall.
+    """
+    f = FIRMA
+    mobil_zeile = (f'Mobil {_html_escape(mobile)}<br>' if mobile else '')
+    return (
+        '<p style="margin:16px 0 0 0;font-family:Arial,Helvetica,sans-serif;'
+        'font-size:10pt;color:#222222;line-height:1.45;">'
+        f'<strong>{_html_escape(owner_display)}</strong><br>'
+        f'{_html_escape(f["name"])}<br>'
+        f'{_html_escape(f["strasse"])} &middot; {_html_escape(f["plz_ort"])}<br>'
+        f'{mobil_zeile}'
+        f'Tel. {_html_escape(f["telefon"])}<br>'
+        f'<a href="mailto:{_html_escape(mailbox)}" style="color:#1155cc;">'
+        f'{_html_escape(mailbox)}</a> &middot; '
+        f'<a href="https://{f["web"]}" style="color:#1155cc;">{f["web"]}</a>'
+        '</p>'
+        '<p style="margin:10px 0 0 0;font-family:Arial,Helvetica,sans-serif;'
+        'font-size:8pt;color:#777777;line-height:1.4;">'
+        f'Sitz der Gesellschaft: {_html_escape(f["sitz"])} &middot; '
+        f'{_html_escape(f["registergericht"])} {_html_escape(f["hrb"])} &middot; '
+        f'Geschäftsführer: {_html_escape(f["geschaeftsfuehrer"])}'
+        '</p>'
+    )
+
+
+def render_email_html(lead: dict, batch: Batch) -> tuple[str, str]:
+    """(subject, body_html) - derselbe Text wie render_email(), aber als HTML
+    mit Signaturblock. Der Abmelde-Hinweis bleibt erhalten, weil er die
+    Widerspruchsmoeglichkeit nach §7 UWG dokumentiert."""
+    subject, body = render_email(lead, batch)
+
+    # Der Signaturteil steckt bereits als Klartext im Body-Template. Fuer die
+    # HTML-Fassung wird er dort abgeschnitten und durch signatur_html ersetzt,
+    # damit dieselbe Information nicht doppelt erscheint.
+    marker = "Mit freundlichen Grüßen"
+    haupttext, _, rest = body.partition(marker)
+    abmelde = ""
+    if "---" in rest:
+        abmelde = rest.split("---", 1)[1].strip()
+
+    absatz = "".join(
+        f'<p style="margin:0 0 12px 0;">{_html_escape(p).replace(chr(10), "<br>")}</p>'
+        for p in haupttext.strip().split("\n\n") if p.strip()
+    )
+
+    html = (
+        '<div style="font-family:Arial,Helvetica,sans-serif;font-size:11pt;'
+        'color:#222222;line-height:1.5;">'
+        f'{absatz}'
+        f'<p style="margin:0 0 4px 0;">{marker}</p>'
+        f'{signatur_html(batch.owner_display, batch.mailbox, getattr(batch, "mobile", ""))}'
+        '<p style="margin:16px 0 0 0;font-family:Arial,Helvetica,sans-serif;'
+        'font-size:8pt;color:#999999;">'
+        f'{_html_escape(abmelde)}</p>'
+        '</div>'
+    )
+    return subject, html
 
 
 def build_eml(lead: dict, batch: Batch, pdf_bytes: bytes) -> bytes:

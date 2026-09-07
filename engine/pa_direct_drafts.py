@@ -17,13 +17,19 @@ Send-Action im Flow):
     und deshalb bekommt der Flyer die Bytes direkt im Trigger-Body statt per
     HTTP-Download-Aktion (die waere ebenfalls Premium).
 
-Zwei Uebertragungswege wurden geprueft, nur einer funktioniert zuverlaessig
-fuer Button-Trigger:
+Die Trigger-Art bestimmt den Uebertragungsweg - das ist keine Praeferenz,
+sondern eine harte Grenze (2026-09-07 an beiden Flows nachgemessen):
 
-  - SAS-Callback-URL (`listCallbackUrl`): fuer Button-Trigger von Microsoft
+  - Button-Trigger (Jordi): NUR ueber den authentifizierten Logic-Flows-
+    Connector-Endpunkt. Die SAS-Callback-URL ist hier von Microsoft
     blockiert (`ListCallbackUrlOperationBlocked`).
-  - Authentifizierter Logic-Flows-Connector-Endpunkt (das, was dieses
-    Werkzeug nutzt): funktioniert fuer beide Trigger-Arten.
+  - Http-/Request-Trigger (Joel): NUR ueber die eigene Callback-URL
+    (`listCallbackUrl`). Der Connector-Endpunkt quittiert diesen Trigger-Typ
+    mit HTTP 500 "Unable to cast object of type Dictionary to JObject" -
+    und zwar in der Trigger-Schicht, es entsteht nicht einmal ein Flow-Lauf.
+
+    Eine frueherer Kommentarstand behauptete, der Connector-Endpunkt taeuge
+    fuer beide Trigger-Arten. Das ist widerlegt.
 
     1. GET .../powerautomate/apis/shared_logicflows?api-version=1
        (PPAPI, Token-Ressource https://service.powerapps.com/)
@@ -80,16 +86,22 @@ FLOWS = {
     "JOEL": {
         "flowId": "137601e8-7369-4a74-9564-959f1551e48d",
         "trigger": "manual",
+        "triggerKind": "Http",     # Request-Trigger -> Callback-URL noetig
         "expectedAccount": "j-cherino@hsb-boden.de",
-        "usesFlyerUrl": True,   # Flow laedt den Flyer selbst per HTTP-Aktion
+        "usesFlyerUrl": False,  # Live-Flow erwartet attachmentContentBytes im Trigger-Body
     },
     "JORDI": {
         "flowId": "47ee3d7a-626c-4fff-9e16-6d938949e4bd",
         "trigger": "manual",
+        "triggerKind": "Button",   # Button-Trigger -> Connector-Endpunkt
         "expectedAccount": "j-post@hsb-boden.de",
         "usesFlyerUrl": False,  # kein Premium -> Bytes direkt im Body
     },
 }
+
+FLOW_API_BASE = "https://api.flow.microsoft.com"
+FLOW_ENV = "Default-8adbbf2e-fd2c-4857-8540-bbcdb3a20f30"
+FLOW_RESOURCE_TOKEN = "https://service.flow.microsoft.com/"
 
 
 class PaFehler(RuntimeError):
@@ -164,17 +176,51 @@ def _runtime_url() -> str:
     return url
 
 
+def callback_url(owner: str) -> str:
+    """Callback-URL eines Http-/Request-Triggers. Nur fuer diese Trigger-Art
+    nutzbar; bei Button-Triggern antwortet Microsoft mit
+    `ListCallbackUrlOperationBlocked`."""
+    flow = FLOWS[owner]
+    token = _az_token(FLOW_RESOURCE_TOKEN)
+    url = (f"{FLOW_API_BASE}/providers/Microsoft.ProcessSimple/environments/"
+           f"{FLOW_ENV}/flows/{flow['flowId']}/triggers/{flow['trigger']}"
+           f"/listCallbackUrl?api-version=2016-11-01")
+    req = urllib.request.Request(url, data=b"", method="POST")
+    req.add_header("Authorization", f"Bearer {token}")
+    try:
+        with urllib.request.urlopen(req, timeout=30) as r:
+            daten = json.load(r)
+    except urllib.error.HTTPError as e:
+        raise PaFehler(
+            f"Callback-URL nicht abrufbar ({e.code}): "
+            f"{e.read().decode('utf-8', 'replace')[:300]}"
+        ) from e
+    wert = (daten.get("response") or {}).get("value") or daten.get("value")
+    if not wert:
+        raise PaFehler("Antwort enthaelt keine Callback-URL.")
+    return wert
+
+
 def entwurf_anlegen(owner: str, runtime_url: str, payload: dict) -> dict:
     """Ruft genau einen Flow-Lauf auf. Der Flow selbst enthaelt nur
-    `DraftEmail` - kein Versand moeglich, unabhaengig vom Payload hier."""
+    `DraftEmail` - kein Versand moeglich, unabhaengig vom Payload hier.
+
+    Der Weg haengt an der Trigger-Art (siehe Kopf dieser Datei): Http-Trigger
+    ueber ihre Callback-URL, Button-Trigger ueber den Connector-Endpunkt."""
     flow = FLOWS[owner]
-    token = _az_token(APIHUB_RESOURCE_TOKEN)
-    url = (f"{runtime_url.rstrip('/')}/{flow['flowId']}/triggers/"
-           f"{flow['trigger']}/run?api-version=2016-11-01")
     daten = json.dumps(payload).encode("utf-8")
-    req = urllib.request.Request(url, data=daten, method="POST")
-    req.add_header("Authorization", f"Bearer {token}")
-    req.add_header("Content-Type", "application/json")
+
+    if flow.get("triggerKind") == "Http":
+        req = urllib.request.Request(callback_url(owner), data=daten,
+                                      method="POST")
+        req.add_header("Content-Type", "application/json")
+    else:
+        token = _az_token(APIHUB_RESOURCE_TOKEN)
+        url = (f"{runtime_url.rstrip('/')}/{flow['flowId']}/triggers/"
+               f"{flow['trigger']}/run?api-version=2016-11-01")
+        req = urllib.request.Request(url, data=daten, method="POST")
+        req.add_header("Authorization", f"Bearer {token}")
+        req.add_header("Content-Type", "application/json")
     try:
         with urllib.request.urlopen(req, timeout=120) as r:
             roh = r.read()
@@ -200,18 +246,9 @@ def payload_fuer_lead(owner: str, lead: dict, batch_id: str, subject: str,
         "bodyHtml": body_html,
         "attachmentName": flyer.filename,
     }
-    if FLOWS[owner]["usesFlyerUrl"]:
-        # Achtung: aktuell die oeffentliche Website-URL, nicht rechte-
-        # geprueft ob sie dauerhaft stabil bleibt - im Zweifel gegen
-        # flyer.path()-Bytes absichern (siehe make_drafts.py).
-        website_name = {"JORDI": "Jordi-Post", "JOEL": "Joel-Cherino"}[owner]
-        basis["flyerUrl"] = (
-            f"https://www.hsb-boden.de/HSB-Flyer-{website_name}.pdf"
-        )
-    else:
-        basis["attachmentContentBytes"] = base64.b64encode(
-            flyer.path.read_bytes()
-        ).decode("ascii")
+    basis["attachmentContentBytes"] = base64.b64encode(
+        flyer.path.read_bytes()
+    ).decode("ascii")
     return basis
 
 

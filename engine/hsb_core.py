@@ -30,6 +30,14 @@ class FlyerMaster:
     filename: str
     drive_id: str
     sha256: str
+    # Name, den der Empfaenger im Anhang sieht. Getrennt vom lokalen
+    # `filename`, weil dieser an Hash-Gate und Drive-Ablage haengt und
+    # deshalb nicht frei umbenannt werden darf.
+    attachment_name: str = ""
+    # Persoenliche Mobilnummer fuer die Signatur. Quelle ist der jeweils
+    # kanonische Flyer (dort per Text-Extraktion geprueft), nicht das
+    # Impressum - das traegt nur die zentrale Durchwahl.
+    mobile: str = ""
 
     @property
     def path(self) -> Path:
@@ -44,6 +52,8 @@ FLYERS: dict[str, FlyerMaster] = {
         filename="HSB-Flyer-Jordi-Post_FINAL.pdf",
         drive_id="1UMX-fi2lJ9bo14KwuClqgfZQWECdE_XV",
         sha256="f343ff05d1e7353a3a91a60f5475c054e1af958ea72e466445e60b9f69059a21",
+        attachment_name="HSB-HEXAGON-Industrieboeden-Flyer.pdf",
+        mobile="0170 2340904",
     ),
     "JOEL": FlyerMaster(
         owner_key="JOEL",
@@ -52,6 +62,8 @@ FLYERS: dict[str, FlyerMaster] = {
         filename="HSB-Flyer-Joel-Cherino_FINAL.pdf",
         drive_id="16Kt-eRk1uY0HorZCrEmGt3QfGcRpYadS",
         sha256="2bccadacc77b531057583d2d650963c30deceed36c8be1fd90ca64e8b8cde5fb",
+        attachment_name="HSB-HEXAGON-Industrieboeden-Flyer.pdf",
+        mobile="0151 21886891",
     ),
 }
 

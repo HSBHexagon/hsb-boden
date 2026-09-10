@@ -1,0 +1,3 @@
+## 2026-09-10 - Improved Form Field Required Indicators and Focus Visibilty
+**Learning:** Adding explicit required indicators (red asterisks) to form labels improves accessibility for sighted users. The grid layout requires these indicators to be nested in a `span` together with the label text, otherwise the grid layout pushes them to a new line. Using `focus-visible:ring-2 focus-visible:ring-hsb-red focus-visible:outline-none` on form inputs improves keyboard navigation visibility.
+**Action:** Always wrap form labels in a span alongside any indicators if the parent uses a grid layout. Always ensure interactive elements have a focus visible style class.

@@ -1218,3 +1218,37 @@ Laufprotokoll statt sofort.
 kaputten Anhaenge aus der Zeit vor dem Kodierungsfix. Sein Flow erzeugt
 inzwischen nachweislich intakte Anhaenge - ein Neuaufbau dieser 50 ist
 also moeglich, aber nicht beauftragt.
+
+### Korrektur desselben Tages: es ist keine Premium-Frage
+
+Die Fehlermeldung `MissingAdequateQuotaPolicy` nennt eine "Power Automate
+Premium license", und ich habe daraus geschlossen, Joel habe eine solche
+Lizenz und Jordi nicht. **Das war falsch.** Der Nutzer hat widersprochen,
+die Lizenzen wurden daraufhin abgefragt (`/users/{upn}/licenseDetails`):
+
+| SKU | j-cherino | j-post |
+|---|---|---|
+| O365_BUSINESS_PREMIUM | ja | ja |
+| FLOW_FREE (FLOW_P2_VIRAL) | ja | ja |
+| POWER_BI_STANDARD | ja | nein |
+| **POWERAPPS_DEV** (FLOW_DEV_VIRAL) | **ja** | **nein** |
+
+**Keiner von beiden hat Power Automate Premium.** Der einzige
+Power-Platform-Unterschied ist `POWERAPPS_DEV` - der **kostenlose**
+Power-Apps-Developer-Plan, dessen Dienstplan `FLOW_DEV_VIRAL` den Zugriff
+auf Premium-Connectoren mitbringt. Deshalb laeuft Joels Flow mit
+Http-Trigger und Jordis nicht.
+
+`/subscribedSkus`: `POWERAPPS_DEV` ist im Tenant vorhanden, 10.000 Einheiten
+gekauft, **1 belegt** (Joel), 9.999 frei. Es entstehen keine Kosten.
+
+Zuweisung per Graph scheitert an fehlenden Rechten: j-cherino hat keine
+Verzeichnisrolle (`/me/memberOf` ist leer), `assignLicense` antwortet mit
+`Authorization_RequestDenied`. Jordi muss den Plan also selbst aktivieren -
+so ist Joel offenbar auch dazu gekommen.
+
+**Damit ist Jordis Blockade kostenlos aufloesbar** und die frueher hier
+notierten Auswege (Premium kaufen, Verbindung unter Joels Konto anlegen)
+sind nicht noetig. Was danach zu tun ist: Jordis Flow auf die Zielversion
+zuruecksetzen (steht im Scratchpad als `jordi_umbau.py`), starten,
+Aufruf-URL holen, im Sheet-Menue eintragen.

@@ -1177,3 +1177,44 @@ ausgeschlossen. Bei Weg B muss die Verbindung deshalb **einmal** per
 Testentwurf durch einen Menschen bestaetigt werden:
 `node tests/live_knopfweg.js JORDI <adresse>` und dann in Jordis Outlook
 nachsehen, ob der Entwurf dort liegt.
+
+### Nachtrag desselben Tages: Jordi laeuft wieder, mit Nachweis
+
+Entscheidung des Nutzers: lieber arbeitsfaehig als fertig-aber-still. Der
+Flow steht deshalb nicht auf der Zielversion, sondern im maximal
+lauffaehigen Zustand ohne Premium:
+
+    Zustand     Started
+    Trigger     Button
+    Aktionen    Draft_an_email_message, Entwurf_zurueckgelesen
+
+Die beiden `Response`-Aktionen sind raus - sie allein verhinderten die
+Aktivierung. `Entwurf_zurueckgelesen` dagegen konnte bleiben: `GetEmailV2`
+gehoert zum Office-365-Outlook-Connector und ist Standard-Tier, nicht
+Premium. Der Aufrufer sieht ihr Ergebnis zwar nicht, aber es landet im
+Laufprotokoll und ist dort nachtraeglich pruefbar.
+
+**Erster echter Nachweis fuer Jordis Anhang** (2026-09-10, Lauf Succeeded,
+Groesse aus dem Laufprotokoll gelesen):
+
+    Anhangname     HSB-HEXAGON-Industrieboeden-Flyer.pdf
+    Anhanggroesse  1.534.356 Bytes   (Quelle 1.534.064, Differenz 292)
+
+Damit ist auch Jordis Kodierungsvariante belegt: sein Flow reicht den
+Anhang als reine Zeichenkette durch und wandelt ihn mit
+`@base64ToBinary(...)`, Joels Flow nutzt `"format": "byte"` im
+Trigger-Schema und reicht direkt durch. Beide Wege erzeugen dieselbe
+Differenz von 292 Bytes MIME-Overhead - beide sind richtig.
+
+**Was in diesem Zustand nicht geht:** Der Knopf im Sheet bleibt fuer Jordi
+tot. Ohne `Response`-Aktion kommt keine Draft-ID zurueck, und
+`createDraftsForBatch` bricht dann bewusst mit `MISSING_DRAFT_ID` ab,
+statt einen ungeprueften Entwurf als Erfolg zu verbuchen. Jordis Entwuerfe
+entstehen bis auf Weiteres nur ueber ein bewusst gestartetes Skript mit
+j-post-Anmeldung, und die Anhangpruefung erfolgt nachtraeglich ueber das
+Laufprotokoll statt sofort.
+
+**Weiterhin offen:** Jordis 50 Entwuerfe vom 2026-09-07 tragen noch die
+kaputten Anhaenge aus der Zeit vor dem Kodierungsfix. Sein Flow erzeugt
+inzwischen nachweislich intakte Anhaenge - ein Neuaufbau dieser 50 ist
+also moeglich, aber nicht beauftragt.

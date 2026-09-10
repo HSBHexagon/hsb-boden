@@ -36,15 +36,22 @@ var HTTP_TIMEOUT_SECONDS = 60;
 
 // ---------------------------------------------------------------- Preflight
 
+/**
+ * Vollstaendiger Lagebericht fuer Menschen. Prueft alles, blockiert nichts.
+ *
+ * Bewusst getrennt von preflightHart_(): frueher hat diese Funktion den
+ * gesamten Entwurfslauf abgebrochen, sobald IRGENDEINE der drei
+ * Skripteigenschaften fehlte. Damit sperrte eine fehlende Jordi-URL auch
+ * Joels Weg, obwohl dessen Adapter vollstaendig eingerichtet war. Eine
+ * Voraussetzung darf nur den blockieren, der sie tatsaechlich braucht.
+ */
 function preflight() {
   var report = [];
-  var ok = true;
 
   REQUIRED_ENGINE_FUNCTIONS.forEach(function (name) {
     var exists = (typeof this[name] === 'function') ||
                  (typeof globalThis[name] === 'function');
     report.push((exists ? 'OK   ' : 'FEHLT') + '  Engine-Funktion ' + name);
-    if (!exists) ok = false;
   }, this);
 
   var props = PropertiesService.getScriptProperties();
@@ -53,23 +60,46 @@ function preflight() {
     var raw = props.getProperty(key);
     var url = raw ? String(raw).trim() : '';
     var good = !!url && url.indexOf('https://') === 0;
-    report.push((good ? 'OK   ' : 'FEHLT') + '  Skripteigenschaft ' + key);
-    if (!good) ok = false;
+    report.push(
+      (good ? 'OK   ' : 'FEHLT') + '  Skripteigenschaft ' + key +
+      (good ? '  (' + url.slice(0, 60) + '…)' : '  — ' + owner +
+        ' kann ohne diese URL keine Entwuerfe erzeugen')
+    );
   });
 
   var activeBatch = props.getProperty(ACTIVE_BATCH_PROP);
   var activeBatchGood = !!activeBatch && /^HSB-[A-Z0-9-]+$/.test(activeBatch);
   report.push(
-    (activeBatchGood ? 'OK   ' : 'FEHLT') + '  Skripteigenschaft ' +
-    ACTIVE_BATCH_PROP + (activeBatchGood ? ' = ' + activeBatch : '')
+    (activeBatchGood ? 'OK   ' : 'OFFEN') + '  Skripteigenschaft ' +
+    ACTIVE_BATCH_PROP +
+    (activeBatchGood ? ' = ' + activeBatch
+                     : ' — nur fuer die Menuepunkte noetig, nicht fuer die Seitenleiste')
   );
-  if (!activeBatchGood) ok = false;
 
   report.push('');
-  report.push(ok ? 'PREFLIGHT=PASS' : 'PREFLIGHT=FAIL — nichts ausfuehren, bis alle Zeilen OK sind.');
+  report.push('Die Seitenleiste braucht je Kontakt nur die Adapter-URL '
+    + 'seines Verantwortlichen. Fehlt eine, scheitert genau dieser Kontakt.');
   var text = report.join('\n');
   Logger.log(text);
   return text;
+}
+
+/**
+ * Harte Voraussetzung fuer jeden Entwurfslauf: die Engine-Funktionen selbst.
+ * Ohne sie gibt es weder Leads noch Flyer noch Text - das ist ein Deploy-
+ * Fehler und kein Konfigurationsthema.
+ */
+function preflightHart_() {
+  var fehlend = REQUIRED_ENGINE_FUNCTIONS.filter(function (name) {
+    return typeof this[name] !== 'function' &&
+           typeof globalThis[name] !== 'function';
+  }, this);
+  if (fehlend.length) {
+    throw new Error(
+      'DEPLOY_UNVOLLSTAENDIG: Engine-Funktionen fehlen: ' + fehlend.join(', ') +
+      '. Das Skript wurde nicht vollstaendig hochgeladen.'
+    );
+  }
 }
 
 // ---------------------------------------------------------------- Hilfen
@@ -164,15 +194,35 @@ function flyerFelderFuer_(key, owner) {
   var verified = getVerifiedFlyer_(owner);
   if (!verified) throw new Error('ASSET_GATE_FAIL: kein verifizierter Flyer fuer ' + owner);
   var blob = verified.blob || DriveApp.getFileById(verified.fileId).getBlob();
+  var bytes = blob.getBytes();
 
   var felder = {
     // Empfaengersichtbarer Name, nicht der interne Dateiname.
     attachmentName: (FLYERS[key] && FLYERS[key].attachmentName) || blob.getName(),
-    attachmentContentBytes: Utilities.base64Encode(blob.getBytes())
+    attachmentContentBytes: Utilities.base64Encode(bytes)
   };
   felder._flyer = verified.flyer;
+  // Sollgroesse fuer den Rueckvergleich mit dem, was Outlook wirklich
+  // gespeichert hat. Ohne diese Zahl waere die Anhangpruefung blind.
+  felder._byteLength = bytes.length;
   return felder;
 }
+
+/**
+ * Flyer je Verantwortlichem genau einmal pro Lauf holen und kodieren.
+ *
+ * Vorher lag das im Lead-Loop: pro Kontakt ein Drive-Download plus eine
+ * Base64-Kodierung von 1,5 MB. Bei zehn Kontakten je Block sind das zehn
+ * identische Kodierungen gegen das Sechs-Minuten-Limit von Apps Script.
+ */
+function flyerCacheHolen_(cache, key, owner) {
+  if (!cache[key]) cache[key] = flyerFelderFuer_(key, owner);
+  return cache[key];
+}
+
+// Outlook zaehlt beim gespeicherten Anhang MIME-Overhead mit. Gemessen am
+// 2026-09-07 ueber 50 reale Entwuerfe: konstant 292 Bytes ueber der Quelle.
+var ANHANG_TOLERANZ_BYTES = 1000;
 
 function sha256Hex_(bytes) {
   return Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, bytes)
@@ -224,8 +274,7 @@ function createDraftsForBatch(batchId, options) {
   var limit = options.limit || 1;
   var dryRun = options.dryRun === true;
 
-  var pre = preflight();
-  if (pre.indexOf('PREFLIGHT=PASS') < 0) throw new Error(pre);
+  preflightHart_();
 
   var allLeads = (readLeads_().leads) || [];
   var leads = allLeads.filter(function (l) { return String(l.Batch_ID) === String(batchId); });
@@ -234,6 +283,7 @@ function createDraftsForBatch(batchId, options) {
   }
 
   var results = { attempted: 0, drafted: 0, skipped: 0, failed: 0, details: [] };
+  var flyerCache = {};
 
   for (var i = 0; i < leads.length && results.attempted < limit; i++) {
     var lead = leads[i];
@@ -255,7 +305,7 @@ function createDraftsForBatch(batchId, options) {
 
     var owner = lead.Owner;
     var ownerKey = String(owner).toUpperCase().indexOf('JOEL') >= 0 ? 'JOEL' : 'JORDI';
-    var flyerFelder = flyerFelderFuer_(ownerKey, owner);
+    var flyerFelder = flyerCacheHolen_(flyerCache, ownerKey, owner);
     var rendered = renderEmail_(lead, flyerFelder._flyer);
     var payload = {
       leadId: lead.Lead_ID,
@@ -266,7 +316,7 @@ function createDraftsForBatch(batchId, options) {
       bodyHtml: bodyHtmlMitSignatur_(rendered, flyerFelder._flyer)
     };
     Object.keys(flyerFelder).forEach(function (k) {
-      if (k !== '_flyer') payload[k] = flyerFelder[k];
+      if (k.charAt(0) !== '_') payload[k] = flyerFelder[k];
     });
 
     if (dryRun) {
@@ -313,10 +363,34 @@ function createDraftsForBatch(batchId, options) {
       logActivity_(lead.Lead_ID, 'DRAFT_FAILED', 'MISSING_DRAFT_ID');
       throw new Error('DRAFT_FAILED: ' + lead.Lead_ID + ' MISSING_DRAFT_ID');
     }
-    writeBackDraft_(lead, body);
+
+    // Anhangpruefung. Der Flow liest den erzeugten Entwurf zurueck und meldet
+    // die Groesse, die Outlook wirklich gespeichert hat. Genau hier ist der
+    // Fehler jahrelang durchgerutscht: eine Antwort mit draftId galt als
+    // Erfolg, obwohl der Flyer doppelt kodiert und damit unlesbar war.
+    var soll = flyerFelder._byteLength;
+    var ist = body.attachmentSize;
+    var anhangOk = (typeof ist === 'number') &&
+                   Math.abs(ist - soll) <= ANHANG_TOLERANZ_BYTES;
+
+    if (!anhangOk) {
+      // Draft_ID trotzdem schreiben: der Entwurf liegt real im Postfach.
+      // Ohne Eintrag waere er verwaist und ein Folgelauf erzeugte ein Duplikat.
+      var anhangFehler = 'ANHANG_UNGEPRUEFT: Soll ' + soll + ' Bytes, gemeldet ' +
+        (ist === undefined || ist === null ? 'nichts' : ist) +
+        (body.verifyError ? ' (' + String(body.verifyError).slice(0, 120) + ')' : '') +
+        '. Entwurf ' + body.draftId + ' liegt im Postfach und ist von Hand zu pruefen.';
+      writeBackDraft_(lead, body, anhangFehler);
+      logActivity_(lead.Lead_ID, 'DRAFT_UNVERIFIED', anhangFehler);
+      results.failed++;
+      throw new Error('ANHANG_FEHLER: ' + lead.Lead_ID + ' ' + anhangFehler);
+    }
+
+    writeBackDraft_(lead, body, '');
     logActivity_(lead.Lead_ID, 'DRAFTED', body.draftId);
     results.drafted++;
-    results.details.push(lead.Lead_ID + ' DRAFTED ' + body.draftId);
+    results.details.push(lead.Lead_ID + ' DRAFTED ' + body.draftId +
+                          ' (Anhang ' + ist + ' Bytes)');
   }
 
   var summary = 'Batch ' + batchId + ': ' + results.drafted + ' Entwuerfe, ' +
@@ -327,20 +401,23 @@ function createDraftsForBatch(batchId, options) {
   return summary;
 }
 
-function writeBackDraft_(lead, body) {
+function writeBackDraft_(lead, body, warnung) {
   var sheet = SpreadsheetApp.getActive().getSheetByName('ALL_LEADS');
   var headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
   var row = lead._row;
   if (!row) throw new Error('Lead ohne Zeilenreferenz (_row): ' + lead.Lead_ID);
 
+  var geprueft = !warnung;
   var set = {};
   set[WRITEBACK.draftId] = body.draftId;
   set[WRITEBACK.internetMessageId] = body.internetMessageId;
   set[WRITEBACK.conversationId] = body.conversationId;
   set[WRITEBACK.draftedAt] = new Date();
-  set[WRITEBACK.batchStatus] = 'DRAFTED';
-  set[WRITEBACK.sendStatus] = 'drafted';
-  set[WRITEBACK.lastError] = '';
+  // Ein Entwurf mit ungepruefetem Anhang ist kein fertiger Entwurf. Der Status
+  // sagt das, damit niemand ihn versehentlich als versandbereit behandelt.
+  set[WRITEBACK.batchStatus] = geprueft ? 'DRAFTED' : 'DRAFTED_UNVERIFIED';
+  set[WRITEBACK.sendStatus] = geprueft ? 'drafted' : 'needs_check';
+  set[WRITEBACK.lastError] = String(warnung || '').slice(0, 500);
 
   Object.keys(set).forEach(function (col) {
     if (headers.indexOf(col) < 0) throw new Error('Spalte fehlt im Sheet: ' + col);
@@ -380,6 +457,91 @@ function uiCreateDraftsForBatch(batchId, limit) {
     if (!n || n < 1) n = 9999;
     var summary = createDraftsForBatch(String(batchId), { limit: n });
     return { ok: true, data: { summary: summary } };
+  } catch (e) {
+    return { ok: false, error: String(e.message || e) };
+  }
+}
+
+// ---------------------------------------------------------------- Einrichtung
+
+/**
+ * Adapter-URL eines Verantwortlichen setzen.
+ *
+ * Die URL enthaelt eine Signatur und ist damit ein Geheimnis - sie gehoert
+ * deshalb in die Skripteigenschaften und nicht in den Quelltext. Sie wird
+ * hier einmalig von Hand eingefuegt statt automatisch geholt, weil Apps
+ * Script keine Azure-Anmeldung besitzt.
+ */
+function uiAdapterUrlSetzen_(ownerKey) {
+  var ui = SpreadsheetApp.getUi();
+  var propKey = ADAPTER_PROPS[ownerKey];
+  var bisher = PropertiesService.getScriptProperties().getProperty(propKey);
+
+  var antwort = ui.prompt(
+    'Adapter-URL für ' + FLYERS[ownerKey].displayName,
+    'Aufruf-URL des Power-Automate-Flows einfügen.\n\n' +
+    'Postfach: ' + FLYERS[ownerKey].mailbox + '\n' +
+    'Bisher: ' + (bisher ? bisher.slice(0, 70) + '…' : 'nicht gesetzt'),
+    ui.ButtonSet.OK_CANCEL
+  );
+  if (antwort.getSelectedButton() !== ui.Button.OK) return 'Abgebrochen.';
+
+  var url = String(antwort.getResponseText() || '').trim();
+  if (url.indexOf('https://') !== 0) {
+    ui.alert('Das ist keine HTTPS-URL. Nichts gespeichert.');
+    return 'ABGELEHNT: keine HTTPS-URL.';
+  }
+  PropertiesService.getScriptProperties().setProperty(propKey, url);
+  ui.alert('Gespeichert', propKey + ' ist gesetzt.\n\n' +
+    'Nächster Schritt: Menü "Adapter-Status prüfen".', ui.ButtonSet.OK);
+  return 'OK: ' + propKey + ' gesetzt.';
+}
+
+function uiAdapterUrlJoel() { return uiAdapterUrlSetzen_('JOEL'); }
+function uiAdapterUrlJordi() { return uiAdapterUrlSetzen_('JORDI'); }
+
+function uiAdapterStatus() {
+  var text = preflight();
+  try {
+    SpreadsheetApp.getUi().alert('Adapter-Status', text, SpreadsheetApp.getUi().ButtonSet.OK);
+  } catch (e) {
+    Logger.log(text);
+  }
+  return text;
+}
+
+/**
+ * Stehengebliebene Fehlermeldungen eines Batches loeschen.
+ *
+ * createDraftsForBatch bricht bei einem alten Last_Error bewusst ab, damit
+ * niemand blind nachlaeuft. Nur: ohne einen Weg, den Vermerk nach der
+ * Klaerung zu entfernen, bleibt der Batch fuer immer gesperrt. Zeilen mit
+ * Draft_ID bleiben unberuehrt - dort ist der Vermerk das Pruefprotokoll.
+ */
+function uiFehlerZuruecksetzen(batchId) {
+  try {
+    if (!batchId) throw new Error('Kein Batch angegeben.');
+    var sheet = SpreadsheetApp.getActive().getSheetByName('ALL_LEADS');
+    var werte = sheet.getDataRange().getValues();
+    var headers = werte[0];
+    var iBatch = headers.indexOf('Batch_ID');
+    var iError = headers.indexOf(WRITEBACK.lastError);
+    var iDraft = headers.indexOf(WRITEBACK.draftId);
+    if (iBatch < 0 || iError < 0 || iDraft < 0) {
+      throw new Error('Spalten Batch_ID / Last_Error / Draft_ID fehlen im Sheet.');
+    }
+
+    var bereinigt = 0;
+    for (var r = 1; r < werte.length; r++) {
+      if (String(werte[r][iBatch]) !== String(batchId)) continue;
+      if (werte[r][iDraft]) continue;
+      if (!werte[r][iError]) continue;
+      sheet.getRange(r + 1, iError + 1).setValue('');
+      bereinigt++;
+    }
+    return { ok: true, data: {
+      summary: bereinigt + ' Fehlervermerk(e) in Batch ' + batchId + ' zurueckgesetzt.'
+    } };
   } catch (e) {
     return { ok: false, error: String(e.message || e) };
   }

@@ -22,6 +22,9 @@ const DEPLOY = path.join(ROOT, 'deploy');
 // ------------------------------------------------------------- Google Stubs
 let SHEETS = {};
 let MOCK_FETCH_CALLS = 0;
+// Steuert, was der nachgebildete Flow als Anhanggroesse zurueckmeldet:
+// 'ok' | 'doppelt_kodiert' | 'fehlt'
+let MOCK_ANHANG_MODUS = 'ok';
 let REAL_SEND_CALLS = 0;
 
 function makeRange(sheet, row, col, numRows, numCols) {
@@ -149,14 +152,30 @@ const sandbox = {
     fetch: function (url, opts) {
       MOCK_FETCH_CALLS++;
       const payload = JSON.parse(opts.payload);
+      // Der echte Flow liest den Entwurf zurueck und meldet, was Outlook
+      // wirklich gespeichert hat. Der Mock rechnet dieselbe Groesse aus den
+      // gesendeten Bytes und legt den an 50 realen Entwuerfen gemessenen
+      // MIME-Overhead von 292 Bytes drauf.
+      const echteBytes = Buffer.from(
+        payload.attachmentContentBytes || '', 'base64').length;
+      let gemeldeteGroesse = echteBytes + 292;
+      if (MOCK_ANHANG_MODUS === 'doppelt_kodiert') {
+        // Der Fehler, der monatelang unentdeckt blieb: Outlook speichert die
+        // Base64-Zeichen als Nutzdaten statt sie zu dekodieren.
+        gemeldeteGroesse = Math.round(echteBytes * 4 / 3) + 292;
+      } else if (MOCK_ANHANG_MODUS === 'fehlt') {
+        gemeldeteGroesse = null;
+      }
       return {
         getResponseCode: function () { return 200; },
         getContentText: function () {
-          return JSON.stringify({
+          const antwort = {
             draftId: 'MOCK-DRAFT-' + payload.leadId,
             internetMessageId: '<mock-' + payload.leadId + '@hsb-boden.de>',
             conversationId: 'CONV-' + payload.leadId
-          });
+          };
+          if (gemeldeteGroesse !== null) antwort.attachmentSize = gemeldeteGroesse;
+          return JSON.stringify(antwort);
         }
       };
     }
@@ -299,4 +318,71 @@ console.log(`ERGEBNIS: ${passed} bestanden, ${failed} fehlgeschlagen von ${passe
 console.log('REAL_EXTERNAL_SEND_COUNT=0');
 console.log('======================================================================');
 
+if (failed > 0) process.exit(1);
+
+// 5. Test: kaputter Anhang muss fail-closed stoppen
+//
+// Das ist der Fehler, der monatelang durchrutschte: der Flow lieferte eine
+// draftId, der Entwurf lag im Postfach - aber der Flyer war doppelt kodiert
+// und liess sich nicht oeffnen. Ohne Groessenpruefung meldete die Oberflaeche
+// dafuer Erfolg. Der Test haelt fest, dass genau das nicht mehr passiert.
+function draftIdsLeeren_() {
+  const blatt = SHEETS['ALL_LEADS'];
+  const kopf = blatt._data[0];
+  const iDraft = kopf.indexOf('Draft_ID');
+  const iError = kopf.indexOf('Last_Error');
+  const iStatus = kopf.indexOf('Batch_Status');
+  for (let r = 1; r < blatt._data.length; r++) {
+    blatt._data[r][iDraft] = '';
+    blatt._data[r][iError] = '';
+    blatt._data[r][iStatus] = '';
+  }
+}
+
+function letzterFehlerVermerk_() {
+  const blatt = SHEETS['ALL_LEADS'];
+  const kopf = blatt._data[0];
+  const iError = kopf.indexOf('Last_Error');
+  const iDraft = kopf.indexOf('Draft_ID');
+  for (let r = 1; r < blatt._data.length; r++) {
+    if (blatt._data[r][iError]) {
+      return { fehler: String(blatt._data[r][iError]), draftId: blatt._data[r][iDraft] };
+    }
+  }
+  return null;
+}
+
+draftIdsLeeren_();
+MOCK_ANHANG_MODUS = 'doppelt_kodiert';
+const rKaputt = vm.runInContext('uiCreateDraftsChunk("' + BATCH_ID + '", 10)', ctx);
+assert(rKaputt.ok === false, 'Doppelt kodierter Anhang meldet KEINEN Erfolg',
+       'ok=' + rKaputt.ok);
+assert(String(rKaputt.error || '').indexOf('ANHANG') >= 0,
+       'Fehlermeldung benennt den Anhang', rKaputt.error);
+const vermerkKaputt = letzterFehlerVermerk_();
+assert(vermerkKaputt !== null, 'Der Vorfall steht in Last_Error');
+assert(!!(vermerkKaputt && vermerkKaputt.draftId),
+       'Draft_ID wird trotzdem geschrieben - kein verwaister Entwurf im Postfach',
+       'draftId=' + (vermerkKaputt && vermerkKaputt.draftId));
+
+// 6. Test: fehlende Groessenmeldung gilt ebenfalls als ungeprueft
+draftIdsLeeren_();
+MOCK_ANHANG_MODUS = 'fehlt';
+const rOhne = vm.runInContext('uiCreateDraftsChunk("' + BATCH_ID + '", 10)', ctx);
+assert(rOhne.ok === false, 'Antwort ohne Anhanggroesse meldet KEINEN Erfolg',
+       'ok=' + rOhne.ok);
+
+// 7. Test: nach der Klaerung laesst sich der Vermerk gezielt zuruecksetzen
+draftIdsLeeren_();
+MOCK_ANHANG_MODUS = 'fehlt';
+vm.runInContext('uiCreateDraftsChunk("' + BATCH_ID + '", 10)', ctx);
+assert(letzterFehlerVermerk_() !== null, 'Vor dem Zuruecksetzen liegt ein Vermerk vor');
+const rReset = vm.runInContext('uiFehlerZuruecksetzen("' + BATCH_ID + '")', ctx);
+assert(rReset.ok === true, 'Zuruecksetzen laeuft durch', JSON.stringify(rReset));
+
+MOCK_ANHANG_MODUS = 'ok';
+
+console.log('\n======================================================================');
+console.log(`ERGEBNIS GESAMT: ${passed} bestanden, ${failed} fehlgeschlagen von ${passed + failed}`);
+console.log('======================================================================');
 if (failed > 0) process.exit(1);

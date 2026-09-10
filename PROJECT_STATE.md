@@ -1029,3 +1029,81 @@ im Browser selbst - dafuer fehlt sowohl Apps-Script-Ausfuehrungsrecht
 (`clasp run`, Privatkonto) als auch Browsersteuerung (Comet). Der Nutzer
 muss den neuen Button einmal selbst klicken, um den echten UI-Pfad zu
 bestaetigen.
+
+---
+
+## Power Automate Direkt-Entwuerfe als alleiniger Standard, ZIP-Workflow entfernt, FlowAgent MCP & Vollstaendige Verifikation, 2026-09-05
+
+Auf ausdruecklichen Nutzerwunsch ("Strikte Ablehnung und nicht behandelbar: ZIP zu erstellen bei 6.000 Kunden ist ineffizient"):
+1. **ZIP-Export restlos entfernt:** Die EML-ZIP-Export-Buttons und Funktionen wurden aus der Seitenleiste (`Sidebar.html`) und dem UI dauerhaft verbannt. Einziger Standardweg ist die direkte Erstellung im Outlook-Entwurfsordner via Power Automate.
+2. **Tooling-Paritaet hergestellt:** FlowAgent MCP Server v3.0.5 (59 Tools) und 10 Power Platform Skills in Antigravity / Gemini CLI (`~/.gemini/settings.json` und `~/.gemini/config/plugins/power-automate/`) registriert.
+3. **Kritischer Bugfix in `engine/pa_direct_drafts.py`:** Joel stand faelschlicherweise auf `usesFlyerUrl: True`. Der Live-Flow verlangt jedoch zwingend `attachmentContentBytes`. Auf `usesFlyerUrl: False` vereinheitlicht; beide Flows erhalten nun die verifizierten PDF-Bytes.
+4. **MSAL-Cache bereinigt:** Veralteter Token-Cache in FlowAgent bereinigt, sodass die Session dynamic und ohne `identityMismatch` auf dem aktiven Azure-Konto (`j-post@HSB-Boden.de`) laeuft.
+5. **Autonome Diagnose:** `engine/pa_diagnose.py` implementiert und verifiziert. Prueft Azure-Identitaet, Environment, Flow-Zustand, Schema-Validitaet (7/7 Felder PASS) und extrahiert eistehende Outlook-Draft-IDs.
+6. **Apps Script gehaertet:** `HSB_DraftAdapter.gs` und `deploy/HSB_DraftAdapter.gs.js` mit striktem URL-Trimming und Fail-Closed-Validierung versehen.
+7. **Verifikation:** 321/321 Unit-Tests, 24/24 Chunking-Tests, 7/7 Verifier Gates und CLI-Trockenlauf PASS. `REAL_EXTERNAL_SEND_COUNT = 0` unveraendert gewahrt.
+- **Clasp Push Live Ausgerollt (2026-09-05T20:46:12):** Alle 5 Dateien live im Apps-Script-Projekt `1Xl6xkMTyn3Hu6UvBoX7gVrdppuyRal04NH6Ei16hnz_Pfuq-JWmh9U4c` aktualisiert.
+
+---
+
+## Der Knopfweg ist erstmals nachweislich gelaufen, 2026-09-10
+
+Bis heute belegte kein Nachweis den Weg, den der Knopf im Sheet tatsaechlich
+nimmt. Alle "100 % PASS"-Berichte davor massen Konfiguration, Simulationen
+oder Python-Direktaufrufe des Flows. Die Kette
+`uiCreateDraftsChunk -> createDraftsForBatch -> adapterUrlFor_ ->
+UrlFetchApp -> Flow -> Outlook` war nie am Stueck gelaufen.
+
+**Was gefehlt hat und jetzt da ist**
+
+1. **Skripteigenschaften waren nie gesetzt.** `HSB_ADAPTER_URL_JOEL` und
+   `HSB_ADAPTER_URL_JORDI` existierten nur als Anforderung in `preflight()`.
+   Ohne sie konnte der Knopf nie funktionieren, egal wie gruen die Tests
+   waren. Neue Menuepunkte "Adapter-URL … setzen" und "Adapter-Status
+   pruefen" tragen sie ueber einen Dialog ein; die URL enthaelt eine
+   Signatur und gehoert deshalb nicht in den Quelltext.
+2. **`preflight()` sperrte quer.** Eine fehlende Jordi-URL brach auch Joels
+   Lauf ab. Getrennt in `preflight()` (Bericht, blockiert nichts) und
+   `preflightHart_()` (nur Engine-Funktionen). Eine Voraussetzung blockiert
+   jetzt nur den, der sie braucht.
+3. **Apps Script prueft den Anhang.** Bisher galt jede Antwort mit `draftId`
+   als Erfolg - genau so entstanden monatelang Entwuerfe mit unlesbarem
+   Flyer. Jetzt vergleicht `createDraftsForBatch` die vom Flow
+   zurueckgemeldete Anhanggroesse mit dem Original (Toleranz 1000 Bytes,
+   gemessener MIME-Overhead: 292 Bytes). Bei Abweichung: `Batch_Status =
+   DRAFTED_UNVERIFIED`, `Send_Status = needs_check`, Vermerk in
+   `Last_Error` - und die Draft_ID wird trotzdem geschrieben, damit kein
+   Entwurf im Postfach ohne Gegenstueck im Sheet steht.
+4. **Der Flow antwortet immer.** `Antwort_Fehler` deckte nur das Scheitern
+   von `Draft_an_email_message` ab. Scheiterte die Rueckleseaktion, kam gar
+   keine Antwort, der Aufrufer lief in den Timeout - und der Entwurf blieb
+   verwaist. Neue Aktion `Antwort_Ohne_Pruefung` liefert in diesem Fall
+   `DRAFTED_UNVERIFIED` samt Draft-ID zurueck.
+5. **Flyer nur noch einmal je Lauf kodiert.** Vorher lag Drive-Download und
+   Base64-Kodierung von 1,5 MB im Lead-Loop, also zehnmal je Block.
+6. **`uiFehlerZuruecksetzen(batchId)`** loescht stehengebliebene Vermerke -
+   aber nur in Zeilen ohne Draft_ID, wo der Vermerk das Pruefprotokoll ist.
+   Ohne diesen Weg blieb ein Batch nach einem Fehler dauerhaft gesperrt.
+
+**Nachweis** (`tests/live_knopfweg.js`, wiederholbar)
+
+Der deployte Apps-Script-Code laeuft in einer nachgebildeten Google-Laufzeit
+gegen den **echten** Flow. Ergebnis 2026-09-10, 11/11:
+
+    HTTP 200 · DRAFTED
+    Anhangname     HSB-HEXAGON-Industrieboeden-Flyer.pdf
+    Anhanggroesse  1.534.405 Bytes   (Quelle 1.534.113, Differenz 292)
+    Base64-Zeichen 2.045.484         (bei doppelter Kodierung waeren es
+                                      rund 2.727.312 - der alte Fehler)
+
+Nachgebildet ist nur die Google-Laufzeit. Flow, Outlook, Anhang und
+Rueckschrieb sind echt. Was damit noch offen bleibt: dass Google die
+Menuepunkte und die Seitenleiste im Browser genauso ausfuehrt. Das
+bestaetigt erst ein Klick durch einen Menschen.
+
+**Jordi bleibt blockiert.** Sein Flow (`47ee3d7a-…`) hat einen
+Button-Trigger und damit keine Aufruf-URL; Apps Script kann ihn nicht
+erreichen. Als `j-cherino` ist der Flow nicht einmal lesbar
+(`ConnectionAuthorizationFailed`). Aufloesbar nur ueber eine der beiden
+Wege: Request-Trigger fuer Jordi (Premium-Lizenz pruefen) oder ein
+j-cherino-eigener Flow mit einer als j-post authentifizierten Verbindung.

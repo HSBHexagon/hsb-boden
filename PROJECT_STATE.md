@@ -1107,3 +1107,73 @@ erreichen. Als `j-cherino` ist der Flow nicht einmal lesbar
 (`ConnectionAuthorizationFailed`). Aufloesbar nur ueber eine der beiden
 Wege: Request-Trigger fuer Jordi (Premium-Lizenz pruefen) oder ein
 j-cherino-eigener Flow mit einer als j-post authentifizierten Verbindung.
+
+---
+
+## Jordi: die Lizenzfrage ist vermessen statt vermutet, 2026-09-10
+
+Bisher stand im Kopf von `engine/pa_direct_drafts.py` als Behauptung:
+"Jordis Konto hat KEINE Premium-Lizenz". Dieselbe Kommentarpassage enthielt
+schon eine widerlegte Aussage. Deshalb wurde die Lizenzfrage heute
+tatsaechlich gemessen. Ergebnis: die Behauptung stimmt.
+
+**Zugang ohne neue Anmeldung.** j-posts Anmeldung vom 2026-09-07 liegt noch
+im MSAL-Cache der Azure CLI (`~/.azure/msal_token_cache.json`); `az` hatte
+sie beim Wechsel auf j-cherino nur aus seinem Profil geworfen, nicht aus dem
+Cache. Ueber dieselbe Bibliothek und denselben Cache laesst sich still ein
+Token fuer j-post ziehen - kein Passwort, keine neue Anmeldung. Damit ist
+Jordis Flow les- und schreibbar, obwohl j-cherino daran
+`ConnectionAuthorizationFailed` bekommt.
+
+**Drei Messungen, drei Absagen**
+
+1. `POST .../flows/{jordi}/start` nach dem Umbau auf Http-Trigger:
+   `MissingAdequateQuotaPolicy` - "you need a Power Automate Premium
+   license ... to save this flow with connection: 'Http'",
+   `userId 2fa22eae-…` (j-post). Damit ist belegt: **j-post hat keine
+   Premium-Lizenz.**
+2. `POST .../connections/{jordi-outlook}/modifyPermissions`:
+   `ConnectionSharingNotAllowed` - "connection ... of type 'office365'
+   cannot be shared". Jordis Outlook-Verbindung laesst sich **nicht** an
+   Joel freigeben.
+3. `DraftEmail` des Office-365-Outlook-Connectors kennt **keinen**
+   Parameter `mailboxAddress` (nur `GetEmailV2` hat einen). Joels
+   Verbindung kann also nicht in Jordis Postfach entwerfen. Ein
+   "Entwurf im freigegebenen Postfach" existiert im Connector nicht -
+   nur `SharedMailboxSendEmailV2`, und Versenden ist ausgeschlossen.
+
+**Nebenwirkung, die benannt gehoert.** Der Umbauversuch hat Jordis Flow
+gestoppt. Er laesst sich nicht wieder starten, weil bereits seine
+urspruenglichen `Response`-Aktionen zum premium-pflichtigen Http-Connector
+gehoeren - die alte Aktivierung war bestandsgeschuetzt, eine neue ist es
+nicht. Gemessen: ohne die beiden Response-Aktionen startet der Flow sofort
+wieder. Dieser Zustand wurde **bewusst nicht** gewaehlt, weil dann weder
+Draft-ID noch Anhanggroesse zurueckkaemen - also genau das unbelegte
+Entwerfen, das hier abgeschafft werden sollte.
+
+Jordis Flow steht deshalb jetzt auf der **fertigen Zielversion**
+(Http-Trigger, `Entwurf_zurueckgelesen`, beide Antwortzweige) und ist
+gestoppt. Sobald die Lizenzfrage geklaert ist, genuegt ein Start.
+Sicherung des Ausgangsstands: `jordi_flow_VORHER-*.json` im Scratchpad
+dieser Sitzung.
+
+**Zwei gangbare Wege, beide brauchen genau einen Menschen**
+
+- **A, kostenpflichtig:** j-post bekommt Power Automate Premium (oder die
+  Testphase). Danach: Flow starten, Aufruf-URL holen, im Sheet-Menue
+  eintragen. Kein Codeaenderung noetig, alles steht.
+- **B, kostenlos, empfohlen:** Jordi meldet sich einmal in **Joels**
+  Power Automate im Outlook-Anmeldedialog mit seinem eigenen Konto an.
+  Die entstehende Verbindung gehoert dann Joel (der Premium hat) und
+  authentifiziert als j-post. Ein Flow unter Joel mit dieser Verbindung
+  entwirft in Jordis Postfach. Zugangsdaten fasst dabei niemand ausser
+  Jordi selbst an.
+
+**Kein Postfach-Nachweis im Flow moeglich.** Geprueft: `GetEmailV2` liefert
+bei einem Entwurf `from` und `sender` als `null`, `DraftEmail` ebenso -
+Outlook fuellt den Absender erst beim Versand. Ein automatischer
+"in welches Postfach wurde geschrieben"-Nachweis je Entwurf ist damit
+ausgeschlossen. Bei Weg B muss die Verbindung deshalb **einmal** per
+Testentwurf durch einen Menschen bestaetigt werden:
+`node tests/live_knopfweg.js JORDI <adresse>` und dann in Jordis Outlook
+nachsehen, ob der Entwurf dort liegt.

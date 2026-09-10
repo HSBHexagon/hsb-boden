@@ -27,14 +27,42 @@ const DEPLOY = path.join(ROOT, 'deploy');
 // und sprengt jedes Argumentlimit.
 const TEMP = fs.mkdtempSync(path.join(os.tmpdir(), 'hsb-knopfweg-'));
 
-const EMPFAENGER = process.argv[2] || 'cherinodiaz@outlook.com';
-const BATCH_ID = 'HSB-20260910-JOEL-TEST';
+// Aufruf: node tests/live_knopfweg.js [JOEL|JORDI] [empfaenger]
+const OWNER = (process.argv[2] || 'JOEL').toUpperCase();
+if (OWNER !== 'JOEL' && OWNER !== 'JORDI') {
+  console.error('Erster Parameter muss JOEL oder JORDI sein.');
+  process.exit(2);
+}
+const EMPFAENGER = process.argv[3] || 'cherinodiaz@outlook.com';
+const BATCH_ID = 'HSB-20260910-' + OWNER + '-TEST';
+
+const OWNER_DATEN = {
+  JOEL: {
+    anzeige: 'Joel Cherino Diaz',
+    postfach: 'j-cherino@hsb-boden.de',
+    driveId: '16Kt-eRk1uY0HorZCrEmGt3QfGcRpYadS',
+    sha256: '2bccadacc77b531057583d2d650963c30deceed36c8be1fd90ca64e8b8cde5fb',
+    propName: 'HSB_ADAPTER_URL_JOEL'
+  },
+  JORDI: {
+    anzeige: 'Jordi Post',
+    postfach: 'j-post@hsb-boden.de',
+    driveId: '1UMX-fi2lJ9bo14KwuClqgfZQWECdE_XV',
+    sha256: 'f343ff05d1e7353a3a91a60f5475c054e1af958ea72e466445e60b9f69059a21',
+    propName: 'HSB_ADAPTER_URL_JORDI'
+  }
+}[OWNER];
 
 // --- Aufruf-URL live holen, damit nichts Geheimes im Quelltext steht -------
-const ADAPTER_URL = execFileSync('python3', ['-c',
+//
+// Die URL traegt eine Signatur. Sie wird deshalb bei jedem Lauf frisch
+// geholt statt gespeichert. Vorrang hat HSB_ADAPTER_URL aus der Umgebung -
+// noetig fuer den Jordi-Flow, dessen Verbindung j-post gehoert und den die
+// az-Anmeldung von j-cherino nicht lesen darf.
+const ADAPTER_URL = (process.env.HSB_ADAPTER_URL || execFileSync('python3', ['-c',
   "import sys; sys.path.insert(0,'" + path.join(ROOT, 'engine') + "');" +
-  "from pa_direct_drafts import callback_url; print(callback_url('JOEL'))"
-], { encoding: 'utf8' }).trim();
+  "from pa_direct_drafts import callback_url; print(callback_url('" + OWNER + "'))"
+], { encoding: 'utf8' })).trim();
 
 let SHEETS = {};
 let ECHTE_AUFRUFE = 0;
@@ -86,10 +114,8 @@ function makeSheet(name, headers, rows) {
   return s;
 }
 
-const SCRIPT_PROPS = {
-  HSB_ADAPTER_URL_JOEL: ADAPTER_URL,
-  HSB_ACTIVE_BATCH_ID: BATCH_ID
-};
+const SCRIPT_PROPS = { HSB_ACTIVE_BATCH_ID: BATCH_ID };
+SCRIPT_PROPS[OWNER_DATEN.propName] = ADAPTER_URL;
 
 const FLYER_DATEIEN = {
   '1UMX-fi2lJ9bo14KwuClqgfZQWECdE_XV': 'HSB-Flyer-Jordi-Post_FINAL.pdf',
@@ -181,7 +207,7 @@ const sandbox = {
   },
   Session: {
     getActiveUser: function () {
-      return { getEmail: function () { return 'j-cherino@hsb-boden.de'; } };
+      return { getEmail: function () { return OWNER_DATEN.postfach; } };
     }
   },
   MailApp: { sendEmail: function () { REAL_SEND_CALLS++; } }
@@ -212,7 +238,7 @@ lead[3] = 'A';
 lead[4] = 'Herr Mustermann';
 lead[5] = EMPFAENGER;
 lead[8] = 'yes';
-lead[9] = 'Joel Cherino Diaz';
+lead[9] = OWNER_DATEN.anzeige;
 lead[11] = BATCH_ID;
 lead[12] = 'not_sent';
 lead[19] = 'EXISTING_CUSTOMER_7_3';
@@ -220,8 +246,7 @@ lead[20] = 'no';
 lead[21] = 'PREPARED';
 makeSheet('ALL_LEADS', LEADS_HEADER, [lead]);
 makeSheet('BATCHES', ['Batch_ID', 'Owner', 'Flyer_SHA256', 'Status', 'Lead_Count'], [
-  [BATCH_ID, 'JOEL',
-   '2bccadacc77b531057583d2d650963c30deceed36c8be1fd90ca64e8b8cde5fb', 'PREPARED', 1]
+  [BATCH_ID, OWNER, OWNER_DATEN.sha256, 'PREPARED', 1]
 ]);
 makeSheet('ACTIVITIES', [
   'Activity_ID', 'Lead_ID', 'Timestamp', 'Owner', 'Activity_Type',
@@ -232,6 +257,7 @@ makeSheet('ACTIVITIES', [
 console.log('='.repeat(70));
 console.log('ECHTLAUF: Apps-Script-Knopfweg gegen den Live-Flow');
 console.log('='.repeat(70));
+console.log('Absender                 : ' + OWNER + ' / ' + OWNER_DATEN.postfach);
 console.log('Empfaenger (nur Entwurf) : ' + EMPFAENGER);
 console.log('Adapter-URL              : ' + ADAPTER_URL.slice(0, 78) + '…');
 console.log('');
@@ -260,7 +286,7 @@ if (LETZTE_ANTWORT) {
   console.log('  Anhanggroesse    : ' + body.attachmentSize + ' Bytes');
   console.log('  Base64-Zeichen   : ' + body.attachmentBase64Chars);
 
-  const flyerBytes = DriveApp._files['16Kt-eRk1uY0HorZCrEmGt3QfGcRpYadS'].bytes.length;
+  const flyerBytes = DriveApp._files[OWNER_DATEN.driveId].bytes.length;
   console.log('  Flyer-Quelle     : ' + flyerBytes + ' Bytes');
   pruefe(Math.abs(body.attachmentSize - flyerBytes) <= 1000,
          'Anhang hat die Groesse des Originalflyers',

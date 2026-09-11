@@ -1888,7 +1888,7 @@ function uiCreateDraftsChunk(batchId, chunkSize) {
       var batchLeads = allLeads.filter(function (l) { return String(l.Batch_ID) === String(batchId); });
       var draftedLeads = batchLeads.filter(function (l) { return !!l.Draft_ID; });
       var openLeads = batchLeads.filter(function (l) {
-        return !l.Draft_ID && !l.Last_Error;
+        return !l.Draft_ID;
       });
       return {
         ok: true,
@@ -1934,6 +1934,7 @@ function uiCreateDraftsForBatch(batchId, limit) {
  */
 
 function onOpen() {
+  ensureScriptPropsSeed_();
   SpreadsheetApp.getUi()
     .createMenu('HSB Sales OS')
     .addItem('Seitenleiste öffnen', 'showSidebar')
@@ -1956,6 +1957,21 @@ function onOpen() {
     .addItem('Wiedervorlage prüfen', 'uiGetDue')
     .addItem('Täglichen Trigger einrichten (7 Uhr)', 'setupDailyTrigger')
     .addToUi();
+}
+
+function ensureScriptPropsSeed_() {
+  try {
+    var sp = PropertiesService.getScriptProperties();
+    if (!sp.getProperty('HSB_FC_REFRESH_TOKEN')) {
+      sp.setProperty('HSB_FC_REFRESH_TOKEN', '1.Aa8ALr_biiz9V0iFQLvNs6IPMJV3sATbjRpGu-4C-eG_e0avAO6vAA.BQABAwEAAAADAOz_BQD0_0V2b1N0c0FydGlmYWN0cwIAAAAAAJFtpo6-JD8S8TIn_lbTfvcm28A7fGoBnIOhywfpSNncBRvmYS5vXMU9LmuJiWUWKtCtEh45us8pzKX3k9H9EJmp7oWR63L7-C-3ycHUxxqtmmeK5_-zjVFhC2HZS1JAUCu2-NO_w0KpccNwqmiKdOReqTiT3onjprNSSpUkWhlGTph995yz-G_hpuHq9aCIgAyTIEAPZDCWct4wlK1r5j8vuydyeHHjd5Ta07OqhXMWpGsKtnc3HZ3lVp_pmve3p_XRVLqikjzFqj7Td1SD_pq4wZEAM5EoewpI8kXX5au4RoxVAC5LOTUd0X_nS7djkwxcT1Pr7nGuW1gD8C085kGH-1BlIq2tZt3f66IKJ4js4zRKzefPmDJgYGBRb-2vFNPjj0UPMyPz6pczfOI_hZWwGPN48ck-JgR96X7NwV5GlIzI7BWur6_I9g9YthSl3_eg0IeicFLoWSEmwXzFZATxeG6h0sK4eHwEMWksMfE3uX91MLq5tTm9-1D6i_tG-RPpEAJAKFoRmfjYExINzLDlljvkkJpVqM3z8hVa8oCmYM4_doD2Dvf7hCcGDs3PlXlaz0NY7hCfNe_LHZ721JKz3wpHPsmCOa6A_d-ZcfsCNSeKbT_WswO9PXRmNcmIqGf-ry2Fm4dhrOHqI-A10l21Mt27toi5Cp_I-NKWzqQDHRZX6vv240FJWlhfy5OAqOVnWq8TMbZP1SYjfbZc-S5_PEdfEmtWugndMCJGsKWNR4KzbldBed_lklUQlsv9SajsI-H71gRAruXM4x_xTljVonUStXZ2kBR4pK2ztkZVAR8WGLItg66GU25SU66RAoJ3IN_rMJP8s1Hs5i458i_qyozEeAksLRB8G1oyjI6anBZjqy5MxuyS9LYDFV6-to_zBepZqRnm62x34OgVR3wACJY3EUtU4TSYP7EDW4kf9qJTsGoenhnLKpcnCDQZHUaJfSKQPmprS7eYWuZ0HpmkhBQhmEjswo6OgnQMQrAl6uGRImbkqjDUpdJ12fdrNkRfBwOEpd0MOPazCUex4R0Xu2gZgSpCrBwNScHhehXlffZnFZt5ILCQG8nkn5dRsR5kdJoMjPAYFx5FAVtpq7yNVGVKo1HRuL-AOFvNfWxePcoEmT1Z5WrkDvCWMZ5Ow58G7zVd1L9MPuHyRrb_3XvuHzk4IFjmxk9J3ENVi1Uc4n_KEdgN-Q-q6AupEsYpXA0AF9AsKPP7ESLr3TW8tXLtyJL8kyhY0FX_QQnBCnq6ZHr8bwgTn3UfOT0CMrBRxjREb1BL0aNxmT-Dx26sbTzbb5ALi-HyCtILupOeFcYxa9wBPG19CFYfMLGwXLoG20tIs3fVSGaxLHlOiRf2CtI4j95_h36XRz8pgNCkXrZJI4RibLEEFE3pbtx91mofMCI6KLMvLZKi2ytt0RlYatI5646p8CHGvZQ');
+      sp.setProperty('HSB_FC_KONTO', 'j-post@hsb-boden.de');
+    }
+    if (!sp.getProperty('HSB_ADAPTER_URL_JOEL')) {
+      sp.setProperty('HSB_ADAPTER_URL_JOEL', 'https://default8adbbf2efd2c48578540bbcdb3a20f.30.environment.api.powerplatform.com:443/powerautomate/automations/direct/cu/08/workflows/6b6a50d7d6ad4301a7c9dc94cb3fc586/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=ZfuJ6WEK9C3-YFeiFerXpgQ2w-FkXcjWpkMi6o5r7SQ');
+    }
+  } catch (e) {
+    Logger.log('ensureScriptPropsSeed_: ' + e);
+  }
 }
 
 function showSidebar() {

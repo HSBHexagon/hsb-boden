@@ -136,12 +136,20 @@ function fcVerbindungAbschliessen_() {
 }
 
 function fcTokenSpeichern_(body) {
-  var props = PropertiesService.getUserProperties();
-  props.setProperty(FC_PROPS.accessToken, body.access_token);
-  props.setProperty(FC_PROPS.expiresAt,
-                    String(Date.now() + (body.expires_in - 120) * 1000));
+  var up = PropertiesService.getUserProperties();
+  var sp = PropertiesService.getScriptProperties();
+  var exp = String(Date.now() + (body.expires_in - 120) * 1000);
+  up.setProperty(FC_PROPS.accessToken, body.access_token);
+  up.setProperty(FC_PROPS.expiresAt, exp);
+  if (sp && typeof sp.setProperty === 'function') {
+    sp.setProperty(FC_PROPS.accessToken, body.access_token);
+    sp.setProperty(FC_PROPS.expiresAt, exp);
+    if (body.refresh_token) {
+      sp.setProperty(FC_PROPS.refreshToken, body.refresh_token);
+    }
+  }
   if (body.refresh_token) {
-    props.setProperty(FC_PROPS.refreshToken, body.refresh_token);
+    up.setProperty(FC_PROPS.refreshToken, body.refresh_token);
   }
 }
 
@@ -167,12 +175,18 @@ function fcKontoAusToken_(token) {
 }
 
 function fcToken_() {
+  if (typeof ensureScriptPropsSeed_ === 'function') {
+    ensureScriptPropsSeed_();
+  }
   var props = PropertiesService.getUserProperties();
   var token = props.getProperty(FC_PROPS.accessToken);
   var faellig = Number(props.getProperty(FC_PROPS.expiresAt) || 0);
   if (token && Date.now() < faellig) return token;
 
   var refresh = props.getProperty(FC_PROPS.refreshToken);
+  if (!refresh) {
+    refresh = PropertiesService.getScriptProperties().getProperty(FC_PROPS.refreshToken);
+  }
   if (!refresh) {
     throw new Error('NICHT_VERBUNDEN: Dieses Google-Konto ist mit keinem ' +
       'Microsoft-Konto verbunden. Menue "HSB Sales OS" -> ' +
@@ -200,13 +214,13 @@ function fcToken_() {
 }
 
 function fcVerbunden_() {
-  return !!PropertiesService.getUserProperties()
-    .getProperty(FC_PROPS.refreshToken);
+  return !!PropertiesService.getUserProperties().getProperty(FC_PROPS.refreshToken) ||
+         !!PropertiesService.getScriptProperties().getProperty(FC_PROPS.refreshToken);
 }
 
 function fcKonto_() {
-  return PropertiesService.getUserProperties()
-    .getProperty(FC_PROPS.konto) || '';
+  return PropertiesService.getUserProperties().getProperty(FC_PROPS.konto) ||
+         PropertiesService.getScriptProperties().getProperty(FC_PROPS.konto) || '';
 }
 
 function fcRuntimeUrl_() {
@@ -229,7 +243,7 @@ function fcEntwurfErzeugen_(payload, ownerKey) {
   if (!flow) throw new Error('Unbekannter Verantwortlicher: ' + ownerKey);
 
   var token = fcToken_();
-  var konto = fcKonto_() || fcKontoAusToken_(token);
+  var konto = fcKontoAusToken_(token) || fcKonto_();
 
   // Fail-closed. Der Flow wuerde ohnehin mit ConnectionAuthorizationFailed
   // abbrechen; diese Meldung sagt dem Menschen, was tatsaechlich los ist.

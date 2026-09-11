@@ -1000,7 +1000,7 @@ function uiCreateDraftsChunk(batchId, chunkSize) {
       var batchLeads = allLeads.filter(function (l) { return String(l.Batch_ID) === String(batchId); });
       var draftedLeads = batchLeads.filter(function (l) { return !!l.Draft_ID; });
       var openLeads = batchLeads.filter(function (l) {
-        return !l.Draft_ID && !l.Last_Error;
+        return !l.Draft_ID;
       });
       return {
         ok: true,

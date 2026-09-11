@@ -333,7 +333,11 @@ function createDraftsForBatch(batchId, options) {
     return 'Keine Leads im Batch ' + batchId + '. Das ist bei geschlossenem Gate korrektes Verhalten.';
   }
 
-  var results = { attempted: 0, drafted: 0, skipped: 0, failed: 0, details: [] };
+  // "async" wird getrennt gezaehlt: diese Entwuerfe entstehen real, sind aber
+  // von Apps Script aus nicht nachgeprueft. Sie unter "drafted" zu fuehren
+  // wuerde die Zusammenfassung zu gut aussehen lassen.
+  var results = { attempted: 0, drafted: 0, async: 0, skipped: 0, failed: 0,
+                  details: [] };
   var flyerCache = {};
 
   for (var i = 0; i < leads.length && results.attempted < limit; i++) {
@@ -386,6 +390,23 @@ function createDraftsForBatch(batchId, options) {
       logActivity_(lead.Lead_ID, 'DRAFT_FAILED', transportMessage);
       throw new Error('DRAFT_FAILED: ' + lead.Lead_ID + ' ' + transportMessage);
     }
+    // Asynchroner Weg (Jordi): der Flow bestaetigt nur die Annahme. Der
+    // Entwurf entsteht in seinem Postfach, aber Apps Script sieht weder
+    // Draft-ID noch Anhanggroesse und darf ihn deshalb nicht als geprueft
+    // ausweisen. Der Batch laeuft weiter - ein Abbruch waere hier falsch,
+    // weil nichts fehlgeschlagen ist.
+    if (body && body.async) {
+      var asyncHinweis = 'ASYNCHRON: Flow-Lauf ' + body.runId + ' angenommen. ' +
+        'Der Entwurf entsteht im Postfach von ' + ownerKey + ', Apps Script ' +
+        'bekommt vom Flow keine Rueckmeldung. Anhang ungeprueft - vor dem ' +
+        'Versand in Outlook sichten.';
+      writeBackDraft_(lead, body, asyncHinweis);
+      logActivity_(lead.Lead_ID, 'DRAFT_ASYNC', asyncHinweis);
+      results.async++;
+      results.details.push(lead.Lead_ID + ' ANGENOMMEN (Lauf ' + body.runId + ')');
+      continue;
+    }
+
     if (!body || !body.draftId) {
       writeBackError_(lead, 'MISSING_DRAFT_ID');
       logActivity_(lead.Lead_ID, 'DRAFT_FAILED', 'MISSING_DRAFT_ID');
@@ -422,6 +443,7 @@ function createDraftsForBatch(batchId, options) {
   }
 
   var summary = 'Batch ' + batchId + ': ' + results.drafted + ' Entwuerfe, ' +
+                results.async + ' angenommen (ungeprueft), ' +
                 results.skipped + ' uebersprungen, ' + results.failed + ' Fehler\n' +
                 results.details.join('\n') +
                 '\n\nSENT wird nicht gesetzt. Versand erfolgt manuell in Outlook.';

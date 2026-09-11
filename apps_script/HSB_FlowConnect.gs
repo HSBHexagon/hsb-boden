@@ -254,11 +254,46 @@ function fcEntwurfErzeugen_(payload, ownerKey) {
     throw new Error('FLOW_HTTP_' + code + ': ' +
                     res.getContentText().slice(0, 300));
   }
+  var text = res.getContentText();
+  if (code === 202 || !text) {
+    // Jordis Flow hat keine Response-Aktion mehr. Response traegt bei
+    // Microsoft die Connector-Art "Http" und gilt als Premium; solange sie
+    // in der Definition stand, lehnte der Dienst jeden Start mit
+    // MissingAdequateQuotaPolicy ab. Ohne sie antwortet der Endpunkt sofort
+    // mit 202 und leerem Rumpf - der Lauf selbst erzeugt den Entwurf.
+    // Die Laufkennung aus der Kopfzeile ist das Einzige, was zurueckkommt.
+    var lauf = fcLaufKennung_(res);
+    return {
+      status: 'ACCEPTED_ASYNC',
+      async: true,
+      runId: lauf,
+      draftId: 'LAUF:' + lauf,
+      internetMessageId: '',
+      conversationId: ''
+    };
+  }
   try {
-    return JSON.parse(res.getContentText());
+    return JSON.parse(text);
   } catch (fehler) {
     throw new Error('INVALID_RESPONSE_JSON vom Connector-Endpunkt');
   }
+}
+
+/**
+ * Liest die Laufkennung aus den Kopfzeilen der 202-Antwort.
+ *
+ * Sie dient als eindeutige, in der Laufhistorie nachschlagbare Kennung und
+ * verhindert, dass ein Folgelauf denselben Lead ein zweites Mal anstoesst.
+ */
+function fcLaufKennung_(res) {
+  var kopf = res.getAllHeaders() || {};
+  var treffer = '';
+  Object.keys(kopf).forEach(function (name) {
+    if (String(name).toLowerCase() === 'x-ms-workflow-run-id') {
+      treffer = String(kopf[name]);
+    }
+  });
+  return treffer || 'OHNE-KENNUNG-' + Date.now();
 }
 
 /** Braucht dieser Verantwortliche den Connector-Weg? */

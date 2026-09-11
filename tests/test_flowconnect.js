@@ -50,10 +50,13 @@ function makeFetch(opt) {
     if (/\/send\b/.test(url)) {
       throw new Error('VERSAND VERSUCHT - darf nicht vorkommen: ' + url);
     }
-    function antwort(code, obj) {
+    function antwort(code, obj, kopf) {
       return {
         getResponseCode: function () { return code; },
-        getContentText: function () { return JSON.stringify(obj); }
+        getContentText: function () {
+          return obj === null ? '' : JSON.stringify(obj);
+        },
+        getAllHeaders: function () { return kopf || {}; }
       };
     }
     if (/oauth2\/v2\.0\/devicecode/.test(url)) {
@@ -73,11 +76,21 @@ function makeFetch(opt) {
       if (opt.flowFehler) {
         return antwort(opt.flowFehler, { error: { code: 'Irgendwas' } });
       }
-      return antwort(200, {
-        status: 'DRAFTED', leadId: 'HSB-TEST-0001', batchId: 'BATCH-TEST',
-        draftId: 'AAMk-JORDI-ENTWURF', internetMessageId: '<t@hsb-boden.de>',
-        conversationId: 'CONV-1', attachmentSize: 1534405
-      });
+      if (opt.synchron) {
+        // Verhalten eines Flows MIT Response-Aktion. Jordis Flow hat keine
+        // mehr - dieser Zweig deckt nur ab, dass der Code den synchronen
+        // Rumpf weiterhin korrekt durchreicht.
+        return antwort(200, {
+          status: 'DRAFTED', leadId: 'HSB-TEST-0001', batchId: 'BATCH-TEST',
+          draftId: 'AAMk-JORDI-ENTWURF', internetMessageId: '<t@hsb-boden.de>',
+          conversationId: 'CONV-1', attachmentSize: 1534405
+        });
+      }
+      // Gemessene Wirklichkeit am 2026-09-11: ohne Response-Aktion antwortet
+      // der Connector mit 202 und leerem Rumpf, die Laufkennung steht in der
+      // Kopfzeile.
+      return antwort(202, null,
+        { 'x-ms-workflow-run-id': '08584124600456631756898045853CU27' });
     }
     throw new Error('Unerwarteter Aufruf: ' + url);
   };
@@ -131,19 +144,33 @@ const NUTZLAST = {
   attachmentName: 'flyer.pdf', attachmentContentBytes: 'AAAA'
 };
 
-console.log('\n=== 1. Jordi erzeugt in seinem Postfach ===');
+console.log('\n=== 1. Jordi erzeugt in seinem Postfach (202, asynchron) ===');
 {
   const k = lade({ konto: 'j-post@hsb-boden.de' });
   const body = k.fcEntwurfErzeugen_(NUTZLAST, 'JORDI');
-  pruefe('Status DRAFTED', body.status === 'DRAFTED');
-  pruefe('Draft-ID da', body.draftId === 'AAMk-JORDI-ENTWURF');
-  pruefe('Anhanggroesse durchgereicht', body.attachmentSize === 1534405);
+  pruefe('Als asynchron gekennzeichnet', body.async === true);
+  pruefe('Status ACCEPTED_ASYNC', body.status === 'ACCEPTED_ASYNC');
+  pruefe('Laufkennung aus der Kopfzeile',
+         body.runId === '08584124600456631756898045853CU27', body.runId);
+  pruefe('Draft-ID traegt die Laufkennung',
+         body.draftId === 'LAUF:08584124600456631756898045853CU27');
+  pruefe('Keine erfundene Anhanggroesse', body.attachmentSize === undefined);
   const lauf = AUFRUFE.filter(function (a) { return /triggers\/manual\/run/.test(a.url); });
   pruefe('Genau ein Flow-Aufruf', lauf.length === 1, lauf.length + ' Aufrufe');
   pruefe('Jordis Flow-ID im Aufruf',
          /47ee3d7a-626c-4fff-9e16-6d938949e4bd/.test(lauf[0].url));
   pruefe('Connector-Endpunkt, keine Aufruf-URL',
          /azure-apihub\.net\/apim\/logicflows/.test(lauf[0].url));
+}
+
+console.log('\n=== 1b. Synchroner Rumpf wird weiterhin durchgereicht ===');
+{
+  const k = lade({ konto: 'j-post@hsb-boden.de', synchron: true });
+  const body = k.fcEntwurfErzeugen_(NUTZLAST, 'JORDI');
+  pruefe('Status DRAFTED', body.status === 'DRAFTED');
+  pruefe('Draft-ID da', body.draftId === 'AAMk-JORDI-ENTWURF');
+  pruefe('Anhanggroesse durchgereicht', body.attachmentSize === 1534405);
+  pruefe('Nicht als asynchron markiert', !body.async);
 }
 
 console.log('\n=== 2. Falsches Konto wird abgewiesen ===');

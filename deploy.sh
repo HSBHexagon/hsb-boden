@@ -84,6 +84,9 @@ cp "$SRC/Sidebar.html"    "$DEPLOY/Sidebar.html"
 # umfasst nur Config/Engine/Actions/Code). Ohne diese Zeile blieben
 # Aenderungen am Draft-Adapter beim Deploy stillschweigend liegen.
 cp "$SRC/HSB_DraftAdapter.gs" "$DEPLOY/HSB_DraftAdapter.gs.js"
+# Gleicher Grund wie eine Zeile darueber: der Graph-Adapter steht ausserhalb
+# des Buendels und muss einzeln mitkommen.
+cp "$SRC/HSB_GraphAdapter.gs" "$DEPLOY/HSB_GraphAdapter.js"
 [ -f "$ROOT/deploy_manifest.json" ] || fail "deploy_manifest.json fehlt"
 
 # --- 3. Projekt verwenden -------------------------------------------------

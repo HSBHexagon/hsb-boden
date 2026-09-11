@@ -1252,3 +1252,95 @@ notierten Auswege (Premium kaufen, Verbindung unter Joels Konto anlegen)
 sind nicht noetig. Was danach zu tun ist: Jordis Flow auf die Zielversion
 zuruecksetzen (steht im Scratchpad als `jordi_umbau.py`), starten,
 Aufruf-URL holen, im Sheet-Menue eintragen.
+
+---
+
+## 2026-09-11: Der Entwicklerplan war es nicht. Power Automate ist fuer Jordi zu.
+
+Der Abschnitt direkt darueber ist **widerlegt**. Er behauptete, der
+kostenlose `POWERAPPS_DEV`-Plan schalte Premium-Connectoren frei und Jordis
+Blockade sei damit gratis aufloesbar. Beides ist falsch.
+
+Gemessen an diesem Tag: j-cherino **hat** `POWERAPPS_DEV` mit
+`FLOW_DEV_VIRAL` - und bekommt beim Aktivieren eines Flows mit
+Http-Connector denselben `403 MissingAdequateQuotaPolicy` wie j-post. Die
+Fehlermeldung nennt dabei j-cherinos eigene `userId` (`789f58a0-…`). Der
+Plan hilft also nicht.
+
+Warum Joels Flow trotzdem laeuft: **Bestandsschutz.** Er wurde aktiviert,
+bevor Microsoft die Regel verschaerfte. Das ist eine operative Mine -
+**wird dieser Flow je gestoppt, ist er verloren.** Genau das ist Jordis
+Flow am 2026-09-10 passiert, durch einen Umbau von mir.
+
+### Vier Varianten, vier Ablehnungen
+
+| Versuch | Antwort |
+|---|---|
+| Http-Trigger mit Antwortaktion | 403 `MissingAdequateQuotaPolicy` |
+| Http-Trigger ohne Antwortaktion | 403 `MissingAdequateQuotaPolicy` |
+| Button-Trigger, Aufruf-URL holen | 400 `ListCallbackUrlOperationBlocked` |
+| Button-Trigger, Flow-API `/run` | 400 `TriggerInputSchemaMismatch` |
+
+Zwischenschritt auf dem Weg dorthin: j-cherino wurde per
+`modifyPermissions` als `CanEdit` auf Jordis Flow eingetragen. Das
+funktioniert (er kann den Flow seitdem lesen und speichern) und bleibt
+bestehen - nur die Aktivierung scheitert weiterhin. Die Outlook-Verbindung
+blieb dabei unveraendert j-posts, geprueft ueber `connectionName`.
+
+Jordis Flow steht wieder auf dem Stand von vorher: `Started`,
+Button-Trigger, zwei Aktionen, j-posts Verbindung.
+
+### Der Ersatz: Microsoft Graph direkt aus dem Sheet
+
+Neu: `apps_script/HSB_GraphAdapter.gs`. Apps Script legt Entwuerfe ueber
+`POST /me/messages` an, ohne Power Automate und ohne Lizenz. Jede Person
+verbindet sich einmalig per Geraetecode mit ihrem eigenen Microsoft-Konto;
+das Token liegt in den **UserProperties**, also getrennt je Google-Konto.
+
+Zwei Eigenschaften, die nicht verhandelbar sind:
+
+- **Postfachbindung.** Vor jedem Entwurf wird geprueft, ob das verbundene
+  Postfach zu `FLYERS[ownerKey].mailbox` passt. Sonst `FALSCHES_POSTFACH`
+  und Abbruch, bevor irgendetwas angelegt wird. Ohne diese Pruefung koennte
+  Jordi Entwuerfe in Joels Namen erzeugen.
+- **Kein Versand.** `POST /me/messages/{id}/send` kommt in der Datei nicht
+  vor; ein Test prueft den ausgelieferten Code darauf.
+
+Der Draft-Adapter bekam eine Weiche (`entwurfAnlegen_`): Graph wenn
+verbunden, sonst Power Automate. Beide Wege liefern dasselbe Antwortformat,
+deshalb bleibt die Anhangpruefung unveraendert - sie ist der Kern der
+Absicherung und darf nicht pro Transportweg neu geschrieben werden.
+
+### Drei Validierungsfallen im Sheet
+
+Der Knopf scheiterte an `AS3433` mit einer Datenvalidierungsmeldung. Ursache:
+Code-Vokabular und Spaltenauswahl waren nie abgeglichen. Gemessen und
+behoben:
+
+| Spalte | vorher erlaubt | Code schreibt aber |
+|---|---|---|
+| AS `Legal_Basis` | UNKNOWN, CONSENT, EXISTING_CUSTOMER_7_3 | `OWNER_APPROVED`, `OPT_IN` |
+| AO `Send_Status` | not_sent, prepared, drafted, sent | `needs_check` |
+| AU `Batch_Status` | PREPARED, DRAFTED, SENT | `DRAFTED_UNVERIFIED` |
+
+Die beiden letzten waren besonders tueckisch: Sie schlagen genau dann zu,
+wenn die **Anhangpruefung anschlaegt** - der Sicherheitsmechanismus haette
+sich beim Zurueckschreiben selbst gesprengt.
+
+Behoben durch Erweitern der Auswahllisten, nicht durch Umdeuten von Werten.
+`OWNER_APPROVED` behauptet bewusst weder Opt-in noch Bestandskundenstatus;
+es auf `EXISTING_CUSTOMER_7_3` abzubilden haette rund 3.000 Kontakte
+stillschweigend zu Bestandskunden erklaert. Kein einziger Zellwert wurde
+geaendert (Stand: 6.155 `UNKNOWN`, 269 `EXISTING_CUSTOMER_7_3`).
+
+### Stand
+
+- Joels Knopfweg: live gegen den echten Flow **11/11 bestanden**, Anhang
+  1.534.405 gegen 1.534.113 Bytes Quelle (+292 MIME-Overhead), nichts
+  versendet.
+- Testsuite: 321 + 31 + 24 (neu, Graph) bestanden, Verifier PASS.
+- Live-Projekt im Sheet ist byte-identisch mit der Quelle (`clasp pull`),
+  sechs Dateien inklusive `HSB_GraphAdapter.js`.
+- **Offen:** Der Graph-Weg ist noch nie gegen ein echtes Postfach gelaufen.
+  Dazu muss sich je eine Person per Geraetecode anmelden. Erst danach darf
+  jemand behaupten, Jordis Seite funktioniere.

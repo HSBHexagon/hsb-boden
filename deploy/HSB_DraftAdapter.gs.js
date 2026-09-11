@@ -267,6 +267,46 @@ function adapterUrlFor_(owner) {
   return url;
 }
 
+/**
+ * Legt einen Entwurf an - ueber Graph, wenn dieses Konto verbunden ist,
+ * sonst ueber Power Automate.
+ *
+ * Beide Wege liefern dasselbe Antwortformat. Die Anhangpruefung im Aufrufer
+ * kennt den Transportweg deshalb nicht und muss ihn nicht kennen.
+ *
+ * Reihenfolge bewusst so: Graph ist der Weg, der ohne Lizenz auskommt und
+ * jeder Person ihr eigenes Postfach zuordnet. Power Automate bleibt nur als
+ * Rueckfallebene fuer Joel, dessen Flow noch aus Bestandsschutz laeuft.
+ */
+function entwurfAnlegen_(owner, ownerKey, payload) {
+  if (typeof graphVerbunden_ === 'function' && graphVerbunden_()) {
+    return graphEntwurfErzeugen_(payload, ownerKey);
+  }
+
+  var res;
+  try {
+    res = UrlFetchApp.fetch(adapterUrlFor_(owner), {
+      method: 'post',
+      contentType: 'application/json',
+      payload: JSON.stringify(payload),
+      timeoutSeconds: HTTP_TIMEOUT_SECONDS,
+      muteHttpExceptions: true
+    });
+  } catch (transportError) {
+    throw new Error('TRANSPORT_UNKLAR: ' + String(transportError));
+  }
+
+  var code = res.getResponseCode();
+  if (code !== 200) {
+    throw new Error('HTTP ' + code + ' ' + res.getContentText().slice(0, 200));
+  }
+  try {
+    return JSON.parse(res.getContentText());
+  } catch (parseError) {
+    throw new Error('INVALID_RESPONSE_JSON');
+  }
+}
+
 // ---------------------------------------------------------------- Kern
 
 function createDraftsForBatch(batchId, options) {
@@ -325,38 +365,15 @@ function createDraftsForBatch(batchId, options) {
       continue;
     }
 
-    var res;
+    var body;
     try {
-      res = UrlFetchApp.fetch(adapterUrlFor_(owner), {
-        method: 'post',
-        contentType: 'application/json',
-        payload: JSON.stringify(payload),
-        timeoutSeconds: HTTP_TIMEOUT_SECONDS,
-        muteHttpExceptions: true
-      });
+      body = entwurfAnlegen_(owner, ownerKey, payload);
     } catch (transportError) {
-      var transportMessage = 'TRANSPORT_UNKLAR: ' + String(transportError);
+      results.failed++;
+      var transportMessage = String(transportError).slice(0, 300);
       writeBackError_(lead, transportMessage);
       logActivity_(lead.Lead_ID, 'DRAFT_FAILED', transportMessage);
       throw new Error('DRAFT_FAILED: ' + lead.Lead_ID + ' ' + transportMessage);
-    }
-
-    var code = res.getResponseCode();
-    if (code !== 200) {
-      results.failed++;
-      var httpMessage = 'HTTP ' + code + ' ' + res.getContentText().slice(0, 200);
-      writeBackError_(lead, httpMessage);
-      logActivity_(lead.Lead_ID, 'DRAFT_FAILED', httpMessage);
-      throw new Error('DRAFT_FAILED: ' + lead.Lead_ID + ' ' + httpMessage);
-    }
-
-    var body;
-    try {
-      body = JSON.parse(res.getContentText());
-    } catch (parseError) {
-      writeBackError_(lead, 'INVALID_RESPONSE_JSON');
-      logActivity_(lead.Lead_ID, 'DRAFT_FAILED', 'INVALID_RESPONSE_JSON');
-      throw new Error('DRAFT_FAILED: ' + lead.Lead_ID + ' INVALID_RESPONSE_JSON');
     }
     if (!body || !body.draftId) {
       writeBackError_(lead, 'MISSING_DRAFT_ID');

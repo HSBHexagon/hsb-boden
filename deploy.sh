@@ -87,6 +87,7 @@ cp "$SRC/HSB_DraftAdapter.gs" "$DEPLOY/HSB_DraftAdapter.gs.js"
 # Gleicher Grund wie eine Zeile darueber: der Graph-Adapter steht ausserhalb
 # des Buendels und muss einzeln mitkommen.
 cp "$SRC/HSB_GraphAdapter.gs" "$DEPLOY/HSB_GraphAdapter.js"
+cp "$SRC/HSB_FlowConnect.gs" "$DEPLOY/HSB_FlowConnect.js"
 [ -f "$ROOT/deploy_manifest.json" ] || fail "deploy_manifest.json fehlt"
 
 # --- 3. Projekt verwenden -------------------------------------------------

@@ -279,6 +279,17 @@ function adapterUrlFor_(owner) {
  * Rueckfallebene fuer Joel, dessen Flow noch aus Bestandsschutz laeuft.
  */
 function entwurfAnlegen_(owner, ownerKey, payload) {
+  // Jordis Flow hat einen Button-Trigger und ist deshalb NUR ueber den
+  // Logic-Flows-Connector erreichbar - seine Aufruf-URL ist von Microsoft
+  // gesperrt. Das ist derselbe Weg, der am 2026-09-07 real 50 Entwuerfe
+  // erzeugt hat, nur dass das Token nicht mehr von `az login` kommt,
+  // sondern von der einmaligen Anmeldung im Sheet-Menue.
+  if (typeof fcBrauchtConnector_ === 'function' && fcBrauchtConnector_(ownerKey)) {
+    return fcEntwurfErzeugen_(payload, ownerKey);
+  }
+
+  // Graph braucht eine Administratorzustimmung, die im HSB-Tenant bisher
+  // fehlt. Bleibt als Weg bestehen, falls sie je erteilt wird.
   if (typeof graphVerbunden_ === 'function' && graphVerbunden_()) {
     return graphEntwurfErzeugen_(payload, ownerKey);
   }

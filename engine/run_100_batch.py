@@ -160,7 +160,7 @@ def create_single_draft(owner: str, lead: dict, flyer_b64: str, flyer_name: str,
             run_id = r.headers.get("x-ms-workflow-run-id")
             return {"status": "ACCEPTED_ASYNC", "runId": run_id, "code": r.getcode()}
 
-def run_batch(owner: str, count: int = 100, start_row: int = None) -> list:
+def run_batch(owner: str, count: int = 100, start_row: int = None, force: bool = False) -> list:
     ts = datetime.datetime.now(datetime.timezone.utc).strftime("%Y%m%dT%H%M%SZ")
     batch_id = f"BATCH-100-{owner}-{ts[:8]}"
 
@@ -200,16 +200,17 @@ def run_batch(owner: str, count: int = 100, start_row: int = None) -> list:
     batches_dir = REPO_ROOT / "batches"
     batches_dir.mkdir(exist_ok=True)
 
-    # Vorhandene Resultate laden, um bereits angelegte Zeilen nicht zu duplizieren
+    # Vorhandene Resultate laden, sofern nicht --force gesetzt ist
     known_results = {}
-    for f in batches_dir.glob(f"result_100_{owner}_*.json"):
-        try:
-            items = json.loads(f.read_text(encoding="utf-8"))
-            for item in items:
-                if item.get("status") == "OK" and item.get("row"):
-                    known_results[item["row"]] = item
-        except Exception:
-            pass
+    if not force:
+        for f in batches_dir.glob(f"result_100_{owner}_*.json"):
+            try:
+                items = json.loads(f.read_text(encoding="utf-8"))
+                for item in items:
+                    if item.get("status") == "OK" and item.get("row"):
+                        known_results[item["row"]] = item
+            except Exception:
+                pass
 
     results = []
     matrix_rows = []
@@ -353,20 +354,24 @@ def run_batch(owner: str, count: int = 100, start_row: int = None) -> list:
     out_file = batches_dir / f"result_100_{owner}_{ts}.json"
     out_file.write_text(json.dumps(results, indent=2, ensure_ascii=False), encoding="utf-8")
     
-    matrix_file = batches_dir / f"matrix_100_{owner}.json"
-    matrix_file.write_text(json.dumps({
+    matrix_payload = {
         "owner": owner,
         "start_row": filtered_leads[0]["_row"],
         "end_row": filtered_leads[-1]["_row"],
         "range": f"ALL_LEADS!AN{filtered_leads[0]['_row']}:BD{filtered_leads[-1]['_row']}",
         "matrix": matrix_rows
-    }, indent=2, ensure_ascii=False), encoding="utf-8")
+    }
+    matrix_file = batches_dir / f"matrix_100_{owner}.json"
+    matrix_file.write_text(json.dumps(matrix_payload, indent=2, ensure_ascii=False), encoding="utf-8")
+
+    matrix_final_file = batches_dir / f"matrix_100_{owner}_final.json"
+    matrix_final_file.write_text(json.dumps(matrix_payload, indent=2, ensure_ascii=False), encoding="utf-8")
 
     ok_count = len([r for r in results if r["status"] == "OK"])
     fail_count = len([r for r in results if r["status"] == "FAIL"])
     print(f"\n================================================================================")
     print(f" BATCH ABGESCHLOSSEN: {ok_count}/{count} erfolgreich, {fail_count} Fehler.")
-    print(f" Matrix-Export     : {matrix_file}")
+    print(f" Matrix-Export     : {matrix_file} & {matrix_final_file}")
     print(f" Ergebnisprotokoll : {out_file}")
     print(f"================================================================================\n")
     return results
@@ -376,9 +381,10 @@ if __name__ == "__main__":
     parser.add_argument("owner", choices=["JOEL", "JORDI", "BOTH"], default="BOTH", nargs="?")
     parser.add_argument("--count", type=int, default=100)
     parser.add_argument("--start-row", type=int, default=None)
+    parser.add_argument("--force", action="store_true", help="Ueberschreibt bestehende Entwuerfe ohne Cache")
     args = parser.parse_args()
 
     if args.owner in ["JOEL", "BOTH"]:
-        run_batch("JOEL", count=args.count, start_row=args.start_row)
+        run_batch("JOEL", count=args.count, start_row=args.start_row, force=args.force)
     if args.owner in ["JORDI", "BOTH"]:
-        run_batch("JORDI", count=args.count, start_row=args.start_row)
+        run_batch("JORDI", count=args.count, start_row=args.start_row, force=args.force)

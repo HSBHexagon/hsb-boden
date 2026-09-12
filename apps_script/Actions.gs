@@ -370,6 +370,14 @@ function setLeadStatus(leadId, status, followUpDays, note) {
     set(FIELD_MAP.Reply_Status, s.toLowerCase());
     set('Last_Reply_At', todayStr_());
   }
+  if (s === 'AUTO_REPLY_OOO') {
+    set(FIELD_MAP.Reply_Status, 'auto_reply_ooo');
+  }
+  if (s === 'CONTACT_CHURN') {
+    set(FIELD_MAP.Reply_Status, 'contact_churn');
+    set('Suppressed', 'yes');
+    set(FIELD_MAP.Versandfreigabe, 'no');
+  }
   if (s === 'OPT_OUT') {
     set(FIELD_MAP.Opt_Out, 'yes');
     set('Suppressed', 'yes');
@@ -719,6 +727,15 @@ function processInboundEvent(event) {
           if (ownerCandidates.length === 1) matchedLead = ownerCandidates[0];
         }
       }
+
+      // Reverse Lookup wenn failed_recipient uebergeben wurde (NDR / Mailer-Daemon)
+      if (!matchedLead && event.failed_recipient) {
+        const failEmail = String(event.failed_recipient).trim().toLowerCase();
+        const candidates = read.leads.filter(function (l) {
+          return String(l.Email || '').trim().toLowerCase() === failEmail;
+        });
+        if (candidates.length === 1) matchedLead = candidates[0];
+      }
     }
 
     const ts = nowIso_();
@@ -751,6 +768,11 @@ function processInboundEvent(event) {
       setLeadStatus(leadId, 'SOFT_BOUNCE', 3, 'Soft Bounce: Wiedervorlage in 3 Tagen');
     } else if (eventType === 'OPT_OUT') {
       setLeadStatus(leadId, 'OPT_OUT', 0, 'Opt-out: Abmeldung vermerkt');
+    } else if (eventType === 'AUTO_REPLY_OOO') {
+      const followUp = parseInt(event.follow_up_days, 10) || 7;
+      setLeadStatus(leadId, 'AUTO_REPLY_OOO', followUp, 'Abwesenheitsnotiz (' + (event.details || 'Urlaub') + ')');
+    } else if (eventType === 'CONTACT_CHURN') {
+      setLeadStatus(leadId, 'CONTACT_CHURN', 0, 'Kontakt-Wechsel: ' + (event.details || 'Person ausgeschieden'));
     } else if (eventType === 'SENT') {
       // Geschaeftsseitige Idempotenz zusaetzlich zur Event-/Message-ID-
       // Dedup-Pruefung oben: Diese greift nur, wenn Event- ODER Message-ID
@@ -982,15 +1004,29 @@ function setupPremiumSheetUX() {
     allLeads.setTabColor('#f29900');
     allLeads.getRange(1, 1, 1, 56).setFontWeight('bold').setBackground('#1f2937').setFontColor('#ffffff');
 
-    // Konditionale Formatierung: BLAU fuer gesendete E-Mails ($AO2="sent")
+    // Konditionale Formatierung: Visuelles Farb-Leitsystem (Blau, Gruen, Gelb, Rot, Flieder)
     try {
       const rules = allLeads.getConditionalFormatRules() || [];
-      const blueRule = SpreadsheetApp.newConditionalFormatRule()
+      const blueRowRule = SpreadsheetApp.newConditionalFormatRule()
         .whenFormulaSatisfied('=$AO2="sent"')
         .setBackground('#e8f0fe')
         .setFontColor('#174ea6')
         .setBold(true)
         .setRanges([allLeads.getRange('AN2:BD6500')])
+        .build();
+      const blueChipRule = SpreadsheetApp.newConditionalFormatRule()
+        .whenTextEqualTo('sent')
+        .setBackground('#c2e7ff')
+        .setFontColor('#001b36')
+        .setBold(true)
+        .setRanges([allLeads.getRange('AO2:AO6500')])
+        .build();
+      const positiveRule = SpreadsheetApp.newConditionalFormatRule()
+        .whenTextEqualTo('positive_reply')
+        .setBackground('#ceead6')
+        .setFontColor('#0d652d')
+        .setBold(true)
+        .setRanges([allLeads.getRange('AR2:AR6500')])
         .build();
       const greenRule = SpreadsheetApp.newConditionalFormatRule()
         .whenTextEqualTo('replied')
@@ -999,8 +1035,43 @@ function setupPremiumSheetUX() {
         .setBold(true)
         .setRanges([allLeads.getRange('AR2:AR6500')])
         .build();
+      const oooRule = SpreadsheetApp.newConditionalFormatRule()
+        .whenTextEqualTo('auto_reply_ooo')
+        .setBackground('#fef7e0')
+        .setFontColor('#b06000')
+        .setBold(true)
+        .setRanges([allLeads.getRange('AR2:AR6500')])
+        .build();
+      const hardBounceRule = SpreadsheetApp.newConditionalFormatRule()
+        .whenTextEqualTo('hard_bounce')
+        .setBackground('#fce8e6')
+        .setFontColor('#c5221f')
+        .setBold(true)
+        .setRanges([allLeads.getRange('AQ2:AQ6500')])
+        .build();
+      const softBounceRule = SpreadsheetApp.newConditionalFormatRule()
+        .whenTextEqualTo('soft_bounce')
+        .setBackground('#feefe3')
+        .setFontColor('#c26401')
+        .setBold(true)
+        .setRanges([allLeads.getRange('AQ2:AQ6500')])
+        .build();
+      const optOutRule = SpreadsheetApp.newConditionalFormatRule()
+        .whenTextEqualTo('yes')
+        .setBackground('#f3e8fd')
+        .setFontColor('#7627bb')
+        .setBold(true)
+        .setRanges([allLeads.getRange('AT2:AT6500')])
+        .build();
+
+      rules.unshift(optOutRule);
+      rules.unshift(softBounceRule);
+      rules.unshift(hardBounceRule);
+      rules.unshift(oooRule);
       rules.unshift(greenRule);
-      rules.unshift(blueRule);
+      rules.unshift(positiveRule);
+      rules.unshift(blueChipRule);
+      rules.unshift(blueRowRule);
       allLeads.setConditionalFormatRules(rules);
     } catch (_) {}
   }

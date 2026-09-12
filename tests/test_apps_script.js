@@ -243,13 +243,21 @@ const sandbox = {
     createHtmlOutputFromFile: function () {
       return { setTitle: function () { return this; }, setWidth: function () { return this; } };
     }
+  },
+  UrlFetchApp: {
+    fetch: function () {
+      return {
+        getResponseCode: function () { return 200; },
+        getContentText: function () { return '{"value":[]}'; }
+      };
+    }
   }
 };
 
 const ctx = vm.createContext(sandbox);
 const DriveApp = sandbox.DriveApp;
 
-['Config.gs', 'Engine.gs', 'Actions.gs', 'Code.gs'].forEach(function (f) {
+['Config.gs', 'Engine.gs', 'Actions.gs', 'Code.gs', 'HSB_GraphAdapter.gs'].forEach(function (f) {
   const src = fs.readFileSync(path.join(AS, f), 'utf8');
   try {
     vm.runInContext(src, ctx, { filename: f });
@@ -1268,6 +1276,93 @@ function testInboundEvents() {
   })[0];
   check('Inbound: Opt-Out setzt Opt_Out=yes und Suppressed=yes',
         updatedLead3.Opt_Out === 'yes' && updatedLead3.Suppressed === 'yes');
+
+  // 4b. Hard Bounce via Reverse Lookup (Mailer-Daemon mit failed_recipient)
+  const lead4 = b.leads[3];
+  const resMailerDaemon = ctx.processInboundEvent({
+    event_id: 'EVT-004-NDR',
+    event_type: 'HARD_BOUNCE',
+    email: 'mailer-daemon@exchange.server.local',
+    failed_recipient: lead4.Email,
+    details: '550 5.1.1 User unknown'
+  });
+  check('Inbound: NDR Reverse Lookup ordnet Mailer-Daemon-Bounce korrekt zu',
+        resMailerDaemon.matched === true && resMailerDaemon.lead_id === lead4.Lead_ID);
+  const updatedLead4 = ctx.readLeads_().leads.filter(function (l) { return l.Lead_ID === lead4.Lead_ID; })[0];
+  check('Inbound: NDR setzt Suppressed=yes', updatedLead4.Suppressed === 'yes');
+
+  // 4c. Abwesenheitsnotiz (AUTO_REPLY_OOO)
+  const lead5 = b.leads[4];
+  const resOoo = ctx.processInboundEvent({
+    event_id: 'EVT-005-OOO',
+    event_type: 'AUTO_REPLY_OOO',
+    email: lead5.Email,
+    details: 'Urlaub bis 25.09.2026',
+    follow_up_days: 7
+  });
+  check('Inbound: Abwesenheitsnotiz (OOO) zugeordnet', resOoo.matched === true && resOoo.lead_id === lead5.Lead_ID);
+  const updatedLead5 = ctx.readLeads_().leads.filter(function (l) { return l.Lead_ID === lead5.Lead_ID; })[0];
+  check('Inbound: OOO setzt Reply_Status=auto_reply_ooo', updatedLead5.Reply_Status === 'auto_reply_ooo');
+  check('Inbound: OOO laesst Lead gesund (Suppressed!=yes)', updatedLead5.Suppressed !== 'yes');
+  check('Inbound: OOO setzt Next_Action_At', !!updatedLead5.Next_Action_At);
+
+  // 4d. Mitarbeiterwechsel (CONTACT_CHURN)
+  const b2 = ctx.prepareBatch({ owner: 'JORDI', count: 2 });
+  const lead6 = b2.leads[0];
+  const resChurn = ctx.processInboundEvent({
+    event_id: 'EVT-006-CHURN',
+    event_type: 'CONTACT_CHURN',
+    email: lead6.Email,
+    details: 'Mitarbeiter ausgeschieden'
+  });
+  check('Inbound: Contact Churn zugeordnet', resChurn.matched === true && resChurn.lead_id === lead6.Lead_ID);
+  const updatedLead6 = ctx.readLeads_().leads.filter(function (l) { return l.Lead_ID === lead6.Lead_ID; })[0];
+  check('Inbound: Contact Churn setzt Suppressed=yes und Versandfreigabe=no',
+        updatedLead6.Suppressed === 'yes' && updatedLead6.Versandfreigabe === 'no');
+
+  // 4e. Positives Kaufsignal (POSITIVE_REPLY)
+  const lead7 = b2.leads[1];
+  const resPos = ctx.processInboundEvent({
+    event_id: 'EVT-007-HOT',
+    event_type: 'POSITIVE_REPLY',
+    email: lead7.Email,
+    details: 'Kaufinteresse / Angebot anfordern'
+  });
+  check('Inbound: Positives Kaufsignal zugeordnet', resPos.matched === true && resPos.lead_id === lead7.Lead_ID);
+  const updatedLead7 = ctx.readLeads_().leads.filter(function (l) { return l.Lead_ID === lead7.Lead_ID; })[0];
+  check('Inbound: Positives Kaufsignal setzt Reply_Status=positive_reply', updatedLead7.Reply_Status === 'positive_reply');
+
+  // 4f. Inbound-Klassifizierer Einheitentests (classifyInboundMessage_)
+  const classifyFn = ctx.classifyInboundMessage_;
+  check('Klassifizierer vorhanden', typeof classifyFn === 'function');
+  const clsBounce = classifyFn({
+    from: { emailAddress: { address: 'mailer-daemon@domain.com' } },
+    subject: 'Undeliverable: Betreff',
+    bodyPreview: 'Delivery has failed to recipient: kunde@firma.de 550 5.1.1 User unknown'
+  });
+  check('Klassifizierer: erkennt Hard Bounce', clsBounce.event_type === 'HARD_BOUNCE');
+  check('Klassifizierer: extrahiert failed_recipient', clsBounce.failed_recipient === 'kunde@firma.de');
+
+  const clsOoo = classifyFn({
+    from: { emailAddress: { address: 'chef@firma.de' } },
+    subject: 'Automatische Antwort: Abwesend',
+    bodyPreview: 'Ich bin bis zum 28.09.2026 im Urlaub.'
+  });
+  check('Klassifizierer: erkennt OOO', clsOoo.event_type === 'AUTO_REPLY_OOO');
+
+  const clsOptOut = classifyFn({
+    from: { emailAddress: { address: 'kontakt@firma.de' } },
+    subject: 'Re: Flyer',
+    bodyPreview: 'Bitte nehmen Sie uns aus Ihrem Verteiler und löschen Sie meine Daten.'
+  });
+  check('Klassifizierer: erkennt Opt-Out', clsOptOut.event_type === 'OPT_OUT');
+
+  const clsHot = classifyFn({
+    from: { emailAddress: { address: 'bauleiter@firma.de' } },
+    subject: 'Re: Industrieböden',
+    bodyPreview: 'Können Sie uns ein Angebot für 1.200 Quadratmeter Hallenboden machen?'
+  });
+  check('Klassifizierer: erkennt Hot Lead', clsHot.event_type === 'POSITIVE_REPLY');
 
   // 5. Nicht zuordenbare Antwort -> NEEDS_REVIEW (kein Raten!)
   const resUnmatched = ctx.processInboundEvent({

@@ -403,6 +403,121 @@ function graphReconcileSentItems_() {
 }
 
 /**
+ * Intelligente Klassifizierung einer eingehenden E-Mail (Inbox / NDR / Reply).
+ * Erkennt Bounces (Hard/Soft), Abwesenheitsnotizen, Opt-Outs, Kontaktwechsel und Kaufinteresse.
+ * Standardkonform nach RFC 3464 (DSN), RFC 3834 (Auto-Reply), § 7 UWG.
+ */
+function classifyInboundMessage_(m) {
+  var fromAddr = (m.from && m.from.emailAddress) ? String(m.from.emailAddress.address || '').trim().toLowerCase() : '';
+  var subj = String(m.subject || '').trim();
+  var subjLower = subj.toLowerCase();
+  var preview = String(m.bodyPreview || '').trim();
+  var previewLower = preview.toLowerCase();
+
+  // 1. NDR / Bounce / Unzustellbar Erkennung (RFC 3464 DSN)
+  var isMailerDaemon = fromAddr.indexOf('mailer-daemon') >= 0 || fromAddr.indexOf('postmaster') >= 0 || fromAddr.indexOf('administrator@') >= 0;
+  var isUndeliverableSubj = subjLower.indexOf('undeliverable') >= 0 || subjLower.indexOf('unzustellbar') >= 0 ||
+                            subjLower.indexOf('delivery status notification') >= 0 || subjLower.indexOf('mail delivery failed') >= 0 ||
+                            subjLower.indexOf('failure') >= 0 || subjLower.indexOf('nicht zugestellt') >= 0;
+
+  if (isMailerDaemon || isUndeliverableSubj) {
+    var emailRegex = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g;
+    var allMatches = (preview + ' ' + subj).match(emailRegex) || [];
+    var failedRecipient = '';
+    for (var i = 0; i < allMatches.length; i++) {
+      var cand = allMatches[i].toLowerCase();
+      if (cand.indexOf('hsb-boden.de') === -1 && cand.indexOf('mailer-daemon') === -1 && cand.indexOf('postmaster') === -1 && cand.indexOf('microsoft') === -1) {
+        failedRecipient = cand;
+        break;
+      }
+    }
+
+    var isHard = previewLower.indexOf('550') >= 0 || previewLower.indexOf('5.1.1') >= 0 || previewLower.indexOf('user unknown') >= 0 ||
+                 previewLower.indexOf('recipient not found') >= 0 || previewLower.indexOf('mailbox unavailable') >= 0 ||
+                 previewLower.indexOf('does not exist') >= 0 || previewLower.indexOf('nicht gefunden') >= 0 ||
+                 previewLower.indexOf('abgelehnt') >= 0 || isUndeliverableSubj;
+
+    return {
+      event_type: isHard ? 'HARD_BOUNCE' : 'SOFT_BOUNCE',
+      email: failedRecipient || fromAddr,
+      failed_recipient: failedRecipient,
+      details: (isHard ? 'Hard Bounce (Unzustellbar): ' : 'Soft Bounce: ') + (failedRecipient || 'Empfaenger unklar'),
+      follow_up_days: isHard ? 0 : 3
+    };
+  }
+
+  // 2. Abwesenheitsnotiz / Out-of-Office (RFC 3834)
+  var isOoo = subjLower.indexOf('automatische antwort') >= 0 || subjLower.indexOf('auto-reply') >= 0 ||
+              subjLower.indexOf('abwesenheitsnotiz') >= 0 || subjLower.indexOf('out of office') >= 0 ||
+              previewLower.indexOf('bin im urlaub') >= 0 || previewLower.indexOf('abwesend bis') >= 0 ||
+              previewLower.indexOf('derzeit nicht im büro') >= 0;
+
+  if (isOoo) {
+    var dateMatch = preview.match(/bis (?:zum |einschließlich )?(\d{1,2}\.\d{1,2}\.(?:\d{4}|\d{2}))/i);
+    return {
+      event_type: 'AUTO_REPLY_OOO',
+      email: fromAddr,
+      details: 'Abwesenheit' + (dateMatch ? ' bis ' + dateMatch[1] : ''),
+      follow_up_days: 7
+    };
+  }
+
+  // 3. Mitarbeiterwechsel (Contact Churn)
+  var isChurn = previewLower.indexOf('verlassen') >= 0 || previewLower.indexOf('nicht mehr im unternehmen') >= 0 ||
+                previewLower.indexOf('nicht mehr im haus') >= 0 || previewLower.indexOf('nicht mehr tätig') >= 0 ||
+                previewLower.indexOf('ausgeschieden') >= 0 || previewLower.indexOf('nachfolger') >= 0 ||
+                previewLower.indexOf('wenden sie sich bitte an') >= 0;
+
+  if (isChurn) {
+    return {
+      event_type: 'CONTACT_CHURN',
+      email: fromAddr,
+      details: 'Ansprechpartner ausgeschieden',
+      follow_up_days: 0
+    };
+  }
+
+  // 4. Opt-Out / DSGVO-Widerspruch
+  var isOptOut = previewLower.indexOf('abmelden') >= 0 || previewLower.indexOf('opt-out') >= 0 ||
+                 subjLower.indexOf('abmelden') >= 0 || previewLower.indexOf('kein interesse') >= 0 ||
+                 previewLower.indexOf('keine werbung') >= 0 || previewLower.indexOf('löschen sie') >= 0 ||
+                 previewLower.indexOf('widerspruch') >= 0 || previewLower.indexOf('aus dem verteiler') >= 0;
+
+  if (isOptOut) {
+    return {
+      event_type: 'OPT_OUT',
+      email: fromAddr,
+      details: 'Opt-out / Abmeldung angefordert',
+      follow_up_days: 0
+    };
+  }
+
+  // 5. Positives Kaufsignal (Hot Lead)
+  var isPositive = previewLower.indexOf('angebot') >= 0 || previewLower.indexOf('preise') >= 0 ||
+                   previewLower.indexOf('kosten') >= 0 || previewLower.indexOf('termin') >= 0 ||
+                   previewLower.indexOf('besichtigung') >= 0 || previewLower.indexOf('rückruf') >= 0 ||
+                   previewLower.indexOf('muster') >= 0 || previewLower.indexOf('quadratmeter') >= 0 ||
+                   previewLower.indexOf('gerne mehr infos') >= 0;
+
+  if (isPositive) {
+    return {
+      event_type: 'POSITIVE_REPLY',
+      email: fromAddr,
+      details: 'Positives Kaufsignal / Hot Lead',
+      follow_up_days: 1
+    };
+  }
+
+  // 6. Generische Antwort
+  return {
+    event_type: 'REPLY',
+    email: fromAddr,
+    details: 'Inbound Antwort erhalten',
+    follow_up_days: 0
+  };
+}
+
+/**
  * Liest Antworten aus dem Posteingang (Inbox) und traegt Antworten sowie
  * Abmeldungen (Opt-Outs) im CRM ein.
  */
@@ -419,19 +534,17 @@ function graphReconcileInboxReplies_() {
   var messages = (JSON.parse(res.getContentText()) || {}).value || [];
   var matchedCount = 0;
   messages.forEach(function (m) {
-    var fromAddr = (m.from && m.from.emailAddress) ? m.from.emailAddress.address : '';
-    var preview = String(m.bodyPreview || '').toLowerCase();
-    var subj = String(m.subject || '').toLowerCase();
-    var isOptOut = preview.indexOf('abmelden') >= 0 || preview.indexOf('opt-out') >= 0 || subj.indexOf('abmelden') >= 0;
-    var evtType = isOptOut ? 'OPT_OUT' : 'REPLY';
+    var cls = classifyInboundMessage_(m);
     if (typeof processInboundEvent === 'function') {
       var r = processInboundEvent({
         event_id: 'GRAPH-INBOX-' + (m.internetMessageId || m.id),
-        event_type: evtType,
+        event_type: cls.event_type,
         message_id: m.internetMessageId || '',
-        email: fromAddr,
+        email: cls.email,
+        failed_recipient: cls.failed_recipient,
         subject: m.subject || '',
-        details: isOptOut ? 'Inbound Abmeldung (Opt-Out)' : 'Inbound Antwort erhalten'
+        details: cls.details,
+        follow_up_days: cls.follow_up_days
       });
       if (r && r.matched) matchedCount++;
     }

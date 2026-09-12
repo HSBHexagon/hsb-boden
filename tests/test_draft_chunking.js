@@ -91,7 +91,7 @@ const DriveApp = {
     const f = DriveApp._files[id];
     if (!f) throw new Error('Datei nicht gefunden: ' + id);
     const map = {
-      '1UMX-fi2lJ9bo14KwuClqgfZQWECdE_XV': 'HSB-Flyer-Jordi-Post_FINAL.pdf',
+      '1UMX-fi2lJ9bo14KwuClqgfZQWECdE_XV': 'HSB-Flyer-Jordie-Post_FINAL.pdf',
       '16Kt-eRk1uY0HorZCrEmGt3QfGcRpYadS': 'HSB-Flyer-Joel-Cherino_FINAL.pdf'
     };
     return {
@@ -109,7 +109,7 @@ const DriveApp = {
 
 function loadRealFlyers() {
   const map = {
-    '1UMX-fi2lJ9bo14KwuClqgfZQWECdE_XV': 'HSB-Flyer-Jordi-Post_FINAL.pdf',
+    '1UMX-fi2lJ9bo14KwuClqgfZQWECdE_XV': 'HSB-Flyer-Jordie-Post_FINAL.pdf',
     '16Kt-eRk1uY0HorZCrEmGt3QfGcRpYadS': 'HSB-Flyer-Joel-Cherino_FINAL.pdf'
   };
   Object.keys(map).forEach(function (id) {
@@ -252,7 +252,7 @@ makeSheet('ALL_LEADS', LEADS_HEADER, mockLeads);
 
 const BATCHES_HEADER = ['Batch_ID', 'Owner', 'Flyer_SHA256', 'Status', 'Lead_Count'];
 makeSheet('BATCHES', BATCHES_HEADER, [
-  [BATCH_ID, 'JORDI', 'f343ff05d1e7353a3a91a60f5475c054e1af958ea72e466445e60b9f69059a21', 'PREPARED', 100]
+  [BATCH_ID, 'JORDI', '08e1149e4fed409ac94d5af18139c36d00027a7a7b53e49928beb429d4a12729', 'PREPARED', 100]
 ]);
 const ACTIVITIES_HEADER = [
   'Activity_ID', 'Lead_ID', 'Timestamp', 'Owner', 'Activity_Type',

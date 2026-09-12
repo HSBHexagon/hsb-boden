@@ -17,7 +17,7 @@ var ADAPTER_PROPS = {
 
 var ACTIVE_BATCH_PROP = 'HSB_ACTIVE_BATCH_ID';
 var EXPECTED_FLYER_SHA256 = {
-  JORDI: 'f343ff05d1e7353a3a91a60f5475c054e1af958ea72e466445e60b9f69059a21',
+  JORDI: '08e1149e4fed409ac94d5af18139c36d00027a7a7b53e49928beb429d4a12729',
   JOEL:  '2bccadacc77b531057583d2d650963c30deceed36c8be1fd90ca64e8b8cde5fb'
 };
 
@@ -128,7 +128,7 @@ var FIRMA = {
   sitz: 'Gronau',
   registergericht: 'Amtsgericht Coesfeld',
   hrb: 'HRB 21481',
-  geschaeftsfuehrer: 'Jordi Post'
+  geschaeftsfuehrer: 'Jordie Post'
 };
 
 function htmlEscape_(text) {

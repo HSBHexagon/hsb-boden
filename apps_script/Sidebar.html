@@ -264,7 +264,7 @@ button.tat[disabled] { opacity: .45; cursor: not-allowed; }
 
 <div class="kopf">
   <div class="wechsel" role="group" aria-label="Absender">
-    <button id="wJordi" aria-pressed="true"  onclick="setOwner('JORDI')">Jordi</button>
+    <button id="wJordi" aria-pressed="true"  onclick="setOwner('JORDI')">Jordie</button>
     <button id="wJoel"  aria-pressed="false" onclick="setOwner('JOEL')">Joel</button>
   </div>
 </div>
@@ -289,9 +289,9 @@ button.tat[disabled] { opacity: .45; cursor: not-allowed; }
 <div id="setupWarnung"></div>
 
 <section class="schnellstart" id="jordi100Box" aria-labelledby="jordi100Titel">
-  <div class="titel" id="jordi100Titel">Jordi · 100 Outlook-Entwürfe</div>
+  <div class="titel" id="jordi100Titel">Jordie · 100 Outlook-Entwürfe</div>
   <div class="erklaerung">
-    Ein Klick gibt exakt 100 sichere Jordi-Kontakte frei, reserviert den Batch
+    Ein Klick gibt exakt 100 sichere Jordie-Kontakte frei, reserviert den Batch
     und erzeugt die Entwürfe direkt im Outlook-Postfach. Es wird nichts
     automatisch versendet.
   </div>
@@ -299,6 +299,25 @@ button.tat[disabled] { opacity: .45; cursor: not-allowed; }
     100 freigeben &amp; Entwürfe erzeugen
   </button>
   <div id="jordi100Ergebnis"></div>
+</section>
+
+<section class="schnellstart" id="reconcileBox" style="background:#e8f0fe;border:1px solid #c2e7ff;border-radius:6px;padding:12px;margin:12px 0;">
+  <div class="titel" style="color:#174ea6;display:flex;align-items:center;justify-content:space-between;">
+    <span>📤 Gesendete Mails (Blau)</span>
+    <span class="zahl" id="sidebarSentCount" style="background:#c2e7ff;color:#001d35;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:bold;">Live-Abgleich</span>
+  </div>
+  <div class="erklaerung" style="color:#3c4043;font-size:11.5px;margin:6px 0 10px 0;">
+    Gleicht manuell versendete E-Mails und eingegangene Antworten mit Outlook ab. Alle versendeten Leads werden im Google Sheet blau hervorgehoben.
+  </div>
+  <div style="display:flex;gap:8px;">
+    <button class="tat" style="background:#1a73e8;color:#fff;flex:1;font-size:12px;padding:8px;" onclick="reconcileSentMails()">
+      📤 Gesendete abgleichen
+    </button>
+    <button class="tat zweit" style="flex:1;font-size:12px;padding:8px;" onclick="reconcileReplies()">
+      📥 Antworten abgleichen
+    </button>
+  </div>
+  <div id="reconcileErgebnis" style="margin-top:6px;font-size:11.5px;"></div>
 </section>
 
 <details class="schritt" id="s1" style="display:none">
@@ -674,6 +693,38 @@ function jordi100Start() {
     btn.textContent = 'Vorgang sicher erneut versuchen';
     fehler('jordi100Ergebnis', e.message);
   }).uiJordi100({ request_id: jordi100RequestId });
+}
+
+/* --- Postfach & Sende-Abgleich (Reconciliation) --------------------- */
+
+function reconcileSentMails() {
+  laden('reconcileErgebnis', 'Prüfe Outlook Sent Items…');
+  google.script.run.withSuccessHandler(function (r) {
+    if (!r.ok) { fehler('reconcileErgebnis', r.error || 'Fehler beim Abgleich'); return; }
+    var d = r.data || {};
+    zeig('reconcileErgebnis', '<div class="meldung m-ok" style="color:#137333;background:#e6f4ea;padding:8px;border-radius:4px;margin-top:6px;">'
+      + '<b>Abgleich erfolgreich</b><br>'
+      + (d.checked || 0) + ' Mails geprüft, <b>' + (d.matched || 0) + '</b> neu im CRM als SENT erfasst. Zeilen in ALL_LEADS blau markiert.</div>');
+    cockpitLaden();
+    batchListeLaden();
+  }).withFailureHandler(function (e) {
+    fehler('reconcileErgebnis', e.message);
+  }).uiReconcileSent();
+}
+
+function reconcileReplies() {
+  laden('reconcileErgebnis', 'Prüfe Outlook Inbox…');
+  google.script.run.withSuccessHandler(function (r) {
+    if (!r.ok) { fehler('reconcileErgebnis', r.error || 'Fehler beim Abgleich'); return; }
+    var d = r.data || {};
+    zeig('reconcileErgebnis', '<div class="meldung m-ok" style="color:#137333;background:#e6f4ea;padding:8px;border-radius:4px;margin-top:6px;">'
+      + '<b>Abgleich erfolgreich</b><br>'
+      + (d.checked || 0) + ' Mails geprüft, <b>' + (d.matched || 0) + '</b> Antworten / Opt-Outs zugeordnet.</div>');
+    cockpitLaden();
+    batchListeLaden();
+  }).withFailureHandler(function (e) {
+    fehler('reconcileErgebnis', e.message);
+  }).uiReconcileReplies();
 }
 
 /* --- 02 Batch ------------------------------------------------------- */

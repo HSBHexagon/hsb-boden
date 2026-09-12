@@ -21,7 +21,7 @@ const crypto = require('crypto');
 const ROOT = path.resolve(__dirname, '..');
 const AS = path.join(ROOT, 'apps_script');
 
-const JORDI_PDF_PATH = path.join(ROOT, 'assets/canonical/HSB-Flyer-Jordi-Post_FINAL.pdf');
+const JORDI_PDF_PATH = path.join(ROOT, 'assets/canonical/HSB-Flyer-Jordie-Post_FINAL.pdf');
 const JOEL_PDF_PATH  = path.join(ROOT, 'assets/canonical/HSB-Flyer-Joel-Cherino_FINAL.pdf');
 
 const JORDI_BYTES = fs.readFileSync(JORDI_PDF_PATH);
@@ -151,7 +151,7 @@ function createEnvironment(customSharedSheets, customLockState) {
 
     DriveApp: {
       _files: {
-        [JORDI_DRIVE_ID]: { bytes: JORDI_BYTES, name: 'HSB-Flyer-Jordi-Post_FINAL.pdf' },
+        [JORDI_DRIVE_ID]: { bytes: JORDI_BYTES, name: 'HSB-Flyer-Jordie-Post_FINAL.pdf' },
         [JOEL_DRIVE_ID]:  { bytes: JOEL_BYTES,  name: 'HSB-Flyer-Joel-Cherino_FINAL.pdf' }
       },
       _folders: {},
@@ -329,12 +329,12 @@ async function runVerifierSuite() {
    * ------------------------------------------------------------------------- */
   console.log("\n>>> GATE 3: OPERATOR ACCEPTANCE MATRIX (JOEL & JORDI N=1, 17, 25, 100, 150, 250)");
   const acceptanceCases = [
-    { owner: 'JORDI', N: 1,   sha: JORDI_SHA, mailbox: 'j-post@hsb-boden.de', template: 'Jordi Post' },
-    { owner: 'JORDI', N: 17,  sha: JORDI_SHA, mailbox: 'j-post@hsb-boden.de', template: 'Jordi Post' },
-    { owner: 'JORDI', N: 25,  sha: JORDI_SHA, mailbox: 'j-post@hsb-boden.de', template: 'Jordi Post' },
-    { owner: 'JORDI', N: 100, sha: JORDI_SHA, mailbox: 'j-post@hsb-boden.de', template: 'Jordi Post' },
-    { owner: 'JORDI', N: 150, sha: JORDI_SHA, mailbox: 'j-post@hsb-boden.de', template: 'Jordi Post' },
-    { owner: 'JORDI', N: 250, sha: JORDI_SHA, mailbox: 'j-post@hsb-boden.de', template: 'Jordi Post' },
+    { owner: 'JORDI', N: 1,   sha: JORDI_SHA, mailbox: 'j-post@hsb-boden.de', template: 'Jordie Post' },
+    { owner: 'JORDI', N: 17,  sha: JORDI_SHA, mailbox: 'j-post@hsb-boden.de', template: 'Jordie Post' },
+    { owner: 'JORDI', N: 25,  sha: JORDI_SHA, mailbox: 'j-post@hsb-boden.de', template: 'Jordie Post' },
+    { owner: 'JORDI', N: 100, sha: JORDI_SHA, mailbox: 'j-post@hsb-boden.de', template: 'Jordie Post' },
+    { owner: 'JORDI', N: 150, sha: JORDI_SHA, mailbox: 'j-post@hsb-boden.de', template: 'Jordie Post' },
+    { owner: 'JORDI', N: 250, sha: JORDI_SHA, mailbox: 'j-post@hsb-boden.de', template: 'Jordie Post' },
     { owner: 'JOEL',  N: 1,   sha: JOEL_SHA,  mailbox: 'j-cherino@hsb-boden.de', template: 'Joel Cherino Diaz' },
     { owner: 'JOEL',  N: 17,  sha: JOEL_SHA,  mailbox: 'j-cherino@hsb-boden.de', template: 'Joel Cherino Diaz' },
     { owner: 'JOEL',  N: 25,  sha: JOEL_SHA,  mailbox: 'j-cherino@hsb-boden.de', template: 'Joel Cherino Diaz' },

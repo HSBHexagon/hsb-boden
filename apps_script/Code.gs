@@ -22,6 +22,9 @@ function onOpen() {
     .addItem('🔗 Adapter-URL Joel setzen', 'uiAdapterUrlJoel')
     .addItem('🔗 Adapter-URL Jordi setzen', 'uiAdapterUrlJordi')
     .addSeparator()
+    .addItem('📤 Gesendete Mails abgleichen', 'uiReconcileSent')
+    .addItem('📥 Antworten abgleichen', 'uiReconcileReplies')
+    .addSeparator()
     .addItem('Spalten prüfen / ergänzen', 'uiEnsureColumns')
     .addItem('Wiedervorlage prüfen', 'uiGetDue')
     .addItem('Täglichen Trigger einrichten (7 Uhr)', 'setupDailyTrigger')
@@ -331,3 +334,18 @@ function readLiveEvidenceAndChronology() {
     project_chronology: chronData
   };
 }
+
+function uiReconcileSent() {
+  if (typeof uiGraphReconcileSent === 'function') {
+    return uiGraphReconcileSent();
+  }
+  SpreadsheetApp.getUi().alert('Funktion nicht verfügbar', 'HSB_GraphAdapter nicht geladen.', SpreadsheetApp.getUi().ButtonSet.OK);
+}
+
+function uiReconcileReplies() {
+  if (typeof uiGraphReconcileReplies === 'function') {
+    return uiGraphReconcileReplies();
+  }
+  SpreadsheetApp.getUi().alert('Funktion nicht verfügbar', 'HSB_GraphAdapter nicht geladen.', SpreadsheetApp.getUi().ButtonSet.OK);
+}
+

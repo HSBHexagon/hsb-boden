@@ -47,11 +47,11 @@ class FlyerMaster:
 FLYERS: dict[str, FlyerMaster] = {
     "JORDI": FlyerMaster(
         owner_key="JORDI",
-        display_name="Jordi Post",
+        display_name="Jordie Post",
         mailbox="j-post@hsb-boden.de",
-        filename="HSB-Flyer-Jordi-Post_FINAL.pdf",
+        filename="HSB-Flyer-Jordie-Post_FINAL.pdf",
         drive_id="1UMX-fi2lJ9bo14KwuClqgfZQWECdE_XV",
-        sha256="f343ff05d1e7353a3a91a60f5475c054e1af958ea72e466445e60b9f69059a21",
+        sha256="08e1149e4fed409ac94d5af18139c36d00027a7a7b53e49928beb429d4a12729",
         attachment_name="HSB-HEXAGON-Industrieboeden-Flyer.pdf",
         mobile="0170 2340904",
     ),

@@ -348,3 +348,111 @@ function uiGraphTrennen() {
   });
   ui.alert('Getrennt', 'Das Token wurde geloescht.', ui.ButtonSet.OK);
 }
+
+// ---------------------------------------------------------------- Sende- & Inbound-Abgleich (Reconciliation)
+
+/**
+ * Liest gesendete Nachrichten aus dem Ordner "Gesendete Elemente" (SentItems)
+ * und gleicht sie mit ALL_LEADS ab. Bei Treffer wird der Status auf 'sent'
+ * gesetzt und die Zeile blau hervorgehoben.
+ */
+function graphReconcileSentItems_() {
+  var token = graphToken_();
+  var url = GRAPH_BASE + '/me/mailFolders/SentItems/messages?$select=id,subject,toRecipients,sentDateTime,internetMessageId&$top=100&$orderby=sentDateTime%20desc';
+  var res = UrlFetchApp.fetch(url, {
+    headers: { Authorization: 'Bearer ' + token },
+    muteHttpExceptions: true
+  });
+  if (res.getResponseCode() !== 200) {
+    throw new Error('Fehler beim Abruf von SentItems: HTTP ' + res.getResponseCode() + ' ' + res.getContentText().slice(0, 300));
+  }
+  var messages = (JSON.parse(res.getContentText()) || {}).value || [];
+  var matchedCount = 0;
+  messages.forEach(function (m) {
+    var toAddr = (m.toRecipients && m.toRecipients[0] && m.toRecipients[0].emailAddress) ? m.toRecipients[0].emailAddress.address : '';
+    if (typeof processInboundEvent === 'function') {
+      var r = processInboundEvent({
+        event_id: 'GRAPH-SENT-' + (m.internetMessageId || m.id),
+        event_type: 'SENT',
+        message_id: m.internetMessageId || '',
+        email: toAddr,
+        subject: m.subject || '',
+        details: 'Outlook SentItems Abgleich'
+      });
+      if (r && r.matched) matchedCount++;
+    }
+  });
+  return { ok: true, matched: matchedCount, checked: messages.length };
+}
+
+/**
+ * Liest Antworten aus dem Posteingang (Inbox) und traegt Antworten sowie
+ * Abmeldungen (Opt-Outs) im CRM ein.
+ */
+function graphReconcileInboxReplies_() {
+  var token = graphToken_();
+  var url = GRAPH_BASE + '/me/mailFolders/Inbox/messages?$select=id,subject,from,receivedDateTime,internetMessageId,bodyPreview&$top=100&$orderby=receivedDateTime%20desc';
+  var res = UrlFetchApp.fetch(url, {
+    headers: { Authorization: 'Bearer ' + token },
+    muteHttpExceptions: true
+  });
+  if (res.getResponseCode() !== 200) {
+    throw new Error('Fehler beim Abruf von Inbox: HTTP ' + res.getResponseCode() + ' ' + res.getContentText().slice(0, 300));
+  }
+  var messages = (JSON.parse(res.getContentText()) || {}).value || [];
+  var matchedCount = 0;
+  messages.forEach(function (m) {
+    var fromAddr = (m.from && m.from.emailAddress) ? m.from.emailAddress.address : '';
+    var preview = String(m.bodyPreview || '').toLowerCase();
+    var subj = String(m.subject || '').toLowerCase();
+    var isOptOut = preview.indexOf('abmelden') >= 0 || preview.indexOf('opt-out') >= 0 || subj.indexOf('abmelden') >= 0;
+    var evtType = isOptOut ? 'OPT_OUT' : 'REPLY';
+    if (typeof processInboundEvent === 'function') {
+      var r = processInboundEvent({
+        event_id: 'GRAPH-INBOX-' + (m.internetMessageId || m.id),
+        event_type: evtType,
+        message_id: m.internetMessageId || '',
+        email: fromAddr,
+        subject: m.subject || '',
+        details: isOptOut ? 'Inbound Abmeldung (Opt-Out)' : 'Inbound Antwort erhalten'
+      });
+      if (r && r.matched) matchedCount++;
+    }
+  });
+  return { ok: true, matched: matchedCount, checked: messages.length };
+}
+
+function uiGraphReconcileSent() {
+  var ui = SpreadsheetApp.getUi();
+  try {
+    var res = graphReconcileSentItems_();
+    ui.alert('Sende-Abgleich erfolgreich',
+      'Outlook Gesendete Elemente (Sent Items) wurden geprüft.\n\n' +
+      'Geprüfte Nachrichten : ' + res.checked + '\n' +
+      'Neu im CRM als SENT erfasst : ' + res.matched + '\n\n' +
+      'Alle versendeten Zeilen sind in ALL_LEADS blau hervorgehoben.',
+      ui.ButtonSet.OK);
+    return { ok: true, data: res };
+  } catch (e) {
+    ui.alert('Abgleich fehlgeschlagen', String(e.message || e), ui.ButtonSet.OK);
+    return { ok: false, error: String(e.message || e) };
+  }
+}
+
+function uiGraphReconcileReplies() {
+  var ui = SpreadsheetApp.getUi();
+  try {
+    var res = graphReconcileInboxReplies_();
+    ui.alert('Antworten-Abgleich erfolgreich',
+      'Outlook Posteingang (Inbox) wurde geprüft.\n\n' +
+      'Geprüfte Nachrichten : ' + res.checked + '\n' +
+      'Erfasste Antworten / Opt-Outs : ' + res.matched + '\n\n' +
+      'Status in ALL_LEADS & INBOUND_EVENTS aktualisiert.',
+      ui.ButtonSet.OK);
+    return { ok: true, data: res };
+  } catch (e) {
+    ui.alert('Abgleich fehlgeschlagen', String(e.message || e), ui.ButtonSet.OK);
+    return { ok: false, error: String(e.message || e) };
+  }
+}
+

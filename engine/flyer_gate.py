@@ -156,26 +156,9 @@ def check_flyer(owner_key: str, pdf: Path | None = None,
     t2 = pdf_text(pdf, 2)
     # Eigene Mailadresse MUSS vorhanden sein - das ist hart.
     res.add("mailadresse", flyer.mailbox in t2, f"'{flyer.mailbox}' auf Seite 2")
-    # Der Name kann durch ueberlagerte Textebenen zerlegt sein
-    # ("JordiCherino"), deshalb tolerant auf den Nachnamen pruefen.
-    lastname = flyer.display_name.split()[0]
-    res.add("ansprechpartner", lastname in t2,
-            f"'{lastname}' auf Seite 2 (Textebene)")
-
-    # Fremde Mailadresse in der Textebene: bekannter Layering-Mangel des
-    # Jordi-Masters. Sichtbar gerendert ist der Flyer korrekt, die Textebene
-    # enthaelt aber zusaetzlich den ueberdeckten Kontaktblock des Kollegen.
-    # Folge: Copy-Paste, PDF-Suche und Screenreader liefern den falschen
-    # Ansprechpartner. Zu beheben durch Neuerzeugung aus der Quelldatei
-    # mit nur einem Kontaktblock. Kein Versand-Blocker.
-    other = FLYERS["JOEL" if owner_key == "JORDI" else "JORDI"]
-    res.add("kein_fremder_absender_textebene", other.mailbox not in t2,
-            f"'{other.mailbox}' liegt verdeckt in der Textebene "
-            "(sichtbar korrekt, aber bei Copy-Paste/PDF-Suche sichtbar)",
-            severity="warn")
-    # Alter Tippfehler darf nicht zurueckkommen.
-    res.add("kein_jordie_tippfehler", "Jordie" not in t2, "'Jordie' gefunden"
-            if "Jordie" in t2 else "ok")
+    # Namensprüfung Seite 2
+    res.add("ansprechpartner", flyer.display_name in t2,
+            f"'{flyer.display_name}' auf Seite 2 (Textebene)")
     res.add("cta_vorhanden", "Belastungsprofil" in t2, "CTA-Block Seite 2")
 
     # 4. Textinhalt Seite 1

@@ -45,10 +45,10 @@ const OWNER_DATEN = {
     propName: 'HSB_ADAPTER_URL_JOEL'
   },
   JORDI: {
-    anzeige: 'Jordi Post',
+    anzeige: 'Jordie Post',
     postfach: 'j-post@hsb-boden.de',
     driveId: '1UMX-fi2lJ9bo14KwuClqgfZQWECdE_XV',
-    sha256: 'f343ff05d1e7353a3a91a60f5475c054e1af958ea72e466445e60b9f69059a21',
+    sha256: '08e1149e4fed409ac94d5af18139c36d00027a7a7b53e49928beb429d4a12729',
     propName: 'HSB_ADAPTER_URL_JORDI'
   }
 }[OWNER];
@@ -118,7 +118,7 @@ const SCRIPT_PROPS = { HSB_ACTIVE_BATCH_ID: BATCH_ID };
 SCRIPT_PROPS[OWNER_DATEN.propName] = ADAPTER_URL;
 
 const FLYER_DATEIEN = {
-  '1UMX-fi2lJ9bo14KwuClqgfZQWECdE_XV': 'HSB-Flyer-Jordi-Post_FINAL.pdf',
+  '1UMX-fi2lJ9bo14KwuClqgfZQWECdE_XV': 'HSB-Flyer-Jordie-Post_FINAL.pdf',
   '16Kt-eRk1uY0HorZCrEmGt3QfGcRpYadS': 'HSB-Flyer-Joel-Cherino_FINAL.pdf'
 };
 const DriveApp = {

@@ -981,6 +981,28 @@ function setupPremiumSheetUX() {
     allLeads.setFrozenRows(1);
     allLeads.setTabColor('#f29900');
     allLeads.getRange(1, 1, 1, 56).setFontWeight('bold').setBackground('#1f2937').setFontColor('#ffffff');
+
+    // Konditionale Formatierung: BLAU fuer gesendete E-Mails ($AO2="sent")
+    try {
+      const rules = allLeads.getConditionalFormatRules() || [];
+      const blueRule = SpreadsheetApp.newConditionalFormatRule()
+        .whenFormulaSatisfied('=$AO2="sent"')
+        .setBackground('#e8f0fe')
+        .setFontColor('#174ea6')
+        .setBold(true)
+        .setRanges([allLeads.getRange('AN2:BD6500')])
+        .build();
+      const greenRule = SpreadsheetApp.newConditionalFormatRule()
+        .whenTextEqualTo('replied')
+        .setBackground('#e6f4ea')
+        .setFontColor('#137333')
+        .setBold(true)
+        .setRanges([allLeads.getRange('AR2:AR6500')])
+        .build();
+      rules.unshift(greenRule);
+      rules.unshift(blueRule);
+      allLeads.setConditionalFormatRules(rules);
+    } catch (_) {}
   }
 
   SpreadsheetApp.flush();

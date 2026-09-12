@@ -19,9 +19,9 @@ const CFG = {
 const FLYERS = {
   JORDI: {
     key: 'JORDI',
-    displayName: 'Jordi Post',
+    displayName: 'Jordie Post',
     mailbox: 'j-post@hsb-boden.de',
-    fileName: 'HSB-Flyer-Jordi-Post_FINAL.pdf',
+    fileName: 'HSB-Flyer-Jordie-Post_FINAL.pdf',
     // Name im Anhang beim Empfaenger. Getrennt von fileName, weil dieser an
     // Hash-Gate und Drive-Ablage haengt und nicht umbenannt werden darf.
     attachmentName: 'HSB-HEXAGON-Industrieboeden-Flyer.pdf',
@@ -29,7 +29,7 @@ const FLYERS = {
     // Flyer. Das Impressum traegt nur die zentrale Durchwahl.
     mobile: '0170 2340904',
     driveId: '1UMX-fi2lJ9bo14KwuClqgfZQWECdE_XV',
-    sha256: 'f343ff05d1e7353a3a91a60f5475c054e1af958ea72e466445e60b9f69059a21'
+    sha256: '08e1149e4fed409ac94d5af18139c36d00027a7a7b53e49928beb429d4a12729'
   },
   JOEL: {
     key: 'JOEL',

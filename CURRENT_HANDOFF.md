@@ -1,4 +1,4 @@
-# CURRENT_HANDOFF — 2026-09-05 (HSB Sales OS & Google Cloud Infrastructure)
+# CURRENT_HANDOFF — 2026-09-12 (HSB Sales OS & CRM Reconciliation)
 
 - **Betreiber:** Joel Cherino Diaz
 - **Hauptidentität (Persönlich):** `cherinodiaz@outlook.com`
@@ -8,32 +8,62 @@
   - GCP Personal / AI: `drive-486711` (`cherino-core`)
   - GCP Corporate / Sales OS: `hsb-boden` (`950665954756`)
 - **Modell & Agent:** Antigravity CLI / Orchestrator (Ralph / OmA Team / Ki-Verification)
-- **Gesamtstatus:** `PRODUCTION_READY = JA`, `VERIFIED = JA`, `REAL_EXTERNAL_SEND_COUNT = 0`
+- **Gesamtstatus:** `PRODUCTION_READY = JA`, `VERIFIED = JA`, `SSOT = ALL_LEADS (Google Sheet)`
 
 ---
 
-## 1. Power Automate & Apps Script Live-Deployment (HSB Sales OS)
+## 1. Namenskorrektur "Jordie Post" & Kanonischer Flyer (SSOT)
 
-1. **Strikte Ablehnung von EML-ZIPs:**
-   - Manueller ZIP-Download von EML-Dateien aus `Sidebar.html` entfernt.
-   - Einziger Standardweg: Direkte Entwurfserstellung in Outlook über Power Automate.
-2. **Toolchain-Parität (Claude Code <-> Gemini / Antigravity):**
-   - FlowAgent MCP Server v3.0.5 (`server/mcp.mjs`, 59 Tools) in `~/.gemini/settings.json` fest verankert.
-   - 10 Power Platform Skills in `~/.gemini/config/plugins/power-automate/` integriert.
-3. **Bugfix `engine/pa_direct_drafts.py`:**
-   - Schema-Angleichung: `attachmentContentBytes` (Base64) wird nun einheitlich für Jordi & Joel genutzt (`usesFlyerUrl: False`).
-4. **Apps Script Live-Ausrollung via clasp:**
-   - Betreiber-Freigabe erteilt.
-   - `clasp push` erfolgreich ausgeführt (5 Dateien: `appsscript.json`, `HSB_AdapterSelbsttest.gs`, `HSB_DraftAdapter.gs.js`, `HSB_SALES_OS.js`, `Sidebar.html`).
-5. **Verifikation & Test-Suite (100% PASS):**
-   - `python3 engine/pa_diagnose.py`: Beide Flows `Started`, `DraftEmail only`, Schema 7/7 PASS (Exit 0).
-   - `node tests/test_apps_script.js`: 321 bestanden, 0 fehlgeschlagen (`REAL_EXTERNAL_SEND_COUNT=0`).
-   - `node tests/test_draft_chunking.js`: 24 Chunks fehlerfrei.
-   - `node tests/verifier_suite.js`: 7/7 Verifier Gates bestanden (`OMA-VERIFIER SUITE VERDICT: PASS`).
+1. **Namens-Konsistenz:**
+   - Der Name wurde auf **Jordie Post** (mit "ie") festgeschrieben.
+   - Gilt für E-Mail-Betreff, Text, Signatur (§35a GmbHG Geschäftsführer) und PDF-Flyer.
+2. **Kanonischer Flyer:**
+   - Datei: `assets/canonical/HSB-Flyer-Jordie-Post_FINAL.pdf`
+   - SHA-256: `08e1149e4fed409ac94d5af18139c36d00027a7a7b53e49928beb429d4a12729` (1.581.178 Bytes).
+   - Seite 2 verifiziert: Ansprechpartner "Jordie Post", Kontaktdaten und mailto-Link fehlerfrei.
+   - Empfänger-Sichtname bleibt unverändert: `HSB-HEXAGON-Industrieboeden-Flyer.pdf`.
 
 ---
 
-## 2. Google Cloud Service Account (Pipedream / Perplexity / Postman)
+## 2. Blau-Hervorhebung gesendeter E-Mails ("Blau einbauen")
+
+1. **Konditionale Formatierung im Google Sheet `ALL_LEADS`:**
+   - Bereich: `ALL_LEADS!AN2:BD6500`
+   - Bedingung: `=$AO2="sent"`
+   - Stil: Weicher Material-Blau-Hintergrund (`#e8f0fe`) mit tiefblauem Text (`#174ea6`) und Fettdruck.
+   - Status-Pille (Spalte AO): Lebendiges Hellblau (`#c2e7ff`) mit kontraststarker Schrift.
+2. **Dashboard & Sidebar:**
+   - Dashboard zählt gesendete E-Mails in Echtzeit (`=COUNTIF(ALL_LEADS!AO2:AO; "sent")`).
+   - Seitenleiste verfügt über ein blaues Info-Panel mit Zähler und Live-Abgleich.
+
+---
+
+## 3. Postfach- & Sende-Abgleich (Reconciliation Engine)
+
+1. **Python CLI (`engine/reconcile_mailbox.py`):**
+   - `--status`: Zeigt die Single Source of Truth aller Leads, Entwürfe, gesendeter Mails und Antworten.
+   - `--mark-sent <start> <end>`: Bestätigt manuell versendete Zeilen atomar im Sheet (z. B. `python3 engine/reconcile_mailbox.py --mark-sent 52 71`).
+2. **Google Apps Script Live-Integration:**
+   - `HSB Sales OS -> 📤 Gesendete Mails abgleichen` (`uiReconcileSent`)
+   - `HSB Sales OS -> 📥 Antworten abgleichen` (`uiReconcileReplies`)
+   - Reconciliert gesendete Mails aus Outlook (`SentItems`) via Microsoft Graph anhand der unveränderlichen `Internet_Message_ID` und Empfängeradresse.
+   - Reconciliert eingehende Antworten aus der `Inbox` und verarbeitet Opt-Outs automatisch.
+3. **Live Clasp Deployment:**
+   - Ausgerollt via `./deploy.sh` auf Apps Script Projekt `1Xl6xkMTyn3Hu6UvBoX7gVrdppuyRal04NH6Ei16hnz_Pfuq-JWmh9U4c`.
+
+---
+
+## 4. Vollständige Test- und Verifikationsergebnisse (100% PASS)
+
+- **Flyer Visual Gate:** PASS (0.000% Abweichung für Jordie und Joel)
+- **Node Unit-Tests:** 325 bestanden, 0 fehlgeschlagen (`test_apps_script.js`)
+- **Chunking Engine:** 31 bestanden, 0 fehlgeschlagen (`test_draft_chunking.js`)
+- **Verifier Suite:** 7 Gates / 12 Fälle PASS (`verifier_suite.js`)
+- **Pytest:** 29 bestanden, 0 fehlgeschlagen (`pytest`)
+
+---
+
+## 5. Google Cloud Service Account (Pipedream / Perplexity / Postman)
 
 - **Ziel:** Saubere, isolierte GCP-Anbindung für Pipedream Connect, Perplexity und Postman.
 - **Autorisierung:** Ausschließlich über das persönliche Konto `cherinodiaz@outlook.com`.
@@ -49,7 +79,7 @@
 
 ---
 
-## 3. GCP Sicherheitsrichtlinien-Deaktivierung ("San netto") & API-Key Freigabe
+## 6. GCP Sicherheitsrichtlinien-Deaktivierung ("San netto") & API-Key Freigabe
 
 - **Problemstellung:** In Google Cloud Console (Projekt `hsb-boden`, Agent Platform) verhinderte eine restriktive Organisationsrichtlinie das Erstellen und Nutzen von API-Schlüsseln (*"API-Schlüssel sind nicht zulässig. Die Sicherheitsrichtlinie Ihrer Organisation lässt keine API-Schlüssel zu."*).
 - **Durchgeführte Behebung:**
@@ -67,7 +97,7 @@
 
 ---
 
-## 4. Wichtige Referenzen & Artefakte
+## 7. Wichtige Referenzen & Artefakte
 
 - Projekt-Walkthrough: `walkthrough.md`
 - GCP Plan Cherinodiaz: `gcp_service_account_cherinodiaz_plan.md`

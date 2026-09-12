@@ -323,7 +323,7 @@ function setupSheet(n, owner, over) {
 
 function loadRealFlyers() {
   const map = {
-    '1UMX-fi2lJ9bo14KwuClqgfZQWECdE_XV': 'HSB-Flyer-Jordi-Post_FINAL.pdf',
+    '1UMX-fi2lJ9bo14KwuClqgfZQWECdE_XV': 'HSB-Flyer-Jordie-Post_FINAL.pdf',
     '16Kt-eRk1uY0HorZCrEmGt3QfGcRpYadS': 'HSB-Flyer-Joel-Cherino_FINAL.pdf'
   };
   Object.keys(map).forEach(function (id) {
@@ -476,7 +476,7 @@ function testEmlStructure() {
   check('EML: X-Unsent: 1 gesetzt', /X-Unsent: 1/.test(eml));
   check('EML: X-HSB-Lead-ID gesetzt', /X-HSB-Lead-ID: TEST-001/.test(eml));
   check('EML: X-HSB-Batch-ID gesetzt', /X-HSB-Batch-ID: HSB-20260821-JORDI-0001/.test(eml));
-  check('EML: From ist Jordis Mailbox', new RegExp('From: Jordi Post <' + flyer.mailbox + '>').test(eml));
+  check('EML: From ist Jordis Mailbox', new RegExp('From: Jordie Post <' + flyer.mailbox + '>').test(eml));
   check('EML: Reply-To gesetzt', new RegExp('Reply-To: ' + flyer.mailbox).test(eml));
   check('EML: To gesetzt', /To: schmidt@muster\.de/.test(eml));
   check('EML: kein fremder Absender', !/j-cherino/.test(eml));
@@ -654,7 +654,7 @@ function testJordi100SafetyGates() {
 function testJordi100UiContract() {
   const sidebar = fs.readFileSync(path.join(AS, 'Sidebar.html'), 'utf8');
   check('Jordi-100 UI: Schnellstart oben vorhanden',
-        /Jordi · 100 Outlook-Entwürfe/.test(sidebar));
+        /Jordi(e)? · 100 Outlook-Entwürfe/.test(sidebar));
   check('Jordi-100 UI: eindeutiger Ein-Klick-Button',
         /100 freigeben &amp; Entwürfe erzeugen/.test(sidebar));
   check('Jordi-100 UI: serverseitiger Wrapper verdrahtet',

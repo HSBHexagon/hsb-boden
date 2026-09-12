@@ -137,8 +137,7 @@ function htmlEscape_(text) {
 }
 
 /**
- * Signatur als HTML. Bewusst ohne externe Bilder: Outlook blockiert extern
- * geladene Logos standardmaessig und sie erhoehen die Spam-Bewertung.
+ * Signatur als HTML mit offiziellem HSB Firmenlogo und §35a GmbHG Pflichtangaben.
  * Inline-Styles, weil Outlook Desktop CSS im <head> weitgehend ignoriert.
  */
 function signaturHtml_(ownerDisplay, mailbox, mobile) {
@@ -153,6 +152,14 @@ function signaturHtml_(ownerDisplay, mailbox, mobile) {
     + '<a href="mailto:' + htmlEscape_(mailbox) + '" style="color:#1155cc;">'
     + htmlEscape_(mailbox) + '</a> &middot; '
     + '<a href="https://' + FIRMA.web + '" style="color:#1155cc;">' + FIRMA.web + '</a>'
+    + '</p>'
+    + '<p style="margin:14px 0 0 0;">'
+    + '<a href="https://' + FIRMA.web + '" target="_blank" style="text-decoration:none;">'
+    + '<img src="https://' + FIRMA.web + '/brand/hsb-boden-logo.png" '
+    + 'alt="' + htmlEscape_(FIRMA.name) + '" '
+    + 'width="148" height="48" '
+    + 'style="display:block;border:0;width:148px;height:auto;max-height:48px;" />'
+    + '</a>'
     + '</p>'
     + '<p style="margin:10px 0 0 0;font-family:Arial,Helvetica,sans-serif;'
     + 'font-size:8pt;color:#777777;line-height:1.4;">'

@@ -369,11 +369,28 @@ function graphReconcileSentItems_() {
   var messages = (JSON.parse(res.getContentText()) || {}).value || [];
   var matchedCount = 0;
   messages.forEach(function (m) {
-    var toAddr = (m.toRecipients && m.toRecipients[0] && m.toRecipients[0].emailAddress) ? m.toRecipients[0].emailAddress.address : '';
+    var toAddr = (m.toRecipients && m.toRecipients[0] && m.toRecipients[0].emailAddress) ? String(m.toRecipients[0].emailAddress.address || '').trim().toLowerCase() : '';
+    var explicitLeadId = '';
+    if (toAddr && typeof readLeadsCached_ === 'function') {
+      try {
+        var leads = (readLeadsCached_().leads) || [];
+        var hits = leads.filter(function (l) {
+          return String(l.Email || '').trim().toLowerCase() === toAddr;
+        });
+        if (hits.length === 1) {
+          explicitLeadId = hits[0].Lead_ID;
+        } else if (hits.length > 1) {
+          var draftedHits = hits.filter(function (l) { return l.Send_Status === 'drafted'; });
+          if (draftedHits.length === 1) explicitLeadId = draftedHits[0].Lead_ID;
+        }
+      } catch (_) {}
+    }
+
     if (typeof processInboundEvent === 'function') {
       var r = processInboundEvent({
         event_id: 'GRAPH-SENT-' + (m.internetMessageId || m.id),
         event_type: 'SENT',
+        lead_id: explicitLeadId,
         message_id: m.internetMessageId || '',
         email: toAddr,
         subject: m.subject || '',

@@ -349,3 +349,28 @@ function uiReconcileReplies() {
   SpreadsheetApp.getUi().alert('Funktion nicht verfügbar', 'HSB_GraphAdapter nicht geladen.', SpreadsheetApp.getUi().ButtonSet.OK);
 }
 
+/**
+ * Webhook-Endpunkt fuer externe Sende- und Inbound-Events (z. B. Power Automate,
+ * Graph Change Notifications, Webhooks).
+ */
+function doPost(e) {
+  try {
+    var raw = (e && e.postData && e.postData.contents) ? e.postData.contents : '{}';
+    var payload = JSON.parse(raw);
+    var result = (typeof processInboundEvent === 'function') ? processInboundEvent(payload) : { ok: false, error: 'processInboundEvent nicht definiert' };
+    return ContentService.createTextOutput(JSON.stringify({ ok: true, data: result }))
+      .setMimeType(ContentService.MimeType.JSON);
+  } catch (err) {
+    return ContentService.createTextOutput(JSON.stringify({ ok: false, error: String(err.message || err) }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+}
+
+function doGet(e) {
+  return ContentService.createTextOutput(JSON.stringify({
+    status: 'HSB Sales OS Webhook Endpoint Online',
+    time: (typeof nowIso_ === 'function') ? nowIso_() : new Date().toISOString()
+  })).setMimeType(ContentService.MimeType.JSON);
+}
+
+

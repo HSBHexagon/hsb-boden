@@ -94,21 +94,28 @@ def create_single_draft(owner: str, lead: dict, flyer_b64: str, flyer_name: str,
     flyer = FLYERS[owner]
     anrede = anrede_fuer(lead)
     firma_str = str(lead.get("Firma") or "").strip()
-    if firma_str and firma_str.lower() not in ["none", "nan"]:
-        betreff = f"Industrieböden & Säurebau für {firma_str} – HSB Hexagon"
-    else:
-        betreff = f"Industrieböden & Säurebau – HSB Hexagon"
+    company = firma_str if (firma_str and firma_str.lower() not in ["none", "nan"]) else "Ihr Unternehmen"
+    betreff = f"Industrieböden für {company} – Beratung von {flyer.display_name}"
 
     sig = signatur_html(flyer.display_name, flyer.mailbox, flyer.mobile)
     body_html = (
-        f'<div style="font-family:Arial,Helvetica,sans-serif;font-size:10pt;color:#222222;line-height:1.5;">'
-        f'<p>{anrede}</p>'
-        f'<p>als spezialisierter Fachbetrieb für hochbelastbare Industrieböden, Beschichtungen und Säurebau '
-        f'unterstützen wir Unternehmen bei langlebigen und normgerechten Bodenlösungen.</p>'
-        f'<p>Anbei übermitteln wir Ihnen unsere aktuelle Leistungsübersicht als PDF-Flyer.</p>'
-        f'<p>Kommen Sie bei anstehenden Sanierungen oder Neubauprojekten gerne direkt auf uns zu.</p>'
-        f'<p>Mit freundlichen Grüßen,</p>'
+        f'<div style="font-family:Arial,Helvetica,sans-serif;font-size:11pt;color:#222222;line-height:1.5;">'
+        f'<p style="margin:0 0 12px 0;">{anrede}</p>'
+        f'<p style="margin:0 0 12px 0;">mein Name ist {flyer.display_name} von der HSB Hexagon Säurebau GmbH. '
+        f'Wir planen, bauen und sanieren säurebeständige, hygienische Industrieböden – '
+        f'ausgelegt auf das reale Belastungsprofil statt auf ein Standardprodukt.</p>'
+        f'<p style="margin:0 0 12px 0;">Typische Themen bei Produktionsbetrieben:<br>'
+        f'&bull; Risse, Ablösungen und offene Fugen<br>'
+        f'&bull; Keimnester in Nassbereichen<br>'
+        f'&bull; stehendes Wasser durch falsches Gefälle<br>'
+        f'&bull; defekte Rinnen und Abläufe</p>'
+        f'<p style="margin:0 0 12px 0;">Im angehängten Flyer sehen Sie ausgeführte Projektflächen und unser '
+        f'Vorgehen von der Analyse bis zur dokumentierten Übergabe.</p>'
+        f'<p style="margin:0 0 16px 0;">Gerne prüfen wir Ihr Belastungsprofil unverbindlich und vor Ort.</p>'
+        f'<p style="margin:0 0 4px 0;">Mit freundlichen Grüßen</p>'
         f'{sig}'
+        f'<p style="margin:20px 0 0 0;font-family:Arial,Helvetica,sans-serif;font-size:8pt;color:#999999;">'
+        f'---<br>Wenn Sie keine weiteren Informationen erhalten möchten, antworten Sie bitte mit dem Betreff &bdquo;Abmelden&ldquo; auf diese E-Mail.</p>'
         f'</div>'
     )
 

@@ -91,7 +91,7 @@
      - `apikeys.googleapis.com` (API Keys API)
   3. Neuer Live-API-Schlüssel generiert und verifiziert:
      - **Name:** `Agent-Platform-Live-Key`
-     - **Key-String:** `AIzaSyD5AxvGQ4qPc6TCnNABG7oABBno1oCQRs8`
+     - **Key-String:** `[IN_GCP_SECRET_MANAGER_GEPFLEGT]`
      - **ID:** `projects/950665954756/locations/global/keys/01bb20eb-6775-4467-a006-e0e37472e78c`
 - **Ergebnis:** Sperre in der Cloud Console aufgehoben. API-Keys und Service-Account-Keys sind sofort voll einsatzbereit.
 

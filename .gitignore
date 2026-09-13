@@ -15,3 +15,12 @@ _FALSCHE_BINDUNG_*
 # Orchestration & Runtime State
 .omg/
 .playwright-mcp/
+
+# Secrets & Environment Configurations
+.env
+.env.*
+secrets/
+*.key
+*.pem
+token_cache.json
+sa-key.json

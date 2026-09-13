@@ -270,10 +270,7 @@ function adapterUrlFor_(owner) {
   var key = ADAPTER_PROPS[String(owner).toUpperCase().indexOf('JORDI') >= 0 ? 'JORDI' : 'JOEL'];
   var raw = PropertiesService.getScriptProperties().getProperty(key);
   if (!raw) {
-    if (key === ADAPTER_PROPS.JOEL) {
-      return 'https://default8adbbf2efd2c48578540bbcdb3a20f.30.environment.api.powerplatform.com:443/powerautomate/automations/direct/cu/08/workflows/6b6a50d7d6ad4301a7c9dc94cb3fc586/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=ZfuJ6WEK9C3-YFeiFerXpgQ2w-FkXcjWpkMi6o5r7SQ';
-    }
-    throw new Error('Skripteigenschaft ' + key + ' ist nicht gesetzt.');
+    throw new Error('Skripteigenschaft ' + key + ' ist nicht gesetzt. Bitte im Menü "HSB Sales OS -> 🔗 Adapter-URL setzen" konfigurieren.');
   }
   var url = String(raw).trim();
   if (url.indexOf('https://') !== 0) {

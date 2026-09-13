@@ -18,12 +18,17 @@ sys.path.insert(0, str(REPO_ROOT / "engine"))
 from hsb_core import FLYERS
 from sheet_loader import load_from_xlsx
 
-FC_CLIENT_ID = "04b07795-8ddb-461a-bbee-02f9e1bf7b46"
-FC_TENANT_ID = "8adbbf2e-fd2c-4857-8540-bbcdb3a20f30"
-FC_SCOPE = "https://apihub.azure.com/.default offline_access"
+from hsb_config import (
+    FC_CLIENT_ID,
+    FC_TENANT_ID,
+    FC_SCOPE,
+    get_joel_url,
+    get_jordi_connector_url,
+    get_fc_refresh_token,
+)
 
-JOEL_URL = "https://default8adbbf2efd2c48578540bbcdb3a20f.30.environment.api.powerplatform.com:443/powerautomate/automations/direct/cu/08/workflows/6b6a50d7d6ad4301a7c9dc94cb3fc586/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=ZfuJ6WEK9C3-YFeiFerXpgQ2w-FkXcjWpkMi6o5r7SQ"
-JORDI_CONNECTOR_URL = "https://default-8adbbf2e-fd2c-4857-8540-bbcdb3a20f30.06.common.germany.azure-apihub.net/apim/logicflows/47ee3d7a-626c-4fff-9e16-6d938949e4bd/triggers/manual/run?api-version=2016-11-01"
+JOEL_URL = get_joel_url()
+JORDI_CONNECTOR_URL = get_jordi_connector_url()
 
 FIRMA = {
     "name": "HSB Hexagon Säurebau GmbH",
@@ -79,11 +84,7 @@ def anrede_fuer(lead: dict) -> str:
     return f"Guten Tag {ap},"
 
 def get_jordi_token() -> str:
-    code_gs = (REPO_ROOT / "apps_script" / "Code.gs").read_text(encoding="utf-8")
-    m = re.search(r"HSB_FC_REFRESH_TOKEN\', \'(.*?)\'", code_gs)
-    if not m:
-        raise RuntimeError("Refresh token nicht in Code.gs gefunden")
-    refresh_token = m.group(1)
+    refresh_token = get_fc_refresh_token()
 
     token_url = f"https://login.microsoftonline.com/{FC_TENANT_ID}/oauth2/v2.0/token"
     data = urllib.parse.urlencode({

@@ -1,0 +1,3 @@
+## 2024-05-24 - LeadForm Accessibility Enhancement
+**Learning:** Native `required` form fields and browser focus rings can be insufficient for a clear and accessible user experience. Sighted users benefit greatly from explicit visual indicators like `*` (which should be hidden from screen readers via `aria-hidden="true"` to prevent redundancy), and keyboard navigators require robust and clearly visible focus outlines (e.g., via Tailwind's `focus-visible:ring` utilities) which are otherwise occasionally stripped or subdued by reset stylesheets.
+**Action:** Always ensure custom forms clearly distinguish mandatory fields visually (while managing ARIA attributes properly), and proactively test/add `focus-visible` styles to ensure full keyboard navigation support.

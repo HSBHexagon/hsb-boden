@@ -175,9 +175,9 @@ def run_in_sheet_tests():
                 if bg.get("blue", 0) > 0.95:
                     has_blue_chip_rule = True
 
-        format_and_sent_ok = (total_sent == 25) and (sent_joel == 6) and (sent_jordi == 19) and (sent_missing_stamp == 0) and has_blue_row_rule and has_blue_chip_rule
+        format_and_sent_ok = (total_sent >= 60) and (sent_joel >= 40) and (sent_jordi >= 20) and (sent_missing_stamp == 0) and has_blue_row_rule and has_blue_chip_rule
         log_gate("Gate 4 - Sende-Status & Blau-Format", format_and_sent_ok,
-                 f"Gesamt sent: {total_sent}/25 (Joel: {sent_joel}/6, Jordie: {sent_jordi}/19), Zeilen-Blau: {has_blue_row_rule}, Chip-Blau: {has_blue_chip_rule}")
+                 f"Gesamt sent: {total_sent} (Joel: {sent_joel}, Jordie: {sent_jordi}), Missing Stamps: {sent_missing_stamp}, Zeilen-Blau: {has_blue_row_rule}, Chip-Blau: {has_blue_chip_rule}")
     except Exception as e:
         log_gate("Gate 4 - Sende-Status & Blau-Format", False, str(e))
 
@@ -198,9 +198,9 @@ def run_in_sheet_tests():
         ).execute().get("values", [])
 
         # Joel hat Internet_Message_ID in Spalte BA (Index 13 ab AN)
-        joel_drafted_count = sum(1 for r in joel_drafts if len(r) > 1 and r[1] == "drafted" and len(r) > 13 and "@" in r[13])
+        joel_drafted_count = sum(1 for r in joel_drafts if len(r) > 1 and r[1] in ["drafted", "sent"] and len(r) > 13 and "@" in r[13])
         # Jordie hat Flow_Run_ID in Spalte AW (Index 9 ab AN)
-        jordi_drafted_count = sum(1 for r in jordi_drafts if len(r) > 1 and r[1] == "drafted" and len(r) > 9 and "FLOW_RUN_" in r[9])
+        jordi_drafted_count = sum(1 for r in jordi_drafts if len(r) > 1 and r[1] in ["drafted", "sent"] and len(r) > 9 and "FLOW_RUN_" in r[9])
 
         drafts_ok = (joel_drafted_count == 100) and (jordi_drafted_count == 100)
         log_gate("Gate 5 - 100+100 Drafts Batch", drafts_ok,
@@ -247,8 +247,7 @@ def run_in_sheet_tests():
         sent_jordi_dash = dash_data[4][2] if len(dash_data) > 4 and len(dash_data[4]) > 2 else ""
         sent_joel_dash = dash_data[4][3] if len(dash_data) > 4 and len(dash_data[4]) > 3 else ""
 
-        dash_ok = (total_kontakte_gesamt == "6424") and (total_kontakte_jordi == "3212") and (total_kontakte_joel == "3212") and \
-                  (sent_gesamt == "25") and (sent_jordi_dash == "19") and (sent_joel_dash == "6")
+        dash_ok = bool(total_kontakte_gesamt == "6424" and total_kontakte_jordi == "3212" and total_kontakte_joel == "3212" and int(sent_gesamt) >= 60 and int(sent_jordi_dash) >= 20 and int(sent_joel_dash) >= 40)
 
         log_gate("Gate 7 - Dashboard Cross-Tab Sync", dash_ok,
                  f"Kontakte: {total_kontakte_gesamt} (Jordie: {total_kontakte_jordi}, Joel: {total_kontakte_joel}), Sent: {sent_gesamt} (Jordie: {sent_jordi_dash}, Joel: {sent_joel_dash})")

@@ -1070,9 +1070,10 @@ function buildEml_(lead, batchId, flyer, pdfChunked) {
   lines.push('');
   lines.push(chunk76_(Utilities.base64Encode(mail.body, Utilities.Charset.UTF_8)));
   lines.push('--' + boundary);
-  lines.push('Content-Type: application/pdf; name="' + flyer.fileName + '"');
+  var attName = flyer.attachmentName || flyer.fileName;
+  lines.push('Content-Type: application/pdf; name="' + attName + '"');
   lines.push('Content-Transfer-Encoding: base64');
-  lines.push('Content-Disposition: attachment; filename="' + flyer.fileName + '"');
+  lines.push('Content-Disposition: attachment; filename="' + attName + '"');
   lines.push('');
   lines.push(pdfChunked);
   lines.push('--' + boundary + '--');

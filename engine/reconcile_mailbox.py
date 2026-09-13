@@ -143,9 +143,14 @@ def main():
     parser.add_argument("--mark-sent-owner", choices=["JOEL", "JORDI"], 
                         help="Markiert erste N Entwürfe eines Absenders als versendet")
     parser.add_argument("--count", type=int, default=10, help="Anzahl für --mark-sent-owner (Standard: 10)")
+    parser.add_argument("--sync-apple-mail", action="store_true", help="Synchronisiert reale gesendete Mails und Bounces aus Apple Mail / Exchange")
     args = parser.parse_args()
 
-    if args.mark_sent:
+    if args.sync_apple_mail:
+        from sync_apple_mail import run_sync
+        run_sync()
+        print_status()
+    elif args.mark_sent:
         mark_rows_sent(args.mark_sent[0], args.mark_sent[1])
         print_status()
     elif args.mark_sent_owner:

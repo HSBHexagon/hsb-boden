@@ -488,7 +488,7 @@ function testEmlStructure() {
   check('EML: Reply-To gesetzt', new RegExp('Reply-To: ' + flyer.mailbox).test(eml));
   check('EML: To gesetzt', /To: schmidt@muster\.de/.test(eml));
   check('EML: kein fremder Absender', !/j-cherino/.test(eml));
-  check('EML: Anhangsname korrekt', new RegExp('filename="' + flyer.fileName + '"').test(eml));
+  check('EML: Anhangsname korrekt', new RegExp('filename="' + (flyer.attachmentName || flyer.fileName) + '"').test(eml));
   check('EML: genau ein Anhang', (eml.match(/Content-Type: application\/pdf/g) || []).length === 1);
   check('EML: CRLF-Zeilenenden', eml.indexOf('\r\n') >= 0 && eml.indexOf('\r\n\r\n') >= 0);
   check('EML: Asset-Hash im Header', new RegExp('X-HSB-Asset-SHA256: ' + flyer.sha256).test(eml));

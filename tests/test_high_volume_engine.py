@@ -22,7 +22,7 @@ from high_volume_matrix_engine import (
 from hsb_core import EMAIL_RE
 
 def test_partition_1000_leads_integrity():
-    joel_leads, jordi_leads = partition_leads(500, joel_start_row=152, jordi_start_row=3314)
+    joel_leads, jordi_leads = partition_leads(500, joel_start_row=152, jordi_start_row=3534, use_live_sheet=True)
 
     assert len(joel_leads) == 500, "Joel muss genau 500 Leads haben"
     assert len(jordi_leads) == 500, "Jordie muss genau 500 Leads haben"
@@ -30,8 +30,8 @@ def test_partition_1000_leads_integrity():
     assert joel_leads[0]["_row"] == 152
     assert joel_leads[-1]["_row"] == 651
 
-    assert jordi_leads[0]["_row"] == 3314
-    assert jordi_leads[-1]["_row"] == 3813
+    assert jordi_leads[0]["_row"] == 3534
+    assert jordi_leads[-1]["_row"] == 4033
 
     joel_ids = set(l["Lead_ID"] for l in joel_leads)
     jordi_ids = set(l["Lead_ID"] for l in jordi_leads)
@@ -49,6 +49,13 @@ def test_partition_1000_leads_integrity():
         assert str(l.get("Reply_Status") or "").lower() not in ["bounced", "hard_bounce"]
         assert str(l.get("Opt_Out") or "").lower() not in ["yes", "ja", "opt_out"]
         assert str(l.get("Suppressed") or "").lower() not in ["yes", "ja", "true"]
+
+def test_partition_offline_xlsx_fallback():
+    joel_leads, jordi_leads = partition_leads(10, joel_start_row=152, jordi_start_row=3314, use_live_sheet=False)
+    assert len(joel_leads) == 10
+    assert len(jordi_leads) == 10
+    overlap = set(l["Lead_ID"] for l in joel_leads).intersection(set(l["Lead_ID"] for l in jordi_leads))
+    assert len(overlap) == 0
 
 def test_build_2d_matrix_format():
     leads = [

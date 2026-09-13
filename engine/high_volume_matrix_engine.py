@@ -3,6 +3,7 @@
 HSB Sales OS - High-Volume Matrix Engine (UG-02).
 Skaliert auf 1.000 Entwürfe (500 Joel / 500 Jordie) mit:
 1. Deterministischer Lead-Partitionierung (0 Crossover, 100% Unique Leads).
+   Autoritativ aus Live Google Sheet 'ALL_LEADS' mit Fallback auf XLSX.
 2. Bulk 2D-Matrix-Writes für Google Sheet (Quota-Schutz gegen 300 Req/min Limit).
 3. Paced Dispatcher mit 400ms Taktung und exponentiellem Backoff bei HTTP 429.
 4. Byte-genauer Anhangs- und Signatur-Integrität nach § 35a GmbHG.
@@ -26,7 +27,7 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO_ROOT / "engine"))
 
 from hsb_core import FLYERS, normalize_owner, EMAIL_RE
-from sheet_loader import load_from_xlsx
+from sheet_loader import load_from_xlsx, _map_row
 from hsb_config import (
     FC_CLIENT_ID,
     FC_TENANT_ID,
@@ -44,17 +45,41 @@ BATCHES_DIR.mkdir(exist_ok=True)
 # 1. Lead-Partitionierung für 1.000 Leads (500 Joel / 500 Jordie)
 # --------------------------------------------------------------------------
 
+def load_leads_authoritative() -> list[dict]:
+    """
+    Laedt Leads bevorzugt direkt aus dem Live Google Sheet 'ALL_LEADS'.
+    Falls offline / Netzwerkfehler, Fallback auf load_from_xlsx().
+    """
+    try:
+        service = get_sheets_service()
+        res = service.spreadsheets().values().get(
+            spreadsheetId=SPREADSHEET_ID,
+            range="ALL_LEADS!A1:BD6425"
+        ).execute()
+        values = res.get("values", [])
+        if values and len(values) > 1:
+            header = [str(h) if h else "" for h in values[0]]
+            return [_map_row(header, tuple(r), nr) for nr, r in enumerate(values[1:], start=2) if r and any(r)]
+    except Exception as e:
+        print(f"[WARN] Live-Sheet-Laden nicht moeglich ({e}), nutze lokalen XLSX-Snapshot...")
+    return load_from_xlsx()
+
+
 def partition_leads(
     count_per_owner: int = 500,
     joel_start_row: int = 152,
-    jordi_start_row: int = 3314
+    jordi_start_row: int = 3534,
+    use_live_sheet: bool = True
 ) -> tuple[list[dict], list[dict]]:
     """
     Waehlt exakt count_per_owner Leads fuer Joel und Jordie aus.
     Schliesst gesendete, gebouncte, opt-out und unterdrueckte Leads strikt aus.
     Garantiert zero crossover und 100% eindeutige Lead-IDs.
     """
-    all_leads = load_from_xlsx()
+    if use_live_sheet:
+        all_leads = load_leads_authoritative()
+    else:
+        all_leads = load_from_xlsx()
 
     def filter_pool(owner_key: str, start_row: int, count: int) -> list[dict]:
         pool = []
@@ -66,7 +91,9 @@ def partition_leads(
             email = str(l.get("Email") or "").strip()
             if not EMAIL_RE.match(email):
                 continue
-            if str(l.get("Send_Status") or "").lower() in ["sent", "gesendet"]:
+            send_status = str(l.get("Send_Status") or "").lower()
+            batch_status = str(l.get("Batch_Status") or "").upper()
+            if send_status in ["sent", "gesendet"] or batch_status == "SENT":
                 continue
             if str(l.get("Reply_Status") or "").lower() in ["bounced", "hard_bounce"]:
                 continue
@@ -110,126 +137,146 @@ class PacedDispatcher:
     def __init__(self, min_interval_seconds: float = 0.400, max_retries: int = 3):
         self.min_interval = min_interval_seconds
         self.max_retries = max_retries
-        self.last_call_timestamp = 0.0
+        self.last_call_time = 0.0
 
-    def wait_pacing(self):
-        elapsed = time.time() - self.last_call_timestamp
+    def pace(self):
+        now = time.time()
+        elapsed = now - self.last_call_time
         if elapsed < self.min_interval:
             time.sleep(self.min_interval - elapsed)
-        self.last_call_timestamp = time.time()
+        self.last_call_time = time.time()
 
-    def execute_with_retry(self, request_fn: Callable[[], Any], description: str = "") -> Any:
+    def execute_with_retry(self, fn: Callable[[], Any], description: str) -> Any:
+        delay = 1.0
         for attempt in range(1, self.max_retries + 1):
-            self.wait_pacing()
+            self.pace()
             try:
-                return request_fn()
+                return fn()
             except urllib.error.HTTPError as e:
                 if e.code == 429:
                     retry_after = e.headers.get("Retry-After")
-                    wait_time = float(retry_after) if retry_after else (2 ** attempt + random.uniform(0.1, 0.5))
-                    print(f"  [429 RATE LIMIT] {description} - Warte {wait_time:.1f}s (Versuch {attempt}/{self.max_retries})...")
-                    time.sleep(wait_time)
-                elif e.code in [502, 503, 504]:
-                    wait_time = 1.5 * attempt + random.uniform(0.1, 0.3)
-                    print(f"  [GATEWAY TIMEOUT {e.code}] {description} - Warte {wait_time:.1f}s...")
-                    time.sleep(wait_time)
+                    if retry_after and retry_after.isdigit():
+                        sleep_s = float(retry_after) + random.uniform(0.1, 0.5)
+                    else:
+                        sleep_s = delay + random.uniform(0.1, 0.5)
+                    print(f"[{description}] HTTP 429 Rate Limit aufgetreten. Backoff {sleep_s:.2f}s (Versuch {attempt}/{self.max_retries})...")
+                    time.sleep(sleep_s)
+                    delay *= 2
+                elif e.code in [500, 502, 503, 504]:
+                    sleep_s = delay + random.uniform(0.1, 0.5)
+                    print(f"[{description}] HTTP {e.code} Serverfehler. Backoff {sleep_s:.2f}s (Versuch {attempt}/{self.max_retries})...")
+                    time.sleep(sleep_s)
+                    delay *= 2
                 else:
                     raise
             except Exception as ex:
                 if attempt == self.max_retries:
                     raise
-                wait_time = 1.0 * attempt
-                print(f"  [NETZWERK-FEHLER] {ex} - Warte {wait_time:.1f}s...")
-                time.sleep(wait_time)
-        raise RuntimeError(f"Maximale Wiederholungsversuche ({self.max_retries}) erschoepft fuer: {description}")
+                sleep_s = delay + random.uniform(0.1, 0.5)
+                print(f"[{description}] Fehler ({ex}). Backoff {sleep_s:.2f}s (Versuch {attempt}/{self.max_retries})...")
+                time.sleep(sleep_s)
+                delay *= 2
+        raise RuntimeError(f"Maximale Versuche ({self.max_retries}) fuer {description} ueberschritten.")
 
 # --------------------------------------------------------------------------
-# 3. 2D-Matrix Bulk Writer (Spalten AN bis BD = 17 Spalten)
+# 3. Bulk 2D-Matrix Generator & Writer (Spalten AN bis BD, 17 Spalten)
 # --------------------------------------------------------------------------
 
 def build_2d_matrix(leads: list[dict], results: list[dict], batch_id: str) -> list[list[str]]:
     """
-    Erzeugt die exakte 17-Spalten 2D-Matrix fuer ALL_LEADS!AN{start}:BD{end}.
-    Spalten:
-    AN: Batch_ID, AO: Send_Status, AP: Send_Datum, AQ: Bounce_Status,
-    AR: Reply_Status, AS: Legal_Basis, AT: Suppressed, AU: Batch_Status,
-    AV: Prepared_At, AW: Draft_ID, AX: Drafted_At, AY: Approved_At,
-    AZ: Outlook_Message_ID, BA: Internet_Message_ID, BB: Conversation_ID,
-    BC: Last_Reply_At, BD: Last_Error
+    Erzeugt die exakte 17-Spalten 2D-Matrix fuer den Bereich AN:BD in ALL_LEADS:
+    Spalte 40 (AN): Batch_ID
+    Spalte 41 (AO): Send_Status ('drafted')
+    Spalte 42 (AP): Send_Datum ('')
+    Spalte 43 (AQ): Tracking_ID ('')
+    Spalte 44 (AR): Reply_Status ('')
+    Spalte 45 (AS): Opt_Out ('no')
+    Spalte 46 (AT): Suppressed ('no')
+    Spalte 47 (AU): Batch_Status ('DRAFTED')
+    Spalte 48 (AV): Prepared_At (ISO-Timestamp)
+    Spalte 49 (AW): Draft_ID (aus Outlook)
+    Spalte 50 (AX): Drafted_At (ISO-Timestamp)
+    Spalte 51 (AY): Approved_At ('')
+    Spalte 52 (AZ): Outlook_Message_ID ('')
+    Spalte 53 (BA): Internet_Message_ID (aus Response)
+    Spalte 54 (BB): Conversation_ID (aus Response)
+    Spalte 55 (BC): Last_Reply_At ('')
+    Spalte 56 (BD): Last_Error ('')
     """
-    now_iso = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
-    res_map = {r["row"]: r for r in results if "row" in r}
+    now_iso = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
+    res_map = {r["row"]: r for r in results}
 
     matrix = []
     for l in leads:
-        row = l["_row"]
-        r = res_map.get(row, {})
-        draft_id = r.get("draft_id", "")
-        internet_mid = r.get("internet_message_id", "")
-        conv_id = r.get("conversation_id", "")
-        last_err = r.get("last_error", "")
-        drafted_at = r.get("drafted_at", now_iso)
+        row_nr = l["_row"]
+        r = res_map.get(row_nr, {})
 
-        matrix.append([
-            batch_id,                                               # AN (Batch_ID)
-            "drafted",                                              # AO (Send_Status)
-            "",                                                     # AP (Send_Datum)
-            "",                                                     # AQ (Bounce_Status)
-            "",                                                     # AR (Reply_Status)
-            str(l.get("Legal_Basis") or "EXISTING_CUSTOMER_7_3"),    # AS (Legal_Basis)
-            str(l.get("Suppressed") or "no"),                       # AT (Suppressed)
-            "DRAFTED",                                              # AU (Batch_Status)
-            drafted_at,                                             # AV (Prepared_At)
-            draft_id,                                               # AW (Draft_ID)
-            drafted_at,                                             # AX (Drafted_At)
-            "",                                                     # AY (Approved_At)
-            "",                                                     # AZ (Outlook_Message_ID)
-            internet_mid,                                           # BA (Internet_Message_ID)
-            conv_id,                                                # BB (Conversation_ID)
-            "",                                                     # BC (Last_Reply_At)
-            last_err                                                # BD (Last_Error)
-        ])
+        draft_id = r.get("draft_id", "")
+        imid = r.get("internet_message_id", "")
+        cid = r.get("conversation_id", "")
+        err = r.get("error", "")
+
+        matrix_row = [
+            batch_id,              # AN (40): Batch_ID
+            "drafted",             # AO (41): Send_Status
+            "",                    # AP (42): Send_Datum
+            "",                    # AQ (43): Tracking_ID
+            "",                    # AR (44): Reply_Status
+            "no",                  # AS (45): Opt_Out
+            "no",                  # AT (46): Suppressed
+            "DRAFTED",             # AU (47): Batch_Status
+            now_iso,               # AV (48): Prepared_At
+            draft_id,              # AW (49): Draft_ID
+            now_iso,               # AX (50): Drafted_At
+            "",                    # AY (51): Approved_At
+            "",                    # AZ (52): Outlook_Message_ID
+            imid,                  # BA (53): Internet_Message_ID
+            cid,                   # BB (54): Conversation_ID
+            "",                    # BC (55): Last_Reply_At
+            err                    # BD (56): Last_Error
+        ]
+        matrix.append(matrix_row)
     return matrix
 
-def write_matrix_in_chunks(service, spreadsheet_id: str, start_row: int, matrix: list[list[str]], chunk_size: int = 50):
+def write_2d_matrix_bulk(start_row: int, end_row: int, matrix: list[list[str]], service=None):
     """
-    Schreibt die 2D-Matrix in sicheren Bloecken (z.B. 50 Zeilen) ins Google Sheet.
-    Verhindert API-Drosselungen und Timeouts bei 500/1000 Zeilen.
+    Schreibt die gesamte 17-Spalten Matrix in einem einzigen API-Call ins Google Sheet.
+    Schuetzt vor Quota-Erschoepfung (300 Writes/min).
     """
-    total = len(matrix)
-    print(f"Schreibe 2D-Matrix ({total} Zeilen) in {chunk_size}er-Bloecken ab Zeile {start_row}...")
+    if service is None:
+        service = get_sheets_service()
 
-    for i in range(0, total, chunk_size):
-        chunk = matrix[i:i + chunk_size]
-        chunk_start = start_row + i
-        chunk_end = chunk_start + len(chunk) - 1
-        range_str = f"ALL_LEADS!AN{chunk_start}:BD{chunk_end}"
-
-        body = {"values": chunk}
-        t0 = time.time()
-        res = service.spreadsheets().values().update(
-            spreadsheetId=spreadsheet_id,
-            range=range_str,
-            valueInputOption="USER_ENTERED",
-            body=body
-        ).execute()
-        dt = time.time() - t0
-        print(f"  [BLOCK {i//chunk_size + 1:02d}] {range_str} ({len(chunk)} Zeilen) geschrieben in {dt:.2f}s (updatedRows: {res.get('updatedRows')})")
+    target_range = f"ALL_LEADS!AN{start_row}:BD{end_row}"
+    body = {
+        "valueInputOption": "USER_ENTERED",
+        "data": [
+            {
+                "range": target_range,
+                "values": matrix
+            }
+        ]
+    }
+    t0 = time.time()
+    service.spreadsheets().values().batchUpdate(
+        spreadsheetId=SPREADSHEET_ID,
+        body=body
+    ).execute()
+    dt = time.time() - t0
+    print(f"2D-Matrix Bulk-Write fuer Zeilen {start_row} bis {end_row} ({len(matrix)} Zeilen) erfolgreich in {dt:.2f}s!")
 
 # --------------------------------------------------------------------------
-# 4. Dry-Run & Manifest Generator
+# 4. Batch-Generierung & Manifest-Erstellung
 # --------------------------------------------------------------------------
 
 def generate_partition_manifests():
-    """Generiert partitionierte Manifeste fuer Joel (500) und Jordie (500) als Artefakt."""
-    print("Partitioniere 1.000 Leads (500 Joel / 500 Jordie)...")
+    print("Erzeuge 1.000er Lead-Partitionierung (500 Joel / 500 Jordie)...")
     t0 = time.time()
-    joel_leads, jordi_leads = partition_leads(500, joel_start_row=152, jordi_start_row=3314)
+    joel_leads, jordi_leads = partition_leads(500, joel_start_row=152, jordi_start_row=3534, use_live_sheet=True)
     dt = time.time() - t0
 
-    ts = datetime.datetime.now(datetime.timezone.utc).strftime("%Y%m%d")
-    batch_joel = f"BATCH-500-JOEL-{ts}"
-    batch_jordi = f"BATCH-500-JORDI-{ts}"
+    today = datetime.datetime.now().strftime("%Y%m%d")
+    batch_joel = f"BATCH-500-JOEL-{today}"
+    batch_jordi = f"BATCH-500-JORDI-{today}"
 
     joel_manifest = {
         "batch_id": batch_joel,

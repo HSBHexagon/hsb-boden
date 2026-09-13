@@ -83,7 +83,7 @@ def print_status():
     def stats(subset):
         drafted = sum(1 for l in subset if l["send_status"] == "drafted" or l["batch_status"] == "DRAFTED")
         sent = sum(1 for l in subset if l["send_status"] == "sent" or l["batch_status"] == "SENT")
-        replied = sum(1 for l in subset if l["reply_status"] in ["reply", "replied"])
+        replied = sum(1 for l in subset if l["reply_status"] in ["reply", "replied", "auto_reply_ooo", "positive_reply"])
         return len(subset), drafted, sent, replied
 
     t_all, d_all, s_all, r_all = stats(leads)

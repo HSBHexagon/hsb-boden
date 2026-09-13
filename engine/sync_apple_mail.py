@@ -241,6 +241,10 @@ def run_sync():
     for target_email, sndr, subj, cls in auto_replies:
         if target_email in email_to_lead:
             lead = email_to_lead[target_email]
+            lead_bounce_updates.append({
+                "range": f"ALL_LEADS!AR{lead['row']}",
+                "values": [["auto_reply_ooo"]]
+            })
             inbound_event_rows.append([
                 f"INBOUND-AUTOREPLY-{lead['lead_id']}",
                 now_iso,

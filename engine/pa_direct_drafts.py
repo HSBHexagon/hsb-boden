@@ -244,7 +244,7 @@ def payload_fuer_lead(owner: str, lead: dict, batch_id: str, subject: str,
         "to": str(lead.get("Email") or "").strip(),
         "subject": subject,
         "bodyHtml": body_html,
-        "attachmentName": flyer.filename,
+        "attachmentName": flyer.attachment_name or flyer.filename,
     }
     basis["attachmentContentBytes"] = base64.b64encode(
         flyer.path.read_bytes()

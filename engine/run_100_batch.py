@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 """
-HSB Sales OS - Batch-Runner für 100 Entwürfe (Joel Cherino Diaz & Jordi Post).
+HSB Sales OS - Batch-Runner für Entwürfe (Joel Cherino Diaz & Jordie Post).
 Sicherheit: Reines DraftEmail, REAL_EXTERNAL_SEND_COUNT = 0.
 Enthält:
 - Offizielles HSB Firmenlogo in der Signatur
 - Anhang: HSB-HEXAGON-Industrieboeden-Flyer.pdf (bytegenau verifiziert)
 - Vollständige Rechtskonformität (§ 35a GmbHG + § 7 UWG)
-- Detailliertes Ergebnis-Logging für Google Sheet Writeback
+- Live Google Sheet Writeback über 2D-Matrix Bulk-Engine (17 Spalten AN:BD)
 """
 import argparse
 import base64
@@ -22,8 +22,8 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO_ROOT / "engine"))
 
-from hsb_core import FLYERS
-from sheet_loader import load_from_xlsx
+from hsb_core import FLYERS, normalize_owner, EMAIL_RE
+from high_volume_matrix_engine import load_leads_authoritative, write_2d_matrix_bulk
 
 from hsb_config import (
     FC_CLIENT_ID,
@@ -69,9 +69,9 @@ def signatur_html(owner_display: str, mailbox: str, mobile: str) -> str:
         f'style="display:block;border:0;width:148px;height:auto;max-height:48px;" />'
         f'</a>'
         f'</p>'
-        f'<p style="margin:10px 0 0 0;font-family:Arial,Helvetica,sans-serif;font-size:8pt;color:#777777;line-height:1.4;">'
-        f'Sitz der Gesellschaft: {FIRMA["sitz"]} &middot; '
-        f'{FIRMA["registergericht"]} {FIRMA["hrb"]} &middot; '
+        f'<p style="margin:14px 0 0 0;font-family:Arial,Helvetica,sans-serif;font-size:8pt;color:#777777;line-height:1.35;">'
+        f'{FIRMA["name"]} &middot; Sitz: {FIRMA["sitz"]}<br>'
+        f'Registergericht: {FIRMA["registergericht"]}, {FIRMA["hrb"]}<br>'
         f'Geschäftsführer: {FIRMA["geschaeftsfuehrer"]}'
         f'</p>'
     )
@@ -161,12 +161,14 @@ def create_single_draft(owner: str, lead: dict, flyer_b64: str, flyer_name: str,
             run_id = r.headers.get("x-ms-workflow-run-id")
             return {"status": "ACCEPTED_ASYNC", "runId": run_id, "code": r.getcode()}
 
-def run_batch(owner: str, count: int = 100, start_row: int = None, force: bool = False) -> list:
+def run_batch(owner: str, count: int = 100, start_row: int = None, force: bool = False, dry_run: bool = False) -> list:
     ts = datetime.datetime.now(datetime.timezone.utc).strftime("%Y%m%dT%H%M%SZ")
-    batch_id = f"BATCH-100-{owner}-{ts[:8]}"
+    batch_id = f"BATCH-{count}-{owner}-{ts[:8]}"
 
     print(f"\n================================================================================")
     print(f" STARTE BATCH: {count} ENTWUERFE FUER {owner} (Batch-ID: {batch_id})")
+    if dry_run:
+        print(f" [DRY-RUN MODUS AKTIV: Es werden keine externen Flow-Aufrufe getätigt]")
     print(f"================================================================================")
     flyer = FLYERS[owner]
     flyer_bytes = flyer.path.read_bytes()
@@ -176,35 +178,56 @@ def run_batch(owner: str, count: int = 100, start_row: int = None, force: bool =
     print(f"Absender         : {flyer.display_name} <{flyer.mailbox}>")
 
     access_token = None
-    if owner == "JORDI":
+    if owner == "JORDI" and not dry_run:
         print("Hole frisches MSAL-Token fuer Jordi...")
         access_token = get_jordi_token()
         print("Token aktiv.")
 
-    leads = load_from_xlsx()
-    owner_str = "Jordi Post" if owner == "JORDI" else "Joel Cherino Diaz"
+    leads = load_leads_authoritative()
 
     # Bestimme Startzeile falls nicht vorgegeben
     if start_row is None:
-        start_row = 3214 if owner == "JORDI" else 52
+        start_row = 3534 if owner == "JORDI" else 152
 
-    # Filter Leads nach Owner, E-Mail und Zeilenbereich
-    filtered_leads = [
-        l for l in leads 
-        if l.get("Owner") == owner_str 
-        and l.get("Email") 
-        and l["_row"] >= start_row
-    ][:count]
+    # Filter Leads nach Owner, E-Mail und Ausschlussregeln
+    filtered_leads = []
+    for l in leads:
+        if normalize_owner(l.get("Owner")) != owner:
+            continue
+        if l["_row"] < start_row:
+            continue
+        email = str(l.get("Email") or "").strip()
+        if not EMAIL_RE.match(email):
+            continue
+        send_status = str(l.get("Send_Status") or "").lower()
+        batch_status = str(l.get("Batch_Status") or "").upper()
+        if send_status in ["sent", "gesendet"] or batch_status == "SENT":
+            continue
+        if str(l.get("Reply_Status") or "").lower() in ["bounced", "hard_bounce"]:
+            continue
+        if str(l.get("Opt_Out") or "").lower() in ["yes", "ja", "opt_out"]:
+            continue
+        if str(l.get("Suppressed") or "").lower() in ["yes", "ja", "true"]:
+            continue
+        filtered_leads.append(l)
+        if len(filtered_leads) == count:
+            break
+
+    if len(filtered_leads) < count:
+        print(f"WARNUNG: Nur {len(filtered_leads)} geeignete Leads ab Zeile {start_row} gefunden (angefordert: {count}).")
+
+    if not filtered_leads:
+        print("Keine verarbeitbaren Leads gefunden. Abbruch.")
+        return []
 
     print(f"Ausgewählte Leads: {len(filtered_leads)} (Zeilen {filtered_leads[0]['_row']} bis {filtered_leads[-1]['_row']})\n")
 
     batches_dir = REPO_ROOT / "batches"
     batches_dir.mkdir(exist_ok=True)
 
-    # Vorhandene Resultate laden, sofern nicht --force gesetzt ist
     known_results = {}
-    if not force:
-        for f in batches_dir.glob(f"result_100_{owner}_*.json"):
+    if not force and not dry_run:
+        for f in batches_dir.glob(f"result_*_{owner}_*.json"):
             try:
                 items = json.loads(f.read_text(encoding="utf-8"))
                 for item in items:
@@ -220,19 +243,18 @@ def run_batch(owner: str, count: int = 100, start_row: int = None, force: bool =
         lead_id = lead.get("Lead_ID")
         email = lead.get("Email")
         row = lead.get("_row")
-        now_iso = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+        now_iso = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
 
         if row in known_results:
             cached = known_results[row]
             print(f"[{i:03d}/{count}] Z.{row} {lead_id} ({email}) : BEREITS ERSTELLT (Cache genutzt)")
             results.append(cached)
-            # Matrix Row: AN bis BD (17 Spalten)
             matrix_rows.append([
                 cached.get("batch_id", batch_id),
                 "drafted",
                 "", "", "",
-                str(lead.get("Legal_Basis") or "EXISTING_CUSTOMER_7_3"),
-                str(lead.get("Suppressed") or "no"),
+                "no",
+                "no",
                 "DRAFTED",
                 cached.get("drafted_at", now_iso),
                 cached.get("draft_id", ""),
@@ -242,6 +264,27 @@ def run_batch(owner: str, count: int = 100, start_row: int = None, force: bool =
                 cached.get("conversation_id", ""),
                 "",
                 ""
+            ])
+            continue
+
+        if dry_run:
+            print(f"[{i:03d}/{count}] Z.{row} {lead_id} ({email}) : [DRY-RUN] Entwurf verifiziert (Mock ID)")
+            draft_id = f"DRYRUN-DRAFT-{lead_id}"
+            item = {
+                "row": row,
+                "lead_id": lead_id,
+                "email": email,
+                "status": "OK",
+                "batch_id": batch_id,
+                "draft_id": draft_id,
+                "drafted_at": now_iso,
+                "attachment_name": flyer.attachment_name,
+                "attachment_size": len(flyer_bytes)
+            }
+            results.append(item)
+            matrix_rows.append([
+                batch_id, "drafted", "", "", "", "no", "no", "DRAFTED",
+                now_iso, draft_id, now_iso, "", "", "", "", "", ""
             ])
             continue
 
@@ -273,8 +316,8 @@ def run_batch(owner: str, count: int = 100, start_row: int = None, force: bool =
                     batch_id,
                     "drafted",
                     "", "", "",
-                    str(lead.get("Legal_Basis") or "EXISTING_CUSTOMER_7_3"),
-                    str(lead.get("Suppressed") or "no"),
+                    "no",
+                    "no",
                     "DRAFTED",
                     now_iso,
                     draft_id,
@@ -308,8 +351,8 @@ def run_batch(owner: str, count: int = 100, start_row: int = None, force: bool =
                     batch_id,
                     "drafted",
                     "", "", "",
-                    str(lead.get("Legal_Basis") or "EXISTING_CUSTOMER_7_3"),
-                    str(lead.get("Suppressed") or "no"),
+                    "no",
+                    "no",
                     "DRAFTED",
                     now_iso,
                     draft_marker,
@@ -338,8 +381,8 @@ def run_batch(owner: str, count: int = 100, start_row: int = None, force: bool =
                 batch_id,
                 "not_sent",
                 "", "", "",
-                str(lead.get("Legal_Basis") or "EXISTING_CUSTOMER_7_3"),
-                str(lead.get("Suppressed") or "no"),
+                "no",
+                "no",
                 "FAILED",
                 now_iso,
                 "",
@@ -350,11 +393,15 @@ def run_batch(owner: str, count: int = 100, start_row: int = None, force: bool =
                 "",
                 str(e)[:400]
             ])
-        time.sleep(0.35)
+        time.sleep(0.40)
 
-    out_file = batches_dir / f"result_100_{owner}_{ts}.json"
+    # 2D-Matrix Bulk-Write ins Google Sheet
+    if not dry_run and matrix_rows:
+        write_2d_matrix_bulk(filtered_leads[0]["_row"], filtered_leads[-1]["_row"], matrix_rows)
+
+    out_file = batches_dir / f"result_{count}_{owner}_{ts}.json"
     out_file.write_text(json.dumps(results, indent=2, ensure_ascii=False), encoding="utf-8")
-    
+
     matrix_payload = {
         "owner": owner,
         "start_row": filtered_leads[0]["_row"],
@@ -362,30 +409,28 @@ def run_batch(owner: str, count: int = 100, start_row: int = None, force: bool =
         "range": f"ALL_LEADS!AN{filtered_leads[0]['_row']}:BD{filtered_leads[-1]['_row']}",
         "matrix": matrix_rows
     }
-    matrix_file = batches_dir / f"matrix_100_{owner}.json"
+    matrix_file = batches_dir / f"matrix_{count}_{owner}.json"
     matrix_file.write_text(json.dumps(matrix_payload, indent=2, ensure_ascii=False), encoding="utf-8")
-
-    matrix_final_file = batches_dir / f"matrix_100_{owner}_final.json"
-    matrix_final_file.write_text(json.dumps(matrix_payload, indent=2, ensure_ascii=False), encoding="utf-8")
 
     ok_count = len([r for r in results if r["status"] == "OK"])
     fail_count = len([r for r in results if r["status"] == "FAIL"])
     print(f"\n================================================================================")
     print(f" BATCH ABGESCHLOSSEN: {ok_count}/{count} erfolgreich, {fail_count} Fehler.")
-    print(f" Matrix-Export     : {matrix_file} & {matrix_final_file}")
+    print(f" Matrix-Export     : {matrix_file}")
     print(f" Ergebnisprotokoll : {out_file}")
     print(f"================================================================================\n")
     return results
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="100 Drafts Batch Runner")
+    parser = argparse.ArgumentParser(description="HSB Sales OS Draft Batch Runner")
     parser.add_argument("owner", choices=["JOEL", "JORDI", "BOTH"], default="BOTH", nargs="?")
-    parser.add_argument("--count", type=int, default=100)
+    parser.add_argument("--count", type=int, default=10)
     parser.add_argument("--start-row", type=int, default=None)
     parser.add_argument("--force", action="store_true", help="Ueberschreibt bestehende Entwuerfe ohne Cache")
+    parser.add_argument("--dry-run", action="store_true", help="Validiert Payload ohne echte Entwurfserstellung")
     args = parser.parse_args()
 
     if args.owner in ["JOEL", "BOTH"]:
-        run_batch("JOEL", count=args.count, start_row=args.start_row, force=args.force)
+        run_batch("JOEL", count=args.count, start_row=args.start_row, force=args.force, dry_run=args.dry_run)
     if args.owner in ["JORDI", "BOTH"]:
-        run_batch("JORDI", count=args.count, start_row=args.start_row, force=args.force)
+        run_batch("JORDI", count=args.count, start_row=args.start_row, force=args.force, dry_run=args.dry_run)

@@ -1,6 +1,7 @@
 const CONSENT_STORAGE_KEY = "hsb-consent-v1";
 
 export const GA4_MEASUREMENT_ID = "G-VC4BJBEFTV";
+export const PRODUCTION_ANALYTICS_HOST = "www.hsb-boden.de";
 
 type Gtag = (...args: unknown[]) => void;
 
@@ -8,6 +9,10 @@ type AnalyticsWindow = Window & {
   dataLayer?: unknown[];
   gtag?: Gtag;
 };
+
+export function isProductionAnalyticsHost(hostname: string): boolean {
+  return hostname.toLowerCase() === PRODUCTION_ANALYTICS_HOST;
+}
 
 function hasStoredAnalyticsConsent(storage: Storage): boolean {
   try {
@@ -22,6 +27,7 @@ export function createAnalyticsLoader(
   browserWindow: Window,
   browserDocument: Document,
   measurementId = GA4_MEASUREMENT_ID,
+  hostname = browserWindow.location.hostname,
 ) {
   const analyticsWindow = browserWindow as AnalyticsWindow;
   let initialized = false;
@@ -38,7 +44,7 @@ export function createAnalyticsLoader(
   }
 
   function loadAfterConsent() {
-    if (loaded) return;
+    if (!isProductionAnalyticsHost(hostname) || loaded) return;
     loaded = true;
 
     const gtag = getGtag();

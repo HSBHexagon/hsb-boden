@@ -28,6 +28,38 @@ describe("trackEvent", () => {
     );
   });
 
+  it("emittiert bei erfolgreichem Lead niemals die fremden Key-Event-Namen", () => {
+    const gtag = vi.fn();
+    win.gtag = gtag;
+
+    trackEvent(TrackingEvent.LeadFormSubmit, { form_path: "/kontakt/" });
+
+    const eventNames = gtag.mock.calls.map((call) => call[1]);
+    expect(eventNames).toContain("generate_lead");
+    expect(eventNames).not.toContain("purchase");
+    expect(eventNames).not.toContain("qualify_lead");
+    expect(eventNames).not.toContain("close_convert_lead");
+  });
+
+  it("entfernt personenbezogene Felder aus dem GA4-Lead-Payload", () => {
+    const gtag = vi.fn();
+    win.gtag = gtag;
+
+    trackEvent(TrackingEvent.LeadFormSubmit, {
+      form_path: "/kontakt/",
+      name: "Test Person",
+      email: "test@example.com",
+      phone: "+491234567",
+      message: "private message",
+    });
+
+    expect(gtag).toHaveBeenCalledWith("event", "generate_lead", {
+      form_path: "/kontakt/",
+      method: "contact_form",
+      send_to: "G-VC4BJBEFTV",
+    });
+  });
+
   it("beschränkt reguläre Events auf die GA4-Destination", () => {
     const gtag = vi.fn();
     win.gtag = gtag;

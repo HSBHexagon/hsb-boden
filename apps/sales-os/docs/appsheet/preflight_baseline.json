@@ -1,0 +1,27 @@
+{
+  "timestamp": "2026-08-28T01:27:45+02:00",
+  "base_branch": "master",
+  "base_head": "a3e3f86",
+  "feature_branch": "feat/hsb-sales-os-mobile-appsheet-20260828",
+  "spreadsheet_id": "1W-NjwEq0UhDo2TaeS-2qp_qit4YFMz6k-IqKHlPpHmg",
+  "script_id": "1Xl6xkMTyn3Hu6UvBoX7gVrdppuyRal04NH6Ei16hnz_Pfuq-JWmh9U4c",
+  "verified_identities": {
+    "joel": "j-cherino@hsb-boden.de",
+    "jordi": "j-post@hsb-boden.de",
+    "admin": "cherinodiaz@outlook.com"
+  },
+  "appsheet_capabilities": {
+    "appsheet_available": true,
+    "require_sign_in": true,
+    "data_access_mode": "AS_APP_CREATOR",
+    "scheduled_automation_available": true,
+    "push_notifications_available": true
+  },
+  "canonical_ssot_tables": [
+    "ALL_LEADS",
+    "BATCHES",
+    "ACTIVITIES",
+    "INBOUND_EVENTS",
+    "SYSTEM_EVIDENCE"
+  ]
+}

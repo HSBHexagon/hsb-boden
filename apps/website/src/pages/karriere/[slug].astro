@@ -1,0 +1,76 @@
+---
+import CTASection from "../../components/sections/CTASection.astro";
+import PageHero from "../../components/sections/PageHero.astro";
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import { getJobs } from "../../data/jobs";
+import { buildBreadcrumbJsonLd, buildJobPostingJsonLd } from "../../lib/schema";
+
+export const prerender = true;
+
+export function getStaticPaths() {
+  return getJobs().map((job) => ({
+    params: { slug: job.slug },
+    props: { job },
+  }));
+}
+
+const { job } = Astro.props;
+const path = `/karriere/${job.slug}/`;
+---
+
+<BaseLayout
+  title={job.seoTitle}
+  description={job.shortDescription}
+  path={path}
+  jsonLd={[
+    buildJobPostingJsonLd({
+      slug: job.slug,
+      title: job.title,
+      description: job.fullDescription,
+      employmentType: job.employmentType,
+      occupationalCategory: job.occupationalCategory,
+      datePosted: job.datePosted,
+    }),
+    buildBreadcrumbJsonLd([
+      { name: "Start", path: "/" },
+      { name: "Karriere", path: "/karriere/" },
+      { name: job.title, path },
+    ]),
+  ]}
+>
+  <PageHero eyebrow="Karriere" title={job.title} text={job.shortDescription} />
+  <section class="section">
+    <div class="container grid gap-8 lg:grid-cols-[0.9fr_1.1fr]">
+      <div>
+        <p class="eyebrow">Über die Stelle</p>
+        <h2 class="h2 mt-3">Was Sie bei uns machen</h2>
+        <p class="lead mt-4">{job.fullDescription}</p>
+      </div>
+      <div class="grid gap-4">
+        <article class="surface p-6">
+          <h3 class="h3">Aufgaben</h3>
+          <ul class="mt-4 space-y-2 text-sm leading-6 text-hsb-steel">
+            {job.tasks.map((item) => <li>• {item}</li>)}
+          </ul>
+        </article>
+        <article class="surface p-6">
+          <h3 class="h3">Ihr Profil</h3>
+          <ul class="mt-4 space-y-2 text-sm leading-6 text-hsb-steel">
+            {job.profile.map((item) => <li>• {item}</li>)}
+          </ul>
+        </article>
+      </div>
+    </div>
+  </section>
+  <section class="section-tight bg-hsb-mist">
+    <div class="container">
+      <div class="surface p-6">
+        <h2 class="h3">Was wir bieten</h2>
+        <ul class="mt-4 grid gap-2 text-sm leading-6 text-hsb-steel sm:grid-cols-2">
+          {job.offer.map((item) => <li>• {item}</li>)}
+        </ul>
+      </div>
+    </div>
+  </section>
+  <CTASection title="Interesse an dieser Stelle?" text="Melden Sie sich mit ein paar Worten zu Ihrer Erfahrung – wir melden uns zeitnah zurück." label="Jetzt bewerben" />
+</BaseLayout>

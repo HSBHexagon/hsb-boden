@@ -1,0 +1,35 @@
+{
+  "timestamp": "2026-08-28T03:53:30+02:00",
+  "feature": "AppSheet Mobile Human Edit Activity Logging",
+  "trigger_event": {
+    "name": "Audit_Mobile_Lead_Edit",
+    "table": "Leads",
+    "event_type": "Data Change",
+    "change_types": ["Updates_Only"],
+    "condition_expression": "OR([_THISROW_BEFORE].[Notizen] <> [_THISROW_AFTER].[Notizen], [_THISROW_BEFORE].[Nächste Aktion] <> [_THISROW_AFTER].[Nächste Aktion], [_THISROW_BEFORE].[Follow-up-Datum] <> [_THISROW_AFTER].[Follow-up-Datum])"
+  },
+  "automation_action": {
+    "name": "Append_Mobile_Audit_Activity",
+    "action_type": "Add a new row to another table using values from this row",
+    "target_table": "Activities",
+    "column_mapping": {
+      "Activity_ID": "CONCATENATE(\"ACT-MOB-\", UNIQUEID())",
+      "Lead_ID": "[_THISROW].[Lead-ID]",
+      "Timestamp": "NOW()",
+      "Owner": "USEREMAIL()",
+      "Activity_Type": "\"NOTE_EDITED\"",
+      "Channel": "\"MANUAL\"",
+      "Result": "\"SAVED\"",
+      "Template_ID": "\"\"",
+      "Batch_ID": "[_THISROW].[Batch_ID]",
+      "Note": "CONCATENATE(\"Mobile Edit durch \", USEREMAIL(), \": Notizen='\", [_THISROW].[Notizen], \"', Nächste Aktion='\", [_THISROW].[Nächste Aktion], \"', Follow-up='\", TEXT([_THISROW].[Follow-up-Datum]), \"'\")",
+      "Next_Action": "[_THISROW].[Nächste Aktion]",
+      "Next_Action_Date": "[_THISROW].[Follow-up-Datum]"
+    }
+  },
+  "idempotency_contract": {
+    "trigger_scope": "AppSheet UI commits only (Zero execution on external Apps Script/backend Sheet mutations)",
+    "duplicate_prevention": "Unique UUID generated per save commit; atomic AppSheet batch write",
+    "zero_secrets_logged": true
+  }
+}

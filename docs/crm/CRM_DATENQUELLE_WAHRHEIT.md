@@ -25,9 +25,27 @@ ins Repo).
 Jede Zeile hat 29 Spalten, u. a. `Versandfreigabe`, `Opt-in-Status`,
 `Opt-out-Status`, `Verantwortlicher`, `Flyer-Anhang`.
 
-**Verifizierter Freigabestatus (2026-08-03):** In `HSB_CRM_Leads_ALL_MASTER_2026-07-08.csv`
-haben alle 6.423 Datenzeilen `Versandfreigabe=unknown`. Keine Zeile ist aktuell
-auf `yes` gesetzt.
+**Korrigiert 2026-08-11 (CSV-korrektes Parsing, `python3 csv.DictReader`,
+Trennzeichen `;`, Anführungszeichen-bewusst):** Der bisherige Eintrag oben war
+durch ein naives Spalten-Splitting (ohne Quote-Behandlung der mehrzeiligen
+Freitextfelder `Beziehung / Kontaktgrund` und `Notizen`) falsch ausgerichtet
+und zeigte daher `Versandfreigabe=unknown`. Nach korrektem CSV-Parsing gilt:
+
+- `Versandfreigabe = no` fuer **alle 6.424** Datenzeilen in
+  `HSB_CRM_Leads_ALL_MASTER_2026-07-08.csv` (0 × `yes`, 0 × `unknown`).
+- `Opt-out-Status = unknown` fuer alle 6.424 Zeilen (wie zuvor berichtet,
+  dieser Wert war korrekt).
+- 0 leere E-Mail-Felder, 0 Syntaxfehler, 0 exakte Duplikate innerhalb der
+  Datei.
+- `ALL_Joel` (3.212) ∪ `ALL_Jordi` (3.212) = `ALL_MASTER` (6.424) exakt,
+  0 Ueberschneidung — Split ist sauber.
+- `HSB_CRM_Leads_MASTER_2026-07-08.csv` (5.000) ist eine Teilmenge von
+  `ALL_MASTER`, aber **veraltet**: 712 der 2.500 Zeilen in
+  `HSB_CRM_Leads_Jordi_2500_2026-07-08.csv` sind im aktuellen `ALL_MASTER`
+  Joel statt Jordi zugeordnet (Owner-Neuzuordnung fand zwischen den beiden
+  Export-Wellen statt). Fuer den Versand ist ausschliesslich der
+  `ALL_MASTER`/`ALL_Joel`/`ALL_Jordi`-Bestand (6.424) gueltig, nicht die
+  5.000er-Welle.
 
 ## Was NICHT existiert
 
@@ -47,8 +65,21 @@ vorliegend — siehe Vermerk in `docs/launch/PHASE_7_COMPLIANCE_GATE.md`.
 
 ## Offene Klärung (an Owner)
 
-1. Welcher der beiden Datensätze (6.424 "ALL" oder 5.000 "MASTER") ist der
-   aktuell gültige, zu versendende Bestand?
-2. Sollen die "RESERVE"-Leads einbezogen werden?
+1. **Per Evidenz beantwortet (2026-08-11):** `ALL_MASTER`/`ALL_Joel`/`ALL_Jordi`
+   (6.424) ist der aktuell gültige Bestand — `MASTER_5000` ist eine ältere
+   Export-Welle mit inzwischen überholter Owner-Zuordnung (siehe Korrektur
+   oben). Für den Versand ausschließlich den 6.424er-Bestand verwenden.
+2. Sollen die "RESERVE"-Leads einbezogen werden? — weiterhin offen, ungeprüft.
 3. Soll `Versandfreigabe` für den gesamten Bestand pauschal auf `yes` gesetzt
-   werden, oder soll das zeilenweise/nach Tier (A/B/C) erfolgen?
+   werden, oder soll das zeilenweise/nach Tier (A/B/C) erfolgen? — weiterhin
+   offen, Owner-Entscheidung. Aktueller Wert bleibt `no` für alle Zeilen,
+   automatisch nicht verändert.
+
+## Wichtig: zwei getrennte CRM-Systeme
+
+Dieses Dokument beschreibt ausschließlich den **Outbound**-Kaltakquise-Bestand
+(lokale Dateien). Das **Inbound**-System (Website-Kontaktformular → `/api/lead`
+→ Pages Function → Google Apps Script → Google Sheet „HSB CRM Light", Tab
+„Leads") ist ein separates, reales, live-verifiziertes System — siehe
+`PROJECT_TRUTH.md` Abschnitt 5 und `docs/crm/CRM_LIGHT_MAX_READINESS.md`.
+Nicht verwechseln oder zusammenführen.

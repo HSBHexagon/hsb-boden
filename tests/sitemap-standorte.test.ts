@@ -23,6 +23,15 @@ describe("getAllPublicPages: Standortseiten", () => {
     expect(paths).toContain("/standorte/baden-wuerttemberg/");
   });
 
+  it("includes the new regional location pages (Niedersachsen, Hessen, Thüringen, Sachsen-Anhalt)", () => {
+    const pages = getAllPublicPages();
+    const paths = pages.map((p) => p.canonicalPath);
+    expect(paths).toContain("/standorte/niedersachsen/");
+    expect(paths).toContain("/standorte/hessen/");
+    expect(paths).toContain("/standorte/thueringen/");
+    expect(paths).toContain("/standorte/sachsen-anhalt/");
+  });
+
   it("every standorte entry has a non-empty seoTitle and description", () => {
     const pages = getAllPublicPages();
     const standortePages = pages.filter((p) =>

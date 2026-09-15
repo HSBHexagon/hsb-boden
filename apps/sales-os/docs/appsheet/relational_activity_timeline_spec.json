@@ -1,0 +1,47 @@
+{
+  "timestamp": "2026-08-28T03:53:00+02:00",
+  "table_name": "Activities",
+  "source_sheet": "ACTIVITIES",
+  "key_column": "Activity_ID",
+  "ref_relationship": {
+    "foreign_key_column": "Lead_ID",
+    "referenced_table": "Leads",
+    "referenced_key": "Lead-ID",
+    "is_part_of": true
+  },
+  "columns": [
+    { "name": "Activity_ID", "type": "Text", "key": true, "editable": false },
+    { "name": "Lead_ID", "type": "Ref", "ref_table": "Leads", "editable": false },
+    { "name": "Timestamp", "type": "DateTime", "editable": false },
+    { "name": "Owner", "type": "Text", "editable": false },
+    { "name": "Activity_Type", "type": "Enum", "editable": false },
+    { "name": "Channel", "type": "Enum", "editable": false },
+    { "name": "Result", "type": "Enum", "editable": false },
+    { "name": "Template_ID", "type": "Text", "editable": false },
+    { "name": "Batch_ID", "type": "Text", "editable": false },
+    { "name": "Note", "type": "LongText", "editable": false },
+    { "name": "Next_Action", "type": "Text", "editable": false },
+    { "name": "Next_Action_Date", "type": "Date", "editable": false }
+  ],
+  "virtual_column_on_leads": {
+    "name": "Related Activities",
+    "type": "List of Refs",
+    "formula": "REF_ROWS(\"Activities\", \"Lead_ID\")",
+    "performance_class": "NATIVE_REVERSE_REF (Zero full-table scan)"
+  },
+  "inline_timeline_view": {
+    "view_name": "Activities_Inline",
+    "view_type": "Table",
+    "position": "ref",
+    "sort_by": { "column": "Timestamp", "order": "Descending" },
+    "display_columns": [
+      "Timestamp",
+      "Activity_Type",
+      "Channel",
+      "Note",
+      "Next_Action",
+      "Next_Action_Date"
+    ],
+    "max_inline_items": 5
+  }
+}

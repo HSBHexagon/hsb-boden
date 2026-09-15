@@ -1,0 +1,60 @@
+{
+  "navigation_structure": {
+    "type": "bottom_bar",
+    "destinations": [
+      {
+        "name": "HOME",
+        "type": "Dashboard",
+        "icon": "home",
+        "widgets": [
+          {
+            "name": "Sendebereite Leads",
+            "type": "KPI_Card",
+            "expression": "COUNT(FILTER(\"Leads\", AND([Send_Status] = \"not_sent\", [Suppressed] = \"no\")))"
+          },
+          {
+            "name": "Vorbereitete Batches",
+            "type": "KPI_Card",
+            "expression": "COUNT(FILTER(\"Batches\", [Status] = \"PREPARED\"))"
+          },
+          {
+            "name": "Offene Wiedervorlagen",
+            "type": "KPI_Card",
+            "expression": "COUNT(FILTER(\"Leads\", AND(ISNOTBLANK([Follow-up-Datum]), [Follow-up-Datum] <= TODAY())))"
+          },
+          {
+            "name": "Eingegangene Antworten",
+            "type": "KPI_Card",
+            "expression": "COUNT(FILTER(\"Leads\", [Reply_Status] = \"replied\"))"
+          }
+        ]
+      },
+      {
+        "name": "MY LEADS",
+        "type": "Deck",
+        "icon": "contacts",
+        "target_table": "Leads"
+      },
+      {
+        "name": "REPLIES",
+        "type": "Card",
+        "icon": "mail",
+        "target_slice": "Replies_Slice"
+      },
+      {
+        "name": "BATCHES",
+        "type": "Table",
+        "icon": "layers",
+        "target_table": "Batches"
+      },
+      {
+        "name": "SEARCH",
+        "type": "Table",
+        "icon": "search",
+        "target_table": "Leads"
+      }
+    ]
+  },
+  "status": "CONFIGURED",
+  "updated_at": "2026-08-28T01:30:20+02:00"
+}

@@ -7,6 +7,8 @@ dist/
 *.log
 .wrangler/
 .worktrees/
+.astro/
+**/apps/website/.astro/
 
 # Local AI / agent artifacts
 .agents/
@@ -16,6 +18,7 @@ docs/brain/
 docs/ops/
 PROJECT_AUDIT.md
 src/OPTIMIZATION.md
+apps/website/src/OPTIMIZATION.md
 
 # Reale Lead-/Kontaktdaten - niemals in oeffentliches Repo (PII, DSGVO)
 data/lead-import/

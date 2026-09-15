@@ -1,0 +1,1147 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<base target="_top">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ------------------------------------------------------------------
+   HSB Sales OS
+
+   Signatur: das Sechseck. Die Firma heisst Hexagon, ihr Logo sind
+   Sechsecke, ihr Produkt sind sechseckige Bodenfliesen. Die
+   Bereitschaftsanzeige fuellt sich deshalb als Sechseck - sie traegt
+   eine echte Groesse (Anteil sendefaehiger Leads), sie schmueckt nicht.
+
+   Schrift: IBM Plex, entworfen fuer technische Dokumentation. Alle
+   Zahlen tabellarisch im Mono-Schnitt, damit sie wie Messwerte lesbar
+   sind und beim Aktualisieren nicht springen.
+
+   Farbe: HSB-Rot ist ausschliesslich die Primaeraktion. Statusfarben
+   konkurrieren nicht mit der Marke.
+   ------------------------------------------------------------------ */
+
+:root {
+  --tinte:      #14171c;
+  --rot:        #c8102e;
+  --rot-tief:   #9d0c24;
+  --papier:     #ffffff;
+  --flaeche:    #f6f7f8;
+  --raster:     #e3e5e8;
+  --grau:       #6b7280;
+  --grau-hell:  #9aa1ab;
+  --bereit:     #1f7a5c;
+  --gesperrt:   #b45309;
+  --gesperrt-f: #fdf6ec;
+  --fehler-f:   #fdf2f2;
+
+  --s1: 4px;  --s2: 8px;  --s3: 12px;
+  --s4: 16px; --s5: 24px; --s6: 32px;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  background: var(--papier);
+  color: var(--tinte);
+  font-family: 'IBM Plex Sans', -apple-system, system-ui, sans-serif;
+  font-size: 13px;
+  line-height: 1.45;
+  -webkit-font-smoothing: antialiased;
+}
+
+body { padding: var(--s4) var(--s4) var(--s6); }
+
+.zahl {
+  font-family: 'IBM Plex Mono', ui-monospace, monospace;
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum';
+}
+
+/* --- Kopf: Absenderwahl ------------------------------------------- */
+
+.kopf {
+  display: flex; align-items: center; gap: var(--s3);
+  padding-bottom: var(--s4);
+  border-bottom: 1px solid var(--raster);
+  margin-bottom: var(--s4);
+}
+
+.wechsel {
+  display: flex; flex: 1; border: 1px solid var(--raster);
+  border-radius: 6px; overflow: hidden; background: var(--flaeche);
+}
+.wechsel button {
+  flex: 1; border: 0; background: transparent; cursor: pointer;
+  padding: 7px 4px; font: inherit; font-weight: 500;
+  color: var(--grau); letter-spacing: .01em;
+  transition: background .12s, color .12s;
+}
+.wechsel button[aria-pressed="true"] {
+  background: var(--tinte); color: #fff; font-weight: 600;
+}
+.wechsel button:focus-visible { outline: 2px solid var(--rot); outline-offset: -2px; }
+
+/* --- Bereitschaft: das Sechseck ----------------------------------- */
+
+.bereitschaft {
+  display: flex; align-items: center; gap: var(--s4);
+  padding: var(--s4); border: 1px solid var(--raster);
+  border-radius: 8px; margin-bottom: var(--s5);
+}
+
+.hex { width: 62px; height: 70px; flex: none; }
+.hex .grund { fill: var(--flaeche); stroke: var(--raster); stroke-width: 2; }
+.hex .fuellung { fill: var(--bereit); transition: none; }
+.hex.leer .fuellung { fill: var(--gesperrt); }
+.hex .wert {
+  font-family: 'IBM Plex Mono', monospace; font-size: 15px;
+  font-weight: 600; fill: var(--tinte); text-anchor: middle;
+}
+
+.bereit-text { min-width: 0; }
+.bereit-text .gross {
+  font-size: 15px; font-weight: 600; line-height: 1.25;
+  letter-spacing: -.01em;
+}
+.bereit-text .klein {
+  font-size: 11.5px; color: var(--grau); margin-top: 3px;
+}
+
+.schnellstart {
+  margin: 0 0 var(--s4); padding: var(--s4);
+  border: 1px solid var(--raster); border-radius: 8px;
+  background: var(--flaeche);
+}
+.schnellstart .titel { font-weight: 700; font-size: 14px; }
+.schnellstart .erklaerung {
+  margin-top: var(--s1); color: var(--grau); font-size: 11.5px;
+}
+
+/* --- Schritte ------------------------------------------------------ */
+
+.schritt { border-bottom: 1px solid var(--raster); }
+.schritt:last-of-type { border-bottom: 0; }
+
+.schritt > summary {
+  display: flex; align-items: baseline; gap: var(--s3);
+  padding: var(--s3) 0; cursor: pointer; list-style: none;
+  user-select: none;
+}
+.schritt > summary::-webkit-details-marker { display: none; }
+.schritt > summary:focus-visible { outline: 2px solid var(--rot); outline-offset: 2px; }
+
+.schritt .nr {
+  font-family: 'IBM Plex Mono', monospace; font-size: 11px;
+  font-weight: 500; color: var(--grau-hell); flex: none;
+  min-width: 16px;
+}
+.schritt .titel { font-weight: 600; font-size: 13px; flex: 1; }
+.schritt .marke {
+  font-size: 11px; color: var(--grau); flex: none;
+}
+.schritt .marke.warn { color: var(--gesperrt); font-weight: 600; }
+.schritt .marke.gut  { color: var(--bereit); font-weight: 600; }
+.schritt[open] > summary .titel { color: var(--tinte); }
+.schritt-inhalt { padding: 0 0 var(--s4) 28px; }
+
+/* --- Formular ------------------------------------------------------ */
+
+label {
+  display: block; font-size: 11px; font-weight: 500;
+  color: var(--grau); margin: var(--s3) 0 var(--s1);
+  letter-spacing: .02em;
+}
+select, input[type=text], input[type=number], input[type=search] {
+  width: 100%; padding: 7px 9px; font: inherit; font-size: 13px;
+  border: 1px solid var(--raster); border-radius: 5px;
+  background: var(--papier); color: var(--tinte);
+}
+input[type=number] {
+  font-family: 'IBM Plex Mono', monospace; font-variant-numeric: tabular-nums;
+}
+select:focus, input:focus {
+  outline: 0; border-color: var(--tinte);
+  box-shadow: 0 0 0 3px rgba(20,23,28,.07);
+}
+.paar { display: flex; gap: var(--s2); }
+.paar > * { flex: 1; min-width: 0; }
+
+button.tat {
+  width: 100%; margin-top: var(--s3); padding: 9px 12px;
+  font: inherit; font-weight: 600; font-size: 13px;
+  border: 1px solid transparent; border-radius: 6px; cursor: pointer;
+  transition: background .12s, border-color .12s;
+}
+button.tat:focus-visible { outline: 2px solid var(--tinte); outline-offset: 2px; }
+button.tat[disabled] { opacity: .45; cursor: not-allowed; }
+
+.primaer { background: var(--rot); color: #fff; }
+.primaer:hover:not([disabled]) { background: var(--rot-tief); }
+.zweit {
+  background: var(--papier); color: var(--tinte); border-color: var(--raster);
+}
+.zweit:hover:not([disabled]) { background: var(--flaeche); }
+
+/* --- Meldungen ----------------------------------------------------- */
+
+.meldung {
+  margin-top: var(--s3); padding: var(--s3);
+  border-radius: 6px; font-size: 12px; line-height: 1.5;
+  border-left: 3px solid;
+}
+.m-gut    { background: #f1f8f4; border-color: var(--bereit); }
+.m-warn   { background: var(--gesperrt-f); border-color: var(--gesperrt); }
+.m-fehler { background: var(--fehler-f); border-color: var(--rot); }
+.m-info   { background: #eef4fb; border-color: #4a7ab5; }
+.meldung b { display: block; margin-bottom: 2px; }
+.meldung ul { margin: var(--s2) 0 0; padding-left: 16px; }
+.meldung li { margin-bottom: 2px; }
+.meldung a { color: var(--tinte); }
+
+.arbeit {
+  display: flex; align-items: center; gap: var(--s2);
+  padding: var(--s3) 0; font-size: 12px; color: var(--grau);
+}
+.arbeit::before {
+  content: ''; width: 11px; height: 11px; flex: none;
+  border: 2px solid var(--raster); border-top-color: var(--tinte);
+  border-radius: 50%; animation: dreh .7s linear infinite;
+}
+@keyframes dreh { to { transform: rotate(360deg); } }
+
+/* --- Listen -------------------------------------------------------- */
+
+.zeile {
+  padding: var(--s3) 0; border-bottom: 1px solid var(--raster);
+}
+.zeile:last-child { border-bottom: 0; }
+.zeile .firma { font-weight: 500; }
+.zeile .meta {
+  font-size: 11px; color: var(--grau); margin-top: 1px;
+  word-break: break-word;
+}
+.zeile .knoepfe { display: flex; gap: var(--s1); margin-top: var(--s2); }
+.zeile .knoepfe button {
+  flex: 1; padding: 5px 4px; font: inherit; font-size: 11px;
+  font-weight: 500; border: 1px solid var(--raster);
+  border-radius: 4px; background: var(--papier); cursor: pointer;
+  color: var(--tinte);
+}
+.zeile .knoepfe button:hover { background: var(--flaeche); }
+
+.tabelle { width: 100%; border-collapse: collapse; }
+.tabelle td { padding: 3px 0; font-size: 12px; }
+.tabelle td.z {
+  text-align: right; font-family: 'IBM Plex Mono', monospace;
+  font-variant-numeric: tabular-nums; font-weight: 500;
+}
+.tabelle tr.trenn td { border-top: 1px solid var(--raster); padding-top: 7px; }
+
+.leer-hinweis {
+  padding: var(--s4) 0; font-size: 12px; color: var(--grau);
+}
+
+.fuss {
+  margin-top: var(--s5); padding-top: var(--s3);
+  border-top: 1px solid var(--raster);
+  font-size: 11px; color: var(--grau-hell);
+  display: flex; justify-content: space-between; gap: var(--s2);
+}
+.fuss button {
+  border: 0; background: none; color: var(--grau); cursor: pointer;
+  font: inherit; font-size: 11px; padding: 0; text-decoration: underline;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before { animation: none !important; transition: none !important; }
+}
+</style>
+</head>
+<body>
+
+<div class="kopf">
+  <div class="wechsel" role="group" aria-label="Absender">
+    <button id="wJordi" aria-pressed="true"  onclick="setOwner('JORDI')">Jordie</button>
+    <button id="wJoel"  aria-pressed="false" onclick="setOwner('JOEL')">Joel</button>
+  </div>
+</div>
+
+<div class="bereitschaft">
+  <svg class="hex" id="hex" viewBox="0 0 62 70" aria-hidden="true">
+    <defs><clipPath id="hexClip">
+      <path d="M31 1 L60 18 L60 52 L31 69 L2 52 L2 18 Z"/>
+    </clipPath></defs>
+    <path class="grund" d="M31 1 L60 18 L60 52 L31 69 L2 52 L2 18 Z"/>
+    <g clip-path="url(#hexClip)">
+      <rect class="fuellung" id="hexFuell" x="0" y="70" width="62" height="70"/>
+    </g>
+    <text class="wert" id="hexWert" x="31" y="40">–</text>
+  </svg>
+  <div class="bereit-text">
+    <div class="gross" id="bereitGross">Wird geladen…</div>
+    <div class="klein" id="bereitKlein"></div>
+  </div>
+</div>
+
+<div id="setupWarnung"></div>
+
+<section class="schnellstart" id="jordi100Box" aria-labelledby="jordi100Titel">
+  <div class="titel" id="jordi100Titel">Jordie · 100 Outlook-Entwürfe</div>
+  <div class="erklaerung">
+    Ein Klick gibt exakt 100 sichere Jordie-Kontakte frei, reserviert den Batch
+    und erzeugt die Entwürfe direkt im Outlook-Postfach. Es wird nichts
+    automatisch versendet.
+  </div>
+  <button class="tat primaer" id="jordi100Button" onclick="jordi100Start()">
+    100 freigeben &amp; Entwürfe erzeugen
+  </button>
+  <div id="jordi100Ergebnis"></div>
+</section>
+
+<section class="schnellstart" id="reconcileBox" style="background:#e8f0fe;border:1px solid #c2e7ff;border-radius:6px;padding:12px;margin:12px 0;">
+  <div class="titel" style="color:#174ea6;display:flex;align-items:center;justify-content:space-between;">
+    <span>📤 Gesendete Mails (Blau)</span>
+    <span class="zahl" id="sidebarSentCount" style="background:#c2e7ff;color:#001d35;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:bold;">Live-Abgleich</span>
+  </div>
+  <div class="erklaerung" style="color:#3c4043;font-size:11.5px;margin:6px 0 10px 0;">
+    Gleicht manuell versendete E-Mails und eingegangene Antworten mit Outlook ab. Alle versendeten Leads werden im Google Sheet blau hervorgehoben.
+  </div>
+  <div style="display:flex;gap:8px;">
+    <button class="tat" style="background:#1a73e8;color:#fff;flex:1;font-size:12px;padding:8px;" onclick="reconcileSentMails()">
+      📤 Gesendete abgleichen
+    </button>
+    <button class="tat zweit" style="flex:1;font-size:12px;padding:8px;" onclick="reconcileReplies()">
+      📥 Antworten abgleichen
+    </button>
+  </div>
+  <div id="reconcileErgebnis" style="margin-top:6px;font-size:11.5px;"></div>
+</section>
+
+<details class="schritt" id="s1" style="display:none">
+  <summary>
+    <span class="nr zahl">01</span>
+    <span class="titel">Rechtlich freigeben</span>
+    <span class="marke" id="m1"></span>
+  </summary>
+  <div class="schritt-inhalt">
+    <div class="klein" style="font-size:11.5px;color:var(--grau)">
+      Werbung per E-Mail braucht eine Rechtsgrundlage (§ 7 UWG). Diese
+      Entscheidung trifft eine Person, nicht die Software.
+    </div>
+    <div class="paar">
+      <div>
+        <label for="qCount">Anzahl</label>
+        <input type="number" id="qCount" value="25" min="1" max="6424">
+      </div>
+      <div>
+        <label for="qBasis">Grundlage</label>
+        <select id="qBasis">
+          <option value="EXISTING_CUSTOMER_7_3">Bestandskunde § 7(3)</option>
+          <option value="OPT_IN">Einwilligung liegt vor</option>
+          <option value="BLOCKED">Sperren</option>
+        </select>
+      </div>
+    </div>
+    <button class="tat zweit" onclick="qualifizieren()">Freigeben</button>
+    <div id="qErgebnis"></div>
+  </div>
+</details>
+
+<details class="schritt" id="s2">
+  <summary>
+    <span class="nr zahl">02</span>
+    <span class="titel">Batch vorbereiten</span>
+    <span class="marke" id="m2"></span>
+  </summary>
+  <div class="schritt-inhalt">
+    <div class="paar">
+      <div>
+        <label for="count">Anzahl</label>
+        <input type="number" id="count" value="25" min="1" max="2000">
+      </div>
+      <div>
+        <label for="tier">Tier</label>
+        <select id="tier">
+          <option value="">alle</option>
+          <option value="A">A</option>
+          <option value="B">B</option>
+        </select>
+      </div>
+    </div>
+    <label for="industry">Branche</label>
+    <select id="industry"><option value="">alle</option></select>
+    <label for="campaign">Kampagne</label>
+    <input type="text" id="campaign" placeholder="optional">
+    <button class="tat primaer" onclick="batchVorbereiten()">Batch vorbereiten</button>
+    <div id="batchErgebnis"></div>
+  </div>
+</details>
+
+<details class="schritt" id="s3">
+  <summary>
+    <span class="nr zahl">03</span>
+    <span class="titel">Entwürfe ausgeben</span>
+    <span class="marke" id="m3"></span>
+  </summary>
+  <div class="schritt-inhalt">
+    <div id="batchListe" class="leer-hinweis">Noch kein Batch vorbereitet.</div>
+  </div>
+</details>
+
+<details class="schritt" id="s4">
+  <summary>
+    <span class="nr zahl">04</span>
+    <span class="titel">Nachfassen</span>
+    <span class="marke" id="m4"></span>
+  </summary>
+  <div class="schritt-inhalt">
+    <button class="tat zweit" onclick="faelligeLaden()">Fällige anzeigen</button>
+    <div id="faellige"></div>
+  </div>
+</details>
+
+<details class="schritt" id="s5">
+  <summary>
+    <span class="nr zahl">05</span>
+    <span class="titel">Kontakt suchen</span>
+    <span class="marke"></span>
+  </summary>
+  <div class="schritt-inhalt">
+    <label for="suche">Firma, E-Mail oder Lead-ID</label>
+    <input type="search" id="suche" placeholder="mindestens 2 Zeichen"
+           oninput="sucheVerzoegert()">
+    <div id="sucheErgebnis"></div>
+  </div>
+</details>
+
+<div class="fuss">
+  <span id="standZeit">–</span>
+  <button onclick="allesLaden()">Aktualisieren</button>
+</div>
+
+<script>
+'use strict';
+
+var OWNER = 'JORDI';
+var aktuellerBatch = null;
+var sucheTimer = null;
+var letzteZahlen = null;
+var jordi100RequestId = null;
+
+function esc(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+    return { '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c];
+  });
+}
+function el(id) { return document.getElementById(id); }
+function zeig(id, html) { el(id).innerHTML = html; }
+function laden(id, text) {
+  zeig(id, '<div class="arbeit">' + esc(text || 'Einen Moment…') + '</div>');
+}
+function fehler(id, msg) {
+  var s = String(msg || '');
+  if (s.indexOf('Berechtigung') >= 0 || s.indexOf('Authorization') >= 0 || s.indexOf('rechten') >= 0) {
+    zeig(id, '<div class="meldung m-warn" style="background:#fffbeb;border:2px solid #f59e0b;padding:12px;border-radius:6px;margin:8px 0;text-align:left;">'
+      + '<b style="color:#b45309;font-size:13px;">⚠️ Einmalige Google-Freigabe erforderlich</b>'
+      + '<p style="margin:6px 0;font-size:11px;color:#78350f;line-height:1.4;">'
+      + 'Google verlangt vor dem ersten Lauf deine Zustimmung.<br>'
+      + '<b>So schaltest du es in 5 Sekunden frei:</b><br>'
+      + '1. Oben im Menü auf <b>HSB Sales OS</b> klicken<br>'
+      + '2. Auf <b>🔑 Berechtigungen erteilen / prüfen</b> klicken<br>'
+      + '3. Im Google-Dialog auf <i>Erweitert ➔ Zu HSB Sales OS wechseln ➔ Zulassen</i> klicken.<br><br>'
+      + 'Danach läuft dieser Vorgang hier sofort durch!'
+      + '</p></div>');
+    return;
+  }
+  zeig(id, '<div class="meldung m-fehler"><b>Das hat nicht geklappt</b>'
+       + esc(msg) + '</div>');
+}
+function nz(n) { return Number(n || 0).toLocaleString('de-DE'); }
+
+/* --- Absender ------------------------------------------------------ */
+
+function setOwner(o) {
+  if (OWNER === o) return;
+  OWNER = o;
+  el('wJordi').setAttribute('aria-pressed', String(o === 'JORDI'));
+  el('wJoel').setAttribute('aria-pressed', String(o === 'JOEL'));
+  aktuellerBatch = null;
+  zeig('batchErgebnis', '');
+  zeig('qErgebnis', '');
+  zeig('faellige', '');
+  zeig('sucheErgebnis', '');
+  el('suche').value = '';
+  ownerUiAktualisieren();
+  allesLaden();
+}
+
+function ownerUiAktualisieren() {
+  var istJordi = OWNER === 'JORDI';
+  el('jordi100Box').style.display = istJordi ? 'block' : 'none';
+  el('s1').style.display = istJordi ? 'none' : 'block';
+}
+
+/* --- Sechseck ------------------------------------------------------ */
+
+function hexSetzen(anteil, wertText) {
+  var h = el('hex'), f = el('hexFuell');
+  var hoehe = 70 * Math.max(0, Math.min(1, anteil));
+  f.setAttribute('y', String(70 - hoehe));
+  f.setAttribute('height', String(hoehe));
+  if (anteil <= 0) h.classList.add('leer'); else h.classList.remove('leer');
+  el('hexWert').textContent = wertText;
+}
+
+/* --- Laden --------------------------------------------------------- */
+
+function allesLaden() {
+  cockpitLaden();
+  setupPruefen();
+  batchListeLaden();
+  el('standZeit').textContent = 'Stand ' + new Date().toLocaleTimeString('de-DE',
+    { hour: '2-digit', minute: '2-digit' });
+}
+
+function setupPruefen() {
+  google.script.run.withSuccessHandler(function (r) {
+    if (!r.ok) { fehler('setupWarnung', r.error); return; }
+    var d = r.data, h = '';
+    if (!d.columns_ok) {
+      h += '<div class="meldung m-warn"><b>Einrichtung unvollständig</b>'
+        + 'Es fehlen ' + d.missing_columns.length + ' Spalten. Ohne sie kann '
+        + 'kein Batch vorbereitet werden.'
+        + '<button class="tat zweit" onclick="spaltenAnlegen()" '
+        + 'style="margin-top:8px">Spalten jetzt anlegen</button></div>';
+    }
+    if (!d.flyers_ok) {
+      h += '<div class="meldung m-fehler"><b>Flyer stimmt nicht</b>';
+      Object.keys(d.flyers).forEach(function (k) {
+        if (d.flyers[k] !== 'OK') h += esc(k + ': ' + d.flyers[k]);
+      });
+      h += '<br>Nicht senden, bis das geklärt ist.</div>';
+    }
+    zeig('setupWarnung', h);
+  }).withFailureHandler(function (e) {
+    // Ohne diesen Handler bliebe ein Plattformfehler (Timeout, Ausnahme
+    // ausserhalb try/catch) unsichtbar - inklusive eines moeglichen
+    // ASSET_GATE=FAIL, der genau hier gemeldet wuerde.
+    fehler('setupWarnung', e.message);
+  }).uiGetSetupState();
+}
+
+function spaltenAnlegen() {
+  laden('setupWarnung', 'Spalten werden angelegt…');
+  google.script.run.withSuccessHandler(function (r) {
+    if (!r.ok) { fehler('setupWarnung', r.error); return; }
+    zeig('setupWarnung', '<div class="meldung m-gut"><b>Spalten angelegt</b>'
+      + esc(r.data.message) + '</div>');
+    setTimeout(allesLaden, 900);
+  }).withFailureHandler(function (e) {
+    fehler('setupWarnung', e.message);
+  }).uiEnsureColumns();
+}
+
+function cockpitLaden() {
+  google.script.run.withSuccessHandler(function (r) {
+    if (!r.ok) {
+      el('bereitGross').textContent = 'Fehler';
+      el('bereitKlein').textContent = r.error;
+      return;
+    }
+    var d = r.data;
+    var c = (d.owners && d.owners[OWNER]) || {};
+    var gesamt = c.total || 0, bereit = c.eligible || 0;
+    letzteZahlen = c;
+
+    hexSetzen(gesamt ? bereit / gesamt : 0, nz(bereit));
+    el('bereitGross').textContent = bereit
+      ? nz(bereit) + ' von ' + nz(gesamt) + ' sendebereit'
+      : 'Noch keiner sendebereit';
+    el('bereitKlein').textContent = bereit
+      ? 'Gesendet ' + nz(c.sent) + ' · Antworten ' + nz(c.replied)
+        + ' · Bounces ' + nz(c.bounced)
+      : (OWNER === 'JORDI'
+        ? nz(gesamt) + ' Kontakte · Schnellstart gibt exakt 100 sicher frei'
+        : nz(gesamt) + ' Kontakte warten auf rechtliche Freigabe');
+
+    el('m1').textContent = bereit ? nz(bereit) + ' frei' : 'zuerst hier';
+    el('m1').className = 'marke ' + (bereit ? 'gut' : 'warn');
+    el('m2').textContent = bereit ? '' : 'gesperrt';
+    el('m2').className = 'marke ' + (bereit ? '' : 'warn');
+    el('m4').textContent = c.due ? nz(c.due) + ' fällig' : 'nichts fällig';
+    el('m4').className = 'marke ' + (c.due ? 'warn' : '');
+
+    // Den blockierenden Schritt oeffnen, nicht alle.
+    if (!el('s1').open && !el('s2').open && !el('s3').open && !el('s4').open) {
+      if (bereit || OWNER === 'JORDI') el('s2').open = true;
+      else el('s1').open = true;
+    }
+  }).withFailureHandler(function (e) {
+    el('bereitGross').textContent = 'Fehler';
+    el('bereitKlein').textContent = e.message;
+  }).uiGetDashboard();
+}
+
+function filterLaden() {
+  google.script.run.withSuccessHandler(function (r) {
+    if (!r || !r.ok) return;
+    var sel = el('industry');
+    (r.data.industries || []).forEach(function (i) {
+      var o = document.createElement('option');
+      o.value = i; o.textContent = i; sel.appendChild(o);
+    });
+  }).withFailureHandler(function () {
+    // Branchenfilter ist optional; ohne ihn bleibt "alle" bestehen.
+  }).uiGetFilters();
+}
+
+/* --- 01 Freigeben --------------------------------------------------- */
+
+function qualifizieren() {
+  var n = parseInt(el('qCount').value, 10) || 0;
+  var basis = el('qBasis').value;
+  if (n < 1) { fehler('qErgebnis', 'Bitte eine Anzahl ab 1 eintragen.'); return; }
+  var txt = basis === 'BLOCKED'
+    ? n + ' Kontakte dauerhaft sperren?'
+    : n + ' Kontakte für den Versand freigeben?\n\nDamit bestätigst du, dass '
+      + 'für diese Kontakte eine Rechtsgrundlage vorliegt.';
+  if (!window.confirm(txt)) return;
+
+  laden('qErgebnis', 'Wird gesetzt…');
+  google.script.run.withSuccessHandler(function (r) {
+    if (!r.ok) { fehler('qErgebnis', r.error); return; }
+    zeig('qErgebnis', '<div class="meldung m-gut"><b>'
+      + nz(r.data.updated) + ' freigegeben</b>'
+      + (r.data.updated === 0
+         ? 'Es waren keine passenden Kontakte mehr offen.'
+         : 'Grundlage: ' + esc(r.data.legalBasis)) + '</div>');
+    el('s2').open = true;
+    cockpitLaden();
+  }).withFailureHandler(function (e) {
+    fehler('qErgebnis', e.message);
+  }).uiQualify({ owner: OWNER, count: n, legalBasis: basis });
+}
+
+/* --- Jordi Schnellstart --------------------------------------------- */
+
+function jordi100Start() {
+  if (OWNER !== 'JORDI') {
+    fehler('jordi100Ergebnis', 'Bitte zuerst Jordi als Absender wählen.');
+    return;
+  }
+  var btn = el('jordi100Button');
+  btn.disabled = true;
+  btn.textContent = '100 werden vorbereitet…';
+  if (!jordi100RequestId) {
+    jordi100RequestId = 'ui-' + Date.now().toString(36) + '-'
+      + Math.random().toString(36).slice(2, 10);
+  }
+  laden('jordi100Ergebnis',
+    'Sicherheitsprüfung, Reservierung und Entwurfserzeugung laufen…');
+
+  google.script.run.withSuccessHandler(function (r) {
+    btn.disabled = false;
+    if (!r.ok) {
+      btn.textContent = 'Vorgang sicher erneut versuchen';
+      fehler('jordi100Ergebnis', r.error);
+      return;
+    }
+
+    var b = r.data.batch;
+    if (b.status === 'BLOCKED_EXACT_100') {
+      zeig('jordi100Ergebnis', '<div class="meldung m-warn"><b>Keine Änderung</b>'
+        + 'Es sind nur <span class="zahl">' + nz(b.approval.safe_available)
+        + '</span> sichere Kontakte verfügbar. Benötigt werden exakt '
+        + '<span class="zahl">100</span>. Es wurde nichts freigegeben und '
+        + 'kein Batch angelegt.</div>');
+      btn.textContent = '100 freigeben & Entwürfe erzeugen';
+      jordi100RequestId = null;
+      return;
+    }
+
+    var h = '<div class="meldung m-gut"><b><span class="zahl">100</span> '
+      + 'Jordi-Entwürfe vorbereitet</b>Batch <span class="zahl">'
+      + esc(b.batch_id) + '</span><br><span class="zahl">'
+      + nz(b.approval.newly_approved) + '</span> neu freigegeben · '
+      + '<span class="zahl">' + nz(b.approval.already_eligible)
+      + '</span> bereits freigegeben<br>Anhang: ' + esc(b.asset_file) + '</div>';
+
+    if (b.already_processed) {
+      h += '<div class="meldung m-warn"><b>Aufruf bereits verarbeitet</b>'
+        + 'Es wurde bewusst kein zweiter Batch angelegt. Die Entwürfe zu '
+        + 'diesem Batch erzeugst du unten in Schritt 03.</div>';
+    } else {
+      // Die Pakete werden bewusst in eigenen Aufrufen geholt: 100 Mails mit
+      // Anhang in einem Rutsch sprengen sonst die Laufzeitgrenze von Apps
+      // Script. Die Oberflaeche holt sie automatisch nacheinander nach.
+      h += '<div class="meldung m-info"><b>Entwürfe werden erzeugt</b>'
+        + 'In mehreren Paketen nacheinander. Das Fenster bitte offen lassen.</div>';
+    }
+    h += '<div id="exp_' + esc(b.batch_id) + '"></div>';
+    zeig('jordi100Ergebnis', h);
+    btn.textContent = 'Nächste 100 freigeben & Entwürfe erzeugen';
+    jordi100RequestId = null;
+    cockpitLaden();
+    batchListeLaden();
+    el('s3').open = true;
+    if (!b.already_processed) direktEntwuerfe(b.batch_id);
+  }).withFailureHandler(function (e) {
+    btn.disabled = false;
+    btn.textContent = 'Vorgang sicher erneut versuchen';
+    fehler('jordi100Ergebnis', e.message);
+  }).uiJordi100({ request_id: jordi100RequestId });
+}
+
+/* --- Postfach & Sende-Abgleich (Reconciliation) --------------------- */
+
+function reconcileSentMails() {
+  laden('reconcileErgebnis', 'Prüfe Outlook Sent Items…');
+  google.script.run.withSuccessHandler(function (r) {
+    if (!r.ok) { fehler('reconcileErgebnis', r.error || 'Fehler beim Abgleich'); return; }
+    var d = r.data || {};
+    zeig('reconcileErgebnis', '<div class="meldung m-ok" style="color:#137333;background:#e6f4ea;padding:8px;border-radius:4px;margin-top:6px;">'
+      + '<b>Abgleich erfolgreich</b><br>'
+      + (d.checked || 0) + ' Mails geprüft, <b>' + (d.matched || 0) + '</b> neu im CRM als SENT erfasst. Zeilen in ALL_LEADS blau markiert.</div>');
+    cockpitLaden();
+    batchListeLaden();
+  }).withFailureHandler(function (e) {
+    fehler('reconcileErgebnis', e.message);
+  }).uiReconcileSent();
+}
+
+function reconcileReplies() {
+  laden('reconcileErgebnis', 'Prüfe Outlook Inbox…');
+  google.script.run.withSuccessHandler(function (r) {
+    if (!r.ok) { fehler('reconcileErgebnis', r.error || 'Fehler beim Abgleich'); return; }
+    var d = r.data || {};
+    zeig('reconcileErgebnis', '<div class="meldung m-ok" style="color:#137333;background:#e6f4ea;padding:8px;border-radius:4px;margin-top:6px;">'
+      + '<b>Abgleich erfolgreich</b><br>'
+      + (d.checked || 0) + ' Mails geprüft, <b>' + (d.matched || 0) + '</b> Antworten / Opt-Outs zugeordnet.</div>');
+    cockpitLaden();
+    batchListeLaden();
+  }).withFailureHandler(function (e) {
+    fehler('reconcileErgebnis', e.message);
+  }).uiReconcileReplies();
+}
+
+/* --- 02 Batch ------------------------------------------------------- */
+
+function batchVorbereiten() {
+  var n = parseInt(el('count').value, 10) || 0;
+  if (n < 1) { fehler('batchErgebnis', 'Bitte eine Anzahl ab 1 eintragen.'); return; }
+  laden('batchErgebnis', 'Kontakte werden ausgewählt…');
+
+  google.script.run.withSuccessHandler(function (r) {
+    if (!r.ok) { fehler('batchErgebnis', r.error); return; }
+    var d = r.data, s = d.stats, h = '';
+
+    if (s.selected_count === 0) {
+      h = '<div class="meldung m-warn"><b>Keiner sendebereit</b>'
+        + 'Von ' + nz(s.total_pool) + ' Kontakten ist derzeit keiner '
+        + 'freigegeben.<ul>';
+      Object.keys(d.exclusion_reasons).forEach(function (k) {
+        h += '<li><span class="zahl">' + nz(d.exclusion_reasons[k])
+          + '</span>× ' + esc(k) + '</li>';
+      });
+      h += '</ul>Schritt 01 erledigt das.</div>';
+      el('s1').open = true;
+    } else {
+      aktuellerBatch = d.batch_id;
+      h = '<div class="meldung m-gut"><b>' + esc(d.batch_id) + '</b>'
+        + '<span class="zahl">' + nz(s.selected_count) + '</span> von '
+        + '<span class="zahl">' + nz(s.requested_count) + '</span> Entwürfen bereit'
+        + (s.shortfall ? ' — <span class="zahl">' + nz(s.shortfall)
+           + '</span> fehlen mangels freigegebener Kontakte' : '')
+        + '<br>Anhang: ' + esc(d.asset_file) + '</div>';
+      el('s3').open = true;
+    }
+    zeig('batchErgebnis', h);
+    cockpitLaden();
+    batchListeLaden();
+  }).withFailureHandler(function (e) {
+    fehler('batchErgebnis', e.message);
+  }).uiPrepareBatch({
+    owner: OWNER, count: n, tier: el('tier').value,
+    industry: el('industry').value, campaign: el('campaign').value
+  });
+}
+
+/* --- 03 Entwuerfe --------------------------------------------------- */
+
+function batchListeLaden() {
+  google.script.run.withSuccessHandler(function (r) {
+    if (!r.ok || !r.data.length) {
+      zeig('batchListe', '<div class="leer-hinweis">Noch kein Batch '
+        + 'vorbereitet.</div>');
+      el('m3').textContent = '';
+      return;
+    }
+    var offen = 0, h = '';
+    r.data.forEach(function (b) {
+      if (b.status === 'PREPARED' || b.status === 'APPROVED') offen++;
+      h += '<div class="zeile"><div class="firma zahl">' + esc(b.batch_id)
+        + '</div><div class="meta"><span class="zahl">' + nz(b.selected)
+        + '</span> Entwürfe · ' + esc(b.status)
+        + (b.campaign ? ' · ' + esc(b.campaign) : '')
+        + (b.sent_at ? ' · versendet ' + esc(b.sent_at) : '') + '</div>'
+        + '<div class="knoepfe">'
+        + '<button class="tat primaer" onclick="direktEntwuerfe(\'' + esc(b.batch_id) + '\')">'
+        + 'Outlook-Entwürfe direkt anlegen</button>'
+        + '<button onclick="freigeben(\'' + esc(b.batch_id) + '\')">'
+        + 'Freigeben</button>'
+        + '<button onclick="versandBestaetigen(\'' + esc(b.batch_id) + '\',0)">'
+        + 'Versand bestätigen</button></div>'
+        + '<div id="exp_' + esc(b.batch_id) + '"></div>'
+        + '<div id="direkt_' + esc(b.batch_id) + '"></div>'
+        + '<div id="conf_' + esc(b.batch_id) + '"></div></div>';
+    });
+    zeig('batchListe', h);
+    el('m3').textContent = offen ? offen + ' offen' : '';
+  }).withFailureHandler(function (e) {
+    fehler('batchListe', e.message);
+  }).uiGetBatches(OWNER);
+}
+
+/**
+ * Erzeugt die Outlook-Entwuerfe eines Batches.
+ *
+ * Der Server liefert pro Aufruf GENAU EIN Teilpaket (siehe
+ * exportBatchAsEmlZip in Actions.gs) - fuer 100 Kontakte waeren das sonst
+ * neun manuelle Klicks auf "Weiter". Diese Funktion ruft sich deshalb bei
+ * Erfolg selbst mit dem naechsten Index erneut auf, bis complete=true;
+ * dabei ist immer hoechstens ein Aufruf fuer denselben Batch unterwegs.
+ * `exportLaufend` ist eine reine Tab-lokale JS-Sperre gegen Doppelklick
+ * und rekursive Ueberschneidung in diesem einen Sidebar-Fenster - keine
+ * serverseitige Serialisierung ueber mehrere Tabs oder Sitzungen hinweg
+ * (die uebernimmt der Wiederverwendungs-Check in exportBatchAsEmlZip).
+ *
+ * Ein Fehlschlag stoppt die automatische Kette und zeigt einen "Erneut
+ * versuchen"-Knopf, der ab genau dem fehlgeschlagenen Index weitermacht -
+ * nicht bei 0. Server-seitig ist jedes Teilpaket deterministisch benannt
+ * und wird bei Wiederholung wiederverwendet statt doppelt angelegt; ein
+ * Neustart bei Index 0 (z. B. nach einem Reload, wenn die Oberflaeche den
+ * Fortschritt vergessen hat) ist deshalb ebenfalls gefahrlos - bereits
+ * vorhandene Pakete werden dabei nur erkannt, nicht neu erzeugt.
+ */
+var exportLaufend = {};   // batchId -> true, waehrend ein Aufruf unterwegs ist
+var exportPakete = {};    // batchId -> bereits eingesammelte Paketlinks
+var exportFortschritt = {}; // batchId -> bisher erzeugte Entwuerfe insgesamt
+
+function exportZeigen(batchId, d) {
+  var h = '<div class="meldung m-gut"><b><span class="zahl">'
+    + nz(exportFortschritt[batchId] || d.written)
+    + '</span> von <span class="zahl">' + nz(d.total) + '</span> Entwürfen</b>';
+  (exportPakete[batchId] || []).forEach(function (p) {
+    h += '<a href="' + p.url + '" target="_blank">' + esc(p.name) + '</a> · '
+      + '<span class="zahl">' + nz(p.count) + '</span> · '
+      + '<span class="zahl">' + p.size_mb + '</span> MB<br>';
+  });
+  if (d.complete) {
+    h += 'In Outlook: Einstellungen → Dateien → Import → Ordner wählen → '
+      + 'Zielordner „Entwürfe". Jedes Paket einzeln.</div>';
+  } else {
+    h += '<span class="zahl">' + nz(d.part_index) + '</span> von '
+      + '<span class="zahl">' + nz(d.part_total)
+      + '</span> Paketen fertig.</div>'
+      + '<div class="arbeit">Nächstes Paket wird erzeugt…</div>';
+  }
+  zeig('exp_' + batchId, h);
+}
+
+function emlExport(batchId, startIndex) {
+  var ziel = 'exp_' + batchId;
+  if (!el(ziel)) return;
+  if (exportLaufend[batchId]) return;   // Doppelklick/Parallelaufruf abwehren
+  exportLaufend[batchId] = true;
+
+  var von = startIndex || 0;
+  if (!von) {
+    // Frischer Start (Knopf-Klick oder Reload) - Anzeige und Zaehler neu
+    // aufbauen. Server-seitig bereits vorhandene Pakete werden trotzdem nur
+    // erkannt, nie doppelt angelegt (siehe Funktionskommentar).
+    exportPakete[batchId] = [];
+    exportFortschritt[batchId] = 0;
+    laden(ziel, 'Entwürfe werden erzeugt…');
+  } else {
+    laden(ziel, 'Nächstes Paket wird erzeugt…');
+  }
+
+  google.script.run.withSuccessHandler(function (r) {
+    if (!r.ok) {
+      exportLaufend[batchId] = false;
+      fehler(ziel, r.error);
+      return;
+    }
+    var d = r.data;
+    exportFortschritt[batchId] = (exportFortschritt[batchId] || 0) + d.written;
+    (d.parts || []).forEach(function (p) {
+      exportPakete[batchId].push(p);
+    });
+
+    if (!d.complete) {
+      exportZeigen(batchId, d);
+      // Automatische Fortsetzung: kein Klick noetig, aber immer nur ein
+      // Serveraufruf gleichzeitig - der naechste startet erst, wenn dieser
+      // hier abgeschlossen ist.
+      exportLaufend[batchId] = false;
+      emlExport(batchId, d.next_index);
+      return;
+    }
+    exportLaufend[batchId] = false;
+    exportZeigen(batchId, d);
+  }).withFailureHandler(function (e) {
+    exportLaufend[batchId] = false;
+    var bisher = exportFortschritt[batchId] || 0;
+    zeig(ziel, '<div class="meldung m-fehler"><b>Paket fehlgeschlagen</b>'
+      + 'Bereits fertig: <span class="zahl">' + nz(bisher)
+      + '</span> Entwürfe. ' + esc(e.message)
+      + '<button class="tat zweit" style="margin-top:8px" onclick="emlExport(\''
+      + esc(batchId) + '\',' + von + ')">Erneut versuchen</button></div>');
+  }).uiExportEml(batchId, von);
+}
+
+function freigeben(batchId) {
+  google.script.run.withSuccessHandler(function (r) {
+    if (r.ok) batchListeLaden(); else alert(r.error);
+  }).withFailureHandler(function (e) {
+    alert(e.message);
+  }).uiApproveBatch(batchId);
+}
+
+/**
+ * Direkter Power-Automate-Entwurf statt ZIP-Export. Erster Klick pro Batch
+ * erzeugt bewusst nur EINEN Testentwurf (limit=1) - genau wie
+ * entwurfTesten() im Editor. Erst nach ausdruecklicher Bestaetigung im
+ * Dialog laeuft der Rest des Batches (limit=9999). Kein Automatismus, der
+ * ohne Zwischenschritt gleich alle Entwuerfe fuer echte Kontakte anlegt.
+ */
+var direktLaufend = {};
+
+function direktEntwuerfe(batchId) {
+  if (direktLaufend[batchId]) return;
+  var ziel = 'direkt_' + batchId;
+  if (!el(ziel)) return;
+  direktLaufend[batchId] = true;
+  laden(ziel, 'Testentwurf wird erzeugt…');
+
+  google.script.run.withSuccessHandler(function (r) {
+    direktLaufend[batchId] = false;
+    if (!r.ok) { fehler(ziel, r.error); return; }
+    var msg = 'Testentwurf erstellt:\n\n' + r.data.summary + '\n\nJetzt den REST dieses Batches als echte Entwürfe anlegen? (Reale Kontakte, nur Entwurf, kein Versand.)';
+    if (!confirm(msg)) {
+      zeig(ziel, '<div class="meldung m-gut">Testentwurf angelegt. Rest nicht ausgelöst.</div>');
+      return;
+    }
+    direktLaufend[batchId] = true;
+    direktEntwuerfeSchleife(batchId, ziel);
+  }).withFailureHandler(function (e) {
+    direktLaufend[batchId] = false;
+    fehler(ziel, e.message);
+  }).uiCreateDraftsChunk(batchId, 1);
+}
+
+function direktEntwuerfeSchleife(batchId, ziel) {
+  zeig(ziel, '<div class="arbeit">Erzeuge Entwürfe in 10er-Blöcken… Bitte warten.</div>');
+  google.script.run.withSuccessHandler(function (r) {
+    if (!r.ok) {
+      direktLaufend[batchId] = false;
+      var retryBtn = '<br><button class="sekundaer" style="margin-top:6px;" onclick="direktEntwuerfeSchleife(\'' + esc(batchId) + '\',\'' + esc(ziel) + '\')">Ab aktuellem Stand fortsetzen</button>';
+      fehler(ziel, r.error + retryBtn);
+      return;
+    }
+    var d = r.data;
+    var total = d.totalCount || 0;
+    var open = d.openCount || 0;
+    var drafted = d.draftedCount || (total - open);
+    var pct = total > 0 ? Math.round((drafted / total) * 100) : 100;
+
+    if (d.isComplete || open === 0) {
+      direktLaufend[batchId] = false;
+      zeig(ziel, '<div class="meldung m-gut"><b>✅ Alle ' + total + ' Entwürfe angelegt!</b><br>Die Entwürfe liegen jetzt mit Flyer in Outlook bereit.<br><small>Bitte in Outlook prüfen und manuell versenden.</small></div>');
+      batchListeLaden();
+    } else {
+      var bar = '<div style="background:#e5e7eb;border-radius:4px;height:8px;margin:6px 0;overflow:hidden;"><div style="background:#10b981;height:100%;width:' + pct + '%;"></div></div>';
+      zeig(ziel, '<div class="arbeit"><b>' + drafted + ' von ' + total + ' Entwürfen</b> angelegt (' + pct + '%)…' + bar + '<small>Nächster 10er-Block läuft automatisch weiter…</small></div>');
+      direktEntwuerfeSchleife(batchId, ziel);
+    }
+  }).withFailureHandler(function (e) {
+    direktLaufend[batchId] = false;
+    var retryBtn = '<br><button class="sekundaer" style="margin-top:6px;" onclick="direktEntwuerfeSchleife(\'' + esc(batchId) + '\',\'' + esc(ziel) + '\')">Ab aktuellem Stand fortsetzen</button>';
+    fehler(ziel, e.message + retryBtn);
+  }).uiCreateDraftsChunk(batchId, 10);
+}
+
+/**
+ * Betreiber-Bestaetigung "Ich habe diesen Batch tatsaechlich in Outlook
+ * versendet." Es gibt (noch) keine lebende Sent-Trigger-Integration, die
+ * einen echten Versand automatisch beobachten koennte - ohne diesen Knopf
+ * bliebe Send_Status nach einem echten, von Hand in Outlook abgeschickten
+ * Batch fuer immer "nicht gesendet". Gleiches Bloecke-mit-Auto-Fortsetzung-
+ * Muster wie emlExport: der Server bestaetigt jeweils einen Abschnitt
+ * (siehe confirmBatchSent in Actions.gs), die Seitenleiste haengt sich bei
+ * Erfolg automatisch an den naechsten Abschnitt, ein Fehlschlag zeigt einen
+ * Wiederholen-Knopf ab genau dem fehlgeschlagenen Index.
+ */
+var versandLaufend = {};
+var versandFortschritt = {};
+
+function versandZeigen(batchId, d) {
+  var gesamt = versandFortschritt[batchId] || 0;
+  var h = '<div class="meldung m-gut"><b><span class="zahl">' + nz(gesamt)
+    + '</span> von <span class="zahl">' + nz(d.total) + '</span> bestätigt</b>';
+  if (d.complete) {
+    h += '<br>Als tatsächlich versendet vermerkt. Kein automatischer '
+       + 'Nachweis - diese Bestätigung ist eine bewusste, protokollierte '
+       + 'Aussage von dir, kein Systembeleg.</div>';
+  } else {
+    h += '<div class="arbeit">Nächster Abschnitt wird bestätigt…</div>';
+  }
+  zeig('conf_' + batchId, h);
+}
+
+function versandBestaetigen(batchId, startIndex) {
+  var ziel = 'conf_' + batchId;
+  if (!el(ziel)) return;
+  if (versandLaufend[batchId]) return;   // Doppelklick/Parallelaufruf abwehren
+  versandLaufend[batchId] = true;
+
+  var von = startIndex || 0;
+  if (!von) {
+    versandFortschritt[batchId] = 0;
+    laden(ziel, 'Versand wird bestätigt…');
+  } else {
+    laden(ziel, 'Nächster Abschnitt wird bestätigt…');
+  }
+
+  google.script.run.withSuccessHandler(function (r) {
+    if (!r.ok) {
+      versandLaufend[batchId] = false;
+      fehler(ziel, r.error);
+      return;
+    }
+    var d = r.data;
+    versandFortschritt[batchId] = (versandFortschritt[batchId] || 0) + d.verarbeitet;
+
+    if (!d.complete) {
+      versandZeigen(batchId, d);
+      versandLaufend[batchId] = false;
+      versandBestaetigen(batchId, d.next_index);
+      return;
+    }
+    versandLaufend[batchId] = false;
+    versandZeigen(batchId, d);
+    batchListeLaden();   // aktualisiert "versendet am" in der Batch-Zeile
+  }).withFailureHandler(function (e) {
+    versandLaufend[batchId] = false;
+    var bisher = versandFortschritt[batchId] || 0;
+    zeig(ziel, '<div class="meldung m-fehler"><b>Abschnitt fehlgeschlagen</b>'
+      + 'Bereits bestätigt: <span class="zahl">' + nz(bisher)
+      + '</span>. ' + esc(e.message)
+      + '<button class="tat zweit" style="margin-top:8px" onclick="versandBestaetigen(\''
+      + esc(batchId) + '\',' + von + ')">Erneut versuchen</button></div>');
+  }).uiConfirmBatchSent(batchId, von);
+}
+
+/* --- 04 Nachfassen -------------------------------------------------- */
+
+function faelligeLaden() {
+  laden('faellige', 'Wird geladen…');
+  google.script.run.withSuccessHandler(function (r) {
+    if (!r.ok) { fehler('faellige', r.error); return; }
+    if (!r.data.length) {
+      zeig('faellige', '<div class="meldung m-gut"><b>Nichts fällig</b>'
+        + 'Keine offenen Wiedervorlagen für ' + esc(OWNER) + '.</div>');
+      return;
+    }
+    var h = '';
+    r.data.slice(0, 60).forEach(function (d) { h += zeileHtml(d, true); });
+    if (r.data.length > 60) {
+      h += '<div class="leer-hinweis">… und <span class="zahl">'
+        + nz(r.data.length - 60) + '</span> weitere.</div>';
+    }
+    zeig('faellige', h);
+  }).withFailureHandler(function (e) {
+    fehler('faellige', e.message);
+  }).uiGetDue(OWNER);
+}
+
+function zeileHtml(d, mitDatum) {
+  var id = esc(d.Lead_ID);
+  return '<div class="zeile" id="lz_' + id + '">'
+    + '<div class="firma">' + esc(d.Company || d.Lead_ID) + '</div>'
+    + '<div class="meta">' + esc(d.Email || '')
+    + (mitDatum && d.Due ? ' · fällig ' + esc(d.Due) : '')
+    + (d.Batch_ID ? ' · ' + esc(d.Batch_ID) : '') + '</div>'
+    + '<div class="knoepfe">'
+    + '<button onclick="status(\'' + id + '\',\'REPLIED\',0)">Antwort</button>'
+    + '<button onclick="status(\'' + id + '\',\'FOLLOWUP\',7)">+7 Tage</button>'
+    + '<button onclick="status(\'' + id + '\',\'OPT_OUT\',0)">Abmeldung</button>'
+    + '</div></div>';
+}
+
+function status(leadId, st, tage) {
+  if (st === 'OPT_OUT'
+      && !window.confirm('Kontakt dauerhaft sperren? Das lässt sich über die '
+                         + 'Oberfläche nicht zurücknehmen.')) return;
+  var zeile = el('lz_' + leadId);
+  if (zeile) zeile.style.opacity = '.4';
+  google.script.run.withSuccessHandler(function (r) {
+    if (!r.ok) { alert(r.error); if (zeile) zeile.style.opacity = '1'; return; }
+    if (zeile) zeile.remove();
+    cockpitLaden();
+  }).withFailureHandler(function (e) {
+    alert(e.message);
+    if (zeile) zeile.style.opacity = '1';
+  }).uiSetStatus(leadId, st, tage, '');
+}
+
+/* --- 05 Suche ------------------------------------------------------- */
+
+function sucheVerzoegert() {
+  clearTimeout(sucheTimer);
+  var q = el('suche').value.trim();
+  if (q.length < 2) { zeig('sucheErgebnis', ''); return; }
+  sucheTimer = setTimeout(function () { sucheAusfuehren(q); }, 350);
+}
+
+function sucheAusfuehren(q) {
+  laden('sucheErgebnis', 'Wird gesucht…');
+  google.script.run.withSuccessHandler(function (r) {
+    if (!r.ok) { fehler('sucheErgebnis', r.error); return; }
+    if (!r.data.length) {
+      zeig('sucheErgebnis', '<div class="leer-hinweis">Nichts gefunden für „'
+        + esc(q) + '".</div>');
+      return;
+    }
+    var h = '';
+    r.data.forEach(function (d) {
+      h += '<div class="zeile" id="lz_' + esc(d.Lead_ID) + '">'
+        + '<div class="firma">' + esc(d.Company || d.Lead_ID) + '</div>'
+        + '<div class="meta">' + esc(d.Email)
+        + ' · ' + (d.eligible ? 'sendebereit'
+                   : 'gesperrt: ' + esc((d.reasons || []).join(', ')))
+        + '</div><div class="knoepfe">'
+        + '<button onclick="status(\'' + esc(d.Lead_ID) + '\',\'REPLIED\',0)">'
+        + 'Antwort</button>'
+        + '<button onclick="status(\'' + esc(d.Lead_ID) + '\',\'FOLLOWUP\',7)">'
+        + '+7 Tage</button>'
+        + '<button onclick="status(\'' + esc(d.Lead_ID) + '\',\'OPT_OUT\',0)">'
+        + 'Abmeldung</button></div></div>';
+    });
+    zeig('sucheErgebnis', h);
+  }).withFailureHandler(function (e) {
+    fehler('sucheErgebnis', e.message);
+  }).uiSearch(q, OWNER);
+}
+
+/* --- Start ---------------------------------------------------------- */
+
+ownerUiAktualisieren();
+allesLaden();
+filterLaden();
+</script>
+</body>
+</html>

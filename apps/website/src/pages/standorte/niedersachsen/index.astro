@@ -1,0 +1,64 @@
+---
+import CTASection from "../../../components/sections/CTASection.astro";
+import PageHero from "../../../components/sections/PageHero.astro";
+import BaseLayout from "../../../layouts/BaseLayout.astro";
+---
+
+<BaseLayout
+  title="Industrieboden Niedersachsen | Böden & Säureschutz"
+  description="HSB Hexagon – Spezialist für keramische Industrieböden, Säureschutz & Entwässerung in Niedersachsen. Projekte in Hannover, Osnabrück, Braunschweig & Region."
+  path="/standorte/niedersachsen/"
+>
+  <PageHero
+    eyebrow="Region Niedersachsen"
+    title="Industrieboden-Spezialist in Niedersachsen"
+    text="HSB Hexagon realisiert anspruchsvolle Industriebodenprojekte in Hannover, Osnabrück, Braunschweig, Oldenburg und der gesamten Region Niedersachsen."
+  />
+
+  <section class="section">
+    <div class="container">
+      <div class="prose max-w-3xl mx-auto">
+        <h2>Keramische Industrieböden & Säureschutz in Niedersachsen</h2>
+        <p>
+          Als erfahrener Fachbetrieb für keramische Industrieböden, PU-Beton und Säureschutzsysteme sind wir in ganz Niedersachsen im Einsatz. Ob Lebensmittelproduktion im Emsland, Molkereien im Oldenburger Land oder Industriebetriebe im Großraum Hannover/Braunschweig – HSB Hexagon liefert dauerhaft dichte und belastbare Bodensysteme.
+        </p>
+
+        <h2>Unsere Leistungen in Niedersachsen</h2>
+        <ul>
+          <li><strong>Keramische Industrieböden</strong> – extrem druckfest, säurebeständig und langlebig im Rüttelverfahren verlegt</li>
+          <li><strong>PU-Beton & Beschichtungen</strong> – fugenlos, thermoschockbeständig bis 130°C für Hygienebereiche</li>
+          <li><strong>Säureschutz & WHG-Abdichtung</strong> – zertifizierter Schutz gegen chemische Medien und Säuren</li>
+          <li><strong>Hygienische Entwässerung</strong> – Edelstahlrinnen, Gefälleausbildung und dichte Anschlüsse</li>
+          <li><strong>Bodensanierung im laufenden Betrieb</strong> – schnelle Wochenendmontage ohne Produktionsstopp</li>
+        </ul>
+
+        <h2>Regionale Präsenz in Niedersachsen</h2>
+        <p>
+          Wir betreuen Kundenstandorte in ganz Niedersachsen: Hannover, Osnabrück, Braunschweig, Wolfsburg, Oldenburg, Göttingen, Lüneburg, Emsland und Umgebung. Kurze Wege durch unseren Standort in Gronau (Westfalen) direkt an der Landesgrenze zu Niedersachsen.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <CTASection
+    title="Projekt in Niedersachsen anfragen"
+    text="Kontaktieren Sie uns für eine kostenlose Ersteinschätzung zu Ihrem Industriebodenprojekt in Niedersachsen."
+  />
+
+  <script is:inline type="application/ld+json" set:html={JSON.stringify({
+    "@context": "https://schema.org",
+    "@type": "LocalBusiness",
+    "name": "Hexagon Säurebau GmbH",
+    "description": "Spezialist für keramische Industrieböden, Säureschutzsysteme und Entwässerung in Niedersachsen",
+    "url": "https://www.hsb-boden.de",
+    "areaServed": [
+      {"@type": "City", "name": "Hannover"},
+      {"@type": "City", "name": "Osnabrück"},
+      {"@type": "City", "name": "Braunschweig"},
+      {"@type": "City", "name": "Oldenburg"},
+      {"@type": "City", "name": "Göttingen"},
+      {"@type": "AdministrativeArea", "name": "Niedersachsen"}
+    ],
+    "sameAs": "https://www.hsb-boden.de"
+  })} />
+</BaseLayout>

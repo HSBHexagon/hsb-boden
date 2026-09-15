@@ -1,0 +1,39 @@
+{
+  "table": "ALL_LEADS",
+  "total_columns": 56,
+  "editable_whitelist": [
+    {
+      "column_name": "Notizen",
+      "column_index": 29,
+      "type": "LongText",
+      "editable_if": "TRUE"
+    },
+    {
+      "column_name": "Nächste Aktion",
+      "column_index": 17,
+      "type": "Text",
+      "editable_if": "TRUE"
+    },
+    {
+      "column_name": "Follow-up-Datum",
+      "column_index": 18,
+      "type": "Date",
+      "editable_if": "TRUE"
+    }
+  ],
+  "strictly_read_only_columns": [
+    "Lead-ID", "Firma", "Standort", "Region", "Branche", "Tier", "Ansprechpartner",
+    "Rolle", "E-Mail", "Telefon", "Website", "Quelle", "Beziehung / Kontaktgrund",
+    "Kampagne", "Score", "Status", "Interesse", "Projektart", "Fläche geschätzt",
+    "Belastungsart", "Sanierungsfenster", "Opt-in-Status", "Opt-out-Status",
+    "Versandfreigabe", "Verantwortlicher", "Flyer-Anhang", "Segment", "Kampagne_ID",
+    "Email_Template_ID", "Flyer_ID", "Flyer_URL", "Landing_URL", "UTM_Source",
+    "UTM_Medium", "UTM_Campaign", "UTM_Content", "Batch_ID", "Send_Status",
+    "Send_Datum", "Bounce_Status", "Reply_Status", "Legal_Basis", "Suppressed",
+    "Batch_Status", "Prepared_At", "Draft_ID", "Drafted_At", "Approved_At",
+    "Outlook_Message_ID", "Internet_Message_ID", "Conversation_ID", "Last_Reply_At",
+    "Last_Error"
+  ],
+  "status": "CONFIGURED",
+  "updated_at": "2026-08-28T01:30:40+02:00"
+}

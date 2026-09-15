@@ -1,0 +1,26 @@
+__pycache__/
+*.pyc
+data/*.xlsx
+batches/
+assets/drive_verify/
+tests/last_run.json
+tests/last_run_apps_script.json
+SCRIPT_ID
+deploy/.clasp.json
+_FALSCHE_BINDUNG_*
+
+# Deployment-Rueckfallpunkte
+.backup_appsscript_*/
+
+# Orchestration & Runtime State
+.omg/
+.playwright-mcp/
+
+# Secrets & Environment Configurations
+.env
+.env.*
+secrets/
+*.key
+*.pem
+token_cache.json
+sa-key.json

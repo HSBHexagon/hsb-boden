@@ -1,0 +1,35 @@
+# Cloudflare Pages headers (https://developers.cloudflare.com/pages/configuration/headers/)
+# Sicherheits- & Performance-Baseline für alle Antworten.
+/*
+  Strict-Transport-Security: max-age=31536000; includeSubDomains; preload
+  X-Content-Type-Options: nosniff
+  X-Frame-Options: DENY
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=(), usb=(), display-capture=(), fullscreen=(self)
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' https://www.googletagmanager.com https://static.cloudflareinsights.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; connect-src 'self' https://www.google-analytics.com https://region1.google-analytics.com https://cloudflareinsights.com; font-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'
+  Cross-Origin-Opener-Policy: same-origin
+
+# Astro fingerprinted assets (immutability cache)
+/_astro/*
+  Cache-Control: public, max-age=31536000, immutable
+
+# Brand assets & static media caching
+/brand/*
+  Cache-Control: public, max-age=86400, stale-while-revalidate=604800
+
+/media/*
+  Cache-Control: public, max-age=604800, stale-while-revalidate=2592000
+
+/logos/*
+  Cache-Control: public, max-age=604800, stale-while-revalidate=2592000
+
+# Canonical PDF Flyers
+/*.pdf
+  Cache-Control: public, max-age=3600, stale-while-revalidate=86400
+
+# Preview- und Projekt-Domains dürfen nicht mit der kanonischen Domain konkurrieren
+https://hsb-boden.pages.dev/*
+  X-Robots-Tag: noindex, nofollow
+
+https://:version.hsb-boden.pages.dev/*
+  X-Robots-Tag: noindex, nofollow

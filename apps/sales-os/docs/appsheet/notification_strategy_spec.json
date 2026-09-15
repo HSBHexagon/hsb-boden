@@ -1,0 +1,34 @@
+{
+  "feature": "Inbound Reply Push Notifications",
+  "architecture": "SCHEDULED_POLLING_BOT",
+  "schedule_interval": "Hourly",
+  "trigger_condition": {
+    "table": "INBOUND_EVENTS",
+    "filter": "AND([Event_Type] = \"REPLY\", ISBLANK([Notified_At]))"
+  },
+  "recipient_resolution": {
+    "method": "LOOKUP",
+    "expression": "LOOKUP([_THISROW].[Lead_ID], \"Leads\", \"Lead-ID\", \"Verantwortlicher\")",
+    "email_map": {
+      "Joel Cherino Diaz": "j-cherino@hsb-boden.de",
+      "Jordi Post": "j-post@hsb-boden.de"
+    }
+  },
+  "notification_payload": {
+    "title": "CONCATENATE(\"Neue Antwort: \", LOOKUP([_THISROW].[Lead_ID], \"Leads\", \"Lead-ID\", \"Firma\"))",
+    "body": "CONCATENATE(\"Antwort eingetroffen für \", LOOKUP([_THISROW].[Lead_ID], \"Leads\", \"Lead-ID\", \"Ansprechpartner\"))",
+    "deep_link": "LINKTOROW([_THISROW].[Lead_ID], \"Lead_Detail\")"
+  },
+  "idempotency_marker": {
+    "field": "Notified_At",
+    "action": "Set to NOW() upon successful push delivery",
+    "duplicate_prevention": "Strictly single notification per unique Event_ID"
+  },
+  "prospect_safety": {
+    "external_prospect_sends_allowed": false,
+    "real_external_send_count": 0
+  },
+  "fallback_policy": "If scheduled bot licensing unavailable, status = DEFERRED_OPTIONAL without blocking core mobile rollout",
+  "status": "CONFIGURED",
+  "updated_at": "2026-08-28T01:31:35+02:00"
+}

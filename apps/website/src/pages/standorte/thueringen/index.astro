@@ -1,0 +1,63 @@
+---
+import CTASection from "../../../components/sections/CTASection.astro";
+import PageHero from "../../../components/sections/PageHero.astro";
+import BaseLayout from "../../../layouts/BaseLayout.astro";
+---
+
+<BaseLayout
+  title="Industrieboden Thüringen | Böden & Säureschutz"
+  description="HSB Hexagon – Spezialist für keramische Industrieböden, Säureschutz & Entwässerung in Thüringen. Projekte in Erfurt, Jena, Gera, Saalfeld & Region."
+  path="/standorte/thueringen/"
+>
+  <PageHero
+    eyebrow="Region Thüringen"
+    title="Industrieboden-Spezialist in Thüringen"
+    text="HSB Hexagon realisiert anspruchsvolle Industriebodenprojekte in Erfurt, Jena, Gera, Saalfeld, Gebesee, Weimar und ganz Thüringen."
+  />
+
+  <section class="section">
+    <div class="container">
+      <div class="prose max-w-3xl mx-auto">
+        <h2>Keramische Industrieböden & Säureschutz in Thüringen</h2>
+        <p>
+          Als erfahrener Fachbetrieb für keramische Industrieböden und Säureschutzsysteme sind wir in ganz Thüringen tätig. Ob Molkereien und Lebensmittelbetriebe (z. B. in Gebesee), Brauereien (z. B. in Saalfeld) oder chemisch belastete Produktionsflächen – HSB Hexagon liefert dauerhaft belastbare und hygienegerechte Bodensysteme.
+        </p>
+
+        <h2>Unsere Leistungen in Thüringen</h2>
+        <ul>
+          <li><strong>Keramische Industrieböden</strong> – rutschhemmend, hygienekonform und säurebeständig im Rüttelverfahren</li>
+          <li><strong>Säureschutzsysteme</strong> – für Molkereien, Brauereien, Fleisch- und Lebensmittelproduktion</li>
+          <li><strong>Entwässerungssysteme</strong> – Edelstahlrinnen, Punktabläufe und Gefälleestrich</li>
+          <li><strong>Industrieboden-Sanierung</strong> – Reparatur und Erneuerung bestehender Böden im laufenden Betrieb</li>
+        </ul>
+
+        <h2>Regionale Präsenz in Thüringen</h2>
+        <p>
+          Wir betreuen Industrieprojekte in der gesamten Region Thüringen: Erfurt, Jena, Gera, Weimar, Gotha, Eisenach, Suhl, Saalfeld, Gebesee und Umgebung.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <CTASection
+    title="Projekt in Thüringen anfragen"
+    text="Kontaktieren Sie uns für eine unverbindliche Beratung zu Ihrem Industriebodenprojekt in Thüringen."
+  />
+
+  <script is:inline type="application/ld+json" set:html={JSON.stringify({
+    "@context": "https://schema.org",
+    "@type": "LocalBusiness",
+    "name": "Hexagon Säurebau GmbH",
+    "description": "Spezialist für keramische Industrieböden, Säureschutzsysteme und Entwässerung in Thüringen",
+    "url": "https://www.hsb-boden.de",
+    "areaServed": [
+      {"@type": "City", "name": "Erfurt"},
+      {"@type": "City", "name": "Jena"},
+      {"@type": "City", "name": "Gera"},
+      {"@type": "City", "name": "Weimar"},
+      {"@type": "City", "name": "Saalfeld"},
+      {"@type": "AdministrativeArea", "name": "Thüringen"}
+    ],
+    "sameAs": "https://www.hsb-boden.de"
+  })} />
+</BaseLayout>

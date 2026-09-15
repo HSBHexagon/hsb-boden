@@ -1,0 +1,17 @@
+{
+  "timestamp": "2026-08-28T03:54:00+02:00",
+  "table_name": "Inbound_Events",
+  "source_sheet": "INBOUND_EVENTS",
+  "canonical_12_columns": [
+    "Event_ID", "Received_UTC", "Mailbox", "From", "Subject",
+    "Internet_Message_ID", "Lead_ID", "Classification", "Stop_Followup",
+    "Processed", "Notes", "Raw_Link"
+  ],
+  "optional_notification_extensions": [
+    { "name": "Mobile_Notified_At", "type": "DateTime", "col_index": 13, "description": "Timestamp when mobile push was sent" },
+    { "name": "Mobile_Notified_To", "type": "Text", "col_index": 14, "description": "Operator email who received the notification" }
+  ],
+  "bot_notification_filter": "[Classification] = \"REPLY\" AND ISBLANK([Mobile_Notified_At])",
+  "idempotency_rule": "Mobile_Notified_At stamped immediately upon push delivery; DUPLICATE_NOTIFICATIONS = 0",
+  "processed_field_invariance": "Processed column semantics (PROCESSED / NEEDS_REVIEW / ALREADY_SENT_IGNORED) preserved 100% without overloading"
+}

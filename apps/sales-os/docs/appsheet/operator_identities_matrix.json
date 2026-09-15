@@ -1,0 +1,38 @@
+{
+  "timestamp": "2026-08-28T03:54:30+02:00",
+  "security_model": "FAIL_CLOSED_ALLOWLIST",
+  "primary_appsheet_identities": [
+    {
+      "operator": "Joel Cherino Diaz",
+      "appsheet_email": "j-cherino@hsb-boden.de",
+      "role": "SALES_OPERATOR_JOEL",
+      "assigned_verantwortlicher": "Joel Cherino Diaz",
+      "visible_rows": 3212,
+      "access_granted": true
+    },
+    {
+      "operator": "Jordi Post",
+      "appsheet_email": "j-post@hsb-boden.de",
+      "role": "SALES_OPERATOR_JORDI",
+      "assigned_verantwortlicher": "Jordi Post",
+      "visible_rows": 3212,
+      "access_granted": true
+    },
+    {
+      "operator": "System Administrator",
+      "appsheet_email": "cherinodiaz@outlook.com",
+      "role": "APP_CREATOR_ADMIN",
+      "assigned_verantwortlicher": "*",
+      "visible_rows": 6424,
+      "access_granted": true
+    }
+  ],
+  "disallowed_alternate_identities": [
+    { "email": "cherinojoel@gmail.com", "reason": "Non-primary personal account", "access_granted": false, "visible_rows": 0 },
+    { "email": "info@hsb-boden.de", "reason": "Shared mailbox / not personal operator account", "access_granted": false, "visible_rows": 0 },
+    { "email": "unauthorized@external.com", "reason": "External / unauthenticated user", "access_granted": false, "visible_rows": 0 }
+  ],
+  "security_filter_expression": "SWITCH(USEREMAIL(), \"j-cherino@hsb-boden.de\", [Verantwortlicher] = \"Joel Cherino Diaz\", \"j-post@hsb-boden.de\", [Verantwortlicher] = \"Jordi Post\", \"cherinodiaz@outlook.com\", TRUE, FALSE)",
+  "owner_crossover_count": 0,
+  "unknown_visible_rows": 0
+}

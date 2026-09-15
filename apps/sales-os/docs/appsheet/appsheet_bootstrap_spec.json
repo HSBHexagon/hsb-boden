@@ -1,0 +1,24 @@
+{
+  "app_name": "HSB Sales OS Mobile",
+  "data_access_mode": "AS_APP_CREATOR",
+  "require_sign_in": true,
+  "user_authentication_provider": "google",
+  "tables": {
+    "Leads": {
+      "source_sheet": "ALL_LEADS",
+      "key_column": "Lead-ID",
+      "label_column": "Firma",
+      "allowed_actions": "Updates_Only",
+      "total_columns": 56,
+      "key_stability_verified": true
+    },
+    "Batches": {
+      "source_sheet": "BATCHES",
+      "key_column": "Batch_ID",
+      "allowed_actions": "Read_Only",
+      "total_columns": 13
+    }
+  },
+  "bootstrap_status": "CONFIGURED",
+  "updated_at": "2026-08-28T01:30:15+02:00"
+}

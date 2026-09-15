@@ -1,0 +1,30 @@
+{
+  "views": [
+    {
+      "name": "REPLIES",
+      "type": "Card",
+      "source_slice": {
+        "name": "Replies_Slice",
+        "table": "Leads",
+        "row_filter_condition": "OR([Reply_Status] = \"replied\", ISNOTBLANK([Last_Reply_At]))",
+        "slice_columns": ["Lead-ID", "Firma", "Ansprechpartner", "Last_Reply_At", "Notizen", "Status"]
+      },
+      "card_layout": {
+        "title": "[Firma]",
+        "subtitle": "CONCATENATE(\"Antwort: \", TEXT([Last_Reply_At], \"DD.MM.YYYY HH:MM\"))",
+        "body": "[Notizen]"
+      },
+      "click_action": "LINKTOROW([Lead-ID], \"Lead_Detail\")"
+    },
+    {
+      "name": "BATCHES",
+      "type": "Table",
+      "table": "Batches",
+      "columns": ["Batch_ID", "Status", "Requested", "Selected", "Created_At", "Sent_At"],
+      "sort_by": "Created_At (DESCENDING)",
+      "read_only": true
+    }
+  ],
+  "status": "CONFIGURED",
+  "updated_at": "2026-08-28T01:30:52+02:00"
+}

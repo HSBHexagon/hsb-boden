@@ -1,0 +1,24 @@
+{
+  "performance_framework": "APPSHEET_PERFORMANCE_ANALYZER",
+  "measurement_status": "PROVISIONAL_TARGETS_DEFINED",
+  "provisional_ux_targets": {
+    "provisional_cold_sync_target": "< 4.5s",
+    "provisional_incremental_sync_target": "< 1.8s",
+    "provisional_navigation_target": "< 200ms"
+  },
+  "protected_range_write_compatibility": "PASS",
+  "measurement_protocol": {
+    "test_surfaces": ["iOS_Safari", "Android_Chrome", "Desktop_Chrome"],
+    "metrics_to_capture": [
+      "COLD_SYNC_P50",
+      "COLD_SYNC_MAX",
+      "INCREMENTAL_SYNC_P50",
+      "INCREMENTAL_SYNC_MAX",
+      "SAFE_UPDATE_LATENCY",
+      "DASHBOARD_LOAD",
+      "SEARCH_RESPONSIVENESS"
+    ]
+  },
+  "status": "CONFIGURED",
+  "updated_at": "2026-08-28T01:32:20+02:00"
+}

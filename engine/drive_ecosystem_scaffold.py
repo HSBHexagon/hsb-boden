@@ -7,16 +7,21 @@ Standardized 5-Folder Project Architecture (v2.5) with GitHub Reconciliation.
 import argparse
 import datetime
 import json
+import sys
 from pathlib import Path
 from typing import Any, Dict, List, Optional
+
+REPO_ROOT = Path(__file__).resolve().parent.parent
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+if str(REPO_ROOT / "engine") not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT / "engine"))
 
 from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaInMemoryUpload
 
 from engine.drive_ecosystem_config import PROJECT_DEFINITIONS, get_project_spec
-
-REPO_ROOT = Path(__file__).resolve().parent.parent
 
 
 def render_project_manifest(spec: Dict[str, Any]) -> str:
@@ -256,9 +261,66 @@ def execute_ecosystem_rollout(dry_run: bool = True) -> Dict[str, Any]:
     return results
 
 
+def verify_all_projects_live() -> Dict[str, Any]:
+    """Verifies live on Google Drive that all projects, canonical subfolders, and manifests exist."""
+    service = get_drive_service()
+    verification: Dict[str, Any] = {"all_passed": True, "projects": {}}
+
+    for pkey, spec in PROJECT_DEFINITIONS.items():
+        parent_hint = spec.get("parent_hint", "root")
+        folder_name = spec["folder_name"]
+
+        parent_id = None
+        if parent_hint == "04_PROJEKTE":
+            p_folder = find_folder(service, "04_PROJEKTE")
+            if p_folder:
+                parent_id = p_folder["id"]
+
+        project_folder = find_folder(service, folder_name, parent_id)
+        if not project_folder:
+            verification["all_passed"] = False
+            verification["projects"][pkey] = {"status": "FAIL", "reason": "Project folder missing"}
+            continue
+
+        existing_subs = list_subfolders(service, project_folder["id"])
+        existing_sub_names = {s["name"]: s["id"] for s in existing_subs}
+
+        missing_subs = [s for s in spec["subfolders"] if s not in existing_sub_names]
+
+        # Check manifest in candidate folders
+        manifest_found = False
+        manifest_file_id = None
+        manifest_folder_found = None
+        for candidate in ["04_Handoff_Audits", "01_Handoff_Audits", "01_Handoff", "Handoff"]:
+            if candidate in existing_sub_names:
+                cid = existing_sub_names[candidate]
+                q = f"name = '00_PROJECT_MANIFEST.md' and '{cid}' in parents and trashed = false"
+                res = service.files().list(q=q, fields="files(id, name)").execute()
+                if res.get("files"):
+                    manifest_found = True
+                    manifest_file_id = res["files"][0]["id"]
+                    manifest_folder_found = candidate
+                    break
+
+        status = "PASS" if (len(missing_subs) == 0 and manifest_found) else "FAIL"
+        if status == "FAIL":
+            verification["all_passed"] = False
+
+        verification["projects"][pkey] = {
+            "status": status,
+            "project_folder_id": project_folder["id"],
+            "missing_subfolders": missing_subs,
+            "manifest_found": manifest_found,
+            "manifest_file_id": manifest_file_id,
+            "manifest_folder": manifest_folder_found,
+        }
+
+    return verification
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Drive Ecosystem Scaffolding")
-    parser.add_argument("--dry-run", action="store_true", default=True, help="Preview actions without executing")
+    parser.add_argument("--dry-run", action="store_true", default=False, help="Preview actions without executing")
     parser.add_argument("--execute", action="store_true", help="Execute live Drive modifications")
     args = parser.parse_args()
 

@@ -268,15 +268,15 @@ def write_2d_matrix_bulk(start_row: int, end_row: int, matrix: list[list[str]], 
 # 4. Batch-Generierung & Manifest-Erstellung
 # --------------------------------------------------------------------------
 
-def generate_partition_manifests():
-    print("Erzeuge 1.000er Lead-Partitionierung (500 Joel / 500 Jordie)...")
+def generate_partition_manifests(count_per_owner: int = 1000):
+    print(f"Erzeuge {count_per_owner * 2}er Lead-Partitionierung ({count_per_owner} Joel / {count_per_owner} Jordie)...")
     t0 = time.time()
-    joel_leads, jordi_leads = partition_leads(500, joel_start_row=152, jordi_start_row=3534, use_live_sheet=True)
+    joel_leads, jordi_leads = partition_leads(count_per_owner, joel_start_row=152, jordi_start_row=3534, use_live_sheet=True)
     dt = time.time() - t0
 
     today = datetime.datetime.now().strftime("%Y%m%d")
-    batch_joel = f"BATCH-500-JOEL-{today}"
-    batch_jordi = f"BATCH-500-JORDI-{today}"
+    batch_joel = f"BATCH-{count_per_owner}-JOEL-{today}"
+    batch_jordi = f"BATCH-{count_per_owner}-JORDI-{today}"
 
     joel_manifest = {
         "batch_id": batch_joel,
@@ -301,8 +301,8 @@ def generate_partition_manifests():
         "created_at": datetime.datetime.now(datetime.timezone.utc).isoformat()
     }
 
-    joel_path = BATCHES_DIR / "manifest_500_JOEL.json"
-    jordi_path = BATCHES_DIR / "manifest_500_JORDI.json"
+    joel_path = BATCHES_DIR / f"manifest_{count_per_owner}_JOEL.json"
+    jordi_path = BATCHES_DIR / f"manifest_{count_per_owner}_JORDI.json"
 
     joel_path.write_text(json.dumps(joel_manifest, indent=2), encoding="utf-8")
     jordi_path.write_text(json.dumps(jordi_manifest, indent=2), encoding="utf-8")
@@ -314,8 +314,8 @@ def generate_partition_manifests():
     m_joel = build_2d_matrix(joel_leads, dummy_res_joel, batch_joel)
     m_jordi = build_2d_matrix(jordi_leads, dummy_res_jordi, batch_jordi)
 
-    preview_joel_path = BATCHES_DIR / "matrix_500_JOEL_preview.json"
-    preview_jordi_path = BATCHES_DIR / "matrix_500_JORDI_preview.json"
+    preview_joel_path = BATCHES_DIR / f"matrix_{count_per_owner}_JOEL_preview.json"
+    preview_jordi_path = BATCHES_DIR / f"matrix_{count_per_owner}_JORDI_preview.json"
 
     preview_joel_path.write_text(json.dumps({
         "range": f"ALL_LEADS!AN{joel_leads[0]['_row']}:BD{joel_leads[-1]['_row']}",

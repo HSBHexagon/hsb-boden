@@ -330,6 +330,40 @@ def run_in_sheet_tests():
         log_gate("Gate 8 - Live In-Sheet Read/Write/Delete Roundtrip", False, str(e))
 
     # --------------------------------------------------------------------------
+    # GATE 9: 2.000er Rollout Verification Gate (1.000 Joel / 1.000 Jordie)
+    # --------------------------------------------------------------------------
+    try:
+        # Joel: AN152:BD1151 (1.000 Leads)
+        joel_rollout = service.spreadsheets().values().get(
+            spreadsheetId=SPREADSHEET_ID,
+            range="ALL_LEADS!AN152:BD1151"
+        ).execute().get("values", [])
+
+        # Jordie: AN3534:BD4533 (1.000 Leads)
+        jordi_rollout = service.spreadsheets().values().get(
+            spreadsheetId=SPREADSHEET_ID,
+            range="ALL_LEADS!AN3534:BD4533"
+        ).execute().get("values", [])
+
+        # Joel: Status drafted in AO, DRAFTED in AU, echte Outlook Draft-ID (AAMk...) in AW
+        joel_ok_count = sum(
+            1 for r in joel_rollout
+            if len(r) > 9 and r[1] == "drafted" and r[7] == "DRAFTED" and r[9].startswith("AAMk")
+        )
+
+        # Jordie: Status drafted in AO, DRAFTED in AU, FLOW_RUN_ in AW
+        jordi_ok_count = sum(
+            1 for r in jordi_rollout
+            if len(r) > 9 and r[1] == "drafted" and r[7] == "DRAFTED" and r[9].startswith("FLOW_RUN_")
+        )
+
+        rollout_ok = (joel_ok_count == 1000) and (jordi_ok_count == 1000)
+        log_gate("Gate 9 - 2.000er Rollout Batch", rollout_ok,
+                 f"Joel (Zeilen 152–1151): {joel_ok_count}/1000 mit AAMk-ID, Jordie (Zeilen 3534–4533): {jordi_ok_count}/1000 mit FLOW_RUN_-ID")
+    except Exception as e:
+        log_gate("Gate 9 - 2.000er Rollout Batch", False, str(e))
+
+    # --------------------------------------------------------------------------
     # ZUSAMMENFASSUNG
     # --------------------------------------------------------------------------
     print("=" * 80)

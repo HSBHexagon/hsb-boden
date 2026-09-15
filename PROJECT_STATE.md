@@ -6,9 +6,9 @@ Google Sheet.
 
 ```
 PROJECT = HSB Sales OS
-STATUS  = VERIFIED_COMPLETE (Alle System-Gates, Mobile-AppSheet-Abnahme, Activities-12-Spalten-Kanon und Remote-Canonicalization PASS)
-COMMIT  = b5de5273b30f41d58b303245d98992f1b79ad5fd
-DATE    = 2026-08-28
+STATUS  = VERIFIED_COMPLETE (Alle 9 System-Gates, 2.000er Draft-Rollout 100% verifiziert, Zero-Send-Invariante PASS)
+COMMIT  = 1c4b954 (Head fix/anhang-signatur-trigger-2026-09-07)
+DATE    = 2026-09-15
 ```
 
 ---
@@ -56,8 +56,8 @@ Prospektadresse erreichen.
 ## Operator-Abnahme
 
 ```
-JORDI_OPERATOR_ACCESS     = USER_REPORTED_GRANTED_NOT_LIVE_VERIFIED
-JORDI_POWER_AUTOMATE      = NOT_CONFIGURED_NOT_REQUIRED_FOR_EML
+JORDI_OPERATOR_ACCESS     = LIVE_VERIFIED (Jordie Post, kanonischer Flyer 1.581.178 Bytes)
+JORDI_POWER_AUTOMATE      = LIVE_CONFIGURED (Flow 47ee3d7a-626c-4fff-9e16-6d938949e4bd, 1.000 Entwürfe verifiziert)
 JORDI_FALLBACK            = EML / Outlook-nativ (lokal verifiziert)
 ```
 

@@ -120,7 +120,16 @@ function anrede_(contact) {
 function renderEmail_(lead, flyer) {
   const company = String(lead.Company || 'Ihr Unternehmen').trim();
   const contact = anrede_(lead.Contact);
-  const greeting = contact ? 'Guten Tag ' + contact + ',' : 'Guten Tag,';
+  let greeting;
+  if (!contact) {
+    greeting = 'Sehr geehrte Damen und Herren,';
+  } else if (/^Herr\b/i.test(contact)) {
+    greeting = 'Sehr geehrter ' + contact + ',';
+  } else if (/^Frau\b/i.test(contact)) {
+    greeting = 'Sehr geehrte ' + contact + ',';
+  } else {
+    greeting = 'Guten Tag ' + contact + ',';
+  }
   const subject = 'Industrieböden für ' + company + ' – Beratung von '
     + flyer.displayName;
 

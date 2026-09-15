@@ -11,12 +11,16 @@ Enthält:
 import argparse
 import base64
 import datetime
+import html
 import json
 import re
+import socket
 import sys
 import time
 import urllib.parse
 import urllib.request
+
+socket.setdefaulttimeout(90)
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
@@ -79,7 +83,7 @@ def signatur_html(owner_display: str, mailbox: str, mobile: str) -> str:
 def anrede_fuer(lead: dict) -> str:
     ap = str(lead.get("Ansprechpartner") or "").strip()
     if not ap or ap.lower() in ["none", "nan"]:
-        return "Guten Tag,"
+        return "Sehr geehrte Damen und Herren,"
     teile = ap.split()
     if len(teile) >= 2:
         anrede = teile[0].lower()
@@ -101,22 +105,33 @@ def get_jordi_token() -> str:
         "scope": FC_SCOPE
     }).encode("utf-8")
 
-    req = urllib.request.Request(token_url, data=data, method="POST")
-    with urllib.request.urlopen(req, timeout=30) as resp:
-        tokens = json.loads(resp.read().decode("utf-8"))
-        return tokens["access_token"]
+    last_err = None
+    for attempt in range(1, 4):
+        try:
+            req = urllib.request.Request(token_url, data=data, method="POST")
+            with urllib.request.urlopen(req, timeout=30) as resp:
+                tokens = json.loads(resp.read().decode("utf-8"))
+                return tokens["access_token"]
+        except Exception as ex:
+            last_err = ex
+            if attempt < 3:
+                time.sleep(1.5 * attempt)
+                continue
+            raise last_err
 
 def create_single_draft(owner: str, lead: dict, flyer_b64: str, flyer_name: str, access_token: str = None, batch_id: str = "") -> dict:
     flyer = FLYERS[owner]
     anrede = anrede_fuer(lead)
+    anrede_esc = html.escape(anrede)
     firma_str = str(lead.get("Firma") or "").strip()
     company = firma_str if (firma_str and firma_str.lower() not in ["none", "nan"]) else "Ihr Unternehmen"
+    company_esc = html.escape(company)
     betreff = f"Industrieböden für {company} – Beratung von {flyer.display_name}"
 
     sig = signatur_html(flyer.display_name, flyer.mailbox, flyer.mobile)
     body_html = (
         f'<div style="font-family:Arial,Helvetica,sans-serif;font-size:11pt;color:#222222;line-height:1.5;">'
-        f'<p style="margin:0 0 12px 0;">{anrede}</p>'
+        f'<p style="margin:0 0 12px 0;">{anrede_esc}</p>'
         f'<p style="margin:0 0 12px 0;">mein Name ist {flyer.display_name} von der HSB Hexagon Säurebau GmbH. '
         f'Wir planen, bauen und sanieren säurebeständige, hygienische Industrieböden – '
         f'ausgelegt auf das reale Belastungsprofil statt auf ein Standardprodukt.</p>'
@@ -148,18 +163,27 @@ def create_single_draft(owner: str, lead: dict, flyer_b64: str, flyer_name: str,
     }
     data = json.dumps(payload).encode("utf-8")
 
-    if owner == "JOEL":
-        req = urllib.request.Request(JOEL_URL, data=data, headers={"Content-Type": "application/json"}, method="POST")
-        with urllib.request.urlopen(req, timeout=45) as r:
-            return json.loads(r.read().decode("utf-8"))
-    else:
-        req = urllib.request.Request(JORDI_CONNECTOR_URL, data=data, headers={
-            "Authorization": f"Bearer {access_token}",
-            "Content-Type": "application/json"
-        }, method="POST")
-        with urllib.request.urlopen(req, timeout=45) as r:
-            run_id = r.headers.get("x-ms-workflow-run-id")
-            return {"status": "ACCEPTED_ASYNC", "runId": run_id, "code": r.getcode()}
+    last_err = None
+    for attempt in range(1, 4):
+        try:
+            if owner == "JOEL":
+                req = urllib.request.Request(JOEL_URL, data=data, headers={"Content-Type": "application/json"}, method="POST")
+                with urllib.request.urlopen(req, timeout=90) as r:
+                    return json.loads(r.read().decode("utf-8"))
+            else:
+                req = urllib.request.Request(JORDI_CONNECTOR_URL, data=data, headers={
+                    "Authorization": f"Bearer {access_token}",
+                    "Content-Type": "application/json"
+                }, method="POST")
+                with urllib.request.urlopen(req, timeout=90) as r:
+                    run_id = r.headers.get("x-ms-workflow-run-id")
+                    return {"status": "ACCEPTED_ASYNC", "runId": run_id, "code": r.getcode()}
+        except Exception as ex:
+            last_err = ex
+            if attempt < 3:
+                time.sleep(1.5 * attempt)
+                continue
+            raise last_err
 
 def run_batch(owner: str, count: int = 100, start_row: int = None, force: bool = False, dry_run: bool = False) -> list:
     ts = datetime.datetime.now(datetime.timezone.utc).strftime("%Y%m%dT%H%M%SZ")
@@ -232,12 +256,33 @@ def run_batch(owner: str, count: int = 100, start_row: int = None, force: bool =
                 items = json.loads(f.read_text(encoding="utf-8"))
                 for item in items:
                     if item.get("status") == "OK" and item.get("row"):
+                        draft_id = str(item.get("draft_id") or "")
+                        if "DRYRUN" in draft_id:
+                            continue
                         known_results[item["row"]] = item
             except Exception:
                 pass
 
     results = []
     matrix_rows = []
+    out_file = batches_dir / f"result_{count}_{owner}_{ts}.json"
+
+    def flush_progress(last_idx: int):
+        if dry_run or not matrix_rows:
+            return
+        sub_matrix = matrix_rows[:last_idx]
+        if not sub_matrix:
+            return
+        r_start = filtered_leads[0]["_row"]
+        r_end = filtered_leads[len(sub_matrix) - 1]["_row"]
+        try:
+            write_2d_matrix_bulk(r_start, r_end, sub_matrix)
+        except Exception as we:
+            print(f"[WARN] Progress Matrix Writeback fehlgeschlagen: {we}")
+        try:
+            out_file.write_text(json.dumps(results[:last_idx], indent=2, ensure_ascii=False), encoding="utf-8")
+        except Exception as fe:
+            print(f"[WARN] Progress JSON Writeback fehlgeschlagen: {fe}")
 
     for i, lead in enumerate(filtered_leads, start=1):
         lead_id = lead.get("Lead_ID")
@@ -393,13 +438,14 @@ def run_batch(owner: str, count: int = 100, start_row: int = None, force: bool =
                 "",
                 str(e)[:400]
             ])
-        time.sleep(0.40)
+        time.sleep(1.0 if owner == "JOEL" else 0.40)
+        if i % 10 == 0:
+            flush_progress(i)
 
     # 2D-Matrix Bulk-Write ins Google Sheet
     if not dry_run and matrix_rows:
         write_2d_matrix_bulk(filtered_leads[0]["_row"], filtered_leads[-1]["_row"], matrix_rows)
 
-    out_file = batches_dir / f"result_{count}_{owner}_{ts}.json"
     out_file.write_text(json.dumps(results, indent=2, ensure_ascii=False), encoding="utf-8")
 
     matrix_payload = {

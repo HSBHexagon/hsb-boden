@@ -552,12 +552,23 @@ def run_cloud_sync(target_owner: Optional[str] = None, limit: int = 100) -> None
             owners_to_sync = ["JOEL", "JORDI"]
 
     for o in owners_to_sync:
+        if o == "JORDI":
+            try:
+                from run_100_batch import get_jordi_token
+                owner_token = get_jordi_token()
+                print("[JORDI] Verwende frisches MSAL OAuth Token für j-post@hsb-boden.de.")
+            except Exception as e:
+                print(f"[JORDI] Warnung: Konnte Jordi-Token nicht abrufen ({e}), nutze az Token")
+                owner_token = token
+        else:
+            owner_token = token
+
         reconcile_cloud_for_owner(
             owner_key=o,
             service=service,
             email_to_lead=email_to_lead,
             existing_event_ids=existing_event_ids,
-            token=token,
+            token=owner_token,
             limit=limit,
         )
 

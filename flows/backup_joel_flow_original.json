@@ -1,0 +1,300 @@
+{
+  "name": "137601e8-7369-4a74-9564-959f1551e48d",
+  "id": "/providers/Microsoft.ProcessSimple/environments/Default-8adbbf2e-fd2c-4857-8540-bbcdb3a20f30/flows/137601e8-7369-4a74-9564-959f1551e48d",
+  "type": "Microsoft.ProcessSimple/environments/flows",
+  "properties": {
+    "apiId": "/providers/Microsoft.PowerApps/apis/shared_logicflows",
+    "displayName": "HSB Sales OS Draft Adapter",
+    "userType": "Owner",
+    "definition": {
+      "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+      "contentVersion": "1.0.0.0",
+      "parameters": {
+        "$connections": {
+          "defaultValue": {},
+          "type": "Object"
+        },
+        "$authentication": {
+          "defaultValue": {},
+          "type": "SecureObject"
+        }
+      },
+      "triggers": {
+        "manual": {
+          "metadata": {},
+          "type": "Request",
+          "kind": "Http",
+          "inputs": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "leadId": {
+                  "type": "string"
+                },
+                "batchId": {
+                  "type": "string"
+                },
+                "owner": {
+                  "type": "string"
+                },
+                "to": {
+                  "type": "string"
+                },
+                "subject": {
+                  "type": "string"
+                },
+                "bodyHtml": {
+                  "type": "string"
+                },
+                "attachmentName": {
+                  "type": "string"
+                },
+                "attachmentContentBytes": {
+                  "type": "string",
+                  "format": "byte"
+                }
+              },
+              "required": [
+                "leadId",
+                "batchId",
+                "to",
+                "subject",
+                "bodyHtml",
+                "attachmentName",
+                "attachmentContentBytes"
+              ]
+            },
+            "triggerAuthenticationType": "All"
+          }
+        }
+      },
+      "actions": {
+        "Draft_an_email_message": {
+          "runAfter": {},
+          "type": "OpenApiConnection",
+          "inputs": {
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_office365",
+              "connectionName": "shared_office365",
+              "operationId": "DraftEmail"
+            },
+            "parameters": {
+              "draftMessage/To": "@triggerBody()?['to']",
+              "draftMessage/Subject": "@triggerBody()?['subject']",
+              "draftMessage/Body": "@triggerBody()?['bodyHtml']",
+              "draftMessage/Attachments": [
+                {
+                  "Name": "@triggerBody()?['attachmentName']",
+                  "ContentBytes": "@triggerBody()?['attachmentContentBytes']"
+                }
+              ],
+              "draftMessage/Importance": "Normal"
+            },
+            "authentication": "@parameters('$authentication')"
+          }
+        },
+        "Antwort_OK": {
+          "runAfter": {
+            "Entwurf_zurueckgelesen": [
+              "Succeeded"
+            ]
+          },
+          "type": "Response",
+          "kind": "Http",
+          "inputs": {
+            "statusCode": 200,
+            "headers": {
+              "Content-Type": "application/json"
+            },
+            "body": {
+              "status": "DRAFTED",
+              "leadId": "@triggerBody()?['leadId']",
+              "batchId": "@triggerBody()?['batchId']",
+              "draftId": "@body('Draft_an_email_message')?['id']",
+              "internetMessageId": "@body('Draft_an_email_message')?['internetMessageId']",
+              "conversationId": "@body('Draft_an_email_message')?['conversationId']",
+              "attachmentSize": "@body('Entwurf_zurueckgelesen')?['attachments'][0]?['size']",
+              "attachmentName": "@body('Entwurf_zurueckgelesen')?['attachments'][0]?['name']",
+              "attachmentBase64Chars": "@length(string(body('Entwurf_zurueckgelesen')?['attachments'][0]?['contentBytes']))"
+            }
+          }
+        },
+        "Antwort_Fehler": {
+          "runAfter": {
+            "Draft_an_email_message": [
+              "Failed",
+              "TimedOut",
+              "Skipped"
+            ]
+          },
+          "type": "Response",
+          "kind": "Http",
+          "inputs": {
+            "statusCode": 502,
+            "headers": {
+              "Content-Type": "application/json"
+            },
+            "body": {
+              "status": "ERROR",
+              "leadId": "@triggerBody()?['leadId']",
+              "batchId": "@triggerBody()?['batchId']",
+              "error": "@{actions('Draft_an_email_message')?['error']?['message']}"
+            }
+          }
+        },
+        "Entwurf_zurueckgelesen": {
+          "runAfter": {
+            "Draft_an_email_message": [
+              "Succeeded"
+            ]
+          },
+          "type": "OpenApiConnection",
+          "inputs": {
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_office365",
+              "connectionName": "shared_office365",
+              "operationId": "GetEmailV2"
+            },
+            "parameters": {
+              "messageId": "@body('Draft_an_email_message')?['id']",
+              "includeAttachments": true
+            },
+            "authentication": "@parameters('$authentication')"
+          }
+        },
+        "Antwort_Ohne_Pruefung": {
+          "runAfter": {
+            "Entwurf_zurueckgelesen": [
+              "Failed",
+              "TimedOut"
+            ]
+          },
+          "type": "Response",
+          "kind": "Http",
+          "inputs": {
+            "statusCode": 200,
+            "headers": {
+              "Content-Type": "application/json"
+            },
+            "body": {
+              "status": "DRAFTED_UNVERIFIED",
+              "leadId": "@triggerBody()?['leadId']",
+              "batchId": "@triggerBody()?['batchId']",
+              "draftId": "@body('Draft_an_email_message')?['id']",
+              "internetMessageId": "@body('Draft_an_email_message')?['internetMessageId']",
+              "conversationId": "@body('Draft_an_email_message')?['conversationId']",
+              "attachmentSize": 0,
+              "verifyError": "@{actions('Entwurf_zurueckgelesen')?['error']?['message']}"
+            }
+          }
+        }
+      },
+      "outputs": {}
+    },
+    "triggerSchema": {
+      "type": "object",
+      "properties": {
+        "leadId": {
+          "type": "string"
+        },
+        "batchId": {
+          "type": "string"
+        },
+        "owner": {
+          "type": "string"
+        },
+        "to": {
+          "type": "string"
+        },
+        "subject": {
+          "type": "string"
+        },
+        "bodyHtml": {
+          "type": "string"
+        },
+        "attachmentName": {
+          "type": "string"
+        },
+        "attachmentContentBytes": {
+          "type": "string",
+          "format": "byte"
+        }
+      },
+      "required": [
+        "leadId",
+        "batchId",
+        "to",
+        "subject",
+        "bodyHtml",
+        "attachmentName",
+        "attachmentContentBytes"
+      ]
+    },
+    "state": "Started",
+    "sharingType": "Coauthor",
+    "connectionReferences": {
+      "shared_office365": {
+        "connectionName": "shared-office365-819bd473",
+        "source": "Embedded",
+        "id": "/providers/Microsoft.PowerApps/apis/shared_office365",
+        "displayName": "Office 365 Outlook",
+        "iconUri": "https://static.powerapps.com/resource/ppcr/releases/v1.0.1819/1.0.1819.4795/office365/icon.png",
+        "brandColor": "#0078D4",
+        "tier": "Standard",
+        "apiName": "office365",
+        "isProcessSimpleApiReferenceConversionAlreadyDone": false
+      }
+    },
+    "createdTime": "2026-09-03T02:39:14.3063263Z",
+    "lastModifiedTime": "2026-09-10T10:50:15.5143709Z",
+    "flowSuspensionReason": "None",
+    "environment": {
+      "name": "Default-8adbbf2e-fd2c-4857-8540-bbcdb3a20f30",
+      "type": "Microsoft.ProcessSimple/environments",
+      "id": "/providers/Microsoft.ProcessSimple/environments/Default-8adbbf2e-fd2c-4857-8540-bbcdb3a20f30"
+    },
+    "definitionSummary": {
+      "triggers": [
+        {
+          "type": "Request",
+          "kind": "Http",
+          "metadata": {}
+        }
+      ],
+      "actions": [
+        {
+          "type": "OpenApiConnection",
+          "swaggerOperationId": "DraftEmail"
+        },
+        {
+          "type": "Response",
+          "kind": "Http"
+        },
+        {
+          "type": "Response",
+          "kind": "Http"
+        },
+        {
+          "type": "OpenApiConnection",
+          "swaggerOperationId": "GetEmailV2"
+        },
+        {
+          "type": "Response",
+          "kind": "Http"
+        }
+      ]
+    },
+    "creator": {
+      "tenantId": "8adbbf2e-fd2c-4857-8540-bbcdb3a20f30",
+      "objectId": "789f58a0-d9b9-43dd-a78c-f2d50d20c99e",
+      "userId": "789f58a0-d9b9-43dd-a78c-f2d50d20c99e",
+      "userType": "ActiveDirectory"
+    },
+    "installationStatus": "NotApplicable",
+    "provisioningMethod": "FromDefinition",
+    "flowFailureAlertSubscribed": true,
+    "referencedResources": [],
+    "isManaged": false,
+    "machineDescriptionData": {}
+  }
+}

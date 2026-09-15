@@ -276,7 +276,14 @@ def render_email(lead: dict, batch: Batch, template: str | None = None) -> tuple
     """Gibt (subject, body) zurueck."""
     company = str(lead.get("Company") or "Ihr Unternehmen").strip()
     contact = anrede(lead.get("Contact"))
-    greeting = f"Guten Tag {contact}," if contact else "Guten Tag,"
+    if not contact:
+        greeting = "Sehr geehrte Damen und Herren,"
+    elif contact.startswith("Herr "):
+        greeting = f"Sehr geehrter {contact},"
+    elif contact.startswith("Frau "):
+        greeting = f"Sehr geehrte {contact},"
+    else:
+        greeting = f"Guten Tag {contact},"
     owner = batch.owner_display
     subject = f"Industrieböden für {company} – Beratung von {owner}"
 

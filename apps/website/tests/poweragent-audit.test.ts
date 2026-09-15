@@ -2,17 +2,25 @@ import { readFileSync, existsSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
+function resolvePath(path: string) {
+  const local = join(process.cwd(), path);
+  if (existsSync(local)) return local;
+  const root = join(process.cwd(), "../..", path);
+  if (existsSync(root)) return root;
+  return local;
+}
+
 function source(path: string) {
-  return readFileSync(join(process.cwd(), path), "utf8");
+  return readFileSync(resolvePath(path), "utf8");
 }
 
 describe("PowerAgent audit guardrails", () => {
   it("does not publish private Notion backups into the public repository", () => {
-    expect(existsSync(join(process.cwd(), ".github/workflows/notion-nightly-backup.yml"))).toBe(false);
+    expect(existsSync(resolvePath(".github/workflows/notion-nightly-backup.yml"))).toBe(false);
   });
 
   it("does not publish the removed, unused Notion deploy-sync workflow", () => {
-    expect(existsSync(join(process.cwd(), ".github/workflows/notion-deploy-sync.yml"))).toBe(false);
+    expect(existsSync(resolvePath(".github/workflows/notion-deploy-sync.yml"))).toBe(false);
   });
 
   it("pins every third-party GitHub Action to an immutable commit", () => {

@@ -15,6 +15,9 @@ env:
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/website
     steps:
       - name: Checkout repository
         # actions/checkout@v4 pinned on 2026-06-26
@@ -25,6 +28,8 @@ jobs:
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
         with:
           node-version: 22
+          cache: 'npm'
+          cache-dependency-path: apps/website/package-lock.json
 
       - name: Install dependencies
         run: npm ci

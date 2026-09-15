@@ -19,6 +19,9 @@ jobs:
     timeout-minutes: 15
     permissions:
       contents: read
+    defaults:
+      run:
+        working-directory: apps/website
     steps:
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
@@ -28,6 +31,7 @@ jobs:
         with:
           node-version: 22
           cache: npm
+          cache-dependency-path: apps/website/package-lock.json
 
       - name: Install dependencies
         run: npm ci --no-audit --no-fund

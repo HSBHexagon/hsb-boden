@@ -12,11 +12,9 @@ PROJECT_DEFINITIONS: Dict[str, Dict[str, Any]] = {
         "parent_hint": "root",
         "github_repos": [
             "https://github.com/HSBHexagon/hsb-boden",
-            "https://github.com/HSBHexagon/hsb-sales-os",
         ],
         "local_paths": [
             "/Users/joelcherinodiaz/KI-System/02_Projects/active/hsb-boden",
-            "/Users/joelcherinodiaz/KI-System/02_Projects/active/hsb-sales-os",
         ],
         "subfolders": [
             "01_Website_Cloudflare",
@@ -25,7 +23,7 @@ PROJECT_DEFINITIONS: Dict[str, Dict[str, Any]] = {
             "04_Handoff_Audits",
             "05_Archiv",
         ],
-        "description": "Ganzheitlicher Hub: Astro/React Webseite auf Cloudflare Pages & Sales OS CRM",
+        "description": "Ganzheitliches Enterprise Monorepo: Astro/React Webseite auf Cloudflare Pages & Sales OS CRM",
     },
     "Automobile_Quick": {
         "display_name": "Automobile Quick (auto-hub)",
@@ -33,7 +31,6 @@ PROJECT_DEFINITIONS: Dict[str, Dict[str, Any]] = {
         "parent_hint": "root",
         "github_repos": [
             "https://github.com/cherinojoel-lang/auto-hub",
-            "https://github.com/cherinojoel-lang/auto-hub1",
         ],
         "local_paths": [
             "/Users/joelcherinodiaz/KI-System/02_Projects/active/auto-hub",

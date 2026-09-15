@@ -19,7 +19,6 @@ def test_manifest_contains_github_links_and_structure():
     manifest = render_project_manifest(spec)
     assert "# 00_PROJECT_MANIFEST — HSB Hexagon Säurebau GmbH (HSB-Boden)" in manifest
     assert "https://github.com/HSBHexagon/hsb-boden" in manifest
-    assert "https://github.com/HSBHexagon/hsb-sales-os" in manifest
     assert "01_Website_Cloudflare" in manifest
     assert "02_Sales_OS_CRM" in manifest
     assert "03_Brand_Assets" in manifest

@@ -14,6 +14,7 @@ dist/
 .agents/
 .claude/
 .codex/
+.omg/
 docs/brain/
 docs/ops/
 PROJECT_AUDIT.md

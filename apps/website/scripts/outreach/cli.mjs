@@ -21,7 +21,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { randomUUID } from "node:crypto";
 import { join } from "node:path";
 import { parseCsvRecords } from "./csv.mjs";
-import { evaluateLead, executeBatch, findResumable, planBatch, STATUS, summarizeState } from "./engine.mjs";
+import { executeBatch, findResumable, planBatch, STATUS, summarizeState } from "./engine.mjs";
 import { loadState, loadSuppression, saveState, writeRunLog } from "./state.mjs";
 import { resolveProvider } from "./providers.mjs";
 import { readAirtableEnv, syncLeadsToAirtable, recordSyncResult, readLastSyncResult } from "./airtable.mjs";

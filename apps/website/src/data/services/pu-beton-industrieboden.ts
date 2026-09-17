@@ -5,7 +5,7 @@ export const puBetonIndustrieboden: Service = {
   title: "PU-Beton Industrieboden",
   seoTitle: "PU-Beton & Polyurethanbeton Industrieböden | HSB",
   description:
-    "Fugenlose PU-Beton-Böden für Lebensmittel & Pharma: Extrem thermoschockbeständig bis 130°C, chemisch resistent, hygienisch und schnell belastbar.",
+    "Fugenlose PU-Beton-Böden für Lebensmittel & Pharma: Thermoschockbeständig bis 120 °C (ab 9 mm), chemisch resistent, hygienisch und schnell belastbar.",
   h1: "PU-Beton: fugenloser Hochleistungsboden für Thermoschock-Belastung",
   primaryKeyword: "PU-Beton Industrieboden",
   secondaryKeywords: [
@@ -25,7 +25,7 @@ export const puBetonIndustrieboden: Service = {
   ],
   technicalRequirements: [
     "Schichtstärken von 6mm bis 12mm",
-    "Thermoschockbeständig bis 130°C",
+    "Thermoschockbeständig bis 120 °C (ab 9 mm Schichtdicke)",
     "Chemische Resistenz gegen organische Säuren",
     "Rutschhemmung einstellbar (R9 bis R13)",
     "Aushärtung binnen weniger Stunden",
@@ -59,7 +59,7 @@ export const puBetonIndustrieboden: Service = {
     {
       question: "Ist PU-Beton dampfstrahlfest?",
       answer:
-        "Ja, ab einer Schichtdicke von 9mm ist PU-Beton dauerhaft beständig gegen Heißwasserreinigung und Dampfstrahler bis 130°C.",
+        "Ja, ab einer Schichtdicke von 9mm ist PU-Beton dauerhaft beständig gegen Heißwasserreinigung und Dampfstrahler bis 120 °C.",
     },
   ],
   ctaLabel: "PU-Beton Fachberatung anfragen",

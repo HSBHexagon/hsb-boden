@@ -624,7 +624,11 @@ function reconcileInboxMessages_(messages, quelle) {
     var msgIdBekannt = !!(m.internetMessageId && li.byMsgId[m.internetMessageId]);
     var leadBezug = adresseMitLeadBezug_(cls.email, li) || adresseMitLeadBezug_(cls.failed_recipient, li) || msgIdBekannt;
     if (!leadBezug && !sicherheitsrelevant) { out.foreign++; return; }
-    var exakt = adresseExaktZuordenbar_(cls.email, li) || adresseExaktZuordenbar_(cls.failed_recipient, li) || msgIdBekannt;
+    // Eine Abmeldung ist auch ueber die Firmendomain zuordenbar (processInboundEvent
+    // sperrt dann alle Leads der Domain) - ein offener Opt-out-Klaerfall wird
+    // deshalb erneut eingereicht, sobald die Domain einen Lead trifft.
+    var exakt = adresseExaktZuordenbar_(cls.email, li) || adresseExaktZuordenbar_(cls.failed_recipient, li) || msgIdBekannt ||
+                (cls.event_type === 'OPT_OUT' && adresseMitLeadBezug_(cls.email, li));
     var entscheidung = abgleichEntscheidung_(eventId, evIdx, exakt);
     if (entscheidung === 'uebersprungen') { out.skipped++; return; }
     if (typeof processInboundEvent !== 'function') return;

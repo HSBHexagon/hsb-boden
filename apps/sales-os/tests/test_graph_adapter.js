@@ -328,6 +328,14 @@ console.log('\n=== 9. Wiederkehrender Postfach-Abgleich: Lead-Bezug und Idempote
          EINGEREICHT.length === 1 && EINGEREICHT[0].event_id === 'TEST-INBOX-<m4@x>',
          EINGEREICHT.map(function (e) { return e.event_id; }).join(','));
 
+  // Offene Abmeldung (NEEDS_REVIEW) aus einer Firmendomain wird erneut eingereicht,
+  // sobald die Domain einen Lead trifft - processInboundEvent sperrt dann die Domain.
+  EVENTS.push(['TEST-INBOX-<m6@x>', 'ts', 'OPT_OUT', '', '', 'vorname.name@brauerei-muster.de', '<m6@x>', '', 'NEEDS_REVIEW', 'Abmelden']);
+  EINGEREICHT = [];
+  k.reconcileInboxMessages_([mail('m6', 'vorname.name@brauerei-muster.de', 'Abmelden', 'bitte abmelden')], 'TEST');
+  pruefe('Offene Abmeldung aus Lead-Domain wird erneut eingereicht',
+         EINGEREICHT.length === 1 && EINGEREICHT[0].event_type === 'OPT_OUT', JSON.stringify(EINGEREICHT));
+
   // Gesendete Elemente: nur Empfaenger mit Lead-Bezug.
   EINGEREICHT = [];
   const GESENDET = [

@@ -143,6 +143,34 @@ const systems = Object.values(STRESS_SYSTEMS);
     });
   });
 
+  // Aktuelles Ergebnis; die CTA-Listener werden genau einmal beim Init
+  // registriert und lesen hier — kein Listener-Stapel bei erneutem Submit.
+  let current: { input: StressCheckInput; result: StressCheckResult } | undefined;
+
+  function handleAuditRequest() {
+    if (!current) return;
+    const { input, result } = current;
+    const prefill = buildLeadPrefill(input, result);
+    trackB2BConversion("audit_request", {
+      placement: "stress_check",
+      medium: input.medium,
+      temp_range: input.tempRange,
+      mechanical_load: input.mechanicalLoad,
+      time_window: input.timeWindow,
+      recommended_system: result.system.id,
+    });
+    try {
+      saveStressCheckHandoff(window.sessionStorage, prefill);
+    } catch {
+      // Storage blockiert: DOM-Event reicht auf derselben Seite.
+    }
+    window.dispatchEvent(new CustomEvent(STRESS_CHECK_EVENT, { detail: prefill }));
+  }
+
+  resultContainer?.querySelectorAll<HTMLAnchorElement>("[data-audit-cta]").forEach((cta) => {
+    cta.addEventListener("click", handleAuditRequest);
+  });
+
   function render(input: StressCheckInput, result: StressCheckResult) {
     if (!resultContainer) return;
     resultContainer.querySelectorAll<HTMLElement>("[data-system]").forEach((card) => {
@@ -175,29 +203,9 @@ const systems = Object.values(STRESS_SYSTEMS);
         note.classList.toggle("hidden", !result.windowNote);
       }
 
-      const cta = card.querySelector<HTMLAnchorElement>("[data-audit-cta]");
-      cta?.addEventListener(
-        "click",
-        () => {
-          const prefill = buildLeadPrefill(input, result);
-          trackB2BConversion("audit_request", {
-            placement: "stress_check",
-            medium: input.medium,
-            temp_range: input.tempRange,
-            mechanical_load: input.mechanicalLoad,
-            time_window: input.timeWindow,
-            recommended_system: result.system.id,
-          });
-          try {
-            saveStressCheckHandoff(window.sessionStorage, prefill);
-          } catch {
-            // Storage blockiert: DOM-Event reicht auf derselben Seite.
-          }
-          window.dispatchEvent(new CustomEvent(STRESS_CHECK_EVENT, { detail: prefill }));
-        },
-        { once: true },
-      );
     });
+
+    current = { input, result };
 
     resultContainer.classList.remove("hidden");
     resultContainer.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -220,6 +228,7 @@ const systems = Object.values(STRESS_SYSTEMS);
   form?.addEventListener("reset", () => {
     error?.classList.add("hidden");
     resultContainer?.classList.add("hidden");
+    current = undefined;
   });
 
   resultContainer?.querySelectorAll<HTMLDetailsElement>("[data-norm]").forEach((details) => {

@@ -220,6 +220,7 @@ const deliveryConfigured = site.hasLeadEndpoint;
 
   // Übergabe aus dem Beanspruchungs-Check: Belastungen, Projektart, Betrieb
   // und technische Nachricht vorbelegen. Personenfelder bleiben leer.
+  let lastPrefillMessage = "";
   function applyPrefill(prefill: LeadPrefill) {
     if (!form) return;
     form.querySelectorAll<HTMLInputElement>('input[name="loads"]').forEach((box) => {
@@ -230,7 +231,13 @@ const deliveryConfigured = site.hasLeadEndpoint;
     const liveOperation = form.elements.namedItem("liveOperation");
     if (liveOperation instanceof HTMLSelectElement) liveOperation.value = prefill.liveOperation;
     const message = form.elements.namedItem("message");
-    if (message instanceof HTMLTextAreaElement && message.value.trim() === "") message.value = prefill.message;
+    if (
+      message instanceof HTMLTextAreaElement &&
+      (message.value.trim() === "" || message.value === lastPrefillMessage)
+    ) {
+      message.value = prefill.message;
+    }
+    lastPrefillMessage = prefill.message;
     form.dataset.stressCheckSystem = prefill.recommendedSystem;
   }
 

@@ -31,6 +31,7 @@ const logos = getLogoCloudEntries(industryFilter);
           data-logo-entry
           data-client={reference.name}
           data-industry={reference.industry ?? ""}
+          data-tracked={reference.systems.length > 0 ? "true" : "false"}
           aria-label={`${reference.name} – ${reference.proofTag} – ${reference.systems.length > 0 ? "Referenzen ansehen" : "Kundenstandorte ansehen"}`}
         >
           <div class="grid h-14 w-full max-w-[150px] place-items-center grayscale opacity-75 contrast-125 transition-all group-hover:grayscale-0 group-hover:opacity-100">
@@ -59,7 +60,9 @@ const logos = getLogoCloudEntries(industryFilter);
 <script>
   import { trackReferenceInteraction } from "../../lib/analytics";
 
-  const entries = document.querySelectorAll<HTMLAnchorElement>("[data-logo-entry]");
+  // Nur freigegebene Referenzen (references.ts) werden an GA4 gemeldet; reine
+  // Kundenstandorte sind ausschließlich für die Kartendarstellung freigegeben.
+  const entries = document.querySelectorAll<HTMLAnchorElement>('[data-logo-entry][data-tracked="true"]');
 
   function describe(element: HTMLElement) {
     return {

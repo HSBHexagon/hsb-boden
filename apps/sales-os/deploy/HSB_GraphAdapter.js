@@ -384,9 +384,6 @@ function graphReconcileSentItems_() {
 //      (NEEDS_REVIEW) wird nur dann erneut eingereicht, wenn er inzwischen
 //      exakt zuordenbar ist (E-Mail eindeutig, Internet_Message_ID bekannt).
 
-var FREEMAIL_DOMAINS_ = ['gmail.com', 'googlemail.com', 'outlook.com', 'outlook.de', 'hotmail.com', 'hotmail.de',
-  'live.com', 'live.de', 'web.de', 'gmx.de', 'gmx.net', 'gmx.at', 'gmx.ch', 't-online.de', 'yahoo.com', 'yahoo.de',
-  'icloud.com', 'me.com', 'freenet.de', 'aol.com', 'posteo.de', 'mail.de', 'protonmail.com', 'proton.me'];
 
 var SICHERHEITSRELEVANT_ = ['HARD_BOUNCE', 'SOFT_BOUNCE', 'OPT_OUT', 'AUTO_REPLY_OOO', 'CONTACT_CHURN', 'NEGATIVE_REPLY'];
 
@@ -426,7 +423,7 @@ function adresseMitLeadBezug_(addr, li) {
   if (!addr) return false;
   if (li.byEmail[addr]) return true;
   var d = addr.split('@')[1] || '';
-  if (!d || FREEMAIL_DOMAINS_.indexOf(d) >= 0) return false;
+  if (!d || (typeof istFreemailDomain_ === 'function' && istFreemailDomain_(d))) return false;
   return !!li.byDomain[d];
 }
 
@@ -627,7 +624,11 @@ function reconcileInboxMessages_(messages, quelle) {
     var msgIdBekannt = !!(m.internetMessageId && li.byMsgId[m.internetMessageId]);
     var leadBezug = adresseMitLeadBezug_(cls.email, li) || adresseMitLeadBezug_(cls.failed_recipient, li) || msgIdBekannt;
     if (!leadBezug && !sicherheitsrelevant) { out.foreign++; return; }
-    var exakt = adresseExaktZuordenbar_(cls.email, li) || adresseExaktZuordenbar_(cls.failed_recipient, li) || msgIdBekannt;
+    // Eine Abmeldung ist auch ueber die Firmendomain zuordenbar (processInboundEvent
+    // sperrt dann alle Leads der Domain) - ein offener Opt-out-Klaerfall wird
+    // deshalb erneut eingereicht, sobald die Domain einen Lead trifft.
+    var exakt = adresseExaktZuordenbar_(cls.email, li) || adresseExaktZuordenbar_(cls.failed_recipient, li) || msgIdBekannt ||
+                (cls.event_type === 'OPT_OUT' && adresseMitLeadBezug_(cls.email, li));
     var entscheidung = abgleichEntscheidung_(eventId, evIdx, exakt);
     if (entscheidung === 'uebersprungen') { out.skipped++; return; }
     if (typeof processInboundEvent !== 'function') return;

@@ -1517,6 +1517,16 @@ function getSetupState() {
  * 3. Kein Raten: Nicht zuordenbare Events erhalten Status 'NEEDS_REVIEW' und
  *    werden niemals auf Verdacht einem Lead zugeordnet.
  */
+// Freemail-Anbieter tragen keine Firmenzuordnung: eine Adresse dort sagt
+// nichts ueber das Unternehmen des Leads aus.
+var FREEMAIL_DOMAINS_ = ['gmail.com', 'googlemail.com', 'outlook.com', 'outlook.de', 'hotmail.com', 'hotmail.de',
+  'live.com', 'live.de', 'web.de', 'gmx.de', 'gmx.net', 'gmx.at', 'gmx.ch', 't-online.de', 'yahoo.com', 'yahoo.de',
+  'icloud.com', 'me.com', 'freenet.de', 'aol.com', 'posteo.de', 'mail.de', 'protonmail.com', 'proton.me'];
+
+function istFreemailDomain_(domain) {
+  return FREEMAIL_DOMAINS_.indexOf(String(domain || '').trim().toLowerCase()) >= 0;
+}
+
 function processInboundEvent(event) {
   if (!event || typeof event !== 'object') {
     throw new Error('Ungueltiges Event-Objekt');
@@ -1577,6 +1587,7 @@ function processInboundEvent(event) {
     // Lead-Zuordnung
     const read = readLeadsCached_();
     let matchedLead = null;
+    let domainOptOutLeads = [];   // nur bei OPT_OUT ueber die Firmendomain gefuellt
 
     if (explicitLeadId) {
       matchedLead = read.leads.filter(function (l) {
@@ -1626,6 +1637,23 @@ function processInboundEvent(event) {
         }
       }
 
+      // Abmeldung aus einer Firmendomain: Der Widerspruch gilt dem Unternehmen
+      // (§ 7 UWG). Kommt "Abmelden" von einer anderen Adresse derselben
+      // Firmendomain (Lead: info@firma.de, Antwort: vorname.name@firma.de),
+      // wird JEDER Lead dieser Domain gesperrt. Eine Abmeldung darf nie als
+      // Klaerfall liegen bleiben, waehrend weiter gesendet wird - hier ist
+      // Sperren die sichere Richtung, nicht Abwarten. Freemail-Domains
+      // tragen keine Firmenzuordnung und bleiben ausgenommen (NEEDS_REVIEW).
+      if (!matchedLead && eventType === 'OPT_OUT' && email) {
+        const optOutDomain = email.split('@')[1] || '';
+        if (optOutDomain && !istFreemailDomain_(optOutDomain)) {
+          domainOptOutLeads = read.leads.filter(function (l) {
+            return String(l.Email || '').trim().toLowerCase().split('@')[1] === optOutDomain;
+          });
+          if (domainOptOutLeads.length) matchedLead = domainOptOutLeads[0];
+        }
+      }
+
       // Reverse Lookup wenn failed_recipient uebergeben wurde (NDR / Mailer-Daemon)
       if (!matchedLead && event.failed_recipient) {
         const failEmail = String(event.failed_recipient).trim().toLowerCase();
@@ -1665,7 +1693,13 @@ function processInboundEvent(event) {
     } else if (eventType === 'SOFT_BOUNCE') {
       setLeadStatus(leadId, 'SOFT_BOUNCE', 3, 'Soft Bounce: Wiedervorlage in 3 Tagen');
     } else if (eventType === 'OPT_OUT') {
-      setLeadStatus(leadId, 'OPT_OUT', 0, 'Opt-out: Abmeldung vermerkt');
+      if (domainOptOutLeads.length) {
+        domainOptOutLeads.forEach(function (l) {
+          setLeadStatus(l.Lead_ID, 'OPT_OUT', 0, 'Opt-out: Domain-Abmeldung von ' + email);
+        });
+      } else {
+        setLeadStatus(leadId, 'OPT_OUT', 0, 'Opt-out: Abmeldung vermerkt');
+      }
     } else if (eventType === 'AUTO_REPLY_OOO') {
       const followUp = parseInt(event.follow_up_days, 10) || 7;
       setLeadStatus(leadId, 'AUTO_REPLY_OOO', followUp, 'Abwesenheitsnotiz (' + (event.details || 'Urlaub') + ')');
@@ -1702,10 +1736,13 @@ function processInboundEvent(event) {
       stampBatchSentAt_(matchedLead.Batch_ID);
     }
 
+    const eventNotiz = domainOptOutLeads.length
+      ? ('Domain-Abmeldung von ' + email + ': gesperrt ' + domainOptOutLeads.map(function (l) { return l.Lead_ID; }).join(', '))
+      : (event.subject || event.details || 'Erfolgreich zugeordnet');
     eventsSh.appendRow([
       eventId, ts, eventType, leadId, owner,
       email, messageId, inReplyTo, 'PROCESSED',
-      event.subject || event.details || 'Erfolgreich zugeordnet'
+      eventNotiz
     ]);
 
     logActivity_(matchedLead.Batch_ID || '', 'INBOUND_' + eventType,

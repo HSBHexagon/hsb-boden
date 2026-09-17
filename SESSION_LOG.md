@@ -365,3 +365,15 @@ Fortlaufendes Log jeder KI-Session. Jeder Eintrag: Zeit · Modell · Phase · Au
 - **Deploy:** ja — Cloudflare Pages (PR #85, #87 Inhalte) sowie separat Google Apps Script Deployment Version 4 (Webhook-URL unverändert)
 - **Kein DNS-/NS-Switch, keine Massenmail, keine neue Apps-Script-Deployment-ID erzeugt**
 - **Nächster Schritt:** Auth-Cutover für das Legacy-Apps-Script-Deployment abschließen (docs/crm/ATTRIBUTION_CONNECTOR_PATCH.md bleibt bis dahin `mapping-live-on-legacy; auth-cutover-open`); PR #88 (CRM-Deep-Dive) reviewen/mergen; verbleibende Jules-PRs triagieren; Apex-DNS-Switch, Google-Business-Profil-Verifizierung und Compliance-Freigabe für Kaltakquise bleiben die drei zentralen Owner-Gates.
+
+---
+
+## 2026-09-17 13:00 CEST — Claude Code (Opus 5) — CRM Operator-Schicht + Auto-Abgleich
+- **Phase:** CRM (Google Sheet „Sales OS") bedienbar machen + automatische Statusfortschreibung
+- **Entscheidungen Owner:** Sheet bleibt System of Record (Airtable nicht SSoA, `STORAGE_ROLES.md` geändert, Backup `08_System/backups/20260917-storage-roles/`); kostenfrei; Abmeldung per Antwort „Abmelden"; beide Postfächer.
+- **Analyse (Sheets-API, alle 34 Tabs/6.424 Zeilen):** nur 5 Tabs sichtbar; JOEL/JORDI/READY_CANDIDATES sind QUERY-Sichten; Ursache des Screenshots = WRAP auf allen 56 Spalten; Operator-Spalten tot (Status/Nächste Aktion/Opt-in/Opt-out ×6.424 unverändert); Bounces in `Reply_Status` statt `Bounce_Status`; `Legal_Basis` gemischtes Vokabular; Sheet-Eigentümer Privatkonto `cherinodiaz@outlook.com`. Power Automate: nur Draft-Adapter (Joel Started, Jordi Stopped), kein Rückkanal-Flow, Google-Connections auf Privatkonto.
+- **Umgesetzt (Branch `feat/crm-operator-layer`, `8e70ec8`):** Backup (Drive-Kopie + 34 CSV + Manifest, 34/34 OK) → ALL_LEADS: CLIP, Gruppe AD:BD eingeklappt, S:W ausgeblendet, Freeze 1/2, Breiten, Dropdown-Chips, 4 Filteransichten, Spalte BE **Pipeline** mit Ampeln (Header A1:BD1 byte-identisch; Verteilung Neu 3.953 · Entwurf 2.125 · Freigegeben 186 · Versendet 140 · Bounce 20). Apps Script: `hsbAutoReconcile()` + 15-min-Trigger je Nutzer + Menü + Opt-out-Stichwörter, per `clasp push` live und per `clasp pull` gegengeprüft. Python-Engine-Tests 45/45. Spec + Plan + AGY-Auftrag (Fassung 3) + README_OPERATING.
+- **Fehlversuch abgefangen:** erster Apply mit Leseprofil → 403, nichts geschrieben; `moveDimension` vor Apply entfernt (hätte Buchstaben-Formeln gebrochen).
+- **Website-Code-Diff:** 0 (Website-Branch `feat/b2b-tracking-stresscheck-schema` unverändert, 13 Commits, wartet auf Push-Freigabe)
+- **Push:** nein · **Deploy:** Apps Script per clasp aktualisiert (bestehende Script-ID, kein neues Deployment); Website nein
+- **Offen (Owner):** (1) im Sheet je Person „Mit Outlook verbinden" + „⏱️ Automatischen Abgleich einrichten"; (2) Task 4: 20× Legal_Basis yes→OWNER_APPROVED, 20× Bounce_Status=hard, 323× Versandfreigabe=yes ohne Rechtsgrundlage → auf `no`?; (3) Eigentum Sheet + Google-Connections vom Privatkonto auf HSB-Konto; (4) Testfälle 1–3 nach Trigger-Einrichtung; (5) Push-Freigabe beider Branches.

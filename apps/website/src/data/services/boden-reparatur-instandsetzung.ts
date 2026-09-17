@@ -55,7 +55,7 @@ export const bodenReparaturInstandsetzung: Service = {
       question:
         "Lohnt sich eine Reparatur oder ist eine Sanierung sinnvoller?",
       answer:
-        "Das hängt vom Schadensbild ab. Bei punktuellen Schäden an einem ansonsten intakten Boden ist die fachgerechte Instandsetzung deutlich günstiger und schneller. Bei flächigem Versagen bewerten wir vor Ort, ab wann eine Sanierung wirtschaftlicher ist.",
+        "Das hängt vom Schadensbild ab. Bei punktuellen Schäden an einem ansonsten intakten Boden ist die fachgerechte Instandsetzung wirtschaftlicher und mit kürzerer Sperrzeit umsetzbar. Bei flächigem Versagen bewerten wir vor Ort, ab wann eine Sanierung wirtschaftlicher ist.",
     },
     {
       question: "Können Reparaturen im laufenden Betrieb erfolgen?",

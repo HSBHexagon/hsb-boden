@@ -268,6 +268,13 @@ export function getAllPublicPages() {
       canonicalPath: "/kontakt/",
     },
     {
+      h1: "Technischer Beanspruchungs-Check für Produktionsböden",
+      seoTitle: "Beanspruchungs-Check für Industrieböden | HSB Hexagon",
+      description:
+        "Medium, Temperatur, mechanische Last und Sanierungsfenster eingeben – deterministische Systemempfehlung nach AGI S 40, PU-Beton oder WHG § 62 mit direktem Vor-Ort-Audit.",
+      canonicalPath: "/beanspruchungs-check/",
+    },
+    {
       h1: "Danke für Ihre Projektanfrage",
       seoTitle: "Danke für Ihre Projektanfrage | HSB Hexagon Säurebau",
       description:

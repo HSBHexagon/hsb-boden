@@ -1,0 +1,26 @@
+---
+import LeadFormSection from "../../components/forms/LeadFormSection.astro";
+import StressCheck from "../../components/forms/StressCheck.astro";
+import PageHero from "../../components/sections/PageHero.astro";
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import { buildBreadcrumbJsonLd } from "../../lib/schema";
+
+export const prerender = true;
+
+const path = "/beanspruchungs-check/";
+const title = "Beanspruchungs-Check für Industrieböden | HSB Hexagon";
+const description =
+  "Medium, Temperatur, mechanische Last und Sanierungsfenster eingeben – deterministische Systemempfehlung nach AGI S 40, PU-Beton oder WHG § 62 mit direktem Vor-Ort-Audit.";
+---
+
+<BaseLayout title={title} description={description} path={path} jsonLd={[buildBreadcrumbJsonLd([{ name: "Start", path: "/" }, { name: "Beanspruchungs-Check", path }])]}>
+  <PageHero
+    eyebrow="Ingenieurbau"
+    title="Technischer Beanspruchungs-Check für Produktionsböden"
+    text="Vier betriebliche Parameter entscheiden über Rüttelkeramik nach AGI S 40, Hochtemperatur-PU-Beton oder eine WHG § 62 Fachbeschichtung. Das Ergebnis geht direkt in eine qualifizierte Audit-Anfrage über."
+    ctaLabel="Check starten"
+    ctaHref="#beanspruchungs-check"
+  />
+  <StressCheck auditAnchor="#kontaktformular" />
+  <LeadFormSection />
+</BaseLayout>

@@ -2,7 +2,7 @@
 
 - **Status:** VOLLSTÄNDIG UMGESETZT UND LIVE DEPLOYT (`clasp push` + Sheets API BatchUpdate).
 - **Claude Code Reset:** Claude Code erreichte um 14:41 Uhr sein Token-Limit (Reset: 16:10 Uhr Europe/Berlin). Die unterbrochene Arbeit (GraphAdapter Section 9 Vorfilter, Operator Layer, Master-Plan) wurde nahtlos übernommen, gehärtet, getestet und live geschaltet.
-- **Git HEAD:** `feat/crm-operator-layer` im Repository `hsb-boden`.
+- **Git HEAD:** `main` (Commit `4c8f843`, Branch `feat/crm-operator-layer` vollständig gemergt und aufgeräumt) im Repository `hsb-boden`.
 - **Apps Script Live Deployment:**
   - Script ID: `1Xl6xkMTyn3Hu6UvBoX7gVrdppuyRal04NH6Ei16hnz_Pfuq-JWmh9U4c`
   - Alle 7 Dateien erfolgreich gepusht: `appsscript.json`, `HSB_AdapterSelbsttest.gs`, `HSB_DraftAdapter.gs.js`, `HSB_FlowConnect.js`, `HSB_GraphAdapter.js` (inkl. Section 9 Idempotenter Inbound-Vorfilter), `HSB_SALES_OS.js` (schlankes Operator-Menü), `Sidebar.html`.

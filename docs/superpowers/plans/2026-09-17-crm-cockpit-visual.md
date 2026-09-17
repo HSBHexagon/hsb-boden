@@ -223,9 +223,14 @@ def test_wiederholte_klaerfaelle_fallen_weg_erste_bleibt():
 
 Run: `python3 -m pytest tests/test_crm_events_migrate.py -q` → PASS; `python3 engine/operator_layer/crm_events_migrate.py` → Dry-Run-Zahlen (erwartet ≈ „Alt-Layout: 600+, Wiederholungen: 284").
 
-- [ ] **Step 7: Owner-Gate, dann anwenden**
+- [ ] **Step 7: Owner-Gate, Abgleich anhalten, dann anwenden**
 
-Dem Owner die Dry-Run-Zeile zeigen; nach „ja": `python3 engine/operator_layer/crm_backup.py && python3 engine/operator_layer/crm_events_migrate.py --apply`, danach Dry-Run erneut → „Alt-Layout: 0 | Wiederholungen entfernt: 0".
+Das Skript macht `clear` + `update` auf dem Audit-Tab, während der 15-Minuten-Trigger dort anhängt — Python hält den Apps-Script-`DocumentLock` nicht. Reihenfolge deshalb zwingend:
+1. Dem Owner die Dry-Run-Zeile zeigen, „ja" abwarten.
+2. In **beiden** Konten Menü „HSB Sales OS → Verwaltung → ⏱️ Abgleich stoppen" (Status prüfen: „Trigger dieses Nutzers: 0").
+3. `python3 engine/operator_layer/crm_backup.py && python3 engine/operator_layer/crm_events_migrate.py --apply`
+4. Dry-Run erneut → „Alt-Layout: 0 | Wiederholungen entfernt: 0".
+5. In beiden Konten „⏱️ Automatischen Abgleich einrichten (alle 15 min)" erneut ausführen; `SYNC_STATUS` (Task 2) bzw. neue Events belegen den Wiederanlauf.
 
 - [ ] **Step 8: Commit**
 
@@ -432,9 +437,15 @@ def cockpit_values(owner_match, mailbox):
     rows = [[f"HEUTE — {owner_match.upper()}", "", "", "", "", "", ""],
             [f'=IFERROR("Postfach " & VLOOKUP("{mailbox}"; SYNC_STATUS!A:H; 1; FALSE) & " · zuletzt abgeglichen " & TEXT(VLOOKUP("{mailbox}"; SYNC_STATUS!A:H; 2; FALSE); "dd.mm. hh:mm") & " UTC"; "Abgleich noch nicht gelaufen")'],
             []]
-    states = ["Abgemeldet", "Antwort", "Bounce", "Versendet", None]
-    for blk, state in zip(cockpit_blocks(owner_match), states):
-        cnt = count_formula(owner_match, state) if state else f'=COUNTIFS(ALL_LEADS!AA2:AA; "*{owner_match}*"; ALL_LEADS!BE2:BE; "Freigegeben")+COUNTIFS(ALL_LEADS!AA2:AA; "*{owner_match}*"; ALL_LEADS!BE2:BE; "Entwurf")'
+    # Zaehler = exakt dieselbe Bedingung wie die Liste darunter (sonst widersprechen sich Kopf und Inhalt).
+    counts = [
+        count_formula(owner_match, "Abgemeldet"),
+        f'=COUNTIFS(ALL_LEADS!AA2:AA; "*{owner_match}*"; ALL_LEADS!BE2:BE; "Antwort"; ALL_LEADS!R2:R; "")',
+        count_formula(owner_match, "Bounce"),
+        f'=COUNTIFS(ALL_LEADS!AA2:AA; "*{owner_match}*"; ALL_LEADS!BE2:BE; "Versendet"; ALL_LEADS!AP2:AP; ">=" & TEXT(TODAY()-7; "yyyy-mm-dd"))',
+        f'=COUNTIFS(ALL_LEADS!AA2:AA; "*{owner_match}*"; ALL_LEADS!BE2:BE; "Freigegeben")+COUNTIFS(ALL_LEADS!AA2:AA; "*{owner_match}*"; ALL_LEADS!BE2:BE; "Entwurf")',
+    ]
+    for blk, cnt in zip(cockpit_blocks(owner_match), counts):
         rows.append([blk["title"], cnt]); rows.append(HEADER_LABELS); rows.append([blk["formula"]])
         rows.extend([[]] * 40)
     return rows
@@ -657,7 +668,7 @@ def dashboard_rows():
          '=COUNTIFS(INBOUND_EVENTS!J2:J; "NEEDS_REVIEW"; INBOUND_EVENTS!C2:C; "j-post@hsb-boden.de")',
          '=COUNTIFS(INBOUND_EVENTS!J2:J; "NEEDS_REVIEW"; INBOUND_EVENTS!C2:C; "j-cherino@hsb-boden.de")', "im Tab POSTEINGANG loesen"],
         [],
-        ["Versendet letzte 30 Tage", '=SPARKLINE(ARRAYFORMULA(COUNTIF(LEFT(ALL_LEADS!AP2:AP; 10); TEXT(SEQUENCE(30; 1; TODAY()-29; 1); "yyyy-mm-dd"))); {"charttype"\\;"column"})', "", "", "Tage links = älter"],
+        ["Versendet letzte 30 Tage", '=SPARKLINE(MAP(SEQUENCE(30; 1; TODAY()-29; 1); LAMBDA(t; COUNTIF(ALL_LEADS!AP2:AP; TEXT(t; "yyyy-mm-dd") & "*"))); {"charttype"\\"column"})', "", "", "Tage links = älter"],
         ["Letzter Abgleich Joel", '=IFERROR(TEXT(VLOOKUP("j-cherino@hsb-boden.de"; SYNC_STATUS!A:H; 2; FALSE); "dd.mm.yyyy hh:mm") & " UTC"; "noch nicht")', "", "", "alle 15 Minuten"],
         ["Letzter Abgleich Jordi", '=IFERROR(TEXT(VLOOKUP("j-post@hsb-boden.de"; SYNC_STATUS!A:H; 2; FALSE); "dd.mm.yyyy hh:mm") & " UTC"; "noch nicht")', "", "", "alle 15 Minuten"],
     ]
@@ -674,7 +685,7 @@ if __name__ == "__main__":
     sys.exit(main(apply="--apply" in sys.argv))
 ```
 
-Vor dem Apply prüfen (Step 4), dass der Batch-Block „ERZEUGTE BATCHES (Letzte 10)" unterhalb von Zeile 15 beginnt; sonst `rows` mit Leerzeilen auffüllen, damit nichts überschrieben wird. Die Klärfälle-Zeile bekommt pro Person die Zählung nach `INBOUND_EVENTS!C` (Mailbox) — erst sinnvoll nach Task 1 (Mailbox gefüllt).
+Die SPARKLINE-Formel **vor** dem Apply in einer leeren Zelle des Sheets (z. B. `DASHBOARD!H1`) eintippen und prüfen: in de_DE ist `\\` der Spaltentrenner innerhalb `{…}`, `;` der Argumenttrenner; `COUNTIF(...; "yyyy-mm-dd*")` zählt sowohl ISO-Strings als auch als Text formatierte Daten. Zeigt die Zelle `#ERROR`/`#N/A`, den Trend durch eine Hilfsspalte ersetzen (`DASHBOARD!G20:G49` = 30 Tagesdaten, `H20:H49` = `COUNTIF`, SPARKLINE auf `H20:H49`). Vor dem Apply prüfen (Step 4), dass der Batch-Block „ERZEUGTE BATCHES (Letzte 10)" unterhalb von Zeile 15 beginnt; sonst `rows` mit Leerzeilen auffüllen, damit nichts überschrieben wird. Die Klärfälle-Zeile bekommt pro Person die Zählung nach `INBOUND_EVENTS!C` (Mailbox) — erst sinnvoll nach Task 1 (Mailbox gefüllt).
 
 - [ ] **Step 4: Run → PASS**; Dry-Run, Apply, Browser: Zahlen plausibel gegen `crm_analyze.py` (Versendet = `Send_Status=sent`, Bounces = Pipeline Bounce).
 

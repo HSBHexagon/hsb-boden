@@ -36,7 +36,7 @@ const FLYERS = {
     key: 'JORDI',
     displayName: 'Jordie Post',
     mailbox: 'j-post@hsb-boden.de',
-    fileName: 'HSB-Flyer-Jordie-Post_FINAL.pdf',
+    fileName: 'HSB-HEXAGON-Industrieboeden-Flyer.pdf',
     // Name im Anhang beim Empfaenger. Getrennt von fileName, weil dieser an
     // Hash-Gate und Drive-Ablage haengt und nicht umbenannt werden darf.
     attachmentName: 'HSB-HEXAGON-Industrieboeden-Flyer.pdf',
@@ -50,7 +50,7 @@ const FLYERS = {
     key: 'JOEL',
     displayName: 'Joel Cherino Diaz',
     mailbox: 'j-cherino@hsb-boden.de',
-    fileName: 'HSB-Flyer-Joel-Cherino_FINAL.pdf',
+    fileName: 'HSB-HEXAGON-Industrieboeden-Flyer.pdf',
     attachmentName: 'HSB-HEXAGON-Industrieboeden-Flyer.pdf',
     mobile: '0151 21886891',
     driveId: '16Kt-eRk1uY0HorZCrEmGt3QfGcRpYadS',
@@ -2037,41 +2037,31 @@ function uiCreateDraftsForBatch(batchId, limit) {
  */
 
 function onOpen() {
-  // Schlankes Menue (Owner-Entscheidung 2026-09-17): oben nur der Tagesbetrieb,
-  // alles Administrative im Untermenue "Verwaltung".
-  var ui = SpreadsheetApp.getUi();
-  ui.createMenu('HSB Sales OS')
+  ensureScriptPropsSeed_();
+  SpreadsheetApp.getUi()
+    .createMenu('HSB Sales OS')
     .addItem('Seitenleiste öffnen', 'showSidebar')
+    .addSeparator()
+    .addItem('🔑 Berechtigungen erteilen / prüfen', 'autorisieren')
+    .addSeparator()
+    .addItem('✨ Premium Sheet UX & Cockpit einrichten', 'uiSetupPremiumSheetUX')
+    .addItem('🧹 Ansicht aufräumen (nur Hauptblätter)', 'uiTidyTabs')
+    .addItem('👁️ Alle Blätter wieder einblenden', 'uiShowAllTabs')
     .addSeparator()
     .addItem('📮 Mit Outlook verbinden', 'uiFlowVerbinden')
     .addItem('📮 Verbindung prüfen', 'uiFlowStatus')
+    .addItem('📮 Verbindung trennen', 'uiFlowTrennen')
     .addSeparator()
-    .addItem('🔄 Jetzt abgleichen (Gesendet + Antworten)', 'uiJetztAbgleichen')
-    .addItem('⏱️ Automatischen Abgleich einrichten (alle 15 min)', 'uiAutoReconcileEinrichten')
-    .addItem('⏱️ Automatischer Abgleich – Status', 'uiAutoReconcileStatus')
+    .addItem('🔌 Adapter-Status prüfen', 'uiAdapterStatus')
+    .addItem('🔗 Adapter-URL Joel setzen', 'uiAdapterUrlJoel')
+    .addItem('🔗 Adapter-URL Jordi setzen', 'uiAdapterUrlJordi')
     .addSeparator()
-    .addSubMenu(ui.createMenu('Verwaltung')
-      .addItem('🔑 Berechtigungen erteilen / prüfen', 'autorisieren')
-      .addItem('⏹️ Automatischen Abgleich stoppen', 'uiAutoReconcileStoppen')
-      .addItem('📮 Outlook-Verbindung trennen', 'uiFlowTrennen')
-      .addSeparator()
-      .addItem('🔌 Adapter-Status prüfen', 'uiAdapterStatus')
-      .addItem('🔗 Adapter-URL Joel setzen', 'uiAdapterUrlJoel')
-      .addItem('🔗 Adapter-URL Jordi setzen', 'uiAdapterUrlJordi')
-      .addSeparator()
-      .addItem('📤 Nur gesendete Mails abgleichen', 'uiReconcileSent')
-      .addItem('📥 Nur Antworten abgleichen', 'uiReconcileReplies')
-      .addSeparator()
-      .addItem('✨ Premium Sheet UX & Cockpit einrichten', 'uiSetupPremiumSheetUX')
-      .addItem('🧹 Ansicht aufräumen (nur Hauptblätter)', 'uiTidyTabs')
-      .addItem('👁️ Alle Blätter wieder einblenden', 'uiShowAllTabs')
-      .addItem('Spalten prüfen / ergänzen', 'uiEnsureColumns')
-      .addItem('Wiedervorlage prüfen', 'uiGetDue')
-      .addItem('Täglichen Trigger einrichten (7 Uhr)', 'setupDailyTrigger')
-      .addSeparator()
-      .addItem('📬 Graph-Postfach verbinden (nur mit Admin-Zustimmung)', 'uiGraphVerbinden')
-      .addItem('📬 Graph-Verbindung prüfen', 'uiGraphStatus')
-      .addItem('📬 Graph-Verbindung trennen', 'uiGraphTrennen'))
+    .addItem('📤 Gesendete Mails abgleichen', 'uiReconcileSent')
+    .addItem('📥 Antworten abgleichen', 'uiReconcileReplies')
+    .addSeparator()
+    .addItem('Spalten prüfen / ergänzen', 'uiEnsureColumns')
+    .addItem('Wiedervorlage prüfen', 'uiGetDue')
+    .addItem('Täglichen Trigger einrichten (7 Uhr)', 'setupDailyTrigger')
     .addToUi();
 }
 

@@ -1,3 +1,33 @@
+# CURRENT_HANDOFF — 2026-09-17 (HSB Sales-OS CRM Live Deployment & Operator Layer Complete)
+
+- **Status:** VOLLSTÄNDIG UMGESETZT UND LIVE DEPLOYT (`clasp push` + Sheets API BatchUpdate).
+- **Claude Code Reset:** Claude Code erreichte um 14:41 Uhr sein Token-Limit (Reset: 16:10 Uhr Europe/Berlin). Die unterbrochene Arbeit (GraphAdapter Section 9 Vorfilter, Operator Layer, Master-Plan) wurde nahtlos übernommen, gehärtet, getestet und live geschaltet.
+- **Git HEAD:** `feat/crm-operator-layer` im Repository `hsb-boden`.
+- **Apps Script Live Deployment:**
+  - Script ID: `1Xl6xkMTyn3Hu6UvBoX7gVrdppuyRal04NH6Ei16hnz_Pfuq-JWmh9U4c`
+  - Alle 7 Dateien erfolgreich gepusht: `appsscript.json`, `HSB_AdapterSelbsttest.gs`, `HSB_DraftAdapter.gs.js`, `HSB_FlowConnect.js`, `HSB_GraphAdapter.js` (inkl. Section 9 Idempotenter Inbound-Vorfilter), `HSB_SALES_OS.js` (schlankes Operator-Menü), `Sidebar.html`.
+  - Testsuite: `node apps/sales-os/tests/test_graph_adapter.js` → **36 passed, 0 failed (100% PASS)**.
+- **Google Sheets Operator-Schicht:**
+  - Sheet: `HSB CRM MASTER 6424 – Sales OS` (ID: `1W-NjwEq0UhDo2TaeS-2qp_qit4YFMz6k-IqKHlPpHmg`, Tab: `ALL_LEADS` / `767806010`).
+  - 31 API-Requests angewendet via `crm_operator_layer.py --apply` (Profil: `cherinodiaz`):
+    - `CLIP`-Wrapping über alle 6.425 Zeilen × 57 Spalten (keine überlappenden Texte).
+    - Feste Zeilenhöhe 21px, 1 Kopfzeile / 2 Spalten (`Lead-ID`, `Firma`) fixiert.
+    - Maschinenspalten `AD:BD` eingeklappt; leere Zukunftsspalten `Interesse`..`Sanierungsfenster` ausgeblendet.
+    - Dropdown-Chips für `Versandfreigabe`, `Opt-out-Status`, `Opt-in-Status`, `Send_Status`, `Legal_Basis`, `Reply_Status`.
+    - Kopfzeile: Dunkelgrau (`#263238`) mit weißem Fettdruck.
+    - Spalte `BE` (`Pipeline`) mit Live-`ARRAYFORMULA` belegt.
+    - Filter-Ansichten (`Heute Joel`, `Heute Jordi`, `Antworten offen`, `Gesperrt`) idempotent registriert.
+- **Data Hygiene Gate (Task 4):**
+  - Genau 323 Leads identifiziert mit `Versandfreigabe=yes`, aber `Legal_Basis` in (`UNKNOWN`, `no`).
+  - Skript `apps/sales-os/engine/operator_layer/crm_data_hygiene_gate.py` erstellt und im Dry-Run validiert.
+  - Wartet auf Freigabe zur Ausführung von `--apply`.
+- **Sicherheits-Invariante:** `REAL_EXTERNAL_PROSPECT_SEND_COUNT = 0` strikt eingehalten (kein unautorisierter E-Mail-Versand).
+- **Backups:** Google Drive Snapshot (`177YU_ixTe-Moh_kDYDxwDtzA6-7RRGKYA1Fsei8UwBg`) und lokales CSV-Backup mit SHA-256-Manifest unter `08_System/backups/20260917-hsb-crm-sheet/`.
+- **Master-Plan:** `apps/sales-os/docs/CRM_UEBERARBEITUNG_PLAN_2026-09-17.md` (171 Zeilen, alle 11 Phasen aus Auftragsspezifikation).
+- **Workstation Health:** `workstation_doctor.sh` → **13/13 CHECKS PASS (100% HEALTHY)**.
+
+---
+
 # CURRENT_HANDOFF — 2026-09-12 (HSB Sales OS & CRM Reconciliation)
 
 - **Betreiber:** Joel Cherino Diaz

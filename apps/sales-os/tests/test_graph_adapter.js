@@ -263,6 +263,87 @@ console.log('\n=== 8. Weiche im Draft-Adapter ===');
          /adapterUrlFor_\(owner\)/.test(adapter));
 }
 
+console.log('\n=== 9. Wiederkehrender Postfach-Abgleich: Lead-Bezug und Idempotenz ===');
+{
+  // Der 15-Minuten-Trigger reicht jede Nachricht der letzten 100 erneut an
+  // processInboundEvent. Dort ist NEEDS_REVIEW bewusst nicht terminal - ohne
+  // Vorfilter entstuende bei jedem Lauf fuer jede fremde Nachricht
+  // (Newsletter, interne Post) eine neue NEEDS_REVIEW-Zeile.
+  const k = ladeAdapter({ postfach: 'j-cherino@hsb-boden.de' });
+  const EVENTS = [];           // Nachbau INBOUND_EVENTS (Script-Layout, Status in Spalte 9)
+  let LEADS = [
+    { Lead_ID: 'HSB-L-1', Email: 'einkauf@brauerei-muster.de', Send_Status: 'sent', Internet_Message_ID: '<sent-1@hsb-boden.de>' },
+    { Lead_ID: 'HSB-L-2', Email: 'info@architekten-beispiel.de', Send_Status: 'drafted', Internet_Message_ID: '' }
+  ];
+  let EINGEREICHT = [];
+  k.CFG = { SHEET_EVENTS: 'INBOUND_EVENTS' };
+  k.sheet_ = function () {
+    return {
+      getLastRow: function () { return EVENTS.length + 1; },
+      getRange: function () { return { getValues: function () { return EVENTS.map(function (r) { return r.slice(); }); } }; }
+    };
+  };
+  k.readLeadsCached_ = function () { return { leads: LEADS }; };
+  k.processInboundEvent = function (ev) {
+    EINGEREICHT.push(ev);
+    const hit = LEADS.filter(function (l) { return l.Lead_ID === ev.lead_id || l.Email === ev.email; })[0];
+    const status = hit ? 'PROCESSED' : 'NEEDS_REVIEW';
+    EVENTS.push([ev.event_id, 'ts', ev.event_type, hit ? hit.Lead_ID : '', '', ev.email || '', ev.message_id || '', '', status, ev.subject || '']);
+    return { ok: true, matched: !!hit, status: status };
+  };
+
+  function mail(id, from, subject, preview, to) {
+    return { id: id, internetMessageId: '<' + id + '@x>', subject: subject, bodyPreview: preview || '',
+             from: { emailAddress: { address: from } },
+             toRecipients: [{ emailAddress: { address: to || 'j-cherino@hsb-boden.de' } }] };
+  }
+  const POSTEINGANG = [
+    mail('m1', 'einkauf@brauerei-muster.de', 'AW: Industrieboden', 'Danke, bitte Angebot'),
+    mail('m2', 'newsletter@cloudflare.com', 'Cloudflare Connect 2026', 'You are invited'),
+    mail('m3', 'postmaster@outlook.com', 'Undeliverable: Industrieboden', '550 5.1.1 user unknown: buero@unbekannte-firma.de'),
+    mail('m4', 'kollege@architekten-beispiel.de', 'AW: Industrieboden', 'Ich uebernehme das Thema'),
+    mail('m5', 'jemand@gmail.com', 'Abmelden', 'bitte abmelden')
+  ];
+
+  const r1 = k.reconcileInboxMessages_(POSTEINGANG, 'TEST');
+  const ids1 = EINGEREICHT.map(function (e) { return e.event_id; });
+  pruefe('Antwort eines Leads wird eingereicht', ids1.indexOf('TEST-INBOX-<m1@x>') >= 0);
+  pruefe('Newsletter ohne Lead-Bezug wird NICHT protokolliert', ids1.indexOf('TEST-INBOX-<m2@x>') === -1, ids1.join(','));
+  pruefe('Bounce wird immer eingereicht (Sicherheitsrelevant)', ids1.indexOf('TEST-INBOX-<m3@x>') >= 0);
+  pruefe('Kollege aus Lead-Domain wird eingereicht (Klaerfall)', ids1.indexOf('TEST-INBOX-<m4@x>') >= 0);
+  pruefe('Abmeldung wird immer eingereicht, auch von fremder Adresse', ids1.indexOf('TEST-INBOX-<m5@x>') >= 0);
+  pruefe('Lauf 1 meldet geprueft/eingereicht/fremd', r1.checked === 5 && r1.submitted === 4 && r1.foreign === 1, JSON.stringify(r1));
+
+  EINGEREICHT = [];
+  const r2 = k.reconcileInboxMessages_(POSTEINGANG, 'TEST');
+  pruefe('Lauf 2 reicht nichts erneut ein (Idempotenz)', EINGEREICHT.length === 0, EINGEREICHT.map(function (e) { return e.event_id; }).join(','));
+  pruefe('Lauf 2 zaehlt Uebersprungene', r2.skipped === 4 && r2.foreign === 1, JSON.stringify(r2));
+
+  // Klaerfall wird erneut versucht, sobald er exakt zuordenbar ist.
+  LEADS = LEADS.concat([{ Lead_ID: 'HSB-L-3', Email: 'kollege@architekten-beispiel.de', Send_Status: 'sent', Internet_Message_ID: '' }]);
+  EINGEREICHT = [];
+  k.reconcileInboxMessages_(POSTEINGANG, 'TEST');
+  pruefe('NEEDS_REVIEW wird erneut eingereicht, wenn jetzt exakt zuordenbar',
+         EINGEREICHT.length === 1 && EINGEREICHT[0].event_id === 'TEST-INBOX-<m4@x>',
+         EINGEREICHT.map(function (e) { return e.event_id; }).join(','));
+
+  // Gesendete Elemente: nur Empfaenger mit Lead-Bezug.
+  EINGEREICHT = [];
+  const GESENDET = [
+    mail('s1', 'j-cherino@hsb-boden.de', 'Industrieboden', '', 'info@architekten-beispiel.de'),
+    mail('s2', 'j-cherino@hsb-boden.de', 'Mietgeraet', '', 'depot@vermieter-intern.de'),
+    mail('s3', 'j-cherino@hsb-boden.de', 'Tagesbericht', '', 'j-post@hsb-boden.de')
+  ];
+  const s1 = k.reconcileSentMessages_(GESENDET, 'TEST');
+  const sids = EINGEREICHT.map(function (e) { return e.event_id; });
+  pruefe('Sendung an Lead wird mit Lead-ID eingereicht',
+         sids.indexOf('TEST-SENT-<s1@x>') >= 0 && EINGEREICHT[0].lead_id === 'HSB-L-2');
+  pruefe('Sendungen ohne Lead-Bezug werden NICHT protokolliert', sids.length === 1 && s1.foreign === 2, JSON.stringify(s1));
+  EINGEREICHT = [];
+  const s2 = k.reconcileSentMessages_(GESENDET, 'TEST');
+  pruefe('Sende-Abgleich Lauf 2 reicht nichts erneut ein', EINGEREICHT.length === 0 && s2.skipped === 1, JSON.stringify(s2));
+}
+
 console.log('\n' + '='.repeat(70));
 console.log('ERGEBNIS: ' + bestanden + ' bestanden, ' + fehlgeschlagen +
             ' fehlgeschlagen von ' + (bestanden + fehlgeschlagen));

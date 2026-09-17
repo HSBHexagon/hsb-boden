@@ -27,11 +27,11 @@ const cookieSettingsLabel = ui[lang].cookieSettings;
           <h2 class="mb-4 text-sm font-black uppercase tracking-wide text-white">{group.title}</h2>
           <ul class="space-y-3 text-sm text-white/70">
             {group.links.map((link) => (
-              <li><a class="hover:text-white" href={link.href}>{link.label}</a></li>
+              <li><a class="hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white rounded px-1 -mx-1" href={link.href}>{link.label}</a></li>
             ))}
             {group.title === "Rechtliches" && (
               <li>
-                <button id="footer-cookie-settings" class="underline-offset-2 hover:text-white hover:underline">{cookieSettingsLabel}</button>
+                <button id="footer-cookie-settings" class="underline-offset-2 hover:text-white hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white rounded px-1 -mx-1">{cookieSettingsLabel}</button>
               </li>
             )}
           </ul>

@@ -277,6 +277,7 @@ console.log('\n=== 9. Wiederkehrender Postfach-Abgleich: Lead-Bezug und Idempote
   ];
   let EINGEREICHT = [];
   k.CFG = { SHEET_EVENTS: 'INBOUND_EVENTS' };
+  k.istFreemailDomain_ = function (d) { return ['gmail.com', 'web.de', 'gmx.de'].indexOf(d) >= 0; };   // aus Actions.gs
   k.sheet_ = function () {
     return {
       getLastRow: function () { return EVENTS.length + 1; },

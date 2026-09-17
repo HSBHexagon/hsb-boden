@@ -1277,6 +1277,50 @@ function testInboundEvents() {
   check('Inbound: Opt-Out setzt Opt_Out=yes und Suppressed=yes',
         updatedLead3.Opt_Out === 'yes' && updatedLead3.Suppressed === 'yes');
 
+  // 4a. Abmeldung von einer anderen Adresse derselben Firmendomain
+  //     (Praxisfall: Lead ist info@firma.de, "Abmelden" kommt von
+  //     vorname.name@firma.de). Der Widerspruch gilt dem Unternehmen (§ 7 UWG),
+  //     deshalb wird jeder Lead dieser Domain gesperrt - nie offen liegen lassen.
+  const leadDom = ctx.readLeads_().leads[10];   // nicht Teil des Batches
+  const domain5 = String(leadDom.Email).split('@')[1];
+  const resDomainOptOut = ctx.processInboundEvent({
+    event_id: 'EVT-003-DOMAIN',
+    event_type: 'OPT_OUT',
+    email: 'vorname.name@' + domain5,
+    subject: 'Abmelden'
+  });
+  check('Inbound: Opt-Out aus Firmendomain wird dem Lead der Domain zugeordnet',
+        resDomainOptOut.matched === true && resDomainOptOut.status === 'PROCESSED', JSON.stringify(resDomainOptOut));
+  const updatedLeadDom = ctx.readLeads_().leads.filter(function (l) {
+    return l.Lead_ID === leadDom.Lead_ID;
+  })[0];
+  check('Inbound: Domain-Opt-Out setzt Opt_Out=yes, Suppressed=yes, Versandfreigabe=no',
+        updatedLeadDom.Opt_Out === 'yes' && updatedLeadDom.Suppressed === 'yes' && updatedLeadDom.Versandfreigabe === 'no',
+        'Opt_Out=' + updatedLeadDom.Opt_Out + ' Suppressed=' + updatedLeadDom.Suppressed + ' Freigabe=' + updatedLeadDom.Versandfreigabe);
+  const domainEvt = SHEETS.INBOUND_EVENTS._data.filter(function (r) { return r[0] === 'EVT-003-DOMAIN'; })[0];
+  check('Inbound: Domain-Opt-Out ist im Ereignis als Domain-Zuordnung gekennzeichnet',
+        domainEvt && /Domain/.test(String(domainEvt[9])), domainEvt ? String(domainEvt[9]) : 'kein Event');
+
+  // Freemail-Domain traegt keine Firmenzuordnung: bleibt Klaerfall.
+  const resFreemailOptOut = ctx.processInboundEvent({
+    event_id: 'EVT-003-FREEMAIL',
+    event_type: 'OPT_OUT',
+    email: 'jemand@gmail.com',
+    subject: 'Abmelden'
+  });
+  check('Inbound: Opt-Out von Freemail ohne exakten Treffer bleibt NEEDS_REVIEW',
+        resFreemailOptOut.matched === false && resFreemailOptOut.status === 'NEEDS_REVIEW');
+
+  // Andere Ereignisarten (REPLY) werden NICHT ueber die Domain geraten.
+  const resDomainReply = ctx.processInboundEvent({
+    event_id: 'EVT-004-DOMAIN-REPLY',
+    event_type: 'REPLY',
+    email: 'kollege@' + String(b.leads[3].Email).split('@')[1],
+    subject: 'AW: Industrieboden'
+  });
+  check('Inbound: Antwort aus Firmendomain wird nicht geraten (NEEDS_REVIEW)',
+        resDomainReply.matched === false && resDomainReply.status === 'NEEDS_REVIEW');
+
   // 4b. Hard Bounce via Reverse Lookup (Mailer-Daemon mit failed_recipient)
   const lead4 = b.leads[3];
   const resMailerDaemon = ctx.processInboundEvent({

@@ -92,7 +92,49 @@ export function getPublicReferences() {
  * Logos fuer den LogoCloud der Startseite. Die freigegebene Referenz hat
  * Vorrang vor dem Kundenstandort-Eintrag derselben Firma.
  */
-export function getLogoCloudEntries() {
+export interface LogoCloudEntry {
+  id: string;
+  name: string;
+  logo: string;
+  meta: string;
+  industry?: string;
+  systems: string[];
+  proofTag: string;
+}
+
+// Technische Kurzlabels je Leistungs-Slug. Proof-Tags entstehen nur aus den in
+// references.ts dokumentierten Systemen — kein Freitext je Kunde.
+const SYSTEM_PROOF_LABELS: Record<string, string> = {
+  "industrieboden-saeureschutz": "Säureschutz",
+  "whg-abdichtung-industrieboden": "WHG § 62 Abdichtung",
+  "keramische-industrieboeden": "Rüttelkeramik",
+  "entwaesserung-industrieboden": "Entwässerung",
+  "pu-beton-industrieboden": "PU-Beton",
+  "epoxidharz-bodenbeschichtung": "Epoxidharz-Beschichtung",
+  "dehnungsfugen-rammschutz-industrieboden": "Dehnungsfugen & Rammschutz",
+  "bodensanierung-laufender-betrieb": "Sanierung im Betrieb",
+  "boden-reparatur-instandsetzung": "Reparatur & Instandsetzung",
+};
+
+// Freitext-Branche der Kundenstandorte -> kanonischer Branchen-Slug.
+const LOCATION_BRANCHE_TO_INDUSTRY: Record<string, string> = {
+  Molkerei: "molkerei",
+  Brauerei: "brauerei-getraenkeindustrie",
+  Getränke: "brauerei-getraenkeindustrie",
+  Lebensmittel: "lebensmittelindustrie",
+  Chemie: "chemieindustrie",
+  Pharma: "pharmaindustrie",
+};
+
+function buildProofTag(systems: string[]): string {
+  return systems
+    .map((slug) => SYSTEM_PROOF_LABELS[slug])
+    .filter((label): label is string => Boolean(label))
+    .slice(0, 2)
+    .join(" & ");
+}
+
+export function getLogoCloudEntries(industryFilter?: string): LogoCloudEntry[] {
   // Bewusst nur gegen die Referenzen deduplizieren, die hier tatsaechlich ein
   // Logo rendern: eine Referenz ohne Logo-Freigabe darf ein separat
   // freigegebenes Standort-Logo nicht stillschweigend unterdruecken.
@@ -103,13 +145,17 @@ export function getLogoCloudEntries() {
     referencesWithLogo.map((reference) => reference.id),
   );
 
-  const referenceEntries = referencesWithLogo.map((reference) => ({
+  const referenceEntries: LogoCloudEntry[] = referencesWithLogo.map((reference) => ({
+    id: reference.id,
     name: reference.displayName,
     logo: reference.logo as string,
     meta: "Referenzprojekt",
+    industry: reference.industry,
+    systems: [...reference.systems],
+    proofTag: buildProofTag([...reference.systems]),
   }));
 
-  const locationEntries = clientLocations
+  const locationEntries: LogoCloudEntry[] = clientLocations
     .filter((location) => "logo" in location)
     .filter(
       (location) =>
@@ -117,12 +163,32 @@ export function getLogoCloudEntries() {
         !renderedReferenceIds.has(location.referenceId),
     )
     .map((location) => ({
+      id: `standort-${location.name.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`,
       name: location.name,
       logo: location.logo,
       meta: location.branche,
+      industry: LOCATION_BRANCHE_TO_INDUSTRY[location.branche],
+      systems: [],
+      proofTag: `Kundenstandort ${location.branche}`,
     }));
 
-  return [...referenceEntries, ...locationEntries];
+  const entries = [...referenceEntries, ...locationEntries];
+  if (!industryFilter) return entries;
+
+  // Rang 2: Branche identisch. Rang 1: mindestens ein System gehört zu den
+  // empfohlenen Systemen der gefilterten Branche (z. B. Südzucker bei Chemie
+  // über Säureschutz/WHG). Rang 0: Rest. Sortierung ist stabil.
+  const industry = getIndustries().find((item) => item.slug === industryFilter);
+  const affineSystems = new Set(industry?.recommendedSystems ?? []);
+  const rank = (entry: LogoCloudEntry) => {
+    if (entry.industry === industryFilter) return 2;
+    if (entry.systems.some((slug) => affineSystems.has(slug))) return 1;
+    return 0;
+  };
+  return entries
+    .map((entry, index) => ({ entry, index, rank: rank(entry) }))
+    .sort((a, b) => b.rank - a.rank || a.index - b.index)
+    .map((item) => item.entry);
 }
 
 /**

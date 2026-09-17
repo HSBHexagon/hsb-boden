@@ -2,6 +2,7 @@
 import ReferenceCard from "../../components/references/ReferenceCard.astro";
 import CTASection from "../../components/sections/CTASection.astro";
 import FAQAccordion from "../../components/sections/FAQAccordion.astro";
+import LogoCloud from "../../components/sections/LogoCloud.astro";
 import PageHero from "../../components/sections/PageHero.astro";
 import BaseLayout from "../../layouts/BaseLayout.astro";
 import { getArticles, getIndustries, getReferencesForSlugs, getServices } from "../../lib/content";
@@ -68,6 +69,7 @@ const industryImage = industryImages[industry.slug];
       </div>
     </section>
   )}
+  <LogoCloud industryFilter={industry.slug} eyebrow="Branchennahe Referenzen" title={`Referenzkunden mit Bezug zu ${industry.title}`} />
   <section class="section">
     <div class="container grid gap-8 lg:grid-cols-[0.9fr_1.1fr]">
       <div>

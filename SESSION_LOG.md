@@ -379,3 +379,4 @@ Fortlaufendes Log jeder KI-Session. Jeder Eintrag: Zeit · Modell · Phase · Au
 - **Deploy:** nein
 - **Bewusst nicht umgesetzt:** Krombacher in LogoCloud (kein Logo, keine Freigabe); „Kagetec-R-Äquivalent" im öffentlichen Text (Herstellervergleich ohne Beleg); Löschung der TCO-Argumentation in `articles.ts:495` (argumentiert gegen m²-Preis-Denken).
 - **Nächster Schritt:** Owner entscheidet 120/130 °C und Freigaben (Krombacher, Kyritzer); danach PR eröffnen (optional `/code-review ultra`), Merge, approval-gated Production-Deploy; GA4-Admin: `b2b_conversion` als Key Event prüfen.
+- **Nachtrag 10:00 CEST:** Advisor-Befund behoben (bbd27cd): CTA-Listener-Stapel in StressCheck (doppelte Conversions, veralteter Prefill) und Referenz-Tracking für Standort-Logos. Playwright-Klickpfad gegen dist belegt: 1 Conversion mit aktuellem System, Kyritzer ohne Tracking-Event. Gate erneut grün.

@@ -53,7 +53,7 @@
   "repo_path": "/Users/joelcherinodiaz/KI-System/02_Projects/active/hsb-boden",
   "local_root_checkout": "tracked files unveraendert, sechs Commits hinter origin/main; untracked .local-secrets/ aus laufender Fable-Sitzung wurde nicht geoeffnet oder veraendert",
   "handoff_path": "/Users/joelcherinodiaz/KI-System/ObsidianVault/brain/CURRENT_HANDOFF.md",
-  "last_commit": "lokal 456afbe auf feat/b2b-tracking-stresscheck-schema; origin/main unveraendert c340d53",
+  "last_commit": "lokal bbd27cd auf feat/b2b-tracking-stresscheck-schema; origin/main unveraendert c340d53",
   "website_code_diff_lines": "+1368/-46 in 26 Dateien (main...HEAD vor 456afbe), plus Review-Fix",
   "canonical_readiness_stack": {
     "tier1": {
@@ -228,7 +228,8 @@
       "5871fef",
       "a239f38",
       "394652d",
-      "456afbe"
+      "456afbe",
+      "bbd27cd"
     ],
     "plan": "docs/superpowers/plans/2026-09-17-b2b-tracking-stresscheck-schema.md",
     "report": "~/KI-System/08_System/reports/validation/2026-09-17-hsb-b2b-tracking-stresscheck-schema.md",
@@ -249,6 +250,7 @@
       "GA4-Admin: b2b_conversion ggf. als Key Event markieren"
     ],
     "push_done": false,
-    "deploy_done": false
+    "deploy_done": false,
+    "e2e": "Playwright: StressCheck doppelter Submit -> 1 Conversion mit aktuellem System; LogoCloud trackt nur Referenzen (Kyritzer ohne Event)"
   }
 }

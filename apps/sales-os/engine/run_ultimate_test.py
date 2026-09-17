@@ -44,6 +44,8 @@ FIRMA = {
 
 def signatur_html(owner_display: str, mailbox: str, mobile: str) -> str:
     mobil_zeile = f"Mobil {mobile}<br>" if mobile else ""
+    owner_slug = urllib.parse.quote(owner_display.lower().replace(" ", "_"))
+    web_url_mit_utm = f"https://{FIRMA['web']}/?utm_source=outreach&utm_medium=email&utm_campaign=kaltakquise_2026_q3&utm_term={owner_slug}&utm_content=signatur"
     return (
         f'<p style="margin:16px 0 0 0;font-family:Arial,Helvetica,sans-serif;font-size:10pt;color:#222222;line-height:1.45;">'
         f'<strong>{owner_display}</strong><br>'
@@ -52,10 +54,10 @@ def signatur_html(owner_display: str, mailbox: str, mobile: str) -> str:
         f'{mobil_zeile}'
         f'Tel. {FIRMA["telefon"]}<br>'
         f'<a href="mailto:{mailbox}" style="color:#1155cc;">{mailbox}</a> &middot; '
-        f'<a href="https://{FIRMA["web"]}" style="color:#1155cc;">{FIRMA["web"]}</a>'
+        f'<a href="{web_url_mit_utm}" style="color:#1155cc;">{FIRMA["web"]}</a>'
         f'</p>'
         f'<p style="margin:14px 0 0 0;">'
-        f'<a href="https://{FIRMA["web"]}" target="_blank" style="text-decoration:none;">'
+        f'<a href="{web_url_mit_utm}" target="_blank" style="text-decoration:none;">'
         f'<img src="https://{FIRMA["web"]}/brand/hsb-boden-logo.png" '
         f'alt="{FIRMA["name"]}" '
         f'width="102" height="75" '
@@ -207,7 +209,8 @@ def run_batch(owner: str, count: int = 20):
 
 if __name__ == "__main__":
     owner_arg = sys.argv[1].upper() if len(sys.argv) > 1 else "BOTH"
+    count_arg = int(sys.argv[2]) if len(sys.argv) > 2 else 10
     if owner_arg in ["JOEL", "BOTH"]:
-        run_batch("JOEL", 20)
+        run_batch("JOEL", count_arg)
     if owner_arg in ["JORDI", "BOTH"]:
-        run_batch("JORDI", 20)
+        run_batch("JORDI", count_arg)

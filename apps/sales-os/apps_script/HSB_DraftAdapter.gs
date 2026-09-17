@@ -146,6 +146,8 @@ function htmlEscape_(text) {
  */
 function signaturHtml_(ownerDisplay, mailbox, mobile) {
   var mobilZeile = mobile ? ('Mobil ' + htmlEscape_(mobile) + '<br>') : '';
+  var ownerSlug = encodeURIComponent(String(ownerDisplay || 'team').toLowerCase().replace(/\s+/g, '_'));
+  var webUrlMitUtm = 'https://' + FIRMA.web + '/?utm_source=outreach&utm_medium=email&utm_campaign=kaltakquise_2026_q3&utm_term=' + ownerSlug + '&utm_content=signatur';
   return '<p style="margin:16px 0 0 0;font-family:Arial,Helvetica,sans-serif;'
     + 'font-size:10pt;color:#222222;line-height:1.45;">'
     + '<strong>' + htmlEscape_(ownerDisplay) + '</strong><br>'
@@ -155,10 +157,10 @@ function signaturHtml_(ownerDisplay, mailbox, mobile) {
     + 'Tel. ' + htmlEscape_(FIRMA.telefon) + '<br>'
     + '<a href="mailto:' + htmlEscape_(mailbox) + '" style="color:#1155cc;">'
     + htmlEscape_(mailbox) + '</a> &middot; '
-    + '<a href="https://' + FIRMA.web + '" style="color:#1155cc;">' + FIRMA.web + '</a>'
+    + '<a href="' + webUrlMitUtm + '" style="color:#1155cc;">' + FIRMA.web + '</a>'
     + '</p>'
     + '<p style="margin:12px 0 0 0;">'
-    + '<a href="https://' + FIRMA.web + '" target="_blank" style="text-decoration:none;">'
+    + '<a href="' + webUrlMitUtm + '" target="_blank" style="text-decoration:none;">'
     + '<img src="https://' + FIRMA.web + '/brand/hsb-boden-logo.png" '
     + 'alt="' + htmlEscape_(FIRMA.name) + '" '
     + 'width="102" height="75" '

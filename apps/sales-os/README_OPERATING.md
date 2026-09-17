@@ -238,3 +238,38 @@ Bricht ein Teilschritt ab (Laufzeitgrenze erreicht oder ein anderer Fehler),
 zeigt die Seitenleiste **„Vorgang sicher erneut versuchen"**. Ein Klick setzt
 genau ab dem fehlgeschlagenen Paket fort — es geht nichts verloren und nichts
 wird doppelt erzeugt.
+
+---
+
+## Automatischer Abgleich (seit 2026-09-17)
+
+Versendet, Antwort, Abmeldung und Bounce werden jetzt automatisch eingetragen —
+je Postfach, alle 15 Minuten, ohne Klick. Einmalig pro Person einrichten:
+
+1. Google Sheet öffnen → Menü **HSB Sales OS → Mit Outlook verbinden** (falls noch
+   nicht geschehen; Anmeldung mit dem eigenen `@hsb-boden.de`-Konto).
+2. Menü **HSB Sales OS → ⏱️ Automatischen Abgleich einrichten (alle 15 min)**.
+3. **⏱️ Automatischer Abgleich – Status** zeigt Postfach und Trigger; **⏹️ … stoppen**
+   entfernt ihn wieder (nur für die eigene Person).
+
+Der Trigger läuft unter dem Konto, das ihn eingerichtet hat — Joel und Jordi
+richten ihn deshalb **jeweils selbst** ein. Was passiert:
+
+| Ereignis im Postfach | Eintrag in ALL_LEADS | Spalte **Pipeline** |
+|---|---|---|
+| Mail an einen Lead in „Gesendete Elemente" | `Send_Status=sent`, `Send_Datum` | **Versendet** (grün) |
+| Antwort im Posteingang | `Reply_Status`, Wiedervorlage | **Antwort** (gelb) |
+| Antwort enthält „Abmelden" o. ä. | `Opt-out-Status=yes`, `Suppressed=yes`, `Versandfreigabe=no` — dauerhaft | **Abgemeldet** (rot) |
+| Unzustellbar (NDR) | `Bounce_Status`, `Suppressed=yes`, `Versandfreigabe=no` | **Bounce** (orange) |
+
+Jedes Ereignis steht zusätzlich als Beleg in `INBOUND_EVENTS`. Es wird weiterhin
+**nichts automatisch versendet**.
+
+## Ansicht in ALL_LEADS (seit 2026-09-17)
+
+- Spalte **Pipeline** (ganz rechts, farbig) fasst den Zustand je Lead zusammen.
+- Maschinenspalten (Segment … Last_Error) sind eingeklappt — über das „+" oben
+  wieder aufklappbar. Leere Zukunftsfelder (Interesse … Sanierungsfenster) sind ausgeblendet.
+- Filteransichten (Menü *Daten → Filteransichten*): **Heute Joel**, **Heute Jordi**,
+  **Antworten offen**, **Gesperrt**.
+- Dropdown-Chips für Versandfreigabe, Opt-in/Opt-out, Send_Status, Legal_Basis, Reply_Status.

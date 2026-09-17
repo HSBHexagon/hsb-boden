@@ -478,10 +478,12 @@ function classifyInboundMessage_(m) {
   }
 
   // 4. Opt-Out / DSGVO-Widerspruch
-  var isOptOut = previewLower.indexOf('abmelden') >= 0 || previewLower.indexOf('opt-out') >= 0 ||
-                 subjLower.indexOf('abmelden') >= 0 || previewLower.indexOf('kein interesse') >= 0 ||
-                 previewLower.indexOf('keine werbung') >= 0 || previewLower.indexOf('löschen sie') >= 0 ||
-                 previewLower.indexOf('widerspruch') >= 0 || previewLower.indexOf('aus dem verteiler') >= 0;
+  // Stichwortliste (Fusszeile: "Antworten Sie mit 'Abmelden'"); Betreff und Vorschau.
+  var optOutWords = ['abmelden', 'abbestellen', 'austragen', 'opt-out', 'optout', 'unsubscribe',
+                     'kein interesse', 'keine werbung', 'keine weiteren', 'löschen sie', 'loeschen sie',
+                     'widerspruch', 'widerspreche', 'aus dem verteiler', 'nicht mehr kontaktieren'];
+  var optOutText = subjLower + ' ' + previewLower;
+  var isOptOut = optOutWords.some(function (w) { return optOutText.indexOf(w) >= 0; });
 
   if (isOptOut) {
     return {
@@ -586,3 +588,91 @@ function uiGraphReconcileReplies() {
   }
 }
 
+
+// ------------------------------------------- Automatischer Abgleich (Trigger)
+//
+// Der Graph-Token liegt in den UserProperties des angemeldeten Nutzers. Ein
+// zeitgesteuerter Trigger laeuft unter der Identitaet dessen, der ihn angelegt
+// hat - Joel und Jordi richten den Trigger daher je einmal in ihrer eigenen
+// Sitzung ein, dann werden beide Postfaecher unabhaengig voneinander
+// abgeglichen. Es wird nie gesendet; es werden nur Sent Items und Inbox
+// gelesen und ueber processInboundEvent() (mit allen Gates) ins CRM
+// geschrieben.
+
+var HSB_AUTO_RECONCILE_HANDLER = 'hsbAutoReconcile';
+var HSB_AUTO_RECONCILE_MINUTES = 15;
+
+function hsbAutoReconcile() {
+  if (!graphVerbunden_()) {
+    console.warn('hsbAutoReconcile: kein Graph-Token fuer diesen Nutzer - Abgleich uebersprungen.');
+    return { ok: false, skipped: 'nicht_verbunden' };
+  }
+  var lock = LockService.getScriptLock();
+  if (!lock.tryLock(30000)) {
+    console.warn('hsbAutoReconcile: Sperre belegt - anderer Abgleich laeuft.');
+    return { ok: false, skipped: 'gesperrt' };
+  }
+  var out = { ok: true, mailbox: graphMailbox_(), sent: null, inbox: null, errors: [] };
+  try {
+    try { out.sent = graphReconcileSentItems_(); }
+    catch (e1) { out.errors.push('sent: ' + String(e1.message || e1)); }
+    try { out.inbox = graphReconcileInboxReplies_(); }
+    catch (e2) { out.errors.push('inbox: ' + String(e2.message || e2)); }
+    out.ok = out.errors.length === 0;
+    if (!out.ok) console.error('hsbAutoReconcile: ' + out.errors.join(' | '));
+    return out;
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+function hsbAutoReconcileTriggerLoeschen_() {
+  var n = 0;
+  ScriptApp.getProjectTriggers().forEach(function (t) {
+    if (t.getHandlerFunction() === HSB_AUTO_RECONCILE_HANDLER) { ScriptApp.deleteTrigger(t); n++; }
+  });
+  return n;
+}
+
+function uiAutoReconcileEinrichten() {
+  var ui = SpreadsheetApp.getUi();
+  if (!graphVerbunden_()) {
+    ui.alert('Erst mit Outlook verbinden',
+      'Fuer diesen Nutzer ist kein Outlook-Zugang (Graph) hinterlegt.\n' +
+      'Bitte zuerst "Mit Outlook verbinden" ausfuehren, danach den automatischen Abgleich einrichten.',
+      ui.ButtonSet.OK);
+    return { ok: false, error: 'nicht_verbunden' };
+  }
+  hsbAutoReconcileTriggerLoeschen_();
+  ScriptApp.newTrigger(HSB_AUTO_RECONCILE_HANDLER).timeBased().everyMinutes(HSB_AUTO_RECONCILE_MINUTES).create();
+  var first = hsbAutoReconcile();
+  ui.alert('Automatischer Abgleich aktiv',
+    'Postfach: ' + graphMailbox_() + '\n' +
+    'Intervall: alle ' + HSB_AUTO_RECONCILE_MINUTES + ' Minuten (Gesendete Elemente + Posteingang).\n\n' +
+    'Erster Lauf: ' +
+    (first.ok
+      ? ('Gesendet geprueft ' + ((first.sent || {}).checked || 0) + ', neu SENT ' + ((first.sent || {}).matched || 0) +
+         '; Posteingang geprueft ' + ((first.inbox || {}).checked || 0) + ', Antworten/Opt-Outs ' + ((first.inbox || {}).matched || 0))
+      : ('Fehler: ' + (first.errors || [first.skipped]).join(' | '))) +
+    '\n\nVersendet, Antwort, Abmeldung und Bounce werden ab jetzt automatisch in ALL_LEADS und INBOUND_EVENTS eingetragen. Es wird nichts versendet.',
+    ui.ButtonSet.OK);
+  return { ok: true, first: first };
+}
+
+function uiAutoReconcileStoppen() {
+  var ui = SpreadsheetApp.getUi();
+  var n = hsbAutoReconcileTriggerLoeschen_();
+  ui.alert('Automatischer Abgleich gestoppt', n + ' Trigger entfernt (nur fuer diesen Nutzer).', ui.ButtonSet.OK);
+  return { ok: true, removed: n };
+}
+
+function uiAutoReconcileStatus() {
+  var ui = SpreadsheetApp.getUi();
+  var mine = ScriptApp.getProjectTriggers().filter(function (t) { return t.getHandlerFunction() === HSB_AUTO_RECONCILE_HANDLER; });
+  ui.alert('Automatischer Abgleich - Status',
+    'Nutzer: ' + Session.getActiveUser().getEmail() + '\n' +
+    'Outlook verbunden: ' + (graphVerbunden_() ? ('ja (' + graphMailbox_() + ')') : 'nein') + '\n' +
+    'Trigger dieses Nutzers: ' + mine.length + (mine.length ? (' (alle ' + HSB_AUTO_RECONCILE_MINUTES + ' min)') : ''),
+    ui.ButtonSet.OK);
+  return { ok: true, triggers: mine.length, connected: graphVerbunden_() };
+}

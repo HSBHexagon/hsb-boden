@@ -53,7 +53,7 @@
   "repo_path": "/Users/joelcherinodiaz/KI-System/02_Projects/active/hsb-boden",
   "local_root_checkout": "tracked files unveraendert, sechs Commits hinter origin/main; untracked .local-secrets/ aus laufender Fable-Sitzung wurde nicht geoeffnet oder veraendert",
   "handoff_path": "/Users/joelcherinodiaz/KI-System/ObsidianVault/brain/CURRENT_HANDOFF.md",
-  "last_commit": "lokal bbd27cd auf feat/b2b-tracking-stresscheck-schema; origin/main unveraendert c340d53",
+  "last_commit": "lokal 1a43c66 auf feat/b2b-tracking-stresscheck-schema; origin/main unveraendert c340d53",
   "website_code_diff_lines": "+1368/-46 in 26 Dateien (main...HEAD vor 456afbe), plus Review-Fix",
   "canonical_readiness_stack": {
     "tier1": {
@@ -177,7 +177,7 @@
     "M365 DKIM for j-cherino@hsb-boden.de not yet activated.",
     "Lead-Datensatz existiert (6424 im MASTER-Sheet), aber Versandfreigabe 0/6424: PHASE_7_COMPLIANCE_GATE (Rechtsgrundlage, Opt-out, Batch-Freigabe) unerfuellt."
   ],
-  "next_step": "Owner: 120/130-C-Entscheidung, Krombacher/Kyritzer-Freigaben pruefen, dann PR aus feat/b2b-tracking-stresscheck-schema eroeffnen (optional /code-review ultra), Merge und approval-gated Production-Deploy.",
+  "next_step": "Owner: Krombacher/Kyritzer-Freigaben pruefen; PR aus feat/b2b-tracking-stresscheck-schema eroeffnen (Push braucht Freigabe), optional /code-review ultra, Merge, approval-gated Production-Deploy; GA4 b2b_conversion als Key Event.",
   "handoff_required": true,
   "safe_to_continue": true,
   "historical_canonical_runtime_migration_2026_07_04": {
@@ -229,7 +229,8 @@
       "a239f38",
       "394652d",
       "456afbe",
-      "bbd27cd"
+      "bbd27cd",
+      "1a43c66"
     ],
     "plan": "docs/superpowers/plans/2026-09-17-b2b-tracking-stresscheck-schema.md",
     "report": "~/KI-System/08_System/reports/validation/2026-09-17-hsb-b2b-tracking-stresscheck-schema.md",
@@ -244,13 +245,13 @@
     "website_code_diff": "26 Dateien +1368/-46 vor Review-Fix; Review-Fix 456afbe zusaetzlich",
     "review": "seo-content-reviewer FAIL(3 kritisch) -> 2 behoben (DIN-EN-14411-Zuordnung, Wortwahl/Rechtsclaims), 1 Owner-Entscheidung (PU-Beton 120 vs 130 C), Kyritzer-Logo in LogoCloud ist Vorbestand auf main",
     "owner_decisions_open": [
-      "PU-Beton Temperaturgrenze: Auftrag 120 C vs. pu-beton-industrieboden.ts 130 C -> einen Wert kanonisch festlegen",
       "Krombacher: Logo-Asset + Referenzfreigabe fehlen -> nicht in LogoCloud",
       "Kyritzer Fruchtsaefte: Standort-Logo in LogoCloud (Vorbestand seit main, Test-gesichert) gegen Freigabe-Ebene in clientLocations.ts:6-10 pruefen",
       "GA4-Admin: b2b_conversion ggf. als Key Event markieren"
     ],
     "push_done": false,
     "deploy_done": false,
-    "e2e": "Playwright: StressCheck doppelter Submit -> 1 Conversion mit aktuellem System; LogoCloud trackt nur Referenzen (Kyritzer ohne Event)"
+    "e2e": "Playwright: StressCheck doppelter Submit -> 1 Conversion mit aktuellem System; LogoCloud trackt nur Referenzen (Kyritzer ohne Event)",
+    "decided_2026_09_17": "PU-Beton 120 C (ab 9 mm) site-weit; Owner delegierte Entscheidung an Claude (Best Practice: konservativer, belegfreier Wert, konsistent mit industries.ts:23 und Auftrag)"
   }
 }

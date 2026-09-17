@@ -49,7 +49,7 @@ const phoneHref = site.phone.replace("(0)", "").replace(/[^\d+]/g, "");
   <div class="container flex min-h-[72px] items-center justify-between gap-6">
 
     <!-- Logo: helle Marken-Variante, fuer den durchgehend dunklen Header gebaut (transparenter PNG-Hintergrund) -->
-    <a href="/" class="logo-lockup flex shrink-0 items-center no-underline" aria-label="HSB Hexagon Säurebau Startseite">
+    <a href="/" class="logo-lockup flex shrink-0 items-center no-underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white rounded" aria-label="HSB Hexagon Säurebau Startseite">
       <img src="/brand/hsb-boden-logo-dark.png" alt="HSB Hexagon Säurebau GmbH" class="h-11 w-auto object-contain" width="60" height="44" />
     </a>
 
@@ -59,12 +59,12 @@ const phoneHref = site.phone.replace("(0)", "").replace(/[^\d+]/g, "");
     <div class="flex items-center gap-4 xl:gap-8">
       <nav class="nav-links hidden items-center gap-4 text-sm font-bold lg:flex xl:gap-6" aria-label="Hauptnavigation">
         {navigation.filter(n => n.href !== "/kontakt/").map((item) => (
-          <a class="transition-colors" href={item.href}>{item.label}</a>
+          <a class="transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white rounded px-1" href={item.href}>{item.label}</a>
         ))}
       </nav>
 
       <a
-        class="hidden items-center gap-2 whitespace-nowrap text-sm font-bold text-white/72 transition-colors hover:text-white xl:flex"
+        class="hidden items-center gap-2 whitespace-nowrap text-sm font-bold text-white/72 transition-colors hover:text-white xl:flex focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white rounded px-2"
         href={`tel:${phoneHref}`}
         aria-label={`HSB anrufen: ${site.phone}`}
       >
@@ -80,7 +80,7 @@ const phoneHref = site.phone.replace("(0)", "").replace(/[^\d+]/g, "");
 
       <button
         id="mobile-menu-toggle"
-        class="flex size-10 items-center justify-center rounded border lg:hidden"
+        class="flex size-10 items-center justify-center rounded border lg:hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
         aria-label="Navigation öffnen"
         aria-expanded="false"
         aria-controls="mobile-menu"
@@ -106,14 +106,14 @@ const phoneHref = site.phone.replace("(0)", "").replace(/[^\d+]/g, "");
       {navigation.map((item) => (
         <a
           href={item.href}
-          class="flex items-center border-b border-white/10 py-3.5 text-sm font-bold text-white/78 last:border-0 hover:text-white"
+          class="flex items-center border-b border-white/10 py-3.5 text-sm font-bold text-white/78 last:border-0 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white rounded-sm"
         >
           {item.label}
         </a>
       ))}
       <a
         href={`tel:${phoneHref}`}
-        class="mt-4 flex items-center justify-center gap-2 rounded border border-white/20 px-4 py-3 text-sm font-bold text-white hover:border-white/40"
+        class="mt-4 flex items-center justify-center gap-2 rounded border border-white/20 px-4 py-3 text-sm font-bold text-white hover:border-white/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
         aria-label={`HSB anrufen: ${site.phone}`}
       >
         <span>Direkt anrufen</span>

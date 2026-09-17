@@ -262,3 +262,14 @@ a {
     scroll-behavior: auto;
   }
 }
+
+.button-primary:focus-visible,
+.button-secondary:focus-visible,
+.button-secondary-dark:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px #161a20, 0 0 0 4px #cb0000;
+}
+
+.button-primary:focus-visible {
+  box-shadow: 0 0 0 2px #ffffff, 0 0 0 4px #cb0000;
+}

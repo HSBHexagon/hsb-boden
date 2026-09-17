@@ -1,4 +1,5 @@
-import { GA4_MEASUREMENT_ID } from "./analytics";
+import { GA4_MEASUREMENT_ID } from "./analyticsConfig";
+import { NORM_IDS } from "../data/standards";
 
 export enum TrackingEvent {
   LeadFormStart = "lead_form_start",
@@ -10,10 +11,14 @@ export enum TrackingEvent {
   ReferenceMapOpen = "reference_map_open",
   FileUploadAdd = "file_upload_add",
   FlyerQrVisit = "flyer_qr_visit",
+  StressCheckStep = "stress_check_step",
+  ReferenceInteraction = "reference_interaction",
+  NormInteraction = "norm_interaction",
+  B2BConversion = "b2b_conversion",
 }
 
-type AnalyticsValue = string | number | boolean;
-type AnalyticsPayload = Record<string, AnalyticsValue>;
+export type AnalyticsValue = string | number | boolean;
+export type AnalyticsPayload = Record<string, AnalyticsValue>;
 type GtagEventPayload = Record<string, AnalyticsValue | (() => void) | undefined> & {
   send_to: string;
   event_callback?: () => void;
@@ -24,6 +29,14 @@ const CONSENT_STORAGE_KEY = "hsb-consent-v1";
 const EVENT_CALLBACK_TIMEOUT_MS = 1000;
 const SAFE_TOKEN_PATTERN = /^[a-z0-9_-]{1,64}$/i;
 const LOCAL_PATH_PATTERN = /^\/[a-z0-9/_-]{0,120}$/i;
+// Anzeigename einer Referenz: Buchstaben, Ziffern, Leerzeichen und übliche
+// Firmenzeichen. Kein HTML, keine Steuerzeichen.
+const SAFE_LABEL_PATTERN = /^[\p{L}\p{N}][\p{L}\p{N} .,&§+()/-]{0,99}$/u;
+const CONVERSION_TYPES = new Set(["audit_request", "technical_inquiry"]);
+const REFERENCE_ACTIONS = new Set(["click", "view"]);
+const NORM_ACTIONS = new Set(["expand", "download"]);
+const NORM_SET = new Set<string>(NORM_IDS);
+const isToken = (value: AnalyticsValue) => typeof value === "string" && SAFE_TOKEN_PATTERN.test(value);
 let currentPageAnalyticsConsent: boolean | undefined;
 
 if (typeof window !== "undefined") {
@@ -39,6 +52,18 @@ const PARAMETER_VALIDATORS: Record<string, (value: AnalyticsValue) => boolean> =
   form_path: (value) => typeof value === "string" && LOCAL_PATH_PATTERN.test(value),
   placement: (value) => typeof value === "string" && SAFE_TOKEN_PATTERN.test(value),
   qualified: (value) => typeof value === "boolean",
+  step: (value) => typeof value === "number" && Number.isInteger(value) && value >= 1 && value <= 10,
+  medium: isToken,
+  temp_range: isToken,
+  mechanical_load: isToken,
+  time_window: isToken,
+  recommended_system: isToken,
+  industry: isToken,
+  project_type: isToken,
+  client_name: (value) => typeof value === "string" && SAFE_LABEL_PATTERN.test(value),
+  action: (value) => typeof value === "string" && (REFERENCE_ACTIONS.has(value) || NORM_ACTIONS.has(value)),
+  norm: (value) => typeof value === "string" && NORM_SET.has(value),
+  conversion_type: (value) => typeof value === "string" && CONVERSION_TYPES.has(value),
 };
 
 function hasAnalyticsConsent(): boolean {
@@ -96,11 +121,12 @@ function emitEvent(
       });
       return true;
     }
-    if (Array.isArray(trackingWindow.dataLayer)) {
-      trackingWindow.dataLayer.push({ event: eventName, ...eventPayload });
-      completion?.();
-      return true;
-    }
+    // GTM-Fallback: dataLayer bei Bedarf anlegen, damit ein Event vor dem
+    // gtag-Loader nicht verloren geht. Consent ist oben bereits geprüft.
+    if (!Array.isArray(trackingWindow.dataLayer)) trackingWindow.dataLayer = [];
+    trackingWindow.dataLayer.push({ event: eventName, ...eventPayload });
+    completion?.();
+    return true;
   } catch {
     // Tracking darf die aufrufende Interaktion nie brechen.
   }

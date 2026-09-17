@@ -365,3 +365,17 @@ Fortlaufendes Log jeder KI-Session. Jeder Eintrag: Zeit · Modell · Phase · Au
 - **Deploy:** ja — Cloudflare Pages (PR #85, #87 Inhalte) sowie separat Google Apps Script Deployment Version 4 (Webhook-URL unverändert)
 - **Kein DNS-/NS-Switch, keine Massenmail, keine neue Apps-Script-Deployment-ID erzeugt**
 - **Nächster Schritt:** Auth-Cutover für das Legacy-Apps-Script-Deployment abschließen (docs/crm/ATTRIBUTION_CONNECTOR_PATCH.md bleibt bis dahin `mapping-live-on-legacy; auth-cutover-open`); PR #88 (CRM-Deep-Dive) reviewen/mergen; verbleibende Jules-PRs triagieren; Apex-DNS-Switch, Google-Business-Profil-Verifizierung und Compliance-Freigabe für Kaltakquise bleiben die drei zentralen Owner-Gates.
+
+---
+
+## 2026-09-17 09:55 CEST — Claude Code (Opus 5)
+- **Phase:** Website B2B-Upgrade (GA4-Events, LogoCloud, Beanspruchungs-Check, Schema/Meta)
+- **Aufgabe:** 5-Schritte-Auftrag des Owners (Freigabe für `apps/website/src/`): typensicheres GA4-B2B-DataLayer, dynamische LogoCloud mit Branchenfilter und Proof-Tags, interaktiver Beanspruchungs-Check mit Audit-Anbindung, Schema.org-/Meta-Upgrade, striktes Verifikations-Gate.
+- **Ergebnis:** Auf Branch `feat/b2b-tracking-stresscheck-schema` (Basis `c340d53`) in 8 Commits umgesetzt. Neu: `src/lib/analyticsConfig.ts`, `src/data/standards.ts`, `src/data/stressMatrix.ts`, `src/lib/stressCheckHandoff.ts`, `src/components/forms/StressCheck.astro`, `src/pages/beanspruchungs-check/index.astro`, 6 Testdateien. Geändert: `analytics.ts`, `tracking.ts`, `content.ts`, `schema.ts`, `LogoCloud.astro`, `LeadForm.astro`, `SEOHead.astro`, `site.ts`, `branchen/[slug].astro`, `leistungen/[slug].astro`, `leistungen/index.astro`, `kontakt/index.astro`, `homepageFaqs.ts`, `boden-reparatur-instandsetzung.ts`. Normen als `knowsAbout`/`additionalProperty`, einziges `hasCredential` = WHG-Fachbetrieb (PROJECT_TRUTH §3a). Kein zweiter Submit-Pfad; Übergabe an bestehendes LeadForm. `seo-content-reviewer`: 3 kritische Befunde → 2 behoben (`456afbe`), 1 Owner-Entscheidung (PU-Beton 120 °C laut Auftrag vs. 130 °C auf Leistungsseite), Kyritzer-Standort-Logo in LogoCloud ist Vorbestand von `main`.
+- **Verifikation (frisch):** `npx astro check` 0/0/0 (150 Dateien) · `npm run build` 57 Seiten · `npm run test:run` 261/261 (Baseline 223) · `npm run check:sitemap` OK 55 URLs · `npm run deploy:dry-run` OK · 11 Routen per `astro preview` HTTP 200 · `grep -ril kagetec dist` = 0.
+- **Geänderte Dateien:** siehe `git diff --stat main...HEAD` (27 Dateien inkl. Review-Fix); Plan `docs/superpowers/plans/2026-09-17-b2b-tracking-stresscheck-schema.md`; Report `~/KI-System/08_System/reports/validation/2026-09-17-hsb-b2b-tracking-stresscheck-schema.md`
+- **Website-Code-Diff:** +1368/−46 (vor Review-Fix)
+- **Push:** nein
+- **Deploy:** nein
+- **Bewusst nicht umgesetzt:** Krombacher in LogoCloud (kein Logo, keine Freigabe); „Kagetec-R-Äquivalent" im öffentlichen Text (Herstellervergleich ohne Beleg); Löschung der TCO-Argumentation in `articles.ts:495` (argumentiert gegen m²-Preis-Denken).
+- **Nächster Schritt:** Owner entscheidet 120/130 °C und Freigaben (Krombacher, Kyritzer); danach PR eröffnen (optional `/code-review ultra`), Merge, approval-gated Production-Deploy; GA4-Admin: `b2b_conversion` als Key Event prüfen.

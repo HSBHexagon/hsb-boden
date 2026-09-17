@@ -1,9 +1,9 @@
 {
   "project": "HSB / HEXAFLOOR",
-  "last_updated": "2026-07-15T13:20:00+0200",
-  "active_model": "Claude Code (Fable 5) + Codex",
-  "active_phase": "post-deploy-security-and-truth-reconciliation",
-  "active_task": "Produktionsstand nach PR #84/#85/#87/#88/#89/#90 und dem operator-verifizierten Attribution-Mapping konsolidieren, oeffentlich dokumentierte Apps-Script-Endpunkte aus dem aktuellen Tree entfernen und den weiterhin offenen Auth-Cutover ohne Abschlussuebertreibung festhalten. Nachtrag 2026-07-15: Attribution-Connector-Patch (docs/crm/ATTRIBUTION_CONNECTOR_PATCH.md) live im HSBBODEN Apps Script + HSB CRM Light Sheet eingespielt (Deployment Version 4, Webhook-URL unveraendert), End-to-End mit echtem UTM-Test-Lead verifiziert.",
+  "last_updated": "2026-09-17T09:55:00+0200",
+  "active_model": "Claude Code (Opus 5)",
+  "active_phase": "website-b2b-tracking-stresscheck-schema",
+  "active_task": "B2B-Upgrade der Website auf Feature-Branch feat/b2b-tracking-stresscheck-schema: GA4-B2B-DataLayer, LogoCloud mit Branchenfilter, Beanspruchungs-Check (/beanspruchungs-check/), Schema.org-Normen, B2B-Metadaten. Gate bestanden, Review-Befunde eingearbeitet. Nicht gepusht, nicht deployt.",
   "account_migration_2026_07_02": {
     "github_new_repo": "https://github.com/HSBHexagon/hsb-boden",
     "github_old_repo_access": "HSBHexagon ist Admin-Collaborator im Alt-Repo cherinojoel-lang/hsb-boden (Ownership-Transfer pending, nicht blockierend)",
@@ -24,7 +24,14 @@
     "github": {
       "origin_main": "f202cb646d3e66d714ec385e724916b7f38f2eec",
       "open_pull_requests": 40,
-      "merged_prs_in_finalization_wave": [84, 85, 87, 88, 89, 90],
+      "merged_prs_in_finalization_wave": [
+        84,
+        85,
+        87,
+        88,
+        89,
+        90
+      ],
       "pr_86": "OPEN, non-draft, DIRTY, REVIEW_REQUIRED; durch PR #87 nur teilweise ueberholt. Nicht as-is mergen; Schutzlogik einzeln gegen aktuellen main bewerten.",
       "pr_74": "OPEN, DRAFT, REVIEW_REQUIRED; main wurde automatisch in den Branch gemergt, Head de6dd57. Frische CI-/QA-/Security-/CodeQL-/Lighthouse-/Preview-Checks gruen; PoC bleibt deaktiviert und erfolgreiche Cloudflare-AI-Gateway-Inferenz ist nicht belegt."
     },
@@ -46,8 +53,8 @@
   "repo_path": "/Users/joelcherinodiaz/KI-System/02_Projects/active/hsb-boden",
   "local_root_checkout": "tracked files unveraendert, sechs Commits hinter origin/main; untracked .local-secrets/ aus laufender Fable-Sitzung wurde nicht geoeffnet oder veraendert",
   "handoff_path": "/Users/joelcherinodiaz/KI-System/ObsidianVault/brain/CURRENT_HANDOFF.md",
-  "last_commit": "origin/main f202cb6; produktiver Code bf0a257; Production-Run 29404977846 erfolgreich",
-  "website_code_diff_lines": "0 in diesem Truth-/Security-Dokumentationspass; aktuelle Codeaenderungen stammen aus den bereits gemergten PRs #85 und #87.",
+  "last_commit": "lokal 456afbe auf feat/b2b-tracking-stresscheck-schema; origin/main unveraendert c340d53",
+  "website_code_diff_lines": "+1368/-46 in 26 Dateien (main...HEAD vor 456afbe), plus Review-Fix",
   "canonical_readiness_stack": {
     "tier1": {
       "cloudflare": "docs/cloudflare/CLOUDFLARE_PROVIDER_MAX_READINESS.md",
@@ -170,7 +177,7 @@
     "M365 DKIM for j-cherino@hsb-boden.de not yet activated.",
     "Lead-Datensatz existiert (6424 im MASTER-Sheet), aber Versandfreigabe 0/6424: PHASE_7_COMPLIANCE_GATE (Rechtsgrundlage, Opt-out, Batch-Freigabe) unerfuellt."
   ],
-  "next_step": "Diesen atomaren Truth-/Endpoint-Redaction-PR reviewen. Parallel keine unrelatierten Fable-Merges oder Deploys. Danach neuen Apps-Script-Pfad und dual-kompatible Pages Function bauen; Preview testen; Production-Secret setzen und denselben Commit approval-gated neu deployen; E2E verifizieren; alte Deployments zuletzt invalidieren.",
+  "next_step": "Owner: 120/130-C-Entscheidung, Krombacher/Kyritzer-Freigaben pruefen, dann PR aus feat/b2b-tracking-stresscheck-schema eroeffnen (optional /code-review ultra), Merge und approval-gated Production-Deploy.",
   "handoff_required": true,
   "safe_to_continue": true,
   "historical_canonical_runtime_migration_2026_07_04": {
@@ -209,5 +216,39 @@
       "Live n8n workflows",
       "Mass outreach"
     ]
+  },
+  "session_2026_09_17_b2b_upgrade": {
+    "branch": "feat/b2b-tracking-stresscheck-schema",
+    "base": "main c340d53",
+    "commits": [
+      "5be41d2",
+      "bd52a39",
+      "c4db3ae",
+      "1f349bb",
+      "5871fef",
+      "a239f38",
+      "394652d",
+      "456afbe"
+    ],
+    "plan": "docs/superpowers/plans/2026-09-17-b2b-tracking-stresscheck-schema.md",
+    "report": "~/KI-System/08_System/reports/validation/2026-09-17-hsb-b2b-tracking-stresscheck-schema.md",
+    "gate": {
+      "astro_check": "0/0/0 (150 Dateien)",
+      "build": "57 Seiten",
+      "tests": "261/261 (33 Dateien; Baseline 223/27)",
+      "sitemap": "OK 55 URLs",
+      "deploy_dry_run": "OK",
+      "preview_routes": "11x HTTP 200"
+    },
+    "website_code_diff": "26 Dateien +1368/-46 vor Review-Fix; Review-Fix 456afbe zusaetzlich",
+    "review": "seo-content-reviewer FAIL(3 kritisch) -> 2 behoben (DIN-EN-14411-Zuordnung, Wortwahl/Rechtsclaims), 1 Owner-Entscheidung (PU-Beton 120 vs 130 C), Kyritzer-Logo in LogoCloud ist Vorbestand auf main",
+    "owner_decisions_open": [
+      "PU-Beton Temperaturgrenze: Auftrag 120 C vs. pu-beton-industrieboden.ts 130 C -> einen Wert kanonisch festlegen",
+      "Krombacher: Logo-Asset + Referenzfreigabe fehlen -> nicht in LogoCloud",
+      "Kyritzer Fruchtsaefte: Standort-Logo in LogoCloud (Vorbestand seit main, Test-gesichert) gegen Freigabe-Ebene in clientLocations.ts:6-10 pruefen",
+      "GA4-Admin: b2b_conversion ggf. als Key Event markieren"
+    ],
+    "push_done": false,
+    "deploy_done": false
   }
 }

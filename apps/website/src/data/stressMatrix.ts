@@ -62,7 +62,7 @@ export const STRESS_SYSTEMS: Record<StressSystemId, StressSystem> = {
     name: "AGI S 40 Vibro-Rüttelkeramik mit Kunstharzfuge",
     short: "Rüttelkeramik (AGI S 40)",
     description:
-      "Keramische Platten nach DIN EN 14411, im Rüttelverfahren in ein Reaktionsharz-Bett eingebracht und mit Kunstharzfuge geschlossen. Beständig gegen organische und anorganische Säuren, Laugen und Thermoschock; höchste Druck- und Punktlastfestigkeit.",
+      "Keramische Platten nach DIN EN 14411, im Rüttelverfahren in ein Reaktionsharz-Bett eingebracht und mit Kunstharzfuge geschlossen. Beständig gegen organische und anorganische Säuren, Laugen und Thermoschock; sehr hohe Druck- und Flächenpressungsfestigkeit durch das Rüttelverfahren.",
     serviceSlug: "keramische-industrieboeden",
     norms: ["AGI S 40", "DIN EN 14411"],
   },
@@ -116,7 +116,7 @@ const WINDOW_NOTE_WHG =
 /**
  * Deterministische Systemauslegung: geordnete Regeln, erste zutreffende gewinnt.
  * 1. Heißdampf > 100 °C          -> Rüttelkeramik (Reaktionsharzsysteme thermisch begrenzt)
- * 2. Schwerlast > 30 N/mm²       -> Rüttelkeramik (Druck-/Punktlastfestigkeit)
+ * 2. Schwerlast > 30 N/mm²       -> Rüttelkeramik (Druck-/Flächenpressungsfestigkeit)
  * 3. Anorganische Säuren pH 0–2  -> mit Thermoschock: Rüttelkeramik, sonst WHG § 62 Fachbeschichtung
  * 4. Wochenendfenster < 48 h     -> PU-Beton (schnell härtend)
  * 5. Fette / Öle                 -> PU-Beton (fugenarm, fettbeständig)
@@ -127,14 +127,14 @@ export function resolveStressSystem(input: StressCheckInput): StressCheckResult 
   const weekend = input.timeWindow === "wochenende-48h";
 
   if (input.tempRange === "heissdampf-100") {
-    reasons.push("Heißdampf über 100 °C liegt über der thermischen Dauerbelastbarkeit von Reaktionsharz-Systemen; Rüttelkeramik mit Kunstharzfuge bleibt formstabil.");
-    if (input.mechanicalLoad === "schwerlast-vulkollan") reasons.push("Punktlasten über 30 N/mm² aus Vulkollanrollen werden von der keramischen Rüttelverlegung abgetragen.");
+    reasons.push("Heißdampf über 100 °C als Dauer- und Wechselbelastung liegt an der Systemgrenze fugenarmer PU- und Reaktionsharz-Systeme; Rüttelkeramik mit Kunstharzfuge bleibt formstabil.");
+    if (input.mechanicalLoad === "schwerlast-vulkollan") reasons.push("Flächenpressungen über 30 N/mm² aus Vulkollanrollen werden von der keramischen Rüttelverlegung abgetragen.");
     return { system: STRESS_SYSTEMS["agi-s40-ruettelkeramik"], reasons, windowNote: weekend ? WINDOW_NOTE_KERAMIK : undefined };
   }
 
   if (input.mechanicalLoad === "schwerlast-vulkollan") {
-    reasons.push("Punktlasten über 30 N/mm² aus Vulkollanrollen erfordern die Druckfestigkeit keramischer Rüttelbeläge nach DIN EN 14411.");
-    if (input.medium === "anorganische-saeuren") reasons.push("Anorganische Säuren im pH-Bereich 0–2 werden durch die Kunstharzfuge nach AGI S 40 dauerhaft abgetragen.");
+    reasons.push("Flächenpressungen über 30 N/mm² aus Vulkollanrollen erfordern die Druckfestigkeit keramischer Rüttelbeläge nach AGI S 40.");
+    if (input.medium === "anorganische-saeuren") reasons.push("Anorganische Säuren im pH-Bereich 0–2 werden durch die Kunstharzfuge nach AGI S 40 dauerhaft abgedeckt.");
     return { system: STRESS_SYSTEMS["agi-s40-ruettelkeramik"], reasons, windowNote: weekend ? WINDOW_NOTE_KERAMIK : undefined };
   }
 
@@ -143,27 +143,28 @@ export function resolveStressSystem(input: StressCheckInput): StressCheckResult 
       reasons.push("Die Kombination aus anorganischen Säuren (pH 0–2) und Thermoschock bis 85 °C überfordert Beschichtungen; Rüttelkeramik mit Kunstharzfuge nach AGI S 40 ist hier Stand der Technik.");
       return { system: STRESS_SYSTEMS["agi-s40-ruettelkeramik"], reasons, windowNote: weekend ? WINDOW_NOTE_KERAMIK : undefined };
     }
-    reasons.push("Anorganische Säuren im pH-Bereich 0–2 fallen unter § 62 WHG; die Fachbeschichtung liefert Dichtheit, Beständigkeit und die behördlich geforderte Dokumentation.");
-    if (input.mechanicalLoad === "gabelstapler-3-5t") reasons.push("Staplerverkehr bis 5 t wird durch einen verschleißfesten Deckversiegelungsaufbau abgedeckt.");
+    reasons.push("Anorganische Säuren im pH-Bereich 0–2 sind in der Regel wassergefährdende Stoffe im Sinne der AwSV; für Anlagen greift § 62 WHG, die Fachbeschichtung liefert Dichtheit, Beständigkeit und die behördlich geforderte Dokumentation.");
+    if (input.mechanicalLoad === "gabelstapler-3-5t") reasons.push("Staplerverkehr bis 5 t wird bei der Auslegung des Schichtaufbaus berücksichtigt.");
     return { system: STRESS_SYSTEMS["whg-fachbeschichtung"], reasons, windowNote: weekend ? WINDOW_NOTE_WHG : undefined };
   }
 
   if (weekend) {
     reasons.push("Ein Wochenendfenster unter 48 h erlaubt nur schnell härtende Systeme; PU-Beton ist nach kurzer Zeit befahrbar und voll belastbar.");
-    if (input.tempRange === "thermoschock-85") reasons.push("PU-Beton ist bis 120 °C thermoschockbeständig und übersteht CIP-Reinigung bis 85 °C.");
-    if (input.medium !== "fette-oele") reasons.push("Organische Säuren und Laugen werden im Konzentrationsbereich der Lebensmittelproduktion dauerhaft abgetragen.");
+    if (input.tempRange === "thermoschock-85") reasons.push("PU-Beton ist thermoschockbeständig und übersteht CIP-Reinigung bis 85 °C.");
+    if (input.medium === "cip-laugen") reasons.push("Die Laugenbeständigkeit wird im Audit anhand Konzentration und Temperatur gegen das Systemdatenblatt geprüft.");
+    else if (input.medium !== "fette-oele") reasons.push("Organische Säuren im Konzentrationsbereich der Lebensmittelproduktion werden dauerhaft abgedeckt.");
     return { system: STRESS_SYSTEMS["pu-beton-hochtemperatur"], reasons };
   }
 
   if (input.medium === "fette-oele") {
     reasons.push("Fette und Öle verlangen eine fugenarme, porenfreie Oberfläche; PU-Beton verhindert Unterwanderung und Keimnester.");
-    if (input.tempRange === "thermoschock-85") reasons.push("PU-Beton ist bis 120 °C thermoschockbeständig und übersteht CIP-Reinigung bis 85 °C.");
+    if (input.tempRange === "thermoschock-85") reasons.push("PU-Beton ist thermoschockbeständig und übersteht CIP-Reinigung bis 85 °C.");
     return { system: STRESS_SYSTEMS["pu-beton-hochtemperatur"], reasons };
   }
 
   reasons.push("Milchsäure, Fruchtsäuren und CIP-Laugen greifen zementöse und viele Reaktionsharz-Fugen an; die Kunstharzfuge nach AGI S 40 deckt pH 0–14 dauerhaft ab.");
   if (input.tempRange === "thermoschock-85") reasons.push("Thermoschock bis 85 °C wird durch die keramische Rüttelverlegung ohne Haftverbund-Verlust aufgenommen.");
-  if (input.mechanicalLoad === "gabelstapler-3-5t") reasons.push("Staplerverkehr bis 5 t liegt innerhalb der Druckfestigkeit von Rüttelkeramik nach DIN EN 14411.");
+  if (input.mechanicalLoad === "gabelstapler-3-5t") reasons.push("Staplerverkehr bis 5 t liegt innerhalb der Druckfestigkeit keramischer Rüttelbeläge nach AGI S 40.");
   if (input.timeWindow === "neubau") reasons.push("Im Neubau kann Gefälle- und Rinnenplanung direkt in die keramische Fläche integriert werden.");
   return { system: STRESS_SYSTEMS["agi-s40-ruettelkeramik"], reasons };
 }

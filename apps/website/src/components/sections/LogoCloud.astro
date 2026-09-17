@@ -31,7 +31,7 @@ const logos = getLogoCloudEntries(industryFilter);
           data-logo-entry
           data-client={reference.name}
           data-industry={reference.industry ?? ""}
-          aria-label={`${reference.name} – ${reference.proofTag} – Referenzen ansehen`}
+          aria-label={`${reference.name} – ${reference.proofTag} – ${reference.systems.length > 0 ? "Referenzen ansehen" : "Kundenstandorte ansehen"}`}
         >
           <div class="grid h-14 w-full max-w-[150px] place-items-center grayscale opacity-75 contrast-125 transition-all group-hover:grayscale-0 group-hover:opacity-100">
             <img

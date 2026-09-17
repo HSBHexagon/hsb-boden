@@ -1299,7 +1299,7 @@ function testInboundEvents() {
         'Opt_Out=' + updatedLeadDom.Opt_Out + ' Suppressed=' + updatedLeadDom.Suppressed + ' Freigabe=' + updatedLeadDom.Versandfreigabe);
   const domainEvt = SHEETS.INBOUND_EVENTS._data.filter(function (r) { return r[0] === 'EVT-003-DOMAIN'; })[0];
   check('Inbound: Domain-Opt-Out ist im Ereignis als Domain-Zuordnung gekennzeichnet',
-        domainEvt && /Domain/.test(String(domainEvt[9])), domainEvt ? String(domainEvt[9]) : 'kein Event');
+        domainEvt && /Domain/.test(String(domainEvt[10])), domainEvt ? String(domainEvt[10]) : 'kein Event');
 
   // Freemail-Domain traegt keine Firmenzuordnung: bleibt Klaerfall.
   const resFreemailOptOut = ctx.processInboundEvent({
@@ -1420,7 +1420,14 @@ function testInboundEvents() {
   const evtData = SHEETS.INBOUND_EVENTS._data;
   const lastEvt = evtData[evtData.length - 1];
   check('Inbound: unmatchbares Event traegt LEERE Lead-ID (kein Raten)',
-        lastEvt[3] === '', 'lead_id=' + lastEvt[3]);
+        lastEvt[6] === '', 'lead_id=' + lastEvt[6]);
+  check('Inbound: Ereigniszeile folgt dem 12-Spalten-Header (Classification=H, Processed=J)',
+        lastEvt.length === 12 && lastEvt[7] === 'REPLY' && lastEvt[9] === 'NEEDS_REVIEW' && lastEvt[3] === 'unbekannt-gibtesnicht@nirgendwo.de',
+        JSON.stringify(lastEvt));
+  const headerRow = SHEETS.INBOUND_EVENTS._data[0];
+  check('Inbound: Header ist kanonisch (12 Spalten)',
+        headerRow.join('|') === 'Event_ID|Received_UTC|Mailbox|From|Subject|Internet_Message_ID|Lead_ID|Classification|Stop_Followup|Processed|Notes|Raw_Link',
+        headerRow.join('|'));
 }
 
 /**

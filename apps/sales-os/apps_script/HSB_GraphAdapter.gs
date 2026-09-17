@@ -394,9 +394,9 @@ function eventIndexLesen_() {
   var sh = sheet_(CFG.SHEET_EVENTS);
   var last = sh.getLastRow();
   if (last < 2) return idx;
-  sh.getRange(2, 1, last - 1, 9).getValues().forEach(function (r) {
+  sh.getRange(2, 1, last - 1, 10).getValues().forEach(function (r) {
     var id = String(r[0] || '');
-    if (id) idx[id] = String(r[8] || '');
+    if (id) idx[id] = String(r[9] || '');
   });
   return idx;
 }
@@ -466,6 +466,7 @@ function reconcileSentMessages_(messages, quelle) {
     var r = processInboundEvent({
       event_id: eventId,
       event_type: 'SENT',
+      mailbox: typeof mailboxKonto_ === 'function' ? mailboxKonto_() : '',
       lead_id: explicitLeadId,
       message_id: m.internetMessageId || '',
       email: toAddr,
@@ -636,6 +637,7 @@ function reconcileInboxMessages_(messages, quelle) {
     var r = processInboundEvent({
       event_id: eventId,
       event_type: cls.event_type,
+      mailbox: typeof mailboxKonto_ === 'function' ? mailboxKonto_() : '',
       message_id: m.internetMessageId || '',
       email: cls.email,
       failed_recipient: cls.failed_recipient,

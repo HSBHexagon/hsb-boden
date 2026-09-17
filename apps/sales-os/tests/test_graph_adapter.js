@@ -270,7 +270,7 @@ console.log('\n=== 9. Wiederkehrender Postfach-Abgleich: Lead-Bezug und Idempote
   // Vorfilter entstuende bei jedem Lauf fuer jede fremde Nachricht
   // (Newsletter, interne Post) eine neue NEEDS_REVIEW-Zeile.
   const k = ladeAdapter({ postfach: 'j-cherino@hsb-boden.de' });
-  const EVENTS = [];           // Nachbau INBOUND_EVENTS (Script-Layout, Status in Spalte 9)
+  const EVENTS = [];           // Nachbau INBOUND_EVENTS (kanonisches 12-Spalten-Layout, Processed in Spalte J)
   let LEADS = [
     { Lead_ID: 'HSB-L-1', Email: 'einkauf@brauerei-muster.de', Send_Status: 'sent', Internet_Message_ID: '<sent-1@hsb-boden.de>' },
     { Lead_ID: 'HSB-L-2', Email: 'info@architekten-beispiel.de', Send_Status: 'drafted', Internet_Message_ID: '' }
@@ -289,7 +289,7 @@ console.log('\n=== 9. Wiederkehrender Postfach-Abgleich: Lead-Bezug und Idempote
     EINGEREICHT.push(ev);
     const hit = LEADS.filter(function (l) { return l.Lead_ID === ev.lead_id || l.Email === ev.email; })[0];
     const status = hit ? 'PROCESSED' : 'NEEDS_REVIEW';
-    EVENTS.push([ev.event_id, 'ts', ev.event_type, hit ? hit.Lead_ID : '', '', ev.email || '', ev.message_id || '', '', status, ev.subject || '']);
+    EVENTS.push([ev.event_id, 'ts', ev.mailbox || '', ev.email || '', ev.subject || '', ev.message_id || '', hit ? hit.Lead_ID : '', ev.event_type, 'no', status, ev.details || '', '']);
     return { ok: true, matched: !!hit, status: status };
   };
 
@@ -330,7 +330,7 @@ console.log('\n=== 9. Wiederkehrender Postfach-Abgleich: Lead-Bezug und Idempote
 
   // Offene Abmeldung (NEEDS_REVIEW) aus einer Firmendomain wird erneut eingereicht,
   // sobald die Domain einen Lead trifft - processInboundEvent sperrt dann die Domain.
-  EVENTS.push(['TEST-INBOX-<m6@x>', 'ts', 'OPT_OUT', '', '', 'vorname.name@brauerei-muster.de', '<m6@x>', '', 'NEEDS_REVIEW', 'Abmelden']);
+  EVENTS.push(['TEST-INBOX-<m6@x>', 'ts', 'j-cherino@hsb-boden.de', 'vorname.name@brauerei-muster.de', 'Abmelden', '<m6@x>', '', 'OPT_OUT', 'yes', 'NEEDS_REVIEW', 'Abmeldung', '']);
   EINGEREICHT = [];
   k.reconcileInboxMessages_([mail('m6', 'vorname.name@brauerei-muster.de', 'Abmelden', 'bitte abmelden')], 'TEST');
   pruefe('Offene Abmeldung aus Lead-Domain wird erneut eingereicht',

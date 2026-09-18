@@ -7,27 +7,32 @@ from crm_operator_layer import PIPELINE_COLORS, rgb
 BLOCK_COLS = "B, G, I, BE, AP, AR, AC"   # Firma, Ansprechpartner, E-Mail, Pipeline, Send_Datum, Reply_Status, Notizen
 HEADER_LABELS = ["Firma", "Ansprechpartner", "E-Mail", "Pipeline", "Versendet am", "Antwort", "Notizen"]
 
+# Zeilen, die jeder HEUTE-Block reserviert (Titel + Kopf + Formel + Leerzeilen). Der QUERY-`limit`
+# jedes Blocks MUSS <= BLOCK_ROWS bleiben, sonst kollidiert die Array-Erweiterung mit der Titelzeile
+# des naechsten Blocks (#REF!, Critical 3).
+BLOCK_ROWS = 40
+
 def q(where, order="", limit=None):
     return f"=IFERROR(QUERY(ALL_LEADS!A2:BE; \"select {BLOCK_COLS} where {where}{(' order by ' + order) if order else ''}{(' limit ' + str(limit)) if limit else ''}\"; 0); \"— keine —\")"
 
 def cockpit_blocks(owner_match):
     own = f"AA contains '{owner_match}'"
     return [
-        {"title": "🔴 Abgemeldet",  "color": PIPELINE_COLORS["Abgemeldet"],  "formula": q(f"{own} and BE = 'Abgemeldet'", "BC desc")},
-        {"title": "🟡 Antworten offen", "color": PIPELINE_COLORS["Antwort"], "formula": q(f"{own} and BE = 'Antwort' and R is null", "BC desc")},
-        {"title": "🟠 Bounce", "color": PIPELINE_COLORS["Bounce"], "formula": q(f"{own} and BE = 'Bounce'", "AP desc")},
+        {"title": "🔴 Abgemeldet",  "color": PIPELINE_COLORS["Abgemeldet"],  "formula": q(f"{own} and BE = 'Abgemeldet'", "BC desc", limit=BLOCK_ROWS)},
+        {"title": "🟡 Antworten offen", "color": PIPELINE_COLORS["Antwort"], "formula": q(f"{own} and BE = 'Antwort' and R is null", "BC desc", limit=BLOCK_ROWS)},
+        {"title": "🟠 Bounce", "color": PIPELINE_COLORS["Bounce"], "formula": q(f"{own} and BE = 'Bounce'", "AP desc", limit=BLOCK_ROWS)},
         # AP (Send_Datum) mischt Text- und Datumswerte im Live-Sheet (162 Text / 201 Datum) — ein Datumsvergleich
         # wuerde die Text-Zeilen still ausblenden. Daher kein `AP >= date '…'`, sondern reiner Status-Filter mit
-        # den juengsten 60 nach AP sortiert; der Zaehler unten (count_formula) prueft dieselbe Bedingung.
-        {"title": "🟢 Versendet (zuletzt 60)", "color": PIPELINE_COLORS["Versendet"], "formula": q(f"{own} and BE = 'Versendet'", "AP desc", limit=60)},
-        {"title": "🔵 Heute dran (freigegeben / Entwurf)", "color": PIPELINE_COLORS["Freigegeben"], "formula": q(f"{own} and (BE = 'Freigegeben' or BE = 'Entwurf')", "F, B")},
+        # den juengsten BLOCK_ROWS nach AP sortiert; der Zaehler unten (count_formula) prueft dieselbe Bedingung.
+        {"title": f"🟢 Versendet (zuletzt {BLOCK_ROWS})", "color": PIPELINE_COLORS["Versendet"], "formula": q(f"{own} and BE = 'Versendet'", "AP desc", limit=BLOCK_ROWS)},
+        {"title": "🔵 Heute dran (freigegeben / Entwurf)", "color": PIPELINE_COLORS["Freigegeben"], "formula": q(f"{own} and (BE = 'Freigegeben' or BE = 'Entwurf')", "F, B", limit=BLOCK_ROWS)},
     ]
 
 def count_formula(owner_match, state):
     return f'=COUNTIFS(ALL_LEADS!AA2:AA; "*{owner_match}*"; ALL_LEADS!BE2:BE; "{state}")'
 
 def cockpit_values(owner_match, mailbox):
-    """Zellinhalte des Tabs (Zeilenlisten). Jeder Block: Titelzeile (mit Zaehler), Kopfzeile, QUERY, 40 Zeilen Platz."""
+    """Zellinhalte des Tabs (Zeilenlisten). Jeder Block: Titelzeile (mit Zaehler), Kopfzeile, QUERY, BLOCK_ROWS Zeilen Platz."""
     rows = [[f"HEUTE — {owner_match.upper()}", "", "", "", "", "", ""],
             [f'=IFERROR("Postfach " & VLOOKUP("{mailbox}"; SYNC_STATUS!A:H; 1; FALSE) & " · zuletzt abgeglichen " & TEXT(VLOOKUP("{mailbox}"; SYNC_STATUS!A:H; 2; FALSE); "dd.mm. hh:mm") & " UTC"; "Abgleich noch nicht gelaufen")'],
             []]
@@ -41,7 +46,7 @@ def cockpit_values(owner_match, mailbox):
     ]
     for blk, cnt in zip(cockpit_blocks(owner_match), counts):
         rows.append([blk["title"], cnt]); rows.append(HEADER_LABELS); rows.append([blk["formula"]])
-        rows.extend([[]] * 40)
+        rows.extend([[]] * BLOCK_ROWS)
     return rows
 
 def build_cockpit_requests(sheet_id, owner_match, mailbox):
@@ -59,11 +64,17 @@ def build_cockpit_requests(sheet_id, owner_match, mailbox):
                      "fields": "userEnteredFormat(backgroundColor,textFormat)"}})
         reqs.append({"repeatCell": {"range": {"sheetId": sheet_id, "startRowIndex": r + 1, "endRowIndex": r + 2, "startColumnIndex": 0, "endColumnIndex": 7},
                      "cell": {"userEnteredFormat": {"textFormat": {"bold": True}, "backgroundColor": rgb("F8F9FA")}}, "fields": "userEnteredFormat(textFormat,backgroundColor)"}})
-        r += 43
+        r += BLOCK_ROWS + 3
     return reqs
 
 EV_COLS = "B, H, G, D, E, J, K"   # Zeit, Typ, Lead-ID, Absender, Betreff, Status, Notiz
 EV_LABELS = ["Zeit (UTC)", "Typ", "Lead-ID", "Absender", "Betreff", "Status", "Notiz"]
+
+# Reservierte Zeilen fuer den Klaerfall-Block (149 Klaerfaelle live nach Migration, Critical 3).
+KLAER_ROWS = 200
+# Gesamtgroesse des POSTEINGANG-Tabs: Klaerfall-Block + Ereignisliste (limit 200) muessen
+# hineinpassen, sonst laeuft die Ereignisliste ihrerseits in die letzte Zeile.
+POSTEINGANG_ROW_COUNT = 450
 
 # Zeilenindizes (0-basiert, wie in posteingang_values()) — von build_posteingang_requests()
 # zum Positionieren der Formatierung wiederverwendet, damit Werte und Formate nicht auseinanderlaufen.
@@ -71,7 +82,7 @@ _EV_ROW_TITLE = 0
 _EV_ROW_KLAER_TITLE = 3
 _EV_ROW_KLAER_LABELS = 4
 _EV_ROW_KLAER_DATA = 5
-_EV_ROW_EVENTS_TITLE = _EV_ROW_KLAER_DATA + 1 + 60  # 60 Leerzeilen fuer Klaerfaelle-Ergebnisse
+_EV_ROW_EVENTS_TITLE = _EV_ROW_KLAER_DATA + 1 + KLAER_ROWS  # KLAER_ROWS Leerzeilen fuer Klaerfaelle-Ergebnisse
 _EV_ROW_EVENTS_LABELS = _EV_ROW_EVENTS_TITLE + 1
 _EV_ROW_EVENTS_DATA = _EV_ROW_EVENTS_TITLE + 2
 
@@ -82,8 +93,8 @@ def posteingang_values():
             [],
             ["⚠️ Klärfälle — bitte in INBOUND_EVENTS Spalte M eine Lead-ID oder „ignorieren“ eintragen", "=COUNTIF(INBOUND_EVENTS!J2:J; \"NEEDS_REVIEW\")"],
             EV_LABELS,
-            [f"=IFERROR(QUERY(INBOUND_EVENTS!A2:M; \"select {EV_COLS} where J = 'NEEDS_REVIEW' order by B desc\"; 0); \"— keine —\")"]]
-    rows.extend([[]] * 60)
+            [f"=IFERROR(QUERY(INBOUND_EVENTS!A2:M; \"select {EV_COLS} where J = 'NEEDS_REVIEW' order by B desc limit {KLAER_ROWS}\"; 0); \"— keine —\")"]]
+    rows.extend([[]] * KLAER_ROWS)
     rows += [["📥 Letzte 200 Ereignisse", ""], EV_LABELS,
              [f"=IFERROR(QUERY(INBOUND_EVENTS!A2:M; \"select {EV_COLS} where A is not null and J <> 'DUPLICATE' order by B desc limit 200\"; 0); \"— keine —\")"]]
     return rows
@@ -97,10 +108,16 @@ _CLASSIFICATION_COLORS = [
     (("SENT",), "Versendet"),
 ]
 
-def build_posteingang_requests(sheet_id):
+def build_posteingang_requests(sheet_id, existing_cf_count=0):
     """Formatierung: Titelzeilen farbig, Kopfzeilen fett, Spaltenbreiten, Zeile 1 fixiert, CLIP,
-    bedingte Formatierung auf Spalte B (Typ) nach Klassifikation fuer beide Bloecke."""
-    reqs = [{"updateSheetProperties": {"properties": {"sheetId": sheet_id, "gridProperties": {"frozenRowCount": 1}}, "fields": "gridProperties.frozenRowCount"}},
+    bedingte Formatierung auf Spalte B (Typ) nach Klassifikation fuer beide Bloecke.
+
+    `existing_cf_count` bestehende bedingte Formate des Tabs werden zuerst absteigend geloescht
+    (wie crm_operator_layer.py), bevor die vier neuen Regeln angefuegt werden — sonst akkumulieren
+    sie bei jedem Lauf (Important 7)."""
+    reqs = [{"deleteConditionalFormatRule": {"sheetId": sheet_id, "index": i}}
+            for i in range(existing_cf_count - 1, -1, -1)]
+    reqs += [{"updateSheetProperties": {"properties": {"sheetId": sheet_id, "gridProperties": {"frozenRowCount": 1}}, "fields": "gridProperties.frozenRowCount"}},
             {"repeatCell": {"range": {"sheetId": sheet_id}, "cell": {"userEnteredFormat": {"wrapStrategy": "CLIP"}}, "fields": "userEnteredFormat.wrapStrategy"}}]
     widths = [140, 130, 120, 220, 260, 110, 260]
     for i, w in enumerate(widths):
@@ -125,7 +142,7 @@ def build_posteingang_requests(sheet_id):
         conds = [f'$B{anchor}="{v}"' for v in values]
         formula = conds[0] if len(conds) == 1 else "OR(" + ",".join(conds) + ")"
         reqs.append({"addConditionalFormatRule": {"index": idx, "rule": {
-            "ranges": [{"sheetId": sheet_id, "startRowIndex": _EV_ROW_KLAER_DATA, "endRowIndex": 300,
+            "ranges": [{"sheetId": sheet_id, "startRowIndex": _EV_ROW_KLAER_DATA, "endRowIndex": POSTEINGANG_ROW_COUNT,
                         "startColumnIndex": 0, "endColumnIndex": 7}],
             "booleanRule": {"condition": {"type": "CUSTOM_FORMULA",
                                           "values": [{"userEnteredValue": f"={formula}"}]},
@@ -135,8 +152,10 @@ def build_posteingang_requests(sheet_id):
 
 def posteingang_setup_requests(events_sheet_id):
     """Spalte M `Zuordnung` in INBOUND_EVENTS: Datenvalidierung M2:M — nicht strikt (Freitext bleibt
-    erlaubt: Lead-ID), mit `ignorieren` als Dropdown-Vorschlag."""
-    reqs = [{"setDataValidation": {"range": {"sheetId": events_sheet_id, "startRowIndex": 1, "endRowIndex": 5000,
+    erlaubt: Lead-ID), mit `ignorieren` als Dropdown-Vorschlag. `endRowIndex` bewusst weggelassen
+    (unbounded) statt einer festen Zeilenobergrenze — sonst schlaegt die Validierung fehl, sobald
+    das Blatt anders dimensioniert ist als beim Schreiben dieser Zeile (Critical 2c)."""
+    reqs = [{"setDataValidation": {"range": {"sheetId": events_sheet_id, "startRowIndex": 1,
                                               "startColumnIndex": 12, "endColumnIndex": 13},
              "rule": {"condition": {"type": "ONE_OF_LIST", "values": [{"userEnteredValue": "ignorieren"}]},
                       "strict": False, "showCustomUi": True}}}]
@@ -145,8 +164,10 @@ def posteingang_setup_requests(events_sheet_id):
 TABS = {"HEUTE JOEL": ("Joel", "j-cherino@hsb-boden.de"), "HEUTE JORDI": ("Jordi", "j-post@hsb-boden.de")}
 
 # Feste Tab-Reihenfolge und Sichtbarkeit (Controller-Ruling Step 5). Alles nicht Gelistete wird versteckt,
-# einschliesslich SYNC_STATUS, das rein als Datenquelle fuer den Sync-Anker dient.
-TAB_ORDER = ["README", "HEUTE JOEL", "HEUTE JORDI", "POSTEINGANG", "ALL_LEADS", "DASHBOARD", "VERSAND", "BATCHES"]
+# einschliesslich SYNC_STATUS, das rein als Datenquelle fuer den Sync-Anker dient. INBOUND_EVENTS
+# bleibt sichtbar (direkt nach POSTEINGANG), weil der Klaerfall-Workflow verlangt, dass der Operator
+# dort in Spalte M eine Lead-ID oder "ignorieren" eintraegt (Important 5).
+TAB_ORDER = ["README", "HEUTE JOEL", "HEUTE JORDI", "POSTEINGANG", "INBOUND_EVENTS", "ALL_LEADS", "DASHBOARD", "VERSAND", "BATCHES"]
 
 def order_tabs(sh, apply=False):
     """Setzt Index/Sichtbarkeit aller vorhandenen Tabs gemaess TAB_ORDER; alles andere wird hidden.
@@ -252,22 +273,49 @@ def main(apply=False):
         sh.spreadsheets().batchUpdate(spreadsheetId=SID, body={"requests": build_cockpit_requests(sid, owner, mailbox)}).execute()
         print(f"{title}: geschrieben (sheetId {sid})")
 
+    # Ein Lese-Call fuer beide Vorbedingungen: bestehende bedingte Formate von POSTEINGANG (I7) und
+    # die aktuelle Spaltenzahl von INBOUND_EVENTS (C2a) — read-only, auch im Dry-Run erlaubt.
+    meta = sh.spreadsheets().get(
+        spreadsheetId=SID,
+        fields="sheets(properties(sheetId,title,gridProperties(columnCount)),conditionalFormats)"
+    ).execute()
+    by_title = {s["properties"]["title"]: s for s in meta["sheets"]}
+    posteingang_sheet = by_title.get("POSTEINGANG")
+    existing_cf_count = len(posteingang_sheet.get("conditionalFormats", [])) if posteingang_sheet else 0
+
     ev_vals = posteingang_values()
     if not apply:
-        print(f"[DRY-RUN] POSTEINGANG: {len(ev_vals)} Zeilen, {len(build_posteingang_requests(0))} Format-Requests")
+        print(f"[DRY-RUN] POSTEINGANG: {len(ev_vals)} Zeilen, "
+              f"{len(build_posteingang_requests(0, existing_cf_count))} Format-Requests "
+              f"({existing_cf_count} bestehende bedingte Formate wuerden zuerst geloescht)")
     else:
-        pid = ensure_tab(sh, "POSTEINGANG", 3, row_count=300)
-        sh.spreadsheets().values().clear(spreadsheetId=SID, range="'POSTEINGANG'!A1:H300").execute()
+        pid = ensure_tab(sh, "POSTEINGANG", 3, row_count=POSTEINGANG_ROW_COUNT)
+        sh.spreadsheets().values().clear(spreadsheetId=SID, range=f"'POSTEINGANG'!A1:H{POSTEINGANG_ROW_COUNT}").execute()
         sh.spreadsheets().values().update(spreadsheetId=SID, range="'POSTEINGANG'!A1", valueInputOption="USER_ENTERED", body={"values": ev_vals}).execute()
-        sh.spreadsheets().batchUpdate(spreadsheetId=SID, body={"requests": build_posteingang_requests(pid)}).execute()
-
-        meta = sh.spreadsheets().get(spreadsheetId=SID, fields="sheets(properties(sheetId,title))").execute()
-        ev_sid = next(s["properties"]["sheetId"] for s in meta["sheets"] if s["properties"]["title"] == "INBOUND_EVENTS")
-        m1 = sh.spreadsheets().values().get(spreadsheetId=SID, range="INBOUND_EVENTS!M1").execute().get("values", [[""]])
-        if not (m1 and m1[0] and str(m1[0][0]).strip()):
-            sh.spreadsheets().values().update(spreadsheetId=SID, range="INBOUND_EVENTS!M1", valueInputOption="USER_ENTERED", body={"values": [["Zuordnung"]]}).execute()
-        sh.spreadsheets().batchUpdate(spreadsheetId=SID, body={"requests": posteingang_setup_requests(ev_sid)}).execute()
+        sh.spreadsheets().batchUpdate(spreadsheetId=SID, body={"requests": build_posteingang_requests(pid, existing_cf_count)}).execute()
         print(f"POSTEINGANG: geschrieben (sheetId {pid})")
+
+    # Spalte M (`Zuordnung`) in INBOUND_EVENTS anlegen, falls das Live-Grid noch bei 12 Spalten steht
+    # (Critical 2a) — sonst schlaegt der anschliessende M1-Write/die Validierung fehl.
+    ev_sheet = by_title.get("INBOUND_EVENTS")
+    if ev_sheet:
+        ev_sid = ev_sheet["properties"]["sheetId"]
+        col_count = ev_sheet["properties"]["gridProperties"]["columnCount"]
+        if col_count < 13:
+            if apply:
+                sh.spreadsheets().batchUpdate(spreadsheetId=SID, body={"requests": [
+                    {"appendDimension": {"sheetId": ev_sid, "dimension": "COLUMNS", "length": 13 - col_count}}
+                ]}).execute()
+                print(f"INBOUND_EVENTS: Spalte M angelegt ({col_count} -> 13 Spalten).")
+            else:
+                print(f"[DRY-RUN] INBOUND_EVENTS hat {col_count} Spalten, Spalte M wuerde angelegt (+{13 - col_count}).")
+        elif not apply:
+            print(f"[DRY-RUN] INBOUND_EVENTS hat bereits {col_count} Spalten, Spalte M vorhanden.")
+        if apply:
+            m1 = sh.spreadsheets().values().get(spreadsheetId=SID, range="INBOUND_EVENTS!M1").execute().get("values", [[""]])
+            if not (m1 and m1[0] and str(m1[0][0]).strip()):
+                sh.spreadsheets().values().update(spreadsheetId=SID, range="INBOUND_EVENTS!M1", valueInputOption="USER_ENTERED", body={"values": [["Zuordnung"]]}).execute()
+            sh.spreadsheets().batchUpdate(spreadsheetId=SID, body={"requests": posteingang_setup_requests(ev_sid)}).execute()
 
     write_readme(sh, apply=apply)
     order_tabs(sh, apply=apply)

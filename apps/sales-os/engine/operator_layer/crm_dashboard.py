@@ -37,7 +37,7 @@ def dashboard_rows():
          '=COUNTIFS(INBOUND_EVENTS!J2:J; "NEEDS_REVIEW"; INBOUND_EVENTS!C2:C; "j-post@hsb-boden.de")',
          '=COUNTIFS(INBOUND_EVENTS!J2:J; "NEEDS_REVIEW"; INBOUND_EVENTS!C2:C; "j-cherino@hsb-boden.de")', "im Tab POSTEINGANG loesen"],  # 10
         [],  # 11
-        ["Versendet letzte 30 Tage", '=SPARKLINE(MAP(SEQUENCE(30; 1; TODAY()-29; 1); LAMBDA(t; COUNTIF(ALL_LEADS!AP2:AP; TEXT(t; "yyyy-mm-dd") & "*"))); {"charttype"\\"column"})', "", "", "Tage links = älter"],  # 12
+        ["Versendet letzte 30 Tage", '=SPARKLINE(MAP(SEQUENCE(30; 1; TODAY()-29; 1); LAMBDA(t; COUNTIFS(ALL_LEADS!AP2:AP; ">="&t; ALL_LEADS!AP2:AP; "<"&(t+1)))); {"charttype"\\"column"})', "", "", "Tage links = älter"],  # 12
         ["Letzter Abgleich Joel", '=IFERROR(TEXT(VLOOKUP("j-cherino@hsb-boden.de"; SYNC_STATUS!A:H; 2; FALSE); "dd.mm.yyyy hh:mm") & " UTC"; "noch nicht")', "", "", "alle 15 Minuten"],  # 13
         ["Letzter Abgleich Jordi", '=IFERROR(TEXT(VLOOKUP("j-post@hsb-boden.de"; SYNC_STATUS!A:H; 2; FALSE); "dd.mm.yyyy hh:mm") & " UTC"; "noch nicht")', "", "", "alle 15 Minuten"],  # 14
         [],  # 15
@@ -54,7 +54,9 @@ def dashboard_rows():
             f'=IF(ISBLANK(BATCHES!F{r}); ""; BATCHES!F{r})',
             f'=IF(ISBLANK(BATCHES!K{r}); ""; BATCHES!K{r})',
         ])
-    return rows
+    # Jede Zeile auf 5 Zellen auffuellen, sonst laesst values().update() Altinhalt
+    # in kuerzeren Zeilen (Titel, Leerzeilen) unangetastet stehen (Minor 9).
+    return [r + [""] * (5 - len(r)) for r in rows]
 
 
 def _row_of(rows, label):

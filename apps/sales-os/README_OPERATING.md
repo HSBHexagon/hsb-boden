@@ -271,8 +271,11 @@ Antwortet jemand mit „Abmelden" (oder ähnlich), wird nicht nur diese eine
 Person gesperrt, sondern **alle Leads derselben Firmendomain** — auch wenn
 die Antwort von einer anderen Kollegenadresse derselben Firma kommt.
 Freemail-Domains (gmail.com, gmx.de, web.de, outlook.com u. ä.) sind davon
-ausgenommen, dort wird nur die einzelne Adresse gesperrt. Die Sperre lässt
-sich nicht durch einen neuen Batch umgehen.
+ausgenommen — dort lässt sich die Firma nicht über die Domain bestimmen.
+Ohne exakten Treffer auf einen einzelnen Lead landet die Abmeldung als
+Klärfall in POSTEINGANG; der Operator löst sie wie jeden anderen Klärfall
+über Spalte M (siehe „Klärfälle lösen" unten). Die Sperre lässt sich nicht
+durch einen neuen Batch umgehen.
 
 ### Klärfälle lösen
 
@@ -289,9 +292,10 @@ entsprechend aktualisiert.
 ### SYNC_STATUS
 
 Ein verstecktes Blatt, eine Zeile pro Postfach, mit dem Zeitpunkt des
-letzten erfolgreichen Abgleichs. Du siehst es nicht direkt — es liefert nur
-den Text „zuletzt abgeglichen …", der oben auf den Tabs HEUTE JOEL, HEUTE
-JORDI und auf DASHBOARD angezeigt wird.
+letzten Abgleichlaufs (Spalte Fehler zeigt, ob er fehlerfrei war). Du
+siehst es nicht direkt — es liefert nur den Text „zuletzt abgeglichen …",
+der oben auf den Tabs HEUTE JOEL, HEUTE JORDI und auf DASHBOARD angezeigt
+wird.
 
 ### Abmelde-Link in der Signatur
 

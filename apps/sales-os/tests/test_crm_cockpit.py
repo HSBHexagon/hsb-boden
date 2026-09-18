@@ -11,3 +11,13 @@ def test_row_tint_rules():
     rng = r0["ranges"][0]
     assert (rng["startColumnIndex"], rng["endColumnIndex"], rng["startRowIndex"]) == (0, 57, 1)
     assert set(PIPELINE_COLORS) == {"Abgemeldet", "Bounce", "Antwort", "Versendet", "Entwurf", "Freigegeben", "Neu"}
+
+from crm_cockpit import cockpit_blocks, BLOCK_COLS
+
+def test_cockpit_blocks_joel():
+    b = cockpit_blocks("Joel")
+    assert [x["title"] for x in b] == ["🔴 Abgemeldet", "🟡 Antworten offen", "🟠 Bounce", "🟢 Versendet (zuletzt 60)", "🔵 Heute dran (freigegeben / Entwurf)"]
+    assert all("AA contains 'Joel'" in x["formula"] for x in b)
+    assert "BE = 'Abgemeldet'" in b[0]["formula"]
+    assert "BE = 'Versendet'" in b[3]["formula"] and "limit 60" in b[3]["formula"]
+    assert BLOCK_COLS == "B, G, I, BE, AP, AR, AC"

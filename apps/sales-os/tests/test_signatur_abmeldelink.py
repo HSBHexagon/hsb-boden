@@ -1,5 +1,7 @@
-import sys, pathlib
+import os, sys, pathlib
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1] / "engine"))
+os.environ.setdefault("HSB_ADAPTER_URL_JOEL", "https://example.invalid/joel")
+os.environ.setdefault("HSB_ADAPTER_URL_JORDI", "https://example.invalid/jordi")
 import batch_engine, run_100_batch, run_ultimate_test
 
 def test_abmeldelink_in_allen_python_signaturen():

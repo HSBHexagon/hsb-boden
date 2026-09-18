@@ -53,3 +53,17 @@ def test_dashboard_formulas():
     assert rows["Versendet letzte 30 Tage"][1].startswith("=SPARKLINE(")
     assert len(dashboard_rows()) == 27
     assert rows["ERZEUGTE BATCHES (Letzte 10)"]
+    assert dashboard_rows()[17] == [
+        '=IF(ISBLANK(BATCHES!A2); ""; BATCHES!A2)',
+        '=IF(ISBLANK(BATCHES!B2); ""; BATCHES!B2)',
+        '=IF(ISBLANK(BATCHES!D2); ""; BATCHES!D2)',
+        '=IF(ISBLANK(BATCHES!F2); ""; BATCHES!F2)',
+        '=IF(ISBLANK(BATCHES!K2); ""; BATCHES!K2)',
+    ]
+    assert dashboard_rows()[26] == [
+        '=IF(ISBLANK(BATCHES!A11); ""; BATCHES!A11)',
+        '=IF(ISBLANK(BATCHES!B11); ""; BATCHES!B11)',
+        '=IF(ISBLANK(BATCHES!D11); ""; BATCHES!D11)',
+        '=IF(ISBLANK(BATCHES!F11); ""; BATCHES!F11)',
+        '=IF(ISBLANK(BATCHES!K11); ""; BATCHES!K11)',
+    ]

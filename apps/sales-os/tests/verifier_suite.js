@@ -554,6 +554,7 @@ async function runVerifierSuite() {
     const dupReplyPass = (resDupReply.duplicate === true) && (resDupReply.status === 'DUPLICATE_IGNORED');
     const bouncePass = (resBounce.matched === true) && (l2Updated.Bounce_Status === 'hard_bounce') && (l2Updated.Suppressed === 'yes') && (l2Updated.Versandfreigabe === 'no');
     const dupBouncePass = (resDupBounce.duplicate === true) && (resDupBounce.status === 'DUPLICATE_IGNORED');
+    // Index 6 = Lead_ID (G), 9 = Processed (J) laut INBOUND_EVENT_HEADER_ / docs/appsheet/inbound_events_schema_spec.json
     const unkPass = (resUnknown.matched === false) && (resUnknown.status === 'NEEDS_REVIEW') && unkRow && (unkRow[6] === '') && (unkRow[9] === 'NEEDS_REVIEW');
     const ambPass = (resAmbiguous.matched === false) && (resAmbiguous.status === 'NEEDS_REVIEW') && ambRow && (ambRow[6] === '') && (ambRow[9] === 'NEEDS_REVIEW');
     const optOutPass = (resOptOut.matched === true) && (l3Updated.Opt_Out === 'yes') && (l3Updated.Suppressed === 'yes') && (l3Updated.Versandfreigabe === 'no');

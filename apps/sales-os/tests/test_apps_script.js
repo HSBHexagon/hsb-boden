@@ -1298,6 +1298,7 @@ function testInboundEvents() {
         updatedLeadDom.Opt_Out === 'yes' && updatedLeadDom.Suppressed === 'yes' && updatedLeadDom.Versandfreigabe === 'no',
         'Opt_Out=' + updatedLeadDom.Opt_Out + ' Suppressed=' + updatedLeadDom.Suppressed + ' Freigabe=' + updatedLeadDom.Versandfreigabe);
   const domainEvt = SHEETS.INBOUND_EVENTS._data.filter(function (r) { return r[0] === 'EVT-003-DOMAIN'; })[0];
+  // Index 10 = Notes (K) laut INBOUND_EVENT_HEADER_ / docs/appsheet/inbound_events_schema_spec.json
   check('Inbound: Domain-Opt-Out ist im Ereignis als Domain-Zuordnung gekennzeichnet',
         domainEvt && /Domain/.test(String(domainEvt[10])), domainEvt ? String(domainEvt[10]) : 'kein Event');
 
@@ -1419,6 +1420,8 @@ function testInboundEvents() {
         resUnmatched.matched === false && resUnmatched.status === 'NEEDS_REVIEW');
   const evtData = SHEETS.INBOUND_EVENTS._data;
   const lastEvt = evtData[evtData.length - 1];
+  // Indizes laut INBOUND_EVENT_HEADER_ (Actions.gs) / docs/appsheet/inbound_events_schema_spec.json:
+  // 3 = From (D), 6 = Lead_ID (G), 7 = Classification (H), 9 = Processed (J)
   check('Inbound: unmatchbares Event traegt LEERE Lead-ID (kein Raten)',
         lastEvt[6] === '', 'lead_id=' + lastEvt[6]);
   check('Inbound: Ereigniszeile folgt dem 12-Spalten-Header (Classification=H, Processed=J)',

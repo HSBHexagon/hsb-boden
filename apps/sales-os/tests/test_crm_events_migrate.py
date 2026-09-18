@@ -24,10 +24,11 @@ def test_wiederholte_klaerfaelle_werden_markiert_nicht_geloescht():
     b = ["E1", "t2", "REPLY", "", "", "x@y.de", "<1>", "", "NEEDS_REVIEW", "s"]
     c = ["E2", "t3", "j@hsb.de", "x@y.de", "s", "<2>", "HSB-1", "REPLY", "no", "PROCESSED", "n", ""]
     changes = plan([a, b, c])
-    idx = [i for i, _ in changes]
+    idx = [i for i, _, _ in changes]
     assert idx == [0, 1]                       # c ist schon kanonisch und unveraendert
     assert changes[0][1][9] == "NEEDS_REVIEW"  # erste bleibt
     assert changes[1][1][9] == "DUPLICATE"     # Wiederholung markiert
+    assert changes[0][2] == ("alt",) and changes[1][2] == ("alt", "dup")
 
 
 def test_kanonische_wiederholung_wird_ebenfalls_markiert():
@@ -35,7 +36,7 @@ def test_kanonische_wiederholung_wird_ebenfalls_markiert():
     a = ["E9", "t1", "j@hsb.de", "x@y.de", "s", "<9>", "", "REPLY", "no", "NEEDS_REVIEW", "n", ""]
     b = ["E9", "t2", "j@hsb.de", "x@y.de", "s", "<9>", "", "REPLY", "no", "NEEDS_REVIEW", "n", ""]
     changes = plan([a, b])
-    assert [i for i, _ in changes] == [1]
+    assert [i for i, _, _ in changes] == [1]
     assert changes[0][1] == b[:9] + ["DUPLICATE", "n", ""]
 
 
@@ -50,3 +51,21 @@ def test_kurze_zeilen_werden_auf_12_zellen_aufgefuellt():
     kurz = ["E7", "t", "SENT", "HSB-3", "JOEL", "z@z.de"]
     neu = alt_zu_neu(kurz)
     assert len(neu) == 12 and neu[7] == "SENT" and neu[9] == "" and neu[3] == "z@z.de"
+
+
+def test_python_altzeile_message_id_wandert_von_l_nach_f():
+    # Python-Schreiber vor der Umstellung: 12 Zellen, Mailbox in C, Message-ID in L statt F.
+    r = ["INBOUND-REPLY-HSB-1", "t", "j-post@hsb-boden.de", "x@y.de", "AW", "", "HSB-1", "REPLY", "no", "PROCESSED", "n", "<abc@x>"]
+    changes = plan([r])
+    assert [(i, tags) for i, _, tags in changes] == [(0, ("msgid",))]
+    neu = changes[0][1]
+    assert neu[5] == "<abc@x>" and neu[11] == ""
+    assert neu[:5] == r[:5] and neu[6:11] == r[6:11]
+    assert plan([neu]) == []                       # zweiter Lauf: nichts mehr zu tun
+
+
+def test_l_ohne_message_id_muster_bleibt_unangetastet():
+    r = ["E", "t", "j@hsb.de", "x@y.de", "s", "", "HSB-1", "REPLY", "no", "PROCESSED", "n", "In-Reply-To: <o@x>"]
+    assert plan([r]) == []
+    r2 = ["E", "t", "j@hsb.de", "x@y.de", "s", "<schon@da>", "HSB-1", "REPLY", "no", "PROCESSED", "n", "<abc@x>"]
+    assert plan([r2]) == []                        # F belegt: L wird nicht angefasst

@@ -67,38 +67,15 @@ Sende-Knopf. Das Hineinziehen in den Ordner funktioniert unabhängig davon.
 
 ### Weg 2 — direkt ins Postfach (empfohlen)
 
-`engine/graph_drafts.py` legt jeden Entwurf über Microsoft Graph serverseitig
-im Ordner „Entwürfe" an. Kein Ziehen, kein Client-Verhalten, kein
+Menü **HSB Sales OS → 📮 Mit Outlook verbinden**, einmalig mit dem eigenen
+`@hsb-boden.de`-Konto anmelden — der Office-365-Connector fragt dabei
+nichts von einem Administrator ab, du wirkst nur in deinem eigenen
+Postfach. Danach legt das Sheet jeden Entwurf direkt im Ordner „Entwürfe"
+des angemeldeten Postfachs an. Kein Ziehen, kein Client-Verhalten, kein
 `X-Unsent`-Trick — und es funktioniert für jeden Outlook-Client gleich.
 
-Einmalig nötig — **ohne Administrator möglich**: eine App-Registrierung in
-Entra ID mit der *delegierten* Berechtigung `Mail.ReadWrite` (nicht
-Anwendungsberechtigung — die würde tenant-weit wirken und bräuchte deshalb
-zwingend einen Admin). Delegiert heißt: du meldest dich einmalig selbst an
-und wirkst danach nur in deinem eigenen Postfach — genau das, was hier
-gebraucht wird. Details und die genauen Klick-Schritte stehen im Kopf von
-`engine/graph_drafts.py`. Danach:
-
-```sh
-export HSB_GRAPH_TENANT_ID=...
-export HSB_GRAPH_CLIENT_ID=...
-
-python3 engine/graph_drafts.py --batch HSB-... --pruefen        # nur Prüfung
-python3 engine/graph_drafts.py --batch HSB-... --limit 1        # ein Probelauf
-python3 engine/graph_drafts.py --batch HSB-...                  # alle
-```
-
-Beim ersten Lauf zeigt das Werkzeug eine Internetadresse und einen kurzen
-Code — im Browser öffnen, Code eingeben, fertig. Merkt sich danach eine
-Anmeldung lokal, damit du dich nicht bei jedem Lauf neu anmelden musst.
-
-Zeigt der Anmeldebildschirm „Genehmigung durch Administrator erforderlich",
-hat eure IT die Selbstzustimmung tenant-weit gesperrt — dann bitte kurz
-Rücksprache halten, wer die Berechtigung einmalig freigibt.
-
-Das Werkzeug ruft ausschließlich `POST /me/messages` auf, also im Postfach
-der gerade angemeldeten Person. Die Graph-Aktion `.../send` kommt im Code
-nicht vor.
+`engine/graph_drafts.py` ist Legacy und nicht mehr der Betriebsweg — der
+Office-365-Connector im Menü hat es abgelöst.
 
 ---
 
@@ -134,6 +111,10 @@ Pro Absender:
 | Bounces | Unzustellbar |
 | Abmeldungen | Opt-out — dauerhaft gesperrt |
 | Wiedervorlage fällig | Heute oder überfällig |
+
+**Achtung:** Das Menü **✨ Premium Sheet UX & Cockpit einrichten** baut
+DASHBOARD mit dem alten Layout neu auf. Dieses Menüelement bitte nicht mehr
+ausführen — es überschreibt den aktuellen Aufbau.
 
 ---
 
@@ -206,6 +187,11 @@ Batch anfordert.
   Person sie unter `j-post@hsb-boden.de` prüft und abschickt.
 - **Langsam senden.** Nicht 100 Mails in wenigen Sekunden. Microsofts
   technische Obergrenze ist keine Empfehlung für die Geschwindigkeit.
+- **Der automatische Abgleich liest die letzten 100 Nachrichten pro Ordner
+  und Lauf.** Gehen in 15 Minuten mehr als 100 Mails durch ein Postfach,
+  holt der nächste Lauf den Rest nach. Bei Bedarf lässt sich
+  `engine/reconcile_cloud_mailbox.py` auch von Hand mit einem größeren
+  Limit starten.
 
 ---
 
@@ -264,6 +250,60 @@ richten ihn deshalb **jeweils selbst** ein. Was passiert:
 
 Jedes Ereignis steht zusätzlich als Beleg in `INBOUND_EVENTS`. Es wird weiterhin
 **nichts automatisch versendet**.
+
+### Cockpit-Tabs (HEUTE JOEL / HEUTE JORDI / POSTEINGANG)
+
+Drei Tabs zeigen den Alltag, ohne dass du ALL_LEADS filtern musst:
+
+- **HEUTE JOEL** / **HEUTE JORDI** — die Tagesansicht für genau eine Person:
+  Abgemeldet, Antworten offen, Bounce, Versendet (zuletzt 60), Heute dran
+  (freigegeben/Entwurf). Oben steht, wann das eigene Postfach zuletzt
+  abgeglichen wurde.
+- **POSTEINGANG** — alle Ereignisse aus beiden Postfächern zusammen. Oben die
+  Klärfälle (siehe unten), darunter die letzten 200 Ereignisse.
+
+Beide Ansichten aktualisieren sich nicht von selbst — nach dem nächsten
+15-Minuten-Lauf des automatischen Abgleichs stehen die neuen Zeilen da.
+
+### Domain-Abmeldung
+
+Antwortet jemand mit „Abmelden" (oder ähnlich), wird nicht nur diese eine
+Person gesperrt, sondern **alle Leads derselben Firmendomain** — auch wenn
+die Antwort von einer anderen Kollegenadresse derselben Firma kommt.
+Freemail-Domains (gmail.com, gmx.de, web.de, outlook.com u. ä.) sind davon
+ausgenommen — dort lässt sich die Firma nicht über die Domain bestimmen.
+Ohne exakten Treffer auf einen einzelnen Lead landet die Abmeldung als
+Klärfall in POSTEINGANG; der Operator löst sie wie jeden anderen Klärfall
+über Spalte M (siehe „Klärfälle lösen" unten). Die Sperre lässt sich nicht
+durch einen neuen Batch umgehen.
+
+### Klärfälle lösen
+
+Kann ein eingehendes Ereignis keinem Lead eindeutig zugeordnet werden, landet
+es als Klärfall im Tab POSTEINGANG. So löst du ihn auf:
+
+1. In `INBOUND_EVENTS` Spalte **M** (`Zuordnung`) die passende Lead-ID
+   eintragen — oder `ignorieren`, wenn das Ereignis nicht relevant ist.
+2. Menü **HSB Sales OS → ✅ Klärfälle anwenden**.
+
+Danach verschwindet die Zeile aus der Klärfälle-Liste und der Lead wird
+entsprechend aktualisiert.
+
+### SYNC_STATUS
+
+Ein verstecktes Blatt, eine Zeile pro Postfach, mit dem Zeitpunkt des
+letzten Abgleichlaufs (Spalte Fehler zeigt, ob er fehlerfrei war). Du
+siehst es nicht direkt — es liefert nur den Text „zuletzt abgeglichen …",
+der oben auf den Tabs HEUTE JOEL, HEUTE JORDI und auf DASHBOARD angezeigt
+wird.
+
+### Abmelde-Link in der Signatur
+
+Jede versendete Mail trägt in der Signatur den Link „Hier abmelden". Ein
+Klick öffnet eine vorausgefüllte Antwort mit Betreff „Abmelden" — dieselbe
+Antwort, die auch von Hand geschrieben denselben Opt-out-Pfad auslöst
+(siehe Domain-Abmeldung oben). Es braucht dafür keinen weiteren Klick oder
+Bestätigungsschritt.
 
 ## Ansicht in ALL_LEADS (seit 2026-09-17)
 

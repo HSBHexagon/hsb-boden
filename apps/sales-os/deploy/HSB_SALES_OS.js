@@ -1527,6 +1527,17 @@ function istFreemailDomain_(domain) {
   return FREEMAIL_DOMAINS_.indexOf(String(domain || '').trim().toLowerCase()) >= 0;
 }
 
+// Kanonisches Layout von INBOUND_EVENTS (docs/appsheet/inbound_events_schema_spec.json).
+// Alle Schreiber (Apps Script, engine/reconcile_cloud_mailbox.py) halten diese Reihenfolge ein.
+var INBOUND_EVENT_HEADER_ = ['Event_ID', 'Received_UTC', 'Mailbox', 'From', 'Subject',
+  'Internet_Message_ID', 'Lead_ID', 'Classification', 'Stop_Followup', 'Processed', 'Notes', 'Raw_Link'];
+
+function inboundEventRow_(p) {
+  var stop = (p.type === 'OPT_OUT' || p.type === 'HARD_BOUNCE' || p.type === 'CONTACT_CHURN' || p.type === 'NEGATIVE_REPLY') ? 'yes' : 'no';
+  return [p.eventId, p.ts, p.mailbox || '', p.from || '', p.subject || '', p.messageId || '',
+          p.leadId || '', p.type, stop, p.status, p.notes || '', p.inReplyTo ? ('In-Reply-To: ' + p.inReplyTo) : ''];
+}
+
 function processInboundEvent(event) {
   if (!event || typeof event !== 'object') {
     throw new Error('Ungueltiges Event-Objekt');
@@ -1549,14 +1560,13 @@ function processInboundEvent(event) {
   try {
     const eventsSh = sheet_(CFG.SHEET_EVENTS);
     if (eventsSh.getLastRow() === 0) {
-      eventsSh.appendRow(['Event_ID', 'Timestamp', 'Type', 'Lead_ID', 'Owner',
-                          'Email', 'Message_ID', 'In_Reply_To', 'Status', 'Details']);
-      eventsSh.getRange(1, 1, 1, 10).setFontWeight('bold').setBackground('#e8eaed');
+      eventsSh.appendRow(INBOUND_EVENT_HEADER_);
+      eventsSh.getRange(1, 1, 1, 12).setFontWeight('bold').setBackground('#e8eaed');
       eventsSh.setFrozenRows(1);
     } else if (eventsSh.getLastRow() >= 2) {
       // Deduplizierungspruefung
       //
-      // Spalte 9 (Status) zaehlt bewusst mit: eine fruehere Zeile mit
+      // Spalte J (Processed) zaehlt bewusst mit: eine fruehere Zeile mit
       // NEEDS_REVIEW hat NIE einen Lead-Zustand veraendert (Abschnitt 3 oben,
       // "Kein Raten"). Sie ist deshalb kein abgeschlossenes Ereignis, sondern
       // ein offener Klaerfall - wird dieselbe Event-/Message-ID spaeter
@@ -1566,19 +1576,19 @@ function processInboundEvent(event) {
       // dauerhaft als "DUPLICATE_IGNORED" verschluckt, obwohl er inzwischen
       // zuordenbar waere - das widerspraeche der Exactly-once-Garantie fuer
       // SENT ebenso wie einer spaeteren Korrektur bei REPLY/BOUNCE.
-      const existingEvents = eventsSh.getRange(2, 1, eventsSh.getLastRow() - 1, 9).getValues();
+      const existingEvents = eventsSh.getRange(2, 1, eventsSh.getLastRow() - 1, 10).getValues();
       for (let ei = 0; ei < existingEvents.length; ei++) {
         const rowEvtId = String(existingEvents[ei][0]);
-        const rowMsgId = String(existingEvents[ei][6]);
-        const rowStatus = String(existingEvents[ei][8] || '');
-        const isTerminal = rowStatus !== 'NEEDS_REVIEW';
+        const rowMsgId = String(existingEvents[ei][5]);
+        const rowStatus = String(existingEvents[ei][9] || '');
+        const isTerminal = rowStatus !== 'NEEDS_REVIEW' && rowStatus !== 'DUPLICATE';
         if (isTerminal && (rowEvtId === eventId || (messageId && rowMsgId === messageId))) {
           return {
             ok: true,
             duplicate: true,
             event_id: rowEvtId,
             status: 'DUPLICATE_IGNORED',
-            lead_id: existingEvents[ei][3] || ''
+            lead_id: existingEvents[ei][6] || ''
           };
         }
       }
@@ -1667,11 +1677,11 @@ function processInboundEvent(event) {
     const ts = nowIso_();
     if (!matchedLead) {
       // UNMATCHED: Niemals raten, in Review-Warteschlange legen
-      eventsSh.appendRow([
-        eventId, ts, eventType, '', event.owner || '',
-        email, messageId, inReplyTo, 'NEEDS_REVIEW',
-        event.subject || event.details || 'Nicht eindeutig zuordenbar'
-      ]);
+      eventsSh.appendRow(inboundEventRow_({
+        eventId: eventId, ts: ts, mailbox: event.mailbox, from: email, subject: event.subject,
+        messageId: messageId, leadId: '', type: eventType, status: 'NEEDS_REVIEW',
+        notes: event.details || 'Nicht eindeutig zuordenbar', inReplyTo: inReplyTo
+      }));
       logActivity_('', 'INBOUND_UNMATCHED',
         eventType + ' von ' + (email || 'unbekannt') + ' (NEEDS_REVIEW)');
       return {
@@ -1714,11 +1724,11 @@ function processInboundEvent(event) {
       // keine zweite Statusaenderung oder Aktivitaet erzeugen - SENT ist ein
       // Einwegzustand.
       if (String(matchedLead.Send_Status || '').toLowerCase() === 'sent') {
-        eventsSh.appendRow([
-          eventId, ts, eventType, leadId, owner,
-          email, messageId, inReplyTo, 'ALREADY_SENT_IGNORED',
-          'Lead bereits als SENT vermerkt - keine erneute Statusaenderung/Aktivitaet'
-        ]);
+        eventsSh.appendRow(inboundEventRow_({
+          eventId: eventId, ts: ts, mailbox: event.mailbox, from: email, subject: event.subject,
+          messageId: messageId, leadId: leadId, type: eventType, status: 'ALREADY_SENT_IGNORED',
+          notes: 'Lead bereits als SENT vermerkt - keine erneute Statusaenderung/Aktivitaet', inReplyTo: inReplyTo
+        }));
         return {
           ok: true, matched: true, lead_id: leadId, owner: owner,
           event_type: eventType, status: 'ALREADY_SENT_IGNORED'
@@ -1739,11 +1749,11 @@ function processInboundEvent(event) {
     const eventNotiz = domainOptOutLeads.length
       ? ('Domain-Abmeldung von ' + email + ': gesperrt ' + domainOptOutLeads.map(function (l) { return l.Lead_ID; }).join(', '))
       : (event.subject || event.details || 'Erfolgreich zugeordnet');
-    eventsSh.appendRow([
-      eventId, ts, eventType, leadId, owner,
-      email, messageId, inReplyTo, 'PROCESSED',
-      eventNotiz
-    ]);
+    eventsSh.appendRow(inboundEventRow_({
+      eventId: eventId, ts: ts, mailbox: event.mailbox, from: email, subject: event.subject,
+      messageId: messageId, leadId: leadId, type: eventType, status: 'PROCESSED',
+      notes: eventNotiz, inReplyTo: inReplyTo
+    }));
 
     logActivity_(matchedLead.Batch_ID || '', 'INBOUND_' + eventType,
       leadId + ' (' + email + ') verarbeitet');
@@ -2064,6 +2074,51 @@ function uiCreateDraftsForBatch(batchId, limit) {
   }
 }
 
+/** Klaerfaelle aus INBOUND_EVENTS anwenden: Spalte M traegt eine Lead-ID oder "ignorieren". */
+function hsbKlaerfaelleAnwenden() {
+  const sh = sheet_(CFG.SHEET_EVENTS);
+  const n = sh.getLastRow();
+  const out = { ok: true, applied: 0, ignored: 0, errors: [] };
+  if (n < 2) return out;
+  if (sh.getMaxColumns() < 13) sh.insertColumnsAfter(sh.getMaxColumns(), 13 - sh.getMaxColumns());
+  const vals = sh.getRange(2, 1, n - 1, 13).getValues();
+  const knownLeadIds = readLeadsCached_().leads.map(function (l) { return String(l.Lead_ID); });
+  for (let i = 0; i < vals.length; i++) {
+    const r = vals[i];
+    const entscheidung = String(r[12] || '').trim();
+    if (String(r[9]) !== 'NEEDS_REVIEW' || !entscheidung) continue;
+    if (entscheidung.toLowerCase() === 'ignorieren') {
+      sh.getRange(i + 2, 10).setValue('IGNORED'); out.ignored++; continue;
+    }
+    if (knownLeadIds.indexOf(entscheidung) === -1) {
+      out.errors.push(String(r[0]) + ': Lead-ID ' + entscheidung + ' nicht gefunden');
+      continue;
+    }
+    try {
+      const res = processInboundEvent({
+        event_id: String(r[0]) + '-MANUAL', event_type: String(r[7]), lead_id: entscheidung,
+        email: String(r[3] || ''), message_id: String(r[5] || ''), subject: String(r[4] || ''),
+        mailbox: String(r[2] || ''), details: 'Manuell zugeordnet (Klaerfall)'
+      });
+      if (res && res.matched) {
+        sh.getRange(i + 2, 10).setValue('RESOLVED');
+        sh.getRange(i + 2, 7).setValue(entscheidung);
+        out.applied++;
+      } else out.errors.push(String(r[0]) + ': Lead-ID ' + entscheidung + ' nicht gefunden');
+    } catch (e) { out.errors.push(String(r[0]) + ': ' + String(e.message || e)); }
+  }
+  out.ok = out.errors.length === 0;
+  return out;
+}
+
+function uiKlaerfaelleAnwenden() {
+  const ui = SpreadsheetApp.getUi();
+  const r = hsbKlaerfaelleAnwenden();
+  ui.alert('Klaerfaelle angewendet', 'Zugeordnet: ' + r.applied + '\nIgnoriert: ' + r.ignored +
+           (r.errors.length ? ('\n\nFehler:\n' + r.errors.join('\n')) : ''), ui.ButtonSet.OK);
+  return r;
+}
+
 
 /* ==================================================================
    Code.gs
@@ -2095,6 +2150,7 @@ function onOpen() {
     .addSeparator()
     .addItem('📤 Gesendete Mails abgleichen', 'uiReconcileSent')
     .addItem('📥 Antworten abgleichen', 'uiReconcileReplies')
+    .addItem('✅ Klärfälle anwenden (Spalte M in INBOUND_EVENTS)', 'uiKlaerfaelleAnwenden')
     .addSeparator()
     .addItem('Spalten prüfen / ergänzen', 'uiEnsureColumns')
     .addItem('Wiedervorlage prüfen', 'uiGetDue')

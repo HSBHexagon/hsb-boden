@@ -270,7 +270,7 @@ console.log('\n=== 9. Wiederkehrender Postfach-Abgleich: Lead-Bezug und Idempote
   // Vorfilter entstuende bei jedem Lauf fuer jede fremde Nachricht
   // (Newsletter, interne Post) eine neue NEEDS_REVIEW-Zeile.
   const k = ladeAdapter({ postfach: 'j-cherino@hsb-boden.de' });
-  const EVENTS = [];           // Nachbau INBOUND_EVENTS (Script-Layout, Status in Spalte 9)
+  const EVENTS = [];           // Nachbau INBOUND_EVENTS (kanonisches 12-Spalten-Layout, Processed in Spalte J)
   let LEADS = [
     { Lead_ID: 'HSB-L-1', Email: 'einkauf@brauerei-muster.de', Send_Status: 'sent', Internet_Message_ID: '<sent-1@hsb-boden.de>' },
     { Lead_ID: 'HSB-L-2', Email: 'info@architekten-beispiel.de', Send_Status: 'drafted', Internet_Message_ID: '' }
@@ -289,7 +289,7 @@ console.log('\n=== 9. Wiederkehrender Postfach-Abgleich: Lead-Bezug und Idempote
     EINGEREICHT.push(ev);
     const hit = LEADS.filter(function (l) { return l.Lead_ID === ev.lead_id || l.Email === ev.email; })[0];
     const status = hit ? 'PROCESSED' : 'NEEDS_REVIEW';
-    EVENTS.push([ev.event_id, 'ts', ev.event_type, hit ? hit.Lead_ID : '', '', ev.email || '', ev.message_id || '', '', status, ev.subject || '']);
+    EVENTS.push([ev.event_id, 'ts', ev.mailbox || '', ev.email || '', ev.subject || '', ev.message_id || '', hit ? hit.Lead_ID : '', ev.event_type, 'no', status, ev.details || '', '']);
     return { ok: true, matched: !!hit, status: status };
   };
 
@@ -330,7 +330,7 @@ console.log('\n=== 9. Wiederkehrender Postfach-Abgleich: Lead-Bezug und Idempote
 
   // Offene Abmeldung (NEEDS_REVIEW) aus einer Firmendomain wird erneut eingereicht,
   // sobald die Domain einen Lead trifft - processInboundEvent sperrt dann die Domain.
-  EVENTS.push(['TEST-INBOX-<m6@x>', 'ts', 'OPT_OUT', '', '', 'vorname.name@brauerei-muster.de', '<m6@x>', '', 'NEEDS_REVIEW', 'Abmelden']);
+  EVENTS.push(['TEST-INBOX-<m6@x>', 'ts', 'j-cherino@hsb-boden.de', 'vorname.name@brauerei-muster.de', 'Abmelden', '<m6@x>', '', 'OPT_OUT', 'yes', 'NEEDS_REVIEW', 'Abmeldung', '']);
   EINGEREICHT = [];
   k.reconcileInboxMessages_([mail('m6', 'vorname.name@brauerei-muster.de', 'Abmelden', 'bitte abmelden')], 'TEST');
   pruefe('Offene Abmeldung aus Lead-Domain wird erneut eingereicht',
@@ -351,6 +351,56 @@ console.log('\n=== 9. Wiederkehrender Postfach-Abgleich: Lead-Bezug und Idempote
   EINGEREICHT = [];
   const s2 = k.reconcileSentMessages_(GESENDET, 'TEST');
   pruefe('Sende-Abgleich Lauf 2 reicht nichts erneut ein', EINGEREICHT.length === 0 && s2.skipped === 1, JSON.stringify(s2));
+
+  // C1 (zweiter Teilfix): eine per Migration als DUPLICATE markierte Wiederholungszeile
+  // derselben Event_ID darf einen noch offenen NEEDS_REVIEW-Klaerfall im Index nicht
+  // ueberschreiben - sonst liefert abgleichEntscheidung_ dauerhaft 'uebersprungen'.
+  EVENTS.push(['TEST-DUPTWIN', 'ts', 'j-cherino@hsb-boden.de', 'zwilling@brauerei-muster.de', 'Abmelden', '<dup-twin@x>', '', 'OPT_OUT', 'yes', 'NEEDS_REVIEW', 'Klaerfall', '']);
+  EVENTS.push(['TEST-DUPTWIN', 'ts', 'j-cherino@hsb-boden.de', 'zwilling@brauerei-muster.de', 'Abmelden', '<dup-twin@x>', '', 'OPT_OUT', 'yes', 'DUPLICATE', 'Migrations-Duplikat', '']);
+  const idxDup = k.eventIndexLesen_();
+  pruefe('eventIndexLesen_: DUPLICATE ueberschreibt offenen NEEDS_REVIEW-Klaerfall nicht (C1)',
+         idxDup['TEST-DUPTWIN'] === 'NEEDS_REVIEW', JSON.stringify(idxDup['TEST-DUPTWIN']));
+  pruefe('abgleichEntscheidung_: NEEDS_REVIEW + DUPLICATE gleicher Event_ID -> erneut, wenn exakt zuordenbar (C1)',
+         k.abgleichEntscheidung_('TEST-DUPTWIN', idxDup, true) === 'erneut');
+  pruefe('abgleichEntscheidung_: ohne exakte Zuordnung bleibt uebersprungen',
+         k.abgleichEntscheidung_('TEST-DUPTWIN', idxDup, false) === 'uebersprungen');
+}
+
+console.log('\n=== 10. Signatur: Abmelde-Link ===');
+{
+  const sigKontext = { console: console, String: String, Object: Object };
+  vm.createContext(sigKontext);
+  vm.runInContext(
+    fs.readFileSync(path.join(DEPLOY, 'HSB_DraftAdapter.gs.js'), 'utf8'), sigKontext);
+  const sigJordi = sigKontext.signaturHtml_('Jordie Post', 'j-post@hsb-boden.de', '0170 2340904');
+  pruefe('Signatur: Abmelde-Link auf das eigene Postfach mit Betreff Abmelden',
+         sigJordi.indexOf('href="mailto:j-post@hsb-boden.de?subject=Abmelden"') >= 0 && sigJordi.indexOf('Hier abmelden') >= 0);
+  pruefe('Signatur: Abmelde-Link steht vor den Pflichtangaben',
+         sigJordi.indexOf('Hier abmelden') < sigJordi.indexOf('Sitz der Gesellschaft'));
+}
+
+console.log('\n=== 11. SYNC_STATUS wird je Postfach fortgeschrieben ===');
+{
+  const k = ladeAdapter({ postfach: 'j-post@hsb-boden.de' });
+  const SYNC = { _data: [] };
+  const sheet = {
+    getLastRow: function () { return SYNC._data.length; },
+    appendRow: function (r) { SYNC._data.push(r.slice()); },
+    getRange: function (r, c, nr, nc) {
+      return {
+        getValues: function () { return SYNC._data.slice(r - 1, r - 1 + nr).map(function (x) { return x.slice(c - 1, c - 1 + nc); }); },
+        setValues: function (v) { for (let i = 0; i < v.length; i++) SYNC._data[r - 1 + i] = v[i].slice(); },
+        setFontWeight: function () { return this; }
+      };
+    },
+    setFrozenRows: function () {}
+  };
+  k.SpreadsheetApp = { getActiveSpreadsheet: function () { return { getSheetByName: function () { return sheet; }, insertSheet: function () { return sheet; } }; } };
+  k.syncStatusSchreiben_('j-post@hsb-boden.de', { ok: true, weg: 'APIHUB', sent: { checked: 100, matched: 52 }, inbox: { checked: 100, matched: 3 }, errors: [] });
+  k.syncStatusSchreiben_('j-post@hsb-boden.de', { ok: true, weg: 'APIHUB', sent: { checked: 100, matched: 1 }, inbox: { checked: 100, matched: 0 }, errors: [] });
+  pruefe('Header + genau eine Zeile je Postfach (Upsert)', SYNC._data.length === 2, SYNC._data.length + ' Zeilen');
+  pruefe('Zweiter Lauf ueberschreibt Zaehler', SYNC._data[1][4] === 1, JSON.stringify(SYNC._data[1]));
+  pruefe('Fehlerspalte leer bei ok', SYNC._data[1][7] === '');
 }
 
 console.log('\n' + '='.repeat(70));

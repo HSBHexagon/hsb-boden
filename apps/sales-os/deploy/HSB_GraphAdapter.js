@@ -394,9 +394,13 @@ function eventIndexLesen_() {
   var sh = sheet_(CFG.SHEET_EVENTS);
   var last = sh.getLastRow();
   if (last < 2) return idx;
-  sh.getRange(2, 1, last - 1, 9).getValues().forEach(function (r) {
+  sh.getRange(2, 1, last - 1, 10).getValues().forEach(function (r) {
     var id = String(r[0] || '');
-    if (id) idx[id] = String(r[8] || '');
+    var st = String(r[9] || '');
+    // Eine DUPLICATE-Zeile (Migration/Dedupe) darf einen noch offenen
+    // Klaerfall (NEEDS_REVIEW) derselben Event_ID nicht ueberschreiben -
+    // sonst wird abgleichEntscheidung_ nie mehr auf 'erneut' entscheiden.
+    if (id && !(st === 'DUPLICATE' && idx[id] === 'NEEDS_REVIEW')) idx[id] = st;
   });
   return idx;
 }
@@ -437,7 +441,7 @@ function adresseExaktZuordenbar_(addr, li) {
 function abgleichEntscheidung_(eventId, evIdx, exaktZuordenbar) {
   var vorhanden = evIdx[eventId];
   if (vorhanden === undefined) return 'neu';
-  if (vorhanden === 'NEEDS_REVIEW' && exaktZuordenbar) return 'erneut';
+  if ((vorhanden === 'NEEDS_REVIEW' || vorhanden === 'DUPLICATE') && exaktZuordenbar) return 'erneut';
   return 'uebersprungen';
 }
 
@@ -466,6 +470,7 @@ function reconcileSentMessages_(messages, quelle) {
     var r = processInboundEvent({
       event_id: eventId,
       event_type: 'SENT',
+      mailbox: typeof mailboxKonto_ === 'function' ? mailboxKonto_() : '',
       lead_id: explicitLeadId,
       message_id: m.internetMessageId || '',
       email: toAddr,
@@ -636,6 +641,7 @@ function reconcileInboxMessages_(messages, quelle) {
     var r = processInboundEvent({
       event_id: eventId,
       event_type: cls.event_type,
+      mailbox: typeof mailboxKonto_ === 'function' ? mailboxKonto_() : '',
       message_id: m.internetMessageId || '',
       email: cls.email,
       failed_recipient: cls.failed_recipient,
@@ -801,6 +807,27 @@ function mailboxKonto_() {
   return mailboxLeseweg_() === 'APIHUB' ? fcMailboxKonto_() : graphMailbox_();
 }
 
+var SYNC_STATUS_SHEET_ = 'SYNC_STATUS';
+var SYNC_STATUS_HEADER_ = ['Mailbox', 'Letzter_Lauf_UTC', 'Weg', 'Gesendet_geprueft', 'Neu_versendet',
+  'Posteingang_geprueft', 'Antworten_Abmeldungen_Bounces', 'Fehler'];
+
+/** Eine Zeile je Postfach: wann lief der Abgleich zuletzt, was hat er gefunden. Sichtbar fuer beide Nutzer. */
+function syncStatusSchreiben_(mailbox, r) {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sh = ss.getSheetByName(SYNC_STATUS_SHEET_) || ss.insertSheet(SYNC_STATUS_SHEET_);
+  if (sh.getLastRow() === 0) { sh.appendRow(SYNC_STATUS_HEADER_); sh.getRange(1, 1, 1, 8).setFontWeight('bold'); sh.setFrozenRows(1); }
+  var row = [mailbox, new Date().toISOString(), r.weg || '', ((r.sent || {}).checked || 0), ((r.sent || {}).matched || 0),
+             ((r.inbox || {}).checked || 0), ((r.inbox || {}).matched || 0), (r.errors || []).join(' | ')];
+  var n = sh.getLastRow();
+  if (n >= 2) {
+    var vals = sh.getRange(2, 1, n - 1, 1).getValues();
+    for (var i = 0; i < vals.length; i++) {
+      if (String(vals[i][0]) === mailbox) { sh.getRange(i + 2, 1, 1, 8).setValues([row]); return; }
+    }
+  }
+  sh.appendRow(row);
+}
+
 var HSB_AUTO_RECONCILE_HANDLER = 'hsbAutoReconcile';
 var HSB_AUTO_RECONCILE_MINUTES = 15;
 
@@ -823,6 +850,7 @@ function hsbAutoReconcile() {
     catch (e2) { out.errors.push('inbox: ' + String(e2.message || e2)); }
     out.ok = out.errors.length === 0;
     if (!out.ok) console.error('hsbAutoReconcile: ' + out.errors.join(' | '));
+    try { syncStatusSchreiben_(out.mailbox, out); } catch (e3) { console.warn('SYNC_STATUS: ' + e3); }
     return out;
   } finally {
     lock.releaseLock();

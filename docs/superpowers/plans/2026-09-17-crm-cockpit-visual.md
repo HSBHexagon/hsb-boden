@@ -149,15 +149,17 @@ Run: `python3 -m pytest tests/test_reconcile_cloud_mailbox.py -q` → Expected: 
 
 - [ ] **Step 6: Migrationsskript (Dry-Run)**
 
+Kein `clear`, keine Zeilenlöschung: Der Trigger hängt parallel an denselben Tab an. Deshalb werden Altzeilen **in-place** überschrieben (gleiche Zeilennummer, 12 Zellen) und Wiederholungszeilen **markiert** (`Processed=DUPLICATE`, Spalte J) statt gelöscht — kein Zeilenversatz, nichts geht verloren, jederzeit rückgängig. `POSTEINGANG` blendet `DUPLICATE` aus.
+
 `engine/operator_layer/crm_events_migrate.py`:
 
 ```python
 #!/usr/bin/env python3
-"""Bringt INBOUND_EVENTS-Altzeilen auf das 12-Spalten-Layout und entfernt Wiederholungszeilen.
+"""Bringt INBOUND_EVENTS-Altzeilen in-place auf das 12-Spalten-Layout und markiert Wiederholungszeilen.
 
 Erkennung Alt-Layout: Spalte C enthaelt einen Ereignistyp (SENT, REPLY, ...), nicht ein Postfach.
-Wiederholung: gleiche Event_ID, spaetere Zeile, Status NEEDS_REVIEW -> nur die erste bleibt.
-Ohne --apply wird nichts geschrieben.
+Wiederholung: gleiche Event_ID wie eine fruehere Zeile und Status NEEDS_REVIEW -> Processed=DUPLICATE.
+Es wird keine Zeile geloescht oder verschoben (Trigger schreibt parallel). Ohne --apply wird nichts geschrieben.
 """
 import sys, collections
 from crm_common import services, SID
@@ -171,30 +173,31 @@ def alt_zu_neu(r):
             ("In-Reply-To: " + g(7)) if g(7) else ""]
 
 def plan(rows):
-    """rows ohne Header -> (neue_zeilen, geloeschte_indizes) ; Indizes 0-basiert relativ zu Zeile 2."""
-    out, drop, seen = [], [], collections.Counter()
+    """rows ohne Header -> Liste (zeilenindex_0basiert, neue_12_zellen) nur fuer Zeilen, die sich aendern."""
+    changes, seen = [], collections.Counter()
     for i, r in enumerate(rows):
         g = lambda k: str(r[k]) if len(r) > k else ""
-        eid = g(0)
-        neu = alt_zu_neu(r) if g(2) in TYPES else (list(r) + [""] * (12 - len(r)))[:12]
-        seen[eid] += 1
-        if seen[eid] > 1 and neu[9] == "NEEDS_REVIEW":
-            drop.append(i); continue
-        out.append(neu)
-    return out, drop
+        alt = g(2) in TYPES
+        neu = alt_zu_neu(r) if alt else (list(map(str, r)) + [""] * (12 - len(r)))[:12]
+        seen[g(0)] += 1
+        dup = seen[g(0)] > 1 and neu[9] == "NEEDS_REVIEW"
+        if dup: neu[9] = "DUPLICATE"
+        if alt or dup: changes.append((i, neu))
+    return changes
 
 def main(apply=False):
     sh, _ = services("cherinodiaz" if apply else "cherinojoel")
     vals = sh.spreadsheets().values().get(spreadsheetId=SID, range="INBOUND_EVENTS!A2:L").execute().get("values", [])
-    out, drop = plan(vals)
-    alt = sum(1 for r in vals if len(r) > 2 and str(r[2]) in TYPES)
-    print(f"Zeilen: {len(vals)} | Alt-Layout: {alt} | Wiederholungen entfernt: {len(drop)} | Ergebnis: {len(out)}")
+    changes = plan(vals)
+    alt = sum(1 for i, n in changes if len(vals[i]) > 2 and str(vals[i][2]) in TYPES)
+    dup = sum(1 for i, n in changes if n[9] == "DUPLICATE")
+    print(f"Zeilen: {len(vals)} | Alt-Layout umgeschrieben: {alt} | als DUPLICATE markiert: {dup} | geaenderte Zeilen: {len(changes)}")
     if not apply:
-        print("DRY-RUN - nichts geschrieben. Mit --apply ausfuehren (nach Backup + Owner-Freigabe)."); return 0
-    sh.spreadsheets().values().clear(spreadsheetId=SID, range="INBOUND_EVENTS!A2:L").execute()
-    sh.spreadsheets().values().update(spreadsheetId=SID, range="INBOUND_EVENTS!A2", valueInputOption="RAW",
-                                      body={"values": out}).execute()
-    print("GESCHRIEBEN."); return 0
+        print("DRY-RUN - nichts geschrieben."); return 0
+    data = [{"range": f"INBOUND_EVENTS!A{i + 2}:L{i + 2}", "values": [n]} for i, n in changes]
+    for k in range(0, len(data), 400):
+        sh.spreadsheets().values().batchUpdate(spreadsheetId=SID, body={"valueInputOption": "RAW", "data": data[k:k + 400]}).execute()
+    print("GESCHRIEBEN (in-place)."); return 0
 
 if __name__ == "__main__":
     sys.exit(main(apply="--apply" in sys.argv))
@@ -213,24 +216,22 @@ def test_alt_layout_wird_auf_header_gemappt():
     assert neu[:10] == ["APIHUB-INBOX-<1>", "2026-09-17T12:00:00Z", "", "a@b.de", "", "<1>", "HSB-1", "OPT_OUT", "yes", "PROCESSED"]
     assert len(neu) == 12
 
-def test_wiederholte_klaerfaelle_fallen_weg_erste_bleibt():
+def test_wiederholte_klaerfaelle_werden_markiert_nicht_geloescht():
     a = ["E1", "t1", "REPLY", "", "", "x@y.de", "<1>", "", "NEEDS_REVIEW", "s"]
     b = ["E1", "t2", "REPLY", "", "", "x@y.de", "<1>", "", "NEEDS_REVIEW", "s"]
     c = ["E2", "t3", "j@hsb.de", "x@y.de", "s", "<2>", "HSB-1", "REPLY", "no", "PROCESSED", "n", ""]
-    out, drop = plan([a, b, c])
-    assert drop == [1] and [r[0] for r in out] == ["E1", "E2"] and out[1] == c
+    changes = plan([a, b, c])
+    idx = [i for i, _ in changes]
+    assert idx == [0, 1]                       # c ist schon kanonisch und unveraendert
+    assert changes[0][1][9] == "NEEDS_REVIEW"  # erste bleibt
+    assert changes[1][1][9] == "DUPLICATE"     # Wiederholung markiert
 ```
 
-Run: `python3 -m pytest tests/test_crm_events_migrate.py -q` → PASS; `python3 engine/operator_layer/crm_events_migrate.py` → Dry-Run-Zahlen (erwartet ≈ „Alt-Layout: 600+, Wiederholungen: 284").
+Run: `python3 -m pytest tests/test_crm_events_migrate.py -q` → PASS; `python3 engine/operator_layer/crm_events_migrate.py` → Dry-Run-Zahlen.
 
-- [ ] **Step 7: Owner-Gate, Abgleich anhalten, dann anwenden**
+- [ ] **Step 7: Backup, dann anwenden (Owner hat Punkt 2 am 2026-09-17 freigegeben)**
 
-Das Skript macht `clear` + `update` auf dem Audit-Tab, während der 15-Minuten-Trigger dort anhängt — Python hält den Apps-Script-`DocumentLock` nicht. Reihenfolge deshalb zwingend:
-1. Dem Owner die Dry-Run-Zeile zeigen, „ja" abwarten.
-2. In **beiden** Konten Menü „HSB Sales OS → Verwaltung → ⏱️ Abgleich stoppen" (Status prüfen: „Trigger dieses Nutzers: 0").
-3. `python3 engine/operator_layer/crm_backup.py && python3 engine/operator_layer/crm_events_migrate.py --apply`
-4. Dry-Run erneut → „Alt-Layout: 0 | Wiederholungen entfernt: 0".
-5. In beiden Konten „⏱️ Automatischen Abgleich einrichten (alle 15 min)" erneut ausführen; `SYNC_STATUS` (Task 2) bzw. neue Events belegen den Wiederanlauf.
+`python3 engine/operator_layer/crm_backup.py && python3 engine/operator_layer/crm_events_migrate.py --apply`, danach Dry-Run erneut → „Alt-Layout umgeschrieben: 0 | als DUPLICATE markiert: 0". Der Trigger muss nicht gestoppt werden (in-place, kein Versatz).
 
 - [ ] **Step 8: Commit**
 
@@ -566,7 +567,7 @@ def posteingang_values():
             [f"=IFERROR(QUERY(INBOUND_EVENTS!A2:M; \"select {EV_COLS} where J = 'NEEDS_REVIEW' order by B desc\"; 0); \"— keine —\")"]]
     rows.extend([[]] * 60)
     rows += [["📥 Letzte 200 Ereignisse", ""], EV_LABELS,
-             [f"=IFERROR(QUERY(INBOUND_EVENTS!A2:M; \"select {EV_COLS} where A is not null order by B desc limit 200\"; 0); \"— keine —\")"]]
+             [f"=IFERROR(QUERY(INBOUND_EVENTS!A2:M; \"select {EV_COLS} where A is not null and J <> 'DUPLICATE' order by B desc limit 200\"; 0); \"— keine —\")"]]
     return rows
 ```
 
@@ -719,9 +720,78 @@ Die SPARKLINE-Formel **vor** dem Apply in einer leeren Zelle des Sheets (z. B. `
 
 ---
 
+### Task 8: Abmelde-Link in der Signatur (gleicher Opt-out-Pfad)
+
+**Warum:** Ein Klick statt Freitext. `mailto:<eigenes Postfach>?subject=Abmelden` erzeugt eine Antwort mit Betreff „Abmelden" — `classifyInboundMessage_` erkennt den Betreff bereits als `OPT_OUT`, der Abgleich sperrt Lead bzw. Firmendomain. Kein neuer Code im Abgleich.
+
+**Files:**
+- Modify: `apps_script/HSB_DraftAdapter.gs` (`signaturHtml_`), `engine/batch_engine.py`, `engine/run_100_batch.py`, `engine/run_ultimate_test.py` (jeweils `signatur_html`)
+- Test: `tests/test_graph_drafts.py` oder neue `tests/test_signatur_abmeldelink.py`; `tests/test_apps_script.js`
+
+**Interfaces:**
+- Produces: In jeder Signatur, direkt vor dem Pflichtangaben-Absatz, ein Absatz: `Keine weiteren E-Mails gewünscht? <a href="mailto:{mailbox}?subject=Abmelden">Hier abmelden</a>` (8pt, `#777777`). `{mailbox}` = Postfach des Absenders (j-cherino@… / j-post@…).
+
+- [ ] **Step 1: Failing Tests**
+
+`tests/test_signatur_abmeldelink.py`:
+
+```python
+import sys, pathlib
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1] / "engine"))
+import batch_engine, run_100_batch, run_ultimate_test
+
+def test_abmeldelink_in_allen_python_signaturen():
+    for mod in (batch_engine, run_100_batch, run_ultimate_test):
+        html = mod.signatur_html("Joel Cherino Diaz", "j-cherino@hsb-boden.de", "0151 21886891")
+        assert 'href="mailto:j-cherino@hsb-boden.de?subject=Abmelden"' in html, mod.__name__
+        assert "Hier abmelden" in html
+        assert html.index("Hier abmelden") < html.index("Sitz der Gesellschaft")
+```
+
+`tests/test_apps_script.js` — in dem Abschnitt, der `signaturHtml_` bereits prüft (grep `signaturHtml_`), ergänzen:
+
+```js
+  const sigJordi = ctx.signaturHtml_('Jordie Post', 'j-post@hsb-boden.de', '0170 2340904');
+  check('Signatur: Abmelde-Link auf das eigene Postfach mit Betreff Abmelden',
+        sigJordi.indexOf('href="mailto:j-post@hsb-boden.de?subject=Abmelden"') >= 0 && sigJordi.indexOf('Hier abmelden') >= 0);
+  check('Signatur: Abmelde-Link steht vor den Pflichtangaben',
+        sigJordi.indexOf('Hier abmelden') < sigJordi.indexOf('Sitz der Gesellschaft'));
+```
+
+Falls `signaturHtml_` in `test_apps_script.js` nicht im Kontext liegt (die Datei lädt `HSB_DraftAdapter.gs` nicht), den Test in `tests/test_graph_adapter.js` unterbringen und dort `HSB_DraftAdapter.gs` per `vm.runInContext` zusätzlich laden (Kontext braucht `FIRMA` aus `Config.gs` — beide Dateien laden).
+
+- [ ] **Step 2: Run → FAIL**
+
+- [ ] **Step 3: Implementieren**
+
+`HSB_DraftAdapter.gs`, in `signaturHtml_` vor `'<p style="margin:10px 0 0 0;font-family:Arial,Helvetica,sans-serif;'` (Pflichtangaben) einfügen:
+
+```js
+    + '<p style="margin:10px 0 0 0;font-family:Arial,Helvetica,sans-serif;'
+    + 'font-size:8pt;color:#777777;line-height:1.4;">'
+    + 'Keine weiteren E-Mails gewünscht? '
+    + '<a href="mailto:' + htmlEscape_(mailbox) + '?subject=Abmelden" style="color:#777777;">Hier abmelden</a>'
+    + '</p>'
+```
+
+Python (`batch_engine.py`, `run_100_batch.py`, `run_ultimate_test.py`), jeweils in `signatur_html` vor dem Pflichtangaben-Absatz (`Sitz der Gesellschaft`):
+
+```python
+        f'<p style="margin:10px 0 0 0;font-family:Arial,Helvetica,sans-serif;font-size:8pt;color:#777777;line-height:1.4;">'
+        f'Keine weiteren E-Mails gewünscht? '
+        f'<a href="mailto:{mailbox}?subject=Abmelden" style="color:#777777;">Hier abmelden</a></p>'
+```
+
+(`batch_engine.py` nutzt `_html_escape(mailbox)`.)
+
+- [ ] **Step 4: Run → PASS**; `python3 -m pytest tests/test_signatur_abmeldelink.py tests/test_graph_drafts.py -q`; Node-Suiten grün; Bündel: `python3 engine/build_single.py && cp apps_script/HSB_SALES_OS.gs deploy/HSB_SALES_OS.js && cp apps_script/HSB_DraftAdapter.gs deploy/HSB_DraftAdapter.gs.js`.
+
+- [ ] **Step 5: Commit** — `git commit -m "feat(sales-os): Abmelde-Link (mailto, Betreff Abmelden) in allen Signaturen"`
+
+---
+
 ## Empfehlungen außerhalb dieses Plans (Ausbaustufen, jeweils kostenfrei)
 1. **Follow-up-Disziplin:** Block „🟡 Antworten offen" lebt von Spalte R (Follow-up-Datum). Wer eine Antwort bearbeitet hat, trägt ein Datum ein — dann verschwindet die Zeile. Ein späterer Block „⏰ Wiedervorlage fällig" (`R <= today()`) ist eine Zeile QUERY.
-2. **Abmelde-Link** in der Signatur (`mailto:j-cherino@hsb-boden.de?subject=Abmelden`) — läuft über denselben Opt-out-Pfad, kein neuer Code.
 3. **AppSheet** (in Google Workspace enthalten) als Handy-Ansicht auf `HEUTE *` und `POSTEINGANG` — Spec `docs/appsheet/` existiert bereits.
 4. **Sende-Fenster:** Der Abgleich liest die letzten 100 Nachrichten je Ordner je Lauf. Bei mehr als 100 Sendungen innerhalb von 15 Minuten würde ein Teil erst über den Rückabgleich (`engine/reconcile_cloud_mailbox.py`) erfasst — Grenze in `README_OPERATING.md` festhalten, `top` bei Bedarf auf 250 setzen.
 

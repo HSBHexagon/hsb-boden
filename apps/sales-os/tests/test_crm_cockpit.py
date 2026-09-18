@@ -32,6 +32,16 @@ def test_posteingang_blocks():
     assert "J = 'NEEDS_REVIEW'" in f[0] and "order by B desc" in f[0]
     assert "limit 200" in f[1]
 
+from crm_cockpit import readme_values, readme_table_rows
+
+def test_readme_values():
+    rows = readme_values()
+    assert len(rows) == 6
+    assert rows[0][0].startswith("1. Dein Tab öffnen")
+    table = readme_table_rows()
+    assert len(table) == 3
+    assert [r[0] for r in table] == ["HEUTE JOEL", "HEUTE JORDI", "POSTEINGANG"]
+
 from crm_dashboard import dashboard_rows
 
 def test_dashboard_formulas():

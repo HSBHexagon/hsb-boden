@@ -172,6 +172,67 @@ def order_tabs(sh, apply=False):
         sh.spreadsheets().batchUpdate(spreadsheetId=SID, body={"requests": reqs}).execute()
     return reqs
 
+# Sechs Zeilen fuer README!A15:B20 — Spalte A Label, Spalte B Erklaerung (Controller-Ruling Task 7a).
+README_SCHNELLSTART = [
+    ["1. Dein Tab öffnen", "HEUTE JOEL bzw. HEUTE JORDI – alles Wichtige auf einer Seite, oben steht, wann dein Postfach zuletzt abgeglichen wurde."],
+    ["2. Rot = Abgemeldet", "Diese Firmen werden nie wieder angeschrieben. Automatisch gesperrt (auch bei \"Abmelden\" von einer Kollegenadresse derselben Firma)."],
+    ["3. Gelb = Antwort offen", "Antworten, zu denen noch kein Follow-up-Datum (Spalte R in ALL_LEADS) steht."],
+    ["4. Grün = Versendet", "Kommt automatisch aus deinem Ordner \"Gesendete Elemente\" (alle 15 Minuten). Nichts bestätigen."],
+    ["5. Unklare Fälle", "Tab POSTEINGANG, Block \"Klärfälle\": in INBOUND_EVENTS Spalte M eine Lead-ID oder \"ignorieren\" eintragen, dann Menü HSB Sales OS → Klärfälle anwenden."],
+    ["6. Neue Entwürfe", "Seitenleiste öffnen (Menü HSB Sales OS → Seitenleiste öffnen), wie bisher."],
+]
+
+def readme_values():
+    """Sechs Zeilen fuer README!A15:B20."""
+    return [list(r) for r in README_SCHNELLSTART]
+
+def readme_table_rows():
+    """Drei Zeilen fuer die TABELLEN-UEBERSICHT, nach der DASHBOARD-Zeile einzufuegen."""
+    return [
+        ["HEUTE JOEL", "Deine Tagesansicht: Abgemeldet · Antworten offen · Bounce · Versendet · Heute dran — nur deine Leads."],
+        ["HEUTE JORDI", "Dieselbe Tagesansicht für Jordi."],
+        ["POSTEINGANG", "Alle Ereignisse beider Postfächer, Klärfälle oben — mit Spalte M in INBOUND_EVENTS lösbar."],
+    ]
+
+def write_readme(sh, apply=False):
+    """Schreibt README!A15:B20 (Schnellstart) und ergaenzt die TABELLEN-UEBERSICHT um die drei
+    Cockpit-Tabs direkt nach der DASHBOARD-Zeile. Idempotent: ueberspringt das Einfuegen, wenn
+    HEUTE JOEL in README!A21:A40 bereits steht. Im Dry-Run wird nur gedruckt, nicht geschrieben."""
+    rows = readme_values()
+    table_rows = readme_table_rows()
+    if not apply:
+        print("[DRY-RUN] README!A15:B20 (Schnellstart):")
+        for r in rows:
+            print(f"  {r}")
+        print("[DRY-RUN] TABELLEN-UEBERSICHT-Ergaenzung nach DASHBOARD:")
+        for r in table_rows:
+            print(f"  {r}")
+        return
+
+    meta = sh.spreadsheets().get(spreadsheetId=SID, fields="sheets(properties(sheetId,title))").execute()
+    readme_sid = next(s["properties"]["sheetId"] for s in meta["sheets"] if s["properties"]["title"] == "README")
+
+    sh.spreadsheets().values().update(spreadsheetId=SID, range="README!A15:B20", valueInputOption="RAW", body={"values": rows}).execute()
+
+    existing = sh.spreadsheets().values().get(spreadsheetId=SID, range="README!A21:A40").execute().get("values", [])
+    flat = [v[0] if v else "" for v in existing]
+    if "HEUTE JOEL" in flat:
+        print("README: TABELLEN-UEBERSICHT enthaelt HEUTE JOEL bereits, ueberspringe Einfuegen.")
+        return
+    dashboard_idx = next((i for i, v in enumerate(flat) if v == "DASHBOARD"), None)
+    if dashboard_idx is None:
+        print("README: DASHBOARD-Zeile in A21:A40 nicht gefunden, ueberspringe Einfuegen.")
+        return
+    dashboard_row0 = 20 + dashboard_idx  # 0-basierter Grid-Index (Zeile 21 = Index 20)
+    sh.spreadsheets().batchUpdate(spreadsheetId=SID, body={"requests": [
+        {"insertDimension": {"range": {"sheetId": readme_sid, "dimension": "ROWS",
+                                        "startIndex": dashboard_row0 + 1, "endIndex": dashboard_row0 + 4}}}
+    ]}).execute()
+    insert_row = dashboard_row0 + 2  # 1-basierte erste neue Zeile (direkt nach DASHBOARD)
+    sh.spreadsheets().values().update(spreadsheetId=SID, range=f"README!A{insert_row}:B{insert_row + 2}",
+                                       valueInputOption="RAW", body={"values": table_rows}).execute()
+    print("README: Schnellstart und TABELLEN-UEBERSICHT aktualisiert.")
+
 def ensure_tab(sh, title, index, row_count=260):
     meta = sh.spreadsheets().get(spreadsheetId=SID, fields="sheets(properties(sheetId,title))").execute()
     for s in meta["sheets"]:
@@ -208,6 +269,7 @@ def main(apply=False):
         sh.spreadsheets().batchUpdate(spreadsheetId=SID, body={"requests": posteingang_setup_requests(ev_sid)}).execute()
         print(f"POSTEINGANG: geschrieben (sheetId {pid})")
 
+    write_readme(sh, apply=apply)
     order_tabs(sh, apply=apply)
     return 0
 

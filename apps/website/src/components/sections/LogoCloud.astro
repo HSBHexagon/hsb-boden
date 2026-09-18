@@ -1,35 +1,98 @@
 ---
 import { getLogoCloudEntries } from "../../lib/content";
 
-const logos = getLogoCloudEntries();
+interface Props {
+  industryFilter?: string;
+  eyebrow?: string;
+  title?: string;
+}
+
+const {
+  industryFilter,
+  eyebrow = "Vertrauen durch reale Umsetzung",
+  title = "Referenzkunden (Auszug)",
+} = Astro.props;
+
+const logos = getLogoCloudEntries(industryFilter);
 ---
 
-<section class="section border-b border-hsb-line bg-white">
+<section class="section border-b border-hsb-line bg-white" data-logo-cloud data-industry-filter={industryFilter ?? ""}>
   <div class="container">
     <div class="mb-10 text-center lg:mb-12">
-      <p class="text-xs font-black uppercase tracking-[0.2em] text-hsb-red">Vertrauen durch reale Umsetzung</p>
-      <h2 class="h2 mt-4">Referenzkunden (Auszug)</h2>
+      <p class="text-xs font-black uppercase tracking-[0.2em] text-hsb-red">{eyebrow}</p>
+      <h2 class="h2 mt-4">{title}</h2>
     </div>
-    
+
     <div class="mx-auto grid max-w-6xl grid-cols-2 overflow-hidden rounded-[4px] border border-hsb-line bg-hsb-line sm:grid-cols-4">
       {logos.map((reference) => (
-        <figure class="group grid min-h-[124px] content-between justify-items-center gap-4 bg-white px-4 py-5 transition-colors hover:bg-[#fbfcfd]">
+        <a
+          href="/referenzen/"
+          class="group grid min-h-[148px] content-between justify-items-center gap-4 bg-white px-4 py-5 no-underline transition-colors hover:bg-[#fbfcfd] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-hsb-red"
+          data-logo-entry
+          data-client={reference.name}
+          data-industry={reference.industry ?? ""}
+          data-tracked={reference.systems.length > 0 ? "true" : "false"}
+          aria-label={`${reference.name} – ${reference.proofTag} – ${reference.systems.length > 0 ? "Referenzen ansehen" : "Kundenstandorte ansehen"}`}
+        >
           <div class="grid h-14 w-full max-w-[150px] place-items-center grayscale opacity-75 contrast-125 transition-all group-hover:grayscale-0 group-hover:opacity-100">
-            <img 
-              src={reference.logo} 
+            <img
+              src={reference.logo}
               alt={`${reference.name} Logo`}
               class="max-h-11 w-full object-contain"
               loading="lazy"
             />
           </div>
-          <figcaption class="grid gap-1 text-center">
+          <div class="grid gap-1 text-center">
             <span class="text-[10px] font-black uppercase tracking-widest text-hsb-black transition-colors group-hover:text-hsb-red">
               {reference.name}
             </span>
             <span class="text-[9px] font-bold uppercase tracking-[0.14em] text-hsb-steel">{reference.meta}</span>
-          </figcaption>
-        </figure>
+            <span class="mt-1 inline-block justify-self-center rounded-[2px] border border-hsb-line bg-hsb-mist px-2 py-1 text-[9px] font-black uppercase tracking-[0.12em] text-hsb-black">
+              {reference.proofTag}
+            </span>
+          </div>
+        </a>
       ))}
     </div>
   </div>
 </section>
+
+<script>
+  import { trackReferenceInteraction } from "../../lib/analytics";
+
+  // Nur freigegebene Referenzen (references.ts) werden an GA4 gemeldet; reine
+  // Kundenstandorte sind ausschließlich für die Kartendarstellung freigegeben.
+  const entries = document.querySelectorAll<HTMLAnchorElement>('[data-logo-entry][data-tracked="true"]');
+
+  function describe(element: HTMLElement) {
+    return {
+      client: element.dataset.client ?? "",
+      industry: element.dataset.industry || "unbekannt",
+    };
+  }
+
+  entries.forEach((element) => {
+    element.addEventListener("click", () => {
+      const { client, industry } = describe(element);
+      trackReferenceInteraction(client, industry, "click");
+    });
+  });
+
+  // 'view' genau einmal je Logo, sobald es zu 60 % sichtbar war.
+  if ("IntersectionObserver" in window) {
+    const seen = new WeakSet<Element>();
+    const observer = new IntersectionObserver(
+      (observed) => {
+        observed.forEach((item) => {
+          if (!item.isIntersecting || seen.has(item.target)) return;
+          seen.add(item.target);
+          observer.unobserve(item.target);
+          const { client, industry } = describe(item.target as HTMLElement);
+          trackReferenceInteraction(client, industry, "view");
+        });
+      },
+      { threshold: 0.6 },
+    );
+    entries.forEach((element) => observer.observe(element));
+  }
+</script>

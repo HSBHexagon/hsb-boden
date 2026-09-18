@@ -4,6 +4,7 @@ import { industries } from "../data/industries";
 import { jobs } from "../data/jobs";
 import { references } from "../data/references";
 import { services } from "../data/services";
+import { site } from "../data/site";
 import { landing } from "./i18n";
 import {
   serviceSchema,
@@ -92,7 +93,49 @@ export function getPublicReferences() {
  * Logos fuer den LogoCloud der Startseite. Die freigegebene Referenz hat
  * Vorrang vor dem Kundenstandort-Eintrag derselben Firma.
  */
-export function getLogoCloudEntries() {
+export interface LogoCloudEntry {
+  id: string;
+  name: string;
+  logo: string;
+  meta: string;
+  industry?: string;
+  systems: string[];
+  proofTag: string;
+}
+
+// Technische Kurzlabels je Leistungs-Slug. Proof-Tags entstehen nur aus den in
+// references.ts dokumentierten Systemen — kein Freitext je Kunde.
+const SYSTEM_PROOF_LABELS: Record<string, string> = {
+  "industrieboden-saeureschutz": "Säureschutz",
+  "whg-abdichtung-industrieboden": "WHG § 62 Abdichtung",
+  "keramische-industrieboeden": "Rüttelkeramik",
+  "entwaesserung-industrieboden": "Entwässerung",
+  "pu-beton-industrieboden": "PU-Beton",
+  "epoxidharz-bodenbeschichtung": "Epoxidharz-Beschichtung",
+  "dehnungsfugen-rammschutz-industrieboden": "Dehnungsfugen & Rammschutz",
+  "bodensanierung-laufender-betrieb": "Sanierung im Betrieb",
+  "boden-reparatur-instandsetzung": "Reparatur & Instandsetzung",
+};
+
+// Freitext-Branche der Kundenstandorte -> kanonischer Branchen-Slug.
+const LOCATION_BRANCHE_TO_INDUSTRY: Record<string, string> = {
+  Molkerei: "molkerei",
+  Brauerei: "brauerei-getraenkeindustrie",
+  Getränke: "brauerei-getraenkeindustrie",
+  Lebensmittel: "lebensmittelindustrie",
+  Chemie: "chemieindustrie",
+  Pharma: "pharmaindustrie",
+};
+
+function buildProofTag(systems: string[]): string {
+  return systems
+    .map((slug) => SYSTEM_PROOF_LABELS[slug])
+    .filter((label): label is string => Boolean(label))
+    .slice(0, 2)
+    .join(" & ");
+}
+
+export function getLogoCloudEntries(industryFilter?: string): LogoCloudEntry[] {
   // Bewusst nur gegen die Referenzen deduplizieren, die hier tatsaechlich ein
   // Logo rendern: eine Referenz ohne Logo-Freigabe darf ein separat
   // freigegebenes Standort-Logo nicht stillschweigend unterdruecken.
@@ -103,13 +146,17 @@ export function getLogoCloudEntries() {
     referencesWithLogo.map((reference) => reference.id),
   );
 
-  const referenceEntries = referencesWithLogo.map((reference) => ({
+  const referenceEntries: LogoCloudEntry[] = referencesWithLogo.map((reference) => ({
+    id: reference.id,
     name: reference.displayName,
     logo: reference.logo as string,
     meta: "Referenzprojekt",
+    industry: reference.industry,
+    systems: [...reference.systems],
+    proofTag: buildProofTag([...reference.systems]),
   }));
 
-  const locationEntries = clientLocations
+  const locationEntries: LogoCloudEntry[] = clientLocations
     .filter((location) => "logo" in location)
     .filter(
       (location) =>
@@ -117,12 +164,32 @@ export function getLogoCloudEntries() {
         !renderedReferenceIds.has(location.referenceId),
     )
     .map((location) => ({
+      id: `standort-${location.name.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`,
       name: location.name,
       logo: location.logo,
       meta: location.branche,
+      industry: LOCATION_BRANCHE_TO_INDUSTRY[location.branche],
+      systems: [],
+      proofTag: `Kundenstandort ${location.branche}`,
     }));
 
-  return [...referenceEntries, ...locationEntries];
+  const entries = [...referenceEntries, ...locationEntries];
+  if (!industryFilter) return entries;
+
+  // Rang 2: Branche identisch. Rang 1: mindestens ein System gehört zu den
+  // empfohlenen Systemen der gefilterten Branche (z. B. Südzucker bei Chemie
+  // über Säureschutz/WHG). Rang 0: Rest. Sortierung ist stabil.
+  const industry = getIndustries().find((item) => item.slug === industryFilter);
+  const affineSystems = new Set(industry?.recommendedSystems ?? []);
+  const rank = (entry: LogoCloudEntry) => {
+    if (entry.industry === industryFilter) return 2;
+    if (entry.systems.some((slug) => affineSystems.has(slug))) return 1;
+    return 0;
+  };
+  return entries
+    .map((entry, index) => ({ entry, index, rank: rank(entry) }))
+    .sort((a, b) => b.rank - a.rank || a.index - b.index)
+    .map((item) => item.entry);
 }
 
 /**
@@ -151,18 +218,15 @@ export function getAllPublicPages() {
   return [
     {
       h1: "Industrieböden und Säureschutzsysteme für produktionskritische Bereiche",
-      seoTitle:
-        "Industrieböden & Säureschutz für Produktion | HSB Hexagon Säurebau",
-      description:
-        "Industrieböden, Säureschutz, Keramik, PU-Beton, Entwässerung und Sanierung für Lebensmittel-, Getränke-, Pharma- und Chemieproduktion. Jetzt kostenlose Ersteinschätzung anfordern.",
+      seoTitle: site.defaultTitle,
+      description: site.defaultDescription,
       canonicalPath: "/",
     },
     {
       h1: "Leistungen für Industrieböden und Säureschutz",
-      seoTitle:
-        "Leistungen für Industrieböden & Säureschutz | HSB Hexagon Säurebau",
+      seoTitle: "Leistungen: Rüttelkeramik, Säureschutz & WHG | HSB Hexagon",
       description:
-        "Keramische Industrieböden, Säureschutz, PU-Beton, Epoxidharz, Entwässerung, Abdichtung und Sanierung für produktionskritische Bereiche.",
+        "Ingenieurbau für Industrieböden: Rüttelkeramik nach AGI S 40, Säureschutz, PU-Beton, Epoxidharz, Entwässerung, WHG § 62 Abdichtung und Sanierung im Betrieb.",
       canonicalPath: "/leistungen/",
     },
     {
@@ -196,10 +260,17 @@ export function getAllPublicPages() {
     },
     {
       h1: "Projektanfrage für Industrieböden",
-      seoTitle: "Kontakt & Projektanfrage | HSB Hexagon Säurebau",
+      seoTitle: "Technisches Vor-Ort-Audit anfragen | HSB Hexagon Säurebau",
       description:
-        "Kostenlose Ersteinschätzung anfordern: Anfrageformular für Industrieböden, Säureschutz, Sanierung, Entwässerung und Branchenlösungen.",
+        "Vor-Ort-Audit für Industrieböden: Belastungsprofil, Untergrund und Sanierungsfenster ingenieurseitig bewertet – Rüttelkeramik, Säureschutz, WHG-Abdichtung.",
       canonicalPath: "/kontakt/",
+    },
+    {
+      h1: "Technischer Beanspruchungs-Check für Produktionsböden",
+      seoTitle: "Beanspruchungs-Check für Industrieböden | HSB Hexagon",
+      description:
+        "Medium, Temperatur, Last und Sanierungsfenster eingeben – deterministische Systemempfehlung nach AGI S 40, PU-Beton oder WHG § 62 mit direktem Vor-Ort-Audit.",
+      canonicalPath: "/beanspruchungs-check/",
     },
     {
       h1: "Danke für Ihre Projektanfrage",

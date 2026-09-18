@@ -255,9 +255,16 @@ def write_readme(sh, apply=False):
     print("README: Schnellstart und TABELLEN-UEBERSICHT aktualisiert.")
 
 def ensure_tab(sh, title, index, row_count=260):
-    meta = sh.spreadsheets().get(spreadsheetId=SID, fields="sheets(properties(sheetId,title))").execute()
+    meta = sh.spreadsheets().get(spreadsheetId=SID, fields="sheets(properties(sheetId,title,gridProperties(rowCount)))").execute()
     for s in meta["sheets"]:
-        if s["properties"]["title"] == title: return s["properties"]["sheetId"]
+        if s["properties"]["title"] == title:
+            sid = s["properties"]["sheetId"]
+            # Bestehender Tab: Zeilenzahl nachziehen, sonst laufen clear/Formate ueber das Grid.
+            have = (s["properties"].get("gridProperties") or {}).get("rowCount", 0)
+            if have < row_count:
+                sh.spreadsheets().batchUpdate(spreadsheetId=SID, body={"requests": [{"updateSheetProperties": {
+                    "properties": {"sheetId": sid, "gridProperties": {"rowCount": row_count}}, "fields": "gridProperties.rowCount"}}]}).execute()
+            return sid
     res = sh.spreadsheets().batchUpdate(spreadsheetId=SID, body={"requests": [{"addSheet": {"properties": {"title": title, "index": index, "gridProperties": {"rowCount": row_count, "columnCount": 8}}}}]}).execute()
     return res["replies"][0]["addSheet"]["properties"]["sheetId"]
 

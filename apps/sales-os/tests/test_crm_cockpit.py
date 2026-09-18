@@ -35,7 +35,8 @@ def test_cockpit_block_limits_fit_reserved_space():
         m = re.search(r"limit (\d+)", blk["formula"])
         assert m, blk["title"]
         limit = int(m.group(1))
-        assert limit <= nxt - start - 1, (blk["title"], limit, nxt - start - 1)
+        # Formel steht in start+2; verfuegbare Ergebniszeilen bis zur naechsten Titelzeile = nxt - start - 2
+        assert limit <= nxt - start - 2, (blk["title"], limit, nxt - start - 2)
 
 from crm_cockpit import posteingang_values, KLAER_ROWS
 

@@ -169,6 +169,11 @@ function signaturHtml_(ownerDisplay, mailbox, mobile) {
     + '</p>'
     + '<p style="margin:10px 0 0 0;font-family:Arial,Helvetica,sans-serif;'
     + 'font-size:8pt;color:#777777;line-height:1.4;">'
+    + 'Keine weiteren E-Mails gewünscht? '
+    + '<a href="mailto:' + htmlEscape_(mailbox) + '?subject=Abmelden" style="color:#777777;">Hier abmelden</a>'
+    + '</p>'
+    + '<p style="margin:10px 0 0 0;font-family:Arial,Helvetica,sans-serif;'
+    + 'font-size:8pt;color:#777777;line-height:1.4;">'
     + 'Sitz der Gesellschaft: ' + htmlEscape_(FIRMA.sitz) + ' &middot; '
     + htmlEscape_(FIRMA.registergericht) + ' ' + htmlEscape_(FIRMA.hrb) + ' &middot; '
     + 'Geschäftsführer: ' + htmlEscape_(FIRMA.geschaeftsfuehrer)

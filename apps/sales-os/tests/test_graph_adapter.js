@@ -353,6 +353,19 @@ console.log('\n=== 9. Wiederkehrender Postfach-Abgleich: Lead-Bezug und Idempote
   pruefe('Sende-Abgleich Lauf 2 reicht nichts erneut ein', EINGEREICHT.length === 0 && s2.skipped === 1, JSON.stringify(s2));
 }
 
+console.log('\n=== 10. Signatur: Abmelde-Link ===');
+{
+  const sigKontext = { console: console, String: String, Object: Object };
+  vm.createContext(sigKontext);
+  vm.runInContext(
+    fs.readFileSync(path.join(DEPLOY, 'HSB_DraftAdapter.gs.js'), 'utf8'), sigKontext);
+  const sigJordi = sigKontext.signaturHtml_('Jordie Post', 'j-post@hsb-boden.de', '0170 2340904');
+  pruefe('Signatur: Abmelde-Link auf das eigene Postfach mit Betreff Abmelden',
+         sigJordi.indexOf('href="mailto:j-post@hsb-boden.de?subject=Abmelden"') >= 0 && sigJordi.indexOf('Hier abmelden') >= 0);
+  pruefe('Signatur: Abmelde-Link steht vor den Pflichtangaben',
+         sigJordi.indexOf('Hier abmelden') < sigJordi.indexOf('Sitz der Gesellschaft'));
+}
+
 console.log('\n' + '='.repeat(70));
 console.log('ERGEBNIS: ' + bestanden + ' bestanden, ' + fehlgeschlagen +
             ' fehlgeschlagen von ' + (bestanden + fehlgeschlagen));

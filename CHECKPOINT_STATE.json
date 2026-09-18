@@ -1,9 +1,9 @@
 {
   "project": "HSB / HEXAFLOOR",
-  "last_updated": "2026-09-17T13:00:00+0200",
-  "active_model": "Claude Code (Fable 5) + Codex",
-  "active_phase": "post-deploy-security-and-truth-reconciliation",
-  "active_task": "Produktionsstand nach PR #84/#85/#87/#88/#89/#90 und dem operator-verifizierten Attribution-Mapping konsolidieren, oeffentlich dokumentierte Apps-Script-Endpunkte aus dem aktuellen Tree entfernen und den weiterhin offenen Auth-Cutover ohne Abschlussuebertreibung festhalten. Nachtrag 2026-07-15: Attribution-Connector-Patch (docs/crm/ATTRIBUTION_CONNECTOR_PATCH.md) live im HSBBODEN Apps Script + HSB CRM Light Sheet eingespielt (Deployment Version 4, Webhook-URL unveraendert), End-to-End mit echtem UTM-Test-Lead verifiziert.",
+  "last_updated": "2026-09-18T14:40:00+0200",
+  "active_model": "Gemini 3.8 Flash (High)",
+  "active_phase": "unified-webperf-b2b-salesos-reconciliation",
+  "active_task": "B2B-Upgrade der Website (Beanspruchungs-Check, AGI S 40, Branchen-LogoCloud, Schema.org) und Sales-OS CRM-Operator-Schicht hermetisch reconciliert. 11 Micro-Goals (G1–G11) in .omg/ultragoal/goals.json für Web-Perf & Sales-OS bereit zur autonomen TDD-Umsetzung unter mode: ultrawork.",
   "account_migration_2026_07_02": {
     "github_new_repo": "https://github.com/HSBHexagon/hsb-boden",
     "github_old_repo_access": "HSBHexagon ist Admin-Collaborator im Alt-Repo cherinojoel-lang/hsb-boden (Ownership-Transfer pending, nicht blockierend)",
@@ -53,8 +53,8 @@
   "repo_path": "/Users/joelcherinodiaz/KI-System/02_Projects/active/hsb-boden",
   "local_root_checkout": "tracked files unveraendert, sechs Commits hinter origin/main; untracked .local-secrets/ aus laufender Fable-Sitzung wurde nicht geoeffnet oder veraendert",
   "handoff_path": "/Users/joelcherinodiaz/KI-System/ObsidianVault/brain/CURRENT_HANDOFF.md",
-  "last_commit": "origin/main f202cb6; produktiver Code bf0a257; Production-Run 29404977846 erfolgreich",
-  "website_code_diff_lines": "0 in diesem Truth-/Security-Dokumentationspass; aktuelle Codeaenderungen stammen aus den bereits gemergten PRs #85 und #87.",
+  "last_commit": "lokal 1a43c66 auf feat/b2b-tracking-stresscheck-schema; origin/main unveraendert c340d53",
+  "website_code_diff_lines": "+1368/-46 in 26 Dateien (main...HEAD vor 456afbe), plus Review-Fix",
   "canonical_readiness_stack": {
     "tier1": {
       "cloudflare": "docs/cloudflare/CLOUDFLARE_PROVIDER_MAX_READINESS.md",
@@ -177,7 +177,7 @@
     "M365 DKIM for j-cherino@hsb-boden.de not yet activated.",
     "Lead-Datensatz existiert (6424 im MASTER-Sheet), aber Versandfreigabe 0/6424: PHASE_7_COMPLIANCE_GATE (Rechtsgrundlage, Opt-out, Batch-Freigabe) unerfuellt."
   ],
-  "next_step": "Owner: Outlook-Verbindung + Auto-Abgleich im Sheet einrichten (Joel, Jordi), Testfaelle 1-3; Task-4-Regeln freigeben; Push/PR beider Branches freigeben.",
+  "next_step": "OmA-Master-Ausführung starten: 11 Micro-Goals aus .omg/ultragoal/goals.json autonom via TDD umsetzen (G1-HEAD-OPT bis G11-SEND-GOVERNANCE).",
   "handoff_required": true,
   "safe_to_continue": true,
   "historical_canonical_runtime_migration_2026_07_04": {
@@ -238,5 +238,42 @@
       "Push-Freigabe"
     ],
     "push_done": false
+  },
+  "session_2026_09_17_b2b_upgrade": {
+    "branch": "feat/b2b-tracking-stresscheck-schema",
+    "base": "main c340d53",
+    "commits": [
+      "5be41d2",
+      "bd52a39",
+      "c4db3ae",
+      "1f349bb",
+      "5871fef",
+      "a239f38",
+      "394652d",
+      "456afbe",
+      "bbd27cd",
+      "1a43c66"
+    ],
+    "plan": "docs/superpowers/plans/2026-09-17-b2b-tracking-stresscheck-schema.md",
+    "report": "~/KI-System/08_System/reports/validation/2026-09-17-hsb-b2b-tracking-stresscheck-schema.md",
+    "gate": {
+      "astro_check": "0/0/0 (150 Dateien)",
+      "build": "57 Seiten",
+      "tests": "261/261 (33 Dateien; Baseline 223/27)",
+      "sitemap": "OK 55 URLs",
+      "deploy_dry_run": "OK",
+      "preview_routes": "11x HTTP 200"
+    },
+    "website_code_diff": "26 Dateien +1368/-46 vor Review-Fix; Review-Fix 456afbe zusaetzlich",
+    "review": "seo-content-reviewer FAIL(3 kritisch) -> 2 behoben (DIN-EN-14411-Zuordnung, Wortwahl/Rechtsclaims), 1 Owner-Entscheidung (PU-Beton 120 vs 130 C), Kyritzer-Logo in LogoCloud ist Vorbestand auf main",
+    "owner_decisions_open": [
+      "Krombacher: Logo-Asset + Referenzfreigabe fehlen -> nicht in LogoCloud",
+      "Kyritzer Fruchtsaefte: Standort-Logo in LogoCloud (Vorbestand seit main, Test-gesichert) gegen Freigabe-Ebene in clientLocations.ts:6-10 pruefen",
+      "GA4-Admin: b2b_conversion ggf. als Key Event markieren"
+    ],
+    "push_done": false,
+    "deploy_done": false,
+    "e2e": "Playwright: StressCheck doppelter Submit -> 1 Conversion mit aktuellem System; LogoCloud trackt nur Referenzen (Kyritzer ohne Event)",
+    "decided_2026_09_17": "PU-Beton 120 C (ab 9 mm) site-weit; Owner delegierte Entscheidung an Claude (Best Practice: konservativer, belegfreier Wert, konsistent mit industries.ts:23 und Auftrag)"
   }
 }

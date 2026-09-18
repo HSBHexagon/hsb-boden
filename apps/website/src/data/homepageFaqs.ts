@@ -13,7 +13,7 @@ export const homepageFaqs = [
   {
     question: "Reparatur oder Komplettsanierung: was ist sinnvoll?",
     answer:
-      "Bei punktuellen Schäden an einem ansonsten intakten Boden ist die fachgerechte Reparatur deutlich günstiger und schneller als eine Vollsanierung. Erst wenn der Aufbau flächig versagt, wird eine Sanierung wirtschaftlicher. HSB bewertet das vor Ort am konkreten Schadensbild.",
+      "Bei punktuellen Schäden an einem ansonsten intakten Boden ist die fachgerechte Reparatur wirtschaftlicher und mit kürzerer Sperrzeit umsetzbar als eine Vollsanierung. Erst wenn der Aufbau flächig versagt, wird eine Sanierung wirtschaftlicher. HSB bewertet das vor Ort am konkreten Schadensbild.",
   },
   {
     question: "Keramik oder PU-Beton: was ist besser für meinen Betrieb?",

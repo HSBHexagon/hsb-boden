@@ -6,9 +6,9 @@ export const site = {
   phone: "+49 (0)2562 9463030",
   description:
     "Industrieböden, Säureschutz, Keramik, PU-Beton, Entwässerung und Sanierung für Lebensmittel-, Getränke-, Pharma- und Chemieproduktion.",
-  defaultTitle: "Industrieböden & Säureschutz für Produktion | HSB Hexagon Säurebau",
+  defaultTitle: "Ingenieurbau, Rüttelkeramik & Säureschutz | HSB Hexagon",
   defaultDescription:
-    "Industrieböden, Säureschutz, Keramik, PU-Beton, Entwässerung und Sanierung für Lebensmittel-, Getränke-, Pharma- und Chemieproduktion. Jetzt kostenlose Ersteinschätzung anfordern.",
+    "Ingenieurbau für Industrieböden: Rüttelkeramik nach AGI S 40, Säureschutz, PU-Beton und WHG § 62 Abdichtung für Lebensmittel-, Pharma- und Chemieproduktion.",
   ctaLabel: "Ersteinschätzung anfordern",
   ctaTarget: "/kontakt/",
   // Lead-Zustellung läuft serverseitig über /api/lead (kein Secret im Bundle).

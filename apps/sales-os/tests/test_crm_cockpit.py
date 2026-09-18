@@ -41,5 +41,5 @@ def test_dashboard_formulas():
     assert rows["Antworten offen"][1] == '=COUNTIFS(ALL_LEADS!BE2:BE; "Antwort"; ALL_LEADS!R2:R; "")'
     assert rows["Klärfälle offen"][1] == '=COUNTIF(INBOUND_EVENTS!J2:J; "NEEDS_REVIEW")'
     assert rows["Versendet letzte 30 Tage"][1].startswith("=SPARKLINE(")
-    assert len(dashboard_rows()) == 28
+    assert len(dashboard_rows()) == 27
     assert rows["ERZEUGTE BATCHES (Letzte 10)"]

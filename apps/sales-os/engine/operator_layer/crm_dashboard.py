@@ -14,12 +14,13 @@ def per_owner(f_all, f_owner):
 
 
 def dashboard_rows():
-    """A1:E28 des DASHBOARD-Tabs.
+    """A1:E27 des DASHBOARD-Tabs.
 
-    Zeilen 1-15 = KPI-Block, 16 leer, 17-18 Batch-Ueberschrift/-Kopf, 19-28 = 10 Batch-Zeilen
-    (Formeln auf BATCHES!). Die Zeilennummern sind Vertrag: Zeile 7 = Abgemeldet, Zeile 8 =
-    Bounces, Zeile 11 = Klaerfaelle offen, Zeile 17/18 = Batch-Ueberschrift/-Kopf — die
-    Formatierung in formatting_requests() greift auf genau diese Zeilennummern zu.
+    Zeilen 1-14 = KPI-Block exakt in Brief-Reihenfolge, 15 leer, 16-17 Batch-Ueberschrift/-Kopf,
+    18-27 = 10 Batch-Zeilen (Formeln auf BATCHES!). Zeile 7 = Abgemeldet, Zeile 8 = Bounces,
+    Zeile 10 = Klaerfaelle offen, Zeile 16 = Batch-Ueberschrift, Zeile 17 = Batch-Kopf. Die
+    Formatierung in formatting_requests() ermittelt diese Zeilennummern per Label-Lookup aus
+    dieser Liste, statt sie erneut hart zu kodieren — damit beide nicht wieder auseinanderlaufen.
     """
     R = lambda label, f_all, f_owner, ziel: [label] + per_owner(f_all, f_owner) + [ziel]
     rows = [
@@ -32,19 +33,18 @@ def dashboard_rows():
         R("Abgemeldet (Opt-out)", '=COUNTIF(ALL_LEADS!Y2:Y; "yes")', '=COUNTIFS(ALL_LEADS!AA2:AA; "*{o}*"; ALL_LEADS!Y2:Y; "yes")', "dauerhaft gesperrt"),  # 7
         R("Bounces", '=COUNTIF(ALL_LEADS!BE2:BE; "Bounce")', '=COUNTIFS(ALL_LEADS!AA2:AA; "*{o}*"; ALL_LEADS!BE2:BE; "Bounce")', "unzustellbar"),  # 8
         R("Freigegeben, noch nicht versendet", '=COUNTIF(ALL_LEADS!BE2:BE; "Freigegeben")+COUNTIF(ALL_LEADS!BE2:BE; "Entwurf")', '=COUNTIFS(ALL_LEADS!AA2:AA; "*{o}*"; ALL_LEADS!BE2:BE; "Freigegeben")+COUNTIFS(ALL_LEADS!AA2:AA; "*{o}*"; ALL_LEADS!BE2:BE; "Entwurf")', "naechste Sendungen"),  # 9
-        [],  # 10
         ["Klärfälle offen", '=COUNTIF(INBOUND_EVENTS!J2:J; "NEEDS_REVIEW")',
          '=COUNTIFS(INBOUND_EVENTS!J2:J; "NEEDS_REVIEW"; INBOUND_EVENTS!C2:C; "j-post@hsb-boden.de")',
-         '=COUNTIFS(INBOUND_EVENTS!J2:J; "NEEDS_REVIEW"; INBOUND_EVENTS!C2:C; "j-cherino@hsb-boden.de")', "im Tab POSTEINGANG loesen"],  # 11
-        [],  # 12
-        ["Versendet letzte 30 Tage", '=SPARKLINE(MAP(SEQUENCE(30; 1; TODAY()-29; 1); LAMBDA(t; COUNTIF(ALL_LEADS!AP2:AP; TEXT(t; "yyyy-mm-dd") & "*"))); {"charttype"\\"column"})', "", "", "Tage links = älter"],  # 13
-        ["Letzter Abgleich Joel", '=IFERROR(TEXT(VLOOKUP("j-cherino@hsb-boden.de"; SYNC_STATUS!A:H; 2; FALSE); "dd.mm.yyyy hh:mm") & " UTC"; "noch nicht")', "", "", "alle 15 Minuten"],  # 14
-        ["Letzter Abgleich Jordi", '=IFERROR(TEXT(VLOOKUP("j-post@hsb-boden.de"; SYNC_STATUS!A:H; 2; FALSE); "dd.mm.yyyy hh:mm") & " UTC"; "noch nicht")', "", "", "alle 15 Minuten"],  # 15
-        [],  # 16
-        ["ERZEUGTE BATCHES (Letzte 10)"],  # 17
-        ["Batch ID", "Owner", "Status", "Anzahl Leads", "Erstellt am"],  # 18
+         '=COUNTIFS(INBOUND_EVENTS!J2:J; "NEEDS_REVIEW"; INBOUND_EVENTS!C2:C; "j-cherino@hsb-boden.de")', "im Tab POSTEINGANG loesen"],  # 10
+        [],  # 11
+        ["Versendet letzte 30 Tage", '=SPARKLINE(MAP(SEQUENCE(30; 1; TODAY()-29; 1); LAMBDA(t; COUNTIF(ALL_LEADS!AP2:AP; TEXT(t; "yyyy-mm-dd") & "*"))); {"charttype"\\"column"})', "", "", "Tage links = älter"],  # 12
+        ["Letzter Abgleich Joel", '=IFERROR(TEXT(VLOOKUP("j-cherino@hsb-boden.de"; SYNC_STATUS!A:H; 2; FALSE); "dd.mm.yyyy hh:mm") & " UTC"; "noch nicht")', "", "", "alle 15 Minuten"],  # 13
+        ["Letzter Abgleich Jordi", '=IFERROR(TEXT(VLOOKUP("j-post@hsb-boden.de"; SYNC_STATUS!A:H; 2; FALSE); "dd.mm.yyyy hh:mm") & " UTC"; "noch nicht")', "", "", "alle 15 Minuten"],  # 14
+        [],  # 15
+        ["ERZEUGTE BATCHES (Letzte 10)"],  # 16
+        ["Batch ID", "Owner", "Status", "Anzahl Leads", "Erstellt am"],  # 17
     ]
-    # 19-28: 10 Batch-Zeilen, Mapping Dashboard-Spalte -> BATCHES-Spalte: A<-A, B<-B, C<-D, D<-F, E<-K.
+    # 18-27: 10 Batch-Zeilen, Mapping Dashboard-Spalte -> BATCHES-Spalte: A<-A, B<-B, C<-D, D<-F, E<-K.
     for b in range(1, 11):
         r = b + 1
         rows.append([
@@ -57,12 +57,28 @@ def dashboard_rows():
     return rows
 
 
-def formatting_requests(sheet_id):
+def _row_of(rows, label):
+    """1-basierter Zeilenindex der Zeile, deren erste Zelle == label ist."""
+    return next(i + 1 for i, r in enumerate(rows) if r and r[0] == label)
+
+
+def formatting_requests(sheet_id, rows=None):
     """Ein batchUpdate: Titelzeile (merge), Kopfzeilen, Klaerfall-/Abgemeldet-/Bounce-Faerbung.
 
+    Die Zielzeilen werden per Label aus dashboard_rows() ermittelt statt hart kodiert, damit
+    Layout-Aenderungen an dashboard_rows() nicht unbemerkt zu falsch gefaerbten Zeilen fuehren.
     unmergeCells muss vor mergeCells laufen, weil Sheets einen zweiten merge auf eine bereits
     gemergte Range ablehnt (A1:E1 kann schon aus einem frueheren Lauf gemergt sein).
     """
+    rows = rows if rows is not None else dashboard_rows()
+    row_titel = _row_of(rows, "HSB SALES OS · VERTRIEBS-COCKPIT")
+    row_header = _row_of(rows, "Kennzahl")
+    row_abgemeldet = _row_of(rows, "Abgemeldet (Opt-out)")
+    row_bounces = _row_of(rows, "Bounces")
+    row_klaerfaelle = _row_of(rows, "Klärfälle offen")
+    row_batch_titel = _row_of(rows, "ERZEUGTE BATCHES (Letzte 10)")
+    row_batch_header = _row_of(rows, "Batch ID")
+
     def row_fmt(row_1based, bg=None, bold=False, size=None, fg=None, cols=5):
         fmt = {}
         if bg:
@@ -85,14 +101,14 @@ def formatting_requests(sheet_id):
     a1e1 = {"sheetId": sheet_id, "startRowIndex": 0, "endRowIndex": 1, "startColumnIndex": 0, "endColumnIndex": 5}
     return [
         {"unmergeCells": {"range": a1e1}},
-        row_fmt(1, bg="0d652d", bold=True, size=16, fg="ffffff"),
+        row_fmt(row_titel, bg="0d652d", bold=True, size=16, fg="ffffff"),
         {"mergeCells": {"range": a1e1, "mergeType": "MERGE_ALL"}},
-        row_fmt(3, bg="e8eaed", bold=True),
-        row_fmt(7, bg="F4C7C3"),
-        row_fmt(8, bg="FCE8B2"),
-        row_fmt(11, bg="FCE8B2"),
-        row_fmt(17, bg="e8eaed", bold=True, size=12),
-        row_fmt(18, bg="e8eaed", bold=True),
+        row_fmt(row_header, bg="e8eaed", bold=True),
+        row_fmt(row_abgemeldet, bg="F4C7C3"),
+        row_fmt(row_bounces, bg="FCE8B2"),
+        row_fmt(row_klaerfaelle, bg="FCE8B2"),
+        row_fmt(row_batch_titel, bg="e8eaed", bold=True, size=12),
+        row_fmt(row_batch_header, bg="e8eaed", bold=True),
     ]
 
 
@@ -108,7 +124,7 @@ def main(apply=False):
                                        valueInputOption="USER_ENTERED", body={"values": rows}).execute()
     grid = sh.spreadsheets().get(spreadsheetId=SID, fields="sheets(properties(sheetId,title))").execute()
     sheet_id = next(s["properties"]["sheetId"] for s in grid["sheets"] if s["properties"]["title"] == DASHBOARD_TITLE)
-    sh.spreadsheets().batchUpdate(spreadsheetId=SID, body={"requests": formatting_requests(sheet_id)}).execute()
+    sh.spreadsheets().batchUpdate(spreadsheetId=SID, body={"requests": formatting_requests(sheet_id, rows)}).execute()
     print("DASHBOARD geschrieben.")
     return 0
 

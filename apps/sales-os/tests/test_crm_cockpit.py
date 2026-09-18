@@ -31,3 +31,15 @@ def test_posteingang_blocks():
     f = [r[0] for r in v if r and str(r[0]).startswith("=IFERROR(QUERY(INBOUND_EVENTS")]
     assert "J = 'NEEDS_REVIEW'" in f[0] and "order by B desc" in f[0]
     assert "limit 200" in f[1]
+
+from crm_dashboard import dashboard_rows
+
+def test_dashboard_formulas():
+    rows = {r[0]: r for r in dashboard_rows() if r}
+    assert rows["Abgemeldet (Opt-out)"][1] == '=COUNTIF(ALL_LEADS!Y2:Y; "yes")'
+    assert rows["Bounces"][1] == '=COUNTIF(ALL_LEADS!BE2:BE; "Bounce")'
+    assert rows["Antworten offen"][1] == '=COUNTIFS(ALL_LEADS!BE2:BE; "Antwort"; ALL_LEADS!R2:R; "")'
+    assert rows["Klärfälle offen"][1] == '=COUNTIF(INBOUND_EVENTS!J2:J; "NEEDS_REVIEW")'
+    assert rows["Versendet letzte 30 Tage"][1].startswith("=SPARKLINE(")
+    assert len(dashboard_rows()) == 28
+    assert rows["ERZEUGTE BATCHES (Letzte 10)"]

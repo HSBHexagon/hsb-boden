@@ -396,7 +396,11 @@ function eventIndexLesen_() {
   if (last < 2) return idx;
   sh.getRange(2, 1, last - 1, 10).getValues().forEach(function (r) {
     var id = String(r[0] || '');
-    if (id) idx[id] = String(r[9] || '');
+    var st = String(r[9] || '');
+    // Eine DUPLICATE-Zeile (Migration/Dedupe) darf einen noch offenen
+    // Klaerfall (NEEDS_REVIEW) derselben Event_ID nicht ueberschreiben -
+    // sonst wird abgleichEntscheidung_ nie mehr auf 'erneut' entscheiden.
+    if (id && !(st === 'DUPLICATE' && idx[id] === 'NEEDS_REVIEW')) idx[id] = st;
   });
   return idx;
 }
@@ -437,7 +441,7 @@ function adresseExaktZuordenbar_(addr, li) {
 function abgleichEntscheidung_(eventId, evIdx, exaktZuordenbar) {
   var vorhanden = evIdx[eventId];
   if (vorhanden === undefined) return 'neu';
-  if (vorhanden === 'NEEDS_REVIEW' && exaktZuordenbar) return 'erneut';
+  if ((vorhanden === 'NEEDS_REVIEW' || vorhanden === 'DUPLICATE') && exaktZuordenbar) return 'erneut';
   return 'uebersprungen';
 }
 

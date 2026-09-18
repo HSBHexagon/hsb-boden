@@ -1581,7 +1581,7 @@ function processInboundEvent(event) {
         const rowEvtId = String(existingEvents[ei][0]);
         const rowMsgId = String(existingEvents[ei][5]);
         const rowStatus = String(existingEvents[ei][9] || '');
-        const isTerminal = rowStatus !== 'NEEDS_REVIEW';
+        const isTerminal = rowStatus !== 'NEEDS_REVIEW' && rowStatus !== 'DUPLICATE';
         if (isTerminal && (rowEvtId === eventId || (messageId && rowMsgId === messageId))) {
           return {
             ok: true,
@@ -2080,7 +2080,9 @@ function hsbKlaerfaelleAnwenden() {
   const n = sh.getLastRow();
   const out = { ok: true, applied: 0, ignored: 0, errors: [] };
   if (n < 2) return out;
+  if (sh.getMaxColumns() < 13) sh.insertColumnsAfter(sh.getMaxColumns(), 13 - sh.getMaxColumns());
   const vals = sh.getRange(2, 1, n - 1, 13).getValues();
+  const knownLeadIds = readLeadsCached_().leads.map(function (l) { return String(l.Lead_ID); });
   for (let i = 0; i < vals.length; i++) {
     const r = vals[i];
     const entscheidung = String(r[12] || '').trim();
@@ -2088,14 +2090,21 @@ function hsbKlaerfaelleAnwenden() {
     if (entscheidung.toLowerCase() === 'ignorieren') {
       sh.getRange(i + 2, 10).setValue('IGNORED'); out.ignored++; continue;
     }
+    if (knownLeadIds.indexOf(entscheidung) === -1) {
+      out.errors.push(String(r[0]) + ': Lead-ID ' + entscheidung + ' nicht gefunden');
+      continue;
+    }
     try {
       const res = processInboundEvent({
         event_id: String(r[0]) + '-MANUAL', event_type: String(r[7]), lead_id: entscheidung,
         email: String(r[3] || ''), message_id: String(r[5] || ''), subject: String(r[4] || ''),
         mailbox: String(r[2] || ''), details: 'Manuell zugeordnet (Klaerfall)'
       });
-      if (res && res.matched) { sh.getRange(i + 2, 10).setValue('RESOLVED'); out.applied++; }
-      else out.errors.push(String(r[0]) + ': Lead-ID ' + entscheidung + ' nicht gefunden');
+      if (res && res.matched) {
+        sh.getRange(i + 2, 10).setValue('RESOLVED');
+        sh.getRange(i + 2, 7).setValue(entscheidung);
+        out.applied++;
+      } else out.errors.push(String(r[0]) + ': Lead-ID ' + entscheidung + ' nicht gefunden');
     } catch (e) { out.errors.push(String(r[0]) + ': ' + String(e.message || e)); }
   }
   out.ok = out.errors.length === 0;

@@ -351,6 +351,19 @@ console.log('\n=== 9. Wiederkehrender Postfach-Abgleich: Lead-Bezug und Idempote
   EINGEREICHT = [];
   const s2 = k.reconcileSentMessages_(GESENDET, 'TEST');
   pruefe('Sende-Abgleich Lauf 2 reicht nichts erneut ein', EINGEREICHT.length === 0 && s2.skipped === 1, JSON.stringify(s2));
+
+  // C1 (zweiter Teilfix): eine per Migration als DUPLICATE markierte Wiederholungszeile
+  // derselben Event_ID darf einen noch offenen NEEDS_REVIEW-Klaerfall im Index nicht
+  // ueberschreiben - sonst liefert abgleichEntscheidung_ dauerhaft 'uebersprungen'.
+  EVENTS.push(['TEST-DUPTWIN', 'ts', 'j-cherino@hsb-boden.de', 'zwilling@brauerei-muster.de', 'Abmelden', '<dup-twin@x>', '', 'OPT_OUT', 'yes', 'NEEDS_REVIEW', 'Klaerfall', '']);
+  EVENTS.push(['TEST-DUPTWIN', 'ts', 'j-cherino@hsb-boden.de', 'zwilling@brauerei-muster.de', 'Abmelden', '<dup-twin@x>', '', 'OPT_OUT', 'yes', 'DUPLICATE', 'Migrations-Duplikat', '']);
+  const idxDup = k.eventIndexLesen_();
+  pruefe('eventIndexLesen_: DUPLICATE ueberschreibt offenen NEEDS_REVIEW-Klaerfall nicht (C1)',
+         idxDup['TEST-DUPTWIN'] === 'NEEDS_REVIEW', JSON.stringify(idxDup['TEST-DUPTWIN']));
+  pruefe('abgleichEntscheidung_: NEEDS_REVIEW + DUPLICATE gleicher Event_ID -> erneut, wenn exakt zuordenbar (C1)',
+         k.abgleichEntscheidung_('TEST-DUPTWIN', idxDup, true) === 'erneut');
+  pruefe('abgleichEntscheidung_: ohne exakte Zuordnung bleibt uebersprungen',
+         k.abgleichEntscheidung_('TEST-DUPTWIN', idxDup, false) === 'uebersprungen');
 }
 
 console.log('\n=== 10. Signatur: Abmelde-Link ===');

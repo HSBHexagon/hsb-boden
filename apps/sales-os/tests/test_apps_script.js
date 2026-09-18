@@ -24,6 +24,12 @@ let REAL_SEND_CALLS = 0;
 
 function makeRange(sheet, row, col, numRows, numCols) {
   numRows = numRows || 1; numCols = numCols || 1;
+  // Wie die echte Sheets-API: eine Range, die ueber das aktuelle Spalten-Grid hinausgeht,
+  // wirft ("exceeds grid limits") statt still zu lesen/schreiben (Critical 2).
+  if (col - 1 + numCols > sheet.getMaxColumns()) {
+    throw new Error('Range (' + sheet._name + ') exceeds grid limits: col ' +
+      (col - 1 + numCols) + ' > maxColumns ' + sheet.getMaxColumns());
+  }
   return {
     getValues: function () {
       const out = [];
@@ -53,16 +59,25 @@ function makeRange(sheet, row, col, numRows, numCols) {
   };
 }
 
-function makeSheet(name, data) {
+function makeSheet(name, data, maxCols) {
   const sh = { _name: name, _data: data || [] };
+  // maxCols === undefined: grenzenloser Stub (bisheriges Verhalten, fuer alle Sheets ausser dem
+  // gezielten C2-Grid-Test). Sonst ein festes Startgrid, das nur ueber insertColumnsAfter waechst -
+  // damit deckt der Klaerfall-Test denselben Fehler auf, den das Live-Grid mit 12 Spalten zeigte.
+  sh._maxCols = (typeof maxCols === 'number') ? maxCols : null;
   sh.getName = function () { return name; };
   sh.getLastRow = function () { return sh._data.length; };
   sh.getLastColumn = function () {
     return sh._data.reduce(function (m, r) { return Math.max(m, r.length); }, 0);
   };
-  sh.getMaxColumns = function () { return Math.max(60, sh.getLastColumn()); };
+  sh.getMaxColumns = function () {
+    return sh._maxCols !== null ? sh._maxCols : Math.max(60, sh.getLastColumn());
+  };
   sh.getMaxRows = function () { return Math.max(7000, sh._data.length); };
-  sh.insertColumnsAfter = function () { return sh; };
+  sh.insertColumnsAfter = function (afterCol, howMany) {
+    if (sh._maxCols !== null) sh._maxCols += howMany;
+    return sh;
+  };
   sh.setFrozenRows = function () { return sh; };
   sh.getRange = function (r, c, nr, nc) { return makeRange(sh, r, c, nr, nc); };
   sh.getDataRange = function () {
@@ -320,7 +335,9 @@ function setupSheet(n, owner, over) {
     ALL_LEADS: makeSheet('ALL_LEADS', data),
     BATCHES: makeSheet('BATCHES', []),
     ACTIVITIES: makeSheet('ACTIVITIES', []),
-    INBOUND_EVENTS: makeSheet('INBOUND_EVENTS', [])
+    // 12 Spalten wie das Live-Grid vor C2-Fix — deckt den Klaerfall-Test gegen
+    // "exceeds grid limits" ab, statt es durch ein grenzenloses Stub zu verdecken.
+    INBOUND_EVENTS: makeSheet('INBOUND_EVENTS', [], 12)
   };
   ctx.invalidateLeadsCache_();
   // Persistierte Drive-Ordner gehoeren nicht zum Sheet-Zustand, muessen aber
@@ -1441,6 +1458,45 @@ function testInboundEvents() {
   check('Klaerfall: Ursprungszeile steht auf RESOLVED', klaer[9] === 'RESOLVED');
   check('Klaerfall: neues Ereignis mit Suffix -MANUAL ist PROCESSED',
         evt.some(function (r) { return r[0] === klaer[0] + '-MANUAL' && r[9] === 'PROCESSED'; }));
+  check('Klaerfall: RESOLVED-Zeile traegt die Lead-ID in Spalte G (M11)',
+        klaer[6] === lead1.Lead_ID, 'G=' + klaer[6]);
+
+  // 7. Klaerfall mit DUPLICATE-Zwilling gleicher Message-ID loest sich trotzdem auf (C1).
+  // Vor dem Fix war eine per Migration als DUPLICATE markierte Wiederholungszeile derselben
+  // Message-ID "terminal" und blockierte die Dedupe-Pruefung fuer die manuelle Zuordnung.
+  const dupMsgId = '<msg-dup-twin@hsb-boden.de>';
+  const resUnmatchedDup = ctx.processInboundEvent({
+    event_id: 'EVT-DUP-A', event_type: 'REPLY', email: 'unbekannt-dup@nirgendwo.de',
+    message_id: dupMsgId, subject: 'Unklar'
+  });
+  check('Klaerfall-DUPLICATE-Vorbereitung: Event A ist NEEDS_REVIEW', resUnmatchedDup.status === 'NEEDS_REVIEW');
+  SHEETS.INBOUND_EVENTS._data.push([
+    'EVT-DUP-B', new Date().toISOString(), '', 'unbekannt-dup@nirgendwo.de', 'Unklar',
+    dupMsgId, '', 'REPLY', 'no', 'DUPLICATE', 'Migrations-Duplikat', ''
+  ]);
+  const klaerDup = SHEETS.INBOUND_EVENTS._data.filter(function (r) { return r[0] === 'EVT-DUP-A'; })[0];
+  klaerDup[12] = lead1.Lead_ID;   // Spalte M: Zuordnung
+  const resKDup = ctx.hsbKlaerfaelleAnwenden();
+  check('Klaerfall mit DUPLICATE-Zwilling gleicher Message-ID wird trotzdem aufgeloest (C1)',
+        resKDup.applied >= 1 && klaerDup[9] === 'RESOLVED', JSON.stringify(resKDup) + ' status=' + klaerDup[9]);
+
+  // 8. Tippfehler in Spalte M erzeugt keine Muellzeile (I4)
+  const resUnmatchedTypo = ctx.processInboundEvent({
+    event_id: 'EVT-TYPO', event_type: 'REPLY', email: 'unbekannt-typo@nirgendwo.de', subject: 'Unklar'
+  });
+  check('Typo-Vorbereitung: Event ist NEEDS_REVIEW', resUnmatchedTypo.status === 'NEEDS_REVIEW');
+  const lenBeforeTypo = SHEETS.INBOUND_EVENTS._data.length;
+  const klaerTypo = SHEETS.INBOUND_EVENTS._data.filter(function (r) { return r[0] === 'EVT-TYPO'; })[0];
+  klaerTypo[12] = 'LEAD-EXISTIERT-NICHT-999';
+  const resKTypo = ctx.hsbKlaerfaelleAnwenden();
+  check('Klaerfall: unbekannte Lead-ID erzeugt Fehler statt Zuordnung (I4)',
+        resKTypo.errors.length >= 1 && resKTypo.errors.some(function (e) { return e.indexOf('LEAD-EXISTIERT-NICHT-999') !== -1; }),
+        JSON.stringify(resKTypo));
+  check('Klaerfall: unbekannte Lead-ID erzeugt KEINE neue Zeile in INBOUND_EVENTS (I4)',
+        SHEETS.INBOUND_EVENTS._data.length === lenBeforeTypo,
+        'vorher=' + lenBeforeTypo + ' nachher=' + SHEETS.INBOUND_EVENTS._data.length);
+  check('Klaerfall: unbekannte Lead-ID laesst Ursprungszeile NEEDS_REVIEW (I4)',
+        klaerTypo[9] === 'NEEDS_REVIEW', klaerTypo[9]);
 }
 
 /**

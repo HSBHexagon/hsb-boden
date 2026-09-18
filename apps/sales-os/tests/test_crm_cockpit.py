@@ -21,3 +21,13 @@ def test_cockpit_blocks_joel():
     assert "BE = 'Abgemeldet'" in b[0]["formula"]
     assert "BE = 'Versendet'" in b[3]["formula"] and "limit 60" in b[3]["formula"]
     assert BLOCK_COLS == "B, G, I, BE, AP, AR, AC"
+
+from crm_cockpit import posteingang_values
+
+def test_posteingang_blocks():
+    v = posteingang_values()
+    titles = [r[0] for r in v if r and str(r[0]).startswith(("⚠️", "📥"))]
+    assert titles == ["⚠️ Klärfälle — bitte in INBOUND_EVENTS Spalte M eine Lead-ID oder „ignorieren“ eintragen", "📥 Letzte 200 Ereignisse"]
+    f = [r[0] for r in v if r and str(r[0]).startswith("=IFERROR(QUERY(INBOUND_EVENTS")]
+    assert "J = 'NEEDS_REVIEW'" in f[0] and "order by B desc" in f[0]
+    assert "limit 200" in f[1]

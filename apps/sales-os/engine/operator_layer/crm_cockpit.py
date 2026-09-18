@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Baut die Cockpit-Tabs HEUTE JOEL / HEUTE JORDI: fuenf QUERY-Bloecke, Farben, Zaehler, Sync-Anker."""
-import sys, datetime
-from crm_common import services, SID, col
+import sys
+from crm_common import services, SID
 from crm_operator_layer import PIPELINE_COLORS, rgb
 
 BLOCK_COLS = "B, G, I, BE, AP, AR, AC"   # Firma, Ansprechpartner, E-Mail, Pipeline, Send_Datum, Reply_Status, Notizen
@@ -62,6 +62,86 @@ def build_cockpit_requests(sheet_id, owner_match, mailbox):
         r += 43
     return reqs
 
+EV_COLS = "B, H, G, D, E, J, K"   # Zeit, Typ, Lead-ID, Absender, Betreff, Status, Notiz
+EV_LABELS = ["Zeit (UTC)", "Typ", "Lead-ID", "Absender", "Betreff", "Status", "Notiz"]
+
+# Zeilenindizes (0-basiert, wie in posteingang_values()) — von build_posteingang_requests()
+# zum Positionieren der Formatierung wiederverwendet, damit Werte und Formate nicht auseinanderlaufen.
+_EV_ROW_TITLE = 0
+_EV_ROW_KLAER_TITLE = 3
+_EV_ROW_KLAER_LABELS = 4
+_EV_ROW_KLAER_DATA = 5
+_EV_ROW_EVENTS_TITLE = _EV_ROW_KLAER_DATA + 1 + 60  # 60 Leerzeilen fuer Klaerfaelle-Ergebnisse
+_EV_ROW_EVENTS_LABELS = _EV_ROW_EVENTS_TITLE + 1
+_EV_ROW_EVENTS_DATA = _EV_ROW_EVENTS_TITLE + 2
+
+def posteingang_values():
+    """Zellinhalte des Tabs POSTEINGANG: Klaerfaelle (NEEDS_REVIEW) oben, Ereignisliste darunter."""
+    rows = [["POSTEINGANG — beide Postfächer", "", "", "", "", "", ""],
+            ['=IFERROR("Joel zuletzt " & TEXT(VLOOKUP("j-cherino@hsb-boden.de"; SYNC_STATUS!A:H; 2; FALSE); "dd.mm. hh:mm") & " · Jordi zuletzt " & TEXT(VLOOKUP("j-post@hsb-boden.de"; SYNC_STATUS!A:H; 2; FALSE); "dd.mm. hh:mm"); "Abgleich noch nicht gelaufen")'],
+            [],
+            ["⚠️ Klärfälle — bitte in INBOUND_EVENTS Spalte M eine Lead-ID oder „ignorieren“ eintragen", "=COUNTIF(INBOUND_EVENTS!J2:J; \"NEEDS_REVIEW\")"],
+            EV_LABELS,
+            [f"=IFERROR(QUERY(INBOUND_EVENTS!A2:M; \"select {EV_COLS} where J = 'NEEDS_REVIEW' order by B desc\"; 0); \"— keine —\")"]]
+    rows.extend([[]] * 60)
+    rows += [["📥 Letzte 200 Ereignisse", ""], EV_LABELS,
+             [f"=IFERROR(QUERY(INBOUND_EVENTS!A2:M; \"select {EV_COLS} where A is not null and J <> 'DUPLICATE' order by B desc limit 200\"; 0); \"— keine —\")"]]
+    return rows
+
+# Klassifikation -> Pipeline-Farbe (Task-5-Ruling): dieselben Farben wie ALL_LEADS, damit
+# ein Bounce/Opt-Out/Antwort im Posteingang genauso aussieht wie in der Leadliste.
+_CLASSIFICATION_COLORS = [
+    (("OPT_OUT",), "Abgemeldet"),
+    (("HARD_BOUNCE", "SOFT_BOUNCE"), "Bounce"),
+    (("REPLY", "POSITIVE_REPLY"), "Antwort"),
+    (("SENT",), "Versendet"),
+]
+
+def build_posteingang_requests(sheet_id):
+    """Formatierung: Titelzeilen farbig, Kopfzeilen fett, Spaltenbreiten, Zeile 1 fixiert, CLIP,
+    bedingte Formatierung auf Spalte B (Typ) nach Klassifikation fuer beide Bloecke."""
+    reqs = [{"updateSheetProperties": {"properties": {"sheetId": sheet_id, "gridProperties": {"frozenRowCount": 1}}, "fields": "gridProperties.frozenRowCount"}},
+            {"repeatCell": {"range": {"sheetId": sheet_id}, "cell": {"userEnteredFormat": {"wrapStrategy": "CLIP"}}, "fields": "userEnteredFormat.wrapStrategy"}}]
+    widths = [140, 130, 120, 220, 260, 110, 260]
+    for i, w in enumerate(widths):
+        reqs.append({"updateDimensionProperties": {"range": {"sheetId": sheet_id, "dimension": "COLUMNS", "startIndex": i, "endIndex": i + 1}, "properties": {"pixelSize": w}, "fields": "pixelSize"}})
+
+    bg, fg = PIPELINE_COLORS["Abgemeldet"]
+    reqs.append({"repeatCell": {"range": {"sheetId": sheet_id, "startRowIndex": _EV_ROW_KLAER_TITLE, "endRowIndex": _EV_ROW_KLAER_TITLE + 1, "startColumnIndex": 0, "endColumnIndex": 7},
+                 "cell": {"userEnteredFormat": {"backgroundColor": rgb(bg), "textFormat": {"bold": True, "fontSize": 12, "foregroundColor": rgb(fg)}}},
+                 "fields": "userEnteredFormat(backgroundColor,textFormat)"}})
+    reqs.append({"repeatCell": {"range": {"sheetId": sheet_id, "startRowIndex": _EV_ROW_KLAER_LABELS, "endRowIndex": _EV_ROW_KLAER_LABELS + 1, "startColumnIndex": 0, "endColumnIndex": 7},
+                 "cell": {"userEnteredFormat": {"textFormat": {"bold": True}, "backgroundColor": rgb("F8F9FA")}}, "fields": "userEnteredFormat(textFormat,backgroundColor)"}})
+    reqs.append({"repeatCell": {"range": {"sheetId": sheet_id, "startRowIndex": _EV_ROW_EVENTS_TITLE, "endRowIndex": _EV_ROW_EVENTS_TITLE + 1, "startColumnIndex": 0, "endColumnIndex": 7},
+                 "cell": {"userEnteredFormat": {"textFormat": {"bold": True, "fontSize": 12}, "backgroundColor": rgb("F8F9FA")}}, "fields": "userEnteredFormat(textFormat,backgroundColor)"}})
+    reqs.append({"repeatCell": {"range": {"sheetId": sheet_id, "startRowIndex": _EV_ROW_EVENTS_LABELS, "endRowIndex": _EV_ROW_EVENTS_LABELS + 1, "startColumnIndex": 0, "endColumnIndex": 7},
+                 "cell": {"userEnteredFormat": {"textFormat": {"bold": True}, "backgroundColor": rgb("F8F9FA")}}, "fields": "userEnteredFormat(textFormat,backgroundColor)"}})
+
+    # Bedingte Formatierung auf Spalte B (Typ) — ueber beide Bloecke (Klaerfaelle- und Ereignisliste-Ergebnisse).
+    anchor = _EV_ROW_KLAER_DATA + 1  # 1-basierte Zeile der ersten Datenzeile, fuer relative Formel-Referenz
+    idx = 0
+    for values, state in _CLASSIFICATION_COLORS:
+        cbg, cfg = PIPELINE_COLORS[state]
+        conds = [f'$B{anchor}="{v}"' for v in values]
+        formula = conds[0] if len(conds) == 1 else "OR(" + ",".join(conds) + ")"
+        reqs.append({"addConditionalFormatRule": {"index": idx, "rule": {
+            "ranges": [{"sheetId": sheet_id, "startRowIndex": _EV_ROW_KLAER_DATA, "endRowIndex": 300,
+                        "startColumnIndex": 0, "endColumnIndex": 7}],
+            "booleanRule": {"condition": {"type": "CUSTOM_FORMULA",
+                                          "values": [{"userEnteredValue": f"={formula}"}]},
+                            "format": {"backgroundColor": rgb(cbg), "textFormat": {"foregroundColor": rgb(cfg)}}}}}})
+        idx += 1
+    return reqs
+
+def posteingang_setup_requests(events_sheet_id):
+    """Spalte M `Zuordnung` in INBOUND_EVENTS: Datenvalidierung M2:M — nicht strikt (Freitext bleibt
+    erlaubt: Lead-ID), mit `ignorieren` als Dropdown-Vorschlag."""
+    reqs = [{"setDataValidation": {"range": {"sheetId": events_sheet_id, "startRowIndex": 1, "endRowIndex": 5000,
+                                              "startColumnIndex": 12, "endColumnIndex": 13},
+             "rule": {"condition": {"type": "ONE_OF_LIST", "values": [{"userEnteredValue": "ignorieren"}]},
+                      "strict": False, "showCustomUi": True}}}]
+    return reqs
+
 TABS = {"HEUTE JOEL": ("Joel", "j-cherino@hsb-boden.de"), "HEUTE JORDI": ("Jordi", "j-post@hsb-boden.de")}
 
 # Feste Tab-Reihenfolge und Sichtbarkeit (Controller-Ruling Step 5). Alles nicht Gelistete wird versteckt,
@@ -92,11 +172,11 @@ def order_tabs(sh, apply=False):
         sh.spreadsheets().batchUpdate(spreadsheetId=SID, body={"requests": reqs}).execute()
     return reqs
 
-def ensure_tab(sh, title, index):
+def ensure_tab(sh, title, index, row_count=260):
     meta = sh.spreadsheets().get(spreadsheetId=SID, fields="sheets(properties(sheetId,title))").execute()
     for s in meta["sheets"]:
         if s["properties"]["title"] == title: return s["properties"]["sheetId"]
-    res = sh.spreadsheets().batchUpdate(spreadsheetId=SID, body={"requests": [{"addSheet": {"properties": {"title": title, "index": index, "gridProperties": {"rowCount": 260, "columnCount": 8}}}}]}).execute()
+    res = sh.spreadsheets().batchUpdate(spreadsheetId=SID, body={"requests": [{"addSheet": {"properties": {"title": title, "index": index, "gridProperties": {"rowCount": row_count, "columnCount": 8}}}}]}).execute()
     return res["replies"][0]["addSheet"]["properties"]["sheetId"]
 
 def main(apply=False):
@@ -110,6 +190,24 @@ def main(apply=False):
         sh.spreadsheets().values().update(spreadsheetId=SID, range=f"'{title}'!A1", valueInputOption="USER_ENTERED", body={"values": vals}).execute()
         sh.spreadsheets().batchUpdate(spreadsheetId=SID, body={"requests": build_cockpit_requests(sid, owner, mailbox)}).execute()
         print(f"{title}: geschrieben (sheetId {sid})")
+
+    ev_vals = posteingang_values()
+    if not apply:
+        print(f"[DRY-RUN] POSTEINGANG: {len(ev_vals)} Zeilen, {len(build_posteingang_requests(0))} Format-Requests")
+    else:
+        pid = ensure_tab(sh, "POSTEINGANG", 3, row_count=300)
+        sh.spreadsheets().values().clear(spreadsheetId=SID, range="'POSTEINGANG'!A1:H300").execute()
+        sh.spreadsheets().values().update(spreadsheetId=SID, range="'POSTEINGANG'!A1", valueInputOption="USER_ENTERED", body={"values": ev_vals}).execute()
+        sh.spreadsheets().batchUpdate(spreadsheetId=SID, body={"requests": build_posteingang_requests(pid)}).execute()
+
+        meta = sh.spreadsheets().get(spreadsheetId=SID, fields="sheets(properties(sheetId,title))").execute()
+        ev_sid = next(s["properties"]["sheetId"] for s in meta["sheets"] if s["properties"]["title"] == "INBOUND_EVENTS")
+        m1 = sh.spreadsheets().values().get(spreadsheetId=SID, range="INBOUND_EVENTS!M1").execute().get("values", [[""]])
+        if not (m1 and m1[0] and str(m1[0][0]).strip()):
+            sh.spreadsheets().values().update(spreadsheetId=SID, range="INBOUND_EVENTS!M1", valueInputOption="USER_ENTERED", body={"values": [["Zuordnung"]]}).execute()
+        sh.spreadsheets().batchUpdate(spreadsheetId=SID, body={"requests": posteingang_setup_requests(ev_sid)}).execute()
+        print(f"POSTEINGANG: geschrieben (sheetId {pid})")
+
     order_tabs(sh, apply=apply)
     return 0
 

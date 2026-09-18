@@ -1431,6 +1431,16 @@ function testInboundEvents() {
   check('Inbound: Header ist kanonisch (12 Spalten)',
         headerRow.join('|') === 'Event_ID|Received_UTC|Mailbox|From|Subject|Internet_Message_ID|Lead_ID|Classification|Stop_Followup|Processed|Notes|Raw_Link',
         headerRow.join('|'));
+
+  // 6. Klaerfall per Spalte M loesen
+  const evt = SHEETS.INBOUND_EVENTS._data;
+  const klaer = evt.filter(function (r) { return r[9] === 'NEEDS_REVIEW'; })[0];
+  klaer[12] = lead1.Lead_ID;            // Spalte M: Zuordnung
+  const resK = ctx.hsbKlaerfaelleAnwenden();
+  check('Klaerfall: Zeile mit Lead-ID in M wird angewendet', resK.applied === 1, JSON.stringify(resK));
+  check('Klaerfall: Ursprungszeile steht auf RESOLVED', klaer[9] === 'RESOLVED');
+  check('Klaerfall: neues Ereignis mit Suffix -MANUAL ist PROCESSED',
+        evt.some(function (r) { return r[0] === klaer[0] + '-MANUAL' && r[9] === 'PROCESSED'; }));
 }
 
 /**

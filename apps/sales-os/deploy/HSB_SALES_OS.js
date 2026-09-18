@@ -2074,6 +2074,42 @@ function uiCreateDraftsForBatch(batchId, limit) {
   }
 }
 
+/** Klaerfaelle aus INBOUND_EVENTS anwenden: Spalte M traegt eine Lead-ID oder "ignorieren". */
+function hsbKlaerfaelleAnwenden() {
+  const sh = sheet_(CFG.SHEET_EVENTS);
+  const n = sh.getLastRow();
+  const out = { ok: true, applied: 0, ignored: 0, errors: [] };
+  if (n < 2) return out;
+  const vals = sh.getRange(2, 1, n - 1, 13).getValues();
+  for (let i = 0; i < vals.length; i++) {
+    const r = vals[i];
+    const entscheidung = String(r[12] || '').trim();
+    if (String(r[9]) !== 'NEEDS_REVIEW' || !entscheidung) continue;
+    if (entscheidung.toLowerCase() === 'ignorieren') {
+      sh.getRange(i + 2, 10).setValue('IGNORED'); out.ignored++; continue;
+    }
+    try {
+      const res = processInboundEvent({
+        event_id: String(r[0]) + '-MANUAL', event_type: String(r[7]), lead_id: entscheidung,
+        email: String(r[3] || ''), message_id: String(r[5] || ''), subject: String(r[4] || ''),
+        mailbox: String(r[2] || ''), details: 'Manuell zugeordnet (Klaerfall)'
+      });
+      if (res && res.matched) { sh.getRange(i + 2, 10).setValue('RESOLVED'); out.applied++; }
+      else out.errors.push(String(r[0]) + ': Lead-ID ' + entscheidung + ' nicht gefunden');
+    } catch (e) { out.errors.push(String(r[0]) + ': ' + String(e.message || e)); }
+  }
+  out.ok = out.errors.length === 0;
+  return out;
+}
+
+function uiKlaerfaelleAnwenden() {
+  const ui = SpreadsheetApp.getUi();
+  const r = hsbKlaerfaelleAnwenden();
+  ui.alert('Klaerfaelle angewendet', 'Zugeordnet: ' + r.applied + '\nIgnoriert: ' + r.ignored +
+           (r.errors.length ? ('\n\nFehler:\n' + r.errors.join('\n')) : ''), ui.ButtonSet.OK);
+  return r;
+}
+
 
 /* ==================================================================
    Code.gs
@@ -2105,6 +2141,7 @@ function onOpen() {
     .addSeparator()
     .addItem('📤 Gesendete Mails abgleichen', 'uiReconcileSent')
     .addItem('📥 Antworten abgleichen', 'uiReconcileReplies')
+    .addItem('✅ Klärfälle anwenden (Spalte M in INBOUND_EVENTS)', 'uiKlaerfaelleAnwenden')
     .addSeparator()
     .addItem('Spalten prüfen / ergänzen', 'uiEnsureColumns')
     .addItem('Wiedervorlage prüfen', 'uiGetDue')

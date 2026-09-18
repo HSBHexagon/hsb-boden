@@ -366,6 +366,30 @@ console.log('\n=== 10. Signatur: Abmelde-Link ===');
          sigJordi.indexOf('Hier abmelden') < sigJordi.indexOf('Sitz der Gesellschaft'));
 }
 
+console.log('\n=== 11. SYNC_STATUS wird je Postfach fortgeschrieben ===');
+{
+  const k = ladeAdapter({ postfach: 'j-post@hsb-boden.de' });
+  const SYNC = { _data: [] };
+  const sheet = {
+    getLastRow: function () { return SYNC._data.length; },
+    appendRow: function (r) { SYNC._data.push(r.slice()); },
+    getRange: function (r, c, nr, nc) {
+      return {
+        getValues: function () { return SYNC._data.slice(r - 1, r - 1 + nr).map(function (x) { return x.slice(c - 1, c - 1 + nc); }); },
+        setValues: function (v) { for (let i = 0; i < v.length; i++) SYNC._data[r - 1 + i] = v[i].slice(); },
+        setFontWeight: function () { return this; }
+      };
+    },
+    setFrozenRows: function () {}
+  };
+  k.SpreadsheetApp = { getActiveSpreadsheet: function () { return { getSheetByName: function () { return sheet; }, insertSheet: function () { return sheet; } }; } };
+  k.syncStatusSchreiben_('j-post@hsb-boden.de', { ok: true, weg: 'APIHUB', sent: { checked: 100, matched: 52 }, inbox: { checked: 100, matched: 3 }, errors: [] });
+  k.syncStatusSchreiben_('j-post@hsb-boden.de', { ok: true, weg: 'APIHUB', sent: { checked: 100, matched: 1 }, inbox: { checked: 100, matched: 0 }, errors: [] });
+  pruefe('Header + genau eine Zeile je Postfach (Upsert)', SYNC._data.length === 2, SYNC._data.length + ' Zeilen');
+  pruefe('Zweiter Lauf ueberschreibt Zaehler', SYNC._data[1][4] === 1, JSON.stringify(SYNC._data[1]));
+  pruefe('Fehlerspalte leer bei ok', SYNC._data[1][7] === '');
+}
+
 console.log('\n' + '='.repeat(70));
 console.log('ERGEBNIS: ' + bestanden + ' bestanden, ' + fehlgeschlagen +
             ' fehlgeschlagen von ' + (bestanden + fehlgeschlagen));

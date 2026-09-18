@@ -803,6 +803,27 @@ function mailboxKonto_() {
   return mailboxLeseweg_() === 'APIHUB' ? fcMailboxKonto_() : graphMailbox_();
 }
 
+var SYNC_STATUS_SHEET_ = 'SYNC_STATUS';
+var SYNC_STATUS_HEADER_ = ['Mailbox', 'Letzter_Lauf_UTC', 'Weg', 'Gesendet_geprueft', 'Neu_versendet',
+  'Posteingang_geprueft', 'Antworten_Abmeldungen_Bounces', 'Fehler'];
+
+/** Eine Zeile je Postfach: wann lief der Abgleich zuletzt, was hat er gefunden. Sichtbar fuer beide Nutzer. */
+function syncStatusSchreiben_(mailbox, r) {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sh = ss.getSheetByName(SYNC_STATUS_SHEET_) || ss.insertSheet(SYNC_STATUS_SHEET_);
+  if (sh.getLastRow() === 0) { sh.appendRow(SYNC_STATUS_HEADER_); sh.getRange(1, 1, 1, 8).setFontWeight('bold'); sh.setFrozenRows(1); }
+  var row = [mailbox, new Date().toISOString(), r.weg || '', ((r.sent || {}).checked || 0), ((r.sent || {}).matched || 0),
+             ((r.inbox || {}).checked || 0), ((r.inbox || {}).matched || 0), (r.errors || []).join(' | ')];
+  var n = sh.getLastRow();
+  if (n >= 2) {
+    var vals = sh.getRange(2, 1, n - 1, 1).getValues();
+    for (var i = 0; i < vals.length; i++) {
+      if (String(vals[i][0]) === mailbox) { sh.getRange(i + 2, 1, 1, 8).setValues([row]); return; }
+    }
+  }
+  sh.appendRow(row);
+}
+
 var HSB_AUTO_RECONCILE_HANDLER = 'hsbAutoReconcile';
 var HSB_AUTO_RECONCILE_MINUTES = 15;
 
@@ -825,6 +846,7 @@ function hsbAutoReconcile() {
     catch (e2) { out.errors.push('inbox: ' + String(e2.message || e2)); }
     out.ok = out.errors.length === 0;
     if (!out.ok) console.error('hsbAutoReconcile: ' + out.errors.join(' | '));
+    try { syncStatusSchreiben_(out.mailbox, out); } catch (e3) { console.warn('SYNC_STATUS: ' + e3); }
     return out;
   } finally {
     lock.releaseLock();

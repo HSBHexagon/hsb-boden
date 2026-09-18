@@ -41,14 +41,14 @@ const OWNER_DATEN = {
     anzeige: 'Joel Cherino Diaz',
     postfach: 'j-cherino@hsb-boden.de',
     driveId: '16Kt-eRk1uY0HorZCrEmGt3QfGcRpYadS',
-    sha256: '6ac5ed1112c88768ac56950faab8802ceaa2817913f35a7b95e73ee79c3431d8',
+    sha256: '2bccadacc77b531057583d2d650963c30deceed36c8be1fd90ca64e8b8cde5fb',
     propName: 'HSB_ADAPTER_URL_JOEL'
   },
   JORDI: {
     anzeige: 'Jordie Post',
     postfach: 'j-post@hsb-boden.de',
     driveId: '1UMX-fi2lJ9bo14KwuClqgfZQWECdE_XV',
-    sha256: 'a11876f02b54421bcafd9a6b8ec6f62d748e383b26fcadc8bbe834ee7ffbc4ce',
+    sha256: '08e1149e4fed409ac94d5af18139c36d00027a7a7b53e49928beb429d4a12729',
     propName: 'HSB_ADAPTER_URL_JORDI'
   }
 }[OWNER];

@@ -1,9 +1,9 @@
 {
   "project": "HSB / HEXAFLOOR",
-  "last_updated": "2026-09-19T03:00:00+0200",
+  "last_updated": "2026-09-19T06:10:00+0200",
   "active_model": "Claude Code (Opus 5)",
-  "active_phase": "ultragoal-webperf-salesos-hardening-completed",
-  "active_task": "Alle 11 Micro-Goals (G1-G11) via TDD umgesetzt und validiert. clasp push -f ausgefuehrt. CRM-Cockpit und Operator-Layer live im Sheet angewendet. PR #383 eroeffnet.",
+  "active_phase": "crm-cockpit-live",
+  "active_task": "CRM-Cockpit live verifiziert; SYNC_STATUS-Fix und wiederhergestellter Abmelde-Link (82f110d) werden per PR, clasp push und Re-Apply live geschaltet.",
   "account_migration_2026_07_02": {
     "github_new_repo": "https://github.com/HSBHexagon/hsb-boden",
     "github_old_repo_access": "HSBHexagon ist Admin-Collaborator im Alt-Repo cherinojoel-lang/hsb-boden (Ownership-Transfer pending, nicht blockierend)",
@@ -53,7 +53,7 @@
   "repo_path": "/Users/joelcherinodiaz/KI-System/02_Projects/active/hsb-boden",
   "local_root_checkout": "tracked files unveraendert, sechs Commits hinter origin/main; untracked .local-secrets/ aus laufender Fable-Sitzung wurde nicht geoeffnet oder veraendert",
   "handoff_path": "/Users/joelcherinodiaz/KI-System/ObsidianVault/brain/CURRENT_HANDOFF.md",
-  "last_commit": "lokal 72feb20 auf main; PR #383 eroeffnet",
+  "last_commit": "main 82f110d (+ docs)",
   "website_code_diff_lines": "+1368/-46 in 26 Dateien (main...HEAD vor 456afbe), plus Review-Fix",
   "canonical_readiness_stack": {
     "tier1": {
@@ -177,7 +177,7 @@
     "M365 DKIM for j-cherino@hsb-boden.de not yet activated.",
     "Lead-Datensatz existiert (6424 im MASTER-Sheet), aber Versandfreigabe 0/6424: PHASE_7_COMPLIANCE_GATE (Rechtsgrundlage, Opt-out, Batch-Freigabe) unerfuellt."
   ],
-  "next_step": "PR #383 auf GitHub reviewen/approven und mergen. CI-Checks laufen lassen.",
+  "next_step": "Nach clasp push + Re-Apply: Sichtprüfung Anker/SYNC_STATUS; Owner: Flyer-Sichtprüfung.",
   "handoff_required": true,
   "safe_to_continue": true,
   "historical_canonical_runtime_migration_2026_07_04": {
@@ -314,7 +314,8 @@
     "gate": "crm_events_migrate.py --apply erst NACH clasp push (Dedupe behandelt DUPLICATE nicht mehr als terminal); Sheet-Applies vom Classifier fuer Claude geblockt → Owner fuehrt sie aus",
     "zero_send": "REAL_EXTERNAL_PROSPECT_SEND_COUNT = 0 unveraendert; kein Automatik-Versand, keine Versandfreigabe=yes per Skript",
     "push_done": false,
-    "deploy_done": "not_run (clasp push offen)"
+    "deploy_done": "not_run (clasp push offen)",
+    "live_verification_2026_09_19": "Migration idempotent 807|0|0|0|0; 7 BE2-Regeln; DASHBOARD 27 Zeilen; HEUTE/POSTEINGANG 0 Fehlerzellen; Spalte M vorhanden; Report 08_System/reports/validation/2026-09-18-hsb-crm-cockpit.md"
   },
   "pull_request": "https://github.com/HSBHexagon/hsb-boden/pull/383"
 }

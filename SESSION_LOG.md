@@ -432,3 +432,11 @@ Fortlaufendes Log jeder KI-Session. Jeder Eintrag: Zeit · Modell · Phase · Au
   - `crm_dashboard.py --apply`: DASHBOARD mit 27 Zeilen live geschaltet.
 - **Pull Request:** PR #383 auf GitHub eröffnet: https://github.com/HSBHexagon/hsb-boden/pull/383
 - **Send Guardrail:** `REAL_EXTERNAL_PROSPECT_SEND_COUNT = 0` strikt eingehalten.
+
+---
+
+## 2026-09-19 06:10 CEST — Claude Code (Opus 5) — CRM-Cockpit: Live-Verifikation und Nachträge
+- **Live geprüft (lesend):** Migration idempotent (807|0|0|0|0), 7 Zeilenfarben-Regeln, DASHBOARD 27 Zeilen (Versendet 385), HEUTE JOEL/JORDI + POSTEINGANG ohne Fehlerzellen, INBOUND_EVENTS Spalte M, SYNC_STATUS vom Trigger beschrieben. Report `~/KI-System/08_System/reports/validation/2026-09-18-hsb-crm-cockpit.md`.
+- **Nachträge:** SYNC_STATUS nach dem Apply vom Trigger angelegt (sichtbar, ISO-Text) → `019c8ed`. Antigravity-Commit `1adafcf` hatte den Abmelde-Link aus `signaturHtml_` entfernt und live gepusht → `82f110d` stellt ihn wieder her; main mit Agys Flyer-Stand zusammengeführt (Drive trägt die komprimierten PDFs).
+- **Verifikation (main 82f110d):** pytest 69/69 · Apps Script 358/358 · Adapter 48/48 · Verifier 0 · FlowConnect 30/30 · Bündel == deploy.
+- **Website-Code-Diff:** 0 · **Push/Deploy:** per PR + clasp push + Re-Apply (Owner-Freigabe 19.09.: „alles andere tust du"); Entwürfe durch Antigravity, nicht durch Claude.

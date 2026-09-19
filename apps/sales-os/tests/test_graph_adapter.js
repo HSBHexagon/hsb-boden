@@ -393,7 +393,9 @@ console.log('\n=== 11. SYNC_STATUS wird je Postfach fortgeschrieben ===');
         setFontWeight: function () { return this; }
       };
     },
-    setFrozenRows: function () {}
+    setFrozenRows: function () {},
+    isSheetHidden: function () { return !!this._hidden; },
+    hideSheet: function () { this._hidden = true; return this; }
   };
   k.SpreadsheetApp = { getActiveSpreadsheet: function () { return { getSheetByName: function () { return sheet; }, insertSheet: function () { return sheet; } }; } };
   k.syncStatusSchreiben_('j-post@hsb-boden.de', { ok: true, weg: 'APIHUB', sent: { checked: 100, matched: 52 }, inbox: { checked: 100, matched: 3 }, errors: [] });
@@ -401,6 +403,9 @@ console.log('\n=== 11. SYNC_STATUS wird je Postfach fortgeschrieben ===');
   pruefe('Header + genau eine Zeile je Postfach (Upsert)', SYNC._data.length === 2, SYNC._data.length + ' Zeilen');
   pruefe('Zweiter Lauf ueberschreibt Zaehler', SYNC._data[1][4] === 1, JSON.stringify(SYNC._data[1]));
   pruefe('Fehlerspalte leer bei ok', SYNC._data[1][7] === '');
+  pruefe('Letzter_Lauf ist ein echtes Datum (kein ISO-String)', SYNC._data[1][1] instanceof Date, typeof SYNC._data[1][1]);
+  pruefe('Kopfzeile heisst Letzter_Lauf (Sheet-Zeit)', SYNC._data[0][1] === 'Letzter_Lauf', SYNC._data[0][1]);
+  pruefe('SYNC_STATUS wird versteckt', sheet._hidden === true, String(sheet._hidden));
 }
 
 console.log('\n' + '='.repeat(70));

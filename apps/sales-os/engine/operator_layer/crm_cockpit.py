@@ -34,7 +34,7 @@ def count_formula(owner_match, state):
 def cockpit_values(owner_match, mailbox):
     """Zellinhalte des Tabs (Zeilenlisten). Jeder Block: Titelzeile (mit Zaehler), Kopfzeile, QUERY, BLOCK_ROWS Zeilen Platz."""
     rows = [[f"HEUTE — {owner_match.upper()}", "", "", "", "", "", ""],
-            [f'=IFERROR("Postfach " & VLOOKUP("{mailbox}"; SYNC_STATUS!A:H; 1; FALSE) & " · zuletzt abgeglichen " & TEXT(VLOOKUP("{mailbox}"; SYNC_STATUS!A:H; 2; FALSE); "dd.mm. hh:mm") & " UTC"; "Abgleich noch nicht gelaufen")'],
+            [f'=IFERROR("Postfach " & VLOOKUP("{mailbox}"; SYNC_STATUS!A:H; 1; FALSE) & " · zuletzt abgeglichen " & TEXT(VLOOKUP("{mailbox}"; SYNC_STATUS!A:H; 2; FALSE); "dd.mm. hh:mm"); "Abgleich noch nicht gelaufen")'],
             []]
     # Zaehler = exakt dieselbe Bedingung wie die Liste darunter (sonst widersprechen sich Kopf und Inhalt).
     counts = [

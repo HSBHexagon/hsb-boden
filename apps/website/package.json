@@ -32,6 +32,7 @@
     "zod": "^3.24.4"
   },
   "devDependencies": {
+    "@notionhq/client": "^4.0.2",
     "@testing-library/jest-dom": "^5.16.5",
     "@types/serialize-javascript": "^5.0.4",
     "@vitest/coverage-v8": "^4.1.9",

@@ -17,26 +17,54 @@
 
 import { Client } from '@notionhq/client';
 
-const notion = new Client({ auth: process.env.NOTION_TOKEN });
+let _clientInstance = null;
 
-if (!process.env.NOTION_TOKEN) {
-  console.error('❌ NOTION_TOKEN fehlt! Export setzen:');
-  console.error('  export NOTION_TOKEN=secret_xxx');
-  process.exit(1);
+export function getNotionClient() {
+  if (_clientInstance) return _clientInstance;
+  if (!process.env.NOTION_TOKEN) {
+    console.error('❌ NOTION_TOKEN fehlt! Export setzen:');
+    console.error('  export NOTION_TOKEN=secret_xxx');
+    process.exit(1);
+  }
+  _clientInstance = new Client({ auth: process.env.NOTION_TOKEN });
+  return _clientInstance;
 }
 
-const [,, command, ...args] = process.argv;
+/**
+ * Executes async map function over items with controlled concurrency.
+ * @template T, R
+ * @param {T[]} items
+ * @param {number} concurrency
+ * @param {(item: T, index: number) => Promise<R>} fn
+ * @returns {Promise<R[]>}
+ */
+export async function mapConcurrent(items, concurrency, fn) {
+  if (!items || items.length === 0) return [];
+  const limit = Math.max(1, Math.min(concurrency || 3, items.length));
+  const results = new Array(items.length);
+  let index = 0;
+
+  const workers = Array.from({ length: limit }, async () => {
+    while (index < items.length) {
+      const i = index++;
+      results[i] = await fn(items[i], i);
+    }
+  });
+
+  await Promise.all(workers);
+  return results;
+}
 
 // ============================================================
 // COMMANDS
 // ============================================================
 
-async function cmdStatus(pageId, status) {
+export async function cmdStatus(pageId, status, notionClient = getNotionClient()) {
   if (!pageId || !status) {
     console.error('Usage: notion-sync.js status <pageId> <status>');
     process.exit(1);
   }
-  await notion.pages.update({
+  await notionClient.pages.update({
     page_id: pageId,
     properties: {
       Status: { select: { name: status } }
@@ -45,14 +73,14 @@ async function cmdStatus(pageId, status) {
   console.log(`✅ Seite ${pageId} → Status: "${status}"`);
 }
 
-async function cmdCreateDeploy(sha, env) {
+export async function cmdCreateDeploy(sha, env, notionClient = getNotionClient()) {
   const dbId = process.env.NOTION_DEPLOY_DB_ID;
   if (!dbId) { console.error('❌ NOTION_DEPLOY_DB_ID fehlt'); process.exit(1); }
   const shortSha = (sha || 'manual').substring(0, 7);
   const environment = env || 'Production';
   const now = new Date().toISOString();
 
-  await notion.pages.create({
+  await notionClient.pages.create({
     parent: { database_id: dbId },
     properties: {
       'Name': { title: [{ text: { content: `Deploy ${shortSha} → ${environment}` } }] },
@@ -65,9 +93,9 @@ async function cmdCreateDeploy(sha, env) {
   console.log(`✅ Deploy ${shortSha} → ${environment} in Notion eingetragen`);
 }
 
-async function cmdListDb(dbId) {
+export async function cmdListDb(dbId, notionClient = getNotionClient()) {
   if (!dbId) { console.error('Usage: notion-sync.js list-db <dbId>'); process.exit(1); }
-  const res = await notion.databases.query({ database_id: dbId, page_size: 20 });
+  const res = await notionClient.databases.query({ database_id: dbId, page_size: 20 });
   console.log(`\n📊 Datenbank: ${dbId} (${res.results.length} Einträge)`);
   for (const page of res.results) {
     const title = page.properties?.Name?.title?.[0]?.text?.content || '(kein Titel)';
@@ -76,31 +104,39 @@ async function cmdListDb(dbId) {
   }
 }
 
-async function cmdBulkStatus(dbId, fromStatus, toStatus) {
+export async function cmdBulkStatus(
+  dbId,
+  fromStatus,
+  toStatus,
+  notionClient = getNotionClient(),
+  concurrency = Number(process.env.NOTION_CONCURRENCY) || 3
+) {
   if (!dbId || !fromStatus || !toStatus) {
     console.error('Usage: notion-sync.js bulk-status <dbId> <fromStatus> <toStatus>');
     process.exit(1);
   }
-  const res = await notion.databases.query({
+  const res = await notionClient.databases.query({
     database_id: dbId,
     filter: { property: 'Status', select: { equals: fromStatus } }
   });
   console.log(`🔄 ${res.results.length} Seiten: "${fromStatus}" → "${toStatus}"`);
-  for (const page of res.results) {
-    await notion.pages.update({
+
+  await mapConcurrent(res.results, concurrency, async (page) => {
+    await notionClient.pages.update({
       page_id: page.id,
       properties: { Status: { select: { name: toStatus } } }
     });
     const title = page.properties?.Name?.title?.[0]?.text?.content || page.id;
     console.log(`  ✅ ${title}`);
-  }
+  });
+
   console.log(`\n✅ ${res.results.length} Einträge aktualisiert`);
 }
 
-async function cmdReport(dbId) {
+export async function cmdReport(dbId, notionClient = getNotionClient()) {
   if (!dbId) { console.error('Usage: notion-sync.js report <dbId>'); process.exit(1); }
   const oneWeekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
-  const res = await notion.databases.query({
+  const res = await notionClient.databases.query({
     database_id: dbId,
     filter: {
       property: 'Deployed At',
@@ -116,11 +152,11 @@ async function cmdReport(dbId) {
   console.log(`  Zeitraum:     letzte 7 Tage`);
 }
 
-async function cmdFristCheck(dbId) {
+export async function cmdFristCheck(dbId, notionClient = getNotionClient()) {
   if (!dbId) { console.error('Usage: notion-sync.js frist-check <dbId>'); process.exit(1); }
   const today = new Date();
   const in7Days = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000).toISOString();
-  const res = await notion.databases.query({
+  const res = await notionClient.databases.query({
     database_id: dbId,
     filter: {
       and: [
@@ -149,27 +185,37 @@ async function cmdFristCheck(dbId) {
 // MAIN DISPATCHER
 // ============================================================
 
-const commands = {
-  'status':       () => cmdStatus(args[0], args[1]),
-  'create-deploy':() => cmdCreateDeploy(args[0], args[1]),
-  'list-db':      () => cmdListDb(args[0]),
-  'bulk-status':  () => cmdBulkStatus(args[0], args[1], args[2]),
-  'report':       () => cmdReport(args[0]),
-  'frist-check':  () => cmdFristCheck(args[0]),
-};
+export async function runCli(argv = process.argv, notionClient) {
+  const [,, command, ...args] = argv;
 
-if (!command || !commands[command]) {
-  console.log('🛠️  Notion Sync CLI\n');
-  console.log('Commands:');
-  Object.keys(commands).forEach(cmd => console.log(`  notion-sync.js ${cmd}`));
-  console.log('\nBeispiele:');
-  console.log('  node scripts/notion-sync.js list-db <DB_ID>');
-  console.log('  node scripts/notion-sync.js frist-check <DB_ID>');
-  console.log('  node scripts/notion-sync.js report <DB_ID>');
-  process.exit(0);
+  const client = notionClient || getNotionClient();
+
+  const commands = {
+    'status':       () => cmdStatus(args[0], args[1], client),
+    'create-deploy':() => cmdCreateDeploy(args[0], args[1], client),
+    'list-db':      () => cmdListDb(args[0], client),
+    'bulk-status':  () => cmdBulkStatus(args[0], args[1], args[2], client),
+    'report':       () => cmdReport(args[0], client),
+    'frist-check':  () => cmdFristCheck(args[0], client),
+  };
+
+  if (!command || !commands[command]) {
+    console.log('🛠️  Notion Sync CLI\n');
+    console.log('Commands:');
+    Object.keys(commands).forEach(cmd => console.log(`  notion-sync.js ${cmd}`));
+    console.log('\nBeispiele:');
+    console.log('  node scripts/notion-sync.js list-db <DB_ID>');
+    console.log('  node scripts/notion-sync.js frist-check <DB_ID>');
+    console.log('  node scripts/notion-sync.js report <DB_ID>');
+    process.exit(0);
+  }
+
+  await commands[command]();
 }
 
-commands[command]().catch(err => {
-  console.error('❌ Fehler:', err.message);
-  process.exit(1);
-});
+if (process.argv[1] && process.argv[1].endsWith('notion-sync.js')) {
+  runCli().catch(err => {
+    console.error('❌ Fehler:', err.message);
+    process.exit(1);
+  });
+}

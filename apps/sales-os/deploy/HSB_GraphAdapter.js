@@ -808,15 +808,22 @@ function mailboxKonto_() {
 }
 
 var SYNC_STATUS_SHEET_ = 'SYNC_STATUS';
-var SYNC_STATUS_HEADER_ = ['Mailbox', 'Letzter_Lauf_UTC', 'Weg', 'Gesendet_geprueft', 'Neu_versendet',
+var SYNC_STATUS_HEADER_ = ['Mailbox', 'Letzter_Lauf', 'Weg', 'Gesendet_geprueft', 'Neu_versendet',
   'Posteingang_geprueft', 'Antworten_Abmeldungen_Bounces', 'Fehler'];
 
 /** Eine Zeile je Postfach: wann lief der Abgleich zuletzt, was hat er gefunden. Sichtbar fuer beide Nutzer. */
 function syncStatusSchreiben_(mailbox, r) {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
-  var sh = ss.getSheetByName(SYNC_STATUS_SHEET_) || ss.insertSheet(SYNC_STATUS_SHEET_);
+  var sh = ss.getSheetByName(SYNC_STATUS_SHEET_);
+  if (!sh) {
+    // Reine Datenquelle fuer den Sync-Anker: ans Ende, nicht in die Tab-Leiste.
+    sh = ss.insertSheet(SYNC_STATUS_SHEET_, ss.getSheets().length);
+  }
+  if (typeof sh.isSheetHidden === 'function' && !sh.isSheetHidden()) sh.hideSheet();
   if (sh.getLastRow() === 0) { sh.appendRow(SYNC_STATUS_HEADER_); sh.getRange(1, 1, 1, 8).setFontWeight('bold'); sh.setFrozenRows(1); }
-  var row = [mailbox, new Date().toISOString(), r.weg || '', ((r.sent || {}).checked || 0), ((r.sent || {}).matched || 0),
+  else sh.getRange(1, 1, 1, 8).setValues([SYNC_STATUS_HEADER_]);   // Kopf nachziehen (idempotent)
+  // Spalte B als echtes Datum (Sheet-Zeitzone), damit TEXT()/VLOOKUP in den Ankern funktionieren.
+  var row = [mailbox, new Date(), r.weg || '', ((r.sent || {}).checked || 0), ((r.sent || {}).matched || 0),
              ((r.inbox || {}).checked || 0), ((r.inbox || {}).matched || 0), (r.errors || []).join(' | ')];
   var n = sh.getLastRow();
   if (n >= 2) {

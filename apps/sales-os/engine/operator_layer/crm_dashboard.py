@@ -38,8 +38,8 @@ def dashboard_rows():
          '=COUNTIFS(INBOUND_EVENTS!J2:J; "NEEDS_REVIEW"; INBOUND_EVENTS!C2:C; "j-cherino@hsb-boden.de")', "im Tab POSTEINGANG loesen"],  # 10
         [],  # 11
         ["Versendet letzte 30 Tage", '=SPARKLINE(MAP(SEQUENCE(30; 1; TODAY()-29; 1); LAMBDA(t; COUNTIFS(ALL_LEADS!AP2:AP; ">="&t; ALL_LEADS!AP2:AP; "<"&(t+1)))); {"charttype"\\"column"})', "", "", "Tage links = älter"],  # 12
-        ["Letzter Abgleich Joel", '=IFERROR(TEXT(VLOOKUP("j-cherino@hsb-boden.de"; SYNC_STATUS!A:H; 2; FALSE); "dd.mm.yyyy hh:mm") & " UTC"; "noch nicht")', "", "", "alle 15 Minuten"],  # 13
-        ["Letzter Abgleich Jordi", '=IFERROR(TEXT(VLOOKUP("j-post@hsb-boden.de"; SYNC_STATUS!A:H; 2; FALSE); "dd.mm.yyyy hh:mm") & " UTC"; "noch nicht")', "", "", "alle 15 Minuten"],  # 14
+        ["Letzter Abgleich Joel", '=IFERROR(TEXT(VLOOKUP("j-cherino@hsb-boden.de"; SYNC_STATUS!A:H; 2; FALSE); "dd.mm.yyyy hh:mm"); "noch nicht")', "", "", "alle 15 Minuten"],  # 13
+        ["Letzter Abgleich Jordi", '=IFERROR(TEXT(VLOOKUP("j-post@hsb-boden.de"; SYNC_STATUS!A:H; 2; FALSE); "dd.mm.yyyy hh:mm"); "noch nicht")', "", "", "alle 15 Minuten"],  # 14
         [],  # 15
         ["ERZEUGTE BATCHES (Letzte 10)"],  # 16
         ["Batch ID", "Owner", "Status", "Anzahl Leads", "Erstellt am"],  # 17

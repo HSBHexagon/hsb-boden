@@ -38,6 +38,11 @@ from hsb_config import (
 )
 from sync_to_google_sheet import get_sheets_service, SPREADSHEET_ID
 
+SENT_STATUSES = {"sent", "gesendet"}
+REPLY_BOUNCED_STATUSES = {"bounced", "hard_bounce"}
+OPT_OUT_STATUSES = {"yes", "ja", "opt_out"}
+SUPPRESSED_STATUSES = {"yes", "ja", "true"}
+
 BATCHES_DIR = REPO_ROOT / "batches"
 BATCHES_DIR.mkdir(exist_ok=True)
 
@@ -93,13 +98,13 @@ def partition_leads(
                 continue
             send_status = str(l.get("Send_Status") or "").lower()
             batch_status = str(l.get("Batch_Status") or "").upper()
-            if send_status in ["sent", "gesendet"] or batch_status == "SENT":
+            if send_status in SENT_STATUSES or batch_status == "SENT":
                 continue
-            if str(l.get("Reply_Status") or "").lower() in ["bounced", "hard_bounce"]:
+            if str(l.get("Reply_Status") or "").lower() in REPLY_BOUNCED_STATUSES:
                 continue
-            if str(l.get("Opt_Out") or "").lower() in ["yes", "ja", "opt_out"]:
+            if str(l.get("Opt_Out") or "").lower() in OPT_OUT_STATUSES:
                 continue
-            if str(l.get("Suppressed") or "").lower() in ["yes", "ja", "true"]:
+            if str(l.get("Suppressed") or "").lower() in SUPPRESSED_STATUSES:
                 continue
             pool.append(l)
             if len(pool) == count:

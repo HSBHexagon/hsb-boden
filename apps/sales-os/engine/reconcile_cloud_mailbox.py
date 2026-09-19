@@ -562,7 +562,7 @@ def run_cloud_sync(target_owner: Optional[str] = None, limit: int = 100) -> None
     for o in owners_to_sync:
         if o == "JORDI":
             try:
-                from run_100_batch import get_jordi_token
+                from hsb_config import get_jordi_token
                 owner_token = get_jordi_token()
                 print("[JORDI] Verwende frisches MSAL OAuth Token für j-post@hsb-boden.de.")
             except Exception as e:

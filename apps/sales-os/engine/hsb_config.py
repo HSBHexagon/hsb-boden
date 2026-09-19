@@ -5,7 +5,11 @@ Keine Klartext-Secrets im Quelltext.
 """
 from __future__ import annotations
 
+import json
 import os
+import time
+import urllib.parse
+import urllib.request
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
@@ -57,3 +61,29 @@ def get_fc_refresh_token() -> str:
 FC_CLIENT_ID = "04b07795-8ddb-461a-bbee-02f9e1bf7b46"
 FC_TENANT_ID = "8adbbf2e-fd2c-4857-8540-bbcdb3a20f30"
 FC_SCOPE = "https://apihub.azure.com/.default offline_access"
+
+def get_jordi_token() -> str:
+    """Ruft ein frisches OAuth2-Token fuer Jordi ab mit automatischer Wiederholung bei Netzwerkfehlern."""
+    refresh_token = get_fc_refresh_token()
+
+    token_url = f"https://login.microsoftonline.com/{FC_TENANT_ID}/oauth2/v2.0/token"
+    data = urllib.parse.urlencode({
+        "grant_type": "refresh_token",
+        "client_id": FC_CLIENT_ID,
+        "refresh_token": refresh_token,
+        "scope": FC_SCOPE
+    }).encode("utf-8")
+
+    last_err = None
+    for attempt in range(1, 4):
+        try:
+            req = urllib.request.Request(token_url, data=data, method="POST")
+            with urllib.request.urlopen(req, timeout=30) as resp:
+                tokens = json.loads(resp.read().decode("utf-8"))
+                return tokens["access_token"]
+        except Exception as ex:
+            last_err = ex
+            if attempt < 3:
+                time.sleep(1.5 * attempt)
+                continue
+            raise last_err

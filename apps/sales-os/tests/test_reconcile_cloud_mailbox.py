@@ -93,3 +93,47 @@ def test_inbound_event_row_has_message_id_in_column_f():
     assert row[5] == "<1@b>" and row[11] == "" and len(row) == 12
     assert row[:5] == ["X", "2026-09-17T00:00:00Z", "j-cherino@hsb-boden.de", "a@b.de", "AW"]
     assert row[6:11] == ["HSB-1", "REPLY", "no", "PROCESSED", "n"]
+
+from unittest.mock import patch
+import subprocess
+
+def test_get_az_apihub_token_success():
+    import reconcile_cloud_mailbox as m
+    mock_token = "mock_bearer_token_12345\n"
+    with patch("subprocess.check_output", return_value=mock_token) as mock_cmd:
+        token = m.get_az_apihub_token()
+        assert token == "mock_bearer_token_12345"
+        mock_cmd.assert_called_once_with(
+            [
+                "az",
+                "account",
+                "get-access-token",
+                "--resource",
+                m.APIHUB_RESOURCE,
+                "--query",
+                "accessToken",
+                "-o",
+                "tsv",
+            ],
+            text=True,
+            timeout=15,
+        )
+
+def test_get_az_apihub_token_failure():
+    import reconcile_cloud_mailbox as m
+    with patch("subprocess.check_output", side_effect=subprocess.CalledProcessError(1, "az")):
+        with pytest.raises(RuntimeError) as exc_info:
+            m.get_az_apihub_token()
+        assert "Fehler beim Abrufen des APIHub-Tokens" in str(exc_info.value)
+
+def test_get_current_az_account_success():
+    import reconcile_cloud_mailbox as m
+    with patch("subprocess.check_output", return_value="  J-POST@HSB-BODEN.DE\n"):
+        account = m.get_current_az_account()
+        assert account == "j-post@hsb-boden.de"
+
+def test_get_current_az_account_failure():
+    import reconcile_cloud_mailbox as m
+    with patch("subprocess.check_output", side_effect=Exception("az command failed")):
+        account = m.get_current_az_account()
+        assert account == ""

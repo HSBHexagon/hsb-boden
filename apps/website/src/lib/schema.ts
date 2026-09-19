@@ -1,5 +1,24 @@
 import { site } from "../data/site";
 import { absoluteUrl } from "./seo";
+import { organizationCredential, type NormId } from "../data/standards";
+
+// Einziges Credential: Fachbetrieb nach § 62 WHG / AwSV (Owner-Bestätigung,
+// PROJECT_TRUTH.md §3a). Ausführungsnormen sind Wissen, keine Zertifikate.
+function buildCredentialJsonLd() {
+  return [
+    {
+      "@type": "EducationalOccupationalCredential",
+      credentialCategory: organizationCredential.credentialCategory,
+      name: organizationCredential.name,
+    },
+  ];
+}
+
+const NORM_KNOWLEDGE = [
+  "AGI S 40 Säureschutzbau (keramische Beläge)",
+  "DIN EN 14411 Keramische Fliesen und Platten",
+  "§ 62 WHG / AwSV Anlagen mit wassergefährdenden Stoffen",
+];
 
 export function buildOrganizationJsonLd() {
   return {
@@ -43,7 +62,9 @@ export function buildOrganizationJsonLd() {
       "WHG-Beschichtung",
       "HACCP-Böden",
       "Rüttelkeramik",
+      ...NORM_KNOWLEDGE,
     ],
+    hasCredential: buildCredentialJsonLd(),
   };
 }
 
@@ -126,7 +147,16 @@ export function buildServiceJsonLd(service: {
   name: string;
   description: string;
   path: string;
+  standards?: NormId[];
 }) {
+  const additionalProperty = service.standards?.length
+    ? service.standards.map((standard) => ({
+        "@type": "PropertyValue",
+        name: "Ausführungsgrundlage",
+        value: standard,
+      }))
+    : undefined;
+
   return {
     "@context": "https://schema.org",
     "@type": "Service",
@@ -135,10 +165,12 @@ export function buildServiceJsonLd(service: {
     url: absoluteUrl(service.path),
     serviceType: service.name,
     areaServed: ["Deutschland", "Österreich", "Schweiz", "Europa"],
+    ...(additionalProperty ? { additionalProperty } : {}),
     provider: {
       "@type": "Organization",
       name: "HSB Hexagon Säurebau GmbH",
       url: site.domain,
+      hasCredential: buildCredentialJsonLd(),
       address: {
         "@type": "PostalAddress",
         streetAddress: "Benzstraße 6",

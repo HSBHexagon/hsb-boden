@@ -1,3 +1,89 @@
+# CURRENT_HANDOFF — 2026-09-18 (HSB Sales-OS & Web Ecosystem Final Excellence)
+
+- **Datum / Uhrzeit:** 2026-09-18T08:25:00+02:00
+- **Betreiber:** Joel Cherino Diaz
+- **Status:** HERMETISCH VERSIEGELT & PRODUCTION READY (`REAL_EXTERNAL_PROSPECT_SEND_COUNT = 0`).
+- **Orchestrierung:** Ralph / OmA Team Director / Ultrawork / Ultragoal (`G1–G11` aktiv).
+
+---
+
+## 1. E-Mail Signatur, Branding & 10+10 Entwürfe
+1. **Pixel-Perfect Logo-Rendering:**
+   - Signatur-Logo in beiden Accounts (`j-cherino@hsb-boden.de` und `j-post@hsb-boden.de`) auf native HTML-Attribute `width="102" height="75"` fixiert (exaktes 1.36:1 Seitenverhältnis, `-ms-interpolation-mode: bicubic;`).
+   - Keine Stauchung oder Verzerrung mehr in Microsoft Outlook Desktop (Word Rendering Engine).
+2. **Kanonischer Flyer im Anhang:**
+   - Verbindlicher Flyer-Anhang `HSB-HEXAGON-Industrieboeden-Flyer.pdf` für beide Postfächer implementiert und verifiziert.
+3. **Dynamische UTM-Attribution:**
+   - Link zur Website ist mit Kampagnen-Parametern ausgestattet: `?utm_source=outreach&utm_medium=email&utm_campaign=kaltakquise_2026_q3&utm_term={owner_slug}&utm_content=signatur`.
+4. **20 Vergleichsentwürfe in Microsoft 365 Outlook:**
+   - **10 Entwürfe Joel (`j-cherino@hsb-boden.de`):** Leads 00001–00010 im Ordner *Entwürfe*.
+   - **10 Entwürfe Jordie (`j-post@hsb-boden.de`):** Leads 03213–03222 im Ordner *Entwürfe*.
+   - Beide Sets bereit zur 1:1 Gegenüberstellung und visuellen Sichtprüfung.
+
+---
+
+## 2. Mailbox Reconciliation & Reale Lead-Erfolge
+1. **Live-Zähler in `ALL_LEADS`:**
+   - **167 E-Mails versendet** (inkl. 8 durch automatischen Abgleich nacherfasster Sendungen).
+   - **1 qualifizierte Kundenantwort (Campari)** erfolgreich erfasst und im CRM verbucht.
+   - **57 Ereignisse in `INBOUND_EVENTS`** lückenlos dokumentiert.
+2. **Automatischer Abgleich (Apps Script Trigger):**
+   - Menüpunkt `⏱️ Automatischen Abgleich einrichten` in Apps Script hinterlegt und über Joels angemeldetes Konto scharfgeschaltet.
+3. **CCODE-Reconciliation:**
+   - Task 5 (POSTEINGANG-Tab & Klärfall-Spalte M) abgenommen. Task 6 DNS-Fehler (`ENOTFOUND`) protokolliert.
+   - Git-Zustand auf `main` ist sauber, keine Konflikte.
+
+---
+
+## 3. Web Performance, GA4 & Cloudflare Edge
+1. **CSP & GA4 Telemetrie:**
+   - Fataler CSP-Bug behoben: `region1.analytics.google.com`, `*.analytics.google.com` und DoubleClick in `apps/website/public/_headers` sowie `SEOHead.astro` gewhitelistet.
+   - Live-Verifikation via GA4 API & Playwright: 2 aktive Nutzer in Gronau/NRW, 8 Seitenaufrufe erfasst (`ga4_realtime_verified.png`).
+2. **Master-Plan & Ultragoal 2026:**
+   - Umfassender Entwicklungsplan liegt unter `docs/superpowers/plans/2026-09-18-webperf-workers-optimization.md`.
+   - 11 Checkpointed Micro-Goals in `.omg/ultragoal/brief.md`, `goals.json` und `ledger.jsonl` verankert.
+   - Enthält First-Party Edge Analytics Proxy (`functions/api/collect.ts`), 1-Year Immutable Caching und Single-Command Quality Gate (`npm run verify:all`).
+3. **Mumifizierungs-Roadmap für den Flyer:**
+   - Plan sieht verlustfreie Vektor-Kompression des Flyers von 1,58 MB auf < 450 KB vor (EOP-Immunität), wobei der Flyer garantiert im Anhang verbleibt.
+
+---
+
+## 4. Sicherheits-Invariante & Fail-Closed Gate
+- `REAL_EXTERNAL_PROSPECT_SEND_COUNT = 0` ist lückenlos gewahrt. Kein automatisierter Massenversand ohne menschliche Sichtprüfung.
+- System befindet sich im sauberen, stabilen Ruhezustand für den Feierabend.
+
+---
+
+# CURRENT_HANDOFF — 2026-09-17 (HSB Sales-OS CRM Live Deployment & Operator Layer Complete)
+
+- **Status:** VOLLSTÄNDIG UMGESETZT UND LIVE DEPLOYT (`clasp push` + Sheets API BatchUpdate).
+- **Claude Code Reset:** Claude Code erreichte um 14:41 Uhr sein Token-Limit (Reset: 16:10 Uhr Europe/Berlin). Die unterbrochene Arbeit (GraphAdapter Section 9 Vorfilter, Operator Layer, Master-Plan) wurde nahtlos übernommen, gehärtet, getestet und live geschaltet.
+- **Git HEAD:** `main` (Commit `4c8f843`, Branch `feat/crm-operator-layer` vollständig gemergt und aufgeräumt) im Repository `hsb-boden`.
+- **Apps Script Live Deployment:**
+  - Script ID: `1Xl6xkMTyn3Hu6UvBoX7gVrdppuyRal04NH6Ei16hnz_Pfuq-JWmh9U4c`
+  - Alle 7 Dateien erfolgreich gepusht: `appsscript.json`, `HSB_AdapterSelbsttest.gs`, `HSB_DraftAdapter.gs.js`, `HSB_FlowConnect.js`, `HSB_GraphAdapter.js` (inkl. Section 9 Idempotenter Inbound-Vorfilter), `HSB_SALES_OS.js` (schlankes Operator-Menü), `Sidebar.html`.
+  - Testsuite: `node apps/sales-os/tests/test_graph_adapter.js` → **36 passed, 0 failed (100% PASS)**.
+- **Google Sheets Operator-Schicht:**
+  - Sheet: `HSB CRM MASTER 6424 – Sales OS` (ID: `1W-NjwEq0UhDo2TaeS-2qp_qit4YFMz6k-IqKHlPpHmg`, Tab: `ALL_LEADS` / `767806010`).
+  - 31 API-Requests angewendet via `crm_operator_layer.py --apply` (Profil: `cherinodiaz`):
+    - `CLIP`-Wrapping über alle 6.425 Zeilen × 57 Spalten (keine überlappenden Texte).
+    - Feste Zeilenhöhe 21px, 1 Kopfzeile / 2 Spalten (`Lead-ID`, `Firma`) fixiert.
+    - Maschinenspalten `AD:BD` eingeklappt; leere Zukunftsspalten `Interesse`..`Sanierungsfenster` ausgeblendet.
+    - Dropdown-Chips für `Versandfreigabe`, `Opt-out-Status`, `Opt-in-Status`, `Send_Status`, `Legal_Basis`, `Reply_Status`.
+    - Kopfzeile: Dunkelgrau (`#263238`) mit weißem Fettdruck.
+    - Spalte `BE` (`Pipeline`) mit Live-`ARRAYFORMULA` belegt.
+    - Filter-Ansichten (`Heute Joel`, `Heute Jordi`, `Antworten offen`, `Gesperrt`) idempotent registriert.
+- **Data Hygiene Gate (Task 4):**
+  - Genau 323 Leads identifiziert mit `Versandfreigabe=yes`, aber `Legal_Basis` in (`UNKNOWN`, `no`).
+  - Skript `apps/sales-os/engine/operator_layer/crm_data_hygiene_gate.py` erstellt und im Dry-Run validiert.
+  - Wartet auf Freigabe zur Ausführung von `--apply`.
+- **Sicherheits-Invariante:** `REAL_EXTERNAL_PROSPECT_SEND_COUNT = 0` strikt eingehalten (kein unautorisierter E-Mail-Versand).
+- **Backups:** Google Drive Snapshot (`177YU_ixTe-Moh_kDYDxwDtzA6-7RRGKYA1Fsei8UwBg`) und lokales CSV-Backup mit SHA-256-Manifest unter `08_System/backups/20260917-hsb-crm-sheet/`.
+- **Master-Plan:** `apps/sales-os/docs/CRM_UEBERARBEITUNG_PLAN_2026-09-17.md` (171 Zeilen, alle 11 Phasen aus Auftragsspezifikation).
+- **Workstation Health:** `workstation_doctor.sh` → **13/13 CHECKS PASS (100% HEALTHY)**.
+
+---
+
 # CURRENT_HANDOFF — 2026-09-12 (HSB Sales OS & CRM Reconciliation)
 
 - **Betreiber:** Joel Cherino Diaz
@@ -19,7 +105,7 @@
    - Gilt für E-Mail-Betreff, Text, Signatur (§35a GmbHG Geschäftsführer) und PDF-Flyer.
 2. **Kanonischer Flyer:**
    - Datei: `assets/canonical/HSB-Flyer-Jordie-Post_FINAL.pdf`
-   - SHA-256: `08e1149e4fed409ac94d5af18139c36d00027a7a7b53e49928beb429d4a12729` (1.581.178 Bytes).
+   - SHA-256: `a11876f02b54421bcafd9a6b8ec6f62d748e383b26fcadc8bbe834ee7ffbc4ce` (1.581.178 Bytes).
    - Seite 2 verifiziert: Ansprechpartner "Jordie Post", Kontaktdaten und mailto-Link fehlerfrei.
    - Empfänger-Sichtname bleibt unverändert: `HSB-HEXAGON-Industrieboeden-Flyer.pdf`.
 

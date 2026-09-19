@@ -629,6 +629,27 @@ function getSetupState() {
  * 3. Kein Raten: Nicht zuordenbare Events erhalten Status 'NEEDS_REVIEW' und
  *    werden niemals auf Verdacht einem Lead zugeordnet.
  */
+// Freemail-Anbieter tragen keine Firmenzuordnung: eine Adresse dort sagt
+// nichts ueber das Unternehmen des Leads aus.
+var FREEMAIL_DOMAINS_ = ['gmail.com', 'googlemail.com', 'outlook.com', 'outlook.de', 'hotmail.com', 'hotmail.de',
+  'live.com', 'live.de', 'web.de', 'gmx.de', 'gmx.net', 'gmx.at', 'gmx.ch', 't-online.de', 'yahoo.com', 'yahoo.de',
+  'icloud.com', 'me.com', 'freenet.de', 'aol.com', 'posteo.de', 'mail.de', 'protonmail.com', 'proton.me'];
+
+function istFreemailDomain_(domain) {
+  return FREEMAIL_DOMAINS_.indexOf(String(domain || '').trim().toLowerCase()) >= 0;
+}
+
+// Kanonisches Layout von INBOUND_EVENTS (docs/appsheet/inbound_events_schema_spec.json).
+// Alle Schreiber (Apps Script, engine/reconcile_cloud_mailbox.py) halten diese Reihenfolge ein.
+var INBOUND_EVENT_HEADER_ = ['Event_ID', 'Received_UTC', 'Mailbox', 'From', 'Subject',
+  'Internet_Message_ID', 'Lead_ID', 'Classification', 'Stop_Followup', 'Processed', 'Notes', 'Raw_Link'];
+
+function inboundEventRow_(p) {
+  var stop = (p.type === 'OPT_OUT' || p.type === 'HARD_BOUNCE' || p.type === 'CONTACT_CHURN' || p.type === 'NEGATIVE_REPLY') ? 'yes' : 'no';
+  return [p.eventId, p.ts, p.mailbox || '', p.from || '', p.subject || '', p.messageId || '',
+          p.leadId || '', p.type, stop, p.status, p.notes || '', p.inReplyTo ? ('In-Reply-To: ' + p.inReplyTo) : ''];
+}
+
 function processInboundEvent(event) {
   if (!event || typeof event !== 'object') {
     throw new Error('Ungueltiges Event-Objekt');
@@ -651,14 +672,13 @@ function processInboundEvent(event) {
   try {
     const eventsSh = sheet_(CFG.SHEET_EVENTS);
     if (eventsSh.getLastRow() === 0) {
-      eventsSh.appendRow(['Event_ID', 'Timestamp', 'Type', 'Lead_ID', 'Owner',
-                          'Email', 'Message_ID', 'In_Reply_To', 'Status', 'Details']);
-      eventsSh.getRange(1, 1, 1, 10).setFontWeight('bold').setBackground('#e8eaed');
+      eventsSh.appendRow(INBOUND_EVENT_HEADER_);
+      eventsSh.getRange(1, 1, 1, 12).setFontWeight('bold').setBackground('#e8eaed');
       eventsSh.setFrozenRows(1);
     } else if (eventsSh.getLastRow() >= 2) {
       // Deduplizierungspruefung
       //
-      // Spalte 9 (Status) zaehlt bewusst mit: eine fruehere Zeile mit
+      // Spalte J (Processed) zaehlt bewusst mit: eine fruehere Zeile mit
       // NEEDS_REVIEW hat NIE einen Lead-Zustand veraendert (Abschnitt 3 oben,
       // "Kein Raten"). Sie ist deshalb kein abgeschlossenes Ereignis, sondern
       // ein offener Klaerfall - wird dieselbe Event-/Message-ID spaeter
@@ -668,19 +688,19 @@ function processInboundEvent(event) {
       // dauerhaft als "DUPLICATE_IGNORED" verschluckt, obwohl er inzwischen
       // zuordenbar waere - das widerspraeche der Exactly-once-Garantie fuer
       // SENT ebenso wie einer spaeteren Korrektur bei REPLY/BOUNCE.
-      const existingEvents = eventsSh.getRange(2, 1, eventsSh.getLastRow() - 1, 9).getValues();
+      const existingEvents = eventsSh.getRange(2, 1, eventsSh.getLastRow() - 1, 10).getValues();
       for (let ei = 0; ei < existingEvents.length; ei++) {
         const rowEvtId = String(existingEvents[ei][0]);
-        const rowMsgId = String(existingEvents[ei][6]);
-        const rowStatus = String(existingEvents[ei][8] || '');
-        const isTerminal = rowStatus !== 'NEEDS_REVIEW';
+        const rowMsgId = String(existingEvents[ei][5]);
+        const rowStatus = String(existingEvents[ei][9] || '');
+        const isTerminal = rowStatus !== 'NEEDS_REVIEW' && rowStatus !== 'DUPLICATE';
         if (isTerminal && (rowEvtId === eventId || (messageId && rowMsgId === messageId))) {
           return {
             ok: true,
             duplicate: true,
             event_id: rowEvtId,
             status: 'DUPLICATE_IGNORED',
-            lead_id: existingEvents[ei][3] || ''
+            lead_id: existingEvents[ei][6] || ''
           };
         }
       }
@@ -689,6 +709,7 @@ function processInboundEvent(event) {
     // Lead-Zuordnung
     const read = readLeadsCached_();
     let matchedLead = null;
+    let domainOptOutLeads = [];   // nur bei OPT_OUT ueber die Firmendomain gefuellt
 
     if (explicitLeadId) {
       matchedLead = read.leads.filter(function (l) {
@@ -738,6 +759,23 @@ function processInboundEvent(event) {
         }
       }
 
+      // Abmeldung aus einer Firmendomain: Der Widerspruch gilt dem Unternehmen
+      // (§ 7 UWG). Kommt "Abmelden" von einer anderen Adresse derselben
+      // Firmendomain (Lead: info@firma.de, Antwort: vorname.name@firma.de),
+      // wird JEDER Lead dieser Domain gesperrt. Eine Abmeldung darf nie als
+      // Klaerfall liegen bleiben, waehrend weiter gesendet wird - hier ist
+      // Sperren die sichere Richtung, nicht Abwarten. Freemail-Domains
+      // tragen keine Firmenzuordnung und bleiben ausgenommen (NEEDS_REVIEW).
+      if (!matchedLead && eventType === 'OPT_OUT' && email) {
+        const optOutDomain = email.split('@')[1] || '';
+        if (optOutDomain && !istFreemailDomain_(optOutDomain)) {
+          domainOptOutLeads = read.leads.filter(function (l) {
+            return String(l.Email || '').trim().toLowerCase().split('@')[1] === optOutDomain;
+          });
+          if (domainOptOutLeads.length) matchedLead = domainOptOutLeads[0];
+        }
+      }
+
       // Reverse Lookup wenn failed_recipient uebergeben wurde (NDR / Mailer-Daemon)
       if (!matchedLead && event.failed_recipient) {
         const failEmail = String(event.failed_recipient).trim().toLowerCase();
@@ -751,11 +789,11 @@ function processInboundEvent(event) {
     const ts = nowIso_();
     if (!matchedLead) {
       // UNMATCHED: Niemals raten, in Review-Warteschlange legen
-      eventsSh.appendRow([
-        eventId, ts, eventType, '', event.owner || '',
-        email, messageId, inReplyTo, 'NEEDS_REVIEW',
-        event.subject || event.details || 'Nicht eindeutig zuordenbar'
-      ]);
+      eventsSh.appendRow(inboundEventRow_({
+        eventId: eventId, ts: ts, mailbox: event.mailbox, from: email, subject: event.subject,
+        messageId: messageId, leadId: '', type: eventType, status: 'NEEDS_REVIEW',
+        notes: event.details || 'Nicht eindeutig zuordenbar', inReplyTo: inReplyTo
+      }));
       logActivity_('', 'INBOUND_UNMATCHED',
         eventType + ' von ' + (email || 'unbekannt') + ' (NEEDS_REVIEW)');
       return {
@@ -777,7 +815,13 @@ function processInboundEvent(event) {
     } else if (eventType === 'SOFT_BOUNCE') {
       setLeadStatus(leadId, 'SOFT_BOUNCE', 3, 'Soft Bounce: Wiedervorlage in 3 Tagen');
     } else if (eventType === 'OPT_OUT') {
-      setLeadStatus(leadId, 'OPT_OUT', 0, 'Opt-out: Abmeldung vermerkt');
+      if (domainOptOutLeads.length) {
+        domainOptOutLeads.forEach(function (l) {
+          setLeadStatus(l.Lead_ID, 'OPT_OUT', 0, 'Opt-out: Domain-Abmeldung von ' + email);
+        });
+      } else {
+        setLeadStatus(leadId, 'OPT_OUT', 0, 'Opt-out: Abmeldung vermerkt');
+      }
     } else if (eventType === 'AUTO_REPLY_OOO') {
       const followUp = parseInt(event.follow_up_days, 10) || 7;
       setLeadStatus(leadId, 'AUTO_REPLY_OOO', followUp, 'Abwesenheitsnotiz (' + (event.details || 'Urlaub') + ')');
@@ -792,11 +836,11 @@ function processInboundEvent(event) {
       // keine zweite Statusaenderung oder Aktivitaet erzeugen - SENT ist ein
       // Einwegzustand.
       if (String(matchedLead.Send_Status || '').toLowerCase() === 'sent') {
-        eventsSh.appendRow([
-          eventId, ts, eventType, leadId, owner,
-          email, messageId, inReplyTo, 'ALREADY_SENT_IGNORED',
-          'Lead bereits als SENT vermerkt - keine erneute Statusaenderung/Aktivitaet'
-        ]);
+        eventsSh.appendRow(inboundEventRow_({
+          eventId: eventId, ts: ts, mailbox: event.mailbox, from: email, subject: event.subject,
+          messageId: messageId, leadId: leadId, type: eventType, status: 'ALREADY_SENT_IGNORED',
+          notes: 'Lead bereits als SENT vermerkt - keine erneute Statusaenderung/Aktivitaet', inReplyTo: inReplyTo
+        }));
         return {
           ok: true, matched: true, lead_id: leadId, owner: owner,
           event_type: eventType, status: 'ALREADY_SENT_IGNORED'
@@ -814,11 +858,14 @@ function processInboundEvent(event) {
       stampBatchSentAt_(matchedLead.Batch_ID);
     }
 
-    eventsSh.appendRow([
-      eventId, ts, eventType, leadId, owner,
-      email, messageId, inReplyTo, 'PROCESSED',
-      event.subject || event.details || 'Erfolgreich zugeordnet'
-    ]);
+    const eventNotiz = domainOptOutLeads.length
+      ? ('Domain-Abmeldung von ' + email + ': gesperrt ' + domainOptOutLeads.map(function (l) { return l.Lead_ID; }).join(', '))
+      : (event.subject || event.details || 'Erfolgreich zugeordnet');
+    eventsSh.appendRow(inboundEventRow_({
+      eventId: eventId, ts: ts, mailbox: event.mailbox, from: email, subject: event.subject,
+      messageId: messageId, leadId: leadId, type: eventType, status: 'PROCESSED',
+      notes: eventNotiz, inReplyTo: inReplyTo
+    }));
 
     logActivity_(matchedLead.Batch_ID || '', 'INBOUND_' + eventType,
       leadId + ' (' + email + ') verarbeitet');
@@ -1137,4 +1184,49 @@ function uiCreateDraftsForBatch(batchId, limit) {
   } catch (e) {
     return { ok: false, error: String(e.message || e) };
   }
+}
+
+/** Klaerfaelle aus INBOUND_EVENTS anwenden: Spalte M traegt eine Lead-ID oder "ignorieren". */
+function hsbKlaerfaelleAnwenden() {
+  const sh = sheet_(CFG.SHEET_EVENTS);
+  const n = sh.getLastRow();
+  const out = { ok: true, applied: 0, ignored: 0, errors: [] };
+  if (n < 2) return out;
+  if (sh.getMaxColumns() < 13) sh.insertColumnsAfter(sh.getMaxColumns(), 13 - sh.getMaxColumns());
+  const vals = sh.getRange(2, 1, n - 1, 13).getValues();
+  const knownLeadIds = readLeadsCached_().leads.map(function (l) { return String(l.Lead_ID); });
+  for (let i = 0; i < vals.length; i++) {
+    const r = vals[i];
+    const entscheidung = String(r[12] || '').trim();
+    if (String(r[9]) !== 'NEEDS_REVIEW' || !entscheidung) continue;
+    if (entscheidung.toLowerCase() === 'ignorieren') {
+      sh.getRange(i + 2, 10).setValue('IGNORED'); out.ignored++; continue;
+    }
+    if (knownLeadIds.indexOf(entscheidung) === -1) {
+      out.errors.push(String(r[0]) + ': Lead-ID ' + entscheidung + ' nicht gefunden');
+      continue;
+    }
+    try {
+      const res = processInboundEvent({
+        event_id: String(r[0]) + '-MANUAL', event_type: String(r[7]), lead_id: entscheidung,
+        email: String(r[3] || ''), message_id: String(r[5] || ''), subject: String(r[4] || ''),
+        mailbox: String(r[2] || ''), details: 'Manuell zugeordnet (Klaerfall)'
+      });
+      if (res && res.matched) {
+        sh.getRange(i + 2, 10).setValue('RESOLVED');
+        sh.getRange(i + 2, 7).setValue(entscheidung);
+        out.applied++;
+      } else out.errors.push(String(r[0]) + ': Lead-ID ' + entscheidung + ' nicht gefunden');
+    } catch (e) { out.errors.push(String(r[0]) + ': ' + String(e.message || e)); }
+  }
+  out.ok = out.errors.length === 0;
+  return out;
+}
+
+function uiKlaerfaelleAnwenden() {
+  const ui = SpreadsheetApp.getUi();
+  const r = hsbKlaerfaelleAnwenden();
+  ui.alert('Klaerfaelle angewendet', 'Zugeordnet: ' + r.applied + '\nIgnoriert: ' + r.ignored +
+           (r.errors.length ? ('\n\nFehler:\n' + r.errors.join('\n')) : ''), ui.ButtonSet.OK);
+  return r;
 }

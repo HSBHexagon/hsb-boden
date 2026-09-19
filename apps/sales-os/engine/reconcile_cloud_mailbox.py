@@ -228,6 +228,17 @@ def parse_rfc3834_autoreply(from_addr: str, subject: str, body: str) -> Tuple[bo
     return False, ""
 
 
+def build_inbound_event_row(*, event_id, msg_date, mailbox, sender, subject, message_id,
+                            lead_id, classification, stop, processed, notes):
+    """Kanonisches 12-Spalten-Layout von INBOUND_EVENTS (Spalte F = Internet_Message_ID).
+
+    Gleiche Reihenfolge wie INBOUND_EVENT_HEADER_ in apps_script/Actions.gs und
+    docs/appsheet/inbound_events_schema_spec.json. Raw_Link (Spalte L) bleibt leer.
+    """
+    return [event_id, msg_date, mailbox, sender, subject, message_id,
+            lead_id, classification, stop, processed, notes, ""]
+
+
 def reconcile_cloud_for_owner(
     owner_key: str,
     service: Any,
@@ -358,20 +369,19 @@ def reconcile_cloud_for_owner(
                     if event_id not in existing_event_ids:
                         existing_event_ids.add(event_id)
                         inbound_event_rows.append(
-                            [
-                                event_id,
-                                msg_date,
-                                mailbox_addr,
-                                sender,
-                                subj,
-                                "",
-                                lead["lead_id"],
-                                "HARD_BOUNCE",
-                                "yes",
-                                "PROCESSED",
-                                bounce_reason,
-                                msg.get("internet_message_id", ""),
-                            ]
+                            build_inbound_event_row(
+                                event_id=event_id,
+                                msg_date=msg_date,
+                                mailbox=mailbox_addr,
+                                sender=sender,
+                                subject=subj,
+                                message_id=msg.get("internet_message_id", ""),
+                                lead_id=lead["lead_id"],
+                                classification="HARD_BOUNCE",
+                                stop="yes",
+                                processed="PROCESSED",
+                                notes=bounce_reason,
+                            )
                         )
             continue
 
@@ -412,20 +422,19 @@ def reconcile_cloud_for_owner(
                 if event_id not in existing_event_ids:
                     existing_event_ids.add(event_id)
                     inbound_event_rows.append(
-                        [
-                            event_id,
-                            msg_date,
-                            mailbox_addr,
-                            sender,
-                            subj,
-                            "",
-                            matched_lead["lead_id"],
-                            auto_cls,
-                            "no",
-                            "PROCESSED",
-                            "Auto-Reply / Eingangsbestaetigung registriert",
-                            msg.get("internet_message_id", ""),
-                        ]
+                        build_inbound_event_row(
+                            event_id=event_id,
+                            msg_date=msg_date,
+                            mailbox=mailbox_addr,
+                            sender=sender,
+                            subject=subj,
+                            message_id=msg.get("internet_message_id", ""),
+                            lead_id=matched_lead["lead_id"],
+                            classification=auto_cls,
+                            stop="no",
+                            processed="PROCESSED",
+                            notes="Auto-Reply / Eingangsbestaetigung registriert",
+                        )
                     )
             continue
 
@@ -451,20 +460,19 @@ def reconcile_cloud_for_owner(
             if event_id not in existing_event_ids:
                 existing_event_ids.add(event_id)
                 inbound_event_rows.append(
-                    [
-                        event_id,
-                        msg_date,
-                        mailbox_addr,
-                        sender,
-                        subj,
-                        "",
-                        matched_lead["lead_id"],
-                        "REPLY",
-                        "no",
-                        "PROCESSED",
-                        f"Echte Prospect-Antwort erfasst ({subj[:40]})",
-                        msg.get("internet_message_id", ""),
-                    ]
+                    build_inbound_event_row(
+                        event_id=event_id,
+                        msg_date=msg_date,
+                        mailbox=mailbox_addr,
+                        sender=sender,
+                        subject=subj,
+                        message_id=msg.get("internet_message_id", ""),
+                        lead_id=matched_lead["lead_id"],
+                        classification="REPLY",
+                        stop="no",
+                        processed="PROCESSED",
+                        notes=f"Echte Prospect-Antwort erfasst ({subj[:40]})",
+                    )
                 )
 
     if lead_inbound_updates:

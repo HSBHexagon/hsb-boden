@@ -82,3 +82,14 @@ def test_cloud_connections_structure():
 
     assert CONNECTIONS["JORDI"]["account"] == "j-post@hsb-boden.de"
     assert CONNECTIONS["JORDI"]["connection_id"] == "3d152ea7ddb24e9286fe006cb9f5069b"
+
+
+def test_inbound_event_row_has_message_id_in_column_f():
+    import reconcile_cloud_mailbox as m
+    row = m.build_inbound_event_row(
+        event_id="X", msg_date="2026-09-17T00:00:00Z", mailbox="j-cherino@hsb-boden.de",
+        sender="a@b.de", subject="AW", message_id="<1@b>", lead_id="HSB-1",
+        classification="REPLY", stop="no", processed="PROCESSED", notes="n")
+    assert row[5] == "<1@b>" and row[11] == "" and len(row) == 12
+    assert row[:5] == ["X", "2026-09-17T00:00:00Z", "j-cherino@hsb-boden.de", "a@b.de", "AW"]
+    assert row[6:11] == ["HSB-1", "REPLY", "no", "PROCESSED", "n"]

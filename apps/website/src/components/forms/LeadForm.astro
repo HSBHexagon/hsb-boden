@@ -123,6 +123,12 @@ const deliveryConfigured = site.hasLeadEndpoint;
 <script>
   import { trackEvent, trackEventAndWait, TrackingEvent } from "../../lib/tracking";
   import { buildLeadAttributionFields, captureAttribution, loadAttribution } from "../../lib/attribution";
+  import {
+    STRESS_CHECK_EVENT,
+    clearStressCheckHandoff,
+    loadStressCheckHandoff,
+    type LeadPrefill,
+  } from "../../lib/stressCheckHandoff";
 
   const form = document.getElementById("lead-form") as HTMLFormElement | null;
   const submitBtn = document.getElementById("form-submit") as HTMLButtonElement | null;
@@ -171,7 +177,7 @@ const deliveryConfigured = site.hasLeadEndpoint;
       attributionFields = {};
     }
 
-    const payload: Record<string, any> = {
+    const payload: Record<string, unknown> = {
       ...attributionFields,
       source: "website",
       legalBasis: "inquiry",
@@ -210,6 +216,44 @@ const deliveryConfigured = site.hasLeadEndpoint;
       errorMsg.textContent = genericErrorText;
       errorMsg.classList.remove("hidden");
     }
+  }
+
+  // Übergabe aus dem Beanspruchungs-Check: Belastungen, Projektart, Betrieb
+  // und technische Nachricht vorbelegen. Personenfelder bleiben leer.
+  let lastPrefillMessage = "";
+  function applyPrefill(prefill: LeadPrefill) {
+    if (!form) return;
+    form.querySelectorAll<HTMLInputElement>('input[name="loads"]').forEach((box) => {
+      box.checked = prefill.loads.includes(box.value);
+    });
+    const projectType = form.elements.namedItem("projectType");
+    if (projectType instanceof HTMLSelectElement) projectType.value = prefill.projectType;
+    const liveOperation = form.elements.namedItem("liveOperation");
+    if (liveOperation instanceof HTMLSelectElement) liveOperation.value = prefill.liveOperation;
+    const message = form.elements.namedItem("message");
+    if (
+      message instanceof HTMLTextAreaElement &&
+      (message.value.trim() === "" || message.value === lastPrefillMessage)
+    ) {
+      message.value = prefill.message;
+    }
+    lastPrefillMessage = prefill.message;
+    form.dataset.stressCheckSystem = prefill.recommendedSystem;
+  }
+
+  window.addEventListener(STRESS_CHECK_EVENT, (event) => {
+    const detail = (event as CustomEvent<LeadPrefill>).detail;
+    if (detail) applyPrefill(detail);
+  });
+
+  try {
+    const stored = loadStressCheckHandoff(window.sessionStorage);
+    if (stored) {
+      applyPrefill(stored);
+      clearStressCheckHandoff(window.sessionStorage);
+    }
+  } catch {
+    // sessionStorage blockiert: Formular bleibt unbefüllt nutzbar.
   }
 
   form?.addEventListener("focusin", onFocus, { once: true });

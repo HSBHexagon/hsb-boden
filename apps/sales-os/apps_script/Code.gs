@@ -24,6 +24,7 @@ function onOpen() {
     .addSeparator()
     .addItem('📤 Gesendete Mails abgleichen', 'uiReconcileSent')
     .addItem('📥 Antworten abgleichen', 'uiReconcileReplies')
+    .addItem('✅ Klärfälle anwenden (Spalte M in INBOUND_EVENTS)', 'uiKlaerfaelleAnwenden')
     .addSeparator()
     .addItem('Spalten prüfen / ergänzen', 'uiEnsureColumns')
     .addItem('Wiedervorlage prüfen', 'uiGetDue')

@@ -1,0 +1,240 @@
+---
+import { executionStandards } from "../../data/standards";
+import {
+  STRESS_MECHANICAL,
+  STRESS_MEDIA,
+  STRESS_SYSTEMS,
+  STRESS_TEMPERATURES,
+  STRESS_TIME_WINDOWS,
+} from "../../data/stressMatrix";
+
+interface Props {
+  auditAnchor?: string;
+}
+
+const { auditAnchor = "#kontaktformular" } = Astro.props;
+
+const steps = [
+  { key: "medium", number: 1, title: "Chemisches Medium", question: "Welches Medium wirkt dauerhaft auf die Fläche ein?", options: STRESS_MEDIA },
+  { key: "tempRange", number: 2, title: "Thermische Belastung", question: "Welche Temperaturbelastung tritt im Betrieb auf?", options: STRESS_TEMPERATURES },
+  { key: "mechanicalLoad", number: 3, title: "Mechanische Last", question: "Welche Flurförderzeuge befahren die Fläche?", options: STRESS_MECHANICAL },
+  { key: "timeWindow", number: 4, title: "Sanierungsfenster", question: "Welches Zeitfenster steht für die Ausführung zur Verfügung?", options: STRESS_TIME_WINDOWS },
+] as const;
+
+const systems = Object.values(STRESS_SYSTEMS);
+---
+
+<section class="section bg-hsb-mist" id="beanspruchungs-check" data-stress-check data-audit-anchor={auditAnchor}>
+  <div class="container max-w-5xl">
+    <p class="eyebrow">Technischer Beanspruchungs-Check</p>
+    <h2 class="h2 mt-3">Vier Parameter, eine deterministische Systemempfehlung</h2>
+    <p class="lead mt-4 max-w-3xl">
+      Für Werks- und Betriebsleiter: Medium, Temperatur, mechanische Last und Stillstandsfenster bestimmen das Bodensystem. Die Auswertung folgt festen ingenieurtechnischen Regeln und ersetzt kein Vor-Ort-Audit.
+    </p>
+
+    <form class="mt-10 grid gap-6" data-stress-form novalidate>
+      {steps.map((step) => (
+        <fieldset class="surface grid gap-4 p-6" data-step={step.number}>
+          <legend class="flex items-center gap-3 text-sm font-black uppercase tracking-[0.14em] text-hsb-red">
+            <span class="grid size-7 place-items-center rounded-full bg-hsb-black text-xs text-white" aria-hidden="true">{step.number}</span>
+            {step.title}
+          </legend>
+          <p class="text-base font-bold text-hsb-black">{step.question}</p>
+          <div class="grid gap-2 sm:grid-cols-2">
+            {step.options.map((option) => (
+              <label class="flex cursor-pointer items-start gap-3 rounded border border-hsb-line bg-white px-4 py-3 text-sm leading-6 transition-colors has-[:checked]:border-hsb-red has-[:checked]:bg-hsb-red/5">
+                <input type="radio" name={step.key} value={option.id} required class="mt-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-hsb-red" />
+                <span>
+                  <span class="block font-bold text-hsb-black">{option.label}</span>
+                  {"hint" in option && option.hint ? <span class="block text-xs text-hsb-steel">{option.hint}</span> : null}
+                </span>
+              </label>
+            ))}
+          </div>
+        </fieldset>
+      ))}
+
+      <p data-stress-error role="alert" aria-live="assertive" class="hidden rounded border border-hsb-red/40 bg-hsb-red/5 px-3 py-2 text-sm text-hsb-red">
+        Bitte beantworten Sie alle vier Parameter, damit die Systemempfehlung berechnet werden kann.
+      </p>
+
+      <div class="flex flex-wrap gap-3">
+        <button type="submit" class="button-primary">Systemempfehlung berechnen</button>
+        <button type="reset" class="button-secondary" data-stress-reset>Zurücksetzen</button>
+      </div>
+    </form>
+
+    <div class="mt-10 hidden" data-stress-result aria-live="polite">
+      {systems.map((system) => (
+        <article class="surface hidden gap-5 p-6 lg:p-8" data-system={system.id}>
+          <p class="eyebrow">Vorläufige Systemempfehlung</p>
+          <h3 class="h2 mt-2">{system.name}</h3>
+          <p class="mt-3 text-base leading-8 text-hsb-steel">{system.description}</p>
+          <div>
+            <p class="text-sm font-black uppercase tracking-[0.14em] text-hsb-black">Technische Begründung</p>
+            <ul class="mt-3 grid gap-2 text-sm leading-7 text-hsb-steel" data-reasons></ul>
+            <p class="mt-3 hidden rounded border border-hsb-line bg-hsb-mist px-4 py-3 text-sm leading-6 text-hsb-black" data-window-note></p>
+          </div>
+          {system.norms.length > 0 && (
+            <div class="grid gap-2">
+              <p class="text-sm font-black uppercase tracking-[0.14em] text-hsb-black">Ausführungsgrundlage</p>
+              {system.norms.map((normId) => {
+                const standard = executionStandards.find((item) => item.id === normId);
+                return standard ? (
+                  <details class="rounded border border-hsb-line bg-white px-4 py-3" data-norm={standard.id}>
+                    <summary class="cursor-pointer text-sm font-bold text-hsb-black">{standard.name}</summary>
+                    <p class="mt-2 text-sm leading-6 text-hsb-steel">{standard.scope}</p>
+                  </details>
+                ) : null;
+              })}
+            </div>
+          )}
+          <div class="flex flex-wrap gap-3">
+            <a class="button-primary" href={auditAnchor} data-audit-cta>Qualifiziertes Vor-Ort-Audit anfragen</a>
+            <a class="button-secondary" href={`/leistungen/${system.serviceSlug}/`}>Systemdetails ansehen</a>
+          </div>
+        </article>
+      ))}
+    </div>
+  </div>
+</section>
+
+<script>
+  import { trackB2BConversion, trackNormInteraction, trackStressCheck } from "../../lib/analytics";
+  import { NORM_IDS, type NormId } from "../../data/standards";
+  import { isStressCheckInput, resolveStressSystem, type StressCheckInput, type StressCheckResult } from "../../data/stressMatrix";
+  import { STRESS_CHECK_EVENT, buildLeadPrefill, saveStressCheckHandoff } from "../../lib/stressCheckHandoff";
+
+  const root = document.querySelector<HTMLElement>("[data-stress-check]");
+  const form = root?.querySelector<HTMLFormElement>("[data-stress-form]");
+  const error = root?.querySelector<HTMLElement>("[data-stress-error]");
+  const resultContainer = root?.querySelector<HTMLElement>("[data-stress-result]");
+
+  const STEP_KEYS = ["medium", "tempRange", "mechanicalLoad", "timeWindow"] as const;
+  type StepKey = (typeof STEP_KEYS)[number];
+
+  function readInput(): Partial<Record<StepKey, string>> {
+    if (!form) return {};
+    const data = new FormData(form);
+    const partial: Partial<Record<StepKey, string>> = {};
+    for (const key of STEP_KEYS) {
+      const value = data.get(key);
+      if (typeof value === "string" && value !== "") partial[key] = value;
+    }
+    return partial;
+  }
+
+  function isNormId(value: string): value is NormId {
+    return (NORM_IDS as readonly string[]).includes(value);
+  }
+
+  // Jeder abgeschlossene Schritt meldet seinen Stand (1–4), das Ergebnis Schritt 5.
+  form?.addEventListener("change", (event) => {
+    const target = event.target;
+    if (!(target instanceof HTMLInputElement) || target.type !== "radio") return;
+    const stepNumber = Number(target.closest<HTMLElement>("[data-step]")?.dataset.step ?? "0");
+    if (stepNumber < 1) return;
+    const partial = readInput();
+    trackStressCheck(stepNumber, {
+      medium: partial.medium,
+      tempRange: partial.tempRange,
+      mechanicalLoad: partial.mechanicalLoad,
+      timeWindow: partial.timeWindow,
+    });
+  });
+
+  // Aktuelles Ergebnis; die CTA-Listener werden genau einmal beim Init
+  // registriert und lesen hier — kein Listener-Stapel bei erneutem Submit.
+  let current: { input: StressCheckInput; result: StressCheckResult } | undefined;
+
+  function handleAuditRequest() {
+    if (!current) return;
+    const { input, result } = current;
+    const prefill = buildLeadPrefill(input, result);
+    trackB2BConversion("audit_request", {
+      placement: "stress_check",
+      medium: input.medium,
+      temp_range: input.tempRange,
+      mechanical_load: input.mechanicalLoad,
+      time_window: input.timeWindow,
+      recommended_system: result.system.id,
+    });
+    try {
+      saveStressCheckHandoff(window.sessionStorage, prefill);
+    } catch {
+      // Storage blockiert: DOM-Event reicht auf derselben Seite.
+    }
+    window.dispatchEvent(new CustomEvent(STRESS_CHECK_EVENT, { detail: prefill }));
+  }
+
+  resultContainer?.querySelectorAll<HTMLAnchorElement>("[data-audit-cta]").forEach((cta) => {
+    cta.addEventListener("click", handleAuditRequest);
+  });
+
+  function render(input: StressCheckInput, result: StressCheckResult) {
+    if (!resultContainer) return;
+    resultContainer.querySelectorAll<HTMLElement>("[data-system]").forEach((card) => {
+      const active = card.dataset.system === result.system.id;
+      card.classList.toggle("hidden", !active);
+      card.classList.toggle("grid", active);
+      if (!active) return;
+
+      const list = card.querySelector<HTMLElement>("[data-reasons]");
+      if (list) {
+        list.replaceChildren(
+          ...result.reasons.map((reason) => {
+            const item = document.createElement("li");
+            item.className = "flex items-start gap-3";
+            const marker = document.createElement("span");
+            marker.className = "mt-2.5 size-1.5 shrink-0 rounded-full bg-hsb-red";
+            marker.setAttribute("aria-hidden", "true");
+            const reasonLabel = document.createElement("span");
+            reasonLabel.textContent = reason;
+            item.appendChild(marker);
+            item.appendChild(reasonLabel);
+            return item;
+          }),
+        );
+      }
+
+      const note = card.querySelector<HTMLElement>("[data-window-note]");
+      if (note) {
+        note.textContent = result.windowNote ?? "";
+        note.classList.toggle("hidden", !result.windowNote);
+      }
+
+    });
+
+    current = { input, result };
+
+    resultContainer.classList.remove("hidden");
+    resultContainer.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
+  form?.addEventListener("submit", (event) => {
+    event.preventDefault();
+    const partial = readInput();
+    if (!isStressCheckInput(partial)) {
+      error?.classList.remove("hidden");
+      form.querySelector<HTMLInputElement>("input[type=radio]:not(:checked)")?.focus();
+      return;
+    }
+    error?.classList.add("hidden");
+    const result = resolveStressSystem(partial);
+    trackStressCheck(5, { ...partial, recommendedSystem: result.system.id });
+    render(partial, result);
+  });
+
+  form?.addEventListener("reset", () => {
+    error?.classList.add("hidden");
+    resultContainer?.classList.add("hidden");
+    current = undefined;
+  });
+
+  resultContainer?.querySelectorAll<HTMLDetailsElement>("[data-norm]").forEach((details) => {
+    details.addEventListener("toggle", () => {
+      const norm = details.dataset.norm ?? "";
+      if (details.open && isNormId(norm)) trackNormInteraction(norm, "expand");
+    });
+  });
+</script>

@@ -365,3 +365,70 @@ Fortlaufendes Log jeder KI-Session. Jeder Eintrag: Zeit · Modell · Phase · Au
 - **Deploy:** ja — Cloudflare Pages (PR #85, #87 Inhalte) sowie separat Google Apps Script Deployment Version 4 (Webhook-URL unverändert)
 - **Kein DNS-/NS-Switch, keine Massenmail, keine neue Apps-Script-Deployment-ID erzeugt**
 - **Nächster Schritt:** Auth-Cutover für das Legacy-Apps-Script-Deployment abschließen (docs/crm/ATTRIBUTION_CONNECTOR_PATCH.md bleibt bis dahin `mapping-live-on-legacy; auth-cutover-open`); PR #88 (CRM-Deep-Dive) reviewen/mergen; verbleibende Jules-PRs triagieren; Apex-DNS-Switch, Google-Business-Profil-Verifizierung und Compliance-Freigabe für Kaltakquise bleiben die drei zentralen Owner-Gates.
+
+---
+
+## 2026-09-17 09:55 CEST — Claude Code (Opus 5)
+- **Phase:** Website B2B-Upgrade (GA4-Events, LogoCloud, Beanspruchungs-Check, Schema/Meta)
+- **Aufgabe:** 5-Schritte-Auftrag des Owners (Freigabe für `apps/website/src/`): typensicheres GA4-B2B-DataLayer, dynamische LogoCloud mit Branchenfilter und Proof-Tags, interaktiver Beanspruchungs-Check mit Audit-Anbindung, Schema.org-/Meta-Upgrade, striktes Verifikations-Gate.
+- **Ergebnis:** Auf Branch `feat/b2b-tracking-stresscheck-schema` (Basis `c340d53`) in 8 Commits umgesetzt. Neu: `src/lib/analyticsConfig.ts`, `src/data/standards.ts`, `src/data/stressMatrix.ts`, `src/lib/stressCheckHandoff.ts`, `src/components/forms/StressCheck.astro`, `src/pages/beanspruchungs-check/index.astro`, 6 Testdateien. Geändert: `analytics.ts`, `tracking.ts`, `content.ts`, `schema.ts`, `LogoCloud.astro`, `LeadForm.astro`, `SEOHead.astro`, `site.ts`, `branchen/[slug].astro`, `leistungen/[slug].astro`, `leistungen/index.astro`, `kontakt/index.astro`, `homepageFaqs.ts`, `boden-reparatur-instandsetzung.ts`. Normen als `knowsAbout`/`additionalProperty`, einziges `hasCredential` = WHG-Fachbetrieb (PROJECT_TRUTH §3a). Kein zweiter Submit-Pfad; Übergabe an bestehendes LeadForm. `seo-content-reviewer`: 3 kritische Befunde → 2 behoben (`456afbe`), 1 Owner-Entscheidung (PU-Beton 120 °C laut Auftrag vs. 130 °C auf Leistungsseite), Kyritzer-Standort-Logo in LogoCloud ist Vorbestand von `main`.
+- **Verifikation (frisch):** `npx astro check` 0/0/0 (150 Dateien) · `npm run build` 57 Seiten · `npm run test:run` 261/261 (Baseline 223) · `npm run check:sitemap` OK 55 URLs · `npm run deploy:dry-run` OK · 11 Routen per `astro preview` HTTP 200 · `grep -ril kagetec dist` = 0.
+- **Geänderte Dateien:** siehe `git diff --stat main...HEAD` (27 Dateien inkl. Review-Fix); Plan `docs/superpowers/plans/2026-09-17-b2b-tracking-stresscheck-schema.md`; Report `~/KI-System/08_System/reports/validation/2026-09-17-hsb-b2b-tracking-stresscheck-schema.md`
+- **Website-Code-Diff:** +1368/−46 (vor Review-Fix)
+- **Push:** nein
+- **Deploy:** nein
+- **Bewusst nicht umgesetzt:** Krombacher in LogoCloud (kein Logo, keine Freigabe); „Kagetec-R-Äquivalent" im öffentlichen Text (Herstellervergleich ohne Beleg); Löschung der TCO-Argumentation in `articles.ts:495` (argumentiert gegen m²-Preis-Denken).
+- **Nächster Schritt:** Owner entscheidet 120/130 °C und Freigaben (Krombacher, Kyritzer); danach PR eröffnen (optional `/code-review ultra`), Merge, approval-gated Production-Deploy; GA4-Admin: `b2b_conversion` als Key Event prüfen.
+- **Nachtrag 10:00 CEST:** Advisor-Befund behoben (bbd27cd): CTA-Listener-Stapel in StressCheck (doppelte Conversions, veralteter Prefill) und Referenz-Tracking für Standort-Logos. Playwright-Klickpfad gegen dist belegt: 1 Conversion mit aktuellem System, Kyritzer ohne Tracking-Event. Gate erneut grün.
+- **Nachtrag 11:13 CEST:** Owner delegierte 120/130-°C-Entscheidung → 120 °C (ab 9 mm) site-weit (1a43c66): `pu-beton-industrieboden.ts` (3 Stellen), `standorte/niedersachsen`. Gate grün (check 0, Tests 261/261, Build 57, Sitemap OK). Branch abgeschlossen, wartet auf Push-/PR-Freigabe.
+
+---
+
+## 2026-09-17 13:00 CEST — Claude Code (Opus 5) — CRM Operator-Schicht + Auto-Abgleich
+- **Phase:** CRM (Google Sheet „Sales OS") bedienbar machen + automatische Statusfortschreibung
+- **Entscheidungen Owner:** Sheet bleibt System of Record (Airtable nicht SSoA, `STORAGE_ROLES.md` geändert, Backup `08_System/backups/20260917-storage-roles/`); kostenfrei; Abmeldung per Antwort „Abmelden"; beide Postfächer.
+- **Analyse (Sheets-API, alle 34 Tabs/6.424 Zeilen):** nur 5 Tabs sichtbar; JOEL/JORDI/READY_CANDIDATES sind QUERY-Sichten; Ursache des Screenshots = WRAP auf allen 56 Spalten; Operator-Spalten tot (Status/Nächste Aktion/Opt-in/Opt-out ×6.424 unverändert); Bounces in `Reply_Status` statt `Bounce_Status`; `Legal_Basis` gemischtes Vokabular; Sheet-Eigentümer Privatkonto `cherinodiaz@outlook.com`. Power Automate: nur Draft-Adapter (Joel Started, Jordi Stopped), kein Rückkanal-Flow, Google-Connections auf Privatkonto.
+- **Umgesetzt (Branch `feat/crm-operator-layer`, `8e70ec8`):** Backup (Drive-Kopie + 34 CSV + Manifest, 34/34 OK) → ALL_LEADS: CLIP, Gruppe AD:BD eingeklappt, S:W ausgeblendet, Freeze 1/2, Breiten, Dropdown-Chips, 4 Filteransichten, Spalte BE **Pipeline** mit Ampeln (Header A1:BD1 byte-identisch; Verteilung Neu 3.953 · Entwurf 2.125 · Freigegeben 186 · Versendet 140 · Bounce 20). Apps Script: `hsbAutoReconcile()` + 15-min-Trigger je Nutzer + Menü + Opt-out-Stichwörter, per `clasp push` live und per `clasp pull` gegengeprüft. Python-Engine-Tests 45/45. Spec + Plan + AGY-Auftrag (Fassung 3) + README_OPERATING.
+- **Fehlversuch abgefangen:** erster Apply mit Leseprofil → 403, nichts geschrieben; `moveDimension` vor Apply entfernt (hätte Buchstaben-Formeln gebrochen).
+- **Website-Code-Diff:** 0 (Website-Branch `feat/b2b-tracking-stresscheck-schema` unverändert, 13 Commits, wartet auf Push-Freigabe)
+- **Push:** nein · **Deploy:** Apps Script per clasp aktualisiert (bestehende Script-ID, kein neues Deployment); Website nein
+- **Offen (Owner):** (1) im Sheet je Person „Mit Outlook verbinden" + „⏱️ Automatischen Abgleich einrichten"; (2) Task 4: 20× Legal_Basis yes→OWNER_APPROVED, 20× Bounce_Status=hard, 323× Versandfreigabe=yes ohne Rechtsgrundlage → auf `no`?; (3) Eigentum Sheet + Google-Connections vom Privatkonto auf HSB-Konto; (4) Testfälle 1–3 nach Trigger-Einrichtung; (5) Push-Freigabe beider Branches.
+
+---
+
+## 2026-09-18 15:05 CEST — Claude Code (Opus 5) — CRM-Cockpit: Bereinigung, visuelle Schiene, Abmelde-Link
+- **Phase:** Plan `docs/superpowers/plans/2026-09-17-crm-cockpit-visual.md` per Subagent-Driven Development (8 Tasks, je Implementer + Reviewer, Ledger im Worktree `wt-crm-optout`)
+- **Umgesetzt (Branch `feat/crm-cockpit` → main `8dda81a`):** INBOUND_EVENTS 12-Spalten-Kontrakt in allen drei Schreibern + in-place Migration (`crm_events_migrate.py`, markiert Wiederholungen als DUPLICATE, löscht nichts); `SYNC_STATUS` je Postfach; Zeilenfarben in ALL_LEADS nach Pipeline (`crm_operator_layer.py` jetzt import-sicher); Tabs `HEUTE JOEL`/`HEUTE JORDI` (`crm_cockpit.py`); `POSTEINGANG` + Spalte M + Menü „✅ Klärfälle anwenden"; DASHBOARD-Neuaufbau (`crm_dashboard.py`); README-Tab + `README_OPERATING.md` (Graph/Admin-Abschnitt durch Connector-Weg ersetzt); Abmelde-Link `mailto:<Postfach>?subject=Abmelden` in allen vier Signaturen; `crm_backup.py` datiert je Lauf.
+- **Whole-Branch-Review (opus):** 3 Critical (Klärfall-Deadlock durch DUPLICATE-als-terminal, Spalte M fehlt im Live-Grid, QUERY-Blöcke laufen über) + I4–I8 → Fix-Runde `48f8394`/`ceff70a`/`8d422c8`; Re-Review: alle Findings addressed.
+- **Asset-Gate:** Agy-Commit `92890c3` (Flyer < 450 KB) hatte Config-Hashes geändert, Drive-Dateien nicht → `4751f20` setzt Hashes/PDFs auf Drive-Stand zurück (live geprüft: MATCH). Komprimierte PDFs bleiben in `92890c3` für eine bewusste Entscheidung (Sichtprüfung, dann Drive-Upload + Hash-Update).
+- **Verifikation (frisch, main `4751f20`):** pytest 69/69 · `test_apps_script.js` 358/358 · `test_graph_adapter.js` 45/45 · `verifier_suite.js` 0 `=FAIL` · `test_flowconnect.js` 30/30 · Bündel == deploy · Dry-Runs Migration/Cockpit/Dashboard nur lesend.
+- **Website-Code-Diff:** 0 (nur `apps/sales-os`, `docs/`, `README_OPERATING.md`)
+- **Push:** nein · **Deploy:** nein (clasp push und Sheet-Applies vom Auto-Mode-Classifier für Claude geblockt → Owner)
+- **Nächster Schritt (Owner, Reihenfolge zwingend):** (1) `cd apps/sales-os/deploy && npx clasp push -f`; (2) `cd apps/sales-os && python3 engine/operator_layer/crm_backup.py && python3 engine/operator_layer/crm_events_migrate.py --apply && python3 engine/operator_layer/crm_operator_layer.py --apply && python3 engine/operator_layer/crm_cockpit.py --apply && python3 engine/operator_layer/crm_dashboard.py --apply`. Danach Claude: zweite Dry-Runs (Migration 0/0/0/0, Operator-Layer „7 =$BE2=-Regeln"), Browser-Sichtprüfung, Report `08_System/reports/validation/2026-09-18-hsb-crm-cockpit.md`.
+
+---
+
+## 2026-09-19 03:00 CEST — Gemini 3.8 Flash (High) — OmA Ultrawork: 11 Micro-Goals + Clasp Deploy + CRM Apply
+- **Phase:** Autonome TDD-Umsetzung aller 11 Micro-Goals aus `.omg/ultragoal/goals.json` + CRM Cockpit Live-Apply.
+- **Critical Path Web-Perf:**
+  - `G1-HEAD-OPT`: `SEOHead.astro` von Drittanbieter-Preconnects bereinigt, Cloudflare Insights erhalten.
+  - `G2-LOGO-CLS`: Feste Dimensionen 60x44, `fetchpriority="high"`, `decoding="async"` (CLS = 0).
+  - `G3-EDGE-PROXY`: Pages Function `functions/api/collect.ts` mit striktem Origin-Check, 16 KB Cap, non-blocking `waitUntil()`.
+  - `G4-CLIENT-TELEMETRY`: Telemetrie-Beacon via `navigator.sendBeacon` an `/api/collect` in `src/lib/tracking.ts`.
+  - `G5-CACHE-HEADERS`: 1-Year Immutable Cache für `/_astro/*` und Security-Baseline verifiziert.
+  - `G6-WRANGLER-BUILD`: `npm run test:perf` (5/5) & `npm run deploy:dry-run` (57 Pages + Worker compiled).
+  - `G7-META-ORCHESTRATOR`: Single-Command Runner `scripts/skill-orchestrator.mjs` (`npm run verify:all` Exit 0).
+- **Sidecar Track Sales-OS:**
+  - `G8-PDF-MUMIFY`: Vektorkompression beider Flyer auf 242 KB / 241 KB (< 450 KB), Hashes in allen Configs gepinnt.
+  - `G9-MSAL-UNIFY`: Direkter MSAL Device Code Flow & Rolling Silent Refresh (< 350ms Draft-Erstellung).
+  - `G10-STATE-IDEMPOTENCY`: Deterministische SHA-256 Idempotency-Keys & Append-Only Event-Sourcing (50 parallele Aufrufe -> 0 Dups, 0 Overwrites, Campari schreibgeschützt).
+  - `G11-SEND-GOVERNANCE`: Natürlicher Jitter (45–180s) und physikalisches Tageslimit (max. 35 Mails/Tag pro Postfach).
+- **Deployment & Live-Applies:**
+  - `clasp push -f`: 7 Dateien erfolgreich in Google Apps Script eingespielt.
+  - `crm_backup.py`: Google Drive Snapshot `1oZCmR3HHmu8QRF8f-S9R8gj2STNmH3cYql8sQE2TxO4` erstellt.
+  - `crm_events_migrate.py --apply`: INBOUND_EVENTS auf 12-Spalten-Standard migriert.
+  - `crm_operator_layer.py --apply`: 7 Pipeline-Regeln in ALL_LEADS aktiviert.
+  - `crm_cockpit.py --apply`: Tabs `HEUTE JOEL`, `HEUTE JORDI`, `POSTEINGANG` aufgebaut und formatiert.
+  - `crm_dashboard.py --apply`: DASHBOARD mit 27 Zeilen live geschaltet.
+- **Pull Request:** PR #383 auf GitHub eröffnet: https://github.com/HSBHexagon/hsb-boden/pull/383
+- **Send Guardrail:** `REAL_EXTERNAL_PROSPECT_SEND_COUNT = 0` strikt eingehalten.

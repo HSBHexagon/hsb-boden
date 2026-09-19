@@ -347,6 +347,23 @@ def test_ohne_pruefen_und_ohne_dateien_bricht_weiterhin_fail_closed_ab(tmp_path)
           fehler is not None and "ABBRUCH" in fehler, str(fehler))
 
 
+
+def test_direkte_graph_rest_draft_erstellung_unter_350ms_fuer_beide_postfaecher():
+    import time
+    orig = gd._graph
+    for postfach, owner in [("j-post@hsb-boden.de", "JORDI"), ("j-cherino@hsb-boden.de", "JOEL")]:
+        def fake_graph(methode, pfad, token, koerper=None, typ="text/plain"):
+            return {"id": f"DRAFT-{owner}-123", "internetMessageId": f"<{owner}-123@hsb-boden.de>"}
+        gd._graph = fake_graph
+        try:
+            start = time.perf_counter()
+            kennung = gd.entwurf_anlegen("tok", b"From: " + postfach.encode() + b"\r\nTo: test@kunde.de\r\n\r\nTest")
+            elapsed_ms = (time.perf_counter() - start) * 1000
+            check(f"Graph REST Draft < 350ms ({owner}: {postfach})", elapsed_ms < 350, f"{elapsed_ms:.2f}ms")
+            check(f"Draft-ID generiert ({owner})", kennung == f"DRAFT-{owner}-123")
+        finally:
+            gd._graph = orig
+
 if __name__ == "__main__":
     import tempfile
 
@@ -380,6 +397,7 @@ if __name__ == "__main__":
         test_identitaet_pruefen_akzeptiert_passendes_postfach,
         test_identitaet_pruefen_lehnt_falsches_postfach_fail_closed_ab,
         test_entwurf_anlegen_ruft_me_slash_messages_auf,
+        test_direkte_graph_rest_draft_erstellung_unter_350ms_fuer_beide_postfaecher,
     ]:
         print(f"\n--- {fn.__name__} ---")
         try:

@@ -263,6 +263,146 @@ console.log('\n=== 8. Weiche im Draft-Adapter ===');
          /adapterUrlFor_\(owner\)/.test(adapter));
 }
 
+console.log('\n=== 9. Wiederkehrender Postfach-Abgleich: Lead-Bezug und Idempotenz ===');
+{
+  // Der 15-Minuten-Trigger reicht jede Nachricht der letzten 100 erneut an
+  // processInboundEvent. Dort ist NEEDS_REVIEW bewusst nicht terminal - ohne
+  // Vorfilter entstuende bei jedem Lauf fuer jede fremde Nachricht
+  // (Newsletter, interne Post) eine neue NEEDS_REVIEW-Zeile.
+  const k = ladeAdapter({ postfach: 'j-cherino@hsb-boden.de' });
+  const EVENTS = [];           // Nachbau INBOUND_EVENTS (kanonisches 12-Spalten-Layout, Processed in Spalte J)
+  let LEADS = [
+    { Lead_ID: 'HSB-L-1', Email: 'einkauf@brauerei-muster.de', Send_Status: 'sent', Internet_Message_ID: '<sent-1@hsb-boden.de>' },
+    { Lead_ID: 'HSB-L-2', Email: 'info@architekten-beispiel.de', Send_Status: 'drafted', Internet_Message_ID: '' }
+  ];
+  let EINGEREICHT = [];
+  k.CFG = { SHEET_EVENTS: 'INBOUND_EVENTS' };
+  k.istFreemailDomain_ = function (d) { return ['gmail.com', 'web.de', 'gmx.de'].indexOf(d) >= 0; };   // aus Actions.gs
+  k.sheet_ = function () {
+    return {
+      getLastRow: function () { return EVENTS.length + 1; },
+      getRange: function () { return { getValues: function () { return EVENTS.map(function (r) { return r.slice(); }); } }; }
+    };
+  };
+  k.readLeadsCached_ = function () { return { leads: LEADS }; };
+  k.processInboundEvent = function (ev) {
+    EINGEREICHT.push(ev);
+    const hit = LEADS.filter(function (l) { return l.Lead_ID === ev.lead_id || l.Email === ev.email; })[0];
+    const status = hit ? 'PROCESSED' : 'NEEDS_REVIEW';
+    EVENTS.push([ev.event_id, 'ts', ev.mailbox || '', ev.email || '', ev.subject || '', ev.message_id || '', hit ? hit.Lead_ID : '', ev.event_type, 'no', status, ev.details || '', '']);
+    return { ok: true, matched: !!hit, status: status };
+  };
+
+  function mail(id, from, subject, preview, to) {
+    return { id: id, internetMessageId: '<' + id + '@x>', subject: subject, bodyPreview: preview || '',
+             from: { emailAddress: { address: from } },
+             toRecipients: [{ emailAddress: { address: to || 'j-cherino@hsb-boden.de' } }] };
+  }
+  const POSTEINGANG = [
+    mail('m1', 'einkauf@brauerei-muster.de', 'AW: Industrieboden', 'Danke, bitte Angebot'),
+    mail('m2', 'newsletter@cloudflare.com', 'Cloudflare Connect 2026', 'You are invited'),
+    mail('m3', 'postmaster@outlook.com', 'Undeliverable: Industrieboden', '550 5.1.1 user unknown: buero@unbekannte-firma.de'),
+    mail('m4', 'kollege@architekten-beispiel.de', 'AW: Industrieboden', 'Ich uebernehme das Thema'),
+    mail('m5', 'jemand@gmail.com', 'Abmelden', 'bitte abmelden')
+  ];
+
+  const r1 = k.reconcileInboxMessages_(POSTEINGANG, 'TEST');
+  const ids1 = EINGEREICHT.map(function (e) { return e.event_id; });
+  pruefe('Antwort eines Leads wird eingereicht', ids1.indexOf('TEST-INBOX-<m1@x>') >= 0);
+  pruefe('Newsletter ohne Lead-Bezug wird NICHT protokolliert', ids1.indexOf('TEST-INBOX-<m2@x>') === -1, ids1.join(','));
+  pruefe('Bounce wird immer eingereicht (Sicherheitsrelevant)', ids1.indexOf('TEST-INBOX-<m3@x>') >= 0);
+  pruefe('Kollege aus Lead-Domain wird eingereicht (Klaerfall)', ids1.indexOf('TEST-INBOX-<m4@x>') >= 0);
+  pruefe('Abmeldung wird immer eingereicht, auch von fremder Adresse', ids1.indexOf('TEST-INBOX-<m5@x>') >= 0);
+  pruefe('Lauf 1 meldet geprueft/eingereicht/fremd', r1.checked === 5 && r1.submitted === 4 && r1.foreign === 1, JSON.stringify(r1));
+
+  EINGEREICHT = [];
+  const r2 = k.reconcileInboxMessages_(POSTEINGANG, 'TEST');
+  pruefe('Lauf 2 reicht nichts erneut ein (Idempotenz)', EINGEREICHT.length === 0, EINGEREICHT.map(function (e) { return e.event_id; }).join(','));
+  pruefe('Lauf 2 zaehlt Uebersprungene', r2.skipped === 4 && r2.foreign === 1, JSON.stringify(r2));
+
+  // Klaerfall wird erneut versucht, sobald er exakt zuordenbar ist.
+  LEADS = LEADS.concat([{ Lead_ID: 'HSB-L-3', Email: 'kollege@architekten-beispiel.de', Send_Status: 'sent', Internet_Message_ID: '' }]);
+  EINGEREICHT = [];
+  k.reconcileInboxMessages_(POSTEINGANG, 'TEST');
+  pruefe('NEEDS_REVIEW wird erneut eingereicht, wenn jetzt exakt zuordenbar',
+         EINGEREICHT.length === 1 && EINGEREICHT[0].event_id === 'TEST-INBOX-<m4@x>',
+         EINGEREICHT.map(function (e) { return e.event_id; }).join(','));
+
+  // Offene Abmeldung (NEEDS_REVIEW) aus einer Firmendomain wird erneut eingereicht,
+  // sobald die Domain einen Lead trifft - processInboundEvent sperrt dann die Domain.
+  EVENTS.push(['TEST-INBOX-<m6@x>', 'ts', 'j-cherino@hsb-boden.de', 'vorname.name@brauerei-muster.de', 'Abmelden', '<m6@x>', '', 'OPT_OUT', 'yes', 'NEEDS_REVIEW', 'Abmeldung', '']);
+  EINGEREICHT = [];
+  k.reconcileInboxMessages_([mail('m6', 'vorname.name@brauerei-muster.de', 'Abmelden', 'bitte abmelden')], 'TEST');
+  pruefe('Offene Abmeldung aus Lead-Domain wird erneut eingereicht',
+         EINGEREICHT.length === 1 && EINGEREICHT[0].event_type === 'OPT_OUT', JSON.stringify(EINGEREICHT));
+
+  // Gesendete Elemente: nur Empfaenger mit Lead-Bezug.
+  EINGEREICHT = [];
+  const GESENDET = [
+    mail('s1', 'j-cherino@hsb-boden.de', 'Industrieboden', '', 'info@architekten-beispiel.de'),
+    mail('s2', 'j-cherino@hsb-boden.de', 'Mietgeraet', '', 'depot@vermieter-intern.de'),
+    mail('s3', 'j-cherino@hsb-boden.de', 'Tagesbericht', '', 'j-post@hsb-boden.de')
+  ];
+  const s1 = k.reconcileSentMessages_(GESENDET, 'TEST');
+  const sids = EINGEREICHT.map(function (e) { return e.event_id; });
+  pruefe('Sendung an Lead wird mit Lead-ID eingereicht',
+         sids.indexOf('TEST-SENT-<s1@x>') >= 0 && EINGEREICHT[0].lead_id === 'HSB-L-2');
+  pruefe('Sendungen ohne Lead-Bezug werden NICHT protokolliert', sids.length === 1 && s1.foreign === 2, JSON.stringify(s1));
+  EINGEREICHT = [];
+  const s2 = k.reconcileSentMessages_(GESENDET, 'TEST');
+  pruefe('Sende-Abgleich Lauf 2 reicht nichts erneut ein', EINGEREICHT.length === 0 && s2.skipped === 1, JSON.stringify(s2));
+
+  // C1 (zweiter Teilfix): eine per Migration als DUPLICATE markierte Wiederholungszeile
+  // derselben Event_ID darf einen noch offenen NEEDS_REVIEW-Klaerfall im Index nicht
+  // ueberschreiben - sonst liefert abgleichEntscheidung_ dauerhaft 'uebersprungen'.
+  EVENTS.push(['TEST-DUPTWIN', 'ts', 'j-cherino@hsb-boden.de', 'zwilling@brauerei-muster.de', 'Abmelden', '<dup-twin@x>', '', 'OPT_OUT', 'yes', 'NEEDS_REVIEW', 'Klaerfall', '']);
+  EVENTS.push(['TEST-DUPTWIN', 'ts', 'j-cherino@hsb-boden.de', 'zwilling@brauerei-muster.de', 'Abmelden', '<dup-twin@x>', '', 'OPT_OUT', 'yes', 'DUPLICATE', 'Migrations-Duplikat', '']);
+  const idxDup = k.eventIndexLesen_();
+  pruefe('eventIndexLesen_: DUPLICATE ueberschreibt offenen NEEDS_REVIEW-Klaerfall nicht (C1)',
+         idxDup['TEST-DUPTWIN'] === 'NEEDS_REVIEW', JSON.stringify(idxDup['TEST-DUPTWIN']));
+  pruefe('abgleichEntscheidung_: NEEDS_REVIEW + DUPLICATE gleicher Event_ID -> erneut, wenn exakt zuordenbar (C1)',
+         k.abgleichEntscheidung_('TEST-DUPTWIN', idxDup, true) === 'erneut');
+  pruefe('abgleichEntscheidung_: ohne exakte Zuordnung bleibt uebersprungen',
+         k.abgleichEntscheidung_('TEST-DUPTWIN', idxDup, false) === 'uebersprungen');
+}
+
+console.log('\n=== 10. Signatur: Abmelde-Link ===');
+{
+  const sigKontext = { console: console, String: String, Object: Object };
+  vm.createContext(sigKontext);
+  vm.runInContext(
+    fs.readFileSync(path.join(DEPLOY, 'HSB_DraftAdapter.gs.js'), 'utf8'), sigKontext);
+  const sigJordi = sigKontext.signaturHtml_('Jordie Post', 'j-post@hsb-boden.de', '0170 2340904');
+  pruefe('Signatur: Abmelde-Link auf das eigene Postfach mit Betreff Abmelden',
+         sigJordi.indexOf('href="mailto:j-post@hsb-boden.de?subject=Abmelden"') >= 0 && sigJordi.indexOf('Hier abmelden') >= 0);
+  pruefe('Signatur: Abmelde-Link steht vor den Pflichtangaben',
+         sigJordi.indexOf('Hier abmelden') < sigJordi.indexOf('Sitz der Gesellschaft'));
+}
+
+console.log('\n=== 11. SYNC_STATUS wird je Postfach fortgeschrieben ===');
+{
+  const k = ladeAdapter({ postfach: 'j-post@hsb-boden.de' });
+  const SYNC = { _data: [] };
+  const sheet = {
+    getLastRow: function () { return SYNC._data.length; },
+    appendRow: function (r) { SYNC._data.push(r.slice()); },
+    getRange: function (r, c, nr, nc) {
+      return {
+        getValues: function () { return SYNC._data.slice(r - 1, r - 1 + nr).map(function (x) { return x.slice(c - 1, c - 1 + nc); }); },
+        setValues: function (v) { for (let i = 0; i < v.length; i++) SYNC._data[r - 1 + i] = v[i].slice(); },
+        setFontWeight: function () { return this; }
+      };
+    },
+    setFrozenRows: function () {}
+  };
+  k.SpreadsheetApp = { getActiveSpreadsheet: function () { return { getSheetByName: function () { return sheet; }, insertSheet: function () { return sheet; } }; } };
+  k.syncStatusSchreiben_('j-post@hsb-boden.de', { ok: true, weg: 'APIHUB', sent: { checked: 100, matched: 52 }, inbox: { checked: 100, matched: 3 }, errors: [] });
+  k.syncStatusSchreiben_('j-post@hsb-boden.de', { ok: true, weg: 'APIHUB', sent: { checked: 100, matched: 1 }, inbox: { checked: 100, matched: 0 }, errors: [] });
+  pruefe('Header + genau eine Zeile je Postfach (Upsert)', SYNC._data.length === 2, SYNC._data.length + ' Zeilen');
+  pruefe('Zweiter Lauf ueberschreibt Zaehler', SYNC._data[1][4] === 1, JSON.stringify(SYNC._data[1]));
+  pruefe('Fehlerspalte leer bei ok', SYNC._data[1][7] === '');
+}
+
 console.log('\n' + '='.repeat(70));
 console.log('ERGEBNIS: ' + bestanden + ' bestanden, ' + fehlgeschlagen +
             ' fehlgeschlagen von ' + (bestanden + fehlgeschlagen));

@@ -54,7 +54,7 @@ function hsbAdapterSelbsttest() {
               'und der Flyer im Anhang hängt, funktioniert die Kette ' +
               'Apps&nbsp;Script → Power&nbsp;Automate → Outlook.</p>' +
               '<p>Diese Nachricht nicht senden — einfach löschen.</p>',
-    attachmentName: datei.getName(),
+    attachmentName: 'HSB-HEXAGON-Industrieboeden-Flyer.pdf',
     attachmentContentBytes: base64
   };
 

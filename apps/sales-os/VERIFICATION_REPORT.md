@@ -305,7 +305,7 @@ EML-Anhänge getrennt von losen PDFs. Eine Suche nach `*.pdf` hätte diese
 5. **Asset Integrity & EML Decoding**:
    - Decodierte Base64-Anhang-Bytes aus erzeugter EML extrahiert und per SHA-256 verifiziert:
      - Jordi EML Anhang: `e0aa76c1ffec5cf89289e6ab141691d42ea81ffd13db2f08f045342531f39acc` (**PASS**)
-     - Joel EML Anhang: `2bccadacc77b531057583d2d650963c30deceed36c8be1fd90ca64e8b8cde5fb` (**PASS**)
+     - Joel EML Anhang: `6ac5ed1112c88768ac56950faab8802ceaa2817913f35a7b95e73ee79c3431d8` (**PASS**)
    - Manipulierte Flyer werden fail-closed mit `ASSET_GATE=FAIL` blockiert.
 6. **Bekannte Mängel / Warnings**:
    - `KNOWN_NON_BLOCKING_WARNING`: Jordi-Master enthält in der verdeckten Textebene `j-cherino@hsb-boden.de`. Visuell gerendert ist der Flyer 100% korrekt. Hash ist fest verdrahtet (`e0aa76c1...`).

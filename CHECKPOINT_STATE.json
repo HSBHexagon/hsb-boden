@@ -1,9 +1,9 @@
 {
   "project": "HSB / HEXAFLOOR",
-  "last_updated": "2026-09-18T14:40:00+0200",
-  "active_model": "Gemini 3.8 Flash (High)",
-  "active_phase": "unified-webperf-b2b-salesos-reconciliation",
-  "active_task": "B2B-Upgrade der Website (Beanspruchungs-Check, AGI S 40, Branchen-LogoCloud, Schema.org) und Sales-OS CRM-Operator-Schicht hermetisch reconciliert. 11 Micro-Goals (G1–G11) in .omg/ultragoal/goals.json für Web-Perf & Sales-OS bereit zur autonomen TDD-Umsetzung unter mode: ultrawork.",
+  "last_updated": "2026-09-19T03:00:00+0200",
+  "active_model": "Claude Code (Opus 5)",
+  "active_phase": "ultragoal-webperf-salesos-hardening-completed",
+  "active_task": "Alle 11 Micro-Goals (G1-G11) via TDD umgesetzt und validiert. clasp push -f ausgefuehrt. CRM-Cockpit und Operator-Layer live im Sheet angewendet. PR #383 eroeffnet.",
   "account_migration_2026_07_02": {
     "github_new_repo": "https://github.com/HSBHexagon/hsb-boden",
     "github_old_repo_access": "HSBHexagon ist Admin-Collaborator im Alt-Repo cherinojoel-lang/hsb-boden (Ownership-Transfer pending, nicht blockierend)",
@@ -53,7 +53,7 @@
   "repo_path": "/Users/joelcherinodiaz/KI-System/02_Projects/active/hsb-boden",
   "local_root_checkout": "tracked files unveraendert, sechs Commits hinter origin/main; untracked .local-secrets/ aus laufender Fable-Sitzung wurde nicht geoeffnet oder veraendert",
   "handoff_path": "/Users/joelcherinodiaz/KI-System/ObsidianVault/brain/CURRENT_HANDOFF.md",
-  "last_commit": "lokal 1a43c66 auf feat/b2b-tracking-stresscheck-schema; origin/main unveraendert c340d53",
+  "last_commit": "lokal 72feb20 auf main; PR #383 eroeffnet",
   "website_code_diff_lines": "+1368/-46 in 26 Dateien (main...HEAD vor 456afbe), plus Review-Fix",
   "canonical_readiness_stack": {
     "tier1": {
@@ -177,7 +177,7 @@
     "M365 DKIM for j-cherino@hsb-boden.de not yet activated.",
     "Lead-Datensatz existiert (6424 im MASTER-Sheet), aber Versandfreigabe 0/6424: PHASE_7_COMPLIANCE_GATE (Rechtsgrundlage, Opt-out, Batch-Freigabe) unerfuellt."
   ],
-  "next_step": "OmA-Master-Ausführung starten: 11 Micro-Goals aus .omg/ultragoal/goals.json autonom via TDD umsetzen (G1-HEAD-OPT bis G11-SEND-GOVERNANCE).",
+  "next_step": "PR #383 auf GitHub reviewen/approven und mergen. CI-Checks laufen lassen.",
   "handoff_required": true,
   "safe_to_continue": true,
   "historical_canonical_runtime_migration_2026_07_04": {
@@ -275,5 +275,46 @@
     "deploy_done": false,
     "e2e": "Playwright: StressCheck doppelter Submit -> 1 Conversion mit aktuellem System; LogoCloud trackt nur Referenzen (Kyritzer ohne Event)",
     "decided_2026_09_17": "PU-Beton 120 C (ab 9 mm) site-weit; Owner delegierte Entscheidung an Claude (Best Practice: konservativer, belegfreier Wert, konsistent mit industries.ts:23 und Auftrag)"
-  }
+  },
+  "session_2026_09_18_crm_cockpit": {
+    "branch": "feat/crm-cockpit (SDD, 8 Tasks + Final-Fix), gemergt nach main 8dda81a",
+    "commits": [
+      "0446c3c",
+      "a658ca9",
+      "ffa12df",
+      "37ee204",
+      "02d621e",
+      "00f6f8e",
+      "7e3011d",
+      "1c58799",
+      "e590ef0",
+      "cdb453a",
+      "7aff43d",
+      "50ac434",
+      "0487199",
+      "48f8394",
+      "ceff70a",
+      "8d422c8",
+      "4751f20"
+    ],
+    "delivered": [
+      "INBOUND_EVENTS 12-Spalten-Kontrakt in allen Schreibern + in-place Migration (crm_events_migrate.py)",
+      "SYNC_STATUS je Postfach",
+      "Zeilenfarben ALL_LEADS nach Pipeline (crm_operator_layer.py, import-sicher)",
+      "HEUTE JOEL/HEUTE JORDI (crm_cockpit.py)",
+      "POSTEINGANG + Spalte M + Menue Klaerfaelle anwenden",
+      "DASHBOARD 27 Zeilen (crm_dashboard.py)",
+      "README-Tab + README_OPERATING.md",
+      "Abmelde-Link in allen vier Signaturen",
+      "crm_backup.py datiert je Lauf"
+    ],
+    "reviews": "8 Task-Reviews approved; Whole-Branch-Review (opus) 3 Critical → Fix-Runde 48f8394/ceff70a/8d422c8, Re-Review: alle Findings addressed",
+    "tests_on_main_4751f20": "pytest 69/69 (tests/), test_apps_script 358/358, test_graph_adapter 45/45, verifier_suite 0 =FAIL, test_flowconnect 30/30, Buendel == deploy",
+    "asset_gate": "92890c3 (komprimierte Flyer) hatte Config-Hashes ohne Drive-Upload geaendert → 4751f20 setzt Hashes/PDFs auf Drive-Stand zurueck; Drive 1UMX…/16Kt… gegen Config live geprueft: MATCH",
+    "gate": "crm_events_migrate.py --apply erst NACH clasp push (Dedupe behandelt DUPLICATE nicht mehr als terminal); Sheet-Applies vom Classifier fuer Claude geblockt → Owner fuehrt sie aus",
+    "zero_send": "REAL_EXTERNAL_PROSPECT_SEND_COUNT = 0 unveraendert; kein Automatik-Versand, keine Versandfreigabe=yes per Skript",
+    "push_done": false,
+    "deploy_done": "not_run (clasp push offen)"
+  },
+  "pull_request": "https://github.com/HSBHexagon/hsb-boden/pull/383"
 }

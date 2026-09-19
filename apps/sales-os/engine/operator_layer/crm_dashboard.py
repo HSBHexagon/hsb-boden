@@ -102,6 +102,7 @@ def formatting_requests(sheet_id, rows=None):
 
     a1e1 = {"sheetId": sheet_id, "startRowIndex": 0, "endRowIndex": 1, "startColumnIndex": 0, "endColumnIndex": 5}
     return [
+        {"clearBasicFilter": {"sheetId": sheet_id}},
         {"unmergeCells": {"range": a1e1}},
         row_fmt(row_titel, bg="0d652d", bold=True, size=16, fg="ffffff"),
         {"mergeCells": {"range": a1e1, "mergeType": "MERGE_ALL"}},

@@ -99,6 +99,27 @@ function emitEvent(
     return false;
   }
 
+  // First-Party Edge Proxy Dispatch (Zero-Mainthread, Beacon-first)
+  try {
+    const proxyPayload = JSON.stringify({
+      event_name: event,
+      params: safePayload,
+    });
+    if (typeof navigator !== "undefined" && typeof navigator.sendBeacon === "function") {
+      const blob = new Blob([proxyPayload], { type: "application/json" });
+      navigator.sendBeacon("/api/collect", blob);
+    } else if (typeof fetch === "function") {
+      fetch("/api/collect", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: proxyPayload,
+        keepalive: true,
+      }).catch(() => {});
+    }
+  } catch {
+    // Non-blocking fallback
+  }
+
   const trackingWindow = window as Window & {
     dataLayer?: unknown[];
     gtag?: (command: "event", event: string, payload: GtagEventPayload) => void;

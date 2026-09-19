@@ -1,9 +1,9 @@
 {
   "project": "HSB / HEXAFLOOR",
-  "last_updated": "2026-09-19T06:10:00+0200",
+  "last_updated": "2026-09-19T16:40:00+0200",
   "active_model": "Claude Code (Opus 5)",
-  "active_phase": "crm-cockpit-live",
-  "active_task": "CRM-Cockpit live verifiziert; SYNC_STATUS-Fix und wiederhergestellter Abmelde-Link (82f110d) werden per PR, clasp push und Re-Apply live geschaltet.",
+  "active_phase": "website-b2b-hardening",
+  "active_task": "B2B-Website-Auftrag: Schritte 1-4 als bereits gemergt verifiziert (8e44b67); site-weite Copy-Bereinigung (kostenlos/unverbindlich/Festpreis/Quadratmeterpreis) + Test-Erweiterung auf Branch feat/b2b-copy-purge; Gate gruen; PR/Merge = Owner-Gate.",
   "account_migration_2026_07_02": {
     "github_new_repo": "https://github.com/HSBHexagon/hsb-boden",
     "github_old_repo_access": "HSBHexagon ist Admin-Collaborator im Alt-Repo cherinojoel-lang/hsb-boden (Ownership-Transfer pending, nicht blockierend)",
@@ -53,8 +53,8 @@
   "repo_path": "/Users/joelcherinodiaz/KI-System/02_Projects/active/hsb-boden",
   "local_root_checkout": "tracked files unveraendert, sechs Commits hinter origin/main; untracked .local-secrets/ aus laufender Fable-Sitzung wurde nicht geoeffnet oder veraendert",
   "handoff_path": "/Users/joelcherinodiaz/KI-System/ObsidianVault/brain/CURRENT_HANDOFF.md",
-  "last_commit": "main 82f110d (+ docs)",
-  "website_code_diff_lines": "+1368/-46 in 26 Dateien (main...HEAD vor 456afbe), plus Review-Fix",
+  "last_commit": "feat/b2b-copy-purge 4dabab7 (Copy-Bereinigung + Test); main 0fc8411 unveraendert; nicht gepusht",
+  "website_code_diff_lines": "+69/-20 in 13 Dateien (4dabab7 vs main): nur Copy + tests/b2b-meta.test.ts",
   "canonical_readiness_stack": {
     "tier1": {
       "cloudflare": "docs/cloudflare/CLOUDFLARE_PROVIDER_MAX_READINESS.md",

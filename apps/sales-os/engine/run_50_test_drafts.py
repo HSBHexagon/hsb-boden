@@ -28,26 +28,11 @@ from hsb_config import (
     get_joel_url,
     get_jordi_connector_url,
     get_fc_refresh_token,
+    get_jordi_token,
 )
 
 JOEL_URL = get_joel_url()
 JORDI_CONNECTOR_URL = get_jordi_connector_url()
-
-def get_jordi_token() -> str:
-    refresh_token = get_fc_refresh_token()
-
-    token_url = f"https://login.microsoftonline.com/{FC_TENANT_ID}/oauth2/v2.0/token"
-    data = urllib.parse.urlencode({
-        "grant_type": "refresh_token",
-        "client_id": FC_CLIENT_ID,
-        "refresh_token": refresh_token,
-        "scope": FC_SCOPE
-    }).encode("utf-8")
-
-    req = urllib.request.Request(token_url, data=data, method="POST")
-    with urllib.request.urlopen(req, timeout=30) as resp:
-        tokens = json.loads(resp.read().decode("utf-8"))
-        return tokens["access_token"]
 
 def create_draft(owner: str, lead: dict, recipient: str, flyer_b64: str, flyer_name: str, access_token: str = None) -> dict:
     subject = f"HSB Hexagon Säurebau GmbH · Industrieböden ({lead.get('Firma') or lead.get('Lead_ID')})"

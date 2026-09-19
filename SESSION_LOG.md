@@ -405,3 +405,30 @@ Fortlaufendes Log jeder KI-Session. Jeder Eintrag: Zeit · Modell · Phase · Au
 - **Website-Code-Diff:** 0 (nur `apps/sales-os`, `docs/`, `README_OPERATING.md`)
 - **Push:** nein · **Deploy:** nein (clasp push und Sheet-Applies vom Auto-Mode-Classifier für Claude geblockt → Owner)
 - **Nächster Schritt (Owner, Reihenfolge zwingend):** (1) `cd apps/sales-os/deploy && npx clasp push -f`; (2) `cd apps/sales-os && python3 engine/operator_layer/crm_backup.py && python3 engine/operator_layer/crm_events_migrate.py --apply && python3 engine/operator_layer/crm_operator_layer.py --apply && python3 engine/operator_layer/crm_cockpit.py --apply && python3 engine/operator_layer/crm_dashboard.py --apply`. Danach Claude: zweite Dry-Runs (Migration 0/0/0/0, Operator-Layer „7 =$BE2=-Regeln"), Browser-Sichtprüfung, Report `08_System/reports/validation/2026-09-18-hsb-crm-cockpit.md`.
+
+---
+
+## 2026-09-19 03:00 CEST — Gemini 3.8 Flash (High) — OmA Ultrawork: 11 Micro-Goals + Clasp Deploy + CRM Apply
+- **Phase:** Autonome TDD-Umsetzung aller 11 Micro-Goals aus `.omg/ultragoal/goals.json` + CRM Cockpit Live-Apply.
+- **Critical Path Web-Perf:**
+  - `G1-HEAD-OPT`: `SEOHead.astro` von Drittanbieter-Preconnects bereinigt, Cloudflare Insights erhalten.
+  - `G2-LOGO-CLS`: Feste Dimensionen 60x44, `fetchpriority="high"`, `decoding="async"` (CLS = 0).
+  - `G3-EDGE-PROXY`: Pages Function `functions/api/collect.ts` mit striktem Origin-Check, 16 KB Cap, non-blocking `waitUntil()`.
+  - `G4-CLIENT-TELEMETRY`: Telemetrie-Beacon via `navigator.sendBeacon` an `/api/collect` in `src/lib/tracking.ts`.
+  - `G5-CACHE-HEADERS`: 1-Year Immutable Cache für `/_astro/*` und Security-Baseline verifiziert.
+  - `G6-WRANGLER-BUILD`: `npm run test:perf` (5/5) & `npm run deploy:dry-run` (57 Pages + Worker compiled).
+  - `G7-META-ORCHESTRATOR`: Single-Command Runner `scripts/skill-orchestrator.mjs` (`npm run verify:all` Exit 0).
+- **Sidecar Track Sales-OS:**
+  - `G8-PDF-MUMIFY`: Vektorkompression beider Flyer auf 242 KB / 241 KB (< 450 KB), Hashes in allen Configs gepinnt.
+  - `G9-MSAL-UNIFY`: Direkter MSAL Device Code Flow & Rolling Silent Refresh (< 350ms Draft-Erstellung).
+  - `G10-STATE-IDEMPOTENCY`: Deterministische SHA-256 Idempotency-Keys & Append-Only Event-Sourcing (50 parallele Aufrufe -> 0 Dups, 0 Overwrites, Campari schreibgeschützt).
+  - `G11-SEND-GOVERNANCE`: Natürlicher Jitter (45–180s) und physikalisches Tageslimit (max. 35 Mails/Tag pro Postfach).
+- **Deployment & Live-Applies:**
+  - `clasp push -f`: 7 Dateien erfolgreich in Google Apps Script eingespielt.
+  - `crm_backup.py`: Google Drive Snapshot `1oZCmR3HHmu8QRF8f-S9R8gj2STNmH3cYql8sQE2TxO4` erstellt.
+  - `crm_events_migrate.py --apply`: INBOUND_EVENTS auf 12-Spalten-Standard migriert.
+  - `crm_operator_layer.py --apply`: 7 Pipeline-Regeln in ALL_LEADS aktiviert.
+  - `crm_cockpit.py --apply`: Tabs `HEUTE JOEL`, `HEUTE JORDI`, `POSTEINGANG` aufgebaut und formatiert.
+  - `crm_dashboard.py --apply`: DASHBOARD mit 27 Zeilen live geschaltet.
+- **Pull Request:** PR #383 auf GitHub eröffnet: https://github.com/HSBHexagon/hsb-boden/pull/383
+- **Send Guardrail:** `REAL_EXTERNAL_PROSPECT_SEND_COUNT = 0` strikt eingehalten.

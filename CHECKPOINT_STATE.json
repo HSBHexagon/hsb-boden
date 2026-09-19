@@ -1,9 +1,9 @@
 {
   "project": "HSB / HEXAFLOOR",
-  "last_updated": "2026-09-18T15:05:00+0200",
+  "last_updated": "2026-09-19T03:00:00+0200",
   "active_model": "Claude Code (Opus 5)",
-  "active_phase": "crm-cockpit-merged-awaiting-owner-apply",
-  "active_task": "CRM-Cockpit (Plan 2026-09-17-crm-cockpit-visual) auf main gemergt (8dda81a) + Asset-Gate-Revert (4751f20). Offen: Owner clasp push + Sheet-Applies, danach Post-Apply-Verifikation und Report.",
+  "active_phase": "ultragoal-webperf-salesos-hardening-completed",
+  "active_task": "Alle 11 Micro-Goals (G1-G11) via TDD umgesetzt und validiert. clasp push -f ausgefuehrt. CRM-Cockpit und Operator-Layer live im Sheet angewendet. PR #383 eroeffnet.",
   "account_migration_2026_07_02": {
     "github_new_repo": "https://github.com/HSBHexagon/hsb-boden",
     "github_old_repo_access": "HSBHexagon ist Admin-Collaborator im Alt-Repo cherinojoel-lang/hsb-boden (Ownership-Transfer pending, nicht blockierend)",
@@ -53,7 +53,7 @@
   "repo_path": "/Users/joelcherinodiaz/KI-System/02_Projects/active/hsb-boden",
   "local_root_checkout": "tracked files unveraendert, sechs Commits hinter origin/main; untracked .local-secrets/ aus laufender Fable-Sitzung wurde nicht geoeffnet oder veraendert",
   "handoff_path": "/Users/joelcherinodiaz/KI-System/ObsidianVault/brain/CURRENT_HANDOFF.md",
-  "last_commit": "lokal 4751f20 auf main; origin/main unveraendert (kein Push)",
+  "last_commit": "lokal 72feb20 auf main; PR #383 eroeffnet",
   "website_code_diff_lines": "+1368/-46 in 26 Dateien (main...HEAD vor 456afbe), plus Review-Fix",
   "canonical_readiness_stack": {
     "tier1": {
@@ -177,7 +177,7 @@
     "M365 DKIM for j-cherino@hsb-boden.de not yet activated.",
     "Lead-Datensatz existiert (6424 im MASTER-Sheet), aber Versandfreigabe 0/6424: PHASE_7_COMPLIANCE_GATE (Rechtsgrundlage, Opt-out, Batch-Freigabe) unerfuellt."
   ],
-  "next_step": "Owner: (1) `cd apps/sales-os/deploy && npx clasp push -f`; (2) `crm_backup.py && crm_events_migrate.py --apply && crm_operator_layer.py --apply && crm_cockpit.py --apply && crm_dashboard.py --apply`. Danach Claude: zweite Dry-Runs (Migration 0/0, Operator-Layer 7 BE2-Regeln), Browser-Sichtpruefung, Report 08_System/reports/validation/2026-09-18-hsb-crm-cockpit.md.",
+  "next_step": "PR #383 auf GitHub reviewen/approven und mergen. CI-Checks laufen lassen.",
   "handoff_required": true,
   "safe_to_continue": true,
   "historical_canonical_runtime_migration_2026_07_04": {
@@ -315,5 +315,6 @@
     "zero_send": "REAL_EXTERNAL_PROSPECT_SEND_COUNT = 0 unveraendert; kein Automatik-Versand, keine Versandfreigabe=yes per Skript",
     "push_done": false,
     "deploy_done": "not_run (clasp push offen)"
-  }
+  },
+  "pull_request": "https://github.com/HSBHexagon/hsb-boden/pull/383"
 }

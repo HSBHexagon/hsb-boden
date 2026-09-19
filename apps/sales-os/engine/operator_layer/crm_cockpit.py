@@ -140,7 +140,7 @@ def build_posteingang_requests(sheet_id, existing_cf_count=0):
     for values, state in _CLASSIFICATION_COLORS:
         cbg, cfg = PIPELINE_COLORS[state]
         conds = [f'$B{anchor}="{v}"' for v in values]
-        formula = conds[0] if len(conds) == 1 else "OR(" + ",".join(conds) + ")"
+        formula = conds[0] if len(conds) == 1 else "OR(" + ";".join(conds) + ")"
         reqs.append({"addConditionalFormatRule": {"index": idx, "rule": {
             "ranges": [{"sheetId": sheet_id, "startRowIndex": _EV_ROW_KLAER_DATA, "endRowIndex": POSTEINGANG_ROW_COUNT,
                         "startColumnIndex": 0, "endColumnIndex": 7}],

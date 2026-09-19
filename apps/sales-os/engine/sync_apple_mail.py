@@ -19,6 +19,8 @@ sys.path.insert(0, str(REPO_ROOT / "engine"))
 
 from sync_to_google_sheet import get_sheets_service, SPREADSHEET_ID
 
+IGNORED_EMAIL_KEYWORDS = ('hsb-boden.de', 'microsoft', 'postmaster', 'mailer-daemon')
+
 def get_sent_messages_apple_mail():
     ascript = '''
     tell application "Mail"
@@ -91,7 +93,7 @@ def get_inbound_messages_apple_mail():
         
         is_bounce = any(x in subj.lower() for x in ["unzustellbar", "undeliverable", "failure", "failed"])
         emails = re.findall(r'[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+', body)
-        cand_emails = [e.lower() for e in emails if not any(x in e.lower() for x in ['hsb-boden.de', 'microsoft', 'postmaster', 'mailer-daemon'])]
+        cand_emails = [e.lower() for e in emails if not any(x in e.lower() for x in IGNORED_EMAIL_KEYWORDS)]
         
         inbound_events.append({
             "date_str": date_str,

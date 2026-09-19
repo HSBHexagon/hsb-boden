@@ -4,21 +4,29 @@ Prueft:
 1. Dynamischen RFC 3464 DSN Bounce Parser (Statuscodes 550, 5.4.1, 5.1.0 etc.).
 2. Dynamischen RFC 3834 Auto-Reply / OOO Parser.
 3. Struktur & Integritaet der Cloud-Verbindungsdaten.
+4. az CLI Token-Abruf (get_az_apihub_token) & Account-Ermittlung (get_current_az_account).
 """
-import pytest
-from pathlib import Path
+import subprocess
 import sys
+from pathlib import Path
+from unittest.mock import patch
+
+import pytest
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO_ROOT / "engine"))
 
 from reconcile_cloud_mailbox import (
+    APIHUB_RESOURCE,
+    AUTO_REPLY_SUBJ_RE,
+    BOUNCE_SUBJ_RE,
+    CONNECTIONS,
+    get_az_apihub_token,
+    get_current_az_account,
     parse_rfc3464_dsn,
     parse_rfc3834_autoreply,
-    CONNECTIONS,
-    BOUNCE_SUBJ_RE,
-    AUTO_REPLY_SUBJ_RE
 )
+
 
 def test_rfc3464_bounce_parsing_hard_bounces():
     subj = "Unzustellbar: Industrieböden & Säurebau – HSB Hexagon"
@@ -32,6 +40,7 @@ def test_rfc3464_bounce_parsing_hard_bounces():
     assert "550 5.4.1" in reason
     assert "info@milchhuus.ch" in recips
 
+
 def test_rfc3464_bounce_various_status_codes():
     cases = [
         ("Undeliverable: Offer", "Remote server returned: 550 5.1.0 Mailbox rejected target@firma.de", "550 5.1.0", "target@firma.de"),
@@ -44,6 +53,7 @@ def test_rfc3464_bounce_various_status_codes():
         assert expected_code in reason, f"Erwarteter Code {expected_code} in {reason}"
         assert expected_email in recips, f"Erwartete E-Mail {expected_email} in {recips}"
 
+
 def test_rfc3464_non_bounces():
     subj = "Re: Industrieböden für Ihr Unternehmen"
     body = "Vielen Dank für das Angebot. Wir prüfen das intern."
@@ -51,6 +61,7 @@ def test_rfc3464_non_bounces():
     assert is_bounce is False
     assert reason is None
     assert recips == []
+
 
 def test_rfc3834_autoreply_detection():
     # Fall 1: Absender mit no-reply
@@ -73,6 +84,7 @@ def test_rfc3834_autoreply_detection():
     assert is_ar is False
     assert cls == ""
 
+
 def test_cloud_connections_structure():
     assert "JOEL" in CONNECTIONS
     assert "JORDI" in CONNECTIONS
@@ -93,3 +105,60 @@ def test_inbound_event_row_has_message_id_in_column_f():
     assert row[5] == "<1@b>" and row[11] == "" and len(row) == 12
     assert row[:5] == ["X", "2026-09-17T00:00:00Z", "j-cherino@hsb-boden.de", "a@b.de", "AW"]
     assert row[6:11] == ["HSB-1", "REPLY", "no", "PROCESSED", "n"]
+
+
+def test_get_az_apihub_token_success():
+    mock_raw_output = "  eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.sample_token_content  \n"
+    with patch("subprocess.check_output") as mock_check_output:
+        mock_check_output.return_value = mock_raw_output
+        token = get_az_apihub_token()
+
+        assert token == "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.sample_token_content"
+        mock_check_output.assert_called_once_with(
+            [
+                "az",
+                "account",
+                "get-access-token",
+                "--resource",
+                APIHUB_RESOURCE,
+                "--query",
+                "accessToken",
+                "-o",
+                "tsv",
+            ],
+            text=True,
+            timeout=15,
+        )
+
+
+def test_get_az_apihub_token_failure():
+    with patch("subprocess.check_output") as mock_check_output:
+        mock_check_output.side_effect = subprocess.CalledProcessError(
+            returncode=1,
+            cmd=["az", "account", "get-access-token"],
+            output="az login required",
+        )
+        with pytest.raises(RuntimeError) as exc_info:
+            get_az_apihub_token()
+
+        assert "Fehler beim Abrufen des APIHub-Tokens ueber az CLI" in str(exc_info.value)
+        assert "az login" in str(exc_info.value)
+
+
+def test_get_current_az_account():
+    # 1. Success case
+    with patch("subprocess.check_output") as mock_check_output:
+        mock_check_output.return_value = "  J-POST@HSB-BODEN.DE \n"
+        account = get_current_az_account()
+        assert account == "j-post@hsb-boden.de"
+        mock_check_output.assert_called_once_with(
+            ["az", "account", "show", "--query", "user.name", "-o", "tsv"],
+            text=True,
+            timeout=10,
+        )
+
+    # 2. Error case fallback to empty string
+    with patch("subprocess.check_output") as mock_check_output:
+        mock_check_output.side_effect = Exception("az CLI error")
+        account = get_current_az_account()
+        assert account == ""

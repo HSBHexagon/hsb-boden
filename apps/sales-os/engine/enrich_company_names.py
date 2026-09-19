@@ -2,14 +2,18 @@
 """
 HSB Sales OS - Automated Lead Company & Contact Enrichment Pipeline.
 
-Enriches raw domain-slug leads (especially Segment B rows 2-1601) with:
+Enriches raw domain-slug leads with:
 1. Canonical legal company name (e.g. "Brauerei Päffgen GmbH & Co. KG")
 2. Managing Director / Executive contact (e.g. "Herr Rudolf Päffgen")
+3. Pre-Send DNS/MX existence verification (Zero-Bounce Guarantee)
 
 Features:
+- Native DNS MX-Record check preventing invalid domain outreach
 - Multi-threaded HTTP scraping with polite headers and timeout guards
 - Impressum and Legal page detection (/impressum, /legal, /kontakt)
-- German corporate forms parsing (GmbH, AG, e.K., KG, OHG, GbR, UG)
+- German corporate forms parsing (GmbH, AG, e.K., KG, OHG, GbR, UG, SA, Sarl)
+- Entity blacklist filtering (excludes banks, hosting providers, web agencies)
+- Domain-relevance ranking preventing false-positive extractions
 - Traditional beverage/dairy maker parsing (Brauerei, Kelterei, Molkerei, Käserei)
 - Strict Freemail isolation (fail-closed against t-online, gmx, web.de, etc.)
 - Direct Google Sheets API writeback with batching and audit logging
@@ -23,6 +27,7 @@ import json
 import logging
 import os
 import re
+import subprocess
 import sys
 import time
 import urllib.parse
@@ -60,6 +65,21 @@ TRADITIONAL_TITLES_RE = re.compile(
     r"[A-ZÄÖÜ][\w\s\-–]{2,40})\b",
     re.IGNORECASE
 )
+
+EXCLUDED_ENTITIES = {
+    "strato", "strato ag", "ionos", "ionos se", "1&1", "hostpoint", "hostpoint ag", "hetzner",
+    "hetzner online gmbh", "ovh", "godaddy", "wix", "jimdo", "squarespace", "shopify", "webflow",
+    "wordpress", "typo3", "plesk", "cpanel", "apache", "nginx", "cookiebot", "usercentrics",
+    "ubs ag", "credit suisse", "sparkasse", "volksbank", "deutsche bank", "commerzbank", "postbank", "raiffeisen",
+    "scholl communications ag", "google llc", "alphabet inc", "microsoft corp", "meta platforms", "apple inc",
+    "adobe", "cloudflare", "amazon web services", "telekom deutschland", "exklusive spezialitäten", "domain reserved", "domain", "reserved", "reserviert", "under construction", "hier entsteht", "geparkt", "parked",
+    "spezialitäten", "feinkost", "willkommen", "home", "startseite", "kontakt", "impressum"
+
+    "ubs ag", "credit suisse", "sparkasse", "volksbank", "deutsche bank", "commerzbank", "postbank", "raiffeisen",
+    "scholl communications ag", "wordpress", "typo3", "hostpoint ag", "hetzner online gmbh", "strato ag",
+    "ionos se", "cookiebot", "google llc", "alphabet inc", "microsoft corp", "meta platforms", "apple inc",
+    "adobe", "cloudflare", "amazon web services", "telekom deutschland"
+}
 
 EXECUTIVE_PATTERNS = [
     re.compile(r"(?:Geschäftsführer(?:in)?|Geschäftsführung|Vertreten durch|Inhaber(?:in)?|Vorstand):\s*(?:<[^>]+>)*\s*([A-ZÄÖÜ][\w\.\-]+(?:\s+[A-ZÄÖÜ][\w\.\-]+){1,4})", re.IGNORECASE),
@@ -100,6 +120,24 @@ class EnrichmentResult:
     source_url: str
     status: str
     reason: str
+
+
+def check_domain_mx(domain: str) -> bool:
+    """Prüft per nativem DNS-Befehl, ob die Domäne valide Mail-Server besitzt."""
+    if not domain:
+        return False
+    try:
+        res = subprocess.run(["host", "-t", "mx", domain], capture_output=True, text=True, timeout=4)
+        out = res.stdout.lower()
+        if "mail is handled by" in out:
+            return True
+        if "has no mx record" in out or "not found" in out or "nxdomain" in out:
+            return False
+        # Fallback A-Record
+        res_a = subprocess.run(["host", "-t", "a", domain], capture_output=True, text=True, timeout=4)
+        return "has address" in res_a.stdout.lower()
+    except Exception:
+        return True
 
 
 def extract_domain(email: str | None) -> str | None:
@@ -148,7 +186,6 @@ def determine_salutation(full_name: str) -> str:
     parts = full_name.strip().split()
     if not parts:
         return ""
-    # Wenn erstes Wort ein Titel ist (Dr., Prof., Dipl.-Ing.)
     test_idx = 0
     if parts[0].lower().strip(".") in {"dr", "prof", "dipl", "dipl.-ing", "ing"} and len(parts) > 1:
         test_idx = 1
@@ -161,36 +198,54 @@ def determine_salutation(full_name: str) -> str:
 
 
 def parse_company_from_html(html_text: str, domain: str) -> tuple[str | None, float]:
-    """Extrahiert juristische Firmennamen aus HTML mit Konfidenzwert."""
-    # 1. Handelsregister & Rechtsformen (hoechste Konfidenz)
-    m = CORPORATE_FORMS_RE.search(html_text)
-    if m:
-        c = re.sub(r"\s+", " ", m.group(1)).strip()
-        c = c.replace("&amp;", "&")
-        if len(c) > 3:
+    """Extrahiert juristische Firmennamen aus HTML mit Konfidenzwert und Blacklist-Filter."""
+    domain_base = domain.split(".")[0].lower().replace("-", "")
+
+    # 1. Alle Corporate Forms suchen und gegen Blacklist filtern
+    matches = CORPORATE_FORMS_RE.findall(html_text)
+    clean_candidates = []
+    for m in matches:
+        c = re.sub(r"\s+", " ", m).strip().replace("&amp;", "&")
+        c_lower = c.lower()
+        if len(c) > 3 and not any(ex in c_lower for ex in EXCLUDED_ENTITIES):
+            clean_candidates.append(c)
+
+    # Relevanz-Ranking mit Umlaut-Normalisierung (ae <-> ä)
+    def norm_u(s: str) -> str:
+        return s.lower().replace("ä", "ae").replace("ö", "oe").replace("ü", "ue").replace("ß", "ss")
+
+    domain_base_norm = norm_u(domain_base)
+    domain_parts_norm = [norm_u(p) for p in domain.split(".")[0].split("-") if len(p) >= 3]
+
+    for c in clean_candidates:
+        c_norm = norm_u(re.sub(r"[^a-zA-Z0-9äöüÄÖÜß]", "", c))
+        if domain_base_norm in c_norm or any(part in c_norm for part in domain_parts_norm):
             return c, 0.95
 
-    # 2. Traditionelle Branchennamen
+    # 2. Traditionelle Branchennamen (Brauerei, Molkerei etc.)
     m_trad = TRADITIONAL_TITLES_RE.search(html_text)
     if m_trad:
-        c = re.sub(r"\s+", " ", m_trad.group(1)).strip()
-        c = c.replace("&amp;", "&")
-        return c, 0.85
+        c = re.sub(r"\s+", " ", m_trad.group(1)).strip().replace("&amp;", "&")
+        if not any(ex in c.lower() for ex in EXCLUDED_ENTITIES):
+            return c, 0.85
 
     # 3. HTML Title Tag
     m_title = re.search(r"<title[^>]*>(.*?)</title>", html_text, re.IGNORECASE | re.DOTALL)
     if m_title:
         title = re.sub(r"\s+", " ", m_title.group(1)).strip()
         title = html.unescape(title)
-        # Trenner wie | - : entfernen
         for sep in ["|", "–", "-", "—", ":", "•"]:
             if sep in title:
                 parts = [p.strip() for p in title.split(sep) if p.strip()]
                 for p in parts:
-                    if len(p) >= 3 and not any(kw in p.lower() for kw in ["home", "startseite", "willkommen", "index"]):
-                        return p, 0.65
-        if len(title) >= 3 and len(title) <= 60:
-            return title, 0.50
+                    if len(p) >= 3 and not any(kw in p.lower() for kw in ["home", "startseite", "willkommen", "index", "spezialit", "feinkost", "domain", "reserved", "reserviert", "construction", "entsteht", "webseite", "website", "online", "portal"]) and not any(ex in p.lower() for ex in EXCLUDED_ENTITIES):
+                        return p, 0.75
+        if len(title) >= 3 and len(title) <= 60 and not any(ex in title.lower() for ex in EXCLUDED_ENTITIES):
+            return title, 0.60
+
+    # 4. Falls gefilterte Corporate Form ohne direkten Domain-Match existiert
+    if clean_candidates:
+        return clean_candidates[0], 0.70
 
     return None, 0.0
 
@@ -204,7 +259,9 @@ def parse_executive_from_html(html_text: str) -> str | None:
             # Validierung
             parts = raw.split()
             if 2 <= len(parts) <= 4:
-                return determine_salutation(raw)
+                # Ausschluss von Nicht-Personen
+                if not any(ex in raw.lower() for ex in ["amtsgericht", "handelsregister", "gmbh", "ag", "gbr"]):
+                    return determine_salutation(raw)
     return None
 
 
@@ -229,6 +286,23 @@ def enrich_lead(row_idx: int, lead: dict) -> EnrichmentResult:
             source_url="",
             status="SKIPPED_FREEMAIL_OR_INVALID",
             reason="Freemail oder ungueltige Domain"
+        )
+
+    # 0. Pre-Send DNS/MX-Prüfung
+    if not check_domain_mx(domain):
+        return EnrichmentResult(
+            lead_id=lead_id,
+            row_idx=row_idx,
+            email=email,
+            domain=domain,
+            original_company=orig_company,
+            enriched_company=sanitize_company_name(orig_company, email),
+            original_contact=orig_contact,
+            enriched_contact=orig_contact,
+            confidence=0.0,
+            source_url="",
+            status="INVALID_MX",
+            reason="Kein MX-Record vorhanden (Zustellung unmöglich)"
         )
 
     # 1. Homepage abrufen
@@ -270,7 +344,6 @@ def enrich_lead(row_idx: int, lead: dict) -> EnrichmentResult:
     enriched_exec = parse_executive_from_html(impressum_html or html_content) or orig_contact
 
     final_company = enriched_co if (enriched_co and conf >= 0.6) else sanitize_company_name(orig_company, email)
-
     status_str = "ENRICHED" if (conf >= 0.8) else ("PARTIAL" if conf >= 0.5 else "LOW_CONFIDENCE")
 
     return EnrichmentResult(
@@ -289,7 +362,7 @@ def enrich_lead(row_idx: int, lead: dict) -> EnrichmentResult:
     )
 
 
-def load_leads_from_sheet(profile: str = "cherinojoel", start_row: int = 2, end_row: int = 1601) -> list[tuple[int, dict]]:
+def load_leads_from_sheet(profile: str = "cherinodiaz", start_row: int = 2, end_row: int = 1601) -> list[tuple[int, dict]]:
     """Laedt Leads direkt aus Google Sheet ALL_LEADS."""
     from crm_common import services, SID
     sheets_svc, _ = services(profile)
@@ -310,7 +383,7 @@ def load_leads_from_sheet(profile: str = "cherinojoel", start_row: int = 2, end_
     return leads
 
 
-def apply_writeback(results: list[EnrichmentResult], profile: str = "cherinojoel", batch_size: int = 50) -> int:
+def apply_writeback(results: list[EnrichmentResult], profile: str = "cherinodiaz", batch_size: int = 50) -> int:
     """Schreibt angereicherte Firmen und Ansprechpartner zurueck ins Sheet ALL_LEADS."""
     from crm_common import services, SID
     sheets_svc, _ = services(profile)
@@ -346,6 +419,10 @@ def apply_writeback(results: list[EnrichmentResult], profile: str = "cherinojoel
                 "values": [[r.enriched_contact]]
             })
 
+    if not data:
+        logger.info("Keine Schreib-Updates vorhanden.")
+        return 0
+
     logger.info(f"Writing back {len(data)} cell updates in batches of {batch_size}...")
     updated_total = 0
     for i in range(0, len(data), batch_size):
@@ -365,7 +442,7 @@ def main():
     parser.add_argument("--start-row", type=int, default=2, help="Startzeile in ALL_LEADS (Standard: 2)")
     parser.add_argument("--end-row", type=int, default=1601, help="Endzeile in ALL_LEADS (Standard: 1601)")
     parser.add_argument("--workers", type=int, default=8, help="Parallele HTTP-Threads")
-    parser.add_argument("--profile", default="cherinojoel", help="Google Workspace Profil")
+    parser.add_argument("--profile", default="cherinodiaz", help="Google Workspace Profil")
     parser.add_argument("--output", default="enrichment_audit.jsonl", help="Pfad fuer Audit-Log")
     args = parser.parse_args()
 

@@ -1,4 +1,6 @@
-import json, collections, sys
+import json, collections, sys, os
+sys.path.insert(0, os.path.dirname(__file__))
+from crm_common import col
 from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
 
@@ -35,10 +37,6 @@ for t, vr in zip(titles, resp["valueRanges"]):
 # ALL_LEADS: header + formulas check + distributions
 hdr = svc.spreadsheets().values().get(spreadsheetId=SID, range="ALL_LEADS!1:1").execute()["values"][0]
 print("\n== ALL_LEADS Header (", len(hdr), ") ==")
-def col(i):
-    s=""; i+=1
-    while i: i,r=divmod(i-1,26); s=chr(65+r)+s
-    return s
 want = ["Tier","Status","Nächste Aktion","Follow-up-Datum","Opt-in-Status","Opt-out-Status","Versandfreigabe","Verantwortlicher","Segment","Batch_ID","Send_Status","Send_Datum","Bounce_Status","Reply_Status","Legal_Basis","Suppressed","Batch_Status","Draft_ID","Drafted_At","Approved_At","Outlook_Message_ID","Last_Reply_At","Last_Error","Kampagne","Branche","Region","Quelle","Score","Interesse","Projektart","Sanierungsfenster"]
 idx = {h:i for i,h in enumerate(hdr)}
 rng = [f"ALL_LEADS!{col(idx[w])}2:{col(idx[w])}" for w in want if w in idx]

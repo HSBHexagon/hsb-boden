@@ -416,6 +416,14 @@ function testEligibility() {
   check('leeres Legal_Basis faellt auf UNKNOWN zurueck',
         !ctx.checkEligibility_(Object.assign({}, base,
           { Legal_Basis: '', Opt_In: 'unknown' })).eligible);
+  check('Freemail als Firmenname blockiert',
+        !ctx.checkEligibility_(Object.assign({}, base, { Company: 'T-Online', Email: 'r.paeffgen@t-online.de' })).eligible);
+  check('Domain-Slug als Firmenname blockiert',
+        !ctx.checkEligibility_(Object.assign({}, base, { Company: 'drinks', Email: 'info@drinks.de' })).eligible);
+  check('sanitizeCompanyName_ filtert Freemail',
+        ctx.sanitizeCompanyName_('T-Online', 'foo@t-online.de') === 'Ihr Unternehmen');
+  check('sanitizeCompanyName_ behaelt gueltige Firma',
+        ctx.sanitizeCompanyName_('Brauerei Päffgen', 'foo@t-online.de') === 'Brauerei Päffgen');
 }
 
 function testDynamicCounts() {

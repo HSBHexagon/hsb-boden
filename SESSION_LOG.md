@@ -455,3 +455,26 @@ Fortlaufendes Log jeder KI-Session. Jeder Eintrag: Zeit · Modell · Phase · Au
 - **Commit:** `4dabab7` auf `feat/b2b-copy-purge` (13 Dateien, +69/−20)
 - **Follow-up (vorbestehend, nicht in diesem Diff):** `articles.ts` ~Z. 499 Standzeiten „25–30 Jahre / alle 5–8 Jahre" vs. Z. 143 „20–30 Jahre / alle 5–7 Jahre" ohne Quelle — vereinheitlichen; Description Z. 490 „TCO-Vergleich über 20 Jahre" ohne 20-Jahres-Rechnung im Artikel; Standortseiten-Descriptions ≈175 Zeichen (> 160).
 - **Owner-Gates:** (1) Krombacher bei `brauerei` kann nicht als Logo erscheinen — kein freigegebenes Logo-Asset (`clientLocations.ts` ohne `logo`), AGENTS.md: keine Kundenlogos ohne Freigabe. (2) `priceRange` im LocalBusiness-Schema entfernen? (3) PR/Merge des Branches.
+
+---
+
+## 2026-09-19 17:42 CEST — Claude Code (Opus 5) / OmA Team Director — Outbound Hardening & Unsubscribe System
+- **Phase:** Outbound Hardening, Postfach-Bereinigung, Abmeldesystem & Belgien-Projekt
+- **Branch:** `feat/b2b-copy-purge`
+- **Anlass:** Nutzer-Intervention nach Entwurf-Fehler um 05:42 Uhr („Industrieböden für T-Online“ bei Freemail-Adresse), Bereinigungsanweisung für Postfächer/CRM, Einbindung des Belgien-Projekts (Fabian Deschamps / IDEA.be) und Erstellung eines barrierefreien, prominenten Abmeldesystems.
+- **Umgesetzt:**
+  1. **Belgien-Projekt (IDEA.be / Fabian Deschamps):** Original-Mailtext aus PDF `ccd8600e.pdf` S. 2 übernommen; Joels Power Automate Flow `137601e8...` per REST API um nativen `draftMessage/Cc`-Support gepatcht; Entwurf `AAMk...` angelegt (To: `fabian.deschamps@idea.be`, CC: `j-post@HSB-boden.de; maxime.fischer@zahna-fliesen.de`, Subject: `RE: Demande conseil - rénovation sol Station de pompage Ghlin`, vollständiger Mailverlauf darunter, ohne Flyer-Anhang); alter Entwurf gelöscht.
+  2. **Postfach- & Sheet-Bereinigung:** 1.102 Entwürfe in Joels Exchange-Mailbox gescannt; 29 fehlerhafte Entwürfe mit Freemail-Providern („T-Online“) oder unaufbereiteten Domain-Slugs („Lustenberger1862“, „Waters“, etc.) restlos per APIHub (`DELETE Mail/{id}`) gelöscht; 29 Zeilen im Google Sheet `ALL_LEADS` synchron auf `Send_Status = not_sent` zurückgesetzt (`Draft_ID` geleert).
+  3. **Code-Schutz-Gates (`hsb_core.py`):** `sanitize_company_name()` schützt alle Generatoren vor Freemail-Providern und Domain-Slugs mit automatischem Fallback auf neutrale Firmenansprache.
+  4. **Prominentes Abmelde-System:** Email-Safe HTML-Tabelle mit dezentem Rahmen, Button und unterstrichenem Link `<u>Hier abmelden</u>` (`https://www.hsb-boden.de/abmelden`) + `mailto:`-Fallback in allen Python-Engines (`run_100_batch.py`, `batch_engine.py`, `run_ultimate_test.py`) und Apps-Script (`HSB_DraftAdapter.gs`, `Actions.gs`) synchronisiert; Astro-Landingpage `apps/website/src/pages/abmelden/index.astro` implementiert.
+  5. **Apps Script Live-Deploy:** `HSB_SALES_OS.gs` (2.543 Zeilen) neu assembliert und per `clasp push --force` live geschaltet (7 Dateien übertragen).
+  6. **Lead-Enrichment Segment B:** `apps/sales-os/engine/enrich_company_names.py` und Pytest-Suite `test_enrich_company_names.py` implementiert für künftige automatisierte Impressum-/Kontakt-Recherche der 1.600 Segment-B-Leads (Quarantäne gewahrt).
+- **Verifikation:**
+  - Pytest: 75/75 PASS (inkl. Freemail-Sanitizer & Abmeldesignatur)
+  - Apps Script Tests: 362/362 PASS
+  - FlowConnect Tests: 30/30 PASS
+  - Astro Tests: 278/278 PASS (39 Testsuiten)
+  - Astro Check: 0 Fehler, 0 Warnungen, 0 Hinweise (160 Dateien)
+  - Astro Build: 58 Seiten generiert (inkl. `/abmelden/index.html`)
+  - `REAL_EXTERNAL_PROSPECT_SEND_COUNT = 0` strikt gewahrt.
+- **Handoff-Dokumentation:** `docs/handoff/2026-09-19-session-summary-outbound-hardening.md` und `apps/sales-os/docs/handoff/HSB_Sales_OS_Outbound_Hardening_Gesamtes_Gespraech_2026-09-19.md` angelegt vor System-Update.

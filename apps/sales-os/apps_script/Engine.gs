@@ -166,6 +166,14 @@ function checkEligibility_(lead) {
   }
   if (!FLYERS[normalizeOwner_(lead.Owner)]) reasons.push('Owner unklar');
 
+  const rawCompany = String(lead.Company || lead.Firma || '').trim();
+  if (rawCompany) {
+    const normC = rawCompany.toLowerCase().trim();
+    if (FREEMAIL_NAMES.indexOf(normC) >= 0 || (email && email.indexOf('@') >= 0 && normC === email.split('@')[1].split('.')[0])) {
+      reasons.push('Freemail/Domain als Firmenname (' + rawCompany + ')');
+    }
+  }
+
   return { eligible: reasons.length === 0, reasons: reasons };
 }
 

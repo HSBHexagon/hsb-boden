@@ -26,7 +26,7 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO_ROOT / "engine"))
 
-from hsb_core import FLYERS, normalize_owner, EMAIL_RE
+from hsb_core import FLYERS, normalize_owner, EMAIL_RE, sanitize_company_name
 from high_volume_matrix_engine import load_leads_authoritative, write_2d_matrix_bulk
 
 from hsb_config import (
@@ -73,9 +73,13 @@ def signatur_html(owner_display: str, mailbox: str, mobile: str) -> str:
         f'style="display:block;border:0;outline:none;text-decoration:none;-ms-interpolation-mode:bicubic;width:102px;height:75px;max-width:102px;max-height:75px;" />'
         f'</a>'
         f'</p>'
-        f'<p style="margin:10px 0 0 0;font-family:Arial,Helvetica,sans-serif;font-size:8pt;color:#777777;line-height:1.4;">'
-        f'Keine weiteren E-Mails gewünscht? '
-        f'<a href="mailto:{mailbox}?subject=Abmelden" style="color:#777777;">Hier abmelden</a></p>'
+        f'<table cellpadding="0" cellspacing="0" border="0" style="margin:16px 0 12px 0;">'
+        f'<tr><td style="padding:8px 14px;background-color:#f4f5f7;border:1px solid #d1d5db;border-radius:5px;font-family:Arial,Helvetica,sans-serif;font-size:9pt;color:#444444;line-height:1.4;">'
+        f'Keine weiteren E-Mails gewünscht?&nbsp;'
+        f'<a href="https://{FIRMA["web"]}/abmelden" target="_blank" style="font-weight:bold;color:#1155cc;text-decoration:underline;"><u>Hier abmelden</u></a>'
+        f'&nbsp;&middot;&nbsp;'
+        f'<a href="mailto:{mailbox}?subject=Abmelden" style="color:#666666;text-decoration:underline;">per E-Mail abmelden</a>'
+        f'</td></tr></table>'
         f'<p style="margin:14px 0 0 0;font-family:Arial,Helvetica,sans-serif;font-size:8pt;color:#777777;line-height:1.35;">'
         f'{FIRMA["name"]} &middot; Sitz: {FIRMA["sitz"]}<br>'
         f'Registergericht: {FIRMA["registergericht"]}, {FIRMA["hrb"]}<br>'
@@ -126,8 +130,9 @@ def create_single_draft(owner: str, lead: dict, flyer_b64: str, flyer_name: str,
     flyer = FLYERS[owner]
     anrede = anrede_fuer(lead)
     anrede_esc = html.escape(anrede)
-    firma_str = str(lead.get("Firma") or "").strip()
-    company = firma_str if (firma_str and firma_str.lower() not in ["none", "nan"]) else "Ihr Unternehmen"
+    email_str = str(lead.get("Email") or lead.get("E-Mail") or "").strip()
+    raw_firma = str(lead.get("Firma") or lead.get("Company") or "").strip()
+    company = sanitize_company_name(raw_firma, email=email_str)
     company_esc = html.escape(company)
     betreff = f"Industrieböden für {company} – Beratung von {flyer.display_name}"
 

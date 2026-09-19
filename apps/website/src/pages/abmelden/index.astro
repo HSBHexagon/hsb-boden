@@ -1,0 +1,53 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+---
+
+<BaseLayout 
+  title="Erfolgreich abgemeldet | HSB Hexagon Säurebau" 
+  description="Ihre E-Mail-Adresse wurde für zukünftige Benachrichtigungen der HSB Hexagon Säurebau GmbH gesperrt." 
+  path="/abmelden/" 
+  robots="noindex, nofollow"
+>
+  <section class="section bg-hsb-mist min-h-[60vh] flex items-center">
+    <div class="container max-w-2xl text-center py-16">
+      <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-green-100 text-green-600 mb-6">
+        <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+        </svg>
+      </div>
+
+      <p class="eyebrow text-hsb-stone uppercase tracking-widest text-xs font-bold">Widerspruch & Abmeldung</p>
+      <h1 class="h1 mt-3 text-3xl font-extrabold text-hsb-charcoal">Erfolgreich abgemeldet</h1>
+
+      <div id="email-confirmation" class="hidden mt-4 p-3 bg-white border border-gray-200 rounded-md text-sm font-medium text-gray-700 max-w-md mx-auto">
+        Abgemeldet: <span id="email-display" class="font-bold text-hsb-charcoal"></span>
+      </div>
+
+      <p class="lead mt-6 text-base text-gray-600 leading-relaxed">
+        Ihre E-Mail-Adresse wurde für zukünftige E-Mail-Kontaktaufnahmen der HSB Hexagon Säurebau GmbH gesperrt. Wir respektieren Ihren Wunsch und senden Ihnen keine weiteren Informationen zu.
+      </p>
+
+      <p class="text-xs text-gray-500 mt-4">
+        Gemäß § 7 Abs. 3 UWG sowie DSGVO wurde Ihre Sperre sofort systemweit hinterlegt.
+      </p>
+
+      <div class="mt-8 flex justify-center gap-4">
+        <a class="button-secondary-dark px-6 py-3 text-sm font-semibold rounded" href="/">Zur Startseite</a>
+        <a class="button-secondary px-6 py-3 text-sm font-semibold rounded" href="/kontakt/">Kontakt</a>
+      </div>
+    </div>
+  </section>
+
+  <script is:inline>
+    const params = new URLSearchParams(window.location.search);
+    const email = params.get('email');
+    if (email) {
+      const display = document.getElementById('email-display');
+      const box = document.getElementById('email-confirmation');
+      if (display && box) {
+        display.textContent = email;
+        box.classList.remove('hidden');
+      }
+    }
+  </script>
+</BaseLayout>

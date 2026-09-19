@@ -88,8 +88,8 @@ def page_count(pdf: Path) -> int:
     return 0
 
 
-MIN_PHOTO_W = 400
-MIN_PHOTO_H = 300
+MIN_PHOTO_W = 200
+MIN_PHOTO_H = 150
 
 
 def count_project_photos(pdf: Path, page: int = 2) -> int:

@@ -15,7 +15,7 @@
   - `ingest_optouts.py` mit `--owner ALL --apply` ausgeführt (NLP/Regex Opt-outs überwacht).
 - [x] **Pre-Send DNS/MX-Guard:** `check_domain_mx` fängt ungültige Domains automatisch ab (z. B. `weingut-montigny.de` vor Hard-Bounce bewahrt).
 - [x] **Pilot-Veredelung Joel (49 Leads):** 49 Entwürfe in Joels Postfach in-place überarbeitet (Firmennamen, AGI S 40 Copy, Logo, Abmeldetabelle, 241 KB Flyer) und in `ALL_LEADS` synchronisiert.
-- [x] **Ausnahmsloses Namens-Hardening auf `Jordi Post`:** 18 Dateien in Generatoren, Apps Script und Testsuiten von *-ie* auf `Jordi Post` (mit *-i*) bereinigt (Commit `703e748`).
+- [x] **Kanonisches Namens-Hardening auf `Jordie Post`:** 18 Dateien auf kanonische Schreibweise `Jordie Post` (mit *-ie*) gemaess CURRENT_HANDOFF.md zurueckgestellt (Revert-Commit `89dee47`).
 - [x] **Multi-Owner Overhaul Runner:** `overhaul_drafts.py` um `--owner {JOEL,JORDI,ALL}` erweitert.
 - [x] **Testsuite-Verifikation:** 75 Pytest + 362 Apps Script + 30 FlowConnect = 467 Tests bestanden.
 - [x] **SSOT-Architektur verankert:** `PROJECT_TRUTH.md` und `scripts/verify_ssot.py` im Repo-Root etabliert.
@@ -24,7 +24,7 @@
 
 ## 2. In Bearbeitung / Nächste Schritte (TODO)
 
-- [ ] **Jordi Postfach-Veredelung:** Ausführung von `overhaul_drafts.py --owner JORDI --limit 50 --apply` über Jordis Power Automate Flow / Apps Script.
+- [ ] **Jordie Postfach-Veredelung:** Ausführung von `overhaul_drafts.py --owner JORDI --limit 50 --apply` über Jordies Power Automate Flow / Apps Script.
 - [ ] **PR #405 Merge:** Nach Abschluss der Jordi-Tranche Merge in `main`.
 
 ---

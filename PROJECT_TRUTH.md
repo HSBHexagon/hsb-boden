@@ -25,8 +25,8 @@
 ## 2. Personen, Rollen & Rechtsform (Strikte Namensregel)
 
 1. **Geschäftsführer (Gesetzliche Pflichtangabe §35a GmbHG):**
-   - **Jordi Post** (Rechtschreibung zwingend mit **-i**).
-   - **VERBOT:** Niemals *Jordie* oder *Jordy* für die Person oder in E-Mail-Signaturen verwenden. (HRB 21481, Amtsgericht Coesfeld).
+   - **Jordie Post** (Rechtschreibung zwingend mit **-ie** laut Handoff 2026-09-12).
+   - **VERBOT:** Niemals *Jordi* oder *Jordy* für die Person oder in E-Mail-Signaturen verwenden. (HRB 21481, Amtsgericht Coesfeld).
    - Mobil: `0170 2340904` &middot; E-Mail: `j-post@hsb-boden.de`
 2. **Betreiber, Gesellschafter & Vertriebsleitung:**
    - **Joel Cherino Diaz**
@@ -40,7 +40,7 @@
 - **Exakter 50/50 Split (6.424 Leads gesamt):**
   - **Joel Cherino Diaz:** 3.212 Leads (Zeilen 2–3213).
     - Flow: `137601e8-7369-4a74-9564-959f1551e48d` (`Request/Http` Trigger)
-  - **Jordi Post:** 3.212 Leads (Zeilen 3214–6425).
+  - **Jordie Post:** 3.212 Leads (Zeilen 3214–6425).
     - Flow: `47ee3d7a-626c-4fff-9e16-6d938949e4bd` (`Button` Trigger / LogicFlows Connector via Apps Script)
 
 ---
@@ -66,7 +66,7 @@
 1. **Kanonischer Vektor-Flyer (241 KB, EOP-optimiert):**
    - Anhangsname beim Empfänger immer: `HSB-HEXAGON-Industrieboeden-Flyer.pdf`
    - Joel Master: `apps/sales-os/assets/canonical/HSB-Flyer-Joel-Cherino_FINAL.pdf` (SHA-256: `6ac5ed11...`)
-   - Jordi Master: `apps/sales-os/assets/canonical/HSB-Flyer-Jordie-Post_FINAL.pdf` (SHA-256: `a11876f0...`)
+   - Jordie Master: `apps/sales-os/assets/canonical/HSB-Flyer-Jordie-Post_FINAL.pdf` (SHA-256: `a11876f0...`)
 2. **Signatur-Logo:**
    - URL: `https://www.hsb-boden.de/brand/hsb-boden-logo.png`
    - Feste Attribute: `width="102" height="75"`, Bicubic Rendering.

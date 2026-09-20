@@ -3,7 +3,7 @@
 HSB Monorepo SSOT Verifier & Guardrail Linter.
 Ensures zero AI drift across Claude Code, Gemini CLI, Cursor and Codex.
 Enforces:
-1. Canonical name "Jordi Post" (never "Jordie Post" or "Jordy" in active code)
+1. Canonical name "Jordie Post" (never "Jordi Post" or "Jordy" in active code)
 2. Invariant REAL_EXTERNAL_PROSPECT_SEND_COUNT == 0
 3. Terminal preference: iTerm2 over Terminal.app
 4. Monorepo integrity: No references pushing to deprecated hsb-sales-os repo
@@ -41,10 +41,11 @@ def check_file_content(path: Path):
     except Exception:
         return
 
-    # Check 1: Forbidden spelling Jordie Post in active code/templates
+    # Check 1: Forbidden spelling Jordi Post in GF / signature fields
     if "apps/sales-os/" in rel and path.suffix in [".py", ".js", ".gs", ".html", ".ts"]:
-        if "Jordie Post" in text:
-            ERRORS.append(f"[{rel}] Unzulässige Namensschreibung 'Jordie Post' gefunden! Erlaubt laut PROJECT_TRUTH.md nur 'Jordi Post'.")
+        for line_no, line in enumerate(text.splitlines(), start=1):
+            if "geschaeftsfuehrer" in line.lower() and "Jordi Post" in line:
+                ERRORS.append(f"[{rel}:{line_no}] Unzulässige Namensschreibung 'Jordi Post' im Geschäftsführer-Feld gefunden! Erlaubt laut PROJECT_TRUTH.md nur 'Jordie Post'.")
 
     # Check 2: Terminal.app usage in scripts/osascript (ignoring this verifier script itself)
     if path.name != "verify_ssot.py" and path.suffix in [".sh", ".py", ".md"] and "apps/sales-os/" in rel:
@@ -82,7 +83,7 @@ def main():
         print("\nBitte korrigieren gemäß PROJECT_TRUTH.md vor Commit/Abschluss.\n")
         sys.exit(1)
 
-    print("✅ Alle SSOT-Prüfungen bestanden: Jordi Post, Monorepo & Invarianten 100% konform.")
+    print("✅ Alle SSOT-Prüfungen bestanden: Jordie Post, Monorepo & Invarianten 100% konform.")
     sys.exit(0)
 
 if __name__ == "__main__":

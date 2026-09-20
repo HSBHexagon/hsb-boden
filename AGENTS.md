@@ -2,7 +2,7 @@
 
 ## ⚠️ OBERSTE SSOT-PFLICHT FÜR ALLE KI-TOOLS (Claude, Gemini, Cursor)
 Vor JEDER Analyse oder Code-Änderung MÜSSEN zwingend gelesen werden:
-1. `PROJECT_TRUTH.md` (Monorepo SSOT, Jordi Post mit -i, HSBHexagon/hsb-sales-os ist archiviert!)
+1. `PROJECT_TRUTH.md` (Monorepo SSOT, Jordie Post mit -ie, HSBHexagon/hsb-sales-os ist archiviert!)
 2. `CURRENT_STATE.md` (Aktueller Live-Fortschritt & nächste Tasks)
 
 Vor jedem Commit / Abschluss MUSS ausgeführt werden:

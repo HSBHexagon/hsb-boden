@@ -54,7 +54,7 @@ def main():
         rollout_jordie(start_from=args.jordie_start, target_end=5033, chunk_size=40)
 
     if args.owner in ["JOEL", "BOTH"]:
-        rollout_joel(start_from=args.joel_start, target_end=1651, chunk_size=20)
+        rollout_joel(start_from=args.joel_start, target_end=2151, chunk_size=20)
 
     print("\n================================================================================")
     print(" 1.000ER ROLLOUT ABGESCHLOSSEN!")

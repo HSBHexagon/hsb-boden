@@ -45,7 +45,7 @@ const OWNER_DATEN = {
     propName: 'HSB_ADAPTER_URL_JOEL'
   },
   JORDI: {
-    anzeige: 'Jordie Post',
+    anzeige: 'Jordi Post',
     postfach: 'j-post@hsb-boden.de',
     driveId: '1UMX-fi2lJ9bo14KwuClqgfZQWECdE_XV',
     sha256: 'a11876f02b54421bcafd9a6b8ec6f62d748e383b26fcadc8bbe834ee7ffbc4ce',

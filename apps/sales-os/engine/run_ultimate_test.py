@@ -39,7 +39,7 @@ FIRMA = {
     "sitz": "Gronau",
     "registergericht": "Amtsgericht Coesfeld",
     "hrb": "HRB 21481",
-    "geschaeftsfuehrer": "Jordie Post"
+    "geschaeftsfuehrer": "Jordi Post"
 }
 
 def signatur_html(owner_display: str, mailbox: str, mobile: str) -> str:

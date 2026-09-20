@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-HSB Sales OS - Batch-Runner für Entwürfe (Joel Cherino Diaz & Jordie Post).
+HSB Sales OS - Batch-Runner für Entwürfe (Joel Cherino Diaz & Jordi Post).
 Sicherheit: Reines DraftEmail, REAL_EXTERNAL_SEND_COUNT = 0.
 Enthält:
 - Offizielles HSB Firmenlogo in der Signatur
@@ -50,7 +50,7 @@ FIRMA = {
     "sitz": "Gronau",
     "registergericht": "Amtsgericht Coesfeld",
     "hrb": "HRB 21481",
-    "geschaeftsfuehrer": "Jordie Post"
+    "geschaeftsfuehrer": "Jordi Post"
 }
 
 def signatur_html(owner_display: str, mailbox: str, mobile: str) -> str:

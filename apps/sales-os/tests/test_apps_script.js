@@ -509,7 +509,7 @@ function testEmlStructure() {
   check('EML: X-Unsent: 1 gesetzt', /X-Unsent: 1/.test(eml));
   check('EML: X-HSB-Lead-ID gesetzt', /X-HSB-Lead-ID: TEST-001/.test(eml));
   check('EML: X-HSB-Batch-ID gesetzt', /X-HSB-Batch-ID: HSB-20260821-JORDI-0001/.test(eml));
-  check('EML: From ist Jordis Mailbox', new RegExp('From: Jordie Post <' + flyer.mailbox + '>').test(eml));
+  check('EML: From ist Jordis Mailbox', new RegExp('From: Jordi Post <' + flyer.mailbox + '>').test(eml));
   check('EML: Reply-To gesetzt', new RegExp('Reply-To: ' + flyer.mailbox).test(eml));
   check('EML: To gesetzt', /To: schmidt@muster\.de/.test(eml));
   check('EML: kein fremder Absender', !/j-cherino/.test(eml));

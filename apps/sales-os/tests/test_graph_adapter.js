@@ -372,7 +372,7 @@ console.log('\n=== 10. Signatur: Abmelde-Link ===');
   vm.createContext(sigKontext);
   vm.runInContext(
     fs.readFileSync(path.join(DEPLOY, 'HSB_DraftAdapter.gs.js'), 'utf8'), sigKontext);
-  const sigJordi = sigKontext.signaturHtml_('Jordie Post', 'j-post@hsb-boden.de', '0170 2340904');
+  const sigJordi = sigKontext.signaturHtml_('Jordi Post', 'j-post@hsb-boden.de', '0170 2340904');
   pruefe('Signatur: Abmelde-Link auf das eigene Postfach mit Betreff Abmelden',
          sigJordi.indexOf('href="mailto:j-post@hsb-boden.de?subject=Abmelden"') >= 0 && sigJordi.indexOf('Hier abmelden') >= 0);
   pruefe('Signatur: Abmelde-Link steht vor den Pflichtangaben',

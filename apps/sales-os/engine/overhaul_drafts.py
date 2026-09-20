@@ -93,10 +93,9 @@ def load_sheet_leads(sheets_svc: Any) -> Tuple[List[Dict[str, Any]], Dict[str, T
     return all_leads, email_map
 
 
-def run_overhaul(limit: int = 20, dry_run: bool = True) -> int:
+def run_overhaul(owner: str = "JOEL", limit: int = 20, dry_run: bool = True) -> int:
     assert REAL_EXTERNAL_PROSPECT_SEND_COUNT == 0, "Sicherheits-Invariante verletzt!"
-
-    owner = "JOEL"
+    owner = normalize_owner(owner)
     conf = CONNECTIONS[owner]
     conn_id = conf["connection_id"]
 
@@ -272,15 +271,20 @@ def run_overhaul(limit: int = 20, dry_run: bool = True) -> int:
 
 def main():
     parser = argparse.ArgumentParser(description="HSB Sales OS - In-Place Draft Overhaul Runner")
+    parser.add_argument("--owner", choices=["JOEL", "JORDI", "ALL"], default="JOEL", help="Postfach-Owner (JOEL, JORDI oder ALL)")
     parser.add_argument("--limit", type=int, default=20, help="Anzahl zu überarbeitender Entwürfe (Standard: 20)")
     parser.add_argument("--apply", action="store_true", default=False, help="Überarbeitung live in Exchange & Sheet anwenden")
     args = parser.parse_args()
 
     dry_run = not args.apply
     logger.info(f"=== HSB DRAFT OVERHAUL & ENRICHMENT ===")
-    logger.info(f"Modus: {'DRY-RUN (Vorschau)' if dry_run else 'APPLY (Live-Update)'} | Limit: {args.limit}")
+    logger.info(f"Owner: {args.owner} | Modus: {'DRY-RUN (Vorschau)' if dry_run else 'APPLY (Live-Update)'} | Limit: {args.limit}")
 
-    run_overhaul(limit=args.limit, dry_run=dry_run)
+    owners = ["JOEL", "JORDI"] if args.owner == "ALL" else [args.owner]
+    total = 0
+    for o in owners:
+        total += run_overhaul(owner=o, limit=args.limit, dry_run=dry_run)
+    return total
 
 
 if __name__ == "__main__":

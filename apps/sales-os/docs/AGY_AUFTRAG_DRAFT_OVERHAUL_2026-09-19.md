@@ -12,7 +12,7 @@
 ## 1. Startbefehl (Neues Terminal-Fenster via osascript)
 
 ```bash
-osascript -e 'tell application "Terminal" to do script "cd /Users/joelcherinodiaz/Projekte/hsb-boden && agy --dangerously-skip-permissions --agent oma-director --effort high -i \"/oma:mode ultrawork\nLies apps/sales-os/docs/AGY_AUFTRAG_DRAFT_OVERHAUL_2026-09-19.md und führe die Entwurfs-Veredelung und Inbound-Automatisierung autonom aus.\""'
+osascript -e 'tell application "iTerm" to do script "cd /Users/joelcherinodiaz/Projekte/hsb-boden && agy --dangerously-skip-permissions --agent oma-director --effort high -i \"/oma:mode ultrawork\nLies apps/sales-os/docs/AGY_AUFTRAG_DRAFT_OVERHAUL_2026-09-19.md und führe die Entwurfs-Veredelung und Inbound-Automatisierung autonom aus.\""'
 ```
 
 ---

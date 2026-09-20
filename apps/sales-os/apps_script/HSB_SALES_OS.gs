@@ -34,7 +34,7 @@ const CFG = {
 const FLYERS = {
   JORDI: {
     key: 'JORDI',
-    displayName: 'Jordi Post',
+    displayName: 'Jordie Post',
     mailbox: 'j-post@hsb-boden.de',
     fileName: 'HSB-HEXAGON-Industrieboeden-Flyer.pdf',
     // Name im Anhang beim Empfaenger. Getrennt von fileName, weil dieser an

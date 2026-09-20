@@ -47,7 +47,7 @@ class FlyerMaster:
 FLYERS: dict[str, FlyerMaster] = {
     "JORDI": FlyerMaster(
         owner_key="JORDI",
-        display_name="Jordi Post",
+        display_name="Jordie Post",
         mailbox="j-post@hsb-boden.de",
         filename="HSB-Flyer-Jordie-Post_FINAL.pdf",
         drive_id="1UMX-fi2lJ9bo14KwuClqgfZQWECdE_XV",
@@ -228,7 +228,7 @@ class EligibilityResult:
 
 
 def normalize_owner(value: str | None) -> str:
-    """'Jordi Post' / 'jordie' / 'JORDI' -> 'JORDI'."""
+    """'Jordie Post' / 'jordie' / 'JORDI' -> 'JORDI'."""
     if not value:
         return ""
     v = str(value).strip().upper()

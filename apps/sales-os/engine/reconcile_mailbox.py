@@ -115,7 +115,7 @@ def print_status():
     print("\n================================================================================")
     print(" HSB SALES OS — CRM STATUS & SENDE-MONITOR (Single Source of Truth)")
     print("================================================================================")
-    print(f"{'Metrik':<30} | {'Gesamt':<10} | {'Joel Cherino':<15} | {'Jordi Post':<15}")
+    print(f"{'Metrik':<30} | {'Gesamt':<10} | {'Joel Cherino':<15} | {'Jordie Post':<15}")
     print("-" * 80)
     print(f"{'Kontakte in Datenbank':<30} | {t_all:<10} | {t_joel:<15} | {t_jordi:<15}")
     print(f"{'Entwürfe in Outlook (DRAFTED)':<30} | {d_all:<10} | {d_joel:<15} | {d_jordi:<15}")

@@ -128,7 +128,7 @@ var FIRMA = {
   sitz: 'Gronau',
   registergericht: 'Amtsgericht Coesfeld',
   hrb: 'HRB 21481',
-  geschaeftsfuehrer: 'Jordi Post'
+  geschaeftsfuehrer: 'Jordie Post'
 };
 
 function htmlEscape_(text) {

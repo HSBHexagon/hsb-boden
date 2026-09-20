@@ -2,7 +2,7 @@
 """
 HSB Sales OS - Rollout Runner für 1.000 Entwürfe (500 Joel / 500 Jordie).
 Arbeitet sequentiell in sicheren Tranchen:
-- Jordi Post: 40er Tranchen (Ziel: Zeilen 4534 bis 5033)
+- Jordie Post: 40er Tranchen (Ziel: Zeilen 4534 bis 5033)
 - Joel Cherino Diaz: 20er Tranchen (Ziel: Zeilen 1152 bis 1651)
 Schreibt nach jeder Tranche und via flush_progress die 2D-Matrix ins Google Sheet zurück
 und pausiert 400ms zwischen Entwürfen.

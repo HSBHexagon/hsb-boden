@@ -14,7 +14,7 @@ conversation_text = """# HSB Sales OS — Gesamtes Gespräch, Audit & Abschluss-
 - **Datum:** 2026-09-15
 - **Projekt:** HSB Sales OS (Gronau)
 - **Betreiber & Hauptidentität:** Joel Cherino Diaz (`cherinodiaz@outlook.com` / `j-cherino@hsb-boden.de`)
-- **Zweiter Geschäftsführer:** Jordi Post (`j-post@hsb-boden.de`)
+- **Zweiter Geschäftsführer:** Jordie Post (`j-post@hsb-boden.de`)
 - **System of Record:** Google Sheet CRM `ALL_LEADS` (`1W-NjwEq0UhDo2TaeS-2qp_qit4YFMz6k-IqKHlPpHmg`)
 - **Apps Script ID:** `1Xl6xkMTyn3Hu6UvBoX7gVrdppuyRal04NH6Ei16hnz_Pfuq-JWmh9U4c`
 - **Sicherheits-Invariante:** `REAL_EXTERNAL_SEND_COUNT = 0` (Strikte Einhaltung: Null externe E-Mails versendet)

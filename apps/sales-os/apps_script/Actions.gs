@@ -118,7 +118,7 @@ function anrede_(contact) {
 }
 
 function renderEmail_(lead, flyer) {
-  const company = String(lead.Company || 'Ihr Unternehmen').trim();
+  const company = sanitizeCompanyName_(lead.Company, lead.Email);
   const contact = anrede_(lead.Contact);
   let greeting;
   if (!contact) {
@@ -152,8 +152,8 @@ function renderEmail_(lead, flyer) {
     + flyer.mailbox + '\n'
     + 'Tel. +49 (0)2562 9463030\n\n'
     + '---\n'
-    + 'Wenn Sie keine weiteren Informationen erhalten möchten, antworten Sie '
-    + 'bitte mit dem Betreff "Abmelden" auf diese E-Mail.';
+    + 'Wenn Sie keine weiteren Informationen erhalten möchten, klicken Sie auf '
+    + 'https://www.hsb-boden.de/abmelden oder antworten Sie mit dem Betreff "Abmelden" auf diese E-Mail.';
 
   return { subject: subject, body: body };
 }

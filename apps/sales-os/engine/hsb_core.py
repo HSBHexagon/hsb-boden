@@ -76,7 +76,7 @@ KNOWN_BAD_HASHES: dict[str, str] = {
     "494465232dd6e563907ca72cbdfe197ead0cc3b5b4b9e41b6771a08d187607cf":
         "Jordi alt: git main Fassung",
     "763ea1784fe83f0d0fd5ab5214e7fc219f1a3ae203e58987cfbdf56a4c22bd88":
-        "Jordi alt: Tippfehler-Fassung 'Jordie Post'",
+        "Jordie alt: Veraltete unkomprimierte Fassung",
     "1745c05de9958f1c1646498a6ebc6e0a17d2aefb3a0e57ec98d8636859fe8dd0":
         "Jordi Zwischenstand: helles Einzelbild, nicht die 4-Bilder-Referenzseite",
     "7c72e93262a8524d2e90b4ea931bf1ee90f5f5321af1b859ba6ff62ce865549e":
@@ -169,8 +169,51 @@ ADDITIONAL_FIELDS: list[str] = [
 ]
 
 # --------------------------------------------------------------------------
-# 3. Compliance-Gate - fail-closed, §7 UWG
+# 3. Compliance-Gate - fail-closed, §7 UWG & Freemail-Filter
 # --------------------------------------------------------------------------
+
+FREEMAIL_DOMAINS: set[str] = {
+    "gmail.com", "googlemail.com", "outlook.com", "outlook.de", "hotmail.com", "hotmail.de",
+    "live.com", "live.de", "web.de", "gmx.de", "gmx.net", "gmx.at", "gmx.ch", "t-online.de",
+    "yahoo.com", "yahoo.de", "icloud.com", "me.com", "freenet.de", "aol.com", "posteo.de",
+    "mail.de", "protonmail.com", "proton.me",
+}
+
+FREEMAIL_NAMES: set[str] = {
+    "t-online", "t online", "tonline", "gmail", "googlemail", "gmx", "web.de", "web de", "web",
+    "yahoo", "outlook", "hotmail", "live", "aol", "freenet", "posteo", "mail.de", "protonmail",
+    "proton", "icloud",
+}
+
+
+def sanitize_company_name(raw_name: str | None, email: str | None = None) -> str:
+    """
+    Bereinigt den Firmennamen fuer Anrede und Betreffzeile.
+    Verhindert peinliche Fehler wie 'Industrieböden für T-Online' oder Freemail-Provider.
+    """
+    if not raw_name:
+        return "Ihr Unternehmen"
+    name = str(raw_name).strip()
+    norm = name.lower()
+    if not norm or norm in {"none", "nan", "null", "undefined", "-", ".", "/"}:
+        return "Ihr Unternehmen"
+
+    # Pruefung gegen Freemail-Namen
+    norm_clean = norm.replace("-", " ").replace(".", " ").strip()
+    for fn in FREEMAIL_NAMES:
+        if norm == fn or norm_clean == fn.replace("-", " ").replace(".", " "):
+            return "Ihr Unternehmen"
+
+    # Falls der Name der Domain einer Freemail-Adresse entspricht
+    if email and "@" in email:
+        domain = email.split("@")[-1].strip().lower()
+        if domain in FREEMAIL_DOMAINS:
+            domain_base = domain.split(".")[0]
+            if domain_base in norm_clean:
+                return "Ihr Unternehmen"
+
+    return name
+
 
 LEGAL_BASIS_SENDABLE = {"OPT_IN", "EXISTING_CUSTOMER_7_3", "OWNER_APPROVED"}
 LEGAL_BASIS_ALL = LEGAL_BASIS_SENDABLE | {"BLOCKED", "UNKNOWN"}
@@ -185,13 +228,13 @@ class EligibilityResult:
 
 
 def normalize_owner(value: str | None) -> str:
-    """'Jordi Post' / 'jordi' / 'JORDI' -> 'JORDI'."""
+    """'Jordie Post' / 'jordie' / 'JORDI' -> 'JORDI'."""
     if not value:
         return ""
     v = str(value).strip().upper()
     if v in FLYERS:
         return v
-    if "JORDI" in v or "POST" in v:
+    if "JORDIE" in v or "JORDI" in v or "POST" in v:
         return "JORDI"
     if "JOEL" in v or "CHERINO" in v:
         return "JOEL"
@@ -240,6 +283,12 @@ def check_eligibility(lead: dict) -> EligibilityResult:
 
     if not normalize_owner(lead.get("Owner")) in FLYERS:
         reasons.append(f"Owner unklar ({lead.get('Owner') or 'leer'})")
+
+    raw_company = str(lead.get("Company") or lead.get("Firma") or "").strip()
+    if raw_company:
+        norm_c = raw_company.lower().strip()
+        if norm_c in FREEMAIL_NAMES or (email and "@" in email and norm_c == email.split("@")[-1].split(".")[0]):
+            reasons.append(f"Freemail/Domain als Firmenname ({raw_company})")
 
     return EligibilityResult(eligible=not reasons, reasons=reasons)
 

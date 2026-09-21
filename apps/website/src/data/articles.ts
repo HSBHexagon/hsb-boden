@@ -35,7 +35,7 @@ export const articles: Article[] = [
       },
       {
         title: "Wirtschaftliche Folgen: Der 'Eisberg' der Sanierungskosten",
-        body: "Die Anschaffungskosten eines Bodensystems sind nur ein Teil der Lebenszykluskosten. Die wirtschaftlichen Folgen eines Fehlkaufs sind erheblich: Ungeplante Produktionsstopps sind teuer, und Notfall-Sanierungen unter Zeitdruck – oft am Wochenende oder an Feiertagen – kosten mehr als geplante Maßnahmen. Ein günstiges System, das wiederholt nachsaniert werden muss, kann über die Nutzungsdauer die Lebenszykluskosten eines einmal richtig geplanten, wartungsarmen Systems deutlich übersteigen.",
+        body: "Die Anschaffungskosten eines Bodensystems sind nur ein Teil der Lebenszykluskosten. Die wirtschaftlichen Folgen eines Fehlkaufs sind erheblich: Ungeplante Produktionsstopps sind teuer, und Notfall-Sanierungen unter Zeitdruck – oft am Wochenende oder an Feiertagen – kosten mehr als geplante Maßnahmen. Ein in der Anschaffung niedrigpreisiges System, das wiederholt nachsaniert werden muss, kann über die Nutzungsdauer die Lebenszykluskosten eines einmal richtig geplanten, wartungsarmen Systems deutlich übersteigen.",
       },
       {
         title: "Praxisbeispiel: Sanierung einer Großküche in NRW",
@@ -46,8 +46,8 @@ export const articles: Article[] = [
         body: "Hexagon Säurebau setzt auf eine strukturierte 4-Stufen-Analyse, um Fehlentscheidungen auszuschließen: 1. Erfassung der mechanischen (Staplergewicht, Radmaterial), thermischen (Dampfstrahler, Frostraum) und chemischen Lasten (Säuren, Konzentrationen). 2. Prüfung des Untergrunds mittels Haftzugprüfung und CM-Messung zur Bestimmung der Restfeuchte. 3. Systemauswahl: Wir beraten herstellerunabhängig zwischen PU-Beton und Keramik. 4. Fachgerechte Ausführung inklusive der kritischen Detailanschlüsse an Rinnen, Abläufe und Wandaufbordungen (Hohlkehlen). Nur wenn alle Komponenten aufeinander abgestimmt sind, entsteht ein dauerhaft sicheres System.",
       },
       {
-        title: "Kostenlose Werksbegehung und Bedarfsanalyse",
-        body: "Sind Sie unsicher, welches System für Ihre nächste Sanierung oder Ihren Neubau geeignet ist? Vermeiden Sie kostspielige Fehlinvestitionen durch fachfremde Planung. Unsere Experten bieten Ihnen eine kostenlose Werksbegehung und eine technische Bestandsaufnahme direkt vor Ort an. Wir identifizieren Schwachstellen, bevor sie zum Produktionsstopp führen. Kontaktieren Sie uns für ein unverbindliches Erstgespräch.",
+        title: "Werksbegehung und technische Bedarfsanalyse",
+        body: "Sind Sie unsicher, welches System für Ihre nächste Sanierung oder Ihren Neubau geeignet ist? Vermeiden Sie kostspielige Fehlinvestitionen durch fachfremde Planung. Unsere Ingenieure führen eine Werksbegehung mit technischer Bestandsaufnahme direkt vor Ort durch; sie wird nicht in Rechnung gestellt und ist mit keiner Kaufverpflichtung verbunden. Wir identifizieren Schwachstellen, bevor sie zum Produktionsstopp führen. Kontaktieren Sie uns für ein technisches Erstgespräch.",
       },
     ],
     relatedServices: ["keramische-industrieboeden", "pu-beton-industrieboden"],
@@ -244,7 +244,7 @@ export const articles: Article[] = [
       },
       {
         title: "Lösungsweg Hexagon Säurebau: Der Taktplan",
-        body: "Unser Sanierungs-Management umfasst: 1. Vorab-Untergrundanalyse (technisch belegt). 2. Erstellung eines detaillierten Taktplans für alle Gewerke. 3. Einsatz von staubfreier Frästechnik. 4. Fachgerechte Verlegung durch eingespielte Teams. Wir koordinieren alles aus einer Hand – vom Rückbau bis zur Abnahme. Sie erhalten eine Festpreisgarantie und eine verbindliche Zusage über den Zeitpunkt der Wiederinbetriebnahme.",
+        body: "Unser Sanierungs-Management umfasst: 1. Vorab-Untergrundanalyse (technisch belegt). 2. Erstellung eines detaillierten Taktplans für alle Gewerke. 3. Einsatz von staubfreier Frästechnik. 4. Fachgerechte Verlegung durch eingespielte Teams. Wir koordinieren alles aus einer Hand – vom Rückbau bis zur Abnahme. Sie erhalten einen verbindlichen Taktplan mit Zusage über den Zeitpunkt der Wiederinbetriebnahme.",
       },
       {
         title: "Jetzt Sanierungs-Konzept für Ihre Produktion anfordern",
@@ -492,7 +492,7 @@ export const articles: Article[] = [
     category: "Wirtschaftlichkeit",
     readTime: "9 Minuten",
     intro:
-      "Bei der Investitionsentscheidung für einen Industrieboden steht oft der Quadratmeterpreis der Erstverlegung im Vordergrund. Für kaufmännische Entscheider und Betriebsleiter zählt jedoch die Total Cost of Ownership (TCO) über den gesamten Lebenszyklus inklusive Sanierungszyklen und Ausfallzeiten.",
+      "Bei der Investitionsentscheidung für einen Industrieboden stehen oft die Erstinvestitionskosten der Verlegung im Vordergrund. Für kaufmännische Entscheider und Betriebsleiter zählt jedoch die Total Cost of Ownership (TCO) über den gesamten Lebenszyklus inklusive Sanierungszyklen und Ausfallzeiten.",
     sections: [
       {
         title: "Der Unterschied zwischen Anschaffungs- und Gesamtkosten",

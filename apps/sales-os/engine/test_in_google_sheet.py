@@ -9,7 +9,7 @@ Test-Gates:
 3. Owner & Lead Distribution Gate (3212 Joel / 3212 Jordie)
 4. Sende-Status & Blau-Formatierung Gate (25 sent leads, 3 Conditional Format Rules)
 5. 100+100 Drafts Batch Gate (200/200 drafted mit Flow-Run / Message-ID)
-6. SSOT Name Verification Gate ('Jordie Post' auf DASHBOARD & README)
+6. SSOT Name Verification Gate ('Jordi Post' auf DASHBOARD & README)
 7. Dashboard Cross-Tab Reconciliation Gate (Formeln vs. ALL_LEADS)
 8. Live In-Sheet Read/Write/Delete Roundtrip Gate (Echte API-Schreib-/Lese-/Lösch-Aktion)
 """
@@ -209,7 +209,7 @@ def run_in_sheet_tests():
         log_gate("Gate 5 - 100+100 Drafts Batch", False, str(e))
 
     # --------------------------------------------------------------------------
-    # GATE 6: SSOT Name Verification Gate ('Jordie Post' auf DASHBOARD & README)
+    # GATE 6: SSOT Name Verification Gate ('Jordi Post' auf DASHBOARD & README)
     # --------------------------------------------------------------------------
     try:
         dash_name = service.spreadsheets().values().get(
@@ -222,11 +222,11 @@ def run_in_sheet_tests():
             range="README!A6"
         ).execute().get("values", [[""]])[0][0]
 
-        name_ok = (dash_name == "Jordie Post") and ("Jordie Post" in readme_name)
-        log_gate("Gate 6 - SSOT Name 'Jordie Post'", name_ok,
+        name_ok = (dash_name == "Jordi Post") and ("Jordi Post" in readme_name)
+        log_gate("Gate 6 - SSOT Name 'Jordi Post'", name_ok,
                  f"DASHBOARD!C3 = '{dash_name}', README!A6 = '{readme_name}'")
     except Exception as e:
-        log_gate("Gate 6 - SSOT Name 'Jordie Post'", False, str(e))
+        log_gate("Gate 6 - SSOT Name 'Jordi Post'", False, str(e))
 
     # --------------------------------------------------------------------------
     # GATE 7: Dashboard Cross-Tab Reconciliation Gate

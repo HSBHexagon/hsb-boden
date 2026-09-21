@@ -24,6 +24,7 @@ from hsb_core import (
     check_eligibility,
     make_batch_id,
     normalize_owner,
+    sanitize_company_name,
     sha256_bytes,
     utc_now_iso,
 )
@@ -274,7 +275,7 @@ def anrede(contact: str | None) -> str:
 
 def render_email(lead: dict, batch: Batch, template: str | None = None) -> tuple[str, str]:
     """Gibt (subject, body) zurueck."""
-    company = str(lead.get("Company") or "Ihr Unternehmen").strip()
+    company = sanitize_company_name(lead.get("Company"), email=lead.get("Email"))
     contact = anrede(lead.get("Contact"))
     if not contact:
         greeting = "Sehr geehrte Damen und Herren,"
@@ -372,9 +373,13 @@ def signatur_html(owner_display: str, mailbox: str, mobile: str = "") -> str:
         'style="display:block;border:0;outline:none;text-decoration:none;-ms-interpolation-mode:bicubic;width:102px;height:75px;max-width:102px;max-height:75px;" />'
         '</a>'
         '</p>'
-        '<p style="margin:10px 0 0 0;font-family:Arial,Helvetica,sans-serif;font-size:8pt;color:#777777;line-height:1.4;">'
-        'Keine weiteren E-Mails gewünscht? '
-        f'<a href="mailto:{_html_escape(mailbox)}?subject=Abmelden" style="color:#777777;">Hier abmelden</a></p>'
+        '<table cellpadding="0" cellspacing="0" border="0" style="margin:16px 0 12px 0;">'
+        '<tr><td style="padding:8px 14px;background-color:#f4f5f7;border:1px solid #d1d5db;border-radius:5px;font-family:Arial,Helvetica,sans-serif;font-size:9pt;color:#444444;line-height:1.4;">'
+        'Keine weiteren E-Mails gewünscht?&nbsp;'
+        f'<a href="https://{f["web"]}/abmelden" target="_blank" style="font-weight:bold;color:#1155cc;text-decoration:underline;"><u>Hier abmelden</u></a>'
+        '&nbsp;&middot;&nbsp;'
+        f'<a href="mailto:{_html_escape(mailbox)}?subject=Abmelden" style="color:#666666;text-decoration:underline;">per E-Mail abmelden</a>'
+        '</td></tr></table>'
         '<p style="margin:10px 0 0 0;font-family:Arial,Helvetica,sans-serif;'
         'font-size:8pt;color:#777777;line-height:1.4;">'
         f'Sitz der Gesellschaft: {_html_escape(f["sitz"])} &middot; '

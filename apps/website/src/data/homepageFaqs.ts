@@ -3,7 +3,7 @@ export const homepageFaqs = [
   {
     question: "Was kostet eine Ersteinschätzung durch HSB?",
     answer:
-      "Die Ersteinschätzung vor Ort ist kostenlos und unverbindlich. HSB nimmt Belastungsprofil, Untergrund und Betriebsablauf auf und bewertet, welche nächste Maßnahme technisch und organisatorisch sinnvoll ist: ohne Kaufverpflichtung.",
+      "Die Ersteinschätzung vor Ort wird nicht in Rechnung gestellt. HSB nimmt Belastungsprofil, Untergrund und Betriebsablauf auf und bewertet, welche nächste Maßnahme technisch und organisatorisch sinnvoll ist – ohne Kaufverpflichtung.",
   },
   {
     question: "Kann eine Sanierung im laufenden Betrieb erfolgen?",

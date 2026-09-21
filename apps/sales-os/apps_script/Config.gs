@@ -80,6 +80,46 @@ const LEGAL_BASIS_ALL = [
   'OPT_IN', 'EXISTING_CUSTOMER_7_3', 'OWNER_APPROVED', 'BLOCKED', 'UNKNOWN'
 ];
 
+const FREEMAIL_DOMAINS = [
+  'gmail.com', 'googlemail.com', 'outlook.com', 'outlook.de', 'hotmail.com', 'hotmail.de',
+  'live.com', 'live.de', 'web.de', 'gmx.de', 'gmx.net', 'gmx.at', 'gmx.ch', 't-online.de',
+  'yahoo.com', 'yahoo.de', 'icloud.com', 'me.com', 'freenet.de', 'aol.com', 'posteo.de',
+  'mail.de', 'protonmail.com', 'proton.me'
+];
+
+const FREEMAIL_NAMES = [
+  't-online', 't online', 'tonline', 'gmail', 'googlemail', 'gmx', 'web.de', 'web de', 'web',
+  'yahoo', 'outlook', 'hotmail', 'live', 'aol', 'freenet', 'posteo', 'mail.de', 'protonmail',
+  'proton', 'icloud'
+];
+
+function sanitizeCompanyName_(rawName, email) {
+  if (!rawName) return 'Ihr Unternehmen';
+  var name = String(rawName).trim();
+  var norm = name.toLowerCase();
+  if (!norm || norm === 'none' || norm === 'nan' || norm === 'null' || norm === 'undefined' || norm === '-' || norm === '.' || norm === '/') {
+    return 'Ihr Unternehmen';
+  }
+  var normClean = norm.replace(/-/g, ' ').replace(/\./g, ' ').trim();
+  for (var i = 0; i < FREEMAIL_NAMES.length; i++) {
+    var fn = FREEMAIL_NAMES[i];
+    if (norm === fn || normClean === fn.replace(/-/g, ' ').replace(/\./g, ' ')) {
+      return 'Ihr Unternehmen';
+    }
+  }
+  if (email && email.indexOf('@') >= 0) {
+    var parts = email.split('@');
+    var domain = parts[parts.length - 1].trim().toLowerCase();
+    if (FREEMAIL_DOMAINS.indexOf(domain) >= 0) {
+      var domainBase = domain.split('.')[0];
+      if (normClean.indexOf(domainBase) >= 0) {
+        return 'Ihr Unternehmen';
+      }
+    }
+  }
+  return name;
+}
+
 function normalizeOwner_(value) {
   if (!value) return '';
   const v = String(value).trim().toUpperCase();

@@ -292,7 +292,7 @@ def generate_partition_manifests(count_per_owner: int = 1000):
     jordi_manifest = {
         "batch_id": batch_jordi,
         "owner": "JORDI",
-        "display_name": "Jordie Post",
+        "display_name": "Jordi Post",
         "mailbox": "j-post@hsb-boden.de",
         "count": len(jordi_leads),
         "start_row": jordi_leads[0]["_row"],

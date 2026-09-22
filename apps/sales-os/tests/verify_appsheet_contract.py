@@ -7,7 +7,6 @@ Uses fast XML/openpyxl streaming.
 
 import sys
 import re
-import zipfile
 import xml.etree.ElementTree as ET
 from pathlib import Path
 

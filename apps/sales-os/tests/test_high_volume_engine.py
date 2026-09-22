@@ -101,3 +101,53 @@ def test_paced_dispatcher_backoff_on_429():
     result = dispatcher.execute_with_retry(mock_flaky_call, "flaky test")
     assert result == "SUCCESS"
     assert attempts == 2
+
+
+def test_paced_dispatcher_backoff_on_500():
+    attempts = 0
+    def mock_server_error():
+        nonlocal attempts
+        attempts += 1
+        if attempts == 1:
+            raise urllib.error.HTTPError("http://test", 500, "Internal Server Error", {}, None)
+        return "SUCCESS"
+
+    dispatcher = PacedDispatcher(min_interval_seconds=0.01, max_retries=2)
+    result = dispatcher.execute_with_retry(mock_server_error, "500 test")
+    assert result == "SUCCESS"
+    assert attempts == 2
+
+def test_paced_dispatcher_non_retryable_http_error():
+    def mock_not_found():
+        raise urllib.error.HTTPError("http://test", 404, "Not Found", {}, None)
+
+    dispatcher = PacedDispatcher(min_interval_seconds=0.01, max_retries=2)
+    with pytest.raises(urllib.error.HTTPError) as exc_info:
+        dispatcher.execute_with_retry(mock_not_found, "404 test")
+    assert exc_info.value.code == 404
+
+def test_paced_dispatcher_generic_exception_retry():
+    attempts = 0
+    def mock_connection_error():
+        nonlocal attempts
+        attempts += 1
+        if attempts == 1:
+            raise ConnectionError("Connection reset")
+        return "SUCCESS"
+
+    dispatcher = PacedDispatcher(min_interval_seconds=0.01, max_retries=2)
+    result = dispatcher.execute_with_retry(mock_connection_error, "generic exc test")
+    assert result == "SUCCESS"
+    assert attempts == 2
+
+def test_paced_dispatcher_max_retries_exhausted():
+    attempts = 0
+    def mock_always_fails():
+        nonlocal attempts
+        attempts += 1
+        raise ValueError("Permanent error")
+
+    dispatcher = PacedDispatcher(min_interval_seconds=0.01, max_retries=2)
+    with pytest.raises(ValueError, match="Permanent error"):
+        dispatcher.execute_with_retry(mock_always_fails, "exhaustion test")
+    assert attempts == 2

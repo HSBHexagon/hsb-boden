@@ -146,34 +146,43 @@ class PacedDispatcher:
             time.sleep(self.min_interval - elapsed)
         self.last_call_time = time.time()
 
+    def _get_retry_info(self, ex: Exception, attempt: int, delay: float, description: str) -> tuple[float, str]:
+        """
+        Evaluates an exception to determine retry sleep duration and log message.
+        Raises non-retryable exceptions or when max retries are reached.
+        """
+        if isinstance(ex, urllib.error.HTTPError):
+            if ex.code == 429:
+                retry_after = ex.headers.get("Retry-After") if ex.headers else None
+                if retry_after and retry_after.isdigit():
+                    sleep_s = float(retry_after) + random.uniform(0.1, 0.5)
+                else:
+                    sleep_s = delay + random.uniform(0.1, 0.5)
+                msg = f"[{description}] HTTP 429 Rate Limit aufgetreten. Backoff {sleep_s:.2f}s (Versuch {attempt}/{self.max_retries})..."
+                return sleep_s, msg
+            elif ex.code in [500, 502, 503, 504]:
+                sleep_s = delay + random.uniform(0.1, 0.5)
+                msg = f"[{description}] HTTP {ex.code} Serverfehler. Backoff {sleep_s:.2f}s (Versuch {attempt}/{self.max_retries})..."
+                return sleep_s, msg
+            else:
+                raise ex
+
+        if attempt == self.max_retries:
+            raise ex
+
+        sleep_s = delay + random.uniform(0.1, 0.5)
+        msg = f"[{description}] Fehler ({ex}). Backoff {sleep_s:.2f}s (Versuch {attempt}/{self.max_retries})..."
+        return sleep_s, msg
+
     def execute_with_retry(self, fn: Callable[[], Any], description: str) -> Any:
         delay = 1.0
         for attempt in range(1, self.max_retries + 1):
             self.pace()
             try:
                 return fn()
-            except urllib.error.HTTPError as e:
-                if e.code == 429:
-                    retry_after = e.headers.get("Retry-After")
-                    if retry_after and retry_after.isdigit():
-                        sleep_s = float(retry_after) + random.uniform(0.1, 0.5)
-                    else:
-                        sleep_s = delay + random.uniform(0.1, 0.5)
-                    print(f"[{description}] HTTP 429 Rate Limit aufgetreten. Backoff {sleep_s:.2f}s (Versuch {attempt}/{self.max_retries})...")
-                    time.sleep(sleep_s)
-                    delay *= 2
-                elif e.code in [500, 502, 503, 504]:
-                    sleep_s = delay + random.uniform(0.1, 0.5)
-                    print(f"[{description}] HTTP {e.code} Serverfehler. Backoff {sleep_s:.2f}s (Versuch {attempt}/{self.max_retries})...")
-                    time.sleep(sleep_s)
-                    delay *= 2
-                else:
-                    raise
             except Exception as ex:
-                if attempt == self.max_retries:
-                    raise
-                sleep_s = delay + random.uniform(0.1, 0.5)
-                print(f"[{description}] Fehler ({ex}). Backoff {sleep_s:.2f}s (Versuch {attempt}/{self.max_retries})...")
+                sleep_s, log_msg = self._get_retry_info(ex, attempt, delay, description)
+                print(log_msg)
                 time.sleep(sleep_s)
                 delay *= 2
         raise RuntimeError(f"Maximale Versuche ({self.max_retries}) fuer {description} ueberschritten.")

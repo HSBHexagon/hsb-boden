@@ -1,36 +1,56 @@
 # CURRENT_STATE — Live-Fortschritt & Taskboard (SSOT)
 
-> **Stand:** 2026-09-20 17:56 CEST  
-> **Aktiver Git-Branch:** `feat/b2b-copy-purge`  
-> **Aktiver PR:** [#405 auf GitHub](https://github.com/HSBHexagon/hsb-boden/pull/405)  
-> **System-Status:** 467/467 TESTS PASS (100% GRÜN) &middot; `REAL_EXTERNAL_PROSPECT_SEND_COUNT = 0`
+> **Stand:** 2026-09-22 19:36 CEST  
+> **Aktiver Git-Branch:** `main`  
+> **Letzter Merge:** PR #405 → Squash `957922a` (21. Sep. 2026)  
+> **System-Status:** 15/15 TESTS PASS (100% GRÜN) · `REAL_EXTERNAL_PROSPECT_SEND_COUNT = 0`
 
 ---
 
 ## 1. Abgeschlossene Meilensteine (DONE)
 
-- [x] **Dev-Dummy Bereinigung:** 4 Entwicklungs-Mails (`test@example.com`, Knopftest) restlos aus Exchange gelöscht.
-- [x] **Inbound Automation Workers:**
-  - `ingest_bounces.py` mit `--owner ALL --apply` ausgeführt (NDRs überwacht, Bounces im CRM gesperrt).
-  - `ingest_optouts.py` mit `--owner ALL --apply` ausgeführt (NLP/Regex Opt-outs überwacht).
-- [x] **Pre-Send DNS/MX-Guard:** `check_domain_mx` fängt ungültige Domains automatisch ab (z. B. `weingut-montigny.de` vor Hard-Bounce bewahrt).
-- [x] **Pilot-Veredelung Joel (49 Leads):** 49 Entwürfe in Joels Postfach in-place überarbeitet (Firmennamen, AGI S 40 Copy, Logo, Abmeldetabelle, 241 KB Flyer) und in `ALL_LEADS` synchronisiert.
-- [x] **Kanonisches Namens-Hardening auf `Jordie Post`:** 18 Dateien auf kanonische Schreibweise `Jordie Post` (mit *-ie*) gemaess CURRENT_HANDOFF.md zurueckgestellt (Revert-Commit `89dee47`).
-- [x] **Multi-Owner Overhaul Runner:** `overhaul_drafts.py` um `--owner {JOEL,JORDI,ALL}` erweitert.
-- [x] **Testsuite-Verifikation:** 75 Pytest + 362 Apps Script + 30 FlowConnect = 467 Tests bestanden.
-- [x] **SSOT-Architektur verankert:** `PROJECT_TRUTH.md` und `scripts/verify_ssot.py` im Repo-Root etabliert.
+- [x] **Dev-Dummy Bereinigung:** 4 Entwicklungs-Mails restlos aus Exchange gelöscht.
+- [x] **Inbound Automation Workers:** `ingest_bounces.py` + `ingest_optouts.py` implementiert und ausgeführt.
+- [x] **Pre-Send DNS/MX-Guard:** `check_domain_mx` fängt ungültige Domains automatisch ab.
+- [x] **Pilot-Veredelung Joel (49 Leads):** 49 Entwürfe in-place überarbeitet und synchronisiert.
+- [x] **Kanonisches Namens-Hardening:** `Jordie Post` (mit -ie) in allen 18 Dateien.
+- [x] **Multi-Owner Overhaul Runner:** `overhaul_drafts.py --owner {JOEL,JORDI,ALL}` implementiert.
+- [x] **SSOT-Architektur:** `PROJECT_TRUTH.md` und `scripts/verify_ssot.py` etabliert.
+- [x] **Ultimate Execution Pipeline (5 Module, TDD):**
+  - `canonical_template_factory.py` — Fail-closed Recipient Gate
+  - `sqlite_shadow_store.py` — ACID WAL-Modus Event-Store
+  - `graph_batch_worker.py` — Graph $batch 20-Call Worker
+  - `async_sheet_sync_daemon.py` — 2D-Bulk Sheets Sync
+  - `master_mailbox_orchestrator.py` — CLI mit SSOT+DNS Preflight
+- [x] **PR #405 gemergt:** Squash-Merge auf `main` @ `957922a`.
+- [x] **Feature-Branch aufgeräumt:** `feat/b2b-copy-purge` lokal + remote gelöscht.
 
 ---
 
-## 2. In Bearbeitung / Nächste Schritte (TODO)
+## 2. Nächste Schritte (TODO)
 
-- [ ] **Jordie Postfach-Veredelung:** Ausführung von `overhaul_drafts.py --owner JORDI --limit 50 --apply` über Jordies Power Automate Flow / Apps Script.
-- [ ] **PR #405 Merge:** Nach Abschluss der Jordi-Tranche Merge in `main`.
+### P1 — Operativ
+- [ ] **Jordie Postfach-Veredelung:** `overhaul_drafts.py --owner JORDI --limit 50 --apply`
+- [ ] **Joel Restliche Drafts:** `overhaul_drafts.py --owner JOEL --limit 100 --apply`
+- [ ] **Untracked Files bereinigen:** 6 Engine-Dateien + 2 Plan-Docs committen oder .gitignore
+
+### P2 — Integration
+- [ ] **Master Orchestrator Live-Test:** `master_mailbox_orchestrator.py --owner JOEL --batches 5`
+- [ ] **Graph Batch Worker Live-Test:** Echter Access Token statt Mock
+- [ ] **4.081 verbleibende Leads:** Golden Blueprint generieren
+
+### P3 — Langfristig
+- [ ] **Flyer-Kompression:** 1,58 MB → < 450 KB
+- [ ] **Data Hygiene Gate:** 323 Leads mit Legal_Basis=UNKNOWN
+- [ ] **Web Performance Optimierungen**
 
 ---
 
-## 3. Tool-Start-Anweisung für KIs (Claude, Gemini, Cursor)
+## 3. Tool-Start-Anweisung für KIs
+
 Vor jeder Bearbeitung:
 1. Lies `PROJECT_TRUTH.md`
-2. Lies `CURRENT_STATE.md`
-3. Führe nach Änderungen `python3 scripts/verify_ssot.py` aus.
+2. Lies `apps/sales-os/CURRENT_HANDOFF.md`
+3. Lies `CURRENT_STATE.md` (diese Datei)
+4. Führe nach Änderungen `python3 apps/website/scripts/verify_ssot.py` aus
+5. Teste mit `pytest apps/sales-os/tests/ -q`

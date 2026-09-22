@@ -65,6 +65,7 @@ from __future__ import annotations
 import argparse
 import base64
 import json
+import os
 import subprocess
 import sys
 import time
@@ -76,11 +77,18 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from hsb_core import FLYERS
 
-PPAPI_BASE = (
-    "https://default8adbbf2efd2c48578540bbcdb3a20f.30.environment.api.powerplatform.com"
+import hsb_config  # Laedt .env in os.environ
+
+PPAPI_BASE = os.getenv(
+    "PPAPI_BASE",
+    "https://default8adbbf2efd2c48578540bbcdb3a20f.30.environment.api.powerplatform.com",
 )
-APIHUB_RESOURCE_TOKEN = "https://apihub.azure.com"       # kein Trailing-Slash!
-PPAPI_RESOURCE_TOKEN = "https://service.powerapps.com/"
+APIHUB_RESOURCE_TOKEN = os.getenv(
+    "APIHUB_RESOURCE_TOKEN", "https://apihub.azure.com"
+)  # kein Trailing-Slash!
+PPAPI_RESOURCE_TOKEN = os.getenv(
+    "PPAPI_RESOURCE_TOKEN", "https://service.powerapps.com/"
+)
 
 FLOWS = {
     "JOEL": {
@@ -99,9 +107,11 @@ FLOWS = {
     },
 }
 
-FLOW_API_BASE = "https://api.flow.microsoft.com"
-FLOW_ENV = "Default-8adbbf2e-fd2c-4857-8540-bbcdb3a20f30"
-FLOW_RESOURCE_TOKEN = "https://service.flow.microsoft.com/"
+FLOW_API_BASE = os.getenv("FLOW_API_BASE", "https://api.flow.microsoft.com")
+FLOW_ENV = os.getenv("FLOW_ENV", "Default-8adbbf2e-fd2c-4857-8540-bbcdb3a20f30")
+FLOW_RESOURCE_TOKEN = os.getenv(
+    "FLOW_RESOURCE_TOKEN", "https://service.flow.microsoft.com/"
+)
 
 
 class PaFehler(RuntimeError):

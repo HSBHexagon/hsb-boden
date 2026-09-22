@@ -198,9 +198,9 @@ def run_in_sheet_tests():
         ).execute().get("values", [])
 
         # Joel hat Internet_Message_ID in Spalte BA (Index 13 ab AN)
-        joel_drafted_count = sum(1 for r in joel_drafts if len(r) > 1 and r[1] in ["drafted", "sent"] and len(r) > 13 and "@" in r[13])
+        joel_drafted_count = sum(1 for r in joel_drafts if len(r) > 1 and r[1] in {"drafted", "sent"} and len(r) > 13 and "@" in r[13])
         # Jordie hat Flow_Run_ID in Spalte AW (Index 9 ab AN)
-        jordi_drafted_count = sum(1 for r in jordi_drafts if len(r) > 1 and r[1] in ["drafted", "sent"] and len(r) > 9 and "FLOW_RUN_" in r[9])
+        jordi_drafted_count = sum(1 for r in jordi_drafts if len(r) > 1 and r[1] in {"drafted", "sent"} and len(r) > 9 and "FLOW_RUN_" in r[9])
 
         drafts_ok = (joel_drafted_count == 100) and (jordi_drafted_count == 100)
         log_gate("Gate 5 - 100+100 Drafts Batch", drafts_ok,

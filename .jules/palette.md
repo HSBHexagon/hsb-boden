@@ -1,0 +1,3 @@
+## 2026-09-23 - Added focus-visible state to global navigation and footer links
+**Learning:** Found that primary navigation links and footer buttons lack clear keyboard navigation focus states, which affects accessibility. Interactive elements need explicit Tailwind `focus-visible` classes to ensure keyboard navigation visibility, as native focus outlines are often insufficient or stripped.
+**Action:** Adding explicit Tailwind focus rings (e.g., `focus-visible:ring-2 focus-visible:ring-hsb-red focus-visible:outline-none`) directly to interactive elements in Header and Footer to ensure they always have a clear focus indicator when navigated via keyboard.

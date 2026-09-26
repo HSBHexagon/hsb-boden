@@ -20,7 +20,7 @@ const FLYERS = {
   JORDI: {
     key: 'JORDI',
     displayName: 'Jordie Post',
-    mailbox: 'j-post@hsb-boden.de',
+    mailbox: 'j-post@hsb-boden.com',
     fileName: 'HSB-HEXAGON-Industrieboeden-Flyer.pdf',
     // Name im Anhang beim Empfaenger. Getrennt von fileName, weil dieser an
     // Hash-Gate und Drive-Ablage haengt und nicht umbenannt werden darf.
@@ -34,7 +34,7 @@ const FLYERS = {
   JOEL: {
     key: 'JOEL',
     displayName: 'Joel Cherino Diaz',
-    mailbox: 'j-cherino@hsb-boden.de',
+    mailbox: 'j-cherino@hsb-boden.com',
     fileName: 'HSB-HEXAGON-Industrieboeden-Flyer.pdf',
     attachmentName: 'HSB-HEXAGON-Industrieboeden-Flyer.pdf',
     mobile: '0151 21886891',

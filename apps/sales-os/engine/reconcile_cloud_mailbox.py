@@ -38,6 +38,10 @@ sys.path.insert(0, str(REPO_ROOT / "engine"))
 
 from sync_to_google_sheet import get_sheets_service, SPREADSHEET_ID
 from hsb_core import normalize_owner, EMAIL_RE
+try:
+    from com_mailbox_manager import ComMailboxClient
+except ImportError:
+    ComMailboxClient = None
 
 APIHUB_RESOURCE = "https://apihub.azure.com"
 RUNTIME_URL = (
@@ -254,13 +258,23 @@ def reconcile_cloud_for_owner(
 
     print(f"\n---> Starte Cloud-Abgleich fuer {owner_key} ({mailbox_addr})...")
 
-    # 1. Gesendete Elemente abrufen
+    # 1. Gesendete Elemente abrufen (Dual-Domain: .de APIHub + .com IMAP)
+    sent_messages = []
     try:
-        sent_messages = fetch_cloud_sent_messages(token, conn_id, limit=limit)
-        print(f"[{owner_key}] Aus Cloud-Mailbox abgerufen: {len(sent_messages)} gesendete Nachrichten.")
+        cloud_sent = fetch_cloud_sent_messages(token, conn_id, limit=limit)
+        print(f"[{owner_key}] Aus Cloud-Mailbox (.de) abgerufen: {len(cloud_sent)} gesendete Nachrichten.")
+        sent_messages.extend(cloud_sent)
     except Exception as e:
-        print(f"[{owner_key}] WARNUNG: Gesendete Elemente konnten nicht gelesen werden: {e}")
-        return {"sent_matched": 0, "sent_updated": 0, "bounces": 0, "replies": 0}
+        print(f"[{owner_key}] WARNUNG: Gesendete Elemente (.de) konnten nicht gelesen werden: {e}")
+
+    if ComMailboxClient:
+        try:
+            com_client = ComMailboxClient(owner_key)
+            com_sent = com_client.fetch_sent_messages(limit=limit)
+            print(f"[{owner_key}] Aus .COM-Mailbox (IMAP Sent) abgerufen: {len(com_sent)} gesendete Nachrichten.")
+            sent_messages.extend(com_sent)
+        except Exception as e:
+            print(f"[{owner_key}] Info: .COM Sent nicht abgerufen: {e}")
 
     now_iso = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
 
@@ -315,18 +329,23 @@ def reconcile_cloud_for_owner(
         ).execute()
         print(f"[{owner_key}] ERFOLG: {newly_marked_sent} Zeilen in ALL_LEADS auf 'sent' aktualisiert!")
 
-    # 2. Inbound Events abrufen (Posteingang)
+    # 2. Inbound Events abrufen (Dual-Domain: .de APIHub + .com IMAP)
+    inbound_messages = []
     try:
-        inbound_messages = fetch_cloud_inbound_messages(token, conn_id, limit=limit)
-        print(f"[{owner_key}] Aus Cloud-Posteingang abgerufen: {len(inbound_messages)} Nachrichten.")
+        cloud_inbound = fetch_cloud_inbound_messages(token, conn_id, limit=limit)
+        print(f"[{owner_key}] Aus Cloud-Posteingang (.de) abgerufen: {len(cloud_inbound)} Nachrichten.")
+        inbound_messages.extend(cloud_inbound)
     except Exception as e:
-        print(f"[{owner_key}] WARNUNG: Posteingang konnte nicht gelesen werden: {e}")
-        return {
-            "sent_matched": matched_sent,
-            "sent_updated": newly_marked_sent,
-            "bounces": 0,
-            "replies": 0,
-        }
+        print(f"[{owner_key}] WARNUNG: Posteingang (.de) konnte nicht gelesen werden: {e}")
+
+    if ComMailboxClient:
+        try:
+            com_client = ComMailboxClient(owner_key)
+            com_inbound = com_client.fetch_inbound_messages(limit=limit)
+            print(f"[{owner_key}] Aus .COM-Mailbox (IMAP Inbox) abgerufen: {len(com_inbound)} Nachrichten.")
+            inbound_messages.extend(com_inbound)
+        except Exception as e:
+            print(f"[{owner_key}] Info: .COM Inbox nicht abgerufen: {e}")
 
     lead_inbound_updates = []
     inbound_event_rows = []

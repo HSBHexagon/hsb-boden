@@ -35,7 +35,7 @@ const FLYERS = {
   JORDI: {
     key: 'JORDI',
     displayName: 'Jordie Post',
-    mailbox: 'j-post@hsb-boden.de',
+    mailbox: 'j-post@hsb-boden.com',
     fileName: 'HSB-HEXAGON-Industrieboeden-Flyer.pdf',
     // Name im Anhang beim Empfaenger. Getrennt von fileName, weil dieser an
     // Hash-Gate und Drive-Ablage haengt und nicht umbenannt werden darf.
@@ -49,7 +49,7 @@ const FLYERS = {
   JOEL: {
     key: 'JOEL',
     displayName: 'Joel Cherino Diaz',
-    mailbox: 'j-cherino@hsb-boden.de',
+    mailbox: 'j-cherino@hsb-boden.com',
     fileName: 'HSB-HEXAGON-Industrieboeden-Flyer.pdf',
     attachmentName: 'HSB-HEXAGON-Industrieboeden-Flyer.pdf',
     mobile: '0151 21886891',
@@ -1112,7 +1112,7 @@ function buildEml_(lead, batchId, flyer, pdfChunked) {
   lines.push('Subject: ' + encodeHeader_(mail.subject));
   lines.push('Date: ' + Utilities.formatDate(new Date(), CFG.TIMEZONE,
              'EEE, dd MMM yyyy HH:mm:ss Z'));
-  lines.push('Message-ID: <' + Utilities.getUuid() + '@hsb-boden.de>');
+  lines.push('Message-ID: <' + Utilities.getUuid() + '@hsb-boden.com>');
   lines.push('X-Unsent: 1');                    // Outlook: als Entwurf oeffnen
   lines.push('X-HSB-Lead-ID: ' + lead.Lead_ID);
   lines.push('X-HSB-Batch-ID: ' + batchId);

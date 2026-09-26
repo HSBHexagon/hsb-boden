@@ -70,12 +70,14 @@ def get_com_mailbox_config(owner: str) -> dict:
         user = os.getenv('HSB_COM_JORDI_USER', '').strip()
         pwd = os.getenv('HSB_COM_JORDI_PASS', '').strip()
         display_name = 'Jordie Post'
+        reply_to = os.getenv('HSB_COM_JORDI_REPLY_TO', 'Jordie Post <j-post@hsb-boden.de>').strip()
     elif norm in ('JOEL', 'J-CHERINO'):
         owner_key = 'JOEL'
         email = os.getenv('HSB_COM_JOEL_EMAIL', 'j-cherino@hsb-boden.com').strip()
         user = os.getenv('HSB_COM_JOEL_USER', '').strip()
         pwd = os.getenv('HSB_COM_JOEL_PASS', '').strip()
         display_name = 'Joel Cherino Diaz'
+        reply_to = os.getenv('HSB_COM_JOEL_REPLY_TO', 'Joel Cherino Diaz <j-cherino@hsb-boden.de>').strip()
     else:
         raise ValueError(f'Unbekannter Owner: {owner}. Erlaubt sind JOEL oder JORDI.')
 
@@ -100,4 +102,5 @@ def get_com_mailbox_config(owner: str) -> dict:
         'drafts_folder': '"Entw&APw-rfe"',
         'sent_folder': '"Gesendet"',
         'inbox_folder': '"INBOX"',
+        'reply_to': reply_to,
     }

@@ -17,11 +17,13 @@ def test_com_mailbox_config_joel_and_jordi():
     assert cfg_joel["imap_server"] == "w0221a9f.kasserver.com"
     assert cfg_joel["imap_port"] == 993
     assert cfg_joel["smtp_port"] == 465
+    assert cfg_joel["reply_to"] == "Joel Cherino Diaz <j-cherino@hsb-boden.de>"
 
     cfg_jordi = get_com_mailbox_config("JORDI")
     assert cfg_jordi["email"] == "j-post@hsb-boden.com"
     assert cfg_jordi["username"] == "m0821e5b"
     assert cfg_jordi["imap_server"] == "w0221a9f.kasserver.com"
+    assert cfg_jordi["reply_to"] == "Jordie Post <j-post@hsb-boden.de>"
 
 
 def test_com_mailbox_config_invalid_owner():
@@ -49,3 +51,25 @@ def test_com_mailbox_live_connection_and_counts():
         assert isinstance(counts["drafts"], int)
         assert isinstance(counts["sent"], int)
         assert isinstance(counts["inbox"], int)
+
+
+def test_com_mailbox_create_draft_sets_reply_to_header(monkeypatch):
+    client = ComMailboxClient("JOEL")
+    captured = {}
+    class FakeImap:
+        def __enter__(self):
+            return self
+        def __exit__(self, *args):
+            pass
+        def append(self, folder, flags, date_time, raw_bytes):
+            import email
+            captured["msg"] = email.message_from_bytes(raw_bytes)
+            return "OK", [b"Success"]
+    monkeypatch.setattr(client, "_get_imap", lambda: FakeImap())
+    ok, mid = client.create_draft("empfaenger@kunde.de", "Test Betreff", "<p>Hallo</p>")
+    assert ok is True
+    msg = captured["msg"]
+    assert "j-cherino@hsb-boden.com" in msg["From"]
+    assert "j-cherino@hsb-boden.de" in msg["Reply-To"]
+    assert msg["To"] == "empfaenger@kunde.de"
+    assert msg["X-Unsent"] == "1"

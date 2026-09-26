@@ -105,6 +105,8 @@ class ComMailboxClient:
 
         msg = MIMEMultipart('mixed')
         msg['From'] = f'{self.cfg["display_name"]} <{self.cfg["email"]}>'
+        if self.cfg.get('reply_to'):
+            msg['Reply-To'] = self.cfg['reply_to']
         msg['To'] = to_email
         msg['Subject'] = Header(subject, 'utf-8').encode()
         msg['Date'] = formatdate(localtime=True)

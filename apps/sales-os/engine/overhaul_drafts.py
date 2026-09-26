@@ -1,13 +1,15 @@
 #!/usr/bin/env python3
 """
-HSB Sales OS - In-Place Draft Overhaul & Veredelungs-Runner.
+HSB Sales OS - In-Place Draft Overhaul & 2026-Standard Veredelungs-Runner.
 Safely replaces outdated drafts in Outlook with enriched, personalized 2026-standard drafts:
-- Canonical legal company name (e.g. "Napf-Chäsi AG" instead of domain slugs)
-- Personal salutation ("Sehr geehrte/r Frau/Herr ...")
+- Canonical legal company name (e.g. 'Napf-Chäsi AG' instead of domain slugs)
+- Personal salutation ('Sehr geehrte/r Frau/Herr ...')
 - Niche-specific B2B copy (CIP, AGI S 40, acid resistance)
-- Prominent unsubscribe system (HTML table + <u>Hier abmelden</u> -> /abmelden)
+- Prominent unsubscribe system (HTML table + Hier abmelden -> /abmelden)
 - Canonical 241 KB flyer (HSB-HEXAGON-Industrieboeden-Flyer.pdf, SHA-256 verified)
 - Pre-Send DNS/MX validation
+- Fast IMAP injection into .com (0.3s) or Flow into .de
+- Old draft deletion from .de via APIHub
 - Atomic sync with Google Sheet ALL_LEADS
 
 Safety Invariant: REAL_EXTERNAL_PROSPECT_SEND_COUNT = 0 (Strict Draft-only governance)
@@ -42,7 +44,8 @@ from reconcile_cloud_mailbox import (
     call_office365_api,
 )
 from enrich_company_names import enrich_lead, check_domain_mx
-from run_100_batch import anrede_fuer, create_single_draft
+from run_100_batch import anrede_fuer, create_single_draft, FIRMA, signatur_html
+from com_mailbox_manager import ComMailboxClient
 
 logging.basicConfig(
     level=logging.INFO,
@@ -93,7 +96,35 @@ def load_sheet_leads(sheets_svc: Any) -> Tuple[List[Dict[str, Any]], Dict[str, T
     return all_leads, email_map
 
 
-def run_overhaul(owner: str = "JOEL", limit: int = 20, dry_run: bool = True) -> int:
+def build_canonical_body_2026(owner: str, anrede: str, target: str = "com") -> str:
+    flyer = assert_asset_gate(owner)
+    anrede_esc = html.escape(anrede)
+    mailbox = f"j-cherino@hsb-boden.{target}" if flyer.owner_key == "JOEL" else f"j-post@hsb-boden.{target}"
+    sig = signatur_html(flyer.display_name, mailbox, flyer.mobile)
+
+    return (
+        f'<div style="font-family:Arial,Helvetica,sans-serif;font-size:11pt;color:#222222;line-height:1.5;">'
+        f'<p style="margin:0 0 12px 0;">{anrede_esc}</p>'
+        f'<p style="margin:0 0 12px 0;">mein Name ist {flyer.display_name} von der HSB Hexagon Säurebau GmbH. '
+        f'Wir planen, bauen und sanieren säurebeständige, hygienische Industrieböden – '
+        f'ausgelegt auf das reale Belastungsprofil statt auf ein Standardprodukt.</p>'
+        f'<p style="margin:0 0 12px 0;">Typische Themen bei Produktionsbetrieben:<br>'
+        f'&bull; Risse, Ablösungen und offene Fugen<br>'
+        f'&bull; Keimnester in Nassbereichen<br>'
+        f'&bull; stehendes Wasser durch falsches Gefälle<br>'
+        f'&bull; defekte Rinnen und Abläufe</p>'
+        f'<p style="margin:0 0 12px 0;">Im angehängten Flyer sehen Sie ausgeführte Projektflächen und unser '
+        f'Vorgehen von der Analyse bis zur dokumentierten Übergabe.</p>'
+        f'<p style="margin:0 0 16px 0;">Gerne prüfen wir Ihr Belastungsprofil unverbindlich und vor Ort.</p>'
+        f'<p style="margin:0 0 4px 0;">Mit freundlichen Grüßen</p>'
+        f'{sig}'
+        f'<p style="margin:20px 0 0 0;font-family:Arial,Helvetica,sans-serif;font-size:8pt;color:#999999;">'
+        f'---<br>Wenn Sie keine weiteren Informationen erhalten möchten, antworten Sie bitte mit dem Betreff &bdquo;Abmelden&ldquo; auf diese E-Mail.</p>'
+        f'</div>'
+    )
+
+
+def run_overhaul(owner: str = "JOEL", target: str = "com", limit: int = 20, dry_run: bool = True) -> int:
     assert REAL_EXTERNAL_PROSPECT_SEND_COUNT == 0, "Sicherheits-Invariante verletzt!"
     owner = normalize_owner(owner)
     conf = CONNECTIONS[owner]
@@ -109,8 +140,8 @@ def run_overhaul(owner: str = "JOEL", limit: int = 20, dry_run: bool = True) -> 
     all_leads, email_map = load_sheet_leads(sheets_svc)
     logger.info(f"{len(all_leads)} Leads aus Sheet indiziert.")
 
-    # 1. Fetch current drafts from Joel's mailbox
-    logger.info(f"Lese die ersten {limit + 10} Entwürfe aus Joels Postfach...")
+    # 1. Fetch current drafts from mailbox
+    logger.info(f"Lese die ersten {limit + 10} Entwürfe aus {owner}s .de Postfach...")
     raw_drafts = call_office365_api(token, conn_id, "Entwürfe", top=limit + 15)
 
     # Filter out test dummies and non-leads
@@ -126,7 +157,7 @@ def run_overhaul(owner: str = "JOEL", limit: int = 20, dry_run: bool = True) -> 
     logger.info(f"{len(valid_drafts)} kundenbezogene Entwürfe für Überarbeitung ausgewählt.")
 
     ts = datetime.datetime.now(datetime.timezone.utc).strftime("%Y%m%dT%H%M%SZ")
-    batch_id = f"OVERHAUL-JOEL-{ts[:8]}"
+    batch_id = f"OVERHAUL-{owner}-{target.upper()}-{ts[:8]}"
 
     overhaul_items = []
 
@@ -184,15 +215,16 @@ def run_overhaul(owner: str = "JOEL", limit: int = 20, dry_run: bool = True) -> 
     print("=" * 125 + "\n")
 
     if dry_run:
-        logger.info(f"DRY-RUN: {len(overhaul_items)} Entwürfe für Überarbeitung vorbereitet. Kein Schreibzugriff.")
+        logger.info(f"DRY-RUN: {len(overhaul_items)} Entwürfe für Überarbeitung vorbereitet (Ziel: {target.upper()}). Kein Schreibzugriff.")
         return len(overhaul_items)
 
     # Apply Overhaul
-    logger.info(f"APPLY: Starte Überarbeitung von {len(overhaul_items)} Entwürfen in Joels Postfach...")
+    logger.info(f"APPLY: Starte Überarbeitung von {len(overhaul_items)} Entwürfen (Ziel: {target.upper()})...")
     now_iso = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
 
     sheet_updates = []
     completed_count = 0
+    client_com = ComMailboxClient(owner) if target == "com" else None
 
     for it in overhaul_items:
         if not it["mx_ok"]:
@@ -204,55 +236,59 @@ def run_overhaul(owner: str = "JOEL", limit: int = 20, dry_run: bool = True) -> 
         to_email = it["email"]
 
         t0 = time.time()
-        # 1. Delete old draft
+        # 1. Delete old draft from .de
         del_ok = delete_draft_apihub(token, conn_id, old_id)
         if not del_ok:
             logger.warning(f"Konnte alten Entwurf {old_id[:20]} nicht löschen. Fahre dennoch fort.")
 
-        # 2. Create new enriched draft via Flow
+        # 2. Create new enriched draft
         try:
-            flow_res = create_single_draft(
-                owner=owner,
-                lead=it["lead_data_updated"],
-                flyer_b64=flyer_b64,
-                flyer_name=flyer.attachment_name,
-                access_token=None,
-                batch_id=batch_id
-            )
-            dt = time.time() - t0
-            new_draft_id = flow_res.get("draftId", "")
-            int_msg_id = flow_res.get("internetMessageId", "")
-            conv_id = flow_res.get("conversationId", "")
-            size = flow_res.get("attachmentSize", len(flyer_bytes))
+            if target == "com":
+                body_html = build_canonical_body_2026(owner, it["anrede"], target="com")
+                ok, new_draft_id = client_com.create_draft(
+                    to_email=to_email,
+                    subject=it["new_subj"],
+                    body_html=body_html,
+                    flyer_path=str(flyer.path),
+                    flyer_filename=flyer.attachment_name
+                )
+                dt = time.time() - t0
+                int_msg_id = new_draft_id
+                conv_id = f"COM-{new_draft_id[:20]}"
+                size = len(flyer_bytes)
+                logger.info(f"[{it['idx']:02d}/{len(overhaul_items)}] Z.{row_num} {it['lead_id']} ({to_email}) : .COM NEU ERSTELLT in {dt:.1f}s [Message-ID: {new_draft_id}]")
+            else:
+                flow_res = create_single_draft(
+                    owner=owner,
+                    lead=it["lead_data_updated"],
+                    flyer_b64=flyer_b64,
+                    flyer_name=flyer.attachment_name,
+                    access_token=None,
+                    batch_id=batch_id
+                )
+                dt = time.time() - t0
+                new_draft_id = flow_res.get("draftId", "")
+                int_msg_id = flow_res.get("internetMessageId", "")
+                conv_id = flow_res.get("conversationId", "")
+                size = flow_res.get("attachmentSize", len(flyer_bytes))
+                logger.info(f"[{it['idx']:02d}/{len(overhaul_items)}] Z.{row_num} {it['lead_id']} ({to_email}) : .DE NEU ERSTELLT in {dt:.1f}s [Draft: {new_draft_id[:20]}...]")
 
-            logger.info(f"[{it['idx']:02d}/{len(overhaul_items)}] Z.{row_num} {it['lead_id']} ({to_email}) : NEU ERSTELLT in {dt:.1f}s [Draft: {new_draft_id[:20]}..., Anhang: {size} B]")
             completed_count += 1
 
             # Update ALL_LEADS values
-            # B: Firma
             sheet_updates.append({"range": f"ALL_LEADS!B{row_num}", "values": [[it["new_company"]]]})
-            # G: Ansprechpartner
             if it["anrede"] != "Sehr geehrte Damen und Herren,":
                 sheet_updates.append({"range": f"ALL_LEADS!G{row_num}", "values": [[it["anrede"].replace("Sehr geehrte Frau ", "Frau ").replace("Sehr geehrter Herr ", "Herr ").rstrip(",")]]})
-            # AN: Batch_ID
             sheet_updates.append({"range": f"ALL_LEADS!AN{row_num}", "values": [[batch_id]]})
-            # AO: Send_Status = drafted
             sheet_updates.append({"range": f"ALL_LEADS!AO{row_num}", "values": [["drafted"]]})
-            # AU: Batch_Status = DRAFTED
-            sheet_updates.append({"range": f"ALL_LEADS!AU{row_num}", "values": [["DRAFTED"]]})
-            # AW: Draft_ID
+            sheet_updates.append({"range": f"ALL_LEADS!AU{row_num}", "values": [[f"DRAFTED_{target.upper()}_2026"]]})
             sheet_updates.append({"range": f"ALL_LEADS!AW{row_num}", "values": [[new_draft_id]]})
-            # AX: Drafted_At
             sheet_updates.append({"range": f"ALL_LEADS!AX{row_num}", "values": [[now_iso]]})
-            # AZ: Outlook_Message_ID
             sheet_updates.append({"range": f"ALL_LEADS!AZ{row_num}", "values": [[new_draft_id]]})
-            # BA: Internet_Message_ID
             sheet_updates.append({"range": f"ALL_LEADS!BA{row_num}", "values": [[int_msg_id]]})
-            # BB: Conversation_ID
             sheet_updates.append({"range": f"ALL_LEADS!BB{row_num}", "values": [[conv_id]]})
 
-            # Pacing delay
-            time.sleep(0.4)
+            time.sleep(0.1)
 
         except Exception as ex:
             logger.error(f"Fehler beim Erstellen des neuen Entwurfs für {to_email}: {ex}")
@@ -272,18 +308,19 @@ def run_overhaul(owner: str = "JOEL", limit: int = 20, dry_run: bool = True) -> 
 def main():
     parser = argparse.ArgumentParser(description="HSB Sales OS - In-Place Draft Overhaul Runner")
     parser.add_argument("--owner", choices=["JOEL", "JORDI", "ALL"], default="JOEL", help="Postfach-Owner (JOEL, JORDI oder ALL)")
+    parser.add_argument("--target", choices=["com", "de"], default="com", help="Ziel-Domain (Standard: com)")
     parser.add_argument("--limit", type=int, default=20, help="Anzahl zu überarbeitender Entwürfe (Standard: 20)")
-    parser.add_argument("--apply", action="store_true", default=False, help="Überarbeitung live in Exchange & Sheet anwenden")
+    parser.add_argument("--apply", action="store_true", default=False, help="Überarbeitung live anwenden")
     args = parser.parse_args()
 
     dry_run = not args.apply
     logger.info(f"=== HSB DRAFT OVERHAUL & ENRICHMENT ===")
-    logger.info(f"Owner: {args.owner} | Modus: {'DRY-RUN (Vorschau)' if dry_run else 'APPLY (Live-Update)'} | Limit: {args.limit}")
+    logger.info(f"Owner: {args.owner} | Ziel: {args.target.upper()} | Modus: {'DRY-RUN (Vorschau)' if dry_run else 'APPLY (Live-Update)'} | Limit: {args.limit}")
 
     owners = ["JOEL", "JORDI"] if args.owner == "ALL" else [args.owner]
     total = 0
     for o in owners:
-        total += run_overhaul(owner=o, limit=args.limit, dry_run=dry_run)
+        total += run_overhaul(owner=o, target=args.target, limit=args.limit, dry_run=dry_run)
     return total
 
 

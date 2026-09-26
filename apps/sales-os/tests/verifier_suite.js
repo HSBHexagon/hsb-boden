@@ -329,18 +329,18 @@ async function runVerifierSuite() {
    * ------------------------------------------------------------------------- */
   console.log("\n>>> GATE 3: OPERATOR ACCEPTANCE MATRIX (JOEL & JORDI N=1, 17, 25, 100, 150, 250)");
   const acceptanceCases = [
-    { owner: 'JORDI', N: 1,   sha: JORDI_SHA, mailbox: 'j-post@hsb-boden.de', template: 'Jordie Post' },
-    { owner: 'JORDI', N: 17,  sha: JORDI_SHA, mailbox: 'j-post@hsb-boden.de', template: 'Jordie Post' },
-    { owner: 'JORDI', N: 25,  sha: JORDI_SHA, mailbox: 'j-post@hsb-boden.de', template: 'Jordie Post' },
-    { owner: 'JORDI', N: 100, sha: JORDI_SHA, mailbox: 'j-post@hsb-boden.de', template: 'Jordie Post' },
-    { owner: 'JORDI', N: 150, sha: JORDI_SHA, mailbox: 'j-post@hsb-boden.de', template: 'Jordie Post' },
-    { owner: 'JORDI', N: 250, sha: JORDI_SHA, mailbox: 'j-post@hsb-boden.de', template: 'Jordie Post' },
-    { owner: 'JOEL',  N: 1,   sha: JOEL_SHA,  mailbox: 'j-cherino@hsb-boden.de', template: 'Joel Cherino Diaz' },
-    { owner: 'JOEL',  N: 17,  sha: JOEL_SHA,  mailbox: 'j-cherino@hsb-boden.de', template: 'Joel Cherino Diaz' },
-    { owner: 'JOEL',  N: 25,  sha: JOEL_SHA,  mailbox: 'j-cherino@hsb-boden.de', template: 'Joel Cherino Diaz' },
-    { owner: 'JOEL',  N: 100, sha: JOEL_SHA,  mailbox: 'j-cherino@hsb-boden.de', template: 'Joel Cherino Diaz' },
-    { owner: 'JOEL',  N: 150, sha: JOEL_SHA,  mailbox: 'j-cherino@hsb-boden.de', template: 'Joel Cherino Diaz' },
-    { owner: 'JOEL',  N: 250, sha: JOEL_SHA,  mailbox: 'j-cherino@hsb-boden.de', template: 'Joel Cherino Diaz' }
+    { owner: 'JORDI', N: 1,   sha: JORDI_SHA, mailbox: 'j-post@hsb-boden.com', template: 'Jordie Post' },
+    { owner: 'JORDI', N: 17,  sha: JORDI_SHA, mailbox: 'j-post@hsb-boden.com', template: 'Jordie Post' },
+    { owner: 'JORDI', N: 25,  sha: JORDI_SHA, mailbox: 'j-post@hsb-boden.com', template: 'Jordie Post' },
+    { owner: 'JORDI', N: 100, sha: JORDI_SHA, mailbox: 'j-post@hsb-boden.com', template: 'Jordie Post' },
+    { owner: 'JORDI', N: 150, sha: JORDI_SHA, mailbox: 'j-post@hsb-boden.com', template: 'Jordie Post' },
+    { owner: 'JORDI', N: 250, sha: JORDI_SHA, mailbox: 'j-post@hsb-boden.com', template: 'Jordie Post' },
+    { owner: 'JOEL',  N: 1,   sha: JOEL_SHA,  mailbox: 'j-cherino@hsb-boden.com', template: 'Joel Cherino Diaz' },
+    { owner: 'JOEL',  N: 17,  sha: JOEL_SHA,  mailbox: 'j-cherino@hsb-boden.com', template: 'Joel Cherino Diaz' },
+    { owner: 'JOEL',  N: 25,  sha: JOEL_SHA,  mailbox: 'j-cherino@hsb-boden.com', template: 'Joel Cherino Diaz' },
+    { owner: 'JOEL',  N: 100, sha: JOEL_SHA,  mailbox: 'j-cherino@hsb-boden.com', template: 'Joel Cherino Diaz' },
+    { owner: 'JOEL',  N: 150, sha: JOEL_SHA,  mailbox: 'j-cherino@hsb-boden.com', template: 'Joel Cherino Diaz' },
+    { owner: 'JOEL',  N: 250, sha: JOEL_SHA,  mailbox: 'j-cherino@hsb-boden.com', template: 'Joel Cherino Diaz' }
   ];
 
   for (const tc of acceptanceCases) {

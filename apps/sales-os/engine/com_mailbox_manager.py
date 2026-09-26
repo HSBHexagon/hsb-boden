@@ -21,6 +21,7 @@ from email.utils import formatdate, make_msgid
 import imaplib
 import os
 from pathlib import Path
+import re
 import smtplib
 import ssl
 import sys
@@ -154,12 +155,77 @@ class ComMailboxClient:
                         parsed = email.message_from_bytes(part[1])
                         drafts.append({
                             'num': num.decode(),
-                            'to': parsed.get('To'),
-                            'subject': parsed.get('Subject'),
-                            'date': parsed.get('Date'),
-                            'message_id': parsed.get('Message-ID'),
+                            'to': str(parsed.get('To') or ''),
+                            'subject': str(parsed.get('Subject') or ''),
+                            'date': str(parsed.get('Date') or ''),
+                            'message_id': str(parsed.get('Message-ID') or ''),
                         })
         return drafts
+
+    def fetch_sent_messages(self, limit: int = 100) -> List[Dict[str, Any]]:
+        """Liest gesendete Nachrichten aus dem Sent-Ordner."""
+        items = []
+        with self._get_imap() as imap:
+            res, _ = imap.select(self.cfg['sent_folder'], readonly=True)
+            if res != 'OK':
+                return items
+            typ, data = imap.search(None, 'ALL')
+            if not data or not data[0]:
+                return items
+            msg_nums = data[0].split()
+            for num in msg_nums[-limit:]:
+                typ, msg_data = imap.fetch(num, '(RFC822)')
+                for part in msg_data:
+                    if isinstance(part, tuple):
+                        parsed = email.message_from_bytes(part[1])
+                        recips_raw = str(parsed.get('To') or '')
+                        recips = [r.strip().lower() for r in re.split(r'[,;]', recips_raw) if r.strip()]
+                        items.append({
+                            'id': str(parsed.get('Message-ID') or num.decode()),
+                            'date_str': str(parsed.get('Date') or ''),
+                            'recipients': recips,
+                            'subject': str(parsed.get('Subject') or ''),
+                            'internet_message_id': str(parsed.get('Message-ID') or ''),
+                        })
+        return items
+
+    def fetch_inbound_messages(self, limit: int = 100) -> List[Dict[str, Any]]:
+        """Liest eingehende Nachrichten aus dem Posteingang (INBOX)."""
+        items = []
+        with self._get_imap() as imap:
+            res, _ = imap.select(self.cfg['inbox_folder'], readonly=True)
+            if res != 'OK':
+                return items
+            typ, data = imap.search(None, 'ALL')
+            if not data or not data[0]:
+                return items
+            msg_nums = data[0].split()
+            for num in msg_nums[-limit:]:
+                typ, msg_data = imap.fetch(num, '(RFC822)')
+                for part in msg_data:
+                    if isinstance(part, tuple):
+                        parsed = email.message_from_bytes(part[1])
+                        body = ""
+                        if parsed.is_multipart():
+                            for p in parsed.walk():
+                                if p.get_content_type() in ("text/plain", "text/html"):
+                                    payload = p.get_payload(decode=True)
+                                    if payload:
+                                        body += payload.decode(errors='replace') + "\n"
+                        else:
+                            payload = parsed.get_payload(decode=True)
+                            if payload:
+                                body = payload.decode(errors='replace')
+                        items.append({
+                            'id': str(parsed.get('Message-ID') or num.decode()),
+                            'date_str': str(parsed.get('Date') or ''),
+                            'from': str(parsed.get('From') or ''),
+                            'to': str(parsed.get('To') or ''),
+                            'subject': str(parsed.get('Subject') or ''),
+                            'body': body,
+                            'internet_message_id': str(parsed.get('Message-ID') or ''),
+                        })
+        return items
 
     def clean_test_drafts(self, marker: str = 'TEST') -> int:
         """Loescht Entwuerfe, die mit dem Test-Marker markiert sind."""

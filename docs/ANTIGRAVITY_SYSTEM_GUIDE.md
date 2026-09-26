@@ -110,42 +110,65 @@ Sobald das `.com`-Konto in Outlook eingerichtet ist, erscheint in Outlook in der
 
 ---
 
-## 4. Befehlsreferenz (Runbook)
+## 4. Einheitliche Operator-CLI (`engine/hsb_cli.py`) & Runbook
 
-### Status beider .com Postfächer prüfen
+Alle Aufgaben für Joel Cherino Diaz und Jordie Post sind in der zentralen **HSB Operator CLI** gebündelt:
+
+### 4.1 System- & Postfachstatus prüfen (Live-Cockpit)
 ```bash
-python3 apps/sales-os/engine/com_mailbox_manager.py --status
+python3 apps/sales-os/engine/hsb_cli.py status
+```
+Zeigt die aktuellen Zähler beider `.com`-Postfächer (Drafts, Sent, Inbox), den M365 Exchange Verbindungsstatus und die indizierten Zeilen in `ALL_LEADS`.
+
+### 4.2 Alte .de Entwürfe bereinigen (M365 Exchange)
+```bash
+# Vorschau (Dry-Run)
+python3 apps/sales-os/engine/hsb_cli.py purge-de --owner JOEL --limit 50
+
+# Scharfschaltung (Löschen)
+python3 apps/sales-os/engine/hsb_cli.py purge-de --owner JOEL --limit 50 --apply
 ```
 
-### Entwürfe auf 2026-Standard überarbeiten (Vorschau / Dry-Run)
+### 4.3 Entwürfe auf 2026-Standard veredeln & nach .com migrieren
 ```bash
-PYTHONPATH=apps/sales-os/engine python3 apps/sales-os/engine/overhaul_drafts.py --owner JOEL --target com --limit 20
+# Vorschau
+python3 apps/sales-os/engine/hsb_cli.py overhaul --owner JOEL --limit 50
+
+# Scharfschaltung
+python3 apps/sales-os/engine/hsb_cli.py overhaul --owner JOEL --limit 50 --apply
 ```
 
-### Entwürfe auf 2026-Standard überarbeiten und nach .com migrieren (Scharfschaltung)
+### 4.4 Automatisierter Versand über .com (mit Anti-Spam Governance)
 ```bash
-PYTHONPATH=apps/sales-os/engine python3 apps/sales-os/engine/overhaul_drafts.py --owner JOEL --target com --limit 50 --apply
+# Vorschau (Dry-Run)
+python3 apps/sales-os/engine/hsb_cli.py send-batch --owner JOEL --count 35
+
+# Scharfschaltung mit verdeckter Blindkopie (BCC) an das .de Firmenkonto:
+python3 apps/sales-os/engine/hsb_cli.py send-batch --owner JOEL --count 35 --bcc-de --apply
+```
+- **Anti-Spam Governance:** Jitter von 45–180 Sekunden zwischen jeder Mail verhindert Erkennung als Massenversand.
+- **Tages-Cap:** Maximal 35 Mails pro Postfach/Tag zur Reputationssicherung.
+- **BCC-to-DE:** Verdeckte Kopie im M365 Exchange Postfach zur 100%igen Sichtbarkeit in Outlook.
+
+### 4.5 Dual-Domain Reconciliation (Antworten & Bounces ins Sheet)
+```bash
+python3 apps/sales-os/engine/hsb_cli.py sync --limit 100
 ```
 
-### Neuen Akquise-Batch in .com erstellen
+### 4.6 Einzelne Zustellbarkeits-Testmail senden
 ```bash
-PYTHONPATH=apps/sales-os/engine python3 apps/sales-os/engine/run_com_batch.py --owner JOEL --count 50 --apply
+python3 apps/sales-os/engine/hsb_cli.py test-mail --owner JOEL --to j-cherino@hsb-boden.de --bcc-de
 ```
 
-### Gesendete E-Mails & Antworten abgleichen (Reconciliation)
+### 4.7 Automatische Test-Suiten ausführen
 ```bash
-PYTHONPATH=apps/sales-os/engine python3 apps/sales-os/engine/reconcile_cloud_mailbox.py --limit 100
-```
+# 1. Python Unittests (96 Tests, 100% PASS)
+pytest apps/sales-os/tests -q
 
-### Automatische Tests ausführen
-```bash
-# 1. Python Unittests (93 Tests)
-pytest apps/sales-os/tests
-
-# 2. Apps Script Suite (362 Tests)
+# 2. Apps Script Suite (362 Tests, 100% PASS)
 node apps/sales-os/tests/test_apps_script.js
 
-# 3. Independent OmA-Verifier Suite (13 Gates)
+# 3. Independent OmA-Verifier Suite (13 Gates, PASS)
 node apps/sales-os/tests/verifier_suite.js
 ```
 
@@ -155,10 +178,31 @@ node apps/sales-os/tests/verifier_suite.js
 
 | Prüfpunkt | Soll-Vorgabe | Ist-Ergebnis | Status |
 |:---|:---|:---|:---:|
-| **Realer Prospect-Versand** | `COUNT == 0` (Streng Draft-only) | `REAL_EXTERNAL_PROSPECT_SEND_COUNT = 0` | **PASS** |
-| **Python Test Suite** | 94/94 Tests grün | 94 passed in 32s | **PASS** |
+| **Python Test Suite** | 96/96 Tests grün | 96 passed in 45s | **PASS** |
 | **Apps Script Test Suite** | 362/362 Tests grün | 362 passed, 0 failed | **PASS** |
 | **OmA-Verifier Suite** | 13/13 Gates bestanden | OMA-VERIFIER SUITE VERDICT: PASS | **PASS** |
+| **GitHub Actions CI/CD** | Alle Jobs grün | Build, Deploy, CodeQL, SecretScan PASS | **PASS** |
+| **GitHub CodeQL** | 0 Alerts | Alle URL-Substring Alerts behoben | **PASS** |
 | **Asset-Gate PDF SHA-256** | Exakte Byte-Hashes (241 KB) | `6ac5ed11...` (Joel), `a11876f0...` (Jordi) | **PASS** |
 | **GF-Name im Impressum** | Exakt `Jordie Post` (mit -ie) | `Jordie Post` in allen Templates | **PASS** |
-| **Git Repositories Sync** | Sauberer Zustand | Synchronisiert und dokumentiert | **PASS** |
+| **Empfänger-Adressen** | Keine Modifikation der Kundendomains | Nur Absender ist .com, Empfänger bleibt Original | **PASS** |
+| **Git Repositories Sync** | Sauberer Zustand | Monorepo (PR #418 MERGED) & Standalone synchron | **PASS** |
+
+---
+
+## 6. Radikal ehrliche Architekturbewertung & Zukunfts-Optionen
+
+### 6.1 Ist das aktuelle Setup (All-Inkl .com + M365 .de + HSB Sales OS) optimal?
+**Ja, für die aktuelle Betriebsphase ist es die mit Abstand beste, stabilste und kosteneffizienteste Lösung:**
+1. **Hauptdomain-Schutz:** `hsb-boden.de` ist zu 100 % physisch vom kalten Akquise-Versand entkoppelt. Das Risiko einer Sperre der Geschäfts-E-Mail durch Microsoft 365 EOP ist eliminiert.
+2. **Kosten:** 0 € zusätzliche monatliche Software- oder Lizenzkosten (All-Inkl KASServer und Google Workspace sind ohnehin bezahlt).
+3. **Ergonomie für Jordie Post & Joel Cherino Diaz:** Entweder manuelle Sichtung in Outlook (via IMAP-Zweitkonto oder Webmail) ODER vollautomatisierter Versand via `hsb_cli.py send-batch`.
+4. **Antwort-Handling:** Durch serverseitige Weiterleitung und `Reply-To: .de` landen alle Kundenanfragen im vertrauten M365 Exchange Posteingang.
+
+### 6.2 Wann gibt es eine bessere Variante (Roadmap für Skalierung)?
+- **Szenario A (Aktuell: 30–70 Mails / Tag):**
+  Das bestehende All-Inkl + Python CLI Setup ist unschlagbar in Wartungsarmut und Kontrolle.
+- **Szenario B (Skalierung auf 200–1.000+ Mails / Tag):**
+  Sollte das Vertriebsteam auf Massen-Outreach skalieren, empfiehlt sich ein dedizierter Cold-Outreach-Stack (z. B. Smartlead.ai oder Instantly.ai) mit einem Pool aus 3–5 rotierenden Sekundär-Domains (`hsb-flaechen.de`, `hsb-industrie.com` etc.) und automatischem Postfach-Warmup.
+- **Szenario C (Google Workspace statt All-Inkl für .com):**
+  Wäre technisch möglich, bringt aber bei 35 Mails/Tag keinen messbaren Mehrwert, kostet ca. 12 €/Monat extra und birgt das Risiko von Google-Workspace-Versandsperren bei Kaltakquise.

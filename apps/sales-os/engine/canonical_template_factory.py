@@ -28,11 +28,15 @@ CANONICAL_FLYERS["JORDIE"] = CANONICAL_FLYERS["JORDI"]
 LOGO_URL = "https://www.hsb-boden.de/brand/hsb-boden-logo.png"
 
 
-def render_canonical_email(lead: Dict[str, Any], owner: str = "JOEL") -> Dict[str, Any]:
+def render_canonical_email(lead: Dict[str, Any], owner: str = "JOEL", domain: str = "de") -> Dict[str, Any]:
     norm_owner = owner.strip().upper() if owner else "JOEL"
     if norm_owner not in CANONICAL_FLYERS:
         norm_owner = "JOEL"
     owner_meta = CANONICAL_FLYERS[norm_owner]
+    if domain.lower() == "com":
+        sender_email = "j-cherino@hsb-boden.com" if norm_owner == "JOEL" else "j-post@hsb-boden.com"
+    else:
+        sender_email = owner_meta["sender_email"]
 
     to_addr = str(lead.get("Email") or lead.get("E-Mail") or "").strip()
     if not to_addr or "@" not in to_addr:
@@ -68,7 +72,7 @@ def render_canonical_email(lead: Dict[str, Any], owner: str = "JOEL") -> Dict[st
     {owner_meta['sender_role']}<br />
     HSB Hexagon Säurebau GmbH<br />
     Telefon: {owner_meta['sender_phone']}<br />
-    E-Mail: {owner_meta['sender_email']}<br />
+    E-Mail: {sender_email}<br />
     Web: <a href="https://www.hsb-boden.de">www.hsb-boden.de</a></p>
     <hr style="border: 0; border-top: 1px solid #ccc; margin: 20px 0;" />
     <p style="font-size: 11px; color: #777;">

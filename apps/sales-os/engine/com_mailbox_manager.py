@@ -315,8 +315,8 @@ class ComMailboxClient:
                     if isinstance(part, tuple):
                         parsed = email.message_from_bytes(part[1])
                         subj = str(parsed.get('Subject', ''))
-                        to_addr = str(parsed.get('To', ''))
-                        if marker in subj or 'example.com' in to_addr or 'test@' in to_addr:
+                        to_addr = str(parsed.get('To', '')).lower()
+                        if marker in subj or to_addr.endswith('@example.com') or to_addr.endswith('.example.com') or to_addr.startswith('test@'):
                             imap.store(num, '+FLAGS', r'\Deleted')
                             deleted += 1
             imap.expunge()

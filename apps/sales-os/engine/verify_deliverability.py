@@ -122,17 +122,22 @@ def check_mx(domain):
         }
     
     seg = "Standard / Custom"
-    mx_str = " ".join(mx_records).lower()
-    if "outlook.com" in mx_str:
-        seg = "Microsoft 365 Exchange Online"
-    elif "google.com" in mx_str or "googlemail.com" in mx_str:
-        seg = "Google Workspace"
-    elif "pphosted.com" in mx_str:
-        seg = "Proofpoint Enterprise SEG"
-    elif "mimecast" in mx_str:
-        seg = "Mimecast Secure Email Gateway"
-    elif "barracuda" in mx_str:
-        seg = "Barracuda Email Security Gateway"
+    for r in [rec.lower().rstrip('.') for rec in mx_records]:
+        if r.endswith('.outlook.com') or r == 'outlook.com':
+            seg = "Microsoft 365 Exchange Online"
+            break
+        elif r.endswith('.google.com') or r == 'google.com' or r.endswith('.googlemail.com') or r == 'googlemail.com':
+            seg = "Google Workspace"
+            break
+        elif r.endswith('.pphosted.com') or r == 'pphosted.com':
+            seg = "Proofpoint Enterprise SEG"
+            break
+        elif 'mimecast' in r:
+            seg = "Mimecast Secure Email Gateway"
+            break
+        elif 'barracuda' in r:
+            seg = "Barracuda Email Security Gateway"
+            break
         
     return {
         "status": "OK",

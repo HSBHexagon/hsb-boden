@@ -9,10 +9,13 @@
 ### Ausgangslage
 - HSB Hexagon Säurebau GmbH nutzte bisher die Hauptdomain `hsb-boden.de` für den Cold-Outreach via Microsoft 365 Exchange.
 - **Risiko:** Reputationsverlust und Spam-Einstufung der primären Geschäftsdomain `hsb-boden.de`.
-- **Zusätzliches Problem:** Veraltete Entwürfe im Postfach (~1.073 bei Joel, ~784 bei Jordi) mit veralteten PDF-Anhängen (1,5 MB), unvollständigen Firmennamen ("Ihr Unternehmen" oder Domain-Slugs), fehlenden Logos und unzureichenden Abmeldelinks.
+- **Zusätzliches Problem:** Veraltete Entwürfe im Postfach (~1.073 bei Joel, aktuell ~273 bei Jordie (zuvor 784 registriert, Rest bereits versendet)) mit veralteten PDF-Anhängen (1,5 MB), unvollständigen Firmennamen ("Ihr Unternehmen" oder Domain-Slugs), fehlenden Logos und unzureichenden Abmeldelinks.
 - **Technische Hürde:** Microsoft Power Automate HTTP-Trigger wurden von Microsoft kostenpflichtig beschränkt (403 Quota).
 
 ### Die Lösung von Antigravity (AGY)
+0. **Kanonische Wahrheit & Namensführung:**
+   - **Geschäftsführer (§ 35a GmbHG):** Ausnahmslos **`Jordie Post`** (mit "-ie") in allen Signaturen, Impressen und Dokumenten.
+   - **Tatsächlicher Postfachstand:** Joel besitzt ~1.073 Altentwürfe (werden bereinigt und migriert); Jordie besitzt aktuell **~273 Entwürfe** (keine Diskrepanzen oder doppelte Wahrheiten im Sheet).
 1. **Domain-Trennung (.com für Outbound, .de für Tagesgeschäft):**
    - Eigene Akquise-Domain: `hsb-boden.com` (gehostet auf All-Inkl / KASServer `w0221a9f.kasserver.com`).
    - Postfächer: `j-cherino@hsb-boden.com` (User: `m0821e5d`) und `j-post@hsb-boden.com` (User: `m0821e5b`).
@@ -153,7 +156,7 @@ node apps/sales-os/tests/verifier_suite.js
 | Prüfpunkt | Soll-Vorgabe | Ist-Ergebnis | Status |
 |:---|:---|:---|:---:|
 | **Realer Prospect-Versand** | `COUNT == 0` (Streng Draft-only) | `REAL_EXTERNAL_PROSPECT_SEND_COUNT = 0` | **PASS** |
-| **Python Test Suite** | 93/93 Tests grün | 93 passed in 33s | **PASS** |
+| **Python Test Suite** | 94/94 Tests grün | 94 passed in 32s | **PASS** |
 | **Apps Script Test Suite** | 362/362 Tests grün | 362 passed, 0 failed | **PASS** |
 | **OmA-Verifier Suite** | 13/13 Gates bestanden | OMA-VERIFIER SUITE VERDICT: PASS | **PASS** |
 | **Asset-Gate PDF SHA-256** | Exakte Byte-Hashes (241 KB) | `6ac5ed11...` (Joel), `a11876f0...` (Jordi) | **PASS** |

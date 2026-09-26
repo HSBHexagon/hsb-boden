@@ -176,7 +176,7 @@ function buildEml_(lead, batchId, flyer, pdfChunked) {
   lines.push('Subject: ' + encodeHeader_(mail.subject));
   lines.push('Date: ' + Utilities.formatDate(new Date(), CFG.TIMEZONE,
              'EEE, dd MMM yyyy HH:mm:ss Z'));
-  lines.push('Message-ID: <' + Utilities.getUuid() + '@hsb-boden.de>');
+  lines.push('Message-ID: <' + Utilities.getUuid() + '@hsb-boden.com>');
   lines.push('X-Unsent: 1');                    // Outlook: als Entwurf oeffnen
   lines.push('X-HSB-Lead-ID: ' + lead.Lead_ID);
   lines.push('X-HSB-Batch-ID: ' + batchId);

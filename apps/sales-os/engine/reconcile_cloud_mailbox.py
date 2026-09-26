@@ -68,7 +68,7 @@ AUTO_REPLY_SUBJ_RE = re.compile(
     re.IGNORECASE,
 )
 STATUS_CODE_RE = re.compile(r"(\b[45]\d{2}\s+[45]\.\d\.\d\b|\b[45]\.\d\.\d\b)")
-INTERNAL_DOMAINS = ["hsb-boden.de", "microsoft.com", "outlook.com", "postmaster", "mailer-daemon"]
+INTERNAL_DOMAINS = ["hsb-boden.de", "hsb-boden.com", "microsoft.com", "outlook.com", "postmaster", "mailer-daemon", "kasserver.com"]
 SEARCH_EMAIL_RE = re.compile(r"[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+")
 
 

@@ -45,6 +45,11 @@ from reconcile_cloud_mailbox import (
     parse_rfc3464_dsn,
     build_inbound_event_row,
 )
+try:
+    from com_mailbox_manager import ComMailboxClient
+except ImportError:
+    ComMailboxClient = None
+
 
 logging.basicConfig(
     level=logging.INFO,
@@ -138,6 +143,38 @@ def scan_mailbox_for_bounces(
     return found_bounces
 
 
+def scan_com_mailbox_for_bounces(
+    owner_name: str,
+    limit: int = 100
+) -> List[Dict[str, Any]]:
+    """Scans All-Inkl .com IMAP inbox for bounces/NDRs using ComMailboxClient."""
+    found_bounces = []
+    if not ComMailboxClient:
+        return found_bounces
+    try:
+        client = ComMailboxClient(owner_name)
+        msgs = client.fetch_inbound_messages(limit=limit)
+        for m in msgs:
+            subj = m.get("subject") or ""
+            body = m.get("body") or ""
+            is_bounce, reason, failed_recips = parse_rfc3464_dsn(subj, body)
+            if is_bounce:
+                found_bounces.append({
+                    "msg_id": m.get("id"),
+                    "internet_message_id": m.get("internet_message_id") or "",
+                    "date_str": m.get("date_str") or "",
+                    "sender": m.get("from") or "",
+                    "subject": subj,
+                    "reason": reason,
+                    "failed_recipients": failed_recips,
+                    "source_folder": "INBOX",
+                })
+        logger.info(f"[{owner_name} .com IMAP] {len(msgs)} Nachrichten gescannt -> {len(found_bounces)} Bounce-Nachrichten erkannt.")
+    except Exception as e:
+        logger.warning(f"[{owner_name} .com IMAP] Fehler beim Abruf: {e}")
+    return found_bounces
+
+
 def process_bounces(
     owner_key: str,
     dry_run: bool = True,
@@ -146,7 +183,12 @@ def process_bounces(
     """Processes bounces for owner and writes back to Google Sheets."""
     assert REAL_EXTERNAL_PROSPECT_SEND_COUNT == 0, "Sicherheits-Invariante verletzt!"
     
-    token = get_az_apihub_token()
+    token = None
+    try:
+        token = get_az_apihub_token()
+    except Exception as e:
+        logger.warning(f"Azure APIHub Token nicht verfuegbar ({e}), scanne All-Inkl IMAP.")
+
     sheets_svc = get_sheets_service()
     email_to_lead, existing_event_ids = load_all_leads_index(sheets_svc)
 
@@ -155,17 +197,21 @@ def process_bounces(
 
     for o in owners:
         conf = CONNECTIONS.get(o)
-        if not conf:
-            continue
-        conn_id = conf["connection_id"]
-        mailbox_addr = conf["account"]
+        conn_id = conf["connection_id"] if conf else ""
+        mailbox_addr = conf["account"] if conf else f"{o.lower()}@hsb-boden.com"
         logger.info(f"=== Starte Bounce-Scan fuer {o} ({mailbox_addr}) ===")
 
-        try:
-            bounces = scan_mailbox_for_bounces(token, conn_id, o, limit=limit)
-        except Exception as e:
-            logger.warning(f"[{o}] Mailbox-Abruf fehlgeschlagen: {e}")
-            continue
+        bounces = []
+        # 1. All-Inkl .com IMAP Inbox Scan
+        bounces.extend(scan_com_mailbox_for_bounces(o, limit=limit))
+
+        # 2. Cloud M365 Scan (falls Token verfuegbar)
+        if token and conf:
+            try:
+                bounces.extend(scan_mailbox_for_bounces(token, conn_id, o, limit=limit))
+            except Exception as e:
+                logger.warning(f"[{o}] Cloud-Mailbox-Abruf fehlgeschlagen: {e}")
+
 
         now_iso = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
         sheet_updates = []
@@ -212,6 +258,12 @@ def process_bounces(
                             "range": f"ALL_LEADS!BD{row_num}",
                             "values": [[b["reason"]]]
                         })
+                        # Spalte BE: Pipeline = Bounce
+                        sheet_updates.append({
+                            "range": f"ALL_LEADS!BE{row_num}",
+                            "values": [["Bounce"]]
+                        })
+
 
                     # Event logging
                     event_id = f"INBOUND-BOUNCE-{lead_id}"

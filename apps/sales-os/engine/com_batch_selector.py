@@ -11,15 +11,16 @@ from typing import Any, Dict, List, Set
 def select_com_eligible_leads(
     leads: List[Dict[str, Any]],
     owner: str = "JOEL",
-    limit: int = 50
+    limit: int = 50,
+    allow_overhaul: bool = False
 ) -> List[Dict[str, Any]]:
     """
     Waehlt autoritativ die naechsten qualifizierten Leads fuer den angegebenen Owner aus.
     
     Filter-Kriterien:
     - Owner-Match: Lead gehoert zu Joel bzw. Jordi
-    - Versandfreigabe: 'yes' / 'ja' / '1' / 'true'
-    - Drafted_At: muss leer sein (noch kein Entwurf erzeugt)
+    - Versandfreigabe: 'yes' / 'ja' / '1' / 'true' (bei allow_overhaul auch Entwuerfe im Refresh)
+    - Drafted_At: muss leer sein (oder bei allow_overhaul erlaubt)
     - Send_Status: darf nicht 'sent' / 'gesendet' sein
     - Opt-Out / Suppression: ausgeschlossen
     - E-Mail-Syntax & Dedup: gueltige Adresse mit '@', keine Duplikate
@@ -38,12 +39,14 @@ def select_com_eligible_leads(
             continue
 
         freigabe = str(lead.get("Versandfreigabe") or "").lower().strip()
-        if freigabe not in ("yes", "ja", "1", "true"):
+        if not allow_overhaul and freigabe not in ("yes", "ja", "1", "true"):
             continue
 
         drafted = str(lead.get("Drafted_At") or "").strip()
         sent = str(lead.get("Send_Status") or "").lower().strip()
-        if drafted or sent in ("sent", "gesendet"):
+        if sent in ("sent", "gesendet"):
+            continue
+        if not allow_overhaul and drafted:
             continue
 
         optout = str(lead.get("Opt_Out") or lead.get("Opt-out-Status") or "").lower().strip()

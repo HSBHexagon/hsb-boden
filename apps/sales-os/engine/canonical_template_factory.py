@@ -76,7 +76,6 @@ def render_canonical_email(lead: Dict[str, Any], owner: str = "JOEL", domain: st
     greeting = anrede_fuer_lead(lead)
 
     body_html = f"""<div style="font-family: Arial, sans-serif; font-size: 14px; color: #222; line-height: 1.5;">
-    <p><img src="{LOGO_URL}" alt="HSB Hexagon Säurebau Logo" width="102" height="75" style="display: block; border: 0; outline: none; text-decoration: none;" /></p>
     <p>{greeting}</p>
     <p>mein Name ist {owner_meta['sender_name']} von der HSB Hexagon Säurebau GmbH. Wir planen, bauen und sanieren säurebeständige, hygienische Industrieböden – ausgelegt auf das reale Belastungsprofil statt auf ein Standardprodukt.</p>
     <p>Typische Themen bei Produktionsbetrieben:<br>
@@ -92,7 +91,8 @@ def render_canonical_email(lead: Dict[str, Any], owner: str = "JOEL", domain: st
     HSB Hexagon Säurebau GmbH<br />
     Telefon: {owner_meta['sender_phone']}<br />
     E-Mail: {sender_email}<br />
-    Web: <a href="https://www.hsb-boden.de">www.hsb-boden.de</a></p>
+    Web: <a href="https://www.hsb-boden.de" style="color: #0051c3; text-decoration: none;">www.hsb-boden.de</a></p>
+    <p style="margin-top: 15px; margin-bottom: 15px;"><img src="{LOGO_URL}" alt="HSB Hexagon Säurebau Logo" width="102" height="75" style="display: block; border: 0; outline: none; text-decoration: none;" /></p>
     <hr style="border: 0; border-top: 1px solid #ccc; margin: 20px 0;" />
     <p style="font-size: 11px; color: #777;">
     <strong>HSB Hexagon Säurebau GmbH</strong> &middot; Benzstraße 6 &middot; 48599 Gronau<br />

@@ -51,6 +51,8 @@ class ComMailboxClient:
             self.cfg['imap_port'],
             ssl_context=self.ssl_context
         )
+        if hasattr(imap, 'sock') and imap.sock:
+            imap.sock.settimeout(25.0)
         imap.login(self.cfg['username'], self.cfg['password'])
         return imap
 
@@ -138,6 +140,78 @@ class ComMailboxClient:
                 raise RuntimeError(f'Fehler beim Speichern des Entwurfs: {data}')
 
         return True, msg_id
+
+    def build_draft_message(
+        self,
+        to_email: str,
+        subject: str,
+        body_html: str,
+        flyer_bytes: Optional[bytes] = None,
+        flyer_filename: Optional[str] = 'HSB-HEXAGON-Industrieboeden-Flyer.pdf',
+        custom_message_id: Optional[str] = None
+    ) -> Tuple[bytes, str]:
+        if not to_email or '@' not in to_email:
+            raise ValueError(f'Ungueltige Empfaengeradresse: {to_email}')
+
+        msg = MIMEMultipart('mixed')
+        msg['From'] = f'{self.cfg["display_name"]} <{self.cfg["email"]}>'
+        if self.cfg.get('reply_to'):
+            msg['Reply-To'] = self.cfg['reply_to']
+        msg['To'] = to_email
+        msg['Subject'] = Header(subject, 'utf-8').encode()
+        msg['Date'] = formatdate(localtime=True)
+        msg_id = custom_message_id or make_msgid(domain='hsb-boden.com')
+        msg['Message-ID'] = msg_id
+        msg['X-Unsent'] = '1'
+
+        part_html = MIMEText(body_html, 'html', 'utf-8')
+        msg.attach(part_html)
+
+        if flyer_bytes:
+            part_pdf = MIMEApplication(flyer_bytes, _subtype='pdf')
+            part_pdf.add_header('Content-Disposition', 'attachment', filename=flyer_filename or 'HSB-Flyer.pdf')
+            msg.attach(part_pdf)
+
+        return msg.as_bytes(), msg_id
+
+    def create_drafts_batch(self, items: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        """Erstellt eine Liste von Entwuerfen in einer einzigen persistenten IMAP-Verbindung."""
+        results = []
+        flyer_cache: Dict[str, bytes] = {}
+
+        for it in items:
+            fpath = it.get('flyer_path')
+            if fpath and fpath not in flyer_cache and os.path.exists(fpath):
+                with open(fpath, 'rb') as f:
+                    flyer_cache[fpath] = f.read()
+
+        with self._get_imap() as imap:
+            folder = self.cfg['drafts_folder']
+            for it in items:
+                fpath = it.get('flyer_path')
+                fbytes = flyer_cache.get(fpath) if fpath else None
+                try:
+                    raw_bytes, mid = self.build_draft_message(
+                        to_email=it['to_email'],
+                        subject=it['subject'],
+                        body_html=it['body_html'],
+                        flyer_bytes=fbytes,
+                        flyer_filename=it.get('flyer_filename'),
+                        custom_message_id=it.get('custom_message_id')
+                    )
+                    res, data = imap.append(
+                        folder,
+                        r'(\Draft)',
+                        imaplib.Time2Internaldate(time.time()),
+                        raw_bytes
+                    )
+                    if res == 'OK':
+                        results.append({'lead_id': it.get('lead_id'), 'row_idx': it.get('row_idx'), 'to': it['to_email'], 'subject': it['subject'], 'message_id': mid, 'status': 'DRAFTED', 'ok': True})
+                    else:
+                        results.append({'lead_id': it.get('lead_id'), 'row_idx': it.get('row_idx'), 'to': it['to_email'], 'subject': it['subject'], 'message_id': mid, 'status': f'ERROR_{data}', 'ok': False})
+                except Exception as ex:
+                    results.append({'lead_id': it.get('lead_id'), 'row_idx': it.get('row_idx'), 'to': it['to_email'], 'subject': it.get('subject'), 'status': f'EXCEPTION_{ex}', 'ok': False})
+        return results
 
     def send_message(
         self,
@@ -322,6 +396,22 @@ class ComMailboxClient:
             imap.expunge()
         return deleted
 
+    def purge_all_drafts(self) -> int:
+        """Loescht alle vorhandenen Entwuerfe im Entwurfsordner."""
+        deleted = 0
+        with self._get_imap() as imap:
+            res, _ = imap.select(self.cfg['drafts_folder'])
+            if res != 'OK':
+                return 0
+            typ, data = imap.search(None, 'ALL')
+            if not data or not data[0]:
+                return 0
+            for num in data[0].split():
+                imap.store(num, '+FLAGS', r'\Deleted')
+                deleted += 1
+            imap.expunge()
+        return deleted
+
 
 def print_status():
     print('=' * 80)
@@ -345,6 +435,7 @@ if __name__ == '__main__':
     parser.add_argument('--owner', choices=['JOEL', 'JORDI'], default='JOEL', help='Mailbox Owner')
     parser.add_argument('--test-draft', action='store_true', help='Test-Entwurf anlegen')
     parser.add_argument('--clean-tests', action='store_true', help='Test-Entwuerfe bereinigen')
+    parser.add_argument('--purge-drafts', action='store_true', help='Alle vorhandenen Entwuerfe im Ordner Entwuerfe loeschen')
     args = parser.parse_args()
 
     if args.status:
@@ -362,5 +453,11 @@ if __name__ == '__main__':
             c = ComMailboxClient(owner)
             n = c.clean_test_drafts()
             print(f'{owner}: {n} Test-Entwuerfe bereinigt.')
+    elif args.purge_drafts:
+        owners = [args.owner] if args.owner else ['JOEL', 'JORDI']
+        for o in owners:
+            c = ComMailboxClient(o)
+            n = c.purge_all_drafts()
+            print(f'{o}: {n} Entwuerfe vollstaendig geloescht.')
     else:
         print_status()

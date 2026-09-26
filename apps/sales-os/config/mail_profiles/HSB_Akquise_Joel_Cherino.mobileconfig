@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>PayloadContent</key>
+    <array>
+        <dict>
+            <key>EmailAccountDescription</key>
+            <string>HSB Akquise - Joel Cherino Diaz (.com)</string>
+            <key>EmailAccountName</key>
+            <string>Joel Cherino Diaz</string>
+            <key>EmailAccountType</key>
+            <string>EmailTypeIMAP</string>
+            <key>EmailAddress</key>
+            <string>j-cherino@hsb-boden.com</string>
+            <key>IncomingMailServerAuthentication</key>
+            <string>EmailAuthPassword</string>
+            <key>IncomingMailServerHostName</key>
+            <string>w0221a9f.kasserver.com</string>
+            <key>IncomingMailServerPortNumber</key>
+            <integer>993</integer>
+            <key>IncomingMailServerUseSSL</key>
+            <true/>
+            <key>IncomingMailServerUsername</key>
+            <string>m0821e5d</string>
+            <key>OutgoingMailServerAuthentication</key>
+            <string>EmailAuthPassword</string>
+            <key>OutgoingMailServerHostName</key>
+            <string>w0221a9f.kasserver.com</string>
+            <key>OutgoingMailServerPortNumber</key>
+            <integer>465</integer>
+            <key>OutgoingMailServerUseSSL</key>
+            <true/>
+            <key>OutgoingMailServerUsername</key>
+            <string>m0821e5d</string>
+            <key>OutgoingPasswordSameAsIncomingPassword</key>
+            <true/>
+            <key>PayloadDescription</key>
+            <string>Konfiguriert das HSB Akquise E-Mail-Postfach für Joel Cherino Diaz</string>
+            <key>PayloadDisplayName</key>
+            <string>HSB Akquise (j-cherino@hsb-boden.com)</string>
+            <key>PayloadIdentifier</key>
+            <string>de.hsb-boden.mail.j-cherino</string>
+            <key>PayloadType</key>
+            <string>com.apple.mail.managed</string>
+            <key>PayloadUUID</key>
+            <string>94B5A5F1-2B4A-4A59-8664-92716E85C7A1</string>
+            <key>PayloadVersion</key>
+            <integer>1</integer>
+        </dict>
+    </array>
+    <key>PayloadDisplayName</key>
+    <string>HSB Akquise - Joel Cherino Diaz</string>
+    <key>PayloadIdentifier</key>
+    <string>de.hsb-boden.profile.j-cherino</string>
+    <key>PayloadRemovalDisallowed</key>
+    <false/>
+    <key>PayloadType</key>
+    <string>Configuration</string>
+    <key>PayloadUUID</key>
+    <string>5D40F48D-7F94-4361-9EE8-D2D49DF76D92</string>
+    <key>PayloadVersion</key>
+    <integer>1</integer>
+</dict>
+</plist>

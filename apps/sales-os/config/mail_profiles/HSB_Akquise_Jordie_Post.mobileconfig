@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>PayloadContent</key>
+    <array>
+        <dict>
+            <key>EmailAccountDescription</key>
+            <string>HSB Akquise - Jordie Post (.com)</string>
+            <key>EmailAccountName</key>
+            <string>Jordie Post</string>
+            <key>EmailAccountType</key>
+            <string>EmailTypeIMAP</string>
+            <key>EmailAddress</key>
+            <string>j-post@hsb-boden.com</string>
+            <key>IncomingMailServerAuthentication</key>
+            <string>EmailAuthPassword</string>
+            <key>IncomingMailServerHostName</key>
+            <string>w0221a9f.kasserver.com</string>
+            <key>IncomingMailServerPortNumber</key>
+            <integer>993</integer>
+            <key>IncomingMailServerUseSSL</key>
+            <true/>
+            <key>IncomingMailServerUsername</key>
+            <string>m0821e5b</string>
+            <key>OutgoingMailServerAuthentication</key>
+            <string>EmailAuthPassword</string>
+            <key>OutgoingMailServerHostName</key>
+            <string>w0221a9f.kasserver.com</string>
+            <key>OutgoingMailServerPortNumber</key>
+            <integer>465</integer>
+            <key>OutgoingMailServerUseSSL</key>
+            <true/>
+            <key>OutgoingMailServerUsername</key>
+            <string>m0821e5b</string>
+            <key>OutgoingPasswordSameAsIncomingPassword</key>
+            <true/>
+            <key>PayloadDescription</key>
+            <string>Konfiguriert das HSB Akquise E-Mail-Postfach für Jordie Post</string>
+            <key>PayloadDisplayName</key>
+            <string>HSB Akquise (j-post@hsb-boden.com)</string>
+            <key>PayloadIdentifier</key>
+            <string>de.hsb-boden.mail.j-post</string>
+            <key>PayloadType</key>
+            <string>com.apple.mail.managed</string>
+            <key>PayloadUUID</key>
+            <string>77C1A2E3-4B8A-4219-9134-82617D95B8B2</string>
+            <key>PayloadVersion</key>
+            <integer>1</integer>
+        </dict>
+    </array>
+    <key>PayloadDisplayName</key>
+    <string>HSB Akquise - Jordie Post</string>
+    <key>PayloadIdentifier</key>
+    <string>de.hsb-boden.profile.j-post</string>
+    <key>PayloadRemovalDisallowed</key>
+    <false/>
+    <key>PayloadType</key>
+    <string>Configuration</string>
+    <key>PayloadUUID</key>
+    <string>3A18C52E-9D14-4172-8CB1-E1F58DF94E10</string>
+    <key>PayloadVersion</key>
+    <integer>1</integer>
+</dict>
+</plist>

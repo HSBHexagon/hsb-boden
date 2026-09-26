@@ -33,8 +33,14 @@ def count_formula(owner_match, state):
 
 def cockpit_values(owner_match, mailbox):
     """Zellinhalte des Tabs (Zeilenlisten). Jeder Block: Titelzeile (mit Zaehler), Kopfzeile, QUERY, BLOCK_ROWS Zeilen Platz."""
+    mb_com = mailbox.replace("@hsb-boden.de", "@hsb-boden.com") if "@hsb-boden.de" in mailbox else mailbox
+    mb_de = mailbox.replace("@hsb-boden.com", "@hsb-boden.de") if "@hsb-boden.com" in mailbox else mailbox
+    sync_formula = (
+        f'=IFERROR("Postfach " & VLOOKUP("{mb_com}"; SYNC_STATUS!A:H; 1; FALSE) & " · zuletzt abgeglichen " & TEXT(VLOOKUP("{mb_com}"; SYNC_STATUS!A:H; 2; FALSE); "dd.mm. hh:mm"); '
+        f'IFERROR("Postfach " & VLOOKUP("{mb_de}"; SYNC_STATUS!A:H; 1; FALSE) & " · zuletzt abgeglichen " & TEXT(VLOOKUP("{mb_de}"; SYNC_STATUS!A:H; 2; FALSE); "dd.mm. hh:mm"); "Abgleich noch nicht gelaufen"))'
+    )
     rows = [[f"HEUTE — {owner_match.upper()}", "", "", "", "", "", ""],
-            [f'=IFERROR("Postfach " & VLOOKUP("{mailbox}"; SYNC_STATUS!A:H; 1; FALSE) & " · zuletzt abgeglichen " & TEXT(VLOOKUP("{mailbox}"; SYNC_STATUS!A:H; 2; FALSE); "dd.mm. hh:mm"); "Abgleich noch nicht gelaufen")'],
+            [sync_formula],
             []]
     # Zaehler = exakt dieselbe Bedingung wie die Liste darunter (sonst widersprechen sich Kopf und Inhalt).
     counts = [

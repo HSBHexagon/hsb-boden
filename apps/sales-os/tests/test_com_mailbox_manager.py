@@ -73,3 +73,40 @@ def test_com_mailbox_create_draft_sets_reply_to_header(monkeypatch):
     assert "j-cherino@hsb-boden.de" in msg["Reply-To"]
     assert msg["To"] == "empfaenger@kunde.de"
     assert msg["X-Unsent"] == "1"
+
+
+def test_com_mailbox_send_message_executes_smtp_and_appends_to_sent(monkeypatch):
+    client = ComMailboxClient("JOEL")
+    captured = {}
+    class FakeImap:
+        def __enter__(self):
+            return self
+        def __exit__(self, *args):
+            pass
+        def append(self, folder, flags, date_time, raw_bytes):
+            captured["imap_folder"] = folder
+            return "OK", [b"Success"]
+
+    class FakeSMTP:
+        def __init__(self, host, port, context=None, timeout=None):
+            pass
+        def __enter__(self):
+            return self
+        def __exit__(self, *args):
+            pass
+        def login(self, u, p):
+            pass
+        def send_message(self, msg):
+            captured["smtp_msg"] = msg
+
+    monkeypatch.setattr(client, "_get_imap", lambda: FakeImap())
+    import smtplib
+    monkeypatch.setattr(smtplib, "SMTP_SSL", FakeSMTP)
+
+    ok, mid = client.send_message("empfaenger@kunde.de", "Live Send Test", "<p>Hallo</p>")
+    assert ok is True
+    assert captured["imap_folder"] == '"Gesendet"'
+    msg = captured["smtp_msg"]
+    assert "j-cherino@hsb-boden.com" in msg["From"]
+    assert "j-cherino@hsb-boden.de" in msg["Reply-To"]
+    assert msg["To"] == "empfaenger@kunde.de"

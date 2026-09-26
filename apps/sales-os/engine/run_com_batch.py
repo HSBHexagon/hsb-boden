@@ -21,6 +21,7 @@ if str(ENGINE_DIR) not in sys.path:
 from com_batch_selector import select_com_eligible_leads
 from com_mailbox_manager import ComMailboxClient
 from canonical_template_factory import render_canonical_email
+from sync_to_google_sheet import get_sheets_service, SPREADSHEET_ID
 
 try:
     from high_volume_matrix_engine import load_leads_authoritative, write_2d_matrix_bulk
@@ -105,10 +106,31 @@ def main():
     for idx, item in enumerate(result["manifest"], 1):
         print(f" [{idx:02d}] {item['lead_id']} -> {item['to']} ({item['subject']})")
 
-    if args.apply and result["selected_count"] > 0 and write_2d_matrix_bulk:
+    if args.apply and result["selected_count"] > 0:
         print("⏳ Aktualisiere Google Sheet ALL_LEADS ...")
-        # Hier optionaler Sheet-Writeback
-        print("✅ Sheet erfolgreich aktualisiert.")
+        try:
+            sheets_svc = get_sheets_service()
+            ts = datetime.datetime.now(datetime.timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+            now_iso = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
+            batch_id = f"COM-{args.owner}-{ts[:8]}"
+            sheet_updates = []
+            for item in result["manifest"]:
+                row_num = item["row_idx"]
+                msg_id = item.get("message_id", "")
+                sheet_updates.append({"range": f"ALL_LEADS!AN{row_num}", "values": [[batch_id]]})
+                sheet_updates.append({"range": f"ALL_LEADS!AO{row_num}", "values": [["drafted"]]})
+                sheet_updates.append({"range": f"ALL_LEADS!AU{row_num}", "values": [["DRAFTED_COM_2026"]]})
+                sheet_updates.append({"range": f"ALL_LEADS!AW{row_num}", "values": [[msg_id]]})
+                sheet_updates.append({"range": f"ALL_LEADS!AX{row_num}", "values": [[now_iso]]})
+                sheet_updates.append({"range": f"ALL_LEADS!BA{row_num}", "values": [[msg_id]]})
+            if sheet_updates:
+                sheets_svc.spreadsheets().values().batchUpdate(
+                    spreadsheetId=SPREADSHEET_ID,
+                    body={"valueInputOption": "USER_ENTERED", "data": sheet_updates}
+                ).execute()
+                print(f"✅ Sheet erfolgreich mit {len(sheet_updates)} Zellen-Updates aktualisiert.")
+        except Exception as e:
+            print(f"⚠ Fehler beim Sheet-Update: {e}")
 
     print("=" * 80)
 

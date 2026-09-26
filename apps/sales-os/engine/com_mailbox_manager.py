@@ -139,6 +139,63 @@ class ComMailboxClient:
 
         return True, msg_id
 
+    def send_message(
+        self,
+        to_email: str,
+        subject: str,
+        body_html: str,
+        flyer_path: Optional[str] = None,
+        flyer_filename: Optional[str] = "HSB-HEXAGON-Industrieboeden-Flyer.pdf",
+        custom_message_id: Optional[str] = None
+    ) -> Tuple[bool, str]:
+        """
+        Versendet eine E-Mail ueber SMTP-SSL und legt eine Kopie im Ordner Gesendet ab.
+        """
+        if not to_email or "@" not in to_email:
+            raise ValueError(f"Ungueltige Empfaengeradresse: {to_email}")
+
+        msg = MIMEMultipart("mixed")
+        msg["From"] = f"{self.cfg['display_name']} <{self.cfg['email']}>"
+        if self.cfg.get("reply_to"):
+            msg["Reply-To"] = self.cfg["reply_to"]
+        msg["To"] = to_email
+        msg["Subject"] = Header(subject, "utf-8").encode()
+        msg["Date"] = formatdate(localtime=True)
+        msg_id = custom_message_id or make_msgid(domain="hsb-boden.com")
+        msg["Message-ID"] = msg_id
+
+        part_html = MIMEText(body_html, "html", "utf-8")
+        msg.attach(part_html)
+
+        if flyer_path and os.path.exists(flyer_path):
+            with open(flyer_path, "rb") as f:
+                part_pdf = MIMEApplication(f.read(), _subtype="pdf")
+            fname = flyer_filename or os.path.basename(flyer_path)
+            part_pdf.add_header("Content-Disposition", "attachment", filename=fname)
+            msg.attach(part_pdf)
+
+        raw_bytes = msg.as_bytes()
+
+        # 1. SMTP Send
+        with smtplib.SMTP_SSL(self.cfg["smtp_server"], self.cfg["smtp_port"], context=self.ssl_context, timeout=self.timeout) as smtp:
+            smtp.login(self.cfg["username"], self.cfg["password"])
+            smtp.send_message(msg)
+
+        # 2. Append to Sent folder via IMAP
+        try:
+            with self._get_imap() as imap:
+                folder = self.cfg["sent_folder"]
+                imap.append(
+                    folder,
+                    r"(\Seen)",
+                    imaplib.Time2Internaldate(time.time()),
+                    raw_bytes
+                )
+        except Exception:
+            pass
+
+        return True, msg_id
+
     def list_drafts(self, limit: int = 10) -> List[Dict[str, Any]]:
         """Liest die neuesten Entwuerfe aus dem Entwurfsordner."""
         drafts = []

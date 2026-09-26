@@ -3,6 +3,8 @@ import re
 from pathlib import Path
 from typing import Dict, Any
 
+from hsb_core import sanitize_company_name
+
 ASSETS_DIR = Path(__file__).resolve().parent.parent / "assets" / "canonical"
 
 CANONICAL_FLYERS = {
@@ -60,12 +62,15 @@ def render_canonical_email(lead: Dict[str, Any], owner: str = "JOEL", domain: st
         raise ValueError(f"Recipient email missing or invalid in lead {lead.get('Lead_ID') or lead.get('Lead-ID')}")
 
     raw_comp = str(lead.get("Firma") or lead.get("Firmenname") or lead.get("Company") or "").strip()
-    company_name = re.sub(r"https?://(?:www\.)?", "", raw_comp, flags=re.IGNORECASE)
-    company_name = re.sub(r"\.(?:de|com|ch|at)/?$", "", company_name, flags=re.IGNORECASE).strip()
-    if not company_name or any(f in to_addr.lower() for f in ["@gmail.", "@gmx.", "@web.", "@t-online."]):
+    clean_comp = re.sub(r"https?://(?:www\.)?", "", raw_comp, flags=re.IGNORECASE)
+    clean_comp = re.sub(r"\.(?:de|com|ch|at)/?$", "", clean_comp, flags=re.IGNORECASE).strip()
+    
+    # Consumer freemail fallback (z.B. gmail, gmx, web.de) oder privater Bauherr
+    is_consumer_freemail = any(f in to_addr.lower() for f in ["@gmail.", "@gmx.", "@web."])
+    if not clean_comp or is_consumer_freemail or clean_comp.lower() in ["private bauherr", "privat", "keine"]:
         subject_target = "Ihr Unternehmen"
     else:
-        subject_target = company_name
+        subject_target = sanitize_company_name(clean_comp, to_addr)
 
     subject = f"Industrieböden für {subject_target} – Beratung von {owner_meta['sender_name']}"
     greeting = anrede_fuer_lead(lead)

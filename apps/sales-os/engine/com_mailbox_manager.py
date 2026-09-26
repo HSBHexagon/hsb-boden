@@ -50,6 +50,7 @@ class ComMailboxClient:
             self.cfg['imap_port'],
             ssl_context=self.ssl_context
         )
+        imap.login(self.cfg['username'], self.cfg['password'])
         return imap
 
     def test_connection(self) -> Dict[str, Any]:
@@ -57,11 +58,9 @@ class ComMailboxClient:
         result = {'owner': self.owner, 'email': self.cfg['email'], 'imap': False, 'smtp': False, 'folders': []}
         try:
             with self._get_imap() as imap:
-                res, data = imap.login(self.cfg['username'], self.cfg['password'])
-                if res == 'OK':
-                    result['imap'] = True
-                    typ, folders = imap.list()
-                    result['folders'] = [f.decode(errors='ignore').split(' "/" ')[-1].strip(' "') for f in folders]
+                result['imap'] = True
+                typ, folders = imap.list()
+                result['folders'] = [f.decode(errors='ignore').split(' "/" ')[-1].strip(' "') for f in folders]
         except Exception as e:
             result['imap_error'] = str(e)
 

@@ -245,13 +245,15 @@ def cmd_send_batch(args):
             logger.info(f"Anti-Spam Jitter: Warte {delay:.1f}s vor nächstem Versand...")
             time.sleep(delay)
 
+        bcc_target = client.cfg.get("reply_to") if getattr(args, "bcc_de", False) else None
         try:
             ok, msg_id = client.send_message(
                 to_email=email,
                 subject=subject,
                 body_html=body,
                 flyer_path=str(flyer.path),
-                flyer_filename=flyer.attachment_name
+                flyer_filename=flyer.attachment_name,
+                bcc_email=bcc_target
             )
             sent_count += 1
             logger.info(f"[{sent_count:02d}/{len(eligible)}] Z.{row_num} GESENDET an {email} (Message-ID: {msg_id})")
@@ -285,16 +287,20 @@ def cmd_test_mail(args):
     body = build_canonical_body_2026(owner, f"Sehr geehrte/r Herr/Frau {owner},", target="com")
     subject = f"TEST: HSB 2026 Standard .com Delivery Check ({owner})"
     
+    bcc_target = client.cfg.get("reply_to") if getattr(args, "bcc_de", False) else None
     ok, msg_id = client.send_message(
         to_email=recipient,
         subject=subject,
         body_html=body,
         flyer_path=str(flyer.path),
-        flyer_filename=flyer.attachment_name
+        flyer_filename=flyer.attachment_name,
+        bcc_email=bcc_target
     )
     print(f"✓ Test-E-Mail erfolgreich versendet! Message-ID: {msg_id}")
     print(f"  Absender: {client.cfg['email']}")
     print(f"  Reply-To: {client.cfg['reply_to']}")
+    if bcc_target:
+        print(f"  BCC-Kopie: {bcc_target} (im .de Postfach sichtbar)")
     print(f"  Anhang:   {flyer.attachment_name} ({flyer.path.stat().st_size // 1024} KB)")
 
 
@@ -324,6 +330,7 @@ def main():
     p_send.add_argument("--jitter-min", type=int, default=MIN_JITTER_SECONDS)
     p_send.add_argument("--jitter-max", type=int, default=MAX_JITTER_SECONDS)
     p_send.add_argument("--cap", type=int, default=DAILY_CAP_PER_MAILBOX)
+    p_send.add_argument("--bcc-de", action="store_true", help="Blindkopie (BCC) an .de Firmenkonto senden")
     p_send.add_argument("--apply", action="store_true", help="Echten Versand starten")
 
     # sync
@@ -334,6 +341,7 @@ def main():
     p_test = subparsers.add_parser("test-mail", help="Einzelne Test-E-Mail senden")
     p_test.add_argument("--owner", choices=["JOEL", "JORDI"], default="JOEL")
     p_test.add_argument("--to", required=True, help="Empfänger-Adresse")
+    p_test.add_argument("--bcc-de", action="store_true", help="Blindkopie (BCC) an .de Firmenkonto senden")
 
     args = parser.parse_args()
 

@@ -110,3 +110,43 @@ def test_com_mailbox_send_message_executes_smtp_and_appends_to_sent(monkeypatch)
     assert "j-cherino@hsb-boden.com" in msg["From"]
     assert "j-cherino@hsb-boden.de" in msg["Reply-To"]
     assert msg["To"] == "empfaenger@kunde.de"
+
+
+def test_com_mailbox_send_message_with_bcc(monkeypatch):
+    client = ComMailboxClient("JOEL")
+    captured = {}
+    class FakeImap:
+        def __enter__(self):
+            return self
+        def __exit__(self, *args):
+            pass
+        def append(self, folder, flags, date_time, raw_bytes):
+            return "OK", [b"Success"]
+
+    class FakeSMTP:
+        def __init__(self, host, port, context=None, timeout=None):
+            pass
+        def __enter__(self):
+            return self
+        def __exit__(self, *args):
+            pass
+        def login(self, u, p):
+            pass
+        def send_message(self, msg, *args, **kwargs):
+            captured["smtp_msg"] = msg
+            captured["to_addrs"] = kwargs.get("to_addrs")
+
+    monkeypatch.setattr(client, "_get_imap", lambda: FakeImap())
+    import smtplib
+    monkeypatch.setattr(smtplib, "SMTP_SSL", FakeSMTP)
+
+    ok, mid = client.send_message(
+        to_email="kunde@example.de",
+        subject="Test mit BCC",
+        body_html="<p>Hallo</p>",
+        bcc_email="Joel Cherino Diaz <j-cherino@hsb-boden.de>"
+    )
+    assert ok is True
+    assert captured["to_addrs"] == ["kunde@example.de", "j-cherino@hsb-boden.de"]
+    assert captured["smtp_msg"]["To"] == "kunde@example.de"
+    assert "Bcc" not in captured["smtp_msg"]

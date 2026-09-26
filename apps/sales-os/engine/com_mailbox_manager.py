@@ -146,10 +146,12 @@ class ComMailboxClient:
         body_html: str,
         flyer_path: Optional[str] = None,
         flyer_filename: Optional[str] = "HSB-HEXAGON-Industrieboeden-Flyer.pdf",
-        custom_message_id: Optional[str] = None
+        custom_message_id: Optional[str] = None,
+        bcc_email: Optional[str] = None
     ) -> Tuple[bool, str]:
         """
         Versendet eine E-Mail ueber SMTP-SSL und legt eine Kopie im Ordner Gesendet ab.
+        Unterstuetzt optional verdeckte Blindkopie (BCC), z.B. an das M365 .de Firmenkonto.
         """
         if not to_email or "@" not in to_email:
             raise ValueError(f"Ungueltige Empfaengeradresse: {to_email}")
@@ -176,10 +178,21 @@ class ComMailboxClient:
 
         raw_bytes = msg.as_bytes()
 
-        # 1. SMTP Send
+        # 1. SMTP Send (Envelope recipients: to_email + optional bcc)
+        to_addrs = [to_email]
+        if bcc_email and "@" in bcc_email:
+            match = re.search(r"[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+", bcc_email)
+            if match:
+                to_addrs.append(match.group(0))
+            else:
+                to_addrs.append(bcc_email.strip())
+
         with smtplib.SMTP_SSL(self.cfg["smtp_server"], self.cfg["smtp_port"], context=self.ssl_context, timeout=self.timeout) as smtp:
             smtp.login(self.cfg["username"], self.cfg["password"])
-            smtp.send_message(msg)
+            if len(to_addrs) > 1:
+                smtp.send_message(msg, to_addrs=to_addrs)
+            else:
+                smtp.send_message(msg)
 
         # 2. Append to Sent folder via IMAP
         try:

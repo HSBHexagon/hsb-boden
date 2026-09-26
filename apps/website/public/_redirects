@@ -10,3 +10,8 @@
 #   /ueber-uns/      -> war bisher 301 -> "/" (kein eigenes Astro-Aequivalent) -> erhalten
 /ueber-uns          /  301
 /ueber-uns/         /  301
+
+# Akquise-Domain hsb-boden.com 301-Weiterleitung auf offizielle Hauptdomain www.hsb-boden.de
+https://hsb-boden.com/*        https://www.hsb-boden.de/:splat  301!
+https://www.hsb-boden.com/*    https://www.hsb-boden.de/:splat  301!
+

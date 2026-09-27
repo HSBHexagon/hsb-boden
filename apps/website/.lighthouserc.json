@@ -3,7 +3,7 @@
     "collect": {
       "numberOfRuns": 1,
       "staticDistDir": "./dist",
-      "autodiscoverUrlBlocklist": ["/404.html"]
+      "autodiscoverUrlBlocklist": ["/404.html", "/abmelden/index.html"]
     },
     "assert": {
       "assertions": {

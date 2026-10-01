@@ -1,5 +1,33 @@
 # MASTER_EXECUTION_PLAN — HSB-Boden / HEXAFLOOR
 
+## Website-Goal — 01.10.2026
+
+Mehr qualifizierte B2B-Anfragen durch eine verlässliche, messbare und mobil gut
+bedienbare Website. Der Nutzer hat Umsetzung, Push und Veröffentlichung
+freigegeben. Bis zur geprüften Umsetzung weiterarbeiten; Kontextwechsel mit
+einem aktuellen Fortschrittsprotokoll abfangen. Keine Kampagnenfreigabe.
+
+Analyse: [Drive-Plan v2](https://drive.google.com/file/d/19XfJa4kkbUSIg3lkesIjxh-BGBT9a8zi/view).
+Fortschritt: [dauerhaftes Protokoll](https://docs.google.com/document/d/1vcNkO8u_3Ymvxi77uMdKzTt_5gyfvBrsiznI52etqIw/edit).
+Arbeitsbranch: `fix/website-optimization-2026-10-01`; Basis `8cb5de1`.
+Dieses Dokument bleibt die einzige kanonische Roadmap.
+
+Abnahme: Consent ablehnen/widerrufen/erneut erteilen; Werbung bleibt gesperrt.
+Ein GA4-Transport, keine Preview-/Abmeldemessung oder Kontaktparameter.
+Kurze Erstanfrage und explizite Backend-Bestätigung vor Erfolg/GA4.
+Rechtstexte nach tatsächlichen Diensten, passende Fachinhalte, Browserprüfung.
+SSOT → Tests → Typprüfung → Build → Functions-Dry-Run → Benutzerpfad.
+PR/CI prüfen; Produktion weiterhin manuell via deploy-production.yml.
+
+Offen: Cloudflare-Produktion und Bindings, HSB GA4/GSC, realer Inbound-Zustelltest,
+Unternehmens-/Vertrags-/Aufbewahrungsnachweise, Referenzrechte und Rechtsprüfung.
+Superpowers, Superdesign, system-governor und cloudflare:wrangler sind hier
+nicht als lesbare Skills eingebunden; keine Verwendung behaupten.
+Vor Fortsetzung PROJECT_TRUTH.md, CURRENT_STATE.md und dieses Protokoll lesen.
+Der historische Snapshot unten ist kein aktueller Produktionsnachweis.
+
+---
+
 > **Dies ist die einzige kanonische Ausführungs-Roadmap des Projekts.**
 > Keine konkurrierende Roadmap existiert. Alle anderen Phasendokumente (`PHASED_EXECUTION_PLAN.md`, `PHASE_STATUS.md`) verweisen auf diese Datei und werden nicht mehr eigenständig gepflegt.
 >
@@ -34,7 +62,7 @@ wenn technische Live-Evidenz und verbleibende Owner-Gates klar getrennt sind.
 
 ---
 
-## Aktuelle Ausfuehrungsreihenfolge
+## Ausführungsreihenfolge vom 15.07.2026 — historische Auditspur
 
 ### P0 — Apps-Script-Webhook absichern
 

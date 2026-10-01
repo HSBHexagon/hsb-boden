@@ -22,16 +22,16 @@ const t = cookieTexts[lang];
   <div class="container py-2 sm:py-4 lg:py-5">
     <div class="flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between lg:gap-8">
       <div class="max-w-2xl">
-        <p id="cookie-consent-title" class="text-[10px] font-black uppercase tracking-wide sm:text-sm">{t.title}</p>
-        <p class="mt-1 text-[11px] leading-4 text-white/70 sm:mt-1.5 sm:text-sm sm:leading-6">
+        <p id="cookie-consent-title" class="text-sm font-black uppercase tracking-wide sm:text-sm">{t.title}</p>
+        <p class="mt-1 text-sm leading-6 text-white/70 sm:mt-1.5 sm:text-sm sm:leading-6">
           {t.intro}
           <a class="ml-1 underline hover:text-white" href="/datenschutz/">{t.privacyLink}</a>
         </p>
       </div>
       <div class="flex flex-wrap items-center gap-2 sm:gap-3 lg:justify-end">
-        <button id="cookie-settings-toggle" class="mr-auto text-[11px] font-bold text-white/70 underline hover:text-white sm:mr-0 sm:text-sm" aria-expanded="false" aria-controls="cookie-categories">{t.settings}</button>
-        <button id="cookie-necessary" class="button-secondary-dark !min-h-9 !border-white/30 !px-3 !text-[11px] !text-white hover:!border-white sm:!min-h-[44px] sm:!px-4 sm:!text-sm">{t.necessaryOnly}</button>
-        <button id="cookie-accept-all" class="button-primary !min-h-9 !px-3 !text-[11px] sm:!min-h-[44px] sm:!px-4 sm:!text-sm">{t.acceptAll}</button>
+        <button id="cookie-settings-toggle" class="mr-auto text-sm font-bold text-white/70 underline hover:text-white sm:mr-0 sm:text-sm" aria-expanded="false" aria-controls="cookie-categories">{t.settings}</button>
+        <button id="cookie-necessary" class="button-secondary-dark !min-h-[44px] !border-white/30 !px-3 !text-sm !text-white hover:!border-white sm:!min-h-[44px] sm:!px-4 sm:!text-sm">{t.necessaryOnly}</button>
+        <button id="cookie-accept-all" class="button-primary !min-h-[44px] !px-3 !text-sm sm:!min-h-[44px] sm:!px-4 sm:!text-sm">{t.acceptAll}</button>
       </div>
     </div>
 
@@ -51,7 +51,7 @@ const t = cookieTexts[lang];
         <p class="mt-1.5 text-xs leading-5 text-white/65">{t.analyticsDesc}</p>
       </div>
       <div class="sm:col-span-2">
-        <button id="cookie-save" class="button-secondary-dark !min-h-10 !border-white/30 !px-3 !text-xs !text-white hover:!border-white sm:!min-h-[44px] sm:!px-4 sm:!text-sm">{t.save}</button>
+        <button id="cookie-save" class="button-secondary-dark !min-h-[44px] !border-white/30 !px-3 !text-xs !text-white hover:!border-white sm:!min-h-[44px] sm:!px-4 sm:!text-sm">{t.save}</button>
       </div>
     </div>
   </div>
@@ -70,7 +70,9 @@ const t = cookieTexts[lang];
   function readConsent(): Consent | null {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
-      return raw ? (JSON.parse(raw) as Consent) : null;
+      if (!raw) return null;
+      const value = JSON.parse(raw) as Partial<Consent> | null;
+      return value?.necessary === true && typeof value.analytics === "boolean" ? value as Consent : null;
     } catch {
       return null;
     }
@@ -91,6 +93,7 @@ const t = cookieTexts[lang];
     const current = readConsent();
     if (analyticsToggle) analyticsToggle.checked = current?.analytics ?? false;
     banner?.classList.remove("hidden");
+    if (current) settingsToggle?.focus();
   }
 
   settingsToggle?.addEventListener("click", () => {

@@ -67,26 +67,26 @@ const skipLabel = ui[lang].skip;
       }
     </script>
     <script>
-      import { captureAttribution, updateSessionAttribution } from "../lib/attribution";
+      import { captureAttribution, updateSessionAttribution, ATTRIBUTION_STORAGE_KEY } from "../lib/attribution";
+      import { hasStoredAnalyticsConsent } from "../lib/analytics";
 
-      // Erst-Attribution der Session (UTM/Referrer/Landingpage) erfassen,
-      // damit sie beim MPA-Seitenwechsel bis zum Lead-Formular erhalten bleibt.
-      try {
-        const current = captureAttribution({
-          search: window.location.search,
-          referrer: document.referrer,
-          pathname: window.location.pathname,
-          origin: window.location.origin,
-        });
-        updateSessionAttribution(window.sessionStorage, current);
-      } catch {
-        // Attribution ist optional — Seitenfunktion darf nie daran scheitern.
+      function captureSessionAttribution() {
+        if (/^\/abmelden(?:\/|$)/i.test(window.location.pathname)) return;
+        try {
+          updateSessionAttribution(window.sessionStorage, captureAttribution({
+            search: window.location.search, referrer: document.referrer,
+            pathname: window.location.pathname, origin: window.location.origin,
+          }));
+        } catch { /* Statistik-Speicher ist optional. */ }
       }
-    </script>
-    <script>
-      import { initializeCloudflareAnalytics } from "../lib/cloudflareAnalytics";
-
-      initializeCloudflareAnalytics(window, document);
+      if (hasStoredAnalyticsConsent(window)) captureSessionAttribution();
+      window.addEventListener("hsb:consent", event => {
+        const analytics = (event as CustomEvent<{ analytics?: unknown }>).detail?.analytics === true;
+        if (analytics) captureSessionAttribution();
+        else {
+          try { window.sessionStorage.removeItem(ATTRIBUTION_STORAGE_KEY); } catch {}
+        }
+      });
     </script>
   </body>
 </html>

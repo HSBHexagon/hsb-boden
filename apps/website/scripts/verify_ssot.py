@@ -21,7 +21,10 @@ def get_repo_root() -> Path:
         ).decode("utf-8").strip()
         return Path(toplevel)
     except Exception:
-        return Path(__file__).resolve().parent.parent
+        for candidate in Path(__file__).resolve().parents:
+            if (candidate / "PROJECT_TRUTH.md").is_file() and (candidate / "CURRENT_STATE.md").is_file():
+                return candidate
+        return Path(__file__).resolve().parents[3]
 
 REPO_ROOT = get_repo_root()
 ERRORS = []
@@ -83,7 +86,7 @@ def main():
         print("\nBitte korrigieren gemäß PROJECT_TRUTH.md vor Commit/Abschluss.\n")
         sys.exit(1)
 
-    print("✅ Alle SSOT-Prüfungen bestanden: Jordie Post, Monorepo & Invarianten 100% konform.")
+    print("✅ SSOT-Dateien und geprüfte Textmuster konform. Kein Nachweis operativer Versand- oder Produktionszustände.")
     sys.exit(0)
 
 if __name__ == "__main__":

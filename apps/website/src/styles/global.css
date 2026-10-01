@@ -33,8 +33,8 @@ body {
   font-feature-settings: "cv01", "cv02";
 }
 
-a {
-  color: inherit;
+@layer base {
+  a { color: inherit; }
 }
 
 .container {
@@ -133,7 +133,9 @@ a {
     border-color 160ms var(--ease-out-strong),
     box-shadow 160ms var(--ease-out-strong),
     color 160ms var(--ease-out-strong);
-  white-space: nowrap;
+  white-space: normal;
+  max-width: 100%;
+  text-align: center;
 }
 
 .button-primary {
@@ -185,7 +187,9 @@ a {
     background 160ms var(--ease-out-strong),
     color 160ms var(--ease-out-strong),
     box-shadow 160ms var(--ease-out-strong);
-  white-space: nowrap;
+  white-space: normal;
+  max-width: 100%;
+  text-align: center;
 }
 
 .button-secondary-dark:hover {

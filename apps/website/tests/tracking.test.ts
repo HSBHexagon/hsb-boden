@@ -67,16 +67,16 @@ describe("trackEvent", () => {
     expect(gtag).toHaveBeenCalledWith("event", "phone_click", { send_to: "G-VC4BJBEFTV" });
   });
 
-  it("pusht weiterhin ins dataLayer, wenn vorhanden (GTM-Kompatibilität)", () => {
+  it("pusht weiterhin ins dataLayer, wenn vorhanden (gtag-Befehl vor Loader)", () => {
     win.dataLayer = [];
     trackEvent(TrackingEvent.CtaClick, { cta: "hero" });
-    expect(win.dataLayer).toContainEqual({ event: "cta_click", cta: "hero", send_to: "G-VC4BJBEFTV" });
+    expect(win.dataLayer).toContainEqual(["event", "cta_click", { cta: "hero", send_to: "G-VC4BJBEFTV" }]);
   });
 
   it("lässt den echten Eventnamen nicht durch ein payload.event-Feld überschreiben (dataLayer-Fallback)", () => {
     win.dataLayer = [];
     trackEvent(TrackingEvent.CtaClick, { event: "fake_event", cta: "hero" });
-    expect(win.dataLayer).toContainEqual({ event: "cta_click", cta: "hero", send_to: "G-VC4BJBEFTV" });
+    expect(win.dataLayer).toContainEqual(["event", "cta_click", { cta: "hero", send_to: "G-VC4BJBEFTV" }]);
   });
 
   it("nutzt dataLayer nur als Fallback, wenn gtag fehlt — kein Doppel-Event bei gtag", () => {
@@ -152,10 +152,8 @@ describe("trackEvent", () => {
 
     await trackEventAndWait(TrackingEvent.LeadFormSubmit);
 
-    expect(win.dataLayer).toContainEqual({
-      event: "generate_lead",
-      method: "contact_form",
-      send_to: "G-VC4BJBEFTV",
-    });
+    expect(win.dataLayer).toContainEqual(["event", "generate_lead", {
+      method: "contact_form", send_to: "G-VC4BJBEFTV",
+    }]);
   });
 });

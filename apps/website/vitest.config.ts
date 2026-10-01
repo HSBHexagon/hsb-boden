@@ -11,6 +11,7 @@ export default defineConfig({
   },
   test: {
     environment: "jsdom",
+    environmentOptions: { jsdom: { url: "https://www.hsb-boden.de/" } },
     globals: true,
     // Lokale git-worktrees liegen innerhalb des Repos (.worktrees/, .claude/worktrees/)
     // und sind gitignored. Ohne diesen Ausschluss sammelt Vitest deren veraltete

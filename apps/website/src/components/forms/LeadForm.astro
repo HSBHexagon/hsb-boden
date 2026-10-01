@@ -21,34 +21,31 @@ const deliveryConfigured = site.hasLeadEndpoint;
     </div>
   ) : null}
 
+  {deliveryConfigured ? (
+    <>
+      <p class="text-sm leading-6 text-hsb-steel">Für den Erstkontakt reichen Name, Firma, E-Mail und eine kurze Beschreibung. Technische Details klären wir anschließend.</p>
+      <label class="grid gap-2 text-sm font-bold"><span>Name <span aria-hidden="true">*</span></span>
+        <input required minlength={2} maxlength={80} name="firstName" autocomplete="name" class="rounded border border-hsb-line px-3 py-3 font-normal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-hsb-red" />
+      </label>
+      <label class="grid gap-2 text-sm font-bold"><span>Firma <span aria-hidden="true">*</span></span>
+        <input required minlength={2} maxlength={120} name="company" autocomplete="organization" class="rounded border border-hsb-line px-3 py-3 font-normal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-hsb-red" />
+      </label>
+      <label class="grid gap-2 text-sm font-bold"><span>E-Mail <span aria-hidden="true">*</span></span>
+        <input required type="email" maxlength={254} name="email" autocomplete="email" class="rounded border border-hsb-line px-3 py-3 font-normal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-hsb-red" />
+      </label>
+      <label class="grid gap-2 text-sm font-bold"><span>Projekt kurz beschreiben <span aria-hidden="true">*</span></span>
+        <textarea required minlength={10} maxlength={2000} name="message" rows={4} class="rounded border border-hsb-line px-3 py-3 font-normal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-hsb-red" />
+      </label>
+      <details class="rounded border border-hsb-line p-4">
+        <summary class="cursor-pointer py-2 text-sm font-bold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-hsb-red">Telefon und technische Angaben ergänzen (optional)</summary>
+        <div class="mt-4 grid gap-4">
+          <label class="grid gap-2 text-sm font-bold"><span>Telefon für Rückfragen (optional)</span>
+            <input minlength={5} maxlength={64} type="tel" name="phone" autocomplete="tel" class="rounded border border-hsb-line px-3 py-3 font-normal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-hsb-red" />
+          </label>
   <div class="grid gap-4 sm:grid-cols-2">
     <label class="grid gap-2 text-sm font-bold">
-      <span>Vorname <span class="text-hsb-red" aria-hidden="true">*</span></span>
-      <input required minlength={2} maxlength={80} name="firstName" autocomplete="given-name" class="rounded border border-hsb-line px-3 py-3 font-normal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-hsb-red" />
-    </label>
-    <label class="grid gap-2 text-sm font-bold">
-      <span>Nachname <span class="text-hsb-red" aria-hidden="true">*</span></span>
-      <input required minlength={2} maxlength={80} name="lastName" autocomplete="family-name" class="rounded border border-hsb-line px-3 py-3 font-normal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-hsb-red" />
-    </label>
-  </div>
-  <label class="grid gap-2 text-sm font-bold">
-    <span>Firma <span class="text-hsb-red" aria-hidden="true">*</span></span>
-    <input required minlength={2} maxlength={120} name="company" autocomplete="organization" class="rounded border border-hsb-line px-3 py-3 font-normal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-hsb-red" />
-  </label>
-  <div class="grid gap-4 sm:grid-cols-2">
-    <label class="grid gap-2 text-sm font-bold">
-      <span>E-Mail <span class="text-hsb-red" aria-hidden="true">*</span></span>
-      <input required type="email" name="email" autocomplete="email" class="rounded border border-hsb-line px-3 py-3 font-normal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-hsb-red" />
-    </label>
-    <label class="grid gap-2 text-sm font-bold">
-      <span>Telefon <span class="text-hsb-red" aria-hidden="true">*</span></span>
-      <input required minlength={5} type="tel" name="phone" autocomplete="tel" class="rounded border border-hsb-line px-3 py-3 font-normal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-hsb-red" />
-    </label>
-  </div>
-  <div class="grid gap-4 sm:grid-cols-2">
-    <label class="grid gap-2 text-sm font-bold">
-      <span>Branche <span class="text-hsb-red" aria-hidden="true">*</span></span>
-      <select required name="industry" class="rounded border border-hsb-line px-3 py-3 font-normal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-hsb-red">
+      <span>Branche (optional)</span>
+      <select name="industry" class="rounded border border-hsb-line px-3 py-3 font-normal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-hsb-red">
         <option value="">Bitte wählen</option>
         <option value="lebensmittelindustrie">Lebensmittelindustrie</option>
         <option value="molkerei">Molkerei</option>
@@ -60,8 +57,8 @@ const deliveryConfigured = site.hasLeadEndpoint;
       </select>
     </label>
     <label class="grid gap-2 text-sm font-bold">
-      <span>Projektart <span class="text-hsb-red" aria-hidden="true">*</span></span>
-      <select required name="projectType" class="rounded border border-hsb-line px-3 py-3 font-normal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-hsb-red">
+      <span>Projektart (optional)</span>
+      <select name="projectType" class="rounded border border-hsb-line px-3 py-3 font-normal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-hsb-red">
         <option value="">Bitte wählen</option>
         <option value="neubau">Neubau</option>
         <option value="sanierung">Sanierung</option>
@@ -71,12 +68,12 @@ const deliveryConfigured = site.hasLeadEndpoint;
   </div>
   <div class="grid gap-4 sm:grid-cols-2">
     <label class="grid gap-2 text-sm font-bold">
-      Fläche in m²
+      Fläche in m² (optional)
       <input name="areaSize" class="rounded border border-hsb-line px-3 py-3 font-normal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-hsb-red" />
     </label>
     <label class="grid gap-2 text-sm font-bold">
-      <span>Laufender Betrieb <span class="text-hsb-red" aria-hidden="true">*</span></span>
-      <select required name="liveOperation" class="rounded border border-hsb-line px-3 py-3 font-normal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-hsb-red">
+      <span>Laufender Betrieb (optional)</span>
+      <select name="liveOperation" class="rounded border border-hsb-line px-3 py-3 font-normal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-hsb-red">
         <option value="">Bitte wählen</option>
         <option value="ja">Ja</option>
         <option value="nein">Nein</option>
@@ -85,7 +82,7 @@ const deliveryConfigured = site.hasLeadEndpoint;
     </label>
   </div>
   <fieldset id="loads-fieldset" class="grid gap-3">
-    <legend class="text-sm font-black">Belastungen <span class="font-normal text-hsb-steel">(mindestens eine auswählen)</span></legend>
+    <legend class="text-sm font-black">Belastungen <span class="font-normal text-hsb-steel">(optional)</span></legend>
     <div class="grid gap-2 sm:grid-cols-2">
       {loadOptions.map((option) => (
         <label class="flex items-center gap-2 text-sm text-hsb-steel">
@@ -95,32 +92,26 @@ const deliveryConfigured = site.hasLeadEndpoint;
       ))}
     </div>
   </fieldset>
-  <label class="grid gap-2 text-sm font-bold">
-    <span>Nachricht <span class="text-hsb-red" aria-hidden="true">*</span></span>
-    <textarea required minlength={10} maxlength={2000} name="message" rows={5} class="rounded border border-hsb-line px-3 py-3 font-normal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-hsb-red" />
-  </label>
-  <label class="flex items-start gap-3 text-sm leading-6 text-hsb-steel">
-    <input required type="checkbox" name="privacyConsent" class="mt-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-hsb-red" />
-    Ich stimme zu, dass meine Angaben zur Bearbeitung der Anfrage verarbeitet werden.
-  </label>
 
-  <p id="form-error" role="alert" aria-live="assertive" class="hidden rounded border border-hsb-red/40 bg-hsb-red/5 px-3 py-2 text-sm text-hsb-red">
-    Senden fehlgeschlagen. Bitte kontaktieren Sie uns direkt unter {site.phone} oder {site.email}.
-  </p>
-
-  <button
-    id="form-submit"
-    class="button-primary disabled:cursor-not-allowed disabled:opacity-60"
-    type="submit"
-    disabled={!deliveryConfigured}
-  >
-    {!deliveryConfigured
-      ? "Bitte direkt anrufen oder mailen"
-      : "Projektanfrage senden"}
-  </button>
+        </div>
+      </details>
+      <div class="hidden" aria-hidden="true"><input name="honeypot" tabindex="-1" autocomplete="off" /></div>
+      <label class="flex items-start gap-3 text-sm leading-6 text-hsb-steel">
+        <input required type="checkbox" name="privacyConsent" class="mt-1 size-5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-hsb-red" />
+        <span>Ich habe die <a href="/datenschutz/" class="underline">Datenschutzhinweise</a> zur Bearbeitung meiner Anfrage zur Kenntnis genommen.</span>
+      </label>
+      <p class="text-xs leading-5 text-hsb-steel">Mit * markierte Angaben sind erforderlich. Die Anfrage ist unabhängig von Ihrer Statistik-Auswahl.</p>
+      <p id="form-error" role="alert" aria-live="assertive" tabindex="-1" class="hidden rounded border border-hsb-red/40 bg-hsb-red/5 px-3 py-2 text-sm text-hsb-red">
+        Ihre Anfrage konnte nicht bestätigt werden. Ihre Eingaben bleiben erhalten. Bitte kontaktieren Sie uns unter {site.phone} oder {site.email}.
+      </p>
+      <button id="form-submit" class="button-primary disabled:cursor-not-allowed disabled:opacity-60" type="submit">Projektanfrage senden</button>
+    </>
+  ) : null}
 </form>
 
 <script>
+  import { submitLeadInquiry } from "../../lib/leadSubmission";
+  import { hasStoredAnalyticsConsent } from "../../lib/analytics";
   import { trackEvent, trackEventAndWait, TrackingEvent } from "../../lib/tracking";
   import { buildLeadAttributionFields, captureAttribution, loadAttribution } from "../../lib/attribution";
   import {
@@ -137,33 +128,30 @@ const deliveryConfigured = site.hasLeadEndpoint;
   const genericErrorText = errorMsg?.textContent ?? "";
 
   let started = false;
+  let sending = false;
+  let analyticsConsent = hasStoredAnalyticsConsent(window);
+  window.addEventListener("hsb:consent", event => {
+    analyticsConsent = (event as CustomEvent<{ analytics?: unknown }>).detail?.analytics === true;
+  });
 
   function onFocus() {
-    if (!started) {
+    if (deliveryConfigured && !started) {
       started = true;
-      trackEvent(TrackingEvent.LeadFormStart);
+      trackEvent(TrackingEvent.LeadFormStart, { form_id: "lead-form", form_path: window.location.pathname });
     }
   }
 
   async function onSubmit(event: SubmitEvent) {
     event.preventDefault();
-    if (!deliveryConfigured || !form || !submitBtn || !errorMsg) return;
+    if (!deliveryConfigured || sending || !form || !submitBtn || !errorMsg) return;
 
     const fd = new FormData(form);
 
-    // Server-Schema verlangt mindestens eine Belastung (leadSchema: loads.min(1));
-    // Checkbox-Gruppen haben kein natives required, daher hier prüfen.
-    if (fd.getAll("loads").length === 0) {
-      errorMsg.textContent =
-        "Bitte wählen Sie mindestens eine Belastung aus, damit wir Ihr Projekt einschätzen können.";
-      errorMsg.classList.remove("hidden");
-      document.getElementById("loads-fieldset")?.querySelector("input")?.focus();
-      return;
-    }
     // Session-Attribution (UTM/Referrer/Landingpage) anreichern; Fallback auf
     // Frisch-Erfassung, falls sessionStorage blockiert ist. Darf nie werfen.
     let attributionFields: Record<string, string> = {};
     try {
+      if (analyticsConsent) {
       const attribution =
         loadAttribution(window.sessionStorage) ??
         captureAttribution({
@@ -173,6 +161,7 @@ const deliveryConfigured = site.hasLeadEndpoint;
           origin: window.location.origin,
         });
       attributionFields = buildLeadAttributionFields(attribution, window.location.pathname);
+      }
     } catch {
       attributionFields = {};
     }
@@ -182,39 +171,41 @@ const deliveryConfigured = site.hasLeadEndpoint;
       source: "website",
       legalBasis: "inquiry",
       firstName: fd.get("firstName"),
-      lastName: fd.get("lastName"),
+      lastName: fd.get("lastName") ?? "",
       company: fd.get("company"),
       email: fd.get("email"),
-      phone: fd.get("phone"),
-      industry: fd.get("industry"),
-      projectType: fd.get("projectType"),
+      phone: fd.get("phone") ?? "",
+      industry: fd.get("industry") ?? "",
+      projectType: fd.get("projectType") || "bewertung",
       areaSize: fd.get("areaSize") ?? "",
-      liveOperation: fd.get("liveOperation"),
+      liveOperation: fd.get("liveOperation") || "unklar",
       loads: fd.getAll("loads"),
       message: fd.get("message"),
       privacyConsent: fd.get("privacyConsent") === "on",
+      honeypot: fd.get("honeypot") ?? "",
     };
 
+    sending = true;
+    form.setAttribute("aria-busy", "true");
     submitBtn.disabled = true;
     const originalBtnText = submitBtn.textContent;
     submitBtn.textContent = "Wird gesendet …";
     errorMsg.classList.add("hidden");
 
     try {
-      const res = await fetch("/api/lead", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Accept: "application/json" },
-        body: JSON.stringify(payload),
-      });
-      if (!res.ok) throw new Error(`Status ${res.status}`);
-      await trackEventAndWait(TrackingEvent.LeadFormSubmit);
+      await submitLeadInquiry(payload);
+      await trackEventAndWait(TrackingEvent.LeadFormSubmit, { form_id: "lead-form", form_path: window.location.pathname });
       window.location.href = "/danke-projektanfrage/";
     } catch (e) {
-      console.error("Submission error:", e);
+      console.error("Submission could not be confirmed.");
       submitBtn.disabled = false;
       submitBtn.textContent = originalBtnText;
       errorMsg.textContent = genericErrorText;
       errorMsg.classList.remove("hidden");
+      errorMsg.focus();
+    } finally {
+      sending = false;
+      form.removeAttribute("aria-busy");
     }
   }
 
@@ -223,6 +214,8 @@ const deliveryConfigured = site.hasLeadEndpoint;
   let lastPrefillMessage = "";
   function applyPrefill(prefill: LeadPrefill) {
     if (!form) return;
+    const details = form.querySelector("details");
+    if (details) details.open = true;
     form.querySelectorAll<HTMLInputElement>('input[name="loads"]').forEach((box) => {
       box.checked = prefill.loads.includes(box.value);
     });

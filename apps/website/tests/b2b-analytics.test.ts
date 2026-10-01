@@ -94,12 +94,11 @@ describe("B2B DataLayer-Interface", () => {
   it("legt dataLayer an, wenn gtag fehlt und dataLayer noch undefiniert ist", () => {
     trackB2BConversion("technical_inquiry", { industry: "chemieindustrie" });
     expect(Array.isArray(win.dataLayer)).toBe(true);
-    expect(win.dataLayer).toContainEqual({
-      event: "b2b_conversion",
+    expect(win.dataLayer).toContainEqual(["event", "b2b_conversion", {
       conversion_type: "technical_inquiry",
       industry: "chemieindustrie",
       send_to: "G-VC4BJBEFTV",
-    });
+    }]);
   });
 
   it("sendet ohne Analytics-Einwilligung nichts", () => {

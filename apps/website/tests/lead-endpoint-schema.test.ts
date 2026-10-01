@@ -34,9 +34,9 @@ describe("leadEndpointSchema", () => {
     expect(result.success).toBe(false);
   });
 
-  it("rejects when loads is empty", () => {
+  it("accepts an inquiry before technical loads are known", () => {
     const result = leadEndpointSchema.safeParse({ ...validPayload, loads: [] });
-    expect(result.success).toBe(false);
+    expect(result.success).toBe(true);
   });
 
   it("rejects an invalid email", () => {

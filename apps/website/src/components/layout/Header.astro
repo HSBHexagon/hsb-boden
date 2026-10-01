@@ -67,7 +67,7 @@ const phoneHref = site.phone.replace("(0)", "").replace(/[^\d+]/g, "");
     <div class="flex items-center gap-4 xl:gap-8">
       <nav class="nav-links hidden items-center gap-4 text-sm font-bold lg:flex xl:gap-6" aria-label="Hauptnavigation">
         {navigation.filter(n => n.href !== "/kontakt/").map((item) => (
-          <a class="transition-colors" href={item.href}>{item.label}</a>
+          <a class="transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-hsb-red focus-visible:ring-offset-2 focus-visible:ring-offset-[#161a20] rounded-[2px]" href={item.href}>{item.label}</a>
         ))}
       </nav>
 
@@ -88,7 +88,7 @@ const phoneHref = site.phone.replace("(0)", "").replace(/[^\d+]/g, "");
 
       <button
         id="mobile-menu-toggle"
-        class="flex size-10 items-center justify-center rounded border lg:hidden"
+        class="flex size-10 items-center justify-center rounded border lg:hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-hsb-red focus-visible:ring-offset-2 focus-visible:ring-offset-[#161a20]"
         aria-label="Navigation öffnen"
         aria-expanded="false"
         aria-controls="mobile-menu"
@@ -114,7 +114,7 @@ const phoneHref = site.phone.replace("(0)", "").replace(/[^\d+]/g, "");
       {navigation.map((item) => (
         <a
           href={item.href}
-          class="flex items-center border-b border-white/10 py-3.5 text-sm font-bold text-white/78 last:border-0 hover:text-white"
+          class="flex items-center border-b border-white/10 py-3.5 text-sm font-bold text-white/78 last:border-0 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-hsb-red focus-visible:ring-offset-2 focus-visible:ring-offset-hsb-black"
         >
           {item.label}
         </a>

@@ -110,7 +110,12 @@ export function createAnalyticsLoader(
 
   return {
     initialize() {
-      if (initialized || !canTrackAnalyticsLocation(hostname, browserWindow.location.pathname)) return;
+      // Auf jeder Produktionsseite auf Consent-Änderungen hören, damit ein
+      // Widerruf auch auf bewusst von Analytics ausgeschlossenen Seiten
+      // (_z. B. /abmelden/_) vorhandene GA-Cookies sofort entfernt. Das
+      // eigentliche Laden/Config von GA4 bleibt weiterhin in
+      // loadAfterConsent() an die zulässige Location gebunden.
+      if (initialized || !isProductionAnalyticsHost(hostname)) return;
       initialized = true;
       browserWindow.addEventListener("hsb:consent", updateConsent);
       analyticsWindow[`ga-disable-${measurementId}`] = true;

@@ -24,8 +24,8 @@ export const leadEndpointSchema = z
     loads: z.array(z.enum(loadOptions)).optional().default([]),
     message: z.string().trim().min(10).max(2000),
     privacyConsent: z.literal(true),
-    source: z.string().trim().min(1),
-    legalBasis: z.string().trim().min(1),
+    source: z.literal("website"),
+    legalBasis: z.literal("inquiry"),
     access_key: z.string().trim().optional(),
     // Attribution: Client sanitisiert bereits (src/lib/attribution.ts), aber die
     // Vertrauensgrenze ist dieser Endpoint — direkte POSTs umgehen den Browser.

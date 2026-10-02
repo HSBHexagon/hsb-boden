@@ -112,7 +112,7 @@ export function createAnalyticsLoader(
     initialize() {
       // Auf jeder Produktionsseite auf Consent-Änderungen hören, damit ein
       // Widerruf auch auf bewusst von Analytics ausgeschlossenen Seiten
-      // (_z. B. /abmelden/_) vorhandene GA-Cookies sofort entfernt. Das
+      // (z. B. /abmelden/) vorhandene GA-Cookies sofort entfernt. Das
       // eigentliche Laden/Config von GA4 bleibt weiterhin in
       // loadAfterConsent() an die zulässige Location gebunden.
       if (initialized || !isProductionAnalyticsHost(hostname)) return;

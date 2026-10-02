@@ -1,4 +1,4 @@
-import { GA4_MEASUREMENT_ID } from "./analyticsConfig";
+import { GA4_MEASUREMENT_ID, canTrackAnalyticsLocation } from "./analyticsConfig";
 import { NORM_IDS } from "../data/standards";
 
 export enum TrackingEvent {
@@ -94,30 +94,9 @@ function emitEvent(
 
   const safePayload = sanitizePayload(payload);
   window.dispatchEvent(new CustomEvent("hsb:tracking", { detail: { event, payload: safePayload } }));
-  if (!hasAnalyticsConsent()) {
+  if (!canTrackAnalyticsLocation(window.location.hostname, window.location.pathname) || !hasAnalyticsConsent()) {
     completion?.();
     return false;
-  }
-
-  // First-Party Edge Proxy Dispatch (Zero-Mainthread, Beacon-first)
-  try {
-    const proxyPayload = JSON.stringify({
-      event_name: event,
-      params: safePayload,
-    });
-    if (typeof navigator !== "undefined" && typeof navigator.sendBeacon === "function") {
-      const blob = new Blob([proxyPayload], { type: "application/json" });
-      navigator.sendBeacon("/api/collect", blob);
-    } else if (typeof fetch === "function") {
-      fetch("/api/collect", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: proxyPayload,
-        keepalive: true,
-      }).catch(() => {});
-    }
-  } catch {
-    // Non-blocking fallback
   }
 
   const trackingWindow = window as Window & {
@@ -142,10 +121,9 @@ function emitEvent(
       });
       return true;
     }
-    // GTM-Fallback: dataLayer bei Bedarf anlegen, damit ein Event vor dem
-    // gtag-Loader nicht verloren geht. Consent ist oben bereits geprüft.
+    // Derselbe gtag-Befehl wird vor dem Loader gepuffert; kein zweiter Transport.
     if (!Array.isArray(trackingWindow.dataLayer)) trackingWindow.dataLayer = [];
-    trackingWindow.dataLayer.push({ event: eventName, ...eventPayload });
+    trackingWindow.dataLayer.push(["event", eventName, eventPayload]);
     completion?.();
     return true;
   } catch {

@@ -34,9 +34,38 @@ describe("leadEndpointSchema", () => {
     expect(result.success).toBe(false);
   });
 
-  it("rejects when loads is empty", () => {
+  it("accepts an inquiry before technical loads are known", () => {
     const result = leadEndpointSchema.safeParse({ ...validPayload, loads: [] });
-    expect(result.success).toBe(false);
+    expect(result.success).toBe(true);
+  });
+
+  it("rejects untrusted source and legal-basis values", () => {
+    expect(leadEndpointSchema.safeParse({ ...validPayload, source: "partner-import" }).success).toBe(false);
+    expect(leadEndpointSchema.safeParse({ ...validPayload, legalBasis: "marketing" }).success).toBe(false);
+  });
+
+  it("accepts the minimal public inquiry contract and applies safe defaults", () => {
+    const result = leadEndpointSchema.safeParse({
+      firstName: "Max",
+      company: "Muster Produktion GmbH",
+      email: "max@example.com",
+      message: "Bitte um technische Ersteinschätzung für unseren Boden.",
+      privacyConsent: true,
+      source: "website",
+      legalBasis: "inquiry",
+    });
+
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data).toMatchObject({
+        lastName: "",
+        phone: "",
+        industry: "",
+        projectType: "bewertung",
+        liveOperation: "unklar",
+        loads: [],
+      });
+    }
   });
 
   it("rejects an invalid email", () => {

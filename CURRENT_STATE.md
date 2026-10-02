@@ -1,5 +1,14 @@
 # CURRENT_STATE — Live-Fortschritt & Taskboard (SSOT)
 
+## Website-Auftrag — 01.10.2026
+
+Goal/Freigabe: docs/MASTER_EXECUTION_PLAN.md. Branch: `fix/website-optimization-2026-10-01`.
+Analyse v2 und dauerhaftes Fortschrittsprotokoll sind in 05_DOKUMENTATION.
+In Arbeit: Consent/GA4, kurze bestätigte Anfrage, Rechtstexte, Fachinhalte und
+mobile Bedienung. Neue Gesamtprüfung und PR/CI folgen. Kein neuer Produktionsnachweis.
+Offen: passende GA4/GSC-/Cloudflare-Zugänge, Zustellung und interne Nachweise.
+Der folgende Sales-OS-Stand ist historisch und für diesen Auftrag nicht neu getestet.
+
 > **Stand:** 2026-09-22 19:36 CEST  
 > **Aktiver Git-Branch:** `main`  
 > **Letzter Merge:** PR #405 → Squash `957922a` (21. Sep. 2026)  

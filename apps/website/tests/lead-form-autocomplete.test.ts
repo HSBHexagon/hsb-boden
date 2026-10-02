@@ -12,8 +12,7 @@ const source = readFileSync(
 );
 
 const expected: Array<[string, string]> = [
-  ["firstName", "given-name"],
-  ["lastName", "family-name"],
+  ["firstName", "name"],
   ["company", "organization"],
   ["email", "email"],
   ["phone", "tel"],

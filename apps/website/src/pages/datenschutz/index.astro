@@ -296,41 +296,30 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
       ausschließlich auf Grundlage dieser Einwilligung (Art. 6 Abs. 1 lit. a DSGVO und § 25 Abs. 1
       TDDDG); die Einwilligung ist jederzeit widerrufbar.
     </p>
-    <h3>Session-Speicher für Anfrage-Herkunft (Attribution)</h3>
+    <h3>Statistik-Auswahl und Herkunft einer Anfrage</h3>
     <p>
-      Beim Aufruf unserer Website speichern wir im sogenannten Session-Speicher Ihres Browsers
-      (sessionStorage, Eintrag „hsb-attribution-v1") Informationen zur Herkunft Ihres Besuchs:
-      Kampagnen-Parameter aus der Aufruf-Adresse (sog. UTM-Parameter), die verweisende Website
-      (nur deren Adresse ohne Pfad und Suchparameter) sowie die zuerst aufgerufene Seite unserer
-      Website. Wir erheben damit nicht gezielt personenbezogene Daten (Kampagnen-Parameter können in
-      Einzelfällen durch den Kampagnenbetreiber personenbeziehbare Inhalte enthalten); die Angaben
-      werden nicht an Analyse- oder Werbedienste übermittelt und ausschließlich dann an uns übertragen, wenn Sie aktiv unser
-      Kontaktformular absenden — dort dienen sie der Zuordnung, über welchen Weg Ihre Projektanfrage
-      zustande kam. Der Session-Speicher wird üblicherweise beim Ende der Browsersitzung
-      (Schließen des Tabs bzw. Browsers) gelöscht; die genaue Aufbewahrung hängt vom
-      verwendeten Browser ab (z.&nbsp;B. bei Sitzungswiederherstellung).
-      Rechtsgrundlage ist unser berechtigtes Interesse an der Zuordnung eingehender Projektanfragen
-      (Art. 6 Abs. 1 lit. f DSGVO); die Speicherung ist für diesen von Ihnen gewünschten
-      Kommunikationsvorgang erforderlich (§ 25 Abs. 2 Nr. 2 TDDDG).
+      Ihre Auswahl wird in Ihrem Browser im localStorage unter „hsb-consent-v1“ gespeichert,
+      damit sie bei weiteren Aufrufen berücksichtigt wird. Dieser Eintrag enthält Ihre
+      Statistik-Auswahl und den Auswahlzeitpunkt. Rechtsgrundlage sind Art. 6 Abs. 1 lit. c DSGVO
+      und § 25 Abs. 2 Nr. 2 TDDDG für die Verwaltung Ihrer Auswahl. Sie können die Auswahl
+      jederzeit über „Cookie-Einstellungen“ im Footer ändern oder den Browserspeicher löschen.
     </p>
     <p>
-      Sie können Ihren Browser so einstellen, dass Sie über das Setzen von Cookies informiert werden
-      und Cookies nur im Einzelfall erlauben, die Annahme von Cookies für bestimmte Fälle oder generell
-      ausschließen sowie das automatische Löschen der Cookies beim Schließen des Browsers aktivieren.
-      Bei der Deaktivierung von Cookies kann die Funktionalität dieser Website eingeschränkt sein.
-    </p>
-    <p>
-      Soweit Cookies von Drittunternehmen oder zu Analysezwecken eingesetzt werden, werden wir Sie
-      hierüber im Rahmen dieser Datenschutzinformation gesondert informieren und ggf. eine Einwilligung
-      abfragen.
+      Nur nach Ihrer Statistik-Einwilligung speichern wir im sessionStorage unter
+      „hsb-attribution-v1“ Kampagnenparameter, die zuerst besuchte Seite ohne Suchparameter
+      und die Herkunftswebsite ohne Pfad oder Suchparameter. Diese Angaben helfen uns,
+      die Herkunft einer von Ihnen abgesendeten Projektanfrage zu verstehen. Rechtsgrundlage
+      sind Art. 6 Abs. 1 lit. a DSGVO und § 25 Abs. 1 TDDDG. Ohne Statistikzustimmung bleibt
+      die Projektanfrage möglich. Bei Widerruf wird dieser Eintrag entfernt; die Sitzungsdauer
+      hängt zusätzlich von Ihrem Browser und dessen Sitzungswiederherstellung ab.
     </p>
 
-    <h3>Kontakt- &amp; Bewerbungsformular</h3>
+    <h3>Projektanfragen</h3>
     <p>
-      Wenn Sie uns per Formular Anfragen/Bewerbungen zukommen lassen, werden Ihre Angaben aus dem
+      Wenn Sie uns per Formular eine Projektanfrage zukommen lassen, werden Ihre Angaben aus dem
       Anfrageformular inklusive der von Ihnen dort angegebenen Daten zwecks Bearbeitung der Anfrage und
-      für den Fall von Anschlussfragen bei uns gespeichert. Diese Daten geben wir nicht ohne Ihre
-      Einwilligung weiter.
+      für den Fall von Anschlussfragen bei uns gespeichert. Für die technische Bereitstellung und Bearbeitung setzen wir Dienstleister ein,
+      die Daten nur für diese Zwecke verarbeiten.
     </p>
     <p>
       Die Verarbeitung dieser Daten erfolgt auf Grundlage von Art. 6 Abs. 1 lit. b DSGVO, sofern Ihre
@@ -351,8 +340,8 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
     <p>
       Wenn Sie uns per E-Mail, Telefon oder Telefax kontaktieren, wird Ihre Anfrage inklusive aller
       daraus hervorgehenden personenbezogenen Daten (Name, Anfrage) zum Zwecke der Bearbeitung Ihres
-      Anliegens bei uns gespeichert und verarbeitet. Diese Daten geben wir nicht ohne Ihre Einwilligung
-      weiter.
+      Anliegens bei uns gespeichert und verarbeitet. Für die technische Bereitstellung und Bearbeitung setzen wir Dienstleister ein,
+      die Daten nur für diese Zwecke verarbeiten.
     </p>
     <p>
       Die Verarbeitung dieser Daten erfolgt auf Grundlage von Art. 6 Abs. 1 lit. b DSGVO, sofern Ihre
@@ -369,113 +358,71 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
       gesetzliche Bestimmungen – insbesondere gesetzliche Aufbewahrungsfristen – bleiben unberührt.
     </p>
 
-    <h2>6. Plugins und Tools</h2>
-    <h3>Real Cookie Banner</h3>
+    <h2>5. Google Analytics 4</h2>
     <p>
-      Zur Verwaltung der eingesetzten Cookies und ähnlichen Technologien (Tracking-Pixel,
-      Web-Beacons etc.) und diesbezüglicher Einwilligungen setzen wir das Consent Tool „Real Cookie
-      Banner" ein. Details zur Funktionsweise von „Real Cookie Banner" findest du unter
-      <a href="https://devowl.io/de/rcb/datenverarbeitung/" target="_blank" rel="noopener noreferrer">
-        devowl.io/de/rcb/datenverarbeitung
-      </a>.
+      Nach Ihrer Statistik-Einwilligung laden wir Google Analytics 4 von Google Ireland Limited,
+      Gordon House, Barrow Street, Dublin 4, Irland. Wir werten Seitenaufrufe und Interaktionen
+      aus, um Inhalte und Kontaktwege zu verbessern. Dazu gehören Geräte- und Browserangaben,
+      Seiten, Herkunftswebsite, Zeitpunkte und pseudonyme Kennungen in Analytics-Cookies
+      (insbesondere „_ga“ und „_ga_…“). Ein gemessener Telefonklick belegt kein tatsächliches
+      Telefonat. Eine Projektanfrage wird erst nach positiver Bestätigung des Anfrage-Endpunkts
+      als Ereignis erfasst.
     </p>
     <p>
-      Rechtsgrundlagen für die Verarbeitung von personenbezogenen Daten in diesem Zusammenhang sind
-      Art. 6 Abs. 1 lit. c DS-GVO und Art. 6 Abs. 1 lit. f DS-GVO. Unser berechtigtes Interesse ist
-      die Verwaltung der eingesetzten Cookies und ähnlichen Technologien und der diesbezüglichen
-      Einwilligungen.
+      Rechtsgrundlage sind Art. 6 Abs. 1 lit. a DSGVO und § 25 Abs. 1 TDDDG.
+      Ohne Zustimmung wird das Google-Skript nicht geladen. Ihre Statistik-Auswahl erteilt
+      keine Freigabe für Werbung oder personalisierte Anzeigen. Beim Widerruf sperren wir
+      weitere GA4-Messung auf dieser Seite und entfernen die von dieser Website erreichbaren
+      Analytics-Cookies. Der Widerruf wirkt für die Zukunft.
     </p>
     <p>
-      Die Bereitstellung der personenbezogenen Daten ist weder vertraglich vorgeschrieben noch für den
-      Abschluss eines Vertrages notwendig. Du bist nicht verpflichtet die personenbezogenen Daten
-      bereitzustellen. Wenn du die personenbezogenen Daten nicht bereitstellst, können wir deine
-      Einwilligungen nicht verwalten.
-    </p>
-
-    <h3>Google Tag Manager</h3>
-    <p>
-      Unsere Website nutzt den Google Tag Manager. Dieser Dienst ermöglicht uns die Verwaltung von
-      Website-Tags über eine Schnittstelle. Der Google Tag Manager selbst verarbeitet keine
-      personenbezogenen Daten, sondern löst lediglich andere Tags aus, die wiederum unter Umständen
-      Daten erfassen. Der Google Tag Manager greift nicht auf diese Daten zu.
+      Kontaktangaben und Nachrichtentexte aus dem Formular werden nicht als eigene
+      Analytics-Ereignisparameter übermittelt. Unsere automatischen Seiten-URL-Felder
+      enthalten keine Suchparameter oder URL-Fragmente; die Abmeldeseite ist von GA4
+      ausgeschlossen. Google verarbeitet bei der Verbindung technische Netzwerkdaten.
+      GA4 speichert laut Google keine individuellen IP-Adressen. Daten können auch in
+      den USA verarbeitet werden. Informationen zu Googles Datenverarbeitung,
+      Übermittlungsgrundlagen und Aufbewahrung finden Sie unter
+      <a href="https://support.google.com/analytics/answer/6004245?hl=de" target="_blank" rel="noopener noreferrer">Google Analytics und Datenschutz</a>
+      sowie in der <a href="https://policies.google.com/privacy?hl=de" target="_blank" rel="noopener noreferrer">Google-Datenschutzerklärung</a>.
     </p>
     <p>
-      Die Nutzung des Google Tag Managers erfolgt auf Grundlage von Art. 6 Abs. 1 lit. f DSGVO. Wir
-      haben ein berechtigtes Interesse an der unkomplizierten und schnellen Integration und Verwaltung
-      der verschiedenen Dienste auf unserer Website. Die Datenverarbeitung erfolgt im Auftrag von
-      Google. Weitere Informationen zum Google Tag Manager findest du in den Nutzungsrichtlinien von
-      Google Tag Manager:
-      <a href="https://www.google.com/intl/de/tagmanager/use-policy.html" target="_blank" rel="noopener noreferrer">
-        google.com/intl/de/tagmanager/use-policy.html
-      </a>.
+      Die Aufbewahrung richtet sich nach der für diese Property eingestellten Dauer
+      und dem Zweck der Auswertung. Eine Cookie-Laufzeit ist nicht mit der Aufbewahrung
+      aller Berichte gleichzusetzen. Für Auskunft und Löschung wenden Sie sich an
+      info@hsb-boden.de.
     </p>
-
-    <h3>Google Analytics</h3>
-    <p>
-      Unsere Website verwendet Google Analytics, einen Webanalysedienst der Google Ireland Limited,
-      Gordon House, Barrow Street, Dublin 4, Irland („Google"). Google Analytics verwendet sogenannte
-      „Cookies", Textdateien, die auf Ihrem Computer gespeichert werden und die eine Analyse der
-      Benutzung der Website durch Sie ermöglichen. Die durch das Cookie erzeugten Informationen über
-      Ihre Benutzung dieser Website werden in der Regel an einen Server von Google in den USA übertragen
-      und dort gespeichert.
+    <p id="consent-change">
+      Sie können Ihre Auswahl jederzeit über die
+      <button type="button" id="privacy-cookie-settings" class="underline font-bold">Cookie-Einstellungen ändern</button>.
+      Die Bearbeitung Ihrer Anfrage hängt nicht von der Statistik-Einwilligung ab.
     </p>
+    <h2>6. Technische Verarbeitung von Projektanfragen</h2>
     <p>
-      Die Speicherung von Google-Analytics-Cookies erfolgt auf Grundlage von Art. 6 Abs. 1 lit. a
-      DSGVO, also nur mit Ihrer Einwilligung. Diese Einwilligung können Sie jederzeit widerrufen.
+      Für die Übertragung des Formulars verwenden wir eine serverseitige Cloudflare-Funktion.
+      Sie prüft die Angaben und begrenzt wiederholte Anfragen anhand von IP-Adresse und
+      E-Mail-Adresse. Diese Schutzdaten werden für kurze Zeitfenster zur Missbrauchsabwehr
+      verarbeitet; Rechtsgrundlage ist Art. 6 Abs. 1 lit. f DSGVO. Die aktuelle Begrenzung
+      arbeitet mit Zeitfenstern von zehn beziehungsweise dreißig Minuten.
     </p>
     <p>
-      Wir haben auf dieser Website die Funktion IP-Anonymisierung aktiviert. Dadurch wird Ihre
-      IP-Adresse von Google innerhalb der Europäischen Union oder in anderen Vertragsstaaten des
-      Abkommens über den Europäischen Wirtschaftsraum vor der Übermittlung in die USA gekürzt. Nur in
-      Ausnahmefällen wird die volle IP-Adresse an einen Server von Google in den USA übertragen und dort
-      gekürzt. Im Auftrag des Betreibers dieser Website wird Google diese Informationen benutzen, um
-      Ihre Nutzung der Website auszuwerten, um Reports über die Website-Aktivitäten zusammenzustellen
-      und um weitere mit der Website-Nutzung und der Internetnutzung verbundene Dienstleistungen
-      gegenüber dem Website-Betreiber zu erbringen.
+      Die Anfrage wird über Google Apps Script an das dafür verwendete Google-Sheets-System
+      zur weiteren Bearbeitung übergeben. Anbieter ist Google Ireland Limited. Übermittelt
+      werden die eingegebenen Kontaktdaten und Projektdetails sowie, bei Statistikzustimmung,
+      die oben beschriebenen Herkunftsangaben. Die Verarbeitung dient der Anfragebearbeitung
+      nach Art. 6 Abs. 1 lit. b DSGVO beziehungsweise bei geschäftlichen Ansprechpartnern
+      unserem berechtigten Interesse an dieser Kommunikation nach Art. 6 Abs. 1 lit. f DSGVO.
+      Die Bestätigung der Datenschutzhinweise im Formular ist keine Einwilligung in Werbung.
     </p>
     <p>
-      Wir haben mit Google einen Vertrag zur Auftragsverarbeitung abgeschlossen und setzen die strengen
-      Vorgaben der deutschen Datenschutzbehörden bei der Nutzung von Google Analytics vollständig um.
-    </p>
-    <p>
-      Die von uns gesendeten und mit Cookies, Nutzerkennungen (z.&nbsp;B. User-ID) oder Werbe-IDs
-      verknüpften Daten werden nach 14 Monaten automatisch gelöscht. Die Löschung von Daten, deren
-      Aufbewahrungsdauer erreicht ist, erfolgt automatisch einmal im Monat.
-    </p>
-    <p>
-      Sie können die Erfassung Ihrer Daten durch Google Analytics verhindern, indem Sie Ihre
-      <a href="/datenschutz/#consent-change">Cookie-Einstellungen anpassen</a>.
-      Weitere Informationen zum Umgang mit Nutzerdaten bei Google Analytics finden Sie in der
-      Datenschutzinformation von Google:
-      <a href="https://support.google.com/analytics/answer/6004245?hl=de" target="_blank" rel="noopener noreferrer">
-        support.google.com/analytics/answer/6004245
-      </a>.
-    </p>
-
-    <h3>Meta Conversions API (Server-zu-Server-Tracking)</h3>
-    <p>
-      Wir nutzen die Meta Conversions API. Dabei werden Daten von unserem Server an Meta Platforms
-      Ireland Ltd. übertragen — nicht aus Ihrem Browser.
-    </p>
-    <p><strong>Übertragene Daten bei Vorliegen Ihrer Einwilligung</strong> („Marketing-Cookies erlauben"):</p>
-    <ul>
-      <li>Hashes (SHA-256) von Telefonnummer, E-Mail, Vorname</li>
-      <li>IP-Adresse, User-Agent-String</li>
-      <li>Klick-IDs (fbclid, _fbp)</li>
-      <li>Eventtyp („SubmitApplication"), Zeitstempel, Quell-URL</li>
-      <li>UTM-Parameter</li>
-    </ul>
-    <p>
-      Ohne Ihre Einwilligung übertragen wir KEINE personenbezogenen Daten an Meta. Lediglich der reine
-      Eventtyp wird gezählt (anonymisiertes Aggregat).
-    </p>
-    <p>
-      <strong>Rechtsgrundlage:</strong> Art. 6 Abs. 1 lit. a DSGVO (Einwilligung)<br />
-      <strong>Empfänger:</strong> Meta Platforms Ireland Ltd, Dublin, Irland; Meta Platforms Inc., USA
-      (auf Basis EU-US Data Privacy Framework)<br />
-      <strong>Speicherdauer:</strong> Bis zum Widerruf der Einwilligung, max. 2 Jahre<br />
-      <strong>Widerruf:</strong> Über das Cookie-Banner-Symbol unten links jederzeit möglich<br />
-      <strong>Quelle:</strong> <a href="https://www.e-recht24.de" target="_blank" rel="noopener noreferrer">e-recht24.de</a>
+      Zusätzlich zur sicheren Websitebereitstellung verarbeitet Cloudflare technische
+      Verbindungsdaten. Externe Schriften werden für diese Website nicht von Google Fonts
+      geladen. Die eingesetzte Schrift wird mit der Website ausgeliefert.
     </p>
   </div>
+  <script>
+    document.getElementById("privacy-cookie-settings")?.addEventListener("click", () => {
+      window.dispatchEvent(new CustomEvent("hsb:open-consent"));
+    });
+  </script>
 </BaseLayout>

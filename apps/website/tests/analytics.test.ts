@@ -58,7 +58,7 @@ describe("GA4 Basic Consent loader", () => {
 
     const script = document.querySelector<HTMLScriptElement>('script[data-hsb-ga4="true"]');
     expect(script?.src).toContain(`https://www.googletagmanager.com/gtag/js?id=${MEASUREMENT_ID}`);
-    expect(gtag).toHaveBeenCalledWith("config", MEASUREMENT_ID, { send_page_view: true });
+    expect(gtag).toHaveBeenCalledWith("config", MEASUREMENT_ID, expect.objectContaining({ send_page_view: true, page_location: "https://www.hsb-boden.de/", allow_google_signals: false, allow_ad_personalization_signals: false }));
     expect(gtag).toHaveBeenCalledTimes(3);
   });
 

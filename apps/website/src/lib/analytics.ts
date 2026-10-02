@@ -1,4 +1,5 @@
-import { GA4_MEASUREMENT_ID, PRODUCTION_ANALYTICS_HOST } from "./analyticsConfig";
+import { analyticsPageLocation, analyticsReferrer } from "./analyticsLocation";
+import { GA4_MEASUREMENT_ID, PRODUCTION_ANALYTICS_HOST, canTrackAnalyticsLocation } from "./analyticsConfig";
 import { TrackingEvent, trackEvent, type AnalyticsPayload, type AnalyticsValue } from "./tracking";
 import type { NormId } from "../data/standards";
 
@@ -11,19 +12,32 @@ type Gtag = (...args: unknown[]) => void;
 type AnalyticsWindow = Window & {
   dataLayer?: unknown[];
   gtag?: Gtag;
+  [key: string]: unknown;
 };
 
 export function isProductionAnalyticsHost(hostname: string): boolean {
   return hostname.toLowerCase() === PRODUCTION_ANALYTICS_HOST;
 }
 
-function hasStoredAnalyticsConsent(storage: Storage): boolean {
+export function hasStoredAnalyticsConsent(browserWindow: Window): boolean {
   try {
-    const raw = storage.getItem(CONSENT_STORAGE_KEY);
-    return raw !== null && (JSON.parse(raw) as { analytics?: unknown }).analytics === true;
+    const raw = browserWindow.localStorage.getItem(CONSENT_STORAGE_KEY);
+    return raw !== null && (JSON.parse(raw) as { analytics?: unknown })?.analytics === true;
   } catch {
     return false;
   }
+}
+
+function clearAnalyticsCookies(browserWindow: Window, browserDocument: Document) {
+  try {
+    for (const cookie of browserDocument.cookie.split(";")) {
+      const name = cookie.trim().split("=", 1)[0];
+      if (!/^_ga(?:_|$)/.test(name)) continue;
+      for (const domain of ["", browserWindow.location.hostname, ".hsb-boden.de", "hsb-boden.de"]) {
+        browserDocument.cookie = `${name}=; Max-Age=0; Path=/; SameSite=Lax${domain ? `; Domain=${domain}` : ""}`;
+      }
+    }
+  } catch { /* Browser-Storage kann gesperrt sein. */ }
 }
 
 export function createAnalyticsLoader(
@@ -47,18 +61,24 @@ export function createAnalyticsLoader(
   }
 
   function loadAfterConsent() {
-    if (!isProductionAnalyticsHost(hostname) || loaded) return;
-    loaded = true;
+    if (!canTrackAnalyticsLocation(hostname, browserWindow.location.pathname)) return;
+    analyticsWindow[`ga-disable-${measurementId}`] = false;
 
     const gtag = getGtag();
     gtag("consent", "update", {
       analytics_storage: "granted",
-      ad_storage: "granted",
-      ad_user_data: "granted",
-      ad_personalization: "granted",
+      ad_storage: "denied",
+      ad_user_data: "denied",
+      ad_personalization: "denied",
     });
+    if (loaded) return;
+    loaded = true;
     gtag("js", new Date());
-    gtag("config", measurementId, { send_page_view: true });
+    gtag("config", measurementId, {
+      send_page_view: true, page_location: analyticsPageLocation(browserWindow.location),
+      page_referrer: analyticsReferrer(browserDocument.referrer),
+      allow_google_signals: false, allow_ad_personalization_signals: false,
+    });
 
     if (!browserDocument.querySelector('script[data-hsb-ga4="true"]')) {
       const script = browserDocument.createElement("script");
@@ -76,6 +96,8 @@ export function createAnalyticsLoader(
       return;
     }
 
+    analyticsWindow[`ga-disable-${measurementId}`] = true;
+    clearAnalyticsCookies(browserWindow, browserDocument);
     if (loaded) {
       getGtag()("consent", "update", {
         analytics_storage: "denied",
@@ -88,11 +110,19 @@ export function createAnalyticsLoader(
 
   return {
     initialize() {
-      if (initialized) return;
+      // Auf jeder Produktionsseite auf Consent-Änderungen hören, damit ein
+      // Widerruf auch auf bewusst von Analytics ausgeschlossenen Seiten
+      // (z. B. /abmelden/) vorhandene GA-Cookies sofort entfernt. Das
+      // eigentliche Laden/Config von GA4 bleibt weiterhin in
+      // loadAfterConsent() an die zulässige Location gebunden.
+      if (initialized || !isProductionAnalyticsHost(hostname)) return;
       initialized = true;
       browserWindow.addEventListener("hsb:consent", updateConsent);
-      if (hasStoredAnalyticsConsent(browserWindow.localStorage)) loadAfterConsent();
+      analyticsWindow[`ga-disable-${measurementId}`] = true;
+      if (hasStoredAnalyticsConsent(browserWindow)) loadAfterConsent();
+      else clearAnalyticsCookies(browserWindow, browserDocument);
     },
+    destroy() { browserWindow.removeEventListener("hsb:consent", updateConsent); },
   };
 }
 
@@ -104,7 +134,7 @@ export function initializeAnalytics() {
 // ---------------------------------------------------------------------------
 // Typensicheres B2B-DataLayer für GA4. Alle Methoden laufen über die
 // consent-gated Schicht in tracking.ts; nicht allowlistete Parameter werden
-// dort verworfen, PII erreicht GA4 damit nie.
+// dort verworfen, nicht vorgesehene Kontaktfelder werden verworfen.
 // ---------------------------------------------------------------------------
 
 export interface StressCheckStepData {

@@ -1,113 +1,132 @@
 # PUBLIC_LEAD_ENDPOINT_SPEC — HSB-Boden
 
-> P0A/P0B-Spezifikation. Sicherheitsrevision: 2026-07-15. Der aktuelle Endpoint-Code
-> liegt als Cloudflare Pages Function unter `functions/api/lead.ts`; Live-Cutover und
-> externe Owner-Gates sind nicht durch dieses Dokument erledigt.
+> Öffentliche technische Spezifikation für den Website-Lead-Endpoint. Stand:
+> 2026-10-02. Der Endpoint-Code liegt als Cloudflare Pages Function unter
+> `apps/website/functions/api/lead.ts`. Diese Spezifikation beschreibt den
+> aktuellen Codevertrag; Live-Zustellung und externe Owner-Gates werden separat
+> in `docs/MASTER_EXECUTION_PLAN.md` und `docs/crm/WEBHOOK_AUTH_CUTOVER.md`
+> geführt.
 
 ## 1. Zweck
-Serverseitiger Annahmepunkt für Website-Formular-Leads, der validierte Daten an den konfigurierten Lead-Webhook weiterreicht. Frontend hält keine Secrets.
+Serverseitiger Annahmepunkt für Website-Formular-Leads. Er validiert und normalisiert die zulässigen Felder, erzwingt Herkunfts-/Zweckkonstanten, begrenzt Missbrauch und leitet ausschließlich an einen erlaubten Google-Apps-Script-Webhook weiter. Im Frontend liegen keine Webhook-Secrets.
 
 ## 2. Zielroute
-- Implementiert: `POST /api/lead` (Astro/Cloudflare Worker, serverseitig).
-- Frontend-Fallback: Wenn `PUBLIC_LEAD_FORM_ENABLED` nicht `"true"` ist, wird nichts versendet und das Formular zeigt Telefon/E-Mail.
+- Implementiert: `POST /api/lead` als Cloudflare Pages Function.
+- Das sichtbare Online-Formular wird nur gebaut, wenn `PUBLIC_LEAD_FORM_ENABLED="true"` gesetzt ist.
+- Ist das Build-Flag nicht aktiv, zeigt die Kontaktseite Telefon/E-Mail statt eines wirkungslosen Formulars.
+- Die Laufzeit-Zustellung benötigt zusätzlich eine gültige Webhook-Bindung; das Build-Flag allein beweist keine Zustellbarkeit.
 
 ## 3. Erlaubte Methoden
 
 | Methode | Erlaubt | Verhalten |
 |---------|---------|-----------|
-| POST | ja | Lead annehmen |
+| POST | ja | Lead validieren und weiterleiten |
 | GET/PUT/DELETE | nein | 405 Method Not Allowed |
-| OPTIONS | ja | CORS-Preflight (nur eigene Origin) |
+| OPTIONS | ja | CORS-Preflight |
 
 ## 4. Request-Felder
 
-| Feld | Typ | Pflicht | Validierung |
-|------|-----|---------|-------------|
-| firstName | string | ja | 2–80 Zeichen |
-| lastName | string | ja | 2–80 Zeichen |
-| company | string | ja | 2–120 Zeichen |
-| email | string | ja | RFC-konform |
-| phone | string | ja | mind. 5 Zeichen, lokale Schreibweisen erlaubt |
-| industry | string | ja | erlaubte Formularwerte aus `LeadForm.tsx` |
-| projectType | string | ja | `neubau`, `sanierung`, `bewertung` |
-| areaSize | string | nein | Freitext, max. 80 Zeichen |
-| liveOperation | string | ja | `ja`, `nein`, `unklar` |
-| loads | string[] | ja | mindestens 1 Eintrag aus `loadOptions` |
-| message | string | ja | 10–2000 Zeichen |
+| Feld | Typ | Pflicht | Serverseitiger Vertrag |
+|------|-----|---------|-------------------------|
+| firstName | string | ja | trim, 2–80 Zeichen |
+| lastName | string | nein | trim, max. 80; Standard `""` |
+| company | string | ja | trim, 2–120 Zeichen |
+| email | string | ja | trim, gültige E-Mail, max. 254 Zeichen |
+| phone | string | nein | trim, leer oder mind. 5, max. 64 Zeichen; Standard `""` |
+| industry | string | nein | trim, max. 120 Zeichen; Standard `""` |
+| projectType | string | nein | `neubau`, `sanierung`, `bewertung`; Standard `bewertung` |
+| areaSize | string | nein | trim, max. 80 Zeichen |
+| liveOperation | string | nein | `ja`, `nein`, `unklar`; Standard `unklar` |
+| loads | string[] | nein | Werte ausschließlich aus `loadOptions`; Standard `[]` |
+| message | string | ja | trim, 10–2000 Zeichen |
 | privacyConsent | boolean | ja | muss `true` sein |
-| source | string | ja | aktuell `website` |
-| legalBasis | string | ja | aktuell `inquiry` |
-| access_key | string | nein | nur falls externer Provider ihn erwartet; kein echtes Secret im Browser |
-| utm_source/medium/campaign | string | nein | max 100 Zeichen |
-| honeypot | string | nein | muss leer sein (Spam) |
-| timestamp | number | nein | optional; serverseitig gegengeprüft, wenn vorhanden |
+| source | string | ja | muss exakt `website` sein |
+| legalBasis | string | ja | muss exakt `inquiry` sein |
+| access_key | string | nein | trim; Kompatibilitätsfeld, kein Browser-Secret |
+| utm_source / utm_medium / utm_campaign / utm_term / utm_content | unbekannter JSON-Typ | nein | Nicht-Strings werden verworfen; Strings normalisiert und auf 100 Zeichen begrenzt |
+| referrer | unbekannter JSON-Typ | nein | nur externe HTTP(S)-Origin; Pfad/Query/Fragment werden entfernt; Same-Origin wird verworfen |
+| landing_page / form_path | unbekannter JSON-Typ | nein | nur normalisierte interne Pfade ohne Query/Hash |
+| attribution_channel | unbekannter JSON-Typ | nein | Clientwert wird nicht vertraut; aus bereinigter Attribution als `campaign`, `referral` oder `direct` neu abgeleitet |
+| honeypot | string | nein | muss leer sein |
+| timestamp | number | nein | optionales Kompatibilitätsfeld; aktuell keine Zeit-Schwellenprüfung |
 
-## 5. Validierungsregeln
-- Schema-Validierung serverseitig (z. B. `zod`, bereits Projekt-Dependency).
-- Trim + Längenlimits + Typprüfung.
-- `privacyConsent === true` zwingend, sonst Ablehnung.
-- Unbekannte Felder verwerfen (allowlist).
-- `source` und `legalBasis` werden serverseitig normalisiert, nicht aus dem Browser vertraut.
+## 5. Validierungs- und Vertrauensregeln
+- Schema-Validierung erfolgt serverseitig mit Zod.
+- `privacyConsent === true` ist zwingend.
+- `source` und `legalBasis` sind feste Literale (`website` / `inquiry`) und können nicht durch direkte POSTs umetikettiert werden.
+- Unbekannte Felder werden durch das Zod-Objektschema aus dem weitergeleiteten Payload entfernt.
+- Attributionswerte werden an der Server-Vertrauensgrenze erneut bereinigt. Formelpräfixe/unerlaubte Zeichen werden entfernt, Referrer auf die Origin reduziert und interne Pfade normalisiert.
+- `attribution_channel` wird aus den bereinigten Attributionswerten neu berechnet, wenn Attribution vorhanden ist.
 
-## 6. Spam-/Rate-Limit-Anforderungen
+## 6. Missbrauchs- und Transportgrenzen
 
-| Maßnahme | Anforderung |
-|----------|-------------|
-| Honeypot | gefülltes Feld → stilles Verwerfen |
-| Rate Limit | pro IP: max. 5 POSTs / 10 min; pro E-Mail: max. 2 POSTs / 30 min |
-| Min-Submit-Zeit | Formular-Render→Submit > Schwellwert |
-| Origin-Check | nur eigene Domain/Preview-Origin |
-| Payload-Limit | max. 16 KB JSON |
+| Maßnahme | Aktuelles Verhalten |
+|----------|----------------------|
+| Origin-Check | nur `https://hsb-boden.de`, `https://www.hsb-boden.de` und HTTPS-Previews desselben `*.hsb-boden.pages.dev`-Projekts |
+| Payload-Limit | max. 16 KiB; darüber 413 |
+| JSON-Tiefe | max. 32 Verschachtelungsebenen |
+| Honeypot | gefüllt → Schema-Ablehnung 400; kein Upstream-Request |
+| Rate Limit IP | max. 5 POSTs / 10 min |
+| Rate Limit E-Mail | max. 2 POSTs / 30 min |
+| Rate-Limit-Store | `RATE_LIMIT_KV` ist fail-closed erforderlich; fehlendes Binding → 500 |
+| Webhook-Timeout | 6 Sekunden; kein Browser-Retry |
 
-## 7. Consent-/Datenschutzfelder (technisch)
-- `privacyConsent` (boolean, Pflicht).
-- `consent_text_version` (string, optional) zur Nachweisführung.
-- Speicherung minimaler personenbezogener Daten; Zweckbindung Lead-Kontakt.
+Eine Min-Submit-Zeit wird aktuell **nicht** erzwungen und ist deshalb kein Bestandteil dieses Vertrags.
+
+## 7. Datenschutz-/Consent-Bezug
+- `privacyConsent` ist als technische Bestätigung des Formularhinweises zwingend.
+- Statistik-/Analytics-Einwilligung ist **keine** Voraussetzung für die Anfrage.
+- Attributionsfelder werden im Browser nur bei Statistikfreigabe angereichert und serverseitig erneut minimiert.
+- Ein `consent_text_version`-Feld ist aktuell nicht Teil des implementierten Endpoint-Vertrags.
 
 ## 8. Weiterleitung an den Lead-Webhook
-> Revidiert 2026-06-22: n8n entfällt (Abo-Kosten). Ziel ist jetzt eine kostenlose Google-Apps-Script-Web-App, siehe `N8N_HOSTING_DECISION.md` §9b und `GOOGLE_SHEETS_CRM_SETUP.md`.
-- Bevorzugter Modus: `LEAD_WEBHOOK_CONFIG` enthält URL und Token atomar. Die Pages
-  Function sendet `{version:1, authToken, lead}` und akzeptiert nur eine JSON-Antwort
-  mit `{ok:true}`.
-- Übergangsmodus: Nur wenn `LEAD_WEBHOOK_CONFIG` vollständig fehlt, wird
-  `LEAD_WEBHOOK_URL` mit dem bisherigen Lead-JSON verwendet. Eine vorhandene, aber
-  ungültige neue Config fällt niemals auf Legacy zurück.
-- Beide Ziel-URLs müssen HTTPS, Host `script.google.com`, den kanonischen
-  `/macros/s/.../exec`-Pfad und weder Query noch Fragment erfüllen.
-- Ziel: Google Apps Script Web App, gebunden an das CRM-Light-Sheet (`doPost(e)`).
-- Payload: validierte, normalisierte Felder mit den Namen aus Abschnitt 4.
-- Timeout: 6 Sekunden. Retry: keine automatische Mehrfachsendung aus dem Browser; serverseitig höchstens 1 Retry oder Queue in P0B.
+- **Bevorzugter Modus:** `LEAD_WEBHOOK_CONFIG` enthält atomar `{"url","token"}` als Secret. Die Pages Function sendet `{version:1, authToken, lead}` und akzeptiert nur eine JSON-Antwort mit exakt `{ok:true}`.
+- **Übergangsmodus:** Nur wenn `LEAD_WEBHOOK_CONFIG` vollständig fehlt, darf `LEAD_WEBHOOK_URL` den Legacy-Payload ohne Auth-Envelope erhalten. Eine vorhandene, aber ungültige neue Config fällt niemals auf Legacy zurück.
+- Ziel-URLs müssen HTTPS, Host `script.google.com`, den kanonischen `/macros/s/.../exec`-Pfad sowie leere Query/Fragmentteile haben.
+- Tokens müssen 32–512 Zeichen lang, frei von Steuerzeichen und ohne führende/abschließende Leerzeichen sein.
+- Kein Webhook-Token gehört in Browsercode, Git oder Dokumentation.
 
 ## 9. Fehlerfälle
 
 | Fall | Antwort |
 |------|---------|
-| Validierung fehlgeschlagen | 400 + Feldfehler (ohne interne Details) |
+| Origin fehlt/unzulässig | 403 |
+| Payload zu groß | 413 |
+| ungültiges JSON / Body | 400 |
+| Schema-Validierung fehlgeschlagen | 400 |
 | Methode unzulässig | 405 + `Allow: POST, OPTIONS` |
 | Rate Limit | 429 |
-| Webhook nicht erreichbar | 502 + keine Erfolgsmeldung; Persistenz/Queue nur nach P0B-Entscheidung |
-| interner Fehler | 500 (generisch) |
+| Rate-Limit-Binding fehlt | 500 generisch |
+| Webhook-Konfiguration ungültig / Webhook nicht erreichbar / keine gültige Bestätigung im Auth-Modus | 502 |
+| Erfolg | 200 + `{"ok":true}` |
+
+Fehlerantworten geben keine Webhook-URL, Tokens, Stacktraces oder interne Anbieter-Details aus.
 
 ## 10. Logging ohne Secrets
-- Loggen: Zeitstempel, Ergebnis, Fehlercode, anonymisierte/teilmaskierte Felder.
-- Nicht loggen: Webhook-URL, Tokens, vollständige PII im Klartext.
+- Erfolgs-/Fehlerlogs enthalten Zeitstempel, Ergebnis und generischen Fehlercode.
+- Webhook-URL, Tokens und vollständige Lead-PII werden nicht geloggt.
 
 ## 11. Teststrategie
-- Unit: Schema-Validierung (gültig/ungültig, `privacyConsent` fehlt, Honeypot gefüllt).
-- Integration: Mock-Webhook (kein Live-Endpoint), getrennt für Legacy- und Auth-Modus.
-- Negativtests: 400/405/429 sowie ungültige Config, unsicherer Host, schwacher Token,
-  fehlender/negativer Acknowledge und Upstream-Ausfall.
-- E2E erst in P0B nach Freigabe (Mock vor Live).
+- Schema: vollständiger und minimaler gültiger Payload, Pflichtfelder, Literale, Defaults, Honeypot und Attribution.
+- Endpoint: Methoden, Origins, Payload-Limit, JSON-Tiefe, KV-Fail-Closed, IP-/E-Mail-Rate-Limits.
+- Webhook: Legacy- und Auth-Modus, ungültige Config, URL-Allowlist, Tokenregeln, Timeout/Upstreamfehler sowie strikte `{ok:true}`-Bestätigung.
+- Frontend: Erfolg erst nach bestätigter Endpoint-Antwort; Fehler behält Eingaben und meldet keinen erfolgreichen Lead.
+- Echte Produktionszustellung nur als kontrollierter synthetischer Test mit eindeutigem Testziel und nachgewiesenem Cleanup.
 
-## 12. Freigabe-Gate vor echter Implementierung
-Implementierung erst nach Freigabe in `P0B_USER_APPROVAL_REQUEST.md`.
+## 12. Deployment-Gates
+Die Implementierung ist vorhanden. Für einen belastbaren Livebetrieb müssen getrennt erfüllt sein:
+1. geprüfter Code/CI-Stand,
+2. `PUBLIC_LEAD_FORM_ENABLED="true"` im freigegebenen Produktions-Build,
+3. `RATE_LIMIT_KV` im Production-Environment,
+4. bevorzugt ein gültiges verschlüsseltes `LEAD_WEBHOOK_CONFIG` statt des Legacy-Fallbacks,
+5. kompatibler serverseitiger Apps-Script-Empfänger für den Auth-Envelope,
+6. genau ein markierter End-to-End-Test mit anschließendem Cleanup.
 
 ## 13. Klare Grenze
-- Keine Live-Aktivierung ohne Freigabe.
-- Kein Endpoint-Code in P0A.
-- Kein Webhook-Livebetrieb in P0A.
+- Das Vorhandensein des Endpoint-Codes ist kein Nachweis erfolgreicher CRM-Zustellung.
+- Keine Produktions-Secrets in Git, Chat oder Drive dokumentieren.
+- Der Legacy-Modus ist nur eine Übergangskompatibilität und kein Zielzustand.
+- Externe Kampagnen-/Prospektversände sind von diesem Endpoint-Vertrag getrennt.
 
-## 14. Nächster Entscheidungspunkt
-Der externe Cutover folgt `docs/crm/WEBHOOK_AUTH_CUTOVER.md`. Ohne verifiziertes
-serverseitiges Binding bleibt `PUBLIC_LEAD_FORM_ENABLED` auf `false`; Production-Secret,
-Redeploy und E2E bleiben getrennte Freigabe-Gates.
+## 14. Nächster Cutover
+Der authentifizierte Produktions-Cutover folgt `docs/crm/WEBHOOK_AUTH_CUTOVER.md`. Nach erfolgreicher Auth-Verifikation und Cleanup wird der Legacy-Fallback entfernt beziehungsweise nicht mehr konfiguriert.

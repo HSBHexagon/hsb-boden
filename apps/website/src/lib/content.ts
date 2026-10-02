@@ -260,9 +260,9 @@ export function getAllPublicPages() {
     },
     {
       h1: "Projektanfrage für Industrieböden",
-      seoTitle: "Technisches Vor-Ort-Audit anfragen | HSB Hexagon Säurebau",
+      seoTitle: "Kontakt & Projektanfrage für Industrieböden | HSB",
       description:
-        "Vor-Ort-Audit für Industrieböden: Belastungsprofil, Untergrund und Sanierungsfenster ingenieurseitig bewertet – Rüttelkeramik, Säureschutz, WHG-Abdichtung.",
+        "Projektanfrage zu Industrieböden, Keramik, Säureschutz und Sanierung: Beschreiben Sie Ihren Bereich und klären Sie mit HSB den passenden nächsten Schritt.",
       canonicalPath: "/kontakt/",
     },
     {

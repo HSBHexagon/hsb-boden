@@ -14,19 +14,19 @@ export const loadOptions = [
 ] as const;
 
 export const leadFormSchema = z.object({
-  firstName: z.string().min(2),
-  lastName: z.string().min(2),
-  company: z.string().min(2),
-  email: z.string().email(),
-  phone: z.string().min(5),
-  industry: z.string().min(2),
-  projectType: z.string().min(2),
+  firstName: z.string().trim().min(2).max(80),
+  lastName: z.string().trim().max(80).optional().default(""),
+  company: z.string().trim().min(2).max(120),
+  email: z.string().trim().email().max(254),
+  phone: z.string().trim().max(64).refine(value => !value || value.length >= 5).optional().default(""),
+  industry: z.string().trim().max(120).optional().default(""),
+  projectType: z.enum(["neubau", "sanierung", "bewertung"]).optional().default("bewertung"),
   areaSize: z.string().optional(),
   currentFloor: z.string().optional(),
-  loads: z.array(z.string()).min(1),
-  liveOperation: z.string().min(2),
+  loads: z.array(z.enum(loadOptions)).optional().default([]),
+  liveOperation: z.enum(["ja", "nein", "unklar"]).optional().default("unklar"),
   timeframe: z.string().optional(),
-  message: z.string().min(10),
+  message: z.string().trim().min(10).max(2000),
   privacyConsent: z.literal(true),
 });
 

@@ -1,25 +1,19 @@
 // @vitest-environment jsdom
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { trackEvent, TrackingEvent } from "../src/lib/tracking";
-
-describe("Client Edge Telemetry Dispatch", () => {
-  beforeEach(() => {
-    localStorage.setItem("hsb-consent-v1", JSON.stringify({ necessary: true, analytics: true }));
-    window.dispatchEvent(new CustomEvent("hsb:consent", { detail: { analytics: true } }));
-  });
-
-  it("dispatches telemetry to /api/collect via sendBeacon or fetch", () => {
-    const sendBeaconSpy = vi.fn().mockReturnValue(true);
-    Object.defineProperty(navigator, "sendBeacon", {
-      value: sendBeaconSpy,
-      writable: true,
-      configurable: true,
-    });
-
-    trackEvent(TrackingEvent.LeadFormSubmit, { form_path: "/kontakt/" });
-
-    expect(sendBeaconSpy).toHaveBeenCalled();
-    const [url] = sendBeaconSpy.mock.calls[0];
-    expect(url).toBe("/api/collect");
-  });
+beforeEach(() => window.dispatchEvent(new CustomEvent("hsb:consent", { detail: { analytics: true } })));
+afterEach(() => vi.unstubAllGlobals());
+it("sends a lead once through gtag without the retired edge proxy", () => {
+  const gtag = vi.fn(); const request = vi.fn(); const beacon = vi.fn();
+  (window as Window & { gtag?: unknown }).gtag = gtag;
+  vi.stubGlobal("fetch", request);
+  Object.defineProperty(navigator, "sendBeacon", { value: beacon, configurable: true });
+  trackEvent(TrackingEvent.LeadFormSubmit);
+  expect(gtag).toHaveBeenCalledTimes(1); expect(request).not.toHaveBeenCalled(); expect(beacon).not.toHaveBeenCalled();
+});
+it.each([["preview.hsb-boden.pages.dev", "/kontakt/"], ["www.hsb-boden.de", "/abmelden/"]])("isolates %s %s", (hostname, pathname) => {
+  const gtag = vi.fn();
+  vi.stubGlobal("window", { location: { hostname, pathname }, dispatchEvent: vi.fn(), gtag });
+  trackEvent(TrackingEvent.PhoneClick);
+  expect(gtag).not.toHaveBeenCalled();
 });

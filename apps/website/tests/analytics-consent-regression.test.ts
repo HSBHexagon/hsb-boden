@@ -3,7 +3,12 @@ import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { createAnalyticsLoader } from "../src/lib/analytics";
 import { analyticsPageLocation, analyticsReferrer } from "../src/lib/analyticsLocation";
 let item: ReturnType<typeof createAnalyticsLoader>;
-beforeEach(() => {\n  localStorage.clear();\n  document.head.innerHTML = "";\n  window.history.replaceState({}, "", "/");\n  document.cookie = "_ga=; Max-Age=0; Path=/";\n});
+beforeEach(() => {
+  localStorage.clear();
+  document.head.innerHTML = "";
+  window.history.replaceState({}, "", "/");
+  document.cookie = "_ga=; Max-Age=0; Path=/";
+});
 afterEach(() => item?.destroy());
 const dispatch = (analytics: boolean) => window.dispatchEvent(new CustomEvent("hsb:consent", { detail: { analytics } }));
 it("grants statistics without advertising and supports withdrawal/regrant", () => {

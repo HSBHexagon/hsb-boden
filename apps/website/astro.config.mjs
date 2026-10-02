@@ -1,10 +1,21 @@
 // @ts-check
-import { defineConfig } from "astro/config";
+import { defineConfig, fontProviders } from "astro/config";
 import tailwindcss from "@tailwindcss/vite";
 
 export default defineConfig({
   site: "https://www.hsb-boden.de",
   output: "static",
+  fonts: [
+    {
+      provider: fontProviders.fontsource(),
+      name: "Outfit",
+      cssVariable: "--font-outfit",
+      styles: ["normal"],
+      weights: ["100 900"],
+      subsets: ["latin"],
+      fallbacks: ["sans-serif"],
+    },
+  ],
   integrations: [],
   prefetch: {
     prefetchAll: true,

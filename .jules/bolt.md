@@ -1,0 +1,3 @@
+## 2026-10-03 - [Content Visibility in Tailwind]
+**Learning:** Using `content-visibility: auto` combined with `contain-intrinsic-size` on deep, heavy components (like a global Footer) effectively reduces initial rendering and paint times. In Tailwind, arbitrary properties that lack built-in utilities must use the full bracket notation format (e.g., \`[content-visibility:auto]\` and \`[contain-intrinsic-size:400px]\`), not invented utility prefixes.
+**Action:** Always consider `content-visibility` for complex off-screen elements in Astro, and remember the strict `[property:value]` syntax for arbitrary CSS properties in Tailwind.

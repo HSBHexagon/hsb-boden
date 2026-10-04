@@ -1,0 +1,3 @@
+## 2026-10-04 - Optimize Below-the-Fold Heavy Components with content-visibility
+**Learning:** Heavy global components like the Footer that are consistently below the fold can negatively impact initial rendering and paint times. Adding `content-visibility: auto` along with `contain-intrinsic-size` is an effective performance optimization in this codebase to defer rendering of off-screen content.
+**Action:** Apply `[content-visibility:auto]` and `[contain-intrinsic-size:auto_500px]` to deep, heavy components that are predictably outside the initial viewport to reduce main thread blocking during page load.

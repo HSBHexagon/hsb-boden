@@ -24,7 +24,7 @@ export const industriebodenSaeureschutz: Service = {
     "Zentralküchen",
   ],
   technicalRequirements: [
-    "Chemikalienbeständigkeit pH 0–14",
+    "Chemikalienbeständigkeit nach Medienliste und Produktprüfzeugnissen",
     "Flüssigkeitsdichte Verbundabdichtung",
     "Säurefeste Fugenmassen (Vinylester/Furan)",
     "WHG-Konformität",

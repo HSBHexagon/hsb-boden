@@ -2,45 +2,23 @@
 import CTASection from "../../../components/sections/CTASection.astro";
 import PageHero from "../../../components/sections/PageHero.astro";
 import BaseLayout from "../../../layouts/BaseLayout.astro";
-import { buildRegionalServiceJsonLd } from "../../../lib/schema";
+import { buildBreadcrumbJsonLd, buildRegionalServiceJsonLd } from "../../../lib/schema";
+import RegionalDecisionGuide from "../../../components/sections/RegionalDecisionGuide.astro";
 ---
 
 <BaseLayout
   title="Industrieboden Sachsen-Anhalt | Böden & Säureschutz"
-  description="HSB Hexagon – Spezialist für keramische Industrieböden, Säureschutz & WHG-Abdichtung in Sachsen-Anhalt. Projekte in Magdeburg, Halle, Zeitz & Region."
+  description="Industrieboden Sachsen-Anhalt: Bestandsaufnahme, chemische Belastung und WHG-/AwSV-relevante Abdichtungen technisch klären."
   path="/standorte/sachsen-anhalt/"
-  jsonLd={[buildRegionalServiceJsonLd("Sachsen-Anhalt", "/standorte/sachsen-anhalt/")]}
+  jsonLd={[buildRegionalServiceJsonLd("Sachsen-Anhalt", "/standorte/sachsen-anhalt/"), buildBreadcrumbJsonLd([{ name: "Start", path: "/" }, { name: "Einsatzgebiet Sachsen-Anhalt", path: "/standorte/sachsen-anhalt/" }])]}
 >
   <PageHero
     eyebrow="Region Sachsen-Anhalt"
     title="Industrieboden-Spezialist in Sachsen-Anhalt"
-    text="HSB Hexagon realisiert anspruchsvolle Industrieboden- und Säureschutzprojekte in Magdeburg, Halle (Saale), Dessau, Zeitz und ganz Sachsen-Anhalt."
+    text="Technische Auslegung und Ausführung von Industrieböden für Betriebe in Sachsen-Anhalt. Welche Lösung passt, hängt von den tatsächlichen Belastungen ab."
   />
 
-  <section class="section">
-    <div class="container">
-      <div class="prose max-w-3xl mx-auto">
-        <h2>Keramische Industrieböden & Säureschutz in Sachsen-Anhalt</h2>
-        <p>
-          Als erfahrener Fachbetrieb für keramische Industrieböden, Säureschutzsysteme und WHG-konforme Abdichtungen sind wir in ganz Sachsen-Anhalt tätig. Ob Großprojekte in der Zucker- und Lebensmittelproduktion (z. B. in Zeitz), Chemieanlagen im Mitteldeutschen Chemiedreieck oder Brauereien – HSB Hexagon liefert langlebige und nachweisbar dichte Bodensysteme.
-        </p>
-
-        <h2>Unsere Leistungen in Sachsen-Anhalt</h2>
-        <ul>
-          <li><strong>Säureschutz & WHG-Abdichtung</strong> – zertifizierte Kombinationsbeläge und säurefeste Fugen nach § 62 WHG</li>
-          <li><strong>Keramische Industrieböden</strong> – rüttelverlegte Feinsteinzeugbeläge für höchste mechanische Lasten</li>
-          <li><strong>Entwässerungssysteme</strong> – Edelstahl-Kastenrinnen, Gefälleausbildung und dichte Anschlüsse</li>
-          <li><strong>Dehnungsfugen & Rammschutz</strong> – schwerlasttaugliche Fugenprofile für Gabelstaplerverkehr</li>
-          <li><strong>Industrieboden-Sanierung</strong> – modulare Sanierungsabschnitte im laufenden Betrieb</li>
-        </ul>
-
-        <h2>Regionale Präsenz in Sachsen-Anhalt</h2>
-        <p>
-          Wir betreuen Kunden in der gesamten Region Sachsen-Anhalt: Magdeburg, Halle (Saale), Dessau-Roßlau, Zeitz, Wittenberg, Stendal, Halberstadt und Bitterfeld.
-        </p>
-      </div>
-    </div>
-  </section>
+  <RegionalDecisionGuide slug="sachsen-anhalt" />
 
   <CTASection
     title="Projekt in Sachsen-Anhalt anfragen"

@@ -2,13 +2,14 @@
 import CTASection from "../../../components/sections/CTASection.astro";
 import PageHero from "../../../components/sections/PageHero.astro";
 import BaseLayout from "../../../layouts/BaseLayout.astro";
-import { sanitizeJsonLd } from "../../../lib/sanitize";
+import { buildRegionalServiceJsonLd } from "../../../lib/schema";
 ---
 
 <BaseLayout
   title="Industrieboden Hessen | Böden & Säureschutz"
   description="HSB Hexagon – Spezialist für keramische Industrieböden, Säureschutz & Entwässerung in Hessen. Projekte in Frankfurt, Kassel, Darmstadt & Region."
   path="/standorte/hessen/"
+  jsonLd={[buildRegionalServiceJsonLd("Hessen", "/standorte/hessen/")]}
 >
   <PageHero
     eyebrow="Region Hessen"
@@ -46,20 +47,4 @@ import { sanitizeJsonLd } from "../../../lib/sanitize";
     text="Kontaktieren Sie uns für eine technische Ersteinschätzung zu Ihrem Industriebodenprojekt in Hessen."
   />
 
-  <script is:inline type="application/ld+json" set:html={sanitizeJsonLd({
-    "@context": "https://schema.org",
-    "@type": "LocalBusiness",
-    "name": "Hexagon Säurebau GmbH",
-    "description": "Spezialist für keramische Industrieböden, Säureschutzsysteme und Entwässerung in Hessen",
-    "url": "https://www.hsb-boden.de",
-    "areaServed": [
-      {"@type": "City", "name": "Frankfurt am Main"},
-      {"@type": "City", "name": "Wiesbaden"},
-      {"@type": "City", "name": "Kassel"},
-      {"@type": "City", "name": "Darmstadt"},
-      {"@type": "City", "name": "Fulda"},
-      {"@type": "AdministrativeArea", "name": "Hessen"}
-    ],
-    "sameAs": "https://www.hsb-boden.de"
-  })} />
 </BaseLayout>

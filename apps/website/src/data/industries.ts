@@ -4,7 +4,7 @@ export const industries: Industry[] = [
   {
     slug: "lebensmittelindustrie",
     title: "Lebensmittelindustrie",
-    seoTitle: "Industrieboden Lebensmittelindustrie | Hygiene & HSB",
+    seoTitle: "Industrieboden Lebensmittelindustrie | HACCP & HSB",
     description:
       "Hygienische Industrieböden für die Lebensmittelproduktion: R11–R13 Rutschhemmung, dichte Hohlkehlen, Beständigkeit gegen Fette & Säuren nach HACCP/IFS.",
     h1: "Industrieböden für die Lebensmittelindustrie",

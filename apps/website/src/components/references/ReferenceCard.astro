@@ -39,7 +39,7 @@ const { reference } = Astro.props;
     <div class="flex flex-col items-end gap-3">
       {reference.logo ? (
         <div class="grid h-10 w-28 place-items-center rounded bg-white border border-hsb-line/30 px-3 shadow-sm">
-          <img src={reference.logo} alt={`${reference.displayName} Logo`} class="max-h-5 w-auto max-w-full grayscale opacity-70 contrast-125" loading="lazy" />
+          <img src={reference.logo} alt={`${reference.displayName} Logo`} class="max-h-5 w-auto max-w-full grayscale opacity-70 contrast-125" loading="lazy" width="112" height="40" decoding="async" />
         </div>
       ) : null}
     </div>

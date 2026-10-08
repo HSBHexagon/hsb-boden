@@ -337,63 +337,63 @@ export function getAllPublicPages() {
       h1: "Industrieboden-Spezialist in Norddeutschland",
       seoTitle: "Industrieboden Hamburg | Keramische Böden & Säureschutz Nord",
       description:
-        "HSB Hexagon – Ihr Spezialist für keramische Industrieböden, Säureschutzsysteme und Entwässerung in Hamburg, Schleswig-Holstein und Norddeutschland.",
+        "Industrieboden Hamburg: Lasten, Übergänge, Entwässerung und mögliche Anforderungen an Auffangflächen im Betrieb einordnen.",
       canonicalPath: "/standorte/hamburg/",
     },
     {
       h1: "Industrieboden-Spezialist in Bayern",
       seoTitle: "Industrieboden Bayern | Böden & Säureschutz München",
       description:
-        "HSB Hexagon – Ihr Spezialist für keramische Industrieböden, Säureschutzsysteme und Entwässerung in Bayern. Projekte in München, Nürnberg, Augsburg, Regensburg und ganz Bayern.",
+        "Industrieboden Bayern: Abfüllung, Gefälle, Rinnen, Reinigungstemperaturen und Keramik oder PU-Beton für die technische Planung vergleichen.",
       canonicalPath: "/standorte/bayern/",
     },
     {
       h1: "Industrieboden-Spezialist in Nordrhein-Westfalen",
       seoTitle: "Industrieboden NRW | Böden & Säureschutz",
       description:
-        "HSB Hexagon – Ihr Spezialist für keramische Industrieböden, Säureschutzsysteme und Entwässerung in NRW. Projekte in Köln, Düsseldorf, Dortmund, Essen und ganz Nordrhein-Westfalen.",
+        "Industrieboden NRW: Säureschutz, WHG-Flächen und Sanierung anhand von Medienliste, Fugen und Betriebsfenstern technisch bewerten.",
       canonicalPath: "/standorte/nrw/",
     },
     {
       h1: "Industrieboden-Spezialist in Rheinland-Pfalz",
       seoTitle: "Industrieboden Rheinland-Pfalz | Böden & Säureschutz",
       description:
-        "HSB Hexagon – Ihr Spezialist für keramische Industrieböden, Säureschutzsysteme und Entwässerung in Rheinland-Pfalz. Projekte in Mainz, Koblenz, Trier und der gesamten Region.",
+        "Industrieboden Rheinland-Pfalz: Getränkeproduktion, Nasszonen und Reparaturen anhand von Medien, Gefälle und Betriebsfenstern planen.",
       canonicalPath: "/standorte/rheinland-pfalz/",
     },
     {
       h1: "Industrieboden-Spezialist in Baden-Württemberg",
       seoTitle: "Industrieboden Baden-Württemberg | Böden & Säureschutz",
       description:
-        "HSB Hexagon – Ihr Spezialist für keramische Industrieböden, Säureschutzsysteme und Entwässerung in Baden-Württemberg. Projekte in Stuttgart, Karlsruhe, Freiburg und der gesamten Region.",
+        "Industrieboden Baden-Württemberg: Keramik, Fugenprofile und Entwässerung nach Radlast, Medien und Betriebsablauf auswählen.",
       canonicalPath: "/standorte/baden-wuerttemberg/",
     },
     {
       h1: "Industrieboden-Spezialist in Niedersachsen",
       seoTitle: "Industrieboden Niedersachsen | Böden & Säureschutz",
       description:
-        "HSB Hexagon – Spezialist für keramische Industrieböden, Säureschutz & Entwässerung in Niedersachsen. Projekte in Hannover, Osnabrück, Braunschweig & Region.",
+        "Industrieboden Niedersachsen: Feuchte, Milchsäure, Rinnenanschlüsse und Sanierungsfenster in Lebensmittelbetrieben fachlich bewerten.",
       canonicalPath: "/standorte/niedersachsen/",
     },
     {
       h1: "Industrieboden-Spezialist in Hessen",
       seoTitle: "Industrieboden Hessen | Böden & Säureschutz",
       description:
-        "HSB Hexagon – Spezialist für keramische Industrieböden, Säureschutz & Entwässerung in Hessen. Projekte in Frankfurt, Kassel, Darmstadt & Region.",
+        "Industrieboden Hessen: Reinigungsvalidierung, chemische Beständigkeit und Dokumentation für Produktions- und Hygienebereiche planen.",
       canonicalPath: "/standorte/hessen/",
     },
     {
       h1: "Industrieboden-Spezialist in Thüringen",
       seoTitle: "Industrieboden Thüringen | Böden & Säureschutz",
       description:
-        "HSB Hexagon – Spezialist für keramische Industrieböden, Säureschutz & Entwässerung in Thüringen. Projekte in Erfurt, Jena, Gera, Saalfeld & Region.",
+        "Industrieboden Thüringen: Hygieneanschlüsse, Reparatur und Wiederinbetriebnahme abhängig von Bodenaufbau und Reinigungsanforderungen prüfen.",
       canonicalPath: "/standorte/thueringen/",
     },
     {
       h1: "Industrieboden-Spezialist in Sachsen-Anhalt",
       seoTitle: "Industrieboden Sachsen-Anhalt | Böden & Säureschutz",
       description:
-        "HSB Hexagon – Spezialist für keramische Industrieböden, Säureschutz & WHG-Abdichtung in Sachsen-Anhalt. Projekte in Magdeburg, Halle, Zeitz & Region.",
+        "Industrieboden Sachsen-Anhalt: Bestandsaufnahme, chemische Belastung und WHG-/AwSV-relevante Abdichtungen technisch klären.",
       canonicalPath: "/standorte/sachsen-anhalt/",
     },
   ];

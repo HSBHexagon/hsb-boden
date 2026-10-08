@@ -28,13 +28,13 @@ export const entwaesserungIndustrieboden: Service = {
     "Hygienische Rinnengeometrie (R > 10mm)",
     "Anbindung über dichte Klebeflansche",
     "Berechnung der hydraulischen Kapazität",
-    "Präzise Gefälleführung (> 1,5%)",
+    "Gefälleführung anhand Abflussmenge, Flächennutzung und Rinnenlayout planen",
   ],
   systemSolution:
     "Hexagon Säurebau plant Entwässerung nicht als Zubehör, sondern als Herzstück des Bodens. Wir koordinieren Gefälleestrich und Rinnensetzung für einen lückenlosen Wasserfluss.",
   benefits: [
     "Keine Pfützenbildung nach der Reinigung",
-    "Dauerhaft dichte Übergänge zum Bodenbelag",
+    "Dichte Übergänge zum Bodenbelag projektbezogen planen und prüfen",
     "Einfache, HACCP-konforme Reinigung",
     "Einhaltung der Arbeitssicherheit",
   ],

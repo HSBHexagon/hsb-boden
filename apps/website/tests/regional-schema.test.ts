@@ -35,3 +35,16 @@ describe("regionale Landingpages: wahrheitsgetreue strukturierte Daten", () => {
     expect(source).not.toContain('type="application/ld+json"');
   });
 });
+
+describe("Lighthouse-SEO-Messung", () => {
+  it("testet indexierbare Kernseiten einschließlich regionaler URLs", () => {
+    const config = JSON.parse(
+      readFileSync(join(process.cwd(), ".lighthouserc.json"), "utf8"),
+    );
+    const urls: string[] = config.ci.collect.url;
+    expect(urls).toContain("http://localhost/standorte/nrw/index.html");
+    expect(urls).toContain("http://localhost/standorte/bayern/index.html");
+    expect(urls).toContain("http://localhost/index.html");
+    expect(urls.every((url) => !/abmelden|danke-projektanfrage|404/.test(url))).toBe(true);
+  });
+});

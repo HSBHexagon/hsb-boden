@@ -3,9 +3,9 @@ import type { Service } from "../../lib/types";
 export const whgAbdichtungIndustrieboden: Service = {
   slug: "whg-abdichtung-industrieboden",
   title: "WHG-Abdichtung im Industrieboden",
-  seoTitle: "WHG-Abdichtung & Fugen für Industrieböden | HSB",
+  seoTitle: "WHG-Bodenabdichtung für Industrieanlagen | HSB",
   description:
-    "Zertifizierte WHG-Abdichtung (§ 62 WHG) & säurefeste Fugen für Chemie- & Industrieanlagen. Vollständige DIBt-Dokumentation für Behörden & Sachverständige.",
+    "WHG-/AwSV-relevante Abdichtungen für Industrieanlagen: Medienliste, Systemnachweise, Anschlüsse und erforderliche Dokumentation projektbezogen prüfen.",
   h1: "WHG-konforme Abdichtungssysteme für die Industrie",
   primaryKeyword: "WHG Abdichtung Industrieboden",
   secondaryKeywords: [
@@ -15,7 +15,7 @@ export const whgAbdichtungIndustrieboden: Service = {
     "Anlagensicherheit",
   ],
   problem:
-    "Austretende Chemikalien können das Grundwasser gefährden. Undichte Fugen oder fehlende zertifizierte Abdichtungen führen zu behördlichen Stilllegungen und massiven Haftungsrisiken.",
+    "Austretende Stoffe können Gewässer gefährden. Ob und welche Abdichtung erforderlich ist, richtet sich nach der konkreten Anlage, den verwendeten Stoffen sowie WHG und AwSV.",
   applications: [
     "Tankläger",
     "Abfüllplätze",
@@ -24,18 +24,18 @@ export const whgAbdichtungIndustrieboden: Service = {
     "Transformatorstationen",
   ],
   technicalRequirements: [
-    "Fachbetriebsnachweis nach WHG",
-    "Bauaufsichtlich zugelassene Systeme (DIBt)",
+    "Fachbetriebspflichten nach AwSV §§ 45 und 62 prüfen",
+    "Für die Anlage geeignete Bauprodukte und erforderliche Eignungsnachweise prüfen",
     "Dokumentation für das Anlagenkataster",
     "Dichtheitsprüfung der Anschlüsse",
   ],
   systemSolution:
-    "Wir realisieren 'Dichte Flächen' durch Kombinationsbeläge: Eine geprüfte Abdichtungsebene wird durch einen mechanisch belastbaren Oberbelag (Keramik oder Beschichtung) geschützt.",
+    "Abhängig von Medienliste und Anlagenart können geeignete Schutz- und Abdichtungssysteme mit mechanisch belastbarem Oberbelag erforderlich sein. Die Auslegung erfolgt anhand der WHG-/AwSV-Anforderungen und der jeweiligen Systemnachweise.",
   benefits: [
-    "Vollständiger Schutz vor Grundwasserkontamination",
-    "Abnahmefertige Dokumentation für Sachverständige",
-    "Höchste Beständigkeit gegen Mineralsäuren und Lösungsmittel",
-    "Sichere Detailanschlüsse an Rohre und Rinnen",
+    "Verringerung des Eintragsrisikos durch geeignete Abdichtung und dichte Anschlüsse",
+    "Projektbezogene Dokumentation für Betreiber und gegebenenfalls Sachverständige",
+    "Chemische Beständigkeit anhand der tatsächlichen Medienliste beurteilen",
+    "Dicht ausgeführte und überprüfbare Anschlüsse an Rohre und Rinnen",
   ],
   decisionCriteria: [
     "Gefährdungsklasse der Stoffe",

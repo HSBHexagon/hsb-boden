@@ -16,4 +16,13 @@ describe("Image Performance & Zero-CLS Guardrails", () => {
     expect(content).toMatch(/decoding=["']async["']/);
     expect(content).toMatch(/fetchpriority=["']high["']/);
   });
+  it("reserves intrinsic sizes for client logos in the reference and industry grids", () => {
+    const logoCloud = readFileSync(resolve(__dirname, "../src/components/sections/LogoCloud.astro"), "utf-8");
+    const referenceCard = readFileSync(resolve(__dirname, "../src/components/references/ReferenceCard.astro"), "utf-8");
+    expect(logoCloud).toMatch(/width="150"/);
+    expect(logoCloud).toMatch(/height="56"/);
+    expect(referenceCard).toMatch(/width="112"/);
+    expect(referenceCard).toMatch(/height="40"/);
+  });
+
 });

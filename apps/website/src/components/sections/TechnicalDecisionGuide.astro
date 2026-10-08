@@ -1,0 +1,30 @@
+---
+import { technicalDecisionGuides } from "../../data/technicalDecisionGuides";
+interface Props { slug: string; }
+const { slug } = Astro.props;
+const guide = technicalDecisionGuides[slug as keyof typeof technicalDecisionGuides];
+---
+
+{guide && (
+  <section class="section-tight border-y border-hsb-line bg-hsb-mist" aria-label="Technische Entscheidungshilfe">
+    <div class="container max-w-5xl">
+      <p class="eyebrow">Für Betriebsleitung, Technik und Einkauf</p>
+      <h2 class="h2 mt-3">{guide.heading}</h2>
+      <p class="mt-5 max-w-3xl text-base leading-8 text-hsb-steel">{guide.intro}</p>
+      <h3 class="h3 mt-8">Diese Informationen gehören in die Projektanfrage</h3>
+      <ol class="mt-5 grid gap-4 lg:grid-cols-3">
+        {guide.requiredInputs.map((item, i) => (
+          <li class="surface p-5">
+            <span class="text-xs font-black text-hsb-red">SCHRITT {i + 1}</span>
+            <p class="mt-2 text-sm leading-7 text-hsb-steel">{item}</p>
+          </li>
+        ))}
+      </ol>
+      <p class="mt-6 max-w-4xl text-sm leading-7 text-hsb-steel">{guide.decisionRule}</p>
+      <div class="mt-6 flex flex-wrap items-center gap-5">
+        <a class="font-bold text-hsb-red underline-offset-4 hover:underline" href={guide.relatedUrl}>{guide.relatedLabel}</a>
+        <a class="font-bold text-hsb-red underline-offset-4 hover:underline" href="/kontakt/">Technische Angaben übermitteln</a>
+      </div>
+    </div>
+  </section>
+)}

@@ -25,18 +25,18 @@ export const keramischeIndustrieboeden: Service = {
     "Werkstätten",
   ],
   technicalRequirements: [
-    "Rüttelverlegung nach DIN EN 14411",
-    "Extrem hohe Druckfestigkeit (> 70 N/mm²)",
-    "Rutschhemmklassen bis R13 V6",
+    "Keramische Fliesen und Platten: Produkteigenschaften nach DIN EN 14411",
+    "Druck- und Biegefestigkeit anhand konkreter Produktnachweise prüfen",
+    "Rutschhemmung passend zum jeweiligen Nutzungsbereich nachweisen",
     "Kraftschlüssige Epoxidharz-Verfugung",
     "Hygienische Hohlkehl-Anschlüsse",
   ],
   systemSolution:
-    "Wir setzen auf die hochbelastbare Rüttelverlegetechnik nach DIN EN 14411. In Kombination mit Feinsteinzeug-Platten entsteht eine monolithische Verbindung mit dem Untergrund, die extremen Punktlasten standhält.",
+    "Wir planen das Rüttelverfahren mit geeigneten keramischen Fliesen und Platten. DIN EN 14411 regelt deren Produkteigenschaften, nicht die Verlegemethode. Untergrund, Verbund, Fugen und Lasten sind projektspezifisch abzustimmen.",
   benefits: [
     "Höchste Verschleißfestigkeit und Abrasionswiderstand",
     "Hygienisch durch schmale, vollflächig gefüllte Fugen",
-    "Extrem langlebig (oft 25+ Jahre)",
+    "Nutzungsdauer abhängig von Beanspruchung, Verlegung, Fugenpflege und Wartung",
     "Reparaturfreundlich durch gezielten Austausch einzelner Fliesen",
   ],
   decisionCriteria: [
@@ -62,7 +62,7 @@ export const keramischeIndustrieboeden: Service = {
     {
       question: "Wie schnell ist ein Rüttelboden befahrbar?",
       answer:
-        "Dank moderner Schnellzemente und Epoxidharz-Fugen können Teilflächen oft schon nach 48-72 Stunden wieder voll mit Gabelstaplern befahren werden.",
+        "Der früheste Zeitpunkt für eine Befahrung hängt von Mörtel- und Fugenprodukten, Untergrund, Temperatur und den jeweiligen Herstellerfreigaben ab. Die Freigabe wird im Bauablauf festgelegt.",
     },
   ],
   ctaLabel: "Rüttelkeramik-System planen",

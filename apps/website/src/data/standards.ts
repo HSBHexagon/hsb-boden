@@ -30,7 +30,7 @@ export const executionStandards: ExecutionStandard[] = [
     id: "WHG § 62",
     name: "§ 62 WHG / AwSV – Anlagen zum Umgang mit wassergefährdenden Stoffen",
     scope:
-      "Dichtheits- und Beständigkeitsanforderungen an Flächen und Auffangwannen; Ausführung durch Fachbetrieb nach AwSV.",
+      "Anforderungen an betroffene Anlagen und Auffangflächen; Fachbetriebspflichten gemäß §§ 45 und 62 AwSV nur soweit anwendbar.",
     serviceSlugs: ["whg-abdichtung-industrieboden", "industrieboden-saeureschutz"],
   },
 ];
@@ -38,7 +38,7 @@ export const executionStandards: ExecutionStandard[] = [
 // Einziges Credential: Owner-Bestätigung 2026-08-03, Urkunde bewusst nicht im
 // Repo (PROJECT_TRUTH.md, Abschnitt 3a).
 export const organizationCredential = {
-  name: "Fachbetrieb nach § 62 WHG / AwSV",
+  name: "Fachbetrieb nach § 62 AwSV",
   credentialCategory: "certification",
   evidenceRef: "PROJECT_TRUTH.md §3a (Owner-Bestätigung 2026-08-03)",
 } as const;

@@ -35,6 +35,9 @@ jobs:
           PUBLIC_LEAD_FORM_ENABLED: "true"
         run: npm run build
 
+      - name: Verify SEO sitemap coverage
+        run: npm run check:sitemap
+
       # Cloudflare Pages (not Workers) is the live architecture since the
       # static-output migration (astro.config.mjs output:"static"). Deploying
       # branch=main via `wrangler pages deploy` becomes the PRODUCTION

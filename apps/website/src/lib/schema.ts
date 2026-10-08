@@ -2,6 +2,8 @@ import { site } from "../data/site";
 import { absoluteUrl } from "./seo";
 import { organizationCredential, type NormId } from "../data/standards";
 
+const BUSINESS_ID = `${site.domain}/#unternehmen`;
+
 // Einziges Credential: Fachbetrieb nach § 62 WHG / AwSV (Owner-Bestätigung,
 // PROJECT_TRUTH.md §3a). Ausführungsnormen sind Wissen, keine Zertifikate.
 function buildCredentialJsonLd() {
@@ -23,6 +25,7 @@ const NORM_KNOWLEDGE = [
 export function buildOrganizationJsonLd() {
   return {
     "@context": "https://schema.org",
+    "@id": BUSINESS_ID,
     "@type": "Organization",
     name: "HSB Hexagon Säurebau GmbH",
     alternateName: "HSB",
@@ -68,6 +71,26 @@ export function buildOrganizationJsonLd() {
   };
 }
 
+/** Ein regionales Leistungsgebiet ist keine separate Niederlassung. */
+export function buildRegionalServiceJsonLd(region: string, path: string) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "Service",
+    name: `Industrieböden und Säureschutz in ${region}`,
+    description: `Keramische Industrieböden, Säureschutz und Bodensanierung für Produktionsbetriebe in ${region}.`,
+    url: absoluteUrl(path),
+    serviceType: ["Keramische Industrieböden", "Säureschutz", "Bodensanierung"],
+    areaServed: region,
+    provider: {
+      "@id": BUSINESS_ID,
+      "@type": "Organization",
+      name: site.name,
+      url: site.domain,
+      telephone: site.phone,
+    },
+  };
+}
+
 // Liefert Google den gewuenschten Sitenamen fuer die Suchergebnisse.
 // Bewusst ohne SearchAction: die Website hat keine eigene Suchfunktion.
 export function buildWebSiteJsonLd() {
@@ -79,6 +102,7 @@ export function buildWebSiteJsonLd() {
     url: site.domain,
     inLanguage: "de-DE",
     publisher: {
+      "@id": BUSINESS_ID,
       "@type": "Organization",
       name: "HSB Hexagon Säurebau GmbH",
       url: site.domain,
@@ -89,8 +113,8 @@ export function buildWebSiteJsonLd() {
 export function buildLocalBusinessJsonLd() {
   return {
     "@context": "https://schema.org",
+    "@id": BUSINESS_ID,
     "@type": "LocalBusiness",
-    additionalType: "https://schema.org/SpecialtyContractor",
     name: "HSB Hexagon Säurebau GmbH",
     alternateName: "HSB",
     url: site.domain,
@@ -104,24 +128,8 @@ export function buildLocalBusinessJsonLd() {
       addressRegion: "Nordrhein-Westfalen",
       addressCountry: "DE",
     },
-    geo: {
-      "@type": "GeoCoordinates",
-      latitude: "52.2125",
-      longitude: "7.0253",
-    },
     telephone: site.phone,
     email: site.email,
-    priceRange: "$$$",
-    currenciesAccepted: "EUR",
-    paymentAccepted: "Invoice, Bank Transfer",
-    openingHoursSpecification: [
-      {
-        "@type": "OpeningHoursSpecification",
-        dayOfWeek: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
-        opens: "07:00",
-        closes: "18:00",
-      },
-    ],
     areaServed: ["Deutschland", "DACH", "Europa"],
   };
 }
@@ -167,6 +175,7 @@ export function buildServiceJsonLd(service: {
     areaServed: ["Deutschland", "Österreich", "Schweiz", "Europa"],
     ...(additionalProperty ? { additionalProperty } : {}),
     provider: {
+      "@id": BUSINESS_ID,
       "@type": "Organization",
       name: "HSB Hexagon Säurebau GmbH",
       url: site.domain,
@@ -255,6 +264,7 @@ export function buildArticleJsonLd(article: {
       url: site.domain,
     },
     publisher: {
+      "@id": BUSINESS_ID,
       "@type": "Organization",
       name: "HSB Hexagon Säurebau GmbH",
       url: site.domain,

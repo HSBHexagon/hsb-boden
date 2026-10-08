@@ -4,7 +4,7 @@ export const industries: Industry[] = [
   {
     slug: "lebensmittelindustrie",
     title: "Lebensmittelindustrie",
-    seoTitle: "HACCP-konformer Industrieboden Lebensmittelindustrie | HSB",
+    seoTitle: "Industrieboden Lebensmittelindustrie | HACCP & HSB",
     description:
       "Hygienische Industrieböden für die Lebensmittelproduktion: R11–R13 Rutschhemmung, dichte Hohlkehlen, Beständigkeit gegen Fette & Säuren nach HACCP/IFS.",
     h1: "Industrieböden für die Lebensmittelindustrie",
@@ -20,9 +20,9 @@ export const industries: Industry[] = [
     floorRequirements: [
       "Geprüfte Rutschhemmung (R11 bis R13 V4/V6)",
       "HACCP-konforme Detailanschlüsse (Hohlkehlen)",
-      "Dampfstrahlfestigkeit bis 120°C",
+      "Eignung für Heißwasser- und Dampfstrahlreinigung anhand Herstellerfreigaben prüfen",
       "Hohe chemische Beständigkeit gegen Fette und organische Säuren",
-      "Zertifizierte Verbundabdichtung unter dem Belag",
+      "Geeignete Verbundabdichtung nach Belastungsprofil und Anlagentyp prüfen",
     ],
     recommendedSystems: [
       "keramische-industrieboeden",
@@ -61,9 +61,9 @@ export const industries: Industry[] = [
   {
     slug: "molkerei",
     title: "Molkerei",
-    seoTitle: "Molkereiboden: Milchsäurebeständig & Säurefest | HSB",
+    seoTitle: "Industrieboden Molkerei & Käserei | HSB Hexagon",
     description:
-      "Spezial-Industrieböden für Molkereien: Beständig gegen Milchsäure, Fette & CIP-Heißwasserreinigung. Wir sanieren im laufenden Betrieb ohne Staubbelastung.",
+      "Spezial-Industrieböden für Molkereien: Beständig gegen Milchsäure, Fette & CIP-Heißwasserreinigung. Sanierung in abgestimmten Bauabschnitten mit Schutz der laufenden Produktion.",
     h1: "Industrieböden für Molkereien und Milchverarbeitung",
     searchIntent:
       "Molkereien benötigen Bodensysteme, die den extremen chemischen Angriff von Milchsäure und die thermische Last der CIP-Reinigung dauerhaft bestehen.",
@@ -75,10 +75,10 @@ export const industries: Industry[] = [
       "Langwierige Sanierungen, die den Betrieb stoppen",
     ],
     floorRequirements: [
-      "Vinylester-Verfugung für pH-Werte von 0 bis 14",
+      "Fugenmaterial anhand Medienliste, Konzentration und Temperatur auswählen",
       "Hohe mechanische Belastbarkeit für Edelstahl-Hubwagen",
       "Säurefeste Verbundabdichtung (WHG-konform)",
-      "Großzügiges Gefälle (> 2%) zur Keimvermeidung",
+      "Gefälle und Rinnenstandorte anhand Reinigungsablauf und Ablaufleistung festlegen",
       "Integration von hygienischen Edelstahl-Kastenrinnen",
     ],
     recommendedSystems: [
@@ -88,7 +88,7 @@ export const industries: Industry[] = [
     ],
     proofPoints: [
       "Spezialist für Milchsäure-beständige Systeme",
-      "Staubfreie Sanierung durch autarke Bauabschnitte",
+      "Abgeschottete, staubarm organisierte Sanierung in Bauabschnitten",
       "Wochenend-Montage für minimale Stillstandszeiten",
     ],
     relatedServices: [
@@ -117,7 +117,7 @@ export const industries: Industry[] = [
   {
     slug: "brauerei-getraenkeindustrie",
     title: "Brauerei und Getränkeindustrie",
-    seoTitle: "Brauereiböden & Fliesen für Getränkeindustrie | HSB",
+    seoTitle: "Industrieboden Brauerei & Getränkeindustrie | HSB",
     description:
       "Säurebeständige Feinsteinzeugböden & Fliesen für Brauereien und Getränkeproduktion: Beständig gegen Laugen, Zucker und schwere Staplerlasten.",
     h1: "Industrieböden für Brauereien und Getränkeproduktion",
@@ -161,7 +161,7 @@ export const industries: Industry[] = [
       {
         question: "Wie wird die Rutschfestigkeit dauerhaft erhalten?",
         answer:
-          "Wir setzen auf keramische Beläge mit Mineralkorn-Struktur, die mechanisch kaum verschleißen. Im Gegensatz zu eingestreuten Beschichtungen bleibt die R-Klasse über Jahrzehnte stabil.",
+          "Die erforderliche Rutschhemmung ergibt sich aus dem jeweiligen Arbeitsbereich und den Produktnachweisen. Reinigung, Verschleiß und Wartung müssen während der Nutzung berücksichtigt werden.",
       },
     ],
     ctaLabel: "Abfüllbereich technisch bewerten",
@@ -169,7 +169,7 @@ export const industries: Industry[] = [
   {
     slug: "chemieindustrie",
     title: "Chemieindustrie",
-    seoTitle: "Säureschutz & WHG-Industrieböden | Hexagon Säurebau",
+    seoTitle: "Industrieboden Chemieindustrie & Säureschutz | HSB",
     description:
       "Zertifizierter WHG-Fachbetrieb für chemisch belastete Bereiche. Wir planen und bauen hochresistente Systeme für Produktion, Lager und Havarieflächen.",
     h1: "Industrieböden für chemisch belastete Produktionsbereiche",
@@ -182,8 +182,8 @@ export const industries: Industry[] = [
       "Explosionsgefahr durch fehlende Ableitfähigkeit (ESD)",
     ],
     floorRequirements: [
-      "WHG-Zulassung für das gesamte Bodensystem",
-      "ESD-Ableitfähigkeit (DIN EN 61340-5-1)",
+      "Anlagenbezogene Eignungs- und Verwendbarkeitsnachweise für Abdichtung und Anschlüsse",
+      "Erforderliche Ableitfähigkeit anhand des ESD- und Explosionsschutzkonzepts nachweisen",
       "Beständigkeit gegen Mineralsäuren (Schwefel-, Salpetersäure)",
       "Diffusionsdichte Kombinationsbeläge",
       "Säurefeste Ausmauerung für Auffangwannen",
@@ -215,7 +215,7 @@ export const industries: Industry[] = [
       {
         question: "Welche Beständigkeiten deckt Hexagon Säurebau ab?",
         answer:
-          "Wir bieten Systeme für das gesamte Spektrum von pH 0 bis 14 sowie für organische Lösungsmittel. Die Auswahl erfolgt strikt nach Ihrer spezifischen Medienliste.",
+          "Die chemische Beständigkeit hängt von Stoff, Konzentration, Temperatur, Einwirkdauer und Systemaufbau ab. Wir prüfen geeignete Beläge, Fugen und Abdichtungen anhand Ihrer konkreten Medienliste.",
       },
     ],
     ctaLabel: "Chemische Beständigkeit prüfen lassen",
@@ -236,8 +236,8 @@ export const industries: Industry[] = [
       "Lange Stillstandszeiten bei Sanierungen",
     ],
     floorRequirements: [
-      "GMP- und FDA-konforme Oberflächen",
-      "Reinraum-Klassifizierung nach ISO 14644",
+      "Reinigbarkeit und Materialeignung nach tatsächlichen GMP-Anforderungen prüfen",
+      "Reinraumbezogene Anforderungen und Nachweise anhand der konkreten Raumklassifizierung abstimmen",
       "Porenfreie, flüssigkeitsdichte Versiegelung",
       "Beständigkeit gegen VHP-Desinfektion (Wasserstoffperoxid)",
       "Lückenlose Dokumentation der Material-Chargen",
@@ -268,7 +268,7 @@ export const industries: Industry[] = [
       {
         question: "Sind Ihre Böden für Reinräume der Klasse A/B geeignet?",
         answer:
-          "Ja, wir bieten spezielle Epoxidharz- und PU-Systeme, die für hohe Reinraumklassen zertifiziert sind und die Anforderungen an geringste Partikelemission erfüllen.",
+          "Je nach Reinraum- und Reinigungskonzept können geeignete Epoxidharz- oder PU-Systeme infrage kommen. Die Eignung muss anhand der konkreten Anforderungen und Herstellerunterlagen nachgewiesen werden.",
       },
     ],
     ctaLabel: "Pharma-Systemlösung anfragen",

@@ -31,7 +31,7 @@ export const industriebodenSaeureschutz: Service = {
     "Temperaturbeständigkeit bei Heißwasserreinigung",
   ],
   systemSolution:
-    "Wir wählen Belag, Fugen und Abdichtung anhand der konkreten Medienliste, Temperatur, Konzentration und Einwirkdauer. WHG-/AwSV-Anforderungen und Verwendbarkeitsnachweise werden je Anlage geprüft.",
+    "Wir wählen Belag, Fugen und Abdichtung anhand der konkreten Medienliste, Temperatur, Konzentration und Einwirkdauer. Vinylester ist ein möglicher Fugenwerkstoff, dessen Eignung jeweils nachzuweisen ist. WHG-/AwSV-Anforderungen werden je Anlage geprüft.",
   benefits: [
     "Schutz der Bausubstanz nach Beanspruchungs- und Instandhaltungskonzept",
     "Dokumentierte Ausführung gemäß den für die Anlage geltenden Anforderungen",

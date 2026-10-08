@@ -16,6 +16,8 @@ describe("json-ld generation", () => {
     expect(() => JSON.stringify(graph)).not.toThrow();
     expect(graph["@type"]).toBe("LocalBusiness");
     expect(graph.name).toBe("HSB Hexagon Säurebau GmbH");
+    expect(graph["@id"]).toBe("https://www.hsb-boden.de/#unternehmen");
+    expect(buildOrganizationJsonLd()["@id"]).toBe(graph["@id"]);
     expect(graph).not.toHaveProperty("priceRange");
     expect(graph).not.toHaveProperty("geo");
     expect(graph).not.toHaveProperty("openingHoursSpecification");
@@ -36,6 +38,7 @@ describe("json-ld generation", () => {
     expect(() => JSON.stringify(graph)).not.toThrow();
     expect(graph["@type"]).toBe("Service");
     expect(graph.provider["@type"]).toBe("Organization");
+    expect(graph.provider["@id"]).toBe("https://www.hsb-boden.de/#unternehmen");
     expect(graph.url).toContain("/leistungen/industrieboden-saeureschutz/");
   });
 

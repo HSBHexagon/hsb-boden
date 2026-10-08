@@ -16,7 +16,10 @@ describe("json-ld generation", () => {
     expect(() => JSON.stringify(graph)).not.toThrow();
     expect(graph["@type"]).toBe("LocalBusiness");
     expect(graph.name).toBe("HSB Hexagon Säurebau GmbH");
-    expect(graph.priceRange).toBe("$$$");
+    expect(graph).not.toHaveProperty("priceRange");
+    expect(graph).not.toHaveProperty("geo");
+    expect(graph).not.toHaveProperty("openingHoursSpecification");
+    expect(graph).not.toHaveProperty("paymentAccepted");
     expect(graph.areaServed).toContain("Deutschland");
     // Also verify some basic structure for telephone/url depending on configuration
     expect(graph).toHaveProperty("url");

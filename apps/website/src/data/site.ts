@@ -8,7 +8,7 @@ export const site = {
     "Industrieböden, Säureschutz, Keramik, PU-Beton, Entwässerung und Sanierung für Lebensmittel-, Getränke-, Pharma- und Chemieproduktion.",
   defaultTitle: "Industrieböden & Säureschutz für Industrie | HSB Hexagon",
   defaultDescription:
-    "Industrieböden für Lebensmittel-, Pharma- und Chemieproduktion: Keramik, Säureschutz, PU-Beton, projektbezogene WHG-/AwSV-Abdichtung und Sanierung.",
+    "Ingenieurbau für Industrieböden: Rüttelkeramik, Säureschutz, PU-Beton und WHG-/AwSV-relevante Abdichtung für Lebensmittel-, Pharma- und Chemieproduktion.",
   ctaLabel: "Ersteinschätzung anfordern",
   ctaTarget: "/kontakt/",
   // Lead-Zustellung läuft serverseitig über /api/lead (kein Secret im Bundle).

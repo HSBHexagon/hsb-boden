@@ -2,13 +2,14 @@
 import CTASection from "../../../components/sections/CTASection.astro";
 import PageHero from "../../../components/sections/PageHero.astro";
 import BaseLayout from "../../../layouts/BaseLayout.astro";
-import { sanitizeJsonLd } from "../../../lib/sanitize";
+import { buildRegionalServiceJsonLd } from "../../../lib/schema";
 ---
 
 <BaseLayout
   title="Industrieboden Sachsen-Anhalt | Böden & Säureschutz"
   description="HSB Hexagon – Spezialist für keramische Industrieböden, Säureschutz & WHG-Abdichtung in Sachsen-Anhalt. Projekte in Magdeburg, Halle, Zeitz & Region."
   path="/standorte/sachsen-anhalt/"
+  jsonLd={[buildRegionalServiceJsonLd("Sachsen-Anhalt", "/standorte/sachsen-anhalt/")]}
 >
   <PageHero
     eyebrow="Region Sachsen-Anhalt"
@@ -46,19 +47,4 @@ import { sanitizeJsonLd } from "../../../lib/sanitize";
     text="Kontaktieren Sie uns für eine technische Ersteinschätzung zu Ihrem Industriebodenprojekt in Sachsen-Anhalt."
   />
 
-  <script is:inline type="application/ld+json" set:html={sanitizeJsonLd({
-    "@context": "https://schema.org",
-    "@type": "LocalBusiness",
-    "name": "Hexagon Säurebau GmbH",
-    "description": "Spezialist für keramische Industrieböden, Säureschutzsysteme und Entwässerung in Sachsen-Anhalt",
-    "url": "https://www.hsb-boden.de",
-    "areaServed": [
-      {"@type": "City", "name": "Magdeburg"},
-      {"@type": "City", "name": "Halle (Saale)"},
-      {"@type": "City", "name": "Dessau-Roßlau"},
-      {"@type": "City", "name": "Zeitz"},
-      {"@type": "AdministrativeArea", "name": "Sachsen-Anhalt"}
-    ],
-    "sameAs": "https://www.hsb-boden.de"
-  })} />
 </BaseLayout>

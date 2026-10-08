@@ -96,7 +96,7 @@ describe("content hardening (Phase 1)", () => {
     const s = services.find((x) => x.slug === "industrieboden-saeureschutz")!;
     expect(s.systemSolution).toMatch(/WHG/);
     expect(s.systemSolution).toMatch(/Vinylester/);
-    expect(s.technicalRequirements).toContain("WHG-Konformität");
+    expect(s.technicalRequirements).toContain("Anforderungen nach WHG/AwSV abhängig von Anlagenart und Medien prüfen");
   });
 
   it("keramik nennt Rüttelverlegetechnik und DIN EN 14411", () => {

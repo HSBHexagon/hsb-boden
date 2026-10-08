@@ -32,8 +32,8 @@ describe("SEO release: specific search intent without unsupported promises", () 
   });
 
   it("avoids unsupported all-media, all-duration and no-stop guarantees", () => {
-    const chemical = lookup("industrieboden-saeureschutz");
-    const renewal = lookup("bodensanierung-laufender-betrieb");
+    const chemical = services.find((entry) => entry.slug === "industrieboden-saeureschutz")!;
+    const renewal = services.find((entry) => entry.slug === "bodensanierung-laufender-betrieb")!;
     const blob = JSON.stringify({ chemical, renewal });
     expect(blob).not.toMatch(/pH-Bereiche von 0[–-]14|> 20 Jahre|ohne Stillstand|Staubfreie Untergrundbearbeitung|garantiert/);
     expect(chemical.systemSolution).toContain("Medienliste");

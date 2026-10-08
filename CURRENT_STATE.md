@@ -29,7 +29,14 @@
 
 ## 2. Nächste Schritte (TODO)
 
+### P0 — Blocker (Website Finalisierung)
+- [ ] **GA4/GSC API-Autorisierung:** `GOOGLE_APPLICATION_CREDENTIALS` für den google-analytics MCP Server setzen, um HSB-Properties zu verifizieren.
+- [ ] **Lead-Ende-zu-Ende Test:** Echter Frontend-Submit mit Testdaten nach PR-Merge.
+- [ ] **PR Freigabe & Merge:** Branch `fix/lead-idempotency-and-jules-governance` pushen und per PR abnehmen.
+
 ### P1 — Operativ
+- [x] **Jules-Draft-Flut gestoppt:** `.github/workflows/jules-auto-merge.yml` gelöscht.
+- [x] **Lead-Idempotenz (PR #433):** Fehlerbehandlung in `LeadForm.astro` immunisiert gegen GA4-Tracking-Fehler.
 - [ ] **Jordie Postfach-Veredelung:** `overhaul_drafts.py --owner JORDI --limit 50 --apply`
 - [ ] **Joel Restliche Drafts:** `overhaul_drafts.py --owner JOEL --limit 100 --apply`
 - [ ] **Untracked Files bereinigen:** 6 Engine-Dateien + 2 Plan-Docs committen oder .gitignore

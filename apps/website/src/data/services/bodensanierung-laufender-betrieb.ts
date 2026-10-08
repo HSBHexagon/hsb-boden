@@ -3,14 +3,14 @@ import type { Service } from "../../lib/types";
 export const bodensanierungLaufenderBetrieb: Service = {
   slug: "bodensanierung-laufender-betrieb",
   title: "Bodensanierung im laufenden Betrieb",
-  seoTitle: "Bodensanierung ohne Stillstand | HSB Fachbetrieb",
+  seoTitle: "Industrieboden sanieren im laufenden Betrieb | HSB",
   description:
-    "Wir sanieren Ihren Industrieboden ohne Stillstand: Taktgenaue Planung, Staubschutzwände und Schnellsysteme für minimale Ausfallzeiten im laufenden Betrieb.",
-  h1: "Professionelle Bodensanierung ohne Produktionsstillstand",
+    "Industriebodensanierung im laufenden Betrieb: Bauabschnitte, Schutzmaßnahmen und Wiederfreigabe abgestimmt auf Produktion und gewähltes System.",
+  h1: "Industrieboden sanieren im laufenden Betrieb",
   primaryKeyword: "Bodensanierung laufender Betrieb",
   secondaryKeywords: [
     "Sanierung Wochenende",
-    "staubfreies Fräsen",
+    "staubarme Untergrundvorbereitung",
     "Schnellbeton Industrie",
     "Produktionsschutz",
   ],
@@ -23,17 +23,17 @@ export const bodensanierungLaufenderBetrieb: Service = {
     "Fugensanierung",
   ],
   technicalRequirements: [
-    "Staubfreie Untergrundbearbeitung",
+    "Staubarme Untergrundbearbeitung mit wirksamen Schutzmaßnahmen",
     "Unterdruck- und Staubschutzsysteme",
     "Schnellhärtende Materialien (PMMA / PU-Beton)",
-    "Minutengenauer Projektplan",
+    "Abgestimmte Bauabschnitts- und Sperrzeitenplanung",
   ],
   systemSolution:
-    "Wir unterteilen die Sanierung in autarke Bauabschnitte. Durch den Einsatz von Schnellsystemen und Wochenend-Schichten übergeben wir die Fläche termingerecht zur nächsten Schicht.",
+    "Wir planen die Sanierung in abgestimmten Bauabschnitten. Aushärtungszeit und Wiederbefahrbarkeit hängen von Untergrund, Einbaubedingungen und Herstellerfreigaben ab; Produktionsfenster werden vor Beginn vereinbart.",
   benefits: [
-    "Keine oder minimale Produktionsunterbrechung",
+    "Produktionsunterbrechungen durch geeignete Bauabschnitte begrenzen",
     "Schutz benachbarter Bereiche vor Staub und Geruch",
-    "Vermeidung von Umsatzausfällen",
+    "Ausfallrisiken durch vorausschauende Ablaufplanung reduzieren",
     "Geringeres Gesamtkostenrisiko",
   ],
   decisionCriteria: [
@@ -56,7 +56,7 @@ export const bodensanierungLaufenderBetrieb: Service = {
     {
       question: "Wie vermeiden Sie Staub in der Nachbarproduktion?",
       answer:
-        "Wir setzen mobile Trennwandsysteme, Absauganlagen und staubfrei arbeitende Fräs- und Schleifmaschinen ein.",
+        "Geeignete Trennwände, Absaugung und abgestimmte Arbeitsverfahren reduzieren Staubeintrag. Vollständige Staubfreiheit darf ohne Prüfung der örtlichen Bedingungen nicht zugesagt werden.",
     },
   ],
   ctaLabel: "Sanierungsfenster analysieren",

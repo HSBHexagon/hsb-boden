@@ -3,7 +3,7 @@ import type { Service } from "../../lib/types";
 export const whgAbdichtungIndustrieboden: Service = {
   slug: "whg-abdichtung-industrieboden",
   title: "WHG-Abdichtung im Industrieboden",
-  seoTitle: "WHG-Abdichtung & Fugen für Industrieböden | HSB",
+  seoTitle: "WHG-Bodenabdichtung für Industrieanlagen | HSB",
   description:
     "WHG-/AwSV-relevante Abdichtungen für Industrieanlagen: Medienliste, Systemnachweise, Anschlüsse und erforderliche Dokumentation projektbezogen prüfen.",
   h1: "WHG-konforme Abdichtungssysteme für die Industrie",

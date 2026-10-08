@@ -2,6 +2,8 @@ import { site } from "../data/site";
 import { absoluteUrl } from "./seo";
 import { organizationCredential, type NormId } from "../data/standards";
 
+const BUSINESS_ID = `${site.domain}/#unternehmen`;
+
 // Einziges Credential: Fachbetrieb nach § 62 WHG / AwSV (Owner-Bestätigung,
 // PROJECT_TRUTH.md §3a). Ausführungsnormen sind Wissen, keine Zertifikate.
 function buildCredentialJsonLd() {
@@ -23,6 +25,7 @@ const NORM_KNOWLEDGE = [
 export function buildOrganizationJsonLd() {
   return {
     "@context": "https://schema.org",
+    "@id": BUSINESS_ID,
     "@type": "Organization",
     name: "HSB Hexagon Säurebau GmbH",
     alternateName: "HSB",
@@ -79,6 +82,7 @@ export function buildRegionalServiceJsonLd(region: string, path: string) {
     serviceType: ["Keramische Industrieböden", "Säureschutz", "Bodensanierung"],
     areaServed: region,
     provider: {
+      "@id": BUSINESS_ID,
       "@type": "Organization",
       name: site.name,
       url: site.domain,
@@ -98,6 +102,7 @@ export function buildWebSiteJsonLd() {
     url: site.domain,
     inLanguage: "de-DE",
     publisher: {
+      "@id": BUSINESS_ID,
       "@type": "Organization",
       name: "HSB Hexagon Säurebau GmbH",
       url: site.domain,
@@ -108,6 +113,7 @@ export function buildWebSiteJsonLd() {
 export function buildLocalBusinessJsonLd() {
   return {
     "@context": "https://schema.org",
+    "@id": BUSINESS_ID,
     "@type": "LocalBusiness",
     name: "HSB Hexagon Säurebau GmbH",
     alternateName: "HSB",
@@ -169,6 +175,7 @@ export function buildServiceJsonLd(service: {
     areaServed: ["Deutschland", "Österreich", "Schweiz", "Europa"],
     ...(additionalProperty ? { additionalProperty } : {}),
     provider: {
+      "@id": BUSINESS_ID,
       "@type": "Organization",
       name: "HSB Hexagon Säurebau GmbH",
       url: site.domain,
@@ -257,6 +264,7 @@ export function buildArticleJsonLd(article: {
       url: site.domain,
     },
     publisher: {
+      "@id": BUSINESS_ID,
       "@type": "Organization",
       name: "HSB Hexagon Säurebau GmbH",
       url: site.domain,

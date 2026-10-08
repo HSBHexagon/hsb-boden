@@ -109,7 +109,6 @@ export function buildLocalBusinessJsonLd() {
   return {
     "@context": "https://schema.org",
     "@type": "LocalBusiness",
-    additionalType: "https://schema.org/SpecialtyContractor",
     name: "HSB Hexagon Säurebau GmbH",
     alternateName: "HSB",
     url: site.domain,
@@ -123,24 +122,8 @@ export function buildLocalBusinessJsonLd() {
       addressRegion: "Nordrhein-Westfalen",
       addressCountry: "DE",
     },
-    geo: {
-      "@type": "GeoCoordinates",
-      latitude: "52.2125",
-      longitude: "7.0253",
-    },
     telephone: site.phone,
     email: site.email,
-    priceRange: "$$$",
-    currenciesAccepted: "EUR",
-    paymentAccepted: "Invoice, Bank Transfer",
-    openingHoursSpecification: [
-      {
-        "@type": "OpeningHoursSpecification",
-        dayOfWeek: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
-        opens: "07:00",
-        closes: "18:00",
-      },
-    ],
     areaServed: ["Deutschland", "DACH", "Europa"],
   };
 }

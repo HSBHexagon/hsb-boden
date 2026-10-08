@@ -28,11 +28,20 @@ jobs:
       - name: Install dependencies
         run: npm ci
         
+      - name: Verify canonical project constraints
+        run: python3 scripts/verify_ssot.py
+
       - name: Check types
         run: npm run check
         
       - name: Build
         run: npm run build
         
+      - name: Check built sitemap against published pages
+        run: npm run check:sitemap
+
       - name: Run tests
         run: npm run test:run
+
+      - name: Verify Pages deployment artifacts
+        run: npm run deploy:dry-run

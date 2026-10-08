@@ -5,7 +5,7 @@ export const puBetonIndustrieboden: Service = {
   title: "PU-Beton Industrieboden",
   seoTitle: "PU-Beton & Polyurethanbeton Industrieböden | HSB",
   description:
-    "Fugenlose PU-Beton-Böden für Lebensmittel & Pharma: Thermoschockbeständig bis 120 °C (ab 9 mm), chemisch resistent, hygienisch und schnell belastbar.",
+    "PU-Beton für Lebensmittel- und Hygienebereiche: Reinigungschemie, Temperaturwechsel, Schichtaufbau und Wiederfreigabe nach Herstellerdaten prüfen.",
   h1: "PU-Beton: fugenloser Hochleistungsboden für Thermoschock-Belastung",
   primaryKeyword: "PU-Beton Industrieboden",
   secondaryKeywords: [
@@ -24,19 +24,19 @@ export const puBetonIndustrieboden: Service = {
     "Hygienezonen",
   ],
   technicalRequirements: [
-    "Schichtstärken von 6mm bis 12mm",
-    "Thermoschockbeständig bis 120 °C (ab 9 mm Schichtdicke)",
+    "Schichtstärke nach tatsächlicher Nutzung und Produktfreigabe festlegen",
+    "Heißwasser- und Thermoschockbeständigkeit mit Produktdatenblättern nachweisen",
     "Chemische Resistenz gegen organische Säuren",
-    "Rutschhemmung einstellbar (R9 bis R13)",
-    "Aushärtung binnen weniger Stunden",
+    "Rutschhemmung anhand geprüfter Oberflächenausführung wählen",
+    "Aushärtung und Wiederfreigabe gemäß Hersteller und Einbaubedingungen planen",
   ],
   systemSolution:
-    "PU-Beton verbindet die Flexibilität von Harzen mit der Härte von Zement. Er ist das einzige System, das permanente Heißwasserbelastung und Frostwechsel ohne Delamination übersteht.",
+    "PU-Beton kann bei geeigneter Zusammensetzung thermische Wechselbeanspruchungen aufnehmen. Eignung für Heißwasser, Reinigungschemie und Frost sowie die Schichtstärke sind mit dem konkreten Systemanbieter zu prüfen.",
   benefits: [
-    "Absolut fugenlos (bis auf Gebäudetrennfugen)",
-    "Keine mikrobielle Ansiedlung möglich",
+    "Flächiger Aufbau unter konstruktiver Berücksichtigung erforderlicher Bewegungsfugen",
+    "Reinigbarkeit von Oberfläche, Fugen und Anschlüssen im Detail planen",
     "Extrem belastbar bei thermischer Wechselbelastung",
-    "Sehr kurze Stillstandszeiten (Montage über Nacht)",
+    "Wiederinbetriebnahme nach tatsächlicher Aushärtungs- und Freigabezeit",
   ],
   decisionCriteria: [
     "Reinigungstemperatur (Dampf/Heißwasser)",
@@ -59,7 +59,7 @@ export const puBetonIndustrieboden: Service = {
     {
       question: "Ist PU-Beton dampfstrahlfest?",
       answer:
-        "Ja, ab einer Schichtdicke von 9mm ist PU-Beton dauerhaft beständig gegen Heißwasserreinigung und Dampfstrahler bis 120 °C.",
+        "Nicht pauschal: Ob Dampfstrahlreinigung zulässig ist, hängt vom ausgewählten PU-Beton-System, der Schichtdicke, dem Temperaturprofil und den Herstellerfreigaben ab.",
     },
   ],
   ctaLabel: "PU-Beton Fachberatung anfragen",

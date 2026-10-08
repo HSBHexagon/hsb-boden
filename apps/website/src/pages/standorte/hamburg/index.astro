@@ -2,13 +2,14 @@
 import CTASection from "../../../components/sections/CTASection.astro";
 import PageHero from "../../../components/sections/PageHero.astro";
 import BaseLayout from "../../../layouts/BaseLayout.astro";
-import { sanitizeJsonLd } from "../../../lib/sanitize";
+import { buildRegionalServiceJsonLd } from "../../../lib/schema";
 ---
 
 <BaseLayout
   title="Industrieboden Hamburg | Keramische Böden & Säureschutz Nord"
   description="HSB Hexagon – Ihr Spezialist für keramische Industrieböden, Säureschutzsysteme und Entwässerung in Hamburg, Schleswig-Holstein und Norddeutschland."
   path="/standorte/hamburg/"
+  jsonLd={[buildRegionalServiceJsonLd("Hamburg und Norddeutschland", "/standorte/hamburg/")]}
 >
   <PageHero
     eyebrow="Region Hamburg & Nord"
@@ -48,20 +49,4 @@ import { sanitizeJsonLd } from "../../../lib/sanitize";
     text="Kontaktieren Sie uns für eine technische Ersteinschätzung zu Ihrem Industriebodenprojekt in Hamburg oder Norddeutschland."
   />
 
-  <script is:inline type="application/ld+json" set:html={sanitizeJsonLd({
-    "@context": "https://schema.org",
-    "@type": "LocalBusiness",
-    "name": "Hexagon Säurebau GmbH",
-    "description": "Spezialist für keramische Industrieböden in Hamburg und Norddeutschland",
-    "url": "https://www.hsb-boden.de",
-    "areaServed": [
-      {"@type": "City", "name": "Hamburg"},
-      {"@type": "City", "name": "Bremen"},
-      {"@type": "City", "name": "Kiel"},
-      {"@type": "City", "name": "Lübeck"},
-      {"@type": "City", "name": "Rostock"},
-      {"@type": "AdministrativeArea", "name": "Schleswig-Holstein"}
-    ],
-    "sameAs": "https://www.hsb-boden.de"
-  })} />
 </BaseLayout>

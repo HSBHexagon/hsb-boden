@@ -101,7 +101,8 @@ describe("content hardening (Phase 1)", () => {
 
   it("keramik nennt Rüttelverlegetechnik und DIN EN 14411", () => {
     const s = services.find((x) => x.slug === "keramische-industrieboeden")!;
-    expect(s.systemSolution).toMatch(/Rüttelverlege/);
+    expect(s.systemSolution).toMatch(/Rüttelverfahren/);
+    expect(s.systemSolution).toMatch(/nicht die Verlegemethode/);
     expect(s.secondaryKeywords.some((k) => /14411/.test(k))).toBe(true);
   });
 

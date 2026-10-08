@@ -63,7 +63,7 @@ export const industries: Industry[] = [
     title: "Molkerei",
     seoTitle: "Molkereiboden: Milchsäurebeständig & Säurefest | HSB",
     description:
-      "Spezial-Industrieböden für Molkereien: Beständig gegen Milchsäure, Fette & CIP-Heißwasserreinigung. Wir sanieren im laufenden Betrieb ohne Staubbelastung.",
+      "Spezial-Industrieböden für Molkereien: Beständig gegen Milchsäure, Fette & CIP-Heißwasserreinigung. Sanierung in abgestimmten Bauabschnitten mit Schutz der laufenden Produktion.",
     h1: "Industrieböden für Molkereien und Milchverarbeitung",
     searchIntent:
       "Molkereien benötigen Bodensysteme, die den extremen chemischen Angriff von Milchsäure und die thermische Last der CIP-Reinigung dauerhaft bestehen.",
@@ -75,10 +75,10 @@ export const industries: Industry[] = [
       "Langwierige Sanierungen, die den Betrieb stoppen",
     ],
     floorRequirements: [
-      "Vinylester-Verfugung für pH-Werte von 0 bis 14",
+      "Fugenmaterial anhand Medienliste, Konzentration und Temperatur auswählen",
       "Hohe mechanische Belastbarkeit für Edelstahl-Hubwagen",
       "Säurefeste Verbundabdichtung (WHG-konform)",
-      "Großzügiges Gefälle (> 2%) zur Keimvermeidung",
+      "Gefälle und Rinnenstandorte anhand Reinigungsablauf und Ablaufleistung festlegen",
       "Integration von hygienischen Edelstahl-Kastenrinnen",
     ],
     recommendedSystems: [
@@ -182,7 +182,7 @@ export const industries: Industry[] = [
       "Explosionsgefahr durch fehlende Ableitfähigkeit (ESD)",
     ],
     floorRequirements: [
-      "WHG-Zulassung für das gesamte Bodensystem",
+      "Anlagenbezogene Eignungs- und Verwendbarkeitsnachweise für Abdichtung und Anschlüsse",
       "ESD-Ableitfähigkeit (DIN EN 61340-5-1)",
       "Beständigkeit gegen Mineralsäuren (Schwefel-, Salpetersäure)",
       "Diffusionsdichte Kombinationsbeläge",
@@ -215,7 +215,7 @@ export const industries: Industry[] = [
       {
         question: "Welche Beständigkeiten deckt Hexagon Säurebau ab?",
         answer:
-          "Wir bieten Systeme für das gesamte Spektrum von pH 0 bis 14 sowie für organische Lösungsmittel. Die Auswahl erfolgt strikt nach Ihrer spezifischen Medienliste.",
+          "Die chemische Beständigkeit hängt von Stoff, Konzentration, Temperatur, Einwirkdauer und Systemaufbau ab. Wir prüfen geeignete Beläge, Fugen und Abdichtungen anhand Ihrer konkreten Medienliste.",
       },
     ],
     ctaLabel: "Chemische Beständigkeit prüfen lassen",
@@ -236,8 +236,8 @@ export const industries: Industry[] = [
       "Lange Stillstandszeiten bei Sanierungen",
     ],
     floorRequirements: [
-      "GMP- und FDA-konforme Oberflächen",
-      "Reinraum-Klassifizierung nach ISO 14644",
+      "Reinigbarkeit und Materialeignung nach tatsächlichen GMP-Anforderungen prüfen",
+      "Reinraumbezogene Anforderungen und Nachweise anhand der konkreten Raumklassifizierung abstimmen",
       "Porenfreie, flüssigkeitsdichte Versiegelung",
       "Beständigkeit gegen VHP-Desinfektion (Wasserstoffperoxid)",
       "Lückenlose Dokumentation der Material-Chargen",

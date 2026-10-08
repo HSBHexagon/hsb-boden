@@ -24,11 +24,11 @@ export const articles: Article[] = [
       },
       {
         title: "PU-Beton: Der fugenlose Spezialist für Thermoschocks",
-        body: "PU-Beton (Polyurethan-Zement-Estrich) ist ein Hybrid-Material, das die Härte von Beton mit der Flexibilität von Harzen verbindet. Er ist die erste Wahl bei extremen Temperaturbelastungen, wie sie bei Heißwasserreinigungen oder in Frostanlagen auftreten. Das System wird in Schichtstärken von 6mm bis 12mm eingebaut und ist nahezu fugenlos, was die Ansiedlung von Keimen verhindert. Technische Daten: Druckfestigkeit bis 50 N/mm², Temperaturbeständigkeit von -40°C bis +120°C. Der entscheidende Vorteil ist der thermische Ausdehnungskoeffizient, der dem des Betons sehr nahe kommt, was die Gefahr von Delamination (Ablösung) minimiert. PU-Beton ist zudem bereits kurz nach dem Einbau (ca. 12-24h) chemisch voll belastbar.",
+        body: "PU-Beton kann bei Feuchtbelastung und häufigen Temperaturwechseln geeignet sein. Die tatsächliche Widerstandsfähigkeit sowie Schichtdicke, Druckfestigkeit und Wiederfreigabe sind aus den Herstellerdaten des gewählten Systems und dem Einsatzprofil abzuleiten.",
       },
       {
         title: "Keramische Industrieböden: Die mechanische Festung",
-        body: "Keramische Böden, insbesondere im Rüttelverfahren verlegt, punkten durch extreme Oberflächenhärte und Abrasionsbeständigkeit. Durch die hohe Dichte des Feinsteinzeugs und die chemikalienbeständige Verfugung mit Epoxidharz (EP) oder Vinylesterharz (VE) entsteht eine hochbelastbare Fläche. Besonders in Bereichen mit hohem Stapleraufkommen, stehenden chemischen Belastungen und dort, wo eine extrem langlebige Lösung (> 20 Jahre) gesucht wird, ist Keramik oft überlegen. Der Aufbau ist diffusionsoffen, was bei feuchten Untergründen von Vorteil ist. Moderne Rüttelkeramik-Systeme minimieren zudem das Fugenrisiko durch sehr schmale, kraftschlüssig gefüllte Fugenkammern.",
+        body: "Keramische Beläge eignen sich für viele mechanisch beanspruchte Produktionsflächen. DIN EN 14411 beschreibt Eigenschaften der Fliesen und Platten, nicht die Verlegetechnik. Der konkrete Aufbau muss zusammen mit Untergrund, Radlasten, Reinigungsmedien und Fugenmaterial geprüft werden; eine feste Nutzungsdauer lässt sich daraus nicht ableiten.",
       },
       {
         title: "Technische Folgen: Hygiene- und Sicherheitsrisiken",
@@ -39,8 +39,8 @@ export const articles: Article[] = [
         body: "Die Anschaffungskosten eines Bodensystems sind nur ein Teil der Lebenszykluskosten. Die wirtschaftlichen Folgen eines Fehlkaufs sind erheblich: Ungeplante Produktionsstopps sind teuer, und Notfall-Sanierungen unter Zeitdruck – oft am Wochenende oder an Feiertagen – kosten mehr als geplante Maßnahmen. Ein in der Anschaffung niedrigpreisiges System, das wiederholt nachsaniert werden muss, kann über die Nutzungsdauer die Lebenszykluskosten eines einmal richtig geplanten, wartungsarmen Systems deutlich übersteigen.",
       },
       {
-        title: "Praxisbeispiel: Sanierung einer Großküche in NRW",
-        body: "In einer Zentralküche wurde ein Standard-Epoxidharzbelag durch PU-Beton ersetzt. Der Grund: Die tägliche Reinigung mit rund 90 °C heißem Wasser und aggressiven Fettlösern zerstörte den EP-Belag großflächig. Risse zogen sich durch die Fläche, Wasser drang in den Unterbeton ein. Die Sanierung erfolgte in drei Bauabschnitten über verlängerte Wochenenden. Zum Einsatz kam ein PU-Beton-System mit integrierter Hohlkehle. Ergebnis: Das fugenlose System nimmt die täglichen Thermoschocks ohne Rissbildung auf; die glatte, fugenlose Fläche lässt sich maschinell schneller und gründlicher reinigen.",
+        title: "Planungsszenario: Großküche und Heißwasser",
+        body: "Fiktives Planungsszenario, kein bestätigtes Referenzprojekt: Bei einer Großküche mit Heißwasserreinigung wäre zunächst zu prüfen, ob der Belag, die Fugen, das Reinigungssystem oder der Untergrund für die Schäden verantwortlich sind. PU-Beton und Keramik können anschließend anhand geeigneter Produktdaten und Betriebsfenster verglichen werden.",
       },
       {
         title: "Der Lösungsweg: Von der Analyse zum Gesamtsystem",
@@ -48,7 +48,7 @@ export const articles: Article[] = [
       },
       {
         title: "Werksbegehung und technische Bedarfsanalyse",
-        body: "Sind Sie unsicher, welches System für Ihre nächste Sanierung oder Ihren Neubau geeignet ist? Vermeiden Sie kostspielige Fehlinvestitionen durch fachfremde Planung. Unsere Ingenieure führen eine Werksbegehung mit technischer Bestandsaufnahme direkt vor Ort durch; sie wird nicht in Rechnung gestellt und ist mit keiner Kaufverpflichtung verbunden. Wir identifizieren Schwachstellen, bevor sie zum Produktionsstopp führen. Kontaktieren Sie uns für ein technisches Erstgespräch.",
+        body: "Für eine belastbare Systementscheidung werden Belastungen, Untergrundzustand, Reinigungsablauf und Zeitfenster dokumentiert. Umfang und Kosten einer Vor-Ort-Begutachtung werden im Einzelfall vereinbart. Für die technische Abstimmung steht die Kontaktseite bereit.",
       },
     ],
     relatedServices: ["keramische-industrieboeden", "pu-beton-industrieboden"],
@@ -84,15 +84,15 @@ export const articles: Article[] = [
       },
       {
         title: "Wirtschaftliche Folgen: Produktionsausfall und Sanierungsdruck",
-        body: "Ein versagender Molkereiboden ist ein wirtschaftliches Risiko erster Güte. Drohende Rückrufe bei Keimbefall können die Existenz des Unternehmens gefährden. Die Kosten für eine ungeplante Sanierung sind immens, da Molkereien oft im Mehrschichtbetrieb arbeiten und Stillstandszeiten kaum vorhanden sind. Eine Not-Sanierung während der Produktion führt zu Staubbelastung und logistischem Chaos. Langfristig gesehen sind die Wartungskosten für das 'Flicken' ungeeigneter Böden deutlich höher als die Investition in ein professionelles Säureschutz-System, das 15-20 Jahre hält.",
+        body: "Ein beschädigter Molkereiboden kann Reinigung, Betrieb und Warenfluss beeinträchtigen. Die Lebenszykluskosten verschiedener Systeme hängen von individuellen Einbaukosten, Wartung, Sanierungsfenstern und Ausfallzeiten ab. Ein pauschales Zeitversprechen ist ohne Projektdaten nicht seriös.",
       },
       {
         title: "Lösungsweg: Das 'Safe-System' für Molkereien",
-        body: "Hexagon Säurebau implementiert in Molkereien ein abgestimmtes 3-Komponenten-System: 1. Eine zertifizierte, rissüberbrückende Verbundabdichtung unter dem Belag als 'Second Line of Defense'. 2. Hochbelastbare keramische Klinker oder spezialisierter PU-Beton, der auf Thermoschocks ausgelegt ist. 3. Spezial-Verfugung auf Vinylester- oder Furanharzbasis, die pH-Werten von 0 bis 14 standhält. Nur diese Kombination schützt die Bausubstanz dauerhaft. Wir planen zudem die Entwässerung mit großzügigem Gefälle (> 2%), um stehendes Wasser und damit erhöhte chemische Einwirkzeiten zu vermeiden.",
+        body: "Die Systemwahl in Molkereien berücksichtigt CIP-Medien, Temperaturen, Fugen- und Rinnenanschlüsse, Untergrund sowie Betriebsablauf. Ob keramische Beläge oder PU-Beton mit welcher Fugen- und Abdichtungslösung geeignet sind, wird anhand der Medienliste und Herstellerprüfungen bestimmt. Gefälle ist projektbezogen zu planen.",
       },
       {
-        title: "Praxisbeispiel: Käsefertigung in Süddeutschland",
-        body: "Ein führender Käseproduzent hatte mit ständigem Fugenversagen in den Reiferäumen zu kämpfen. Herkömmliche Epoxidharz-Fugen hielten der Kombination aus Salzlake und Milchsäure nur etwa 3 Jahre stand. Nach der Analyse durch Hexagon Säurebau wurde der Boden komplett saniert. Wir installierten säurefeste Spaltplatten im Rüttelverfahren, verfugt mit einem hochresistenten Vinylester-System. Die Sanierung erfolgte in Bauabschnitten bei laufender Produktion durch Staubschutzwände. Ergebnis: Der Boden ist dauerhaft beständig gegen die Kombination aus Salzlake und Milchsäure und auf die wiederkehrenden Hygiene-Audits ausgelegt.",
+        title: "Planungsszenario: Käsefertigung und Salzlake",
+        body: "Fiktives Planungsszenario, kein bestätigtes Referenzprojekt: In einer Käseproduktion können Salzlake, Milchsäure und intensive Reinigung zu Fugenschäden führen. Ein seriöser Lösungsweg umfasst Schadensanalyse, Medienprüfung, Systemvergleich und die abgestimmte Ausführung in Bauabschnitten.",
       },
       {
         title: "Analyse Ihres Molkereibodens anfordern",
@@ -129,23 +129,23 @@ export const articles: Article[] = [
       },
       {
         title: "Materialkunde: Feinsteinzeug vs. säurefeste Spaltplatten",
-        body: "Für den industriellen Säureschutz stehen verschiedene Keramiken zur Verfügung. Hochverdichtetes Feinsteinzeug bietet extrem niedrige Wasseraufnahmewerte (< 0,05%) und eine sehr glatte, reinigungsfreundliche Oberfläche. Säurefeste Spaltplatten (Klinker) hingegen bieten durch ihre rückseitige Struktur (Schwalbenschwanz) eine exzellente mechanische Verzahnung mit dem Verlegebett, was bei massiven Scherkräften vorteilhaft ist. In der chemischen Industrie setzen wir oft auf Plattenstärken von 15mm bis 40mm, um eine ausreichende thermische Trägheit und mechanische Belastbarkeit sicherzustellen.",
+        body: "Feinsteinzeug und keramische Spaltplatten unterscheiden sich unter anderem bei Format, Oberfläche und Produkteigenschaften. Die für den Einsatz relevanten Kennwerte und Nachweise sind anhand des ausgewählten Materials und der DIN EN 14411 zu prüfen. Die Plattenstärke ist vom tatsächlichen Systemaufbau und den mechanischen Lasten abhängig.",
       },
       {
         title: "Die Fuge: Das technische Herzstück des Säureschutzes",
-        body: "Ein säurefester Belag ist technisch gesehen nur so gut wie seine Fuge. Hier kommen hochspezialisierte Zweikomponenten-Harze zum Einsatz. Wir unterscheiden zwischen Epoxidharzen (EP) für Standardanwendungen, Vinylesterharzen (VE) für hohe chemische und thermische Lasten und Furanharzen für extremste Säure- und Lösungsmittelbelastungen. Diese Harze müssen nicht nur chemisch resistent, sondern auch flüssigkeitsdicht und druckfest sein. Hexagon Säurebau verwendet spezielle Einbringverfahren, um eine 100%ige Füllung der Fugenkammer ohne Lufteinschlüsse zu garantieren.",
+        body: "Ein chemisch beanspruchter Keramikbelag benötigt ein geeignetes Fugenmaterial und sachgerecht ausgeführte Anschlüsse. Epoxid-, Vinylester- oder andere geeignete Materialien müssen nach konkreter Medienliste, Temperatur und Einwirkdauer gewählt werden. Der Füllgrad ist im Einbau zu prüfen; eine pauschal garantierte Fehlerfreiheit ist nicht möglich.",
       },
       {
         title: "Technische Folgen und Schadensbilder",
-        body: "Versagt das Fugensystem oder die Abdichtung, entstehen sogenannte 'Unterläufigkeiten'. Die aggressive Flüssigkeit wandert unbemerkt unter den Fliesen und zersetzt den Untergrund. In einem Chemiewerk führte ein solcher Schaden zum Absacken einer ganzen Abfüllanlage, da die Schwefelsäure den kalkhaltigen Beton des Fundaments buchstäblich aufgelöst hatte. Solche Schäden gefährden nicht nur die Produktion, sondern auch die Betriebssicherheit und die Umwelt (WHG-Relevanz). Die Sanierung erfordert oft den kompletten Rückbau bis auf die tragende Struktur.",
+        body: "Wenn Chemikalien und Feuchtigkeit durch schadhafte Fugen eindringen, können Unterläufigkeit, Haftverbundverlust und Untergrundschäden auftreten. Art und Umfang des Schadens sind durch Untersuchung und geeignete Messungen festzustellen. Konkrete Vorfälle werden ohne belastbare Projektnachweise nicht behauptet.",
       },
       {
         title: "Wirtschaftlichkeit: Langlebigkeit reduziert Betriebskosten",
-        body: "Professionell ausgeführte säurefeste Keramiksysteme haben eine Lebenserwartung von 20 bis 30 Jahren, selbst unter extremer Belastung. Im Vergleich zu einfachen Beschichtungen, die oft alle 5 bis 7 Jahre erneuert werden müssen, bieten sie trotz höherer Initialkosten die deutlich bessere Total Cost of Ownership (TCO). Die Investition amortisiert sich durch minimierte Instandhaltungskosten und die Vermeidung von ungeplanten Sanierungs-Stillständen. Zudem bleibt der Wiederverkaufswert einer Immobilie mit einem intakten, dokumentierten Säureschutz deutlich höher.",
+        body: "Ein Vergleich keramischer Systeme mit Beschichtungen muss Investition, Nutzungsbedingungen, Wartungsaufwand und Ausfallkosten berücksichtigen. Aussagen zur Lebensdauer oder Amortisation benötigen belastbare System- und Betriebsdaten und können nicht pauschal zugesagt werden.",
       },
       {
-        title: "Lösungsweg Hexagon Säurebau: Systemgarantie",
-        body: "Wir betrachten Säureschutz als Ganzheit: 1. Chemische Lastanalyse (Medienliste). 2. Auswahl der passenden Abdichtungsebene (Kombinationsbeläge). 3. Dimensionierung der Keramik (Materialstärke und Format). 4. Festlegung des optimalen Fugensystems. Durch die Ausführung aus einer Hand minimieren wir Schnittstellenrisiken. Unsere Dokumentation dient Ihnen als belastbarer Nachweis gegenüber Behörden und Auditoren. Wir garantieren Systeme, die halten, was die Planung verspricht.",
+        title: "Lösungsweg: Nachweisbarer Säureschutz",
+        body: "Ein fachlich geeigneter Säureschutz entsteht aus Medienanalyse, passenden Materialnachweisen, Abstimmung des Schichtaufbaus und überprüfbaren Fugen- und Anschlussdetails. Die Dokumentation sollte die für die jeweilige Anlage erforderlichen Nachweise enthalten, statt eine pauschale Systemgarantie zu versprechen.",
       },
       {
         title: "Technische Fachberatung anfordern",
@@ -180,7 +180,7 @@ export const articles: Article[] = [
       },
       {
         title: "Planungsgrundlage: Gefälle als Präventionsmaßnahme",
-        body: "Für Nassbereiche in der Produktion ist ein Gefälle von mindestens 1,5% bis 2,0% zum Ablauf hin zwingend erforderlich. Dies muss bereits in der Rohbetonplanung oder durch spezialisierte Gefälleestriche berücksichtigt werden. Hexagon Säurebau berechnet die Wasserwege präzise, um Kreuzungspunkte mit Hauptverkehrswegen zu minimieren. Wir achten darauf, dass das Gefälle so geführt wird, dass Reinigungsflüssigkeiten den kürzesten Weg zur Rinne finden und keine 'toten Zonen' entstehen.",
+        body: "Für die Entwässerung müssen Reinigungswasseranfall, Maschinenlayout, Rinnenstandorte und Nutzungswege gemeinsam geplant werden. Ein pauschales Mindestgefälle von 1,5 oder 2 Prozent ersetzt keine projektspezifische Berechnung und Prüfung der Entwässerung.",
       },
       {
         title: "Hygienische Rinnensysteme: Edelstahl als Standard",
@@ -191,12 +191,12 @@ export const articles: Article[] = [
         body: "Wenn Wasser an den Rinnenanschlüssen versickert, kommt es zur 'Unterläufigkeit'. Die Feuchtigkeit wandert kapillar unter dem Belag und zerstört den Haftverbund. Bei Frost-Tau-Wechseln oder durch chemische Reaktionen (Verseifung) löst sich der Bodenbelag großflächig ab. Wirtschaftlich bedeutet dies: Erhöhter Reinigungsaufwand, da Pfützen manuell abgezogen werden müssen, und das Risiko von Chargenkontaminationen durch Spritzwasser.",
       },
       {
-        title: "Praxisbeispiel: Getränkeabfüllung in Südwestdeutschland",
-        body: "In einer Brauerei wurde durch Korrektur des Gefälles und den Einbau neuer Kastenrinnen die Trocknungszeit des Bodens nach der Reinigung deutlich verkürzt, weil das Wasser gezielt und schnell zur Rinne abfließt. Zuvor gab es Probleme mit Schimmelbildung an den Wandanschlüssen durch hohe Luftfeuchtigkeit aufgrund stehenden Wassers. Hexagon Säurebau installierte ein System aus Gefälleestrich, Verbundabdichtung und säurefesten Klinkern. Das Ergebnis ist eine signifikante Verbesserung der Hygiene-Werte und eine höhere Mitarbeiterzufriedenheit durch trockene Arbeitswege.",
+        title: "Planungsszenario: Abfüllung und Entwässerung",
+        body: "Fiktives Planungsszenario, kein bestätigtes Referenzprojekt: Bei stehendem Wasser in einer Getränkeabfüllung wären zuerst vorhandenes Gefälle, Rinnenleistung und Übergänge zum Belag zu prüfen. Danach lassen sich eine passende Entwässerungsführung sowie die geeigneten Abdichtungsdetails planen.",
       },
       {
         title: "Lösungsweg: Integrierte Entwässerungsplanung",
-        body: "Wir planen Industrieböden 'vom Ablauf her'. 1. Festlegung der Entwässerungspunkte basierend auf dem Maschinenlayout. 2. Berechnung des notwendigen Gefälles. 3. Auswahl der Rinnentypen (Schlitz- vs. Kastenrinnen). 4. Fachgerechte Abdichtung und Anbindung. Unser Ziel ist ein Wasserleitsystem, das die Reinigung unterstützt und die Belastung für den Boden minimiert. Wir liefern Rinnen und Boden als geprüftes Gesamtsystem.",
+        body: "Entwässerung und Bodenbelag sind anhand von Anlagenlayout, Reinigungsabläufen, Volumenstrom, Belagsystem und Anschlussdetails aufeinander abzustimmen. Materialeignung und Ausführungsqualität werden projektspezifisch überprüft; ein pauschal geprüftes Gesamtsystem wird nicht zugesagt.",
       },
       {
         title: "Entwässerungs-Audit für Ihre Produktion",
@@ -233,11 +233,11 @@ export const articles: Article[] = [
       {
         title:
           "Strategie 1: Schnellhärtende Systeme (PMMA & beschleunigter PU-Beton)",
-        body: "Durch den Einsatz von reaktiven Harzen (PMMA) oder spezialisierten, schnellhärtenden PU-Beton-Systemen erreichen wir die volle mechanische und chemische Belastbarkeit oft schon nach wenigen Stunden. PMMA-Harze sind beispielsweise bereits 60 Minuten nach dem Auftrag voll belastbar. Dies ermöglicht 'Nacht-Sanierungen': Abends wird der Altbelag rückgebaut und vorbereitet, in der Nacht wird das neue System appliziert, und am nächsten Morgen kann die Produktion wie gewohnt starten.",
+        body: "Schnellhärtende Systeme können die Stillstandszeit verringern. Aushärtung, Begeh- und Befahrbarkeit sowie chemische Belastbarkeit hängen von Produkt, Temperatur und Untergrund ab. Die Wiederfreigabe wird ausschließlich nach den konkreten Systemvorgaben geplant.",
       },
       {
         title: "Strategie 2: Modulare Bauabschnitte und Emission-Control",
-        body: "Wir unterteilen Großflächen in logische Segmente, die unabhängig voneinander saniert werden können. Durch den Einsatz von Hochleistungs-Staubschutzwänden, Unterdrucksystemen und geruchsarmen Harzen stellen wir sicher, dass kein Staub oder störende Dämpfe in aktive Produktionsbereiche gelangen. Die logistische Planung der Zuwege und Materialflüsse wird im Vorfeld minutengenau mit der Betriebsleitung abgestimmt.",
+        body: "Abgeschottete Bauabschnitte, geeignete Absaugung und getrennte Materialwege reduzieren Staub- und Geruchseinträge in aktive Produktionsbereiche. Vollständige Emissionsfreiheit kann nicht ohne projektspezifische Maßnahmen und Überprüfung zugesagt werden.",
       },
       {
         title: "Wirtschaftliche Folgen: Reduzierung der Gesamtkosten",
@@ -245,7 +245,7 @@ export const articles: Article[] = [
       },
       {
         title: "Lösungsweg Hexagon Säurebau: Der Taktplan",
-        body: "Unser Sanierungs-Management umfasst: 1. Vorab-Untergrundanalyse (technisch belegt). 2. Erstellung eines detaillierten Taktplans für alle Gewerke. 3. Einsatz von staubfreier Frästechnik. 4. Fachgerechte Verlegung durch eingespielte Teams. Wir koordinieren alles aus einer Hand – vom Rückbau bis zur Abnahme. Sie erhalten einen verbindlichen Taktplan mit Zusage über den Zeitpunkt der Wiederinbetriebnahme.",
+        body: "Die Sanierung erfordert Untersuchung des Altuntergrundes, belastbare Abschnittsplanung, Emissionsschutz und die Abstimmung mit Betrieb und Qualitätssicherung. Die tatsächliche Wiederinbetriebnahme hängt von Einbaubedingungen und Herstellerfreigaben ab; Termine werden anhand dieser Voraussetzungen vereinbart.",
       },
       {
         title: "Jetzt Sanierungs-Konzept für Ihre Produktion anfordern",

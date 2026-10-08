@@ -2,13 +2,14 @@
 import CTASection from "../../../components/sections/CTASection.astro";
 import PageHero from "../../../components/sections/PageHero.astro";
 import BaseLayout from "../../../layouts/BaseLayout.astro";
-import { sanitizeJsonLd } from "../../../lib/sanitize";
+import { buildRegionalServiceJsonLd } from "../../../lib/schema";
 ---
 
 <BaseLayout
   title="Industrieboden Thüringen | Böden & Säureschutz"
   description="HSB Hexagon – Spezialist für keramische Industrieböden, Säureschutz & Entwässerung in Thüringen. Projekte in Erfurt, Jena, Gera, Saalfeld & Region."
   path="/standorte/thueringen/"
+  jsonLd={[buildRegionalServiceJsonLd("Thüringen", "/standorte/thueringen/")]}
 >
   <PageHero
     eyebrow="Region Thüringen"
@@ -45,20 +46,4 @@ import { sanitizeJsonLd } from "../../../lib/sanitize";
     text="Kontaktieren Sie uns für eine technische Ersteinschätzung zu Ihrem Industriebodenprojekt in Thüringen."
   />
 
-  <script is:inline type="application/ld+json" set:html={sanitizeJsonLd({
-    "@context": "https://schema.org",
-    "@type": "LocalBusiness",
-    "name": "Hexagon Säurebau GmbH",
-    "description": "Spezialist für keramische Industrieböden, Säureschutzsysteme und Entwässerung in Thüringen",
-    "url": "https://www.hsb-boden.de",
-    "areaServed": [
-      {"@type": "City", "name": "Erfurt"},
-      {"@type": "City", "name": "Jena"},
-      {"@type": "City", "name": "Gera"},
-      {"@type": "City", "name": "Weimar"},
-      {"@type": "City", "name": "Saalfeld"},
-      {"@type": "AdministrativeArea", "name": "Thüringen"}
-    ],
-    "sameAs": "https://www.hsb-boden.de"
-  })} />
 </BaseLayout>

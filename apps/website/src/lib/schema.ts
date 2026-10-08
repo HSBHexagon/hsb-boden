@@ -68,6 +68,25 @@ export function buildOrganizationJsonLd() {
   };
 }
 
+/** Ein regionales Leistungsgebiet ist keine separate Niederlassung. */
+export function buildRegionalServiceJsonLd(region: string, path: string) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "Service",
+    name: `Industrieböden und Säureschutz in ${region}`,
+    description: `Keramische Industrieböden, Säureschutz und Bodensanierung für Produktionsbetriebe in ${region}.`,
+    url: absoluteUrl(path),
+    serviceType: ["Keramische Industrieböden", "Säureschutz", "Bodensanierung"],
+    areaServed: region,
+    provider: {
+      "@type": "Organization",
+      name: site.name,
+      url: site.domain,
+      telephone: site.phone,
+    },
+  };
+}
+
 // Liefert Google den gewuenschten Sitenamen fuer die Suchergebnisse.
 // Bewusst ohne SearchAction: die Website hat keine eigene Suchfunktion.
 export function buildWebSiteJsonLd() {

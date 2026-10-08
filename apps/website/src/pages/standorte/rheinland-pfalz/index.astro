@@ -2,13 +2,14 @@
 import CTASection from "../../../components/sections/CTASection.astro";
 import PageHero from "../../../components/sections/PageHero.astro";
 import BaseLayout from "../../../layouts/BaseLayout.astro";
-import { sanitizeJsonLd } from "../../../lib/sanitize";
+import { buildRegionalServiceJsonLd } from "../../../lib/schema";
 ---
 
 <BaseLayout
   title="Industrieboden Rheinland-Pfalz | Böden & Säureschutz"
   description="HSB Hexagon – Ihr Spezialist für keramische Industrieböden, Säureschutzsysteme und Entwässerung in Rheinland-Pfalz. Projekte in Mainz, Koblenz, Trier und der gesamten Region."
   path="/standorte/rheinland-pfalz/"
+  jsonLd={[buildRegionalServiceJsonLd("Rheinland-Pfalz", "/standorte/rheinland-pfalz/")]}
 >
   <PageHero
     eyebrow="Region Rheinland-Pfalz"
@@ -49,20 +50,4 @@ import { sanitizeJsonLd } from "../../../lib/sanitize";
     text="Kontaktieren Sie uns für eine technische Ersteinschätzung zu Ihrem Industriebodenprojekt in Rheinland-Pfalz."
   />
 
-  <script is:inline type="application/ld+json" set:html={sanitizeJsonLd({
-    "@context": "https://schema.org",
-    "@type": "LocalBusiness",
-    "name": "Hexagon Säurebau GmbH",
-    "description": "Spezialist für keramische Industrieböden in Rheinland-Pfalz",
-    "url": "https://www.hsb-boden.de",
-    "areaServed": [
-      {"@type": "City", "name": "Mainz"},
-      {"@type": "City", "name": "Koblenz"},
-      {"@type": "City", "name": "Trier"},
-      {"@type": "City", "name": "Ludwigshafen"},
-      {"@type": "City", "name": "Kaiserslautern"},
-      {"@type": "AdministrativeArea", "name": "Rheinland-Pfalz"}
-    ],
-    "sameAs": "https://www.hsb-boden.de"
-  })} />
 </BaseLayout>

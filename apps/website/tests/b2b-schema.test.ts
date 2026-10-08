@@ -19,7 +19,7 @@ describe("Normen-Datenquelle", () => {
   });
 
   it("führt nur den owner-bestätigten WHG-Fachbetrieb als Credential", () => {
-    expect(organizationCredential.name).toContain("§ 62 WHG");
+    expect(organizationCredential.name).toContain("§ 62 AwSV");
     expect(organizationCredential.evidenceRef).toContain("PROJECT_TRUTH.md");
   });
 });
@@ -36,7 +36,7 @@ describe("Schema.org-Normen", () => {
       "§ 62 WHG / AwSV Anlagen mit wassergefährdenden Stoffen",
     ]));
     expect(graph.hasCredential).toHaveLength(1);
-    expect(graph.hasCredential[0].name).toBe("Fachbetrieb nach § 62 WHG / AwSV");
+    expect(graph.hasCredential[0].name).toBe("Fachbetrieb nach § 62 AwSV");
     expect(blob).not.toMatch(/"hasCredential":\[[^\]]*AGI S 40/);
     expect(blob).not.toMatch(/"hasCredential":\[[^\]]*DIN EN 14411/);
   });
@@ -52,7 +52,7 @@ describe("Schema.org-Normen", () => {
       { "@type": "PropertyValue", name: "Ausführungsgrundlage", value: "AGI S 40" },
       { "@type": "PropertyValue", name: "Ausführungsgrundlage", value: "DIN EN 14411" },
     ]);
-    expect(graph.provider.hasCredential[0].name).toBe("Fachbetrieb nach § 62 WHG / AwSV");
+    expect(graph.provider.hasCredential[0].name).toBe("Fachbetrieb nach § 62 AwSV");
   });
 
   it("lässt Service-Schema ohne Normen unverändert schlank", () => {

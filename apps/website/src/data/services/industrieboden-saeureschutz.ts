@@ -3,9 +3,9 @@ import type { Service } from "../../lib/types";
 export const industriebodenSaeureschutz: Service = {
   slug: "industrieboden-saeureschutz",
   title: "Industrieboden-Säureschutz",
-  seoTitle: "Säureschutz für Industrieböden & Säurebau | HSB",
+  seoTitle: "Säureschutz für Industrieböden in Chemie | HSB",
   description:
-    "Säurebeständige Industrieböden & Säureschutzbau für Lebensmittel-, Getränke-, Pharma- und Chemieproduktion. Beständig gegen Säuren, Laugen und Heißwasser.",
+    "Säureschutz für Industrieböden: Belag, Fugen und Abdichtung nach Medienliste und Produktnachweisen für Chemie- und Lebensmittelbetriebe.",
   h1: "Säureschutz für chemisch belastete Industrieböden",
   primaryKeyword: "Säureschutz Industrieboden",
   secondaryKeywords: [
@@ -27,16 +27,16 @@ export const industriebodenSaeureschutz: Service = {
     "Chemikalienbeständigkeit nach Medienliste und Produktprüfzeugnissen",
     "Flüssigkeitsdichte Verbundabdichtung",
     "Säurefeste Fugenmassen (Vinylester/Furan)",
-    "WHG-Konformität",
+    "Anforderungen nach WHG/AwSV abhängig von Anlagenart und Medien prüfen",
     "Temperaturbeständigkeit bei Heißwasserreinigung",
   ],
   systemSolution:
-    "Wir planen den Säureschutz als WHG-geprüftes Gesamtsystem: von der Untergrundvorbehandlung über chemisch hochresistente Abdichtungen bis zur spezialisierten Vinylester-Verfugung für pH-Bereiche von 0–14.",
+    "Wir wählen Belag, Fugen und Abdichtung anhand der konkreten Medienliste, Temperatur, Konzentration und Einwirkdauer. WHG-/AwSV-Anforderungen und Verwendbarkeitsnachweise werden je Anlage geprüft.",
   benefits: [
-    "Langfristiger Schutz der Bausubstanz (> 20 Jahre)",
-    "Rechtssicherheit durch WHG-konforme Ausführung",
-    "Minimale Wartungskosten durch extrem belastbare Fugen",
-    "Vermeidung von Umweltgefährdungen",
+    "Schutz der Bausubstanz nach Beanspruchungs- und Instandhaltungskonzept",
+    "Dokumentierte Ausführung gemäß den für die Anlage geltenden Anforderungen",
+    "Wartungsbedarf anhand von Fugenmaterial und tatsächlicher Belastung planen",
+    "Risiken von Stoffeinträgen durch geeignete Schutzmaßnahmen reduzieren",
   ],
   decisionCriteria: [
     "Art und Konzentration der Medien",

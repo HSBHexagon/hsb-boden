@@ -88,7 +88,7 @@ export const articles: Article[] = [
       },
       {
         title: "Lösungsweg: Das 'Safe-System' für Molkereien",
-        body: "Die Systemwahl in Molkereien berücksichtigt CIP-Medien, Temperaturen, Fugen- und Rinnenanschlüsse, Untergrund sowie Betriebsablauf. Ob keramische Beläge oder PU-Beton mit welcher Fugen- und Abdichtungslösung geeignet sind, wird anhand der Medienliste und Herstellerprüfungen bestimmt. Gefälle ist projektbezogen zu planen.",
+        body: "Die Systemwahl in Molkereien berücksichtigt CIP-Medien, Temperaturen, Fugen- und Rinnenanschlüsse, Untergrund sowie Betriebsablauf. Auch Epoxidharz-Fugen müssen anhand ihrer nachgewiesenen Milchsäure- und Reinigungschemiebeständigkeit beurteilt werden. Ob keramische Beläge oder PU-Beton mit welcher Fugen- und Abdichtungslösung geeignet sind, wird anhand der Medienliste und Herstellerprüfungen bestimmt. Gefälle ist projektbezogen zu planen.",
       },
       {
         title: "Planungsszenario: Käsefertigung und Salzlake",

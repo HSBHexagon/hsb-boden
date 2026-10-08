@@ -31,6 +31,7 @@ jobs:
 
       - name: Quality gate
         run: |
+          python3 scripts/verify_ssot.py
           npm run check
           npm run test:run
 
@@ -43,6 +44,12 @@ jobs:
         env:
           PUBLIC_LEAD_FORM_ENABLED: "true"
         run: npm run build
+
+      - name: Verify production SEO sitemap coverage
+        run: npm run check:sitemap
+
+      - name: Verify Pages deployment artifacts
+        run: npm run deploy:dry-run
 
       - name: Deploy to Cloudflare Pages (Production)
         # Cloudflare Pages is the live architecture since the static-output

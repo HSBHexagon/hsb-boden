@@ -2,13 +2,14 @@
 import CTASection from "../../../components/sections/CTASection.astro";
 import PageHero from "../../../components/sections/PageHero.astro";
 import BaseLayout from "../../../layouts/BaseLayout.astro";
-import { sanitizeJsonLd } from "../../../lib/sanitize";
+import { buildRegionalServiceJsonLd } from "../../../lib/schema";
 ---
 
 <BaseLayout
   title="Industrieboden Bayern | Böden & Säureschutz München"
   description="HSB Hexagon – Ihr Spezialist für keramische Industrieböden, Säureschutzsysteme und Entwässerung in Bayern. Projekte in München, Nürnberg, Augsburg, Regensburg und ganz Bayern."
   path="/standorte/bayern/"
+  jsonLd={[buildRegionalServiceJsonLd("Bayern", "/standorte/bayern/")]}
 >
   <PageHero
     eyebrow="Region Bayern"
@@ -50,31 +51,4 @@ import { sanitizeJsonLd } from "../../../lib/sanitize";
     text="Kontaktieren Sie uns für eine technische Ersteinschätzung zu Ihrem Industriebodenprojekt in Bayern."
   />
 
-  <!-- LocalBusiness + Service Schema for Bayern -->
-  <script is:inline type="application/ld+json" set:html={sanitizeJsonLd({
-    "@context": "https://schema.org",
-    "@type": "LocalBusiness",
-    "name": "Hexagon Säurebau GmbH",
-    "description": "Spezialist für keramische Industrieböden, Säureschutzsysteme und Entwässerung in Bayern",
-    "url": "https://www.hsb-boden.de",
-    "areaServed": [
-      {"@type": "City", "name": "München"},
-      {"@type": "City", "name": "Nürnberg"},
-      {"@type": "City", "name": "Augsburg"},
-      {"@type": "City", "name": "Regensburg"},
-      {"@type": "City", "name": "Ingolstadt"},
-      {"@type": "City", "name": "Würzburg"},
-      {"@type": "AdministrativeArea", "name": "Bayern"}
-    ],
-    "hasOfferCatalog": {
-      "@type": "OfferCatalog",
-      "name": "Industrieboden-Leistungen Bayern",
-      "itemListElement": [
-        {"@type": "Offer", "itemOffered": {"@type": "Service", "name": "Keramische Industrieböden Bayern"}},
-        {"@type": "Offer", "itemOffered": {"@type": "Service", "name": "Säureschutzsysteme Bayern"}},
-        {"@type": "Offer", "itemOffered": {"@type": "Service", "name": "Industrieboden-Sanierung Bayern"}}
-      ]
-    },
-    "sameAs": "https://www.hsb-boden.de"
-  })} />
 </BaseLayout>

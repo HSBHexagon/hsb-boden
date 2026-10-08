@@ -4,7 +4,7 @@ export const industries: Industry[] = [
   {
     slug: "lebensmittelindustrie",
     title: "Lebensmittelindustrie",
-    seoTitle: "HACCP-konformer Industrieboden Lebensmittelindustrie | HSB",
+    seoTitle: "Industrieboden Lebensmittelindustrie | Hygiene & HSB",
     description:
       "Hygienische Industrieböden für die Lebensmittelproduktion: R11–R13 Rutschhemmung, dichte Hohlkehlen, Beständigkeit gegen Fette & Säuren nach HACCP/IFS.",
     h1: "Industrieböden für die Lebensmittelindustrie",
@@ -61,7 +61,7 @@ export const industries: Industry[] = [
   {
     slug: "molkerei",
     title: "Molkerei",
-    seoTitle: "Molkereiboden: Milchsäurebeständig & Säurefest | HSB",
+    seoTitle: "Industrieboden Molkerei & Käserei | HSB Hexagon",
     description:
       "Spezial-Industrieböden für Molkereien: Beständig gegen Milchsäure, Fette & CIP-Heißwasserreinigung. Sanierung in abgestimmten Bauabschnitten mit Schutz der laufenden Produktion.",
     h1: "Industrieböden für Molkereien und Milchverarbeitung",
@@ -117,7 +117,7 @@ export const industries: Industry[] = [
   {
     slug: "brauerei-getraenkeindustrie",
     title: "Brauerei und Getränkeindustrie",
-    seoTitle: "Brauereiböden & Fliesen für Getränkeindustrie | HSB",
+    seoTitle: "Industrieboden Brauerei & Getränkeindustrie | HSB",
     description:
       "Säurebeständige Feinsteinzeugböden & Fliesen für Brauereien und Getränkeproduktion: Beständig gegen Laugen, Zucker und schwere Staplerlasten.",
     h1: "Industrieböden für Brauereien und Getränkeproduktion",
@@ -169,7 +169,7 @@ export const industries: Industry[] = [
   {
     slug: "chemieindustrie",
     title: "Chemieindustrie",
-    seoTitle: "Säureschutz & WHG-Industrieböden | Hexagon Säurebau",
+    seoTitle: "Industrieboden Chemieindustrie & Säureschutz | HSB",
     description:
       "Zertifizierter WHG-Fachbetrieb für chemisch belastete Bereiche. Wir planen und bauen hochresistente Systeme für Produktion, Lager und Havarieflächen.",
     h1: "Industrieböden für chemisch belastete Produktionsbereiche",

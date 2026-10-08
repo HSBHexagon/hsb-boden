@@ -1,0 +1,62 @@
+---
+import { regionalGuides } from "../../data/regionalGuides";
+import { getArticles, getIndustries, getServices } from "../../lib/content";
+
+interface Props { slug: keyof typeof regionalGuides; }
+const { slug } = Astro.props;
+const guide = regionalGuides[slug];
+const services = guide.serviceSlugs.map((key) => getServices().find((entry) => entry.slug === key)).filter((x) => x !== undefined);
+const industries = guide.industrySlugs.map((key) => getIndustries().find((entry) => entry.slug === key)).filter((x) => x !== undefined);
+const article = getArticles().find((entry) => entry.slug === guide.articleSlug);
+---
+
+<section class="section" aria-labelledby="region-entscheidung">
+  <div class="container max-w-5xl">
+    <p class="eyebrow">Planung für das Einsatzgebiet {guide.label}</p>
+    <h2 class="h2 mt-3" id="region-entscheidung">{guide.focus}</h2>
+    <p class="lead mt-5 max-w-4xl">{guide.summary}</p>
+
+    <div class="mt-9 rounded border border-hsb-line bg-hsb-mist p-6 lg:p-8">
+      <h3 class="h3">Drei Fragen vor der Systementscheidung</h3>
+      <ol class="mt-5 grid gap-4 lg:grid-cols-3">
+        {guide.diagnosticQuestions.map((question, index) => (
+          <li class="border-l-2 border-hsb-red bg-white px-5 py-4">
+            <span class="text-xs font-black text-hsb-red">PRÜFPUNKT {index + 1}</span>
+            <p class="mt-2 text-sm leading-7 text-hsb-steel">{question}</p>
+          </li>
+        ))}
+      </ol>
+    </div>
+
+    <div class="mt-10 grid gap-8 lg:grid-cols-2">
+      <div>
+        <h3 class="h3">Technische Leistungen im Vergleich</h3>
+        <p class="mt-3 text-sm leading-7 text-hsb-steel">Die passende Konstruktion ergibt sich aus Medium, Temperatur, Tragfähigkeit, Untergrund und Nutzung. Die folgenden Leistungen erläutern die technischen Unterschiede.</p>
+        <ul class="mt-5 space-y-3">
+          {services.map((service) => (
+            <li><a class="font-bold text-hsb-red underline-offset-4 hover:underline" href={`/leistungen/${service.slug}/`}>{service.title}</a></li>
+          ))}
+        </ul>
+      </div>
+      <div>
+        <h3 class="h3">Anforderungen nach Produktionsbereich</h3>
+        <p class="mt-3 text-sm leading-7 text-hsb-steel">Branchen unterscheiden sich insbesondere durch Reinigungsabläufe, Chemikalien, Hygieneanforderungen und Materialtransport.</p>
+        <ul class="mt-5 space-y-3">
+          {industries.map((industry) => (
+            <li><a class="font-bold text-hsb-red underline-offset-4 hover:underline" href={`/branchen/${industry.slug}/`}>{industry.title}</a></li>
+          ))}
+        </ul>
+      </div>
+    </div>
+
+    {article && (
+      <div class="mt-10 border-t border-hsb-line pt-6">
+        <p class="eyebrow">Fachliche Vertiefung</p>
+        <a class="mt-2 inline-block font-bold text-hsb-red underline-offset-4 hover:underline" href={`/wissen/${article.slug}/`}>{article.title}</a>
+        <p class="mt-2 max-w-3xl text-sm leading-7 text-hsb-steel">{article.intro}</p>
+      </div>
+    )}
+    <p class="mt-8 text-sm leading-7 text-hsb-steel">HSB hat den Unternehmenssitz in Gronau. Eine Projektbesichtigung und die Ausführung im angegebenen Einsatzgebiet werden individuell abgestimmt; aus dieser Seite folgt keine zusätzliche Niederlassung oder bereits ausgeführte regionale Referenz.</p>
+    <a class="mt-4 inline-block font-bold text-hsb-red underline-offset-4 hover:underline" href="/referenzen/">Veröffentlichte Referenzbeispiele ansehen</a>
+  </div>
+</section>

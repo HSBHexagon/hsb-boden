@@ -77,10 +77,12 @@ describe("B2B-Positionierung der Metadaten", () => {
     expect(site.defaultDescription.length).toBeLessThanOrEqual(160);
   });
 
-  it("positioniert die Startseite auf Ingenieurbau, Rüttelkeramik und Säureschutz", () => {
-    expect(site.defaultTitle).toMatch(/Ingenieurbau/);
-    expect(site.defaultTitle).toMatch(/Rüttelkeramik/);
+  it("kombiniert das Hauptkeyword im Title mit technischen Differenzierern in der Description", () => {
+    expect(site.defaultTitle).toMatch(/Industrieböden/);
     expect(site.defaultTitle).toMatch(/Säureschutz/);
+    expect(site.defaultTitle).toMatch(/HSB/);
+    expect(site.defaultDescription).toMatch(/Ingenieurbau/);
+    expect(site.defaultDescription).toMatch(/Rüttelkeramik/);
     expect(getAllPublicPages()[0].seoTitle).toBe(site.defaultTitle);
   });
 

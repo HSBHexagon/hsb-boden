@@ -20,9 +20,9 @@ export const industries: Industry[] = [
     floorRequirements: [
       "Geprüfte Rutschhemmung (R11 bis R13 V4/V6)",
       "HACCP-konforme Detailanschlüsse (Hohlkehlen)",
-      "Dampfstrahlfestigkeit bis 120°C",
+      "Eignung für Heißwasser- und Dampfstrahlreinigung anhand Herstellerfreigaben prüfen",
       "Hohe chemische Beständigkeit gegen Fette und organische Säuren",
-      "Zertifizierte Verbundabdichtung unter dem Belag",
+      "Geeignete Verbundabdichtung nach Belastungsprofil und Anlagentyp prüfen",
     ],
     recommendedSystems: [
       "keramische-industrieboeden",
@@ -88,7 +88,7 @@ export const industries: Industry[] = [
     ],
     proofPoints: [
       "Spezialist für Milchsäure-beständige Systeme",
-      "Staubfreie Sanierung durch autarke Bauabschnitte",
+      "Abgeschottete, staubarm organisierte Sanierung in Bauabschnitten",
       "Wochenend-Montage für minimale Stillstandszeiten",
     ],
     relatedServices: [
@@ -161,7 +161,7 @@ export const industries: Industry[] = [
       {
         question: "Wie wird die Rutschfestigkeit dauerhaft erhalten?",
         answer:
-          "Wir setzen auf keramische Beläge mit Mineralkorn-Struktur, die mechanisch kaum verschleißen. Im Gegensatz zu eingestreuten Beschichtungen bleibt die R-Klasse über Jahrzehnte stabil.",
+          "Die erforderliche Rutschhemmung ergibt sich aus dem jeweiligen Arbeitsbereich und den Produktnachweisen. Reinigung, Verschleiß und Wartung müssen während der Nutzung berücksichtigt werden.",
       },
     ],
     ctaLabel: "Abfüllbereich technisch bewerten",
@@ -183,7 +183,7 @@ export const industries: Industry[] = [
     ],
     floorRequirements: [
       "Anlagenbezogene Eignungs- und Verwendbarkeitsnachweise für Abdichtung und Anschlüsse",
-      "ESD-Ableitfähigkeit (DIN EN 61340-5-1)",
+      "Erforderliche Ableitfähigkeit anhand des ESD- und Explosionsschutzkonzepts nachweisen",
       "Beständigkeit gegen Mineralsäuren (Schwefel-, Salpetersäure)",
       "Diffusionsdichte Kombinationsbeläge",
       "Säurefeste Ausmauerung für Auffangwannen",
@@ -268,7 +268,7 @@ export const industries: Industry[] = [
       {
         question: "Sind Ihre Böden für Reinräume der Klasse A/B geeignet?",
         answer:
-          "Ja, wir bieten spezielle Epoxidharz- und PU-Systeme, die für hohe Reinraumklassen zertifiziert sind und die Anforderungen an geringste Partikelemission erfüllen.",
+          "Je nach Reinraum- und Reinigungskonzept können geeignete Epoxidharz- oder PU-Systeme infrage kommen. Die Eignung muss anhand der konkreten Anforderungen und Herstellerunterlagen nachgewiesen werden.",
       },
     ],
     ctaLabel: "Pharma-Systemlösung anfragen",

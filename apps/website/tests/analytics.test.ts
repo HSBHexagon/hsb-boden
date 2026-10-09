@@ -62,6 +62,45 @@ describe("GA4 Basic Consent loader", () => {
     expect(gtag).toHaveBeenCalledTimes(3);
   });
 
+  it("erteilt bei Statistik-Einwilligung keine Werbe- oder Personalisierungs-Einwilligung", () => {
+    localStorage.setItem("hsb-consent-v1", JSON.stringify({ necessary: true, analytics: true }));
+    const gtag = vi.fn();
+    (window as Window & { gtag?: typeof gtag }).gtag = gtag;
+
+    createAnalyticsLoader(window, document, MEASUREMENT_ID, PRODUCTION_ANALYTICS_HOST).initialize();
+
+    expect(gtag).toHaveBeenCalledWith("consent", "update", {
+      analytics_storage: "granted",
+      ad_storage: "denied",
+      ad_user_data: "denied",
+      ad_personalization: "denied",
+    });
+  });
+
+  it("aktiviert Analytics nach Widerruf und erneuter Zustimmung wieder, ohne das Skript zweimal zu laden", () => {
+    localStorage.setItem("hsb-consent-v1", JSON.stringify({ necessary: true, analytics: true }));
+    const gtag = vi.fn();
+    (window as Window & { gtag?: typeof gtag }).gtag = gtag;
+    createAnalyticsLoader(window, document, MEASUREMENT_ID, PRODUCTION_ANALYTICS_HOST).initialize();
+
+    window.dispatchEvent(new CustomEvent("hsb:consent", { detail: { analytics: false } }));
+    expect(gtag).toHaveBeenLastCalledWith("consent", "update", {
+      analytics_storage: "denied",
+      ad_storage: "denied",
+      ad_user_data: "denied",
+      ad_personalization: "denied",
+    });
+
+    window.dispatchEvent(new CustomEvent("hsb:consent", { detail: { analytics: true } }));
+    expect(gtag).toHaveBeenLastCalledWith("consent", "update", {
+      analytics_storage: "granted",
+      ad_storage: "denied",
+      ad_user_data: "denied",
+      ad_personalization: "denied",
+    });
+    expect(document.querySelectorAll('script[data-hsb-ga4="true"]')).toHaveLength(1);
+  });
+
   it("lädt erst nach einem positiven Consent-Ereignis und ignoriert ein negatives", () => {
     const loader = createAnalyticsLoader(window, document, MEASUREMENT_ID, PRODUCTION_ANALYTICS_HOST);
     loader.initialize();

@@ -47,16 +47,20 @@ export function createAnalyticsLoader(
   }
 
   function loadAfterConsent() {
-    if (!isProductionAnalyticsHost(hostname) || loaded) return;
-    loaded = true;
+    if (!isProductionAnalyticsHost(hostname)) return;
 
     const gtag = getGtag();
+    // The user only opted in to statistics, not advertising or personalization.
+    // Refresh consent on every grant (including after a previous revocation).
     gtag("consent", "update", {
       analytics_storage: "granted",
-      ad_storage: "granted",
-      ad_user_data: "granted",
-      ad_personalization: "granted",
+      ad_storage: "denied",
+      ad_user_data: "denied",
+      ad_personalization: "denied",
     });
+
+    if (loaded) return;
+    loaded = true;
     gtag("js", new Date());
     gtag("config", measurementId, { send_page_view: true });
 

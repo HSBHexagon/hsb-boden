@@ -1,8 +1,8 @@
 # CURRENT_STATE — Live-Fortschritt & Taskboard (SSOT)
 
-> **Stand:** 2026-10-12 16:05 CEST  
-> **Aktiver Git-Branch:** `main`  
-> **System-Status:** 798/798 TESTS PASS (100% GRÜN) · `REAL_EXTERNAL_PROSPECT_SEND_COUNT = 0` · `.COM` SHIELD AKTIV
+> **Stand:** 2026-10-12 17:25 CEST  
+> **Aktiver Git-Branch:** `feature/closed-loop-tracking-crm`  
+> **System-Status:** 105/105 PYTEST PASS · 340/340 VITEST PASS (48 Testdateien) · 12/12 OMA-VERIFIER PASS · ASTRO CHECK 0 ERRORS · ASTRO BUILD OK · `REAL_EXTERNAL_PROSPECT_SEND_COUNT = 0` · .COM SHIELD AKTIV
 
 ---
 
@@ -21,6 +21,14 @@
 - [x] **Cloudflare 301 Redirect:** `hsb-boden.com` leitet live per 301 auf `https://www.hsb-boden.de/` weiter.
 - [x] **Google Sheet SSOT Sync:** 50 Leads für Jordie (`COM-JORDI-20261012`) auf `drafted` synchronisiert (300 Zellen).
 - [x] **Live-Testversand an Betreiber:** Erfolgreiche Test-Zustellung an `cherinodiaz@outlook.com` ohne Bounces.
+- [x] **Closed-Loop Opt-Out & Tracking-Ökosystem:**
+  - HMAC-SHA256 manipulationssichere Abmelde- & Webseitenlinks in Flyern/E-Mails (`optout_helper.py`).
+  - GA4 Event-Tracking (`email_opt_out`, `opt_out_reason`) ohne PII-Übertragung (`tracking.ts`, `/abmelden`).
+  - Cloudflare Pages Function (`/api/optout`) mit Origin-Schutz, Token-Prüfung und Webhook-Forwarding.
+  - Automatische CRM-Suppression in Google Sheet `ALL_LEADS` (`Suppressed = 'yes'`, Pipeline auf `Abgemeldet`) und Logging in `INBOUND_EVENTS`.
+  - Sofortiges IMAP-Purging (`purge_drafts_for_recipient`) offener Entwürfe in beiden Postfächern bei Abmeldung.
+  - Automatisierte E-Mail-Ermittlung (`enrich_missing_emails.py`) für Webseiten mit DNS/MX-Prüfung.
+  - Betreiber-Cockpit in CLI (`hsb_cli.py optouts` & `optout-lead`).
 
 ---
 

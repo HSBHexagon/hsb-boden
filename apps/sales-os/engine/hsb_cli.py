@@ -237,7 +237,8 @@ def cmd_send_batch(args):
 
         anrede = anrede_fuer(lead_copy)
         subject = f"Industrieböden für {company} – Beratung von {flyer.display_name}"
-        body = build_canonical_body_2026(owner, anrede, target="com")
+        lead_id_val = str(lead.get("Lead_ID") or lead.get("Lead-ID") or "")
+        body = build_canonical_body_2026(owner, anrede, target="com", lead_id=lead_id_val, to_email=email)
 
         # Jitter delay before sending (except first)
         if idx > 1:
@@ -304,12 +305,78 @@ def cmd_test_mail(args):
     print(f"  Anhang:   {flyer.attachment_name} ({flyer.path.stat().st_size // 1024} KB)")
 
 
+def cmd_optouts(args):
+    """Zeigt alle gesperrten / abgemeldeten Leads und Inbound-Events an."""
+    print("\n" + "=" * 105)
+    print(" HSB SALES OS — ABMELDUNGEN & WIDERSPRÜCHE (SSOT COCKPIT)")
+    print("=" * 105)
+    sheets_svc = get_sheets_service()
+
+    # 1. Aus ALL_LEADS
+    res = sheets_svc.spreadsheets().values().get(spreadsheetId=SPREADSHEET_ID, range="ALL_LEADS!A:BE").execute()
+    rows = res.get("values", [])
+    optouts = []
+    if rows:
+        col_lead_id = 0
+        col_comp = 1
+        col_email = 8
+        col_opt = 24
+        col_pipe = 56
+        for idx, r in enumerate(rows[1:], start=2):
+            opt_val = r[col_opt] if len(r) > col_opt else ""
+            pipe_val = r[col_pipe] if len(r) > col_pipe else ""
+            if str(opt_val).lower() == "yes" or pipe_val == "Abgemeldet":
+                optouts.append({
+                    "row": idx,
+                    "lead_id": r[col_lead_id] if len(r) > col_lead_id else "",
+                    "company": r[col_comp] if len(r) > col_comp else "",
+                    "email": r[col_email] if len(r) > col_email else "",
+                    "pipeline": pipe_val,
+                })
+
+    print(f"Gesperrte Leads in ALL_LEADS: {len(optouts)}")
+    print(f"{'Row':<5} | {'Lead-ID':<18} | {'E-Mail':<32} | {'Firma':<30} | {'Status'}")
+    print("-" * 105)
+    for it in optouts[-20:]:
+        print(f"{it['row']:<5} | {it['lead_id']:<18} | {it['email'][:32]:<32} | {it['company'][:30]:<30} | {it['pipeline']}")
+
+    # 2. Aus INBOUND_EVENTS
+    ev_res = sheets_svc.spreadsheets().values().get(spreadsheetId=SPREADSHEET_ID, range="INBOUND_EVENTS!A:K").execute()
+    ev_rows = ev_res.get("values", [])
+    ev_count = len(ev_rows) - 1 if ev_rows else 0
+    print(f"\nProtokollierte Inbound-Events: {ev_count}")
+    print("=" * 105 + "\n")
+
+
+def cmd_optout_direct(args):
+    """Sperrt einen Lead manuell oder aus Webhook und löscht Postfach-Entwürfe."""
+    from ingest_optouts import suppress_lead_direct
+    res = suppress_lead_direct(
+        email=args.email,
+        lead_id=getattr(args, "lead_id", None),
+        reason=getattr(args, "reason", "Manuell über CLI"),
+        dry_run=not args.apply
+    )
+    mode_str = "LIVE" if args.apply else "DRY-RUN"
+    print(f"[{mode_str}] Sperre verarbeitet: Lead-ID={res['lead_id']}, E-Mail={res['email']}, Gelöschte Entwürfe={res.get('purged_drafts', 0)}")
+
+
 def main():
     parser = argparse.ArgumentParser(description="HSB Sales OS - Unified Operator CLI")
     subparsers = parser.add_subparsers(dest="command", required=True)
 
     # status
     p_status = subparsers.add_parser("status", help="Status aller Postfächer und Sheets")
+
+    # optouts Cockpit
+    p_optouts = subparsers.add_parser("optouts", help="Alle Abmeldungen & Widersprüche anzeigen")
+
+    # optout Befehl
+    p_optout = subparsers.add_parser("optout", help="Einen Lead sofort sperren und Entwürfe löschen")
+    p_optout.add_argument("--email", required=True, help="E-Mail-Adresse des Leads")
+    p_optout.add_argument("--lead-id", help="Optionale Lead-ID")
+    p_optout.add_argument("--reason", default="Manuell über CLI", help="Grund des Widerspruchs")
+    p_optout.add_argument("--apply", action="store_true", help="Sperre scharf ins Sheet schreiben")
 
     # purge-de
     p_purge = subparsers.add_parser("purge-de", help="Alte .de Entwürfe aus M365 Exchange löschen")
@@ -357,6 +424,10 @@ def main():
         run_cloud_sync(limit=args.limit)
     elif args.command == "test-mail":
         cmd_test_mail(args)
+    elif args.command == "optouts":
+        cmd_optouts(args)
+    elif args.command == "optout":
+        cmd_optout_direct(args)
 
 
 if __name__ == "__main__":

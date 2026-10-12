@@ -8,19 +8,34 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
   path="/abmelden/" 
   robots="noindex, nofollow"
 >
-  <section class="section bg-hsb-mist min-h-[60vh] flex items-center">
+  <section class="section bg-hsb-mist min-h-[70vh] flex items-center">
     <div class="container max-w-2xl text-center py-16">
-      <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-green-100 text-green-600 mb-6">
+      <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-green-100 text-green-600 mb-6 shadow-sm">
         <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
         </svg>
       </div>
 
-      <p class="eyebrow text-hsb-stone uppercase tracking-widest text-xs font-bold">Widerspruch & Abmeldung</p>
+      <p class="eyebrow text-hsb-stone uppercase tracking-widest text-xs font-bold">Widerspruch & Sperre</p>
       <h1 class="h1 mt-3 text-3xl font-extrabold text-hsb-charcoal">Erfolgreich abgemeldet</h1>
 
-      <div id="email-confirmation" class="hidden mt-4 p-3 bg-white border border-gray-200 rounded-md text-sm font-medium text-gray-700 max-w-md mx-auto">
-        Abgemeldet: <span id="email-display" class="font-bold text-hsb-charcoal"></span>
+      <div id="email-confirmation" class="hidden mt-4 p-3 bg-white border border-gray-200 rounded-md text-sm font-medium text-gray-700 max-w-md mx-auto shadow-sm">
+        Gesperrte Adresse: <span id="email-display" class="font-bold text-hsb-charcoal"></span>
+      </div>
+
+      <div id="manual-form" class="mt-6 max-w-md mx-auto p-4 bg-white border border-gray-200 rounded-md text-left shadow-sm">
+        <label for="manual-email" class="block text-xs font-bold text-gray-700 uppercase mb-1">E-Mail-Adresse abmelden</label>
+        <div class="flex gap-2">
+          <input 
+            type="email" 
+            id="manual-email" 
+            placeholder="ihre.adresse@firma.de" 
+            class="flex-1 px-3 py-2 border border-gray-300 rounded text-sm focus:outline-none focus:border-hsb-amber"
+          />
+          <button id="manual-submit" class="button-secondary-dark px-4 py-2 text-sm font-semibold rounded whitespace-nowrap">
+            Sperren
+          </button>
+        </div>
       </div>
 
       <p class="lead mt-6 text-base text-gray-600 leading-relaxed">
@@ -28,8 +43,32 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
       </p>
 
       <p class="text-xs text-gray-500 mt-4">
-        Gemäß § 7 Abs. 3 UWG sowie DSGVO wurde Ihre Sperre sofort systemweit hinterlegt.
+        Gemäß § 7 Abs. 3 UWG sowie Art. 21 DSGVO wurde Ihre Sperre sofort systemweit hinterlegt.
       </p>
+
+      <!-- Optionales 1-Klick-Feedback für maximalen Nutzwert -->
+      <div id="feedback-card" class="mt-8 p-5 bg-white border border-gray-200 rounded-lg max-w-lg mx-auto text-left shadow-sm">
+        <p class="text-xs font-bold text-gray-700 uppercase tracking-wide mb-3">
+          Kurzes Feedback (1 Klick, optional):
+        </p>
+        <div id="feedback-buttons" class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+          <button type="button" class="feedback-btn p-2 border border-gray-200 rounded text-gray-700 hover:bg-gray-50 hover:border-gray-400 text-left transition-colors" data-reason="Kein Industrieboden vorhanden">
+            &bull; Kein Industrieboden
+          </button>
+          <button type="button" class="feedback-btn p-2 border border-gray-200 rounded text-gray-700 hover:bg-gray-50 hover:border-gray-400 text-left transition-colors" data-reason="Bereits fester Sanierungspartner">
+            &bull; Haben festen Partner
+          </button>
+          <button type="button" class="feedback-btn p-2 border border-gray-200 rounded text-gray-700 hover:bg-gray-50 hover:border-gray-400 text-left transition-colors" data-reason="Falscher Ansprechpartner">
+            &bull; Falscher Ansprechpartner
+          </button>
+          <button type="button" class="feedback-btn p-2 border border-gray-200 rounded text-gray-700 hover:bg-gray-50 hover:border-gray-400 text-left transition-colors" data-reason="Aktuell ungünstiger Zeitpunkt">
+            &bull; Aktuell kein Bedarf
+          </button>
+        </div>
+        <p id="feedback-thankyou" class="hidden text-xs text-green-700 font-semibold mt-2">
+          ✓ Vielen Dank für Ihre Rückmeldung!
+        </p>
+      </div>
 
       <div class="mt-8 flex justify-center gap-4">
         <a class="button-secondary-dark px-6 py-3 text-sm font-semibold rounded" href="/">Zur Startseite</a>
@@ -38,16 +77,112 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
     </div>
   </section>
 
-  <script is:inline>
-    const params = new URLSearchParams(window.location.search);
-    const email = params.get('email');
-    if (email) {
-      const display = document.getElementById('email-display');
-      const box = document.getElementById('email-confirmation');
-      if (display && box) {
-        display.textContent = email;
-        box.classList.remove('hidden');
+  <script>
+    import { trackEvent, TrackingEvent } from "../../lib/tracking";
+
+    function initOptOut() {
+      const params = new URLSearchParams(window.location.search);
+      const email = params.get("email");
+      const leadId = params.get("lead_id") || "";
+      const token = params.get("token") || "";
+
+      const display = document.getElementById("email-display");
+      const box = document.getElementById("email-confirmation");
+      const manualForm = document.getElementById("manual-form");
+
+      function triggerOptOut(targetEmail: string, targetLeadId: string, targetToken: string) {
+        if (!targetEmail) return;
+
+        if (display && box) {
+          display.textContent = targetEmail;
+          box.classList.remove("hidden");
+        }
+        if (manualForm) {
+          manualForm.classList.add("hidden");
+        }
+
+        // 1. Google Analytics 4 Event (DSGVO-konform ohne Klartext-E-Mail)
+        const trackingPayload: Record<string, string | number | boolean> = {
+          campaign: "flyer_outreach_2026",
+          placement: "footer_unsubscribe",
+        };
+        if (targetLeadId) {
+          trackingPayload.lead_id = targetLeadId;
+        }
+        trackEvent(TrackingEvent.OptOut, trackingPayload);
+
+        // 2. Automatischer CRM Backend Call zur atomaren Sperre
+        fetch("/api/optout", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            email: targetEmail,
+            lead_id: targetLeadId,
+            token: targetToken,
+          }),
+        }).catch(() => {
+          // Non-blocking Fallback
+        });
       }
+
+      if (email) {
+        triggerOptOut(email, leadId, token);
+      } else {
+        if (box) box.classList.add("hidden");
+        if (manualForm) manualForm.classList.remove("hidden");
+      }
+
+      // Manuelle Eingabe behandeln
+      const submitBtn = document.getElementById("manual-submit");
+      const emailInput = document.getElementById("manual-email") as HTMLInputElement | null;
+      if (submitBtn && emailInput) {
+        submitBtn.addEventListener("click", () => {
+          const val = emailInput.value.trim();
+          if (val && val.includes("@")) {
+            triggerOptOut(val, "", "");
+          }
+        });
+      }
+
+      // Optionales Feedback behandeln
+      const feedbackBtns = document.querySelectorAll(".feedback-btn");
+      const feedbackThanks = document.getElementById("feedback-thankyou");
+      const activeEmail = email || (emailInput ? emailInput.value : "");
+
+      feedbackBtns.forEach((btn) => {
+        btn.addEventListener("click", () => {
+          const reason = btn.getAttribute("data-reason") || "";
+          if (reason) {
+            trackEvent(TrackingEvent.OptOutReason, {
+              reason,
+              campaign: "flyer_outreach_2026",
+            });
+
+            const currentEmail = display?.textContent || activeEmail;
+            if (currentEmail) {
+              fetch("/api/optout", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  email: currentEmail,
+                  lead_id: leadId,
+                  token: token,
+                  reason: reason,
+                }),
+              }).catch(() => {});
+            }
+
+            if (feedbackThanks) feedbackThanks.classList.remove("hidden");
+            feedbackBtns.forEach((b) => (b as HTMLButtonElement).disabled = true);
+          }
+        });
+      });
+    }
+
+    if (document.readyState === "loading") {
+      document.addEventListener("DOMContentLoaded", initOptOut);
+    } else {
+      initOptOut();
     }
   </script>
 </BaseLayout>

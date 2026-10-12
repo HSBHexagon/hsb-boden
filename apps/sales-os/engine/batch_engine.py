@@ -28,6 +28,7 @@ from hsb_core import (
     sha256_bytes,
     utc_now_iso,
 )
+from optout_helper import build_optout_url, build_tracked_website_url
 
 BATCH_ROOT = REPO_ROOT / "batches"
 
@@ -340,7 +341,7 @@ def _html_escape(text: str) -> str:
             .replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;"))
 
 
-def signatur_html(owner_display: str, mailbox: str, mobile: str = "") -> str:
+def signatur_html(owner_display: str, mailbox: str, mobile: str = "", lead_id: str = "", to_email: str = "") -> str:
     """E-Mail-Signatur als HTML.
 
     Bewusst ohne externe Bilder: extern geladene Logos werden von Outlook
@@ -353,6 +354,13 @@ def signatur_html(owner_display: str, mailbox: str, mobile: str = "") -> str:
     """
     f = FIRMA
     mobil_zeile = (f'Mobil {_html_escape(mobile)}<br>' if mobile else '')
+    web_url = build_tracked_website_url("signature_website", base_url=f"https://{f['web']}")
+    logo_url = build_tracked_website_url("signature_logo", base_url=f"https://{f['web']}")
+    if lead_id and to_email:
+        optout_url = build_optout_url(lead_id=lead_id, email=to_email, base_url=f"https://{f['web']}")
+    else:
+        optout_url = f"https://{f['web']}/abmelden"
+
     return (
         '<p style="margin:16px 0 0 0;font-family:Arial,Helvetica,sans-serif;'
         'font-size:10pt;color:#222222;line-height:1.45;">'
@@ -363,10 +371,10 @@ def signatur_html(owner_display: str, mailbox: str, mobile: str = "") -> str:
         f'Tel. {_html_escape(f["telefon"])}<br>'
         f'<a href="mailto:{_html_escape(mailbox)}" style="color:#1155cc;">'
         f'{_html_escape(mailbox)}</a> &middot; '
-        f'<a href="https://{f["web"]}" style="color:#1155cc;">{f["web"]}</a>'
+        f'<a href="{web_url}" style="color:#1155cc;">{f["web"]}</a>'
         '</p>'
         '<p style="margin:14px 0 0 0;">'
-        f'<a href="https://{f["web"]}" target="_blank" style="text-decoration:none;">'
+        f'<a href="{logo_url}" target="_blank" style="text-decoration:none;">'
         f'<img src="https://{f["web"]}/brand/hsb-boden-logo.png" '
         f'alt="{_html_escape(f["name"])}" '
         'width="102" height="75" '
@@ -376,7 +384,7 @@ def signatur_html(owner_display: str, mailbox: str, mobile: str = "") -> str:
         '<table cellpadding="0" cellspacing="0" border="0" style="margin:16px 0 12px 0;">'
         '<tr><td style="padding:8px 14px;background-color:#f4f5f7;border:1px solid #d1d5db;border-radius:5px;font-family:Arial,Helvetica,sans-serif;font-size:9pt;color:#444444;line-height:1.4;">'
         'Keine weiteren E-Mails gewünscht?&nbsp;'
-        f'<a href="https://{f["web"]}/abmelden" target="_blank" style="font-weight:bold;color:#1155cc;text-decoration:underline;"><u>Hier abmelden</u></a>'
+        f'<a href="{optout_url}" target="_blank" style="font-weight:bold;color:#1155cc;text-decoration:underline;"><u>Hier abmelden</u></a>'
         '&nbsp;&middot;&nbsp;'
         f'<a href="mailto:{_html_escape(mailbox)}?subject=Abmelden" style="color:#666666;text-decoration:underline;">per E-Mail abmelden</a>'
         '</td></tr></table>'
@@ -409,12 +417,15 @@ def render_email_html(lead: dict, batch: Batch) -> tuple[str, str]:
         for p in haupttext.strip().split("\n\n") if p.strip()
     )
 
+    lead_id = str(lead.get("Lead_ID") or lead.get("Lead-ID") or "")
+    to_email = str(lead.get("Email") or lead.get("E-Mail") or "")
+
     html = (
         '<div style="font-family:Arial,Helvetica,sans-serif;font-size:11pt;'
         'color:#222222;line-height:1.5;">'
         f'{absatz}'
         f'<p style="margin:0 0 4px 0;">{marker}</p>'
-        f'{signatur_html(batch.owner_display, batch.mailbox, getattr(batch, "mobile", ""))}'
+        f'{signatur_html(batch.owner_display, batch.mailbox, getattr(batch, "mobile", ""), lead_id=lead_id, to_email=to_email)}'
         '<p style="margin:16px 0 0 0;font-family:Arial,Helvetica,sans-serif;'
         'font-size:8pt;color:#999999;">'
         f'{_html_escape(abmelde)}</p>'

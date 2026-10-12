@@ -96,11 +96,11 @@ def load_sheet_leads(sheets_svc: Any) -> Tuple[List[Dict[str, Any]], Dict[str, T
     return all_leads, email_map
 
 
-def build_canonical_body_2026(owner: str, anrede: str, target: str = "com") -> str:
+def build_canonical_body_2026(owner: str, anrede: str, target: str = "com", lead_id: str = "", to_email: str = "") -> str:
     flyer = assert_asset_gate(owner)
     anrede_esc = html.escape(anrede)
     mailbox = f"j-cherino@hsb-boden.{target}" if flyer.owner_key == "JOEL" else f"j-post@hsb-boden.{target}"
-    sig = signatur_html(flyer.display_name, mailbox, flyer.mobile)
+    sig = signatur_html(flyer.display_name, mailbox, flyer.mobile, lead_id=lead_id, to_email=to_email)
 
     return (
         f'<div style="font-family:Arial,Helvetica,sans-serif;font-size:11pt;color:#222222;line-height:1.5;">'
@@ -244,7 +244,7 @@ def run_overhaul(owner: str = "JOEL", target: str = "com", limit: int = 20, dry_
         # 2. Create new enriched draft
         try:
             if target == "com":
-                body_html = build_canonical_body_2026(owner, it["anrede"], target="com")
+                body_html = build_canonical_body_2026(owner, it["anrede"], target="com", lead_id=it["lead_id"], to_email=to_email)
                 ok, new_draft_id = client_com.create_draft(
                     to_email=to_email,
                     subject=it["new_subj"],

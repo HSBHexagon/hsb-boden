@@ -412,6 +412,31 @@ class ComMailboxClient:
             imap.expunge()
         return deleted
 
+    def purge_drafts_for_recipient(self, to_email: str) -> int:
+        """Loescht alle Entwuerfe fuer eine bestimmte Empfaengeradresse (Opt-Out Schutz)."""
+        target = str(to_email or "").strip().lower()
+        if not target or "@" not in target:
+            return 0
+        deleted = 0
+        with self._get_imap() as imap:
+            res, _ = imap.select(self.cfg['drafts_folder'])
+            if res != 'OK':
+                return 0
+            typ, data = imap.search(None, 'ALL')
+            if not data or not data[0]:
+                return 0
+            for num in data[0].split():
+                typ, msg_data = imap.fetch(num, '(RFC822.HEADER)')
+                for part in msg_data:
+                    if isinstance(part, tuple):
+                        parsed = email.message_from_bytes(part[1])
+                        recip = str(parsed.get('To', '')).lower()
+                        if target in recip:
+                            imap.store(num, '+FLAGS', r'\Deleted')
+                            deleted += 1
+            imap.expunge()
+        return deleted
+
 
 def print_status():
     print('=' * 80)

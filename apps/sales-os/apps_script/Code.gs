@@ -10,7 +10,7 @@ function onOpen() {
     .addSeparator()
     .addItem('🔑 Berechtigungen erteilen / prüfen', 'autorisieren')
     .addSeparator()
-    .addItem('✨ Premium Sheet UX & Cockpit einrichten', 'uiSetupPremiumSheetUX')
+    .addItem('Darstellung schonend aktualisieren', 'uiSetupPremiumSheetUX')
     .addItem('🧹 Ansicht aufräumen (nur Hauptblätter)', 'uiTidyTabs')
     .addItem('👁️ Alle Blätter wieder einblenden', 'uiShowAllTabs')
     .addSeparator()
@@ -70,7 +70,7 @@ function autorisieren() {
 function uiSetupPremiumSheetUX() {
   try {
     const res = setupPremiumSheetUX();
-    return { ok: true, data: res };
+    return res.ok ? { ok: true, data: res } : res;
   } catch (e) {
     return { ok: false, error: String(e.message || e) };
   }
@@ -89,32 +89,25 @@ function uiSetupPremiumSheetUX() {
  * ausgeblendeten Blätter zu. Nichts wird gelöscht.
  */
 function uiTidyTabs() {
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
-  const sheets = ss.getSheets();
-  const keepVisible = ['ALL_LEADS', 'BATCHES', 'VERSAND', 'README', 'DASHBOARD'];
-  let hiddenCount = 0;
-
-  sheets.forEach(function (sh) {
-    const name = sh.getName();
-    if (keepVisible.indexOf(name) === -1) {
-      try {
-        sh.hideSheet();
-        hiddenCount++;
-      } catch (_) {}
-    } else {
-      try {
-        sh.showSheet();
-      } catch (_) {}
+  const technical = ['SYNC_STATUS','JOEL','JORDI','JOEL_LEGACY_20260904',
+    'JORDI_LEGACY_20260904','READY_CANDIDATES','READY_CANDIDATES_LEGACY_20260904',
+    'DUPLICATES_REVIEW','INVALID_EMAIL_REVIEW','OPT_OUT_EXCLUDED','ALREADY_CONTACTED',
+    'OWNER_CONFLICT_REVIEW','FLYER_MAPPING','CAMPAIGN_MAPPING','EMAIL_TEMPLATE_MAPPING',
+    'BATCH_PLAN','ACTIVITIES','CONTROL_CENTER','AKTUELLER_BATCH_JORDI_50',
+    'LEGACY_JORDI_HEUTE_20','SYSTEM_EVIDENCE','RUNBOOK','Diagramm1',
+    'PROJECT_CHRONOLOGY','CONTROL_CENTER_BACKUP_20260823','RUNBOOK_BACKUP_20260823',
+    'BATCH_PLAN_BACKUP_20260823','GO_LIVE_100_REVIEW','AUDIT_20260904'];
+  let hidden = 0;
+  SpreadsheetApp.getActiveSpreadsheet().getSheets().forEach(function (sh) {
+    if (technical.indexOf(sh.getName()) !== -1 && !sh.isSheetHidden()) {
+      sh.hideSheet();
+      hidden++;
     }
   });
-
-  SpreadsheetApp.getUi().alert(
-    'Ansicht aufgeräumt',
-    'Es wurden ' + hiddenCount + ' Hintergrund- und Backup-Blätter ausgeblendet.\n\n' +
-    'Sichtbar bleiben nur noch die wesentlichen Arbeitsblätter (ALL_LEADS, BATCHES, VERSAND).\n\n' +
-    'Alle Daten und Funktionen bleiben im Hintergrund zu 100% erhalten.',
-    SpreadsheetApp.getUi().ButtonSet.OK
-  );
+  SpreadsheetApp.getUi().alert('Ansicht aufgeraeumt',
+    hidden + ' bekannte Hintergrundblaetter ausgeblendet. Alle operativen und unbekannten Blaetter bleiben erhalten.',
+    SpreadsheetApp.getUi().ButtonSet.OK);
+  return { ok: true, hidden_count: hidden };
 }
 
 function uiShowAllTabs() {

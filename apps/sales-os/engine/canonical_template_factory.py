@@ -4,6 +4,7 @@ from pathlib import Path
 from typing import Dict, Any
 
 from hsb_core import sanitize_company_name
+from optout_helper import build_optout_url, build_tracked_website_url
 
 ASSETS_DIR = Path(__file__).resolve().parent.parent / "assets" / "canonical"
 
@@ -61,6 +62,8 @@ def render_canonical_email(lead: Dict[str, Any], owner: str = "JOEL", domain: st
     if not to_addr or "@" not in to_addr:
         raise ValueError(f"Recipient email missing or invalid in lead {lead.get('Lead_ID') or lead.get('Lead-ID')}")
 
+    lead_id = str(lead.get("Lead_ID") or lead.get("Lead-ID") or "").strip()
+
     raw_comp = str(lead.get("Firma") or lead.get("Firmenname") or lead.get("Company") or "").strip()
     clean_comp = re.sub(r"https?://(?:www\.)?", "", raw_comp, flags=re.IGNORECASE)
     clean_comp = re.sub(r"\.(?:de|com|ch|at)/?$", "", clean_comp, flags=re.IGNORECASE).strip()
@@ -74,6 +77,10 @@ def render_canonical_email(lead: Dict[str, Any], owner: str = "JOEL", domain: st
 
     subject = f"Industrieböden für {subject_target} – Beratung von {owner_meta['sender_name']}"
     greeting = anrede_fuer_lead(lead)
+
+    tracked_web_url = build_tracked_website_url("signature_website")
+    tracked_logo_url = build_tracked_website_url("signature_logo")
+    optout_url = build_optout_url(lead_id=lead_id, email=to_addr)
 
     body_html = f"""<div style="font-family: Arial, sans-serif; font-size: 14px; color: #222; line-height: 1.5;">
     <p>{greeting}</p>
@@ -91,14 +98,14 @@ def render_canonical_email(lead: Dict[str, Any], owner: str = "JOEL", domain: st
     HSB Hexagon Säurebau GmbH<br />
     Telefon: {owner_meta['sender_phone']}<br />
     E-Mail: {sender_email}<br />
-    Web: <a href="https://www.hsb-boden.de" style="color: #0051c3; text-decoration: none;">www.hsb-boden.de</a></p>
-    <p style="margin-top: 15px; margin-bottom: 15px;"><img src="{LOGO_URL}" alt="HSB Hexagon Säurebau Logo" width="102" height="75" style="display: block; border: 0; outline: none; text-decoration: none;" /></p>
+    Web: <a href="{tracked_web_url}" style="color: #0051c3; text-decoration: none;">www.hsb-boden.de</a></p>
+    <p style="margin-top: 15px; margin-bottom: 15px;"><a href="{tracked_logo_url}"><img src="{LOGO_URL}" alt="HSB Hexagon Säurebau Logo" width="102" height="75" style="display: block; border: 0; outline: none; text-decoration: none;" /></a></p>
     <hr style="border: 0; border-top: 1px solid #ccc; margin: 20px 0;" />
     <p style="font-size: 11px; color: #777;">
     <strong>HSB Hexagon Säurebau GmbH</strong> &middot; Benzstraße 6 &middot; 48599 Gronau<br />
     Registergericht: Amtsgericht Coesfeld, HRB 21481 &middot; Sitz: Gronau<br />
     Geschäftsführer: Jordie Post<br />
-    Falls Sie keine weiteren Informationen wünschen: <a href="https://www.hsb-boden.de/abmelden">Hier abmelden</a> oder per Antwort mit dem Betreff &bdquo;Abmelden&ldquo;.
+    Falls Sie keine weiteren Informationen wünschen: <a href="{optout_url}">Hier abmelden</a> oder per Antwort mit dem Betreff &bdquo;Abmelden&ldquo;.
     </p>
 </div>"""
 

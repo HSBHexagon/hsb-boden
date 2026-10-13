@@ -15,6 +15,8 @@ export enum TrackingEvent {
   ReferenceInteraction = "reference_interaction",
   NormInteraction = "norm_interaction",
   B2BConversion = "b2b_conversion",
+  OptOut = "email_opt_out",
+  OptOutReason = "opt_out_reason",
 }
 
 export type AnalyticsValue = string | number | boolean;
@@ -64,6 +66,12 @@ const PARAMETER_VALIDATORS: Record<string, (value: AnalyticsValue) => boolean> =
   action: (value) => typeof value === "string" && (REFERENCE_ACTIONS.has(value) || NORM_ACTIONS.has(value)),
   norm: (value) => typeof value === "string" && NORM_SET.has(value),
   conversion_type: (value) => typeof value === "string" && CONVERSION_TYPES.has(value),
+  lead_id: isToken,
+  campaign: isToken,
+  method: isToken,
+  event_category: isToken,
+  event_label: isToken,
+  reason: (value) => typeof value === "string" && SAFE_LABEL_PATTERN.test(value),
 };
 
 function hasAnalyticsConsent(): boolean {

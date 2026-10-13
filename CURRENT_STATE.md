@@ -1,9 +1,8 @@
 # CURRENT_STATE — Live-Fortschritt & Taskboard (SSOT)
 
-> **Stand:** 2026-09-22 19:36 CEST  
-> **Aktiver Git-Branch:** `main`  
-> **Letzter Merge:** PR #405 → Squash `957922a` (21. Sep. 2026)  
-> **System-Status:** 15/15 TESTS PASS (100% GRÜN) · `REAL_EXTERNAL_PROSPECT_SEND_COUNT = 0`
+> **Stand:** 2026-10-12 17:25 CEST  
+> **Aktiver Git-Branch:** `feature/closed-loop-tracking-crm`  
+> **System-Status:** 105/105 PYTEST PASS · 340/340 VITEST PASS (48 Testdateien) · 12/12 OMA-VERIFIER PASS · ASTRO CHECK 0 ERRORS · ASTRO BUILD OK · `REAL_EXTERNAL_PROSPECT_SEND_COUNT = 0` · .COM SHIELD AKTIV
 
 ---
 
@@ -12,37 +11,37 @@
 - [x] **Dev-Dummy Bereinigung:** 4 Entwicklungs-Mails restlos aus Exchange gelöscht.
 - [x] **Inbound Automation Workers:** `ingest_bounces.py` + `ingest_optouts.py` implementiert und ausgeführt.
 - [x] **Pre-Send DNS/MX-Guard:** `check_domain_mx` fängt ungültige Domains automatisch ab.
-- [x] **Pilot-Veredelung Joel (49 Leads):** 49 Entwürfe in-place überarbeitet und synchronisiert.
-- [x] **Kanonisches Namens-Hardening:** `Jordie Post` (mit -ie) in allen 18 Dateien.
-- [x] **Multi-Owner Overhaul Runner:** `overhaul_drafts.py --owner {JOEL,JORDI,ALL}` implementiert.
+- [x] **Kanonisches Namens-Hardening:** `Jordie Post` (mit -ie) in allen Dateien verankert (§ 35a GmbHG).
 - [x] **SSOT-Architektur:** `PROJECT_TRUTH.md` und `scripts/verify_ssot.py` etabliert.
-- [x] **Ultimate Execution Pipeline (5 Module, TDD):**
-  - `canonical_template_factory.py` — Fail-closed Recipient Gate
-  - `sqlite_shadow_store.py` — ACID WAL-Modus Event-Store
-  - `graph_batch_worker.py` — Graph $batch 20-Call Worker
-  - `async_sheet_sync_daemon.py` — 2D-Bulk Sheets Sync
-  - `master_mailbox_orchestrator.py` — CLI mit SSOT+DNS Preflight
-- [x] **PR #405 gemergt:** Squash-Merge auf `main` @ `957922a`.
-- [x] **Feature-Branch aufgeräumt:** `feat/b2b-copy-purge` lokal + remote gelöscht.
+- [x] **Kanonische Vektor-Flyer (241 KB):** Joel & Jordie Master-PDFs mit SHA-256 Gates integriert.
+- [x] **.COM Outbound Akquise-Shield (All-Inkl):** 
+  - `j-cherino@hsb-boden.com`: 102 Entwürfe (IMAP/SMTP OK)
+  - `j-post@hsb-boden.com`: 52 Entwürfe (IMAP/SMTP OK)
+  - `Reply-To: ...@hsb-boden.de` für M365-Antwort-Routing verifiziert
+- [x] **Cloudflare 301 Redirect:** `hsb-boden.com` leitet live per 301 auf `https://www.hsb-boden.de/` weiter.
+- [x] **Google Sheet SSOT Sync:** 50 Leads für Jordie (`COM-JORDI-20261012`) auf `drafted` synchronisiert (300 Zellen).
+- [x] **Live-Testversand an Betreiber:** Erfolgreiche Test-Zustellung an `cherinodiaz@outlook.com` ohne Bounces.
+- [x] **Closed-Loop Opt-Out & Tracking-Ökosystem:**
+  - HMAC-SHA256 manipulationssichere Abmelde- & Webseitenlinks in Flyern/E-Mails (`optout_helper.py`).
+  - GA4 Event-Tracking (`email_opt_out`, `opt_out_reason`) ohne PII-Übertragung (`tracking.ts`, `/abmelden`).
+  - Cloudflare Pages Function (`/api/optout`) mit Origin-Schutz, Token-Prüfung und Webhook-Forwarding.
+  - Automatische CRM-Suppression in Google Sheet `ALL_LEADS` (`Suppressed = 'yes'`, Pipeline auf `Abgemeldet`) und Logging in `INBOUND_EVENTS`.
+  - Sofortiges IMAP-Purging (`purge_drafts_for_recipient`) offener Entwürfe in beiden Postfächern bei Abmeldung.
+  - Automatisierte E-Mail-Ermittlung (`enrich_missing_emails.py`) für Webseiten mit DNS/MX-Prüfung.
+  - Betreiber-Cockpit in CLI (`hsb_cli.py optouts` & `optout-lead`).
 
 ---
 
-## 2. Nächste Schritte (TODO)
+## 2. Nächste operative Schritte (TODO)
 
-### P1 — Operativ
-- [ ] **Jordie Postfach-Veredelung:** `overhaul_drafts.py --owner JORDI --limit 50 --apply`
-- [ ] **Joel Restliche Drafts:** `overhaul_drafts.py --owner JOEL --limit 100 --apply`
-- [ ] **Untracked Files bereinigen:** 6 Engine-Dateien + 2 Plan-Docs committen oder .gitignore
+### P1 — Operative Akquise & Vertrieb
+- [ ] **Tägliche Outlook-Sichtung:** Joel & Jordie sichten und versenden Tranchen aus dem Ordner `Entwürfe`.
+- [ ] **Nächster Entwurfs-Batch:** Bei Bedarf nächste 50–100 Leads via `run_com_batch.py` nachladen.
+- [ ] **Dual-Domain Reconciliation:** Regelmäßiger Abgleich via `python3 apps/sales-os/engine/hsb_cli.py sync`.
 
-### P2 — Integration
-- [ ] **Master Orchestrator Live-Test:** `master_mailbox_orchestrator.py --owner JOEL --batches 5`
-- [ ] **Graph Batch Worker Live-Test:** Echter Access Token statt Mock
-- [ ] **4.081 verbleibende Leads:** Golden Blueprint generieren
-
-### P3 — Langfristig
-- [ ] **Flyer-Kompression:** 1,58 MB → < 450 KB
-- [ ] **Data Hygiene Gate:** 323 Leads mit Legal_Basis=UNKNOWN
-- [ ] **Web Performance Optimierungen**
+### P2 — Wartung & GitHub
+- [ ] **Dependabot PR #457:** Bump sharp/wrangler in `apps/website` final abschließen (nach CodeQL-Freigabe).
+- [ ] **4.000+ verbleibende Leads:** Sukzessive Vorbereitung im Google Sheet `ALL_LEADS`.
 
 ---
 
@@ -50,7 +49,6 @@
 
 Vor jeder Bearbeitung:
 1. Lies `PROJECT_TRUTH.md`
-2. Lies `apps/sales-os/CURRENT_HANDOFF.md`
-3. Lies `CURRENT_STATE.md` (diese Datei)
-4. Führe nach Änderungen `python3 apps/website/scripts/verify_ssot.py` aus
-5. Teste mit `pytest apps/sales-os/tests/ -q`
+2. Lies `CURRENT_STATE.md` (diese Datei)
+3. Führe nach Änderungen `python3 scripts/verify_ssot.py` aus (Muss Exit 0 sein!)
+4. Teste mit `pytest apps/sales-os/tests/ -q`

@@ -2,7 +2,7 @@
 
 > **Status:** UNVERRÜCKBARE QUELLE DER WAHRHEIT (SSOT) FÜR ALLE KI-TOOLS  
 > **Gültigkeit:** Verbindlich für Claude Code, Gemini CLI (agy), Antigravity, Cursor, Codex und Menschen  
-> **Stand:** 2026-09-20 &middot; Monorepo-Konsolidierung: 2026-09-16  
+> **Stand:** 2026-10-12 &middot; Monorepo-Konsolidierung: 2026-09-16 &middot; .COM-Shield: 2026-10-12  
 > **Verletzungen:** Bei Widerspruch zwischen diesem Dokument und anderen Dateien gilt IMMER dieses Dokument.
 
 ---
@@ -73,3 +73,21 @@
 3. **Abmeldesystem:**
    - Prominente HTML-Tabelle mit unterstrichenem Link `<u>Hier abmelden</u>` &rarr; `https://www.hsb-boden.de/abmelden?email={email}` + `mailto:`-Fallback.
 
+---
+
+## 6. Kanonische .COM Akquise-Shield-Architektur (Live seit 2026-10-12)
+
+1. **Zweck:** Vollständiger Reputationsschutz der M365-Geschäftsdomain `hsb-boden.de` vor Spam-Blacklisting durch Kaltakquise.
+2. **Mailserver-Architektur (Dual-Domain):**
+   - **Outbound Kaltakquise-Entwürfe:** Ausschließlich in All-Inkl Postfächern (`w0221a9f.kasserver.com`):
+     - `j-cherino@hsb-boden.com` (Joel Cherino Diaz)
+     - `j-post@hsb-boden.com` (Jordie Post)
+   - **Inbound & Antworten:** Laufen über `Reply-To: ...@hsb-boden.de` direkt in Microsoft 365 Exchange.
+   - **Web-Präsenz:** `hsb-boden.com` leitet per Cloudflare 301 live auf `https://www.hsb-boden.de/` weiter.
+3. **Echtzeit-Bestand (Verifiziert 2026-10-12):**
+   - Joel Cherino Diaz (`j-cherino@hsb-boden.com`): 102 Entwürfe im IMAP-Ordner `Entw&APw-rfe`
+   - Jordie Post (`j-post@hsb-boden.com`): 52 Entwürfe im IMAP-Ordner `Entw&APw-rfe`
+   - Alle Entwürfe tragen den kanonischen Vektor-Flyer (241 KB) und zwingend den Namen **Jordie Post** mit **-ie** (§ 35a GmbHG).
+4. **Harte Invariante für alle KIs (Claude, Gemini, Cursor, Codex, Jules):**
+   - Es gibt KEIN Cloud Run / tinyfish.ai Setup. Alle Entwürfe werden lokal über `run_com_batch.py` injiziert.
+   - Das alte Repo `HSBHexagon/hsb-sales-os` ist archiviert und darf niemals referenziert werden.

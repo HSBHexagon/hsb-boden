@@ -89,6 +89,11 @@ function uiSetupPremiumSheetUX() {
  * ausgeblendeten Blätter zu. Nichts wird gelöscht.
  */
 function uiTidyTabs() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  // Bring back views hidden by the old five-tab tidy implementation first.
+  const operational = ['README','ENTWURF_STEUERUNG','HEUTE JOEL','HEUTE JORDI',
+    'POSTEINGANG','INBOUND_EVENTS','ALL_LEADS','DASHBOARD','VERSAND',
+    'BATCHES','COM_ROLLOUT_GATE','SYNC_STATUS'];
   const technical = ['JOEL','JORDI','JOEL_LEGACY_20260904',
     'JORDI_LEGACY_20260904','READY_CANDIDATES','READY_CANDIDATES_LEGACY_20260904',
     'DUPLICATES_REVIEW','INVALID_EMAIL_REVIEW','OPT_OUT_EXCLUDED','ALREADY_CONTACTED',
@@ -97,17 +102,28 @@ function uiTidyTabs() {
     'LEGACY_JORDI_HEUTE_20','SYSTEM_EVIDENCE','RUNBOOK','Diagramm1',
     'PROJECT_CHRONOLOGY','CONTROL_CENTER_BACKUP_20260823','RUNBOOK_BACKUP_20260823',
     'BATCH_PLAN_BACKUP_20260823','GO_LIVE_100_REVIEW','AUDIT_20260904'];
+  let restored = 0;
   let hidden = 0;
-  SpreadsheetApp.getActiveSpreadsheet().getSheets().forEach(function (sh) {
-    if (technical.indexOf(sh.getName()) !== -1 && !sh.isSheetHidden()) {
-      sh.hideSheet();
-      hidden++;
-    }
+  const errors = [];
+  const sheets = ss.getSheets();
+
+  sheets.forEach(function (sh) {
+    if (operational.indexOf(sh.getName()) < 0 || !sh.isSheetHidden()) return;
+    try { sh.showSheet(); restored++; }
+    catch (e) { errors.push('Einblenden ' + sh.getName() + ': ' + String(e.message || e)); }
   });
-  SpreadsheetApp.getUi().alert('Ansicht aufgeraeumt',
-    hidden + ' bekannte Hintergrundblaetter ausgeblendet. Alle operativen und unbekannten Blaetter bleiben erhalten.',
+  sheets.forEach(function (sh) {
+    if (technical.indexOf(sh.getName()) < 0 || sh.isSheetHidden()) return;
+    try { sh.hideSheet(); hidden++; }
+    catch (e) { errors.push('Ausblenden ' + sh.getName() + ': ' + String(e.message || e)); }
+  });
+  SpreadsheetApp.getUi().alert('HSB-Ansicht aktualisiert',
+    'Operative Ansichten eingeblendet: ' + restored +
+    '\nHintergrundblaetter ausgeblendet: ' + hidden +
+    (errors.length ? '\nNicht durchgefuehrt: ' + errors.join('; ') : ''),
     SpreadsheetApp.getUi().ButtonSet.OK);
-  return { ok: true, hidden_count: hidden };
+  return { ok: errors.length === 0, restored_count: restored,
+    hidden_count: hidden, errors: errors };
 }
 
 function uiShowAllTabs() {

@@ -969,7 +969,7 @@ function setupPremiumSheetUX() {
   const leads = ss.getSheetByName('ALL_LEADS');
   leads.setFrozenRows(1);
   leads.setFrozenColumns(2);
-  leads.getRange('A1:BM1').setFontWeight('bold');
+  leads.getRange(1, 1, 1, Math.max(1, leads.getLastColumn())).setFontWeight('bold');
   ss.getSheetByName('ENTWURF_STEUERUNG').getRange('A4:G4').setFontWeight('bold');
   SpreadsheetApp.flush();
   return { ok: true, changed: true, mode: 'formatting_only' };

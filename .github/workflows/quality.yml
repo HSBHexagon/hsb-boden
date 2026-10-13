@@ -25,12 +25,15 @@ jobs:
           cache: 'npm'
           cache-dependency-path: apps/website/package-lock.json
           
-      - name: Test Sales OS safe UX
-        working-directory: .
-        run: node apps/sales-os/tests/test_non_destructive_ux.js
-
       - name: Install dependencies
         run: npm ci
+
+      - name: Test Sales OS safe UX and bundle parity
+        working-directory: .
+        run: |
+          python3 apps/sales-os/engine/build_single.py
+          git diff --exit-code -- apps/sales-os/apps_script/HSB_SALES_OS.gs
+          node apps/sales-os/tests/test_non_destructive_ux.js
         
       - name: Verify canonical project constraints
         run: python3 scripts/verify_ssot.py

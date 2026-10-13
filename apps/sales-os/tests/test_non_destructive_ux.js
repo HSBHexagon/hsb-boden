@@ -10,13 +10,15 @@ const sheets={},log=[];for(let n of [...operational,'RUNBOOK','CUSTOM_SHEET']){
   setFrozenRows(){return this},setFrozenColumns(){return this},
   getRange(){return{setFontWeight(){return this},setFontSize(){return this},clear(){throw Error('clear')},setValues(){throw Error('write')}}}};
 }
+const diagnostic = 'SYNC_STATUS';
+sheets[diagnostic] = {hidden:false,getName(){return diagnostic},isSheetHidden(){return this.hidden},hideSheet(){this.hidden=true;log.push('HIDE:'+diagnostic)}};
 const book={getSheetByName:n=>sheets[n]||null,getSheets:()=>Object.values(sheets)};
 const ctx=vm.createContext({SpreadsheetApp:{getActiveSpreadsheet:()=>book,flush(){},getUi:()=>({alert(){},ButtonSet:{OK:'OK'}})}});
 for(let n of ['Actions.gs','Code.gs'])vm.runInContext(fs.readFileSync(path.join(dir,n),'utf8'),ctx);
 let result=vm.runInContext('setupPremiumSheetUX()',ctx);
 assert.equal(result.mode,'formatting_only');assert.deepEqual(log,[]);
 result=vm.runInContext('uiTidyTabs()',ctx);assert.equal(result.hidden_count,0);
-assert.ok(operational.every(n=>!sheets[n].hidden));assert.equal(sheets.CUSTOM_SHEET.hidden,false);
+assert.ok(operational.every(n=>!sheets[n].hidden));assert.equal(sheets.CUSTOM_SHEET.hidden,false);assert.equal(sheets.SYNC_STATUS.hidden,false,'SYNC_STATUS diagnostic remains visible');
 sheets.RUNBOOK.hidden=false;result=vm.runInContext('uiTidyTabs()',ctx);
 assert.equal(result.hidden_count,1);assert.deepEqual(log,['HIDE:RUNBOOK']);
 const oldGet=book.getSheetByName;book.getSheetByName=n=>n==='DASHBOARD'?null:oldGet(n);log.length=0;

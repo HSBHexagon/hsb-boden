@@ -9,7 +9,7 @@
 ## Completed changes (verified)
 
 - [x] PR #460: replace destructive `setupPremiumSheetUX` setup with a formatting-only, fail-closed action.
-- [x] PR #460: preserve all eleven existing operator tabs; hide only known technical/archival tabs.
+- [x] PR #460: preserve all eleven existing operator tabs, unknown tabs, and the SYNC_STATUS diagnostic when visible; hide only known non-operational technical/archival tabs.
 - [x] PR #460: generate `HSB_SALES_OS.gs` from the four canonical source modules; Node regression test included in Quality Assurance and green in the initial run.
 - [x] Read `README!A4` / `DASHBOARD!E13:E14` via Google Sheets API, replace falsely reassuring "Echtzeit" / "alle 15 Minuten" captions with truthful "Tabellenstand" / last **logged** .de sync captions; independent API read-back confirmed formulas untouched.
 - [x] Remove public `anyone:reader` permission from the original CRM using authenticated owner via Google web browser; independent direct Google Drive API checks through both connected accounts confirm public=false and owner plus five named editors unchanged.
@@ -39,3 +39,9 @@
 2. An unconnected Opera browser and an offline Desktop Commander are **not** prerequisites and must not block independent progress.
 3. If the exact user/account authorization is absent, record the precise blocker; do not create duplicate systems or speculate.
 4. Stop at destructive actions, new mail sends, or untested live Apps Script repairs. Verify every implemented step against the existing source of truth.
+
+## Review remediation 2026-10-13
+
+- [x] The OpenAI review flagged SYNC_STATUS being hidden when users tidy tabs. The known diagnostic sheet is now excluded from the technical hide list; a regression fixture proves a visible SYNC_STATUS remains visible.
+- [x] Test step moved after npm ci and checks actual build_single.py regeneration parity with git diff plus Node fixture.
+- [ ] New commit CI and required independent GitHub approval must be rechecked after this change; passing checks on an earlier commit do not substitute.

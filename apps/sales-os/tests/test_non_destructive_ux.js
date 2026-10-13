@@ -22,7 +22,7 @@ assert.ok(operational.every(n=>!sheets[n].hidden));assert.equal(sheets.CUSTOM_SH
 sheets.RUNBOOK.hidden=false;result=vm.runInContext('uiTidyTabs()',ctx);
 assert.equal(result.hidden_count,1);assert.deepEqual(log,['HIDE:RUNBOOK']);
 sheets['HEUTE JOEL'].hidden=true;sheets.SYNC_STATUS.hidden=true;log.length=0;
-result=vm.runInContext('uiTidyTabs()',ctx);assert.equal(result.ok,true);assert.equal(result.restored_count,2);assert.equal(sheets['HEUTE JOEL'].hidden,false);assert.equal(sheets.SYNC_STATUS.hidden,false);assert.deepEqual(log,['SHOW:HEUTE JOEL','SHOW:SYNC_STATUS']);
+result=vm.runInContext('uiTidyTabs()',ctx);assert.equal(result.ok,true);assert.equal(result.restored_count,1);assert.equal(sheets['HEUTE JOEL'].hidden,false);assert.equal(sheets.SYNC_STATUS.hidden,true,'deliberately hidden SYNC_STATUS stays hidden');assert.deepEqual(log,['SHOW:HEUTE JOEL']);
 sheets.RUNBOOK.hidden=false;sheets.RUNBOOK.hideSheet=()=>{throw Error('permission denied')};log.length=0;
 result=vm.runInContext('uiTidyTabs()',ctx);assert.equal(result.ok,false);assert.equal(result.errors.length,1);assert.match(result.errors[0],/RUNBOOK/);assert.deepEqual(log,[]);
 const oldGet=book.getSheetByName;book.getSheetByName=n=>n==='DASHBOARD'?null:oldGet(n);log.length=0;

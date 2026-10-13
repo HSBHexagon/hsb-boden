@@ -17,7 +17,7 @@ from email.header import Header
 from email.mime.application import MIMEApplication
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
-from email.utils import formatdate, make_msgid
+from email.utils import formatdate, getaddresses, make_msgid
 import imaplib
 import os
 from pathlib import Path
@@ -430,8 +430,11 @@ class ComMailboxClient:
                 for part in msg_data:
                     if isinstance(part, tuple):
                         parsed = email.message_from_bytes(part[1])
-                        recip = str(parsed.get('To', '')).lower()
-                        if target in recip:
+                        recipients = {
+                            addr.strip().lower()
+                            for _, addr in getaddresses(parsed.get_all('To', []))
+                        }
+                        if target in recipients:
                             imap.store(num, '+FLAGS', r'\Deleted')
                             deleted += 1
             imap.expunge()

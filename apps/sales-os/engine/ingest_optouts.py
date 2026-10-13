@@ -282,6 +282,11 @@ def suppress_lead_direct(
     row_num = matched["row"] if matched else None
     resolved_id = matched["lead_id"] if matched else (target_id or "WEB-DIRECT")
     resolved_email = matched["email"] if matched else target_email
+    if target_email and target_id and (
+        not matched or str(matched.get("lead_id", "")) != target_id
+        or str(matched.get("email", "")).strip().lower() != target_email
+    ):
+        return {"ok": False, "error": "lead_id_email_mismatch"}
 
     now_iso = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
     note = f"Web Opt-Out [{now_iso}]: {reason}" if reason else f"Web Opt-Out [{now_iso}]"
@@ -312,13 +317,14 @@ def suppress_lead_direct(
         )
 
     purged_drafts = 0
-    try:
-        from com_mailbox_manager import ComMailboxClient
-        for owner in ["JOEL", "JORDI"]:
-            c = ComMailboxClient(owner)
-            purged_drafts += c.purge_drafts_for_recipient(resolved_email)
-    except Exception as e:
-        logger.warning(f"Fehler bei IMAP-Entwurf-Loeschung: {e}")
+    if not dry_run and resolved_email:
+        try:
+            from com_mailbox_manager import ComMailboxClient
+            for owner in ["JOEL", "JORDI"]:
+                c = ComMailboxClient(owner)
+                purged_drafts += c.purge_drafts_for_recipient(resolved_email)
+        except Exception as e:
+            logger.warning(f"Fehler bei IMAP-Entwurf-Loeschung: {e}")
 
     if not dry_run and updates:
         sheets_svc.spreadsheets().values().batchUpdate(

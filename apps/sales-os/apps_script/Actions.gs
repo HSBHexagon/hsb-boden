@@ -954,189 +954,26 @@ function confirmBatchSent(batchId, startIndex) {
  * und aufgeraeumter Spaltenstruktur ein.
  */
 function setupPremiumSheetUX() {
+  // Format only; never clear or replace business data, formulas or live status.
   const ss = SpreadsheetApp.getActiveSpreadsheet();
-
-  // 1. Sichtbare Tabs einstellen
-  const keepVisible = ['README', 'VERSAND', 'ALL_LEADS', 'DASHBOARD', 'BATCHES'];
-  ss.getSheets().forEach(function (sh) {
-    const name = sh.getName();
-    if (keepVisible.indexOf(name) === -1) {
-      try { sh.hideSheet(); } catch (_) {}
-    } else {
-      try { sh.showSheet(); } catch (_) {}
-    }
-  });
-
-  // 2. README Startseite dynamisieren
+  const names = ['README','DASHBOARD','ALL_LEADS','ENTWURF_STEUERUNG',
+    'HEUTE JOEL','HEUTE JORDI','POSTEINGANG','INBOUND_EVENTS',
+    'BATCHES','VERSAND','COM_ROLLOUT_GATE'];
+  const missing = names.filter(function (n) { return !ss.getSheetByName(n); });
+  if (missing.length) return { ok: false, changed: false, error: 'Fehlende Tabellen: ' + missing.join(', ') };
   const readme = ss.getSheetByName('README');
-  if (readme) {
-    readme.clear();
-    readme.setTabColor('#1a73e8');
-
-    const readmeData = [
-      ['HSB Sales OS · Leitstand', ''],
-      ['Status', 'PRODUKTIV EINSATZBEREIT'],
-      ['', ''],
-      ['LIVE-KENNZAHLEN (Echtzeit)', ''],
-      ['Gesamte Leads im System', '=COUNTA(ALL_LEADS!A2:A)'],
-      ['Leads von Jordi Post', '=COUNTIF(ALL_LEADS!AA2:AA; "*Jordi*")'],
-      ['Leads von Joel Cherino Diaz', '=COUNTIF(ALL_LEADS!AA2:AA; "*Joel*")'],
-      ['Vorbereitete Batches', '=COUNTA(BATCHES!A2:A)'],
-      ['In Batches reservierte Kontakte', '=COUNTIF(ALL_LEADS!AN2:AN; "<>")'],
-      ['Tatsächlich versendete E-Mails', '=COUNTIF(ALL_LEADS!AO2:AO; "sent")'],
-      ['Eingegangene Antworten', '=COUNTIF(ALL_LEADS!AR2:AR; "replied")'],
-      ['Offene Klärungsfälle (Review)', '=COUNTIF(ALL_LEADS!BD2:BD; "<>")'],
-      ['', ''],
-      ['SCHNELLSTART-ANLEITUNG FÜR JORDI & JOEL', ''],
-      ['1. Seitenleiste öffnen', 'Klicke oben im Menü auf "HSB Sales OS" -> "Seitenleiste öffnen".'],
-      ['2. Absender wählen', 'Wähle in der Seitenleiste oben deinen Reiter ("Jordi" oder "Joel").'],
-      ['3. Paketgröße wählen', 'Unterstützt: 1, 25, 100 oder 150 Kontakte (Schnellstart: "100 freigeben & Entwürfe erzeugen").'],
-      ['4. Outlook-Entwürfe laden', 'Die Seitenleiste lädt die ZIP-Pakete herunter. Mails in Outlook in "Entwürfe" ziehen.'],
-      ['5. Nach manuellem Versand', 'In der Seitenleiste beim Batch auf "Versand bestätigen" klicken.'],
-      ['', ''],
-      ['TABELLEN-ÜBERSICHT', ''],
-      ['ALL_LEADS', 'Die zentrale Kontaktdatenbank (6.424 geprüfte Kontakte).'],
-      ['BATCHES', 'Historie aller vorbereiteten und freigegebenen Kampagnen-Pakete.'],
-      ['VERSAND', 'Projektionsansicht aller aktuell in Vorbereitung/Versand befindlichen Leads.'],
-      ['DASHBOARD', 'Kompakte Chef-Übersicht & Vergleich zwischen Jordi und Joel.']
-    ];
-
-    readme.getRange(1, 1, readmeData.length, 2).setValues(readmeData);
-    readme.getRange('A1:B1').merge().setFontSize(16).setFontWeight('bold').setBackground('#1a73e8').setFontColor('#ffffff');
-    readme.getRange('A4:B4').merge().setFontSize(12).setFontWeight('bold').setBackground('#e8eaed');
-    readme.getRange('A14:B14').merge().setFontSize(12).setFontWeight('bold').setBackground('#e8eaed');
-    readme.getRange('A21:B21').merge().setFontSize(12).setFontWeight('bold').setBackground('#e8eaed');
-    readme.setColumnWidth(1, 300);
-    readme.setColumnWidth(2, 550);
-  }
-
-  // 3. DASHBOARD formatieren
-  const dash = ss.getSheetByName('DASHBOARD');
-  if (dash) {
-    dash.clear();
-    dash.setTabColor('#0d652d');
-
-    const dashData = [
-      ['HSB SALES OS · VERTRIEBS-COCKPIT', '', '', '', ''],
-      ['', '', '', '', ''],
-      ['Metrik / Kennzahl', 'Gesamt', 'Jordi Post', 'Joel Cherino Diaz', 'Status / Ziel'],
-      ['Kontakte gesamt', '=COUNTA(ALL_LEADS!A2:A)', '=COUNTIF(ALL_LEADS!AA2:AA; "*Jordi*")', '=COUNTIF(ALL_LEADS!AA2:AA; "*Joel*")', '6.424 verifiziert'],
-      ['Tier A Kontakte', '=COUNTIF(ALL_LEADS!F2:F; "A")', '=COUNTIFS(ALL_LEADS!AA2:AA; "*Jordi*"; ALL_LEADS!F2:F; "A")', '=COUNTIFS(ALL_LEADS!AA2:AA; "*Joel*"; ALL_LEADS!F2:F; "A")', 'Prio 1 Kaltakquise'],
-      ['Tier B Kontakte', '=COUNTIF(ALL_LEADS!F2:F; "B")', '=COUNTIFS(ALL_LEADS!AA2:AA; "*Jordi*"; ALL_LEADS!F2:F; "B")', '=COUNTIFS(ALL_LEADS!AA2:AA; "*Joel*"; ALL_LEADS!F2:F; "B")', 'Prio 2 Kaltakquise'],
-      ['In Batches reserviert', '=COUNTIF(ALL_LEADS!AN2:AN; "<>")', '=COUNTIFS(ALL_LEADS!AA2:AA; "*Jordi*"; ALL_LEADS!AN2:AN; "<>")', '=COUNTIFS(ALL_LEADS!AA2:AA; "*Joel*"; ALL_LEADS!AN2:AN; "<>")', 'Vorbereitet'],
-      ['Tatsächlich versendet', '=COUNTIF(ALL_LEADS!AO2:AO; "sent")', '=COUNTIFS(ALL_LEADS!AA2:AA; "*Jordi*"; ALL_LEADS!AO2:AO; "sent")', '=COUNTIFS(ALL_LEADS!AA2:AA; "*Joel*"; ALL_LEADS!AO2:AO; "sent")', 'Bestaetigt'],
-      ['Antworten erhalten', '=COUNTIF(ALL_LEADS!AR2:AR; "replied")', '=COUNTIFS(ALL_LEADS!AA2:AA; "*Jordi*"; ALL_LEADS!AR2:AR; "replied")', '=COUNTIFS(ALL_LEADS!AA2:AA; "*Joel*"; ALL_LEADS!AR2:AR; "replied")', 'Inbound'],
-      ['Opt-Outs / Bounces', '=COUNTIF(ALL_LEADS!AQ2:AQ; "<>") + COUNTIF(ALL_LEADS!AT2:AT; "yes")', '=COUNTIFS(ALL_LEADS!AA2:AA; "*Jordi*"; ALL_LEADS!AT2:AT; "yes")', '=COUNTIFS(ALL_LEADS!AA2:AA; "*Joel*"; ALL_LEADS!AT2:AT; "yes")', 'Gesperrt'],
-      ['', '', '', '', ''],
-      ['ERZEUGTE BATCHES (Letzte 10)', '', '', '', ''],
-      ['Batch ID', 'Owner', 'Status', 'Anzahl Leads', 'Erstellt am']
-    ];
-
-    dash.getRange(1, 1, dashData.length, 5).setValues(dashData);
-    dash.getRange('A1:E1').merge().setFontSize(16).setFontWeight('bold').setBackground('#0d652d').setFontColor('#ffffff');
-    dash.getRange('A3:E3').setFontWeight('bold').setBackground('#e8eaed');
-    dash.getRange('A12:E12').merge().setFontSize(12).setFontWeight('bold').setBackground('#e8eaed');
-    dash.getRange('A13:E13').setFontWeight('bold').setBackground('#f1f3f4');
-
-    for (let b = 1; b <= 10; b++) {
-      const rowNum = 13 + b;
-      dash.getRange(rowNum, 1).setValue('=IF(ISBLANK(BATCHES!A' + (b + 1) + '); ""; BATCHES!A' + (b + 1) + ')');
-      dash.getRange(rowNum, 2).setValue('=IF(ISBLANK(BATCHES!B' + (b + 1) + '); ""; BATCHES!B' + (b + 1) + ')');
-      dash.getRange(rowNum, 3).setValue('=IF(ISBLANK(BATCHES!D' + (b + 1) + '); ""; BATCHES!D' + (b + 1) + ')');
-      dash.getRange(rowNum, 4).setValue('=IF(ISBLANK(BATCHES!F' + (b + 1) + '); ""; BATCHES!F' + (b + 1) + ')');
-      dash.getRange(rowNum, 5).setValue('=IF(ISBLANK(BATCHES!K' + (b + 1) + '); ""; BATCHES!K' + (b + 1) + ')');
-    }
-
-    dash.setColumnWidth(1, 240);
-    dash.setColumnWidth(2, 130);
-    dash.setColumnWidth(3, 150);
-    dash.setColumnWidth(4, 150);
-    dash.setColumnWidth(5, 180);
-  }
-
-  // 4. ALL_LEADS formatieren
-  const allLeads = ss.getSheetByName('ALL_LEADS');
-  if (allLeads) {
-    allLeads.setFrozenRows(1);
-    allLeads.setTabColor('#f29900');
-    allLeads.getRange(1, 1, 1, 56).setFontWeight('bold').setBackground('#1f2937').setFontColor('#ffffff');
-
-    // Konditionale Formatierung: Visuelles Farb-Leitsystem (Blau, Gruen, Gelb, Rot, Flieder)
-    try {
-      const rules = allLeads.getConditionalFormatRules() || [];
-      const blueRowRule = SpreadsheetApp.newConditionalFormatRule()
-        .whenFormulaSatisfied('=$AO2="sent"')
-        .setBackground('#e8f0fe')
-        .setFontColor('#174ea6')
-        .setBold(true)
-        .setRanges([allLeads.getRange('AN2:BD6500')])
-        .build();
-      const blueChipRule = SpreadsheetApp.newConditionalFormatRule()
-        .whenTextEqualTo('sent')
-        .setBackground('#c2e7ff')
-        .setFontColor('#001b36')
-        .setBold(true)
-        .setRanges([allLeads.getRange('AO2:AO6500')])
-        .build();
-      const positiveRule = SpreadsheetApp.newConditionalFormatRule()
-        .whenTextEqualTo('positive_reply')
-        .setBackground('#ceead6')
-        .setFontColor('#0d652d')
-        .setBold(true)
-        .setRanges([allLeads.getRange('AR2:AR6500')])
-        .build();
-      const greenRule = SpreadsheetApp.newConditionalFormatRule()
-        .whenTextEqualTo('replied')
-        .setBackground('#e6f4ea')
-        .setFontColor('#137333')
-        .setBold(true)
-        .setRanges([allLeads.getRange('AR2:AR6500')])
-        .build();
-      const oooRule = SpreadsheetApp.newConditionalFormatRule()
-        .whenTextEqualTo('auto_reply_ooo')
-        .setBackground('#fef7e0')
-        .setFontColor('#b06000')
-        .setBold(true)
-        .setRanges([allLeads.getRange('AR2:AR6500')])
-        .build();
-      const hardBounceRule = SpreadsheetApp.newConditionalFormatRule()
-        .whenTextEqualTo('hard_bounce')
-        .setBackground('#fce8e6')
-        .setFontColor('#c5221f')
-        .setBold(true)
-        .setRanges([allLeads.getRange('AQ2:AQ6500')])
-        .build();
-      const softBounceRule = SpreadsheetApp.newConditionalFormatRule()
-        .whenTextEqualTo('soft_bounce')
-        .setBackground('#feefe3')
-        .setFontColor('#c26401')
-        .setBold(true)
-        .setRanges([allLeads.getRange('AQ2:AQ6500')])
-        .build();
-      const optOutRule = SpreadsheetApp.newConditionalFormatRule()
-        .whenTextEqualTo('yes')
-        .setBackground('#f3e8fd')
-        .setFontColor('#7627bb')
-        .setBold(true)
-        .setRanges([allLeads.getRange('AT2:AT6500')])
-        .build();
-
-      rules.unshift(optOutRule);
-      rules.unshift(softBounceRule);
-      rules.unshift(hardBounceRule);
-      rules.unshift(oooRule);
-      rules.unshift(greenRule);
-      rules.unshift(positiveRule);
-      rules.unshift(blueChipRule);
-      rules.unshift(blueRowRule);
-      allLeads.setConditionalFormatRules(rules);
-    } catch (_) {}
-  }
-
+  readme.getRange('A1:B1').setFontWeight('bold').setFontSize(16);
+  const dashboard = ss.getSheetByName('DASHBOARD');
+  dashboard.getRange('A1:E1').setFontWeight('bold').setFontSize(16);
+  dashboard.getRange('A3:E3').setFontWeight('bold');
+  const leads = ss.getSheetByName('ALL_LEADS');
+  leads.setFrozenRows(1);
+  leads.setFrozenColumns(2);
+  leads.getRange(1, 1, 1, Math.max(1, leads.getLastColumn())).setFontWeight('bold');
+  ss.getSheetByName('ENTWURF_STEUERUNG').getRange('A4:G4').setFontWeight('bold');
   SpreadsheetApp.flush();
-  return { ok: true, message: 'Premium Sheet UX erfolgreich eingerichtet.' };
+  return { ok: true, changed: true, mode: 'formatting_only' };
 }
-
 
 /**
  * UI-Bridge fuer Direkt-Entwuerfe im Batch via Draft-Adapter in sicheren 10er-Haeppchen.

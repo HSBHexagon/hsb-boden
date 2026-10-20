@@ -5,6 +5,7 @@ import {JSDOM} from 'jsdom';
 import Core from '../src/core.mjs';
 import {route} from '../src/routes.mjs';
 import {database} from './sqlite-d1.mjs';
+import {writeState} from '../src/store.mjs';
 const html=readFileSync(new URL('../public/index.html',import.meta.url),'utf8');
 const script=readFileSync(new URL('../public/app.js',import.meta.url),'utf8').replace("import Core from '/core.mjs';",'const Core=window.Core;');
 async function session(db,role='admin'){
@@ -28,3 +29,21 @@ test('existing UI creates project and worker through command API and second sess
  }finally{a.window.close()}
 });
 test('read-only UI prevents mutations after tab changes',async()=>{const {db}=database();const a=await session(db,'viewer'),w=a.window;try{click(w,'[data-tab="data"]');click(w,'[data-subtab="workers"]');assert.equal(w.document.querySelector('#sub-workers [data-action="new-worker"]').disabled,true);click(w,'[data-tab="changes"]');assert.equal(w.document.querySelector('#absenceForm button').disabled,true)}finally{w.close()}});
+test('simple project view shows three staff then one missing after sickness without replacement dialog',async()=>{
+ const {db}=database(),state=Core.emptyDB();
+ const now=new Date(),today=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`,date=now.getDay()===0?Core.monday(today):today;
+ state.workers=['A','B','C'].map(id=>({id,name:'MOCK_DATA '+id,crew:'',skills:'',active:true}));
+ state.projects=[{id:'p',number:'MOCK_DATA',customer:'MOCK_DATA Baustelle',place:'Test',start:Core.monday(date),end:Core.plusDays(Core.monday(date),5),requirement:3,dayNeeds:{[date]:3},active:true}];
+ for(const w of state.workers)Core.assign(state,w.id,'p',date);
+ await writeState(db,state,0,'test@example.test','save');
+ const a=await session(db),w=a.window;
+ try{
+  assert.equal(w.document.querySelectorAll('[data-action="whatsapp"]').length,0);
+  assert.match(w.document.querySelector('#projects').textContent,/3\s*\/\s*3/);
+  click(w,'[data-tab="changes"]');fill(w,'absenceWorker','A');fill(w,'absenceFrom',date);fill(w,'absenceTo',date);fill(w,'absenceType','krank');
+  w.document.getElementById('absenceForm').dispatchEvent(new w.Event('submit',{bubbles:true,cancelable:true}));await settle();
+  assert.equal(w.document.querySelector('#modal').open,false);
+  const text=w.document.querySelector('#projects').textContent;
+  assert.match(text,/2\s*\/\s*3/);assert.match(text,/1 fehlt/);assert.match(text,/MOCK_DATA A.*krank/);
+ }finally{w.close()}
+});

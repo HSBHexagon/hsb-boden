@@ -1,0 +1,1 @@
+{"name":"hexafloor-einsatzplaner","private":true,"type":"module","scripts":{"test":"node --test test/*.test.mjs","check":"node --check src/worker.mjs && node --check public/app.js","build":"node build.mjs","deploy:dry-run":"wrangler deploy --dry-run"},"devDependencies":{"jsdom":"^20.0.0","wrangler":"4.147.0"}}

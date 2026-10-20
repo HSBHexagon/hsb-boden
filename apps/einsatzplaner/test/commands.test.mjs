@@ -1,0 +1,9 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import Core from '../src/core.mjs';
+const {applyCommand}=await import('../src/commands.mjs').catch(()=>({applyCommand:()=>({})}));
+function fixture(){const d=Core.emptyDB();d.workers=[{id:'a',name:'MOCK_DATA A',skills:'',crew:'1',active:true},{id:'b',name:'MOCK_DATA B',skills:'',crew:'1',active:true}];d.projects=[{id:'p',number:'MOCK_DATA-1',customer:'MOCK_DATA',place:'Test',start:'2026-10-19',end:'2026-10-24',requirement:1,dayNeeds:{},active:true}];return d;}
+test('server executes named absence operation and returns affected site',()=>{const d=fixture();Core.assign(d,'a','p','2026-10-19');const r=applyCommand(d,{type:'absence',workerId:'a',from:'2026-10-19',to:'2026-10-20',absenceType:'krank'});assert.equal(d.assignments.length,0);assert.equal(r.removed[0].projectId,'p')});
+test('zero demand releases assignments while keeping valid data',()=>{const d=fixture();Core.assign(d,'a','p','2026-10-19');applyCommand(d,{type:'need',projectId:'p',from:'2026-10-19',to:'2026-10-19',count:0});assert.equal(d.assignments.length,0);assert.equal(Core.validateDB(d),true)});
+test('archive releases future staff and preserves past assignment',()=>{const d=fixture();Core.assign(d,'a','p','2026-10-19');Core.assign(d,'a','p','2026-10-23');applyCommand(d,{type:'project',data:{...d.projects[0],active:false}},'2026-10-21');assert.deepEqual(d.assignments.map(a=>a.date),['2026-10-19']);assert.equal(Core.daySummary(d,'2026-10-19').assigned,1)});
+test('crew transfer retains assignments of unavailable team member',()=>{const d=fixture();d.projects.push({...d.projects[0],id:'q',number:'MOCK_DATA-2',requiredSkill:'Fliesen'});Core.assign(d,'a','p','2026-10-19');const r=applyCommand(d,{type:'crew',crew:'1',projectId:'q',date:'2026-10-19'});assert.equal(r.done,0);assert.equal(d.assignments[0].projectId,'p')});

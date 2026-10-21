@@ -3,22 +3,19 @@ import { Core } from '@/public/planner-core.mjs';
 import { readPlan, writePlan } from '@/lib/plan-store.mjs';
 export const dynamic='force-dynamic';
 const json=(data:unknown,status=200)=>Response.json(data,{status,headers:{'Cache-Control':'no-store','X-Content-Type-Options':'nosniff'}});
-const ownerId='2436f47b-7dc9-4e7b-8932-ebf0e4289fa8';
 // Sites dispatch enforces the private allowlist on ALL routes and consumes
 // service credentials before forwarding. Never publish this Site publicly.
+// Forwarded visitor IDs are Site-specific audit identities, not account UUIDs.
 function actor(request:Request) {
- const id=request.headers.get('oai-authenticated-user-id');
- if(id&&id!==ownerId)return null;
- return id??'private-platform-service';
+ return request.headers.get('oai-authenticated-user-id')??'private-platform-service';
 }
 function environment(request:Request) {return new URL(request.url).pathname==='/api/test-plan'?'test':'production';}
 export async function GET(request:Request) {
- if(!actor(request))return json({error:'Keine Berechtigung.'},403);
  try {return json(await readPlan(env.DB!,environment(request)));}
  catch {return json({error:'Die zentrale Planung konnte nicht geladen werden. Bitte erneut versuchen.'},503);}
 }
 export async function PUT(request:Request) {
- const user=actor(request);if(!user)return json({error:'Keine Berechtigung.'},403);
+ const user=actor(request);
  const origin=request.headers.get('origin');
  if(!origin||origin!==new URL(request.url).origin)return json({error:'Ungültiger Ursprung.'},403);
  if(!request.headers.get('content-type')?.startsWith('application/json'))return json({error:'JSON erforderlich.'},415);

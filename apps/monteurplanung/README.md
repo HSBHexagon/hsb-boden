@@ -13,7 +13,7 @@ Production records use environment `production`. `/planner.html?environment=test
 
 ## Access boundary
 
-The Site was changed from public to custom, owner-only access on 2026-10-21, access-policy revision 3, and independently read back. Sites dispatch enforces this on all pages, static assets and APIs. It consumes platform service credentials before forwarding; those calls do not include visitor identity. API requests with another authenticated visitor ID are rejected too. **Never make this Site public**. Do not copy the shared service-call behavior to a public Worker.
+The Site was changed from public to custom, owner-only access on 2026-10-21, access-policy revision 3, and independently read back. Sites dispatch enforces this on all pages, static assets and APIs. It consumes platform service credentials before forwarding; those calls do not include visitor identity. Site-specific visitor IDs are recorded for audit attribution; the server-side Sites access policy owns membership checks. **Never make this Site public**. Do not copy the shared service-call behavior to a public Worker.
 
 The current allowed user is the existing Site owner. Additional staff access requires deliberate grant in Sites and updating API authorization; no invitations were sent. No app passwords or tokens belong in source.
 

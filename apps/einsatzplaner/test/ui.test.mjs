@@ -45,5 +45,11 @@ test('simple project view shows three staff then one missing after sickness with
   assert.equal(w.document.querySelector('#modal').open,false);
   const text=w.document.querySelector('#projects').textContent;
   assert.match(text,/2\s*\/\s*3/);assert.match(text,/1 fehlt/);assert.match(text,/MOCK_DATA A.*krank/);
+  click(w,'[data-tab="changes"]');assert.match(w.document.querySelector('#absenceList').textContent,/MOCK_DATA A/);
+  const viewer=await session(db,'viewer');try{assert.equal(viewer.window.document.querySelector('[data-action="cancel-absence"]').disabled,true)}finally{viewer.window.close()}
+  click(w,'[data-action="edit-absence"]');assert.equal(w.document.querySelector('#modal').open,true);fill(w,'f_absenceType','sonstig');
+  w.document.getElementById('entityForm').dispatchEvent(new w.Event('submit',{bubbles:true,cancelable:true}));await settle();assert.equal(w.document.querySelector('#modal').open,false);assert.match(w.document.querySelector('#projects').textContent,/abwesend/);
+  click(w,'[data-action="cancel-absence"]');await settle();
+  assert.match(w.document.querySelector('#projects').textContent,/3\s*\/\s*3/);assert.doesNotMatch(w.document.querySelector('#projects').textContent,/1 fehlt|krank/);
  }finally{w.close()}
 });

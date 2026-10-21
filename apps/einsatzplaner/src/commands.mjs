@@ -24,6 +24,27 @@ export function applyCommand(db,c,today=new Intl.DateTimeFormat('sv-SE',{timeZon
  case 'assign':return Core.assignRange(db,c.workerId,c.projectId,c.from,c.to);
  case 'unassign':Core.unassign(db,c.workerId,c.date);return true;
  case 'absence':return Core.markAbsence(db,c.workerId,c.from,c.to,c.absenceType);
+ case 'edit-absence':
+ case 'cancel-absence':{
+  const next=structuredClone(db),old=next.absences.find(a=>a.id===c.id);
+  if(!old)throw Error('Abwesenheit nicht gefunden.');
+  next.absences=next.absences.filter(a=>a.id!==c.id);
+  let replacement;
+  if(c.type==='edit-absence'){
+   Core.markAbsence(next,old.workerId,c.from,c.to,c.absenceType);
+   replacement=next.absences.at(-1);replacement.id=old.id;
+   const affected=[...(old.affected||[]).filter(a=>a.date>=c.from&&a.date<=c.to),...replacement.affected];
+   replacement.affected=[...new Map(affected.map(a=>[a.projectId+':'+a.date,a])).values()];
+  }
+  const result={restored:0,skipped:[]};
+  for(const a of old.affected||[]){
+   if(replacement&&a.date>=replacement.from&&a.date<=replacement.to)continue;
+   try{Core.assign(next,old.workerId,a.projectId,a.date);result.restored++;}
+   catch(e){result.skipped.push({date:a.date,projectId:a.projectId,error:e.message});}
+  }
+  Core.log(next,`Abwesenheit ${old.id} ${replacement?'korrigiert':'aufgehoben'}; ${result.restored} Einsätze wiederhergestellt; ${result.skipped.length} offen`);
+  Object.assign(db,next);return result;
+ }
  case 'need':Core.updateNeed(db,c.projectId,c.from,c.to,c.count);if(c.count===0)db.assignments=db.assignments.filter(a=>a.projectId!==c.projectId||a.date<c.from||a.date>c.to);return true;
  case 'extend':return Core.extendProject(db,c.projectId,c.end,c.carry===true);
  case 'crew':{

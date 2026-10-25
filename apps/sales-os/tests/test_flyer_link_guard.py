@@ -29,6 +29,7 @@ def test_flyer_delivery_is_attachment_only(owner):
     assert cfg["attach_physical_pdf"] is True
     assert cfg["include_cdn_link"] is False
     assert cfg["flyer_cdn_url"] is None
+    assert cfg["flyer_filename"] == "HSB-HEXAGON-Industrieboeden-Flyer.pdf"
 
 
 def _code_files():

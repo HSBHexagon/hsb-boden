@@ -22,7 +22,8 @@ def test_render_canonical_email_valid_lead():
     assert "Molkerei Biedermann AG" in rendered["subject"]
     assert "Jordie Post" in rendered["body_html"]
     assert "Jordi Post" not in rendered["body_html"]
-    assert "HSB-Flyer-Joel-Cherino_FINAL.pdf" in rendered["flyer_filename"]
+    assert rendered["flyer_filename"] == "HSB-HEXAGON-Industrieboeden-Flyer.pdf"
+    assert rendered["flyer_path"].endswith("HSB-Flyer-Joel-Cherino_FINAL.pdf")
     assert "hsb-boden-logo.png" in rendered["body_html"]
     assert 'width="102" height="75"' in rendered["body_html"]
 
@@ -49,7 +50,8 @@ def test_render_canonical_email_jordie_owner():
     }
     rendered = render_canonical_email(lead, owner="JORDI")
     assert rendered["to_address"] == "kontakt@brauerei-test.de"
-    assert "HSB-Flyer-Jordie-Post_FINAL.pdf" in rendered["flyer_filename"]
+    assert rendered["flyer_filename"] == "HSB-HEXAGON-Industrieboeden-Flyer.pdf"
+    assert rendered["flyer_path"].endswith("HSB-Flyer-Jordie-Post_FINAL.pdf")
     assert "Jordie Post" in rendered["body_html"]
     assert "j.post@hsb-boden.de" in rendered["body_html"]
     assert "Geschäftsführer" in rendered["body_html"]

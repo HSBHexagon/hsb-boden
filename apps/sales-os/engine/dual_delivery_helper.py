@@ -28,6 +28,8 @@ CANONICAL_FLYERS = {
     }
 }
 
+ATTACHMENT_NAME = "HSB-HEXAGON-Industrieboeden-Flyer.pdf"  # neutraler Name beim Empfaenger, nie ein Personenname
+
 # Alias
 CANONICAL_FLYERS["JORDIE"] = CANONICAL_FLYERS["JORDI"]
 
@@ -101,7 +103,8 @@ def get_flyer_delivery_config(owner: str, recipient_email: str) -> Dict[str, Any
     # Attachment only: kein Link im Mailtext (siehe Modul-Docstring).
     return {
         "owner": norm_owner,
-        "flyer_filename": flyer_meta["filename"],
+        "flyer_filename": ATTACHMENT_NAME,  # Anhangsname beim Empfaenger
+        "flyer_source_filename": flyer_meta["filename"],  # nur Dateiname auf der Platte
         "flyer_local_path": flyer_meta["local_path"],
         "flyer_cdn_url": None,
         "flyer_size_kb": flyer_meta["size_kb"],

@@ -30,6 +30,7 @@ CANONICAL_FLYERS = {
 CANONICAL_FLYERS["JORDIE"] = CANONICAL_FLYERS["JORDI"]
 
 LOGO_URL = "https://www.hsb-boden.de/brand/hsb-boden-logo.png"
+ATTACHMENT_NAME = "HSB-HEXAGON-Industrieboeden-Flyer.pdf"  # neutraler Name beim Empfaenger, nie ein Personenname
 
 
 def anrede_fuer_lead(lead: Dict[str, Any]) -> str:
@@ -107,7 +108,7 @@ def render_canonical_email(lead: Dict[str, Any], owner: str = "JOEL", domain: st
         "body_html": body_html,
         "to_address": to_addr,
         "flyer_path": owner_meta["path"],
-        "flyer_filename": owner_meta["filename"],
+        "flyer_filename": ATTACHMENT_NAME,
         "logo_url": LOGO_URL,
         "reply_to": owner_meta["reply_to"],
     }

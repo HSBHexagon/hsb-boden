@@ -5,6 +5,7 @@ import {
   captureAttribution,
   loadAttribution,
   resolveChannel,
+  sanitizeReferrerOrigin,
   updateSessionAttribution,
 } from "../src/lib/attribution";
 
@@ -203,5 +204,37 @@ describe("buildLeadAttributionFields", () => {
 
     expect(fields).toEqual({ form_path: "/kontakt/", attribution_channel: "direct" });
     expect(Object.keys(fields)).not.toContain("utm_source");
+  });
+});
+
+
+describe("sanitizeReferrerOrigin", () => {
+  it("returns undefined on URL parsing error (invalid URL string)", () => {
+    expect(sanitizeReferrerOrigin("not a valid url")).toBeUndefined();
+    expect(sanitizeReferrerOrigin("://bad")).toBeUndefined();
+    expect(sanitizeReferrerOrigin("http//missing-colon")).toBeUndefined();
+  });
+
+  it("returns undefined for non-string or empty inputs", () => {
+    expect(sanitizeReferrerOrigin(null)).toBeUndefined();
+    expect(sanitizeReferrerOrigin(undefined)).toBeUndefined();
+    expect(sanitizeReferrerOrigin(123)).toBeUndefined();
+    expect(sanitizeReferrerOrigin("")).toBeUndefined();
+    expect(sanitizeReferrerOrigin("   ")).toBeUndefined();
+  });
+
+  it("returns undefined for non-http/https protocols", () => {
+    expect(sanitizeReferrerOrigin("javascript:alert(1)")).toBeUndefined();
+    expect(sanitizeReferrerOrigin("ftp://example.com/file")).toBeUndefined();
+    expect(sanitizeReferrerOrigin("file:///etc/passwd")).toBeUndefined();
+  });
+
+  it("returns undefined when referrer origin matches ownOrigin", () => {
+    expect(sanitizeReferrerOrigin("https://www.hsb-boden.de/leistungen/", ORIGIN)).toBeUndefined();
+  });
+
+  it("returns sanitized origin for valid external http or https referrers", () => {
+    expect(sanitizeReferrerOrigin("https://www.google.com/search?q=test", ORIGIN)).toBe("https://www.google.com");
+    expect(sanitizeReferrerOrigin("http://example.org:8080/path", ORIGIN)).toBe("http://example.org:8080");
   });
 });

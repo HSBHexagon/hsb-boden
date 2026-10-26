@@ -59,17 +59,18 @@ def run_in_sheet_tests():
         return False
 
     # --------------------------------------------------------------------------
-    # GATE 2: Schema & Dimensions Gate (ALL_LEADS: 56 Spalten, 6425 Zeilen)
+    # GATE 2 & GATE 3: Schema, Dimensions & Owner Distribution (Batch Query)
     # --------------------------------------------------------------------------
     try:
-        header_res = service.spreadsheets().values().get(
+        g23_batch = service.spreadsheets().values().batchGet(
             spreadsheetId=SPREADSHEET_ID,
-            range="ALL_LEADS!A1:BD1"
-        ).execute()
-        headers = header_res.get("values", [[]])[0]
+            ranges=["ALL_LEADS!A1:BD1", "ALL_LEADS!A1:A6500", "ALL_LEADS!AA2:AA6425"]
+        ).execute().get("valueRanges", [])
+
+        # Gate 2 Check
+        headers = g23_batch[0].get("values", [[]])[0]
         col_count = len(headers)
 
-        # Unterstützt sowohl deutsche Originalnamen als auch standardisierte Bezeichner
         expected_cols = {
             0: ["lead_id", "lead-id"],
             8: ["email", "e-mail"],
@@ -87,29 +88,15 @@ def run_in_sheet_tests():
             if actual_name.lower() not in [n.lower() for n in valid_names]:
                 col_mismatches.append(f"Col {idx+1} ('{actual_name}' not in {valid_names})")
 
-        # Zeilenanzahl prüfen
-        lead_ids_res = service.spreadsheets().values().get(
-            spreadsheetId=SPREADSHEET_ID,
-            range="ALL_LEADS!A1:A6500"
-        ).execute()
-        total_rows = len(lead_ids_res.get("values", []))
+        total_rows = len(g23_batch[1].get("values", []))
         total_leads = total_rows - 1
 
         schema_ok = (col_count == 56) and (len(col_mismatches) == 0) and (total_leads == 6424)
         log_gate("Gate 2 - Schema & Dimensions", schema_ok,
                  f"Spalten: {col_count}/56, Leads: {total_leads}/6424, Validierte Headers OK")
-    except Exception as e:
-        log_gate("Gate 2 - Schema & Dimensions", False, str(e))
 
-    # --------------------------------------------------------------------------
-    # GATE 3: Owner & Lead Distribution Gate
-    # --------------------------------------------------------------------------
-    try:
-        owners_res = service.spreadsheets().values().get(
-            spreadsheetId=SPREADSHEET_ID,
-            range="ALL_LEADS!AA2:AA6425"
-        ).execute()
-        owners = [r[0] if r else "" for r in owners_res.get("values", [])]
+        # Gate 3 Check
+        owners = [r[0] if r else "" for r in g23_batch[2].get("values", [])]
         joel_count = sum(1 for o in owners if normalize_owner(o) == "JOEL")
         jordi_count = sum(1 for o in owners if normalize_owner(o) == "JORDI")
         other_count = len(owners) - (joel_count + jordi_count)
@@ -118,6 +105,7 @@ def run_in_sheet_tests():
         log_gate("Gate 3 - Owner Distribution", dist_ok,
                  f"Joel: {joel_count}/3212, Jordie: {jordi_count}/3212, Sonstige/Fehler: {other_count}")
     except Exception as e:
+        log_gate("Gate 2 - Schema & Dimensions", False, str(e))
         log_gate("Gate 3 - Owner Distribution", False, str(e))
 
     # --------------------------------------------------------------------------
@@ -182,20 +170,18 @@ def run_in_sheet_tests():
         log_gate("Gate 4 - Sende-Status & Blau-Format", False, str(e))
 
     # --------------------------------------------------------------------------
-    # GATE 5: 100+100 Drafts Batch Gate
+    # GATE 5: 100+100 Drafts Batch Gate (Batch Query)
     # --------------------------------------------------------------------------
     try:
-        # Joel: AN52:BD151
-        joel_drafts = service.spreadsheets().values().get(
+        g5_batch = service.spreadsheets().values().batchGet(
             spreadsheetId=SPREADSHEET_ID,
-            range="ALL_LEADS!AN52:BD151"
-        ).execute().get("values", [])
+            ranges=["ALL_LEADS!AN52:BD151", "ALL_LEADS!AN3214:BD3313"]
+        ).execute().get("valueRanges", [])
 
+        # Joel: AN52:BD151
+        joel_drafts = g5_batch[0].get("values", [])
         # Jordie: AN3214:BD3313
-        jordi_drafts = service.spreadsheets().values().get(
-            spreadsheetId=SPREADSHEET_ID,
-            range="ALL_LEADS!AN3214:BD3313"
-        ).execute().get("values", [])
+        jordi_drafts = g5_batch[1].get("values", [])
 
         # Joel hat Internet_Message_ID in Spalte BA (Index 13 ab AN)
         joel_drafted_count = sum(1 for r in joel_drafts if len(r) > 1 and r[1] in ["drafted", "sent"] and len(r) > 13 and "@" in r[13])
@@ -209,18 +195,16 @@ def run_in_sheet_tests():
         log_gate("Gate 5 - 100+100 Drafts Batch", False, str(e))
 
     # --------------------------------------------------------------------------
-    # GATE 6: SSOT Name Verification Gate ('Jordi Post' auf DASHBOARD & README)
+    # GATE 6: SSOT Name Verification Gate (Batch Query)
     # --------------------------------------------------------------------------
     try:
-        dash_name = service.spreadsheets().values().get(
+        g6_batch = service.spreadsheets().values().batchGet(
             spreadsheetId=SPREADSHEET_ID,
-            range="DASHBOARD!C3"
-        ).execute().get("values", [[""]])[0][0]
+            ranges=["DASHBOARD!C3", "README!A6"]
+        ).execute().get("valueRanges", [])
 
-        readme_name = service.spreadsheets().values().get(
-            spreadsheetId=SPREADSHEET_ID,
-            range="README!A6"
-        ).execute().get("values", [[""]])[0][0]
+        dash_name = g6_batch[0].get("values", [[""]])[0][0]
+        readme_name = g6_batch[1].get("values", [[""]])[0][0]
 
         name_ok = (dash_name == "Jordi Post") and ("Jordi Post" in readme_name)
         log_gate("Gate 6 - SSOT Name 'Jordi Post'", name_ok,
@@ -330,20 +314,18 @@ def run_in_sheet_tests():
         log_gate("Gate 8 - Live In-Sheet Read/Write/Delete Roundtrip", False, str(e))
 
     # --------------------------------------------------------------------------
-    # GATE 9: 2.000er Rollout Verification Gate (1.000 Joel / 1.000 Jordie)
+    # GATE 9: 2.000er Rollout Verification Gate (Batch Query)
     # --------------------------------------------------------------------------
     try:
-        # Joel: AN152:BD1151 (1.000 Leads)
-        joel_rollout = service.spreadsheets().values().get(
+        g9_batch = service.spreadsheets().values().batchGet(
             spreadsheetId=SPREADSHEET_ID,
-            range="ALL_LEADS!AN152:BD1151"
-        ).execute().get("values", [])
+            ranges=["ALL_LEADS!AN152:BD1151", "ALL_LEADS!AN3534:BD4533"]
+        ).execute().get("valueRanges", [])
 
+        # Joel: AN152:BD1151 (1.000 Leads)
+        joel_rollout = g9_batch[0].get("values", [])
         # Jordie: AN3534:BD4533 (1.000 Leads)
-        jordi_rollout = service.spreadsheets().values().get(
-            spreadsheetId=SPREADSHEET_ID,
-            range="ALL_LEADS!AN3534:BD4533"
-        ).execute().get("values", [])
+        jordi_rollout = g9_batch[1].get("values", [])
 
         # Joel: Status drafted in AO, DRAFTED in AU, echte Outlook Draft-ID (AAMk...) in AW
         joel_ok_count = sum(

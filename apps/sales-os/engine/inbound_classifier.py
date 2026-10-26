@@ -123,7 +123,8 @@ def classify_inbound_message(sender: str, subject: str, body: str, reference_dat
     full_new_text = f"{subj_clean.lower()} {new_reply_text.lower()}"
 
     # 3. Echter Opt-out / Widerspruch des Kunden (hat Vorrang vor zufälligen Begriffen)
-    if OPTOUT_RE.search(full_new_text):
+    explicit_subject = re.fullmatch(r"(?:re:\s*|aw:\s*)*(?:abmelden|abmeldung|unsubscribe|stop)\s*[.!]?", subj_clean.strip(), re.I)
+    if explicit_subject or OPTOUT_RE.search(full_new_text):
         return InboundClassificationResult(category="OPTOUT", confidence=0.90, reason="Widerspruch / Opt-out Signal")
 
     # 4. Hot Lead / Termin-Interesse

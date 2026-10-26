@@ -61,6 +61,7 @@ def sync_inbounds(apply=False, include_de=True):
     events=svc.spreadsheets().values().get(spreadsheetId=SPREADSHEET_ID,range='INBOUND_EVENTS!A1:M10000').execute().get('values',[])
     seen_ids={str(r[0]) for r in events[1:] if r}
     seen_mids={str(r[5]) for r in events[1:] if len(r)>5 and r[5]}
+    seen_classifications={(str(r[5]), str(r[7]), str(r[6])) for r in events[1:] if len(r)>7}
     messages=collect_all_inbounds(limit_per_mailbox=0,include_de=include_de)
     pending=[]; categories={}; matched=0
     # Process the whole observed set in one call; no newest-N starvation.
@@ -69,11 +70,22 @@ def sync_inbounds(apply=False, include_de=True):
         cls=classify_inbound_message(msg.sender,msg.subject,msg.body)
         targets=[cls.extracted_email.lower()] if cls.category=='BOUNCE' and cls.extracted_email else addresses(msg.sender)
         eid='INBOUND-'+hashlib.sha256((msg.source+'|'+msg.owner+'|'+msg.message_id).encode()).hexdigest()
-        if eid in seen_ids or msg.message_id in seen_mids: continue
+        already_seen = eid in seen_ids or msg.message_id in seen_mids
         for target in targets:
             for row,lead in byemail.get(target,[]):
-                matched+=1;categories[cls.category]=categories.get(cls.category,0)+1
                 blocked=cls.category in {'OPTOUT','BOUNCE'}
+                # A corrected classifier must repair an old neutral event, without
+                # replaying an already complete suppression or sending anything.
+                negative_upgrade = blocked and (
+                    str(lead.get('Suppressed') or '').lower() != 'yes'
+                    or str(lead.get('Versandfreigabe') or '').lower() != 'no'
+                    or (cls.category == 'OPTOUT' and str(lead.get('Opt-out-Status') or '').lower() != 'yes')
+                    or (cls.category == 'BOUNCE' and not lead.get('Bounce_Status')))
+                missing_negative_event = blocked and (msg.message_id, cls.category, str(lead.get('Lead-ID') or '')) not in seen_classifications
+                if already_seen and not negative_upgrade and not missing_negative_event:
+                    continue
+                event_id = eid if not already_seen else eid + '-RECLASSIFIED-' + cls.category
+                matched+=1;categories[cls.category]=categories.get(cls.category,0)+1
                 change={'Last_Reply_At':msg.date or datetime.now(timezone.utc).isoformat()}
                 # Replies on already suppressed records must not erase their status.
                 if str(lead.get('Reply_Status') or '').lower() not in {'opt_out','bounced'}:
@@ -86,7 +98,7 @@ def sync_inbounds(apply=False, include_de=True):
                 if cls.recontact_date:change['Follow-up-Datum']=cls.recontact_date
                 if apply:
                     crm_write_readback(svc,SPREADSHEET_ID,headers,row,change)
-                pending.append([eid, msg.date or datetime.now(timezone.utc).isoformat(),
+                pending.append([event_id, msg.date or datetime.now(timezone.utc).isoformat(),
                     msg.source+':'+msg.owner,msg.sender,msg.subject,msg.message_id,
                     lead.get('Lead-ID',''),cls.category,'yes' if blocked else 'no',
                     'PROCESSED' if apply else 'PENDING',cls.reason,'','MATCHED'])

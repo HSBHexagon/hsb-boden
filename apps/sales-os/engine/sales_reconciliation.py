@@ -13,6 +13,7 @@ from email.parser import BytesParser
 from email.utils import getaddresses
 import hashlib
 import html
+from html.parser import HTMLParser
 import json
 import os
 from pathlib import Path
@@ -148,7 +149,26 @@ def probe_url(url):
     req = Request(url, headers={'User-Agent': 'HSB-Reconciliation/1.0'})
     with urlopen(req, timeout=30) as response:
         data = response.read()
-        return {'status': response.status, 'final_url': response.url, 'content_type': response.headers.get('Content-Type'), 'sha256': hashlib.sha256(data).hexdigest(), 'bytes': len(data), 'valid': response.status == 200 and (data.startswith(b'%PDF-') or (b'<html' in data.lower() and len(data) > 500))}
+        reachable = response.status == 200
+        valid = reachable and (data.startswith(b'%PDF-') or (b'<html' in data.lower() and len(data) > 500))
+        result = {'status': response.status, 'final_url': response.url, 'content_type': response.headers.get('Content-Type'), 'sha256': hashlib.sha256(data).hexdigest(), 'bytes': len(data), 'reachable': reachable, 'valid': valid}
+        if urlsplit(url).path.rstrip('/') == '/abmelden':
+            class Links(HTMLParser):
+                def __init__(self):
+                    super().__init__(); self.hrefs = []
+                def handle_starttag(self, tag, attrs):
+                    if tag == 'a':
+                        self.hrefs.extend(value for key, value in attrs if key == 'href' and value)
+            page = data.decode('utf-8', errors='replace')
+            parsed = Links(); parsed.feed(page)
+            routes = [urlsplit(href) for href in parsed.hrefs]
+            mailto = any(route.scheme == 'mailto' and route.path.lower() in SENDERS.values()
+                         and parse_qs(route.query).get('subject', [''])[0].lower() in {'abmelden', 'abmeldung', 'unsubscribe'}
+                         for route in routes)
+            result.update(valid=bool(valid and mailto and 'erfolgreich abgemeldet' not in page.lower()),
+                          request_route='MONITORED_COM_MAILTO' if mailto else 'MISSING',
+                          crm_update_on_page_load=False)
+        return result
 
 
 def write_crm_audit(output):
@@ -243,7 +263,7 @@ def run_audit(output, reuse_snapshot=False):
                 try: links[base] = probe_url(base)
                 except Exception as exc: links[base] = {'valid':False, 'error':type(exc).__name__}
             if not links[base]['valid']: d['issues'].append('FLYER_LINK_UNREACHABLE')
-        if not links['https://www.hsb-boden.de/abmelden']['valid']: d['issues'].append('OPTOUT_PAGE_UNREACHABLE')
+        if not links['https://www.hsb-boden.de/abmelden']['valid']: d['issues'].append('OPTOUT_PAGE_NOT_FUNCTIONAL')
         for a in d['recipients']:
             if counts[a] > 1: d['issues'].append('DUPLICATE_DRAFT_RECIPIENT')
             if a in contacted: d['issues'].append('ALREADY_CONTACTED')

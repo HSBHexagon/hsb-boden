@@ -158,4 +158,42 @@ describe("trackEvent", () => {
       send_to: "G-VC4BJBEFTV",
     });
   });
+
+  it("fängt Fehler beim Parsen von ungültigem Storage-Inhalt ab und verweigert die Einwilligung", async () => {
+    vi.resetModules();
+    localStorage.setItem("hsb-consent-v1", "{invalid json");
+    const { trackEvent: isolatedTrackEvent, TrackingEvent: IsolatedTrackingEvent } = await import(
+      "../src/lib/tracking"
+    );
+    const gtag = vi.fn();
+    win.gtag = gtag;
+    win.dataLayer = [];
+
+    isolatedTrackEvent(IsolatedTrackingEvent.PhoneClick);
+
+    expect(gtag).not.toHaveBeenCalled();
+    expect(win.dataLayer).toHaveLength(0);
+  });
+
+  it("fängt Exceptions beim Zugriff auf localStorage ab und verweigert die Einwilligung", async () => {
+    vi.resetModules();
+    const getItemSpy = vi.spyOn(Storage.prototype, "getItem").mockImplementation(() => {
+      throw new Error("SecurityError: Access denied");
+    });
+    try {
+      const { trackEvent: isolatedTrackEvent, TrackingEvent: IsolatedTrackingEvent } = await import(
+        "../src/lib/tracking"
+      );
+      const gtag = vi.fn();
+      win.gtag = gtag;
+      win.dataLayer = [];
+
+      isolatedTrackEvent(IsolatedTrackingEvent.PhoneClick);
+
+      expect(gtag).not.toHaveBeenCalled();
+      expect(win.dataLayer).toHaveLength(0);
+    } finally {
+      getItemSpy.mockRestore();
+    }
+  });
 });

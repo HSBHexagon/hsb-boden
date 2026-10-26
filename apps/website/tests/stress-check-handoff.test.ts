@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { resolveStressSystem } from "../src/data/stressMatrix";
 import {
   STRESS_CHECK_STORAGE_KEY,
@@ -54,5 +54,30 @@ describe("Beanspruchungs-Check → Audit-Formular", () => {
 
     clearStressCheckHandoff(sessionStorage);
     expect(sessionStorage.getItem(STRESS_CHECK_STORAGE_KEY)).toBeNull();
+  });
+
+  it("behandelt Fehler bei blockiertem Storage abfanganfällig (Storage error path)", () => {
+    const prefill = buildLeadPrefill(input, resolveStressSystem(input));
+
+    const failingStorage: Storage = {
+      length: 0,
+      clear: vi.fn(),
+      key: vi.fn(),
+      getItem: vi.fn().mockImplementation(() => {
+        throw new Error("Storage access denied");
+      }),
+      setItem: vi.fn().mockImplementation(() => {
+        throw new Error("QuotaExceededError");
+      }),
+      removeItem: vi.fn().mockImplementation(() => {
+        throw new Error("Storage access denied");
+      }),
+    };
+
+    expect(() => saveStressCheckHandoff(failingStorage, prefill)).not.toThrow();
+
+    expect(() => clearStressCheckHandoff(failingStorage)).not.toThrow();
+
+    expect(loadStressCheckHandoff(failingStorage)).toBeUndefined();
   });
 });

@@ -109,7 +109,11 @@ class _FakeResp:
         self._url = url
 
     def read(self, n=-1):
-        return self._body if n is None or n < 0 else self._body[:n]
+        # Wie eine echte Antwort: jeder Aufruf liefert die nächsten Bytes.
+        if n is None or n < 0:
+            n = len(self._body)
+        chunk, self._body = self._body[:n], self._body[n:]
+        return chunk
 
     def geturl(self):
         return self._url
@@ -297,3 +301,35 @@ def test_redirect_body_is_not_drained(monkeypatch):
         result = getattr(handler, f"http_error_{code}")(req, fp, code, "Moved", headers)
         assert result == "ziel" and followed == ["https://www.mueller-gmbh.de/impressum"]
     assert fp.closed
+
+
+# --- 6. Ressourcen: lineare Adresssuche, Gesamtfrist -----------------------------
+
+def test_email_extraction_is_linear_on_long_runs_without_at():
+    import time
+    start = time.monotonic()
+    assert bra.extract_emails("a" * 2_000_000) == []
+    assert bra.extract_emails("x" * 1_000_000 + "@" + "y" * 1_000_000) == []
+    assert time.monotonic() - start < 1.0
+
+
+def test_email_extraction_still_finds_normal_addresses():
+    text = "Kontakt: info@mueller-gmbh.de, Vertrieb <vertrieb@werk2.mueller-gmbh.de>."
+    assert bra.extract_emails(text) == ["info@mueller-gmbh.de", "vertrieb@werk2.mueller-gmbh.de"]
+    assert bra.extract_emails(text) == bra.EMAIL_EXTRACT_RE.findall(text)
+
+
+def test_slow_drip_response_is_aborted_at_deadline(monkeypatch):
+    agent = BounceRescueAgent()
+    _public_dns(monkeypatch)
+    clock = {"t": 0.0}
+    monkeypatch.setattr(bra.time, "monotonic", lambda: clock["t"])
+
+    class Drip(_FakeResp):
+        def read1(self, n=-1):
+            clock["t"] += 5  # jedes Stück kommt "langsam"
+            return b"x"
+
+    monkeypatch.setattr(agent, "_open", lambda req: Drip(b""))
+    assert agent._fetch_url_content("https://www.mueller-gmbh.de/impressum") is None
+    assert clock["t"] <= bra.FETCH_DEADLINE_SECONDS + 5

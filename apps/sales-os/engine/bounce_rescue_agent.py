@@ -11,6 +11,7 @@ Sicherheits-Invariante: REAL_EXTERNAL_PROSPECT_SEND_COUNT = 0 (Reine Recherche &
 from __future__ import annotations
 
 import datetime
+import time
 from dataclasses import dataclass
 import html
 import http.client
@@ -43,6 +44,24 @@ logger = logging.getLogger("bounce_rescue_agent")
 REAL_EXTERNAL_PROSPECT_SEND_COUNT = 0
 
 EMAIL_EXTRACT_RE = re.compile(r"[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+")
+_LOCAL_TAIL_RE = re.compile(r"[a-zA-Z0-9_.+-]{1,64}$")
+_DOMAIN_HEAD_RE = re.compile(r"[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+")
+MAX_EMAIL_CANDIDATES = 500
+# Gesamtfrist je Abruf inkl. Weiterleitungen; der Socket-Timeout begrenzt nur einzelne Lesevorgänge.
+FETCH_DEADLINE_SECONDS = 20
+
+
+def extract_emails(text: str) -> List[str]:
+    """Lineare Suche: nur um jedes '@' ein begrenztes Fenster prüfen (kein quadratisches Regex-Backtracking)."""
+    found: List[str] = []
+    pos = text.find("@")
+    while pos != -1 and len(found) < MAX_EMAIL_CANDIDATES:
+        local = _LOCAL_TAIL_RE.search(text[max(0, pos - 64):pos])
+        domain = _DOMAIN_HEAD_RE.match(text, pos + 1, min(len(text), pos + 254))
+        if local and domain:
+            found.append(f"{local.group(0)}@{domain.group(0)}")
+        pos = text.find("@", pos + 1)
+    return found
 GENERIC_IGNORE_DOMAINS = {"wix.com", "jimdo.com", "wordpress.com", "squarespace.com", "cloudflare.com", "google.com", "schema.org"}
 GENERIC_IGNORE_PREFIXES = {"webmaster", "postmaster", "hostmaster", "noreply", "no-reply", "datenschutz", "privacy", "dsgvo"}
 
@@ -180,8 +199,11 @@ class BounceRescueAgent:
             parts = urllib.parse.urlsplit(url)
             if parts.scheme not in ("http", "https") or not is_public_hostname(parts.hostname or ""):
                 return None
+            deadline = time.monotonic() + FETCH_DEADLINE_SECONDS
             req = urllib.request.Request(url, headers=self.headers)
             with self._open(req) as resp:
+                if time.monotonic() > deadline:
+                    return None
                 # Weiterleitungen dürfen nicht auf interne Ziele führen.
                 if not is_public_hostname(urllib.parse.urlsplit(resp.geturl()).hostname or ""):
                     return None
@@ -191,9 +213,20 @@ class BounceRescueAgent:
                 declared = resp.headers.get("Content-Length")
                 if declared and declared.isdigit() and int(declared) > MAX_FETCH_BYTES:
                     return None
-                raw = resp.read(MAX_FETCH_BYTES + 1)
-                if len(raw) > MAX_FETCH_BYTES:
-                    return None
+                read_chunk = getattr(resp, "read1", resp.read)
+                chunks: List[bytes] = []
+                size = 0
+                while True:
+                    if time.monotonic() > deadline:
+                        return None
+                    chunk = read_chunk(65536)
+                    if not chunk:
+                        break
+                    chunks.append(chunk)
+                    size += len(chunk)
+                    if size > MAX_FETCH_BYTES:
+                        return None
+                raw = b"".join(chunks)
                 return raw.decode("utf-8", errors="ignore")
         except Exception:
             return None
@@ -243,7 +276,7 @@ class BounceRescueAgent:
                     continue
 
                 # Extrahiere mailto: Links und Plain-Text Mails
-                matches = EMAIL_EXTRACT_RE.findall(html_text)
+                matches = extract_emails(html_text)
                 for raw_em in matches:
                     em = raw_em.strip().lower()
                     if not em or "@" not in em:

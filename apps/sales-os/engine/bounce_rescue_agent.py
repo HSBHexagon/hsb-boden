@@ -11,13 +11,17 @@ Sicherheits-Invariante: REAL_EXTERNAL_PROSPECT_SEND_COUNT = 0 (Reine Recherche &
 from __future__ import annotations
 
 import datetime
+import time
 from dataclasses import dataclass
 import html
+import http.client
+import ipaddress
 import json
 import logging
 import re
 import socket
 import sys
+import urllib.error
 import urllib.parse
 import urllib.request
 from pathlib import Path
@@ -40,8 +44,127 @@ logger = logging.getLogger("bounce_rescue_agent")
 REAL_EXTERNAL_PROSPECT_SEND_COUNT = 0
 
 EMAIL_EXTRACT_RE = re.compile(r"[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+")
+_LOCAL_TAIL_RE = re.compile(r"[a-zA-Z0-9_.+-]{1,64}$")
+_DOMAIN_HEAD_RE = re.compile(r"[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+")
+MAX_EMAIL_CANDIDATES = 500
+# Gesamtfrist je Abruf inkl. Weiterleitungen; der Socket-Timeout begrenzt nur einzelne Lesevorgänge.
+FETCH_DEADLINE_SECONDS = 20
+
+
+def extract_emails(text: str) -> List[str]:
+    """Lineare Suche: nur um jedes '@' ein begrenztes Fenster prüfen (kein quadratisches Regex-Backtracking)."""
+    found: List[str] = []
+    pos = text.find("@")
+    while pos != -1 and len(found) < MAX_EMAIL_CANDIDATES:
+        local = _LOCAL_TAIL_RE.search(text[max(0, pos - 64):pos])
+        domain = _DOMAIN_HEAD_RE.match(text, pos + 1, min(len(text), pos + 254))
+        if local and domain:
+            found.append(f"{local.group(0)}@{domain.group(0)}")
+        pos = text.find("@", pos + 1)
+    return found
 GENERIC_IGNORE_DOMAINS = {"wix.com", "jimdo.com", "wordpress.com", "squarespace.com", "cloudflare.com", "google.com", "schema.org"}
 GENERIC_IGNORE_PREFIXES = {"webmaster", "postmaster", "hostmaster", "noreply", "no-reply", "datenschutz", "privacy", "dsgvo"}
+
+# Ein Impressum ist nie größer; alles darüber wird verworfen statt in den Speicher geladen.
+MAX_FETCH_BYTES = 2_000_000
+HOSTNAME_RE = re.compile(r"^(?=.{1,253}$)([a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}$")
+
+
+def is_public_hostname(host: str) -> bool:
+    """Nur echte öffentliche Domains: kein Port, keine Zugangsdaten, keine IP, keine interne Auflösung."""
+    host = (host or "").strip().lower().rstrip(".")
+    if not HOSTNAME_RE.match(host):
+        return False
+    try:
+        infos = socket.getaddrinfo(host, None)
+    except (socket.gaierror, UnicodeError, OSError):
+        return False
+    if not infos:
+        return False
+    for info in infos:
+        try:
+            ip = ipaddress.ip_address(info[4][0].split("%")[0])
+        except ValueError:
+            return False
+        if not ip.is_global:
+            return False
+    return True
+
+
+def _resolve_public_ip(host: str, port: int) -> str:
+    """Löst einmal auf und liefert eine öffentliche IP; jede nicht-öffentliche Antwort blockiert (DNS-Rebinding)."""
+    infos = socket.getaddrinfo(host, port, type=socket.SOCK_STREAM)
+    ips = []
+    for info in infos:
+        ip = info[4][0].split("%")[0]
+        if not ipaddress.ip_address(ip).is_global:
+            raise ConnectionRefusedError(f"Nicht-öffentliche Adresse {ip} für {host} verweigert")
+        ips.append(ip)
+    if not ips:
+        raise ConnectionRefusedError(f"Keine Adresse für {host}")
+    return ips[0]
+
+
+class _PublicHTTPConnection(http.client.HTTPConnection):
+    """Verbindet ausschließlich mit der vorab geprüften IP – vor TCP- und TLS-Aufbau."""
+
+    def connect(self):
+        ip = _resolve_public_ip(self.host, self.port)
+        self.sock = socket.create_connection((ip, self.port), self.timeout, self.source_address)
+
+
+class _PublicHTTPSConnection(http.client.HTTPSConnection):
+    def connect(self):
+        ip = _resolve_public_ip(self.host, self.port)
+        sock = socket.create_connection((ip, self.port), self.timeout, self.source_address)
+        # Hostname bleibt für SNI und Zertifikatsprüfung erhalten.
+        self.sock = self._context.wrap_socket(sock, server_hostname=self.host)
+
+
+class _PublicHTTPHandler(urllib.request.HTTPHandler):
+    def http_open(self, req):
+        return self.do_open(_PublicHTTPConnection, req)
+
+
+class _PublicHTTPSHandler(urllib.request.HTTPSHandler):
+    def https_open(self, req):
+        return self.do_open(_PublicHTTPSConnection, req, context=self._context)
+
+
+class _PublicRedirectHandler(urllib.request.HTTPRedirectHandler):
+    """Prüft jedes Weiterleitungsziel, bevor es aufgerufen wird."""
+
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        target = urllib.parse.urlsplit(newurl)
+        if target.scheme not in ("http", "https") or not is_public_hostname(target.hostname or ""):
+            raise urllib.error.HTTPError(newurl, code, "Weiterleitung auf nicht-öffentliches Ziel verweigert", headers, fp)
+        return super().redirect_request(req, fp, code, msg, headers, newurl)
+
+    def http_error_302(self, req, fp, code, msg, headers):
+        # Der geerbte Handler liest den Body der Zwischenantwort ohne Limit (fp.read()).
+        # Nicht leeren, nur schließen – die Weiterleitung braucht den Inhalt nicht.
+        fp.read = lambda *args, **kwargs: b""
+        return super().http_error_302(req, fp, code, msg, headers)
+
+    http_error_301 = http_error_303 = http_error_307 = http_error_308 = http_error_302
+
+
+def build_public_opener() -> urllib.request.OpenerDirector:
+    """Nur HTTP(S) ohne Proxy: kein FTP/File/Data-Handler, keine Umgehung der Peer-Prüfung über einen Proxy."""
+    opener = urllib.request.OpenerDirector()
+    for handler in (
+        _PublicHTTPHandler(),
+        _PublicHTTPSHandler(),
+        _PublicRedirectHandler(),
+        urllib.request.HTTPDefaultErrorHandler(),
+        urllib.request.HTTPErrorProcessor(),
+    ):
+        opener.add_handler(handler)
+    return opener
+
+
+def belongs_to_domain(email_domain: str, domain: str) -> bool:
+    return email_domain == domain or email_domain.endswith("." + domain)
 
 
 @dataclass
@@ -66,15 +189,44 @@ class BounceRescueAgent:
             "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
             "Accept-Language": "de-DE,de;q=0.9,en;q=0.8"
         }
+        self._opener = build_public_opener()
+
+    def _open(self, req: urllib.request.Request):
+        return self._opener.open(req, timeout=self.timeout)
 
     def _fetch_url_content(self, url: str) -> Optional[str]:
         try:
+            parts = urllib.parse.urlsplit(url)
+            if parts.scheme not in ("http", "https") or not is_public_hostname(parts.hostname or ""):
+                return None
+            deadline = time.monotonic() + FETCH_DEADLINE_SECONDS
             req = urllib.request.Request(url, headers=self.headers)
-            with urllib.request.urlopen(req, timeout=self.timeout) as resp:
+            with self._open(req) as resp:
+                if time.monotonic() > deadline:
+                    return None
+                # Weiterleitungen dürfen nicht auf interne Ziele führen.
+                if not is_public_hostname(urllib.parse.urlsplit(resp.geturl()).hostname or ""):
+                    return None
                 content_type = resp.headers.get("Content-Type", "")
                 if "text/html" not in content_type and "text/plain" not in content_type:
                     return None
-                raw = resp.read()
+                declared = resp.headers.get("Content-Length")
+                if declared and declared.isdigit() and int(declared) > MAX_FETCH_BYTES:
+                    return None
+                read_chunk = getattr(resp, "read1", resp.read)
+                chunks: List[bytes] = []
+                size = 0
+                while True:
+                    if time.monotonic() > deadline:
+                        return None
+                    chunk = read_chunk(65536)
+                    if not chunk:
+                        break
+                    chunks.append(chunk)
+                    size += len(chunk)
+                    if size > MAX_FETCH_BYTES:
+                        return None
+                raw = b"".join(chunks)
                 return raw.decode("utf-8", errors="ignore")
         except Exception:
             return None
@@ -99,6 +251,9 @@ class BounceRescueAgent:
         """
         if not domain or any(d in domain for d in ["gmail.com", "gmx.de", "web.de", "t-online.de", "outlook.com"]):
             return []
+        if not is_public_hostname(domain):
+            logger.warning("Domain %r ist keine öffentliche Domain – keine Websuche.", domain)
+            return []
 
         base_urls = [
             f"https://www.{domain}",
@@ -121,7 +276,7 @@ class BounceRescueAgent:
                     continue
 
                 # Extrahiere mailto: Links und Plain-Text Mails
-                matches = EMAIL_EXTRACT_RE.findall(html_text)
+                matches = extract_emails(html_text)
                 for raw_em in matches:
                     em = raw_em.strip().lower()
                     if not em or "@" not in em:
@@ -129,19 +284,19 @@ class BounceRescueAgent:
                     prefix, em_dom = em.split("@", 1)
                     if em_dom in GENERIC_IGNORE_DOMAINS or any(p in prefix for p in GENERIC_IGNORE_PREFIXES):
                         continue
+                    # Im Impressum stehen oft Webagentur, Hoster oder Steuerberater –
+                    # nur Adressen der Firmendomain (inkl. Subdomains) sind eine Rettung.
+                    if not belongs_to_domain(em_dom, domain):
+                        continue
 
                     # Prioritäts-Scoring
-                    score = 0.50
-                    if em_dom == domain or em_dom.endswith("." + domain):
+                    score = 0.70
+                    if prefix in ("info", "kontakt", "contact", "zentrale", "empfang"):
+                        score += 0.25
+                    elif prefix in ("geschaeftsfuehrung", "leitung", "management", "vertrieb", "sales", "einkauf"):
                         score += 0.20
-                        if prefix in ("info", "kontakt", "contact", "zentrale", "empfang"):
-                            score += 0.25
-                        elif prefix in ("geschaeftsfuehrung", "leitung", "management", "vertrieb", "sales", "einkauf"):
-                            score += 0.20
-                        else:
-                            score += 0.10
-                    elif "impressum" in target or "kontakt" in target:
-                        score += 0.15
+                    else:
+                        score += 0.10
 
                     if em not in candidates or score > candidates[em][1]:
                         candidates[em] = (target, round(min(score, 0.98), 2))

@@ -1,6 +1,6 @@
 {
   "timestamp": "2026-10-26T12:45:56.339453+00:00",
-  "reassessed_at": "2026-10-26T13:02:37.123586+00:00",
+  "reassessed_at": "2026-10-26T13:48:05.346446+00:00",
   "crm_total": 6424,
   "crm_owners": {
     "JOEL": 3212,
@@ -13,11 +13,12 @@
       "scanned": 3080,
       "unique_recipients": 3080,
       "crm_unique": 3078,
-      "technical_ready": 1924,
+      "technical_ready": 0,
       "sendable": 0,
       "issues": {
         "BODY_NOT_COMPANY_OR_CONTACT_SPECIFIC": 1155,
         "FLYER_LINK_MISSING": 531,
+        "HISTORICAL_VARIANT_REQUIRES_REVIEW": 3080,
         "PERSONAL_OPTOUT_LINK_MISSING": 531,
         "ALREADY_CONTACTED": 5,
         "COMPANY_UNVERIFIED": 4,
@@ -42,13 +43,14 @@
       "scanned": 2538,
       "unique_recipients": 2538,
       "crm_unique": 2536,
-      "technical_ready": 2032,
+      "technical_ready": 0,
       "sendable": 0,
       "issues": {
         "BODY_NOT_COMPANY_OR_CONTACT_SPECIFIC": 251,
         "COMPANY_UNVERIFIED": 2,
         "CRM_RECIPIENT_MISSING": 2,
         "FLYER_LINK_MISSING": 250,
+        "HISTORICAL_VARIANT_REQUIRES_REVIEW": 2538,
         "LEAD_ID_INFERRED_ONLY": 2,
         "PERSONAL_OPTOUT_LINK_MISSING": 250,
         "INBOUND_REQUIRES_REVIEW": 30,
@@ -78,21 +80,22 @@
     "SEND_STATE_NOT_READY": 774,
     "Send_Datum": 774,
     "bereits gesendet": 774,
-    "Hard Bounce": 17,
+    "Hard Bounce": 18,
     "INBOUND_REQUIRES_REVIEW": 47,
     "Opt_Out=YES": 43,
-    "REPLY_ALREADY_PRESENT": 79,
-    "Suppressed=YES": 39,
-    "Versandfreigabe=no": 462,
+    "REPLY_ALREADY_PRESENT": 81,
+    "Suppressed=YES": 40,
+    "Versandfreigabe=no": 463,
     "BODY_NOT_COMPANY_OR_CONTACT_SPECIFIC": 1402,
     "FLYER_LINK_MISSING": 777,
+    "HISTORICAL_VARIANT_REQUIRES_REVIEW": 5614,
     "PERSONAL_OPTOUT_LINK_MISSING": 777,
     "Legal_Basis=YES": 22,
     "WRONG_OWNER": 5,
     "Legal_Basis=UNKNOWN": 91,
+    "Suppression_Reason": 3,
     "Legal_Basis=CONTRACT_APPROVED": 5639,
     "Legal_Basis=NO": 360,
-    "Suppression_Reason": 1,
     "COMPANY_UNVERIFIED": 2,
     "Legal_Basis=OWNER_APPROVED": 63,
     "SUBJECT_NOT_COMPANY_SPECIFIC": 2
@@ -145,7 +148,7 @@
   "crm_writeback": {
     "rows_verified": 6424,
     "range": "ALL_LEADS!BN1:BR6425",
-    "run_id": "HSB-RECON-796fb81b392912a7",
+    "run_id": "HSB-RECON-dff5e7fb64da3437",
     "customer_emails_sent": 0
   },
   "python_tests": {
@@ -155,16 +158,18 @@
   },
   "website_tests": {
     "passed": 335,
-    "runtime": "Node 26 with experimental webstorage disabled; Node22 Homebrew install has missing dylib"
+    "check_errors": 0,
+    "check_warnings": 0,
+    "built_pages": 58
   },
-  "cloud_runtime": "PENDING_FIRST_RUN",
+  "cloud_runtime": {
+    "status": "READ_ONLY_VERIFIED",
+    "workflow_run": "https://github.com/HSBHexagon/hsb-boden/actions/runs/40332225903",
+    "customer_smtp_enabled": false,
+    "hourly_inbound_schedule": "activates only after merge to default branch"
+  },
   "m365_jordie": "HTTP_403_ACCESS_BLOCKED",
-  "outlook_client": "NOT_VERIFIED: no IMAP accounts exposed by Outlook AppleScript",
-  "automation_limits": {
-    "daily_per_mailbox": 35,
-    "unbounded_loop": false,
-    "customer_send_enabled": false
-  },
+  "outlook_client": "NOT_VERIFIED: AppleScript exposed no IMAP accounts",
   "customer_only_overlap": {
     "JOEL": 3,
     "JORDI": 256

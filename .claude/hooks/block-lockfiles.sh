@@ -14,7 +14,9 @@ if [ -z "$file_path" ]; then
   exit 0
 fi
 
-base="$(basename "${file_path//\//}")"
+# Windows-Backslashes zu Slashes normalisieren, dann den Dateinamen nach dem letzten Slash nehmen.
+norm="${file_path//\\//}"
+base="${norm##*/}"
 
 case "$base" in
   package-lock.json|npm-shrinkwrap.json|pnpm-lock.yaml|yarn.lock)

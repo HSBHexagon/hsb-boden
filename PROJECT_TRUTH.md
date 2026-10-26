@@ -16,6 +16,8 @@ Stand: 26.10.2026. Aktueller Auftrag und frische Messungen ersetzen ältere Abna
 - 35 Nachrichten pro Postfach und Tag bleiben Obergrenze. 100 pro Stunde sind nicht freigegeben.
 - Entwurfsoriginale werden erhalten. Kein Massen-Purge. Vor Reparaturen Original-MIME, UIDVALIDITY, UID, Message-ID und Hash sichern.
 - Der Workflow `sales-os-safety.yml` erlaubt Tests, lesende Abnahmen und .com-Inbound-Sync. Kundenversand ist dort ausdrücklich deaktiviert. Zeitpläne sind erst nach Übernahme in den Default-Branch aktiv.
-- Keine produktive Website-Veröffentlichung durch diesen Auftrag.
+- Die geprüfte Abmeldekorrektur wurde über den vorhandenen manuellen Production-Workflow veröffentlicht (Run 40341382688); öffentlicher HTTP-Readback bestanden. Kein ungeprüfter Website-Deploy.
 
 Die vollständigen Einzelbilanzen stehen im Master unter `ALL_LEADS!BN:BR`. Rohbelege liegen privat unter `~/KI-System/07_Logs/hsb-sales-os-20261026/`. Kundendaten und Zugangsdaten gehören nicht in neue Git-Commits oder öffentliche CI-Artefakte.
+
+Aktuelle ausdrückliche Betreiberbestätigung vom 26.10.2026 zur bereits geklärten §-7-Prüfung: Legal_Review_Status=yes für alle 6.424 Leads, Herkunftsvermerk und UTC-Datum in BS:BU. Die Engine berücksichtigt diesen vollständigen manuellen Review-Vermerk getrennt von Opt-in-Evidenz. Individuelle Sperren einschließlich Legal_Basis=BLOCKED/NO, Opt-outs, Bounces, Sendestatus und Versandfreigabe=no bleiben wirksam.

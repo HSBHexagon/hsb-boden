@@ -158,4 +158,39 @@ describe("trackEvent", () => {
       send_to: "G-VC4BJBEFTV",
     });
   });
+
+  it("behandelt ungültiges JSON in localStorage ohne Exception und verweigert Analytics-Consent", () => {
+    localStorage.clear();
+    localStorage.setItem("hsb-consent-v1", "invalid-json{");
+    window.dispatchEvent(new CustomEvent("hsb:consent", { detail: {} }));
+    const gtag = vi.fn();
+    win.gtag = gtag;
+    win.dataLayer = [];
+
+    trackEvent(TrackingEvent.LeadFormSubmit);
+
+    expect(gtag).not.toHaveBeenCalled();
+    expect(win.dataLayer).toHaveLength(0);
+  });
+
+  it("behandelt Fehler beim Zugriff auf localStorage (z.B. SecurityError) ohne Exception", () => {
+    localStorage.clear();
+    window.dispatchEvent(new CustomEvent("hsb:consent", { detail: {} }));
+    const spy = vi.spyOn(Storage.prototype, "getItem").mockImplementation(() => {
+      throw new Error("SecurityError: The operation is insecure.");
+    });
+
+    const gtag = vi.fn();
+    win.gtag = gtag;
+    win.dataLayer = [];
+
+    try {
+      trackEvent(TrackingEvent.LeadFormSubmit);
+
+      expect(gtag).not.toHaveBeenCalled();
+      expect(win.dataLayer).toHaveLength(0);
+    } finally {
+      spy.mockRestore();
+    }
+  });
 });

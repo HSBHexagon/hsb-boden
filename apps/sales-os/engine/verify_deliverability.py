@@ -25,10 +25,10 @@ def run_dig(record_type, query):
 def check_spf(domain):
     txt_records = run_dig("TXT", domain)
     spf_records = [r for r in txt_records if r.startswith("v=spf1")]
-    
+
     status = "OK"
     issues = []
-    
+
     if not spf_records:
         return {
             "status": "FAIL",
@@ -36,13 +36,13 @@ def check_spf(domain):
             "record": None,
             "issues": ["Kein SPF-Eintrag vorhanden. E-Mails landen bei DMARC/SPF-Prüfung im Spam."]
         }
-    
+
     if len(spf_records) > 1:
         status = "FAIL"
         issues.append(f"Mehrere SPF-Einträge gefunden ({len(spf_records)}). RFC 7208 verbietet mehrere Einträge (führt zu PermError)!")
-    
+
     spf = spf_records[0]
-    
+
     if "+all" in spf:
         status = "FAIL"
         issues.append("SPF endet auf '+all' (erlaubt jedem Server den Versand in Ihrem Namen)!")
@@ -53,13 +53,13 @@ def check_spf(domain):
         issues.append("SPF endet auf '~all' (SoftFail - akzeptabel, aber '-all' wird für M365 empfohlen).")
     elif "-all" in spf:
         issues.append("SPF endet auf '-all' (HardFail - optimaler Schutz vor Mail-Spoofing).")
-        
+
     if "include:spf.protection.outlook.com" in spf:
         issues.append("Microsoft 365 Exchange Online SPF-Include korrekt hinterlegt.")
     else:
         status = "WARN"
         issues.append("Kein 'include:spf.protection.outlook.com' im SPF gefunden. Falls M365 genutzt wird, dringend ergänzen.")
-        
+
     score = 100 if status == "OK" and "-all" in spf else (80 if status == "OK" else (50 if status == "WARN" else 0))
     return {
         "status": status,
@@ -71,7 +71,7 @@ def check_spf(domain):
 def check_dmarc(domain):
     txt_records = run_dig("TXT", f"_dmarc.{domain}")
     dmarc_records = [r for r in txt_records if r.startswith("v=DMARC1")]
-    
+
     if not dmarc_records:
         return {
             "status": "FAIL",
@@ -79,14 +79,14 @@ def check_dmarc(domain):
             "record": None,
             "issues": ["Kein DMARC-Eintrag gefunden. Google & Yahoo verlangen seit Feb 2024 DMARC für alle Versender!"]
         }
-    
+
     dmarc = dmarc_records[0]
     issues = []
     status = "OK"
-    
+
     policy_match = re.search(r'p=([a-zA-Z]+)', dmarc)
     policy = policy_match.group(1).lower() if policy_match else "unknown"
-    
+
     if policy == "none":
         status = "WARN"
         issues.append("DMARC Policy ist 'p=none' (Monitoring-Modus). Keine Abweisung bei Spoofing. Empfehlung für Zukunft: 'p=quarantine' oder 'p=reject'.")
@@ -95,12 +95,12 @@ def check_dmarc(domain):
     else:
         status = "FAIL"
         issues.append(f"Unbekannte oder fehlende DMARC Policy: {policy}")
-        
+
     if "rua=" in dmarc:
         issues.append("DMARC Aggregate Reporting (rua) ist konfiguriert.")
     else:
         issues.append("Hinweis: Kein 'rua=' Aggregate Reporting konfiguriert (hilfreich zur Überwachung von Zustellproblemen).")
-        
+
     score = 100 if policy in ("quarantine", "reject") else (75 if policy == "none" else 20)
     return {
         "status": status,
@@ -120,7 +120,7 @@ def check_mx(domain):
             "seg": "None",
             "issues": ["Keine MX-Einträge gefunden. Domain kann keine E-Mails empfangen."]
         }
-    
+
     seg = "Standard / Custom"
     for r in [rec.lower().rstrip('.') for rec in mx_records]:
         if r.endswith('.outlook.com') or r == 'outlook.com':
@@ -138,7 +138,7 @@ def check_mx(domain):
         elif 'barracuda' in r:
             seg = "Barracuda Email Security Gateway"
             break
-        
+
     return {
         "status": "OK",
         "score": 100,
@@ -150,7 +150,7 @@ def check_mx(domain):
 def check_dkim_selectors(domain, selectors=None):
     if not selectors:
         selectors = ["selector1", "selector2", "default", "google", "k1", "ms"]
-    
+
     results = {}
     found_any = False
     for s in selectors:
@@ -162,7 +162,7 @@ def check_dkim_selectors(domain, selectors=None):
         elif txt:
             results[s] = {"type": "TXT", "target": txt}
             found_any = True
-            
+
     return {
         "status": "OK" if found_any else "WARN",
         "score": 90 if found_any else 50,
@@ -178,35 +178,35 @@ def audit_domain(domain):
     print(f"  HSB SALES OS - DELIVERABILITY & REPUTATION AUDIT")
     print(f"  Ziel-Domain: {domain}")
     print(f"============================================================")
-    
+
     spf = check_spf(domain)
     dmarc = check_dmarc(domain)
     mx = check_mx(domain)
     dkim = check_dkim_selectors(domain)
-    
+
     total_score = int(spf["score"] * 0.35 + dmarc["score"] * 0.30 + mx["score"] * 0.20 + dkim["score"] * 0.15)
-    
+
     print(f"\n[1] SPF-Status: [{spf['status']}] (Score: {spf['score']}/100)")
     if spf.get("record"):
         print(f"    Record: {spf['record']}")
     for d in spf.get("details", []):
         print(f"    - {d}")
-        
+
     print(f"\n[2] DMARC-Status: [{dmarc['status']}] (Score: {dmarc['score']}/100)")
     if dmarc.get("record"):
         print(f"    Record: {dmarc['record']}")
     for d in dmarc.get("details", []):
         print(f"    - {d}")
-        
+
     print(f"\n[3] MX-Infrastruktur: [{mx['status']}] (Score: {mx['score']}/100)")
     print(f"    Gateway: {mx['seg']}")
     for r in mx.get("records", []):
         print(f"    MX: {r}")
-        
+
     print(f"\n[4] DKIM-Status: [{dkim['status']}] (Score: {dkim['score']}/100)")
     for d in dkim.get("details", []):
         print(f"    - {d}")
-        
+
     print(f"\n------------------------------------------------------------")
     print(f"  GESAMT-DELIVERABILITY-SCORE: {total_score} / 100")
     if total_score >= 85:
@@ -216,7 +216,7 @@ def audit_domain(domain):
     else:
         print(f"  BEWERTUNG: KRITISCH - Gefahr von Spam-Einstufungen bei B2B-Gateways!")
     print(f"------------------------------------------------------------\n")
-    
+
     return {
         "domain": domain,
         "total_score": total_score,
@@ -231,7 +231,7 @@ if __name__ == "__main__":
     parser.add_argument("--domain", default="hsb-boden.de", help="Zu prüfende Domain")
     parser.add_argument("--json", action="store_true", help="Ausgabe als JSON")
     args = parser.parse_args()
-    
+
     report = audit_domain(args.domain)
     if args.json:
         print(json.dumps(report, indent=2))

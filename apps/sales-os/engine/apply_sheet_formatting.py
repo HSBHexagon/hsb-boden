@@ -20,14 +20,14 @@ from sync_to_google_sheet import get_sheets_service, SPREADSHEET_ID
 
 def apply_full_formatting():
     service = get_sheets_service()
-    
+
     meta = service.spreadsheets().get(spreadsheetId=SPREADSHEET_ID).execute()
     all_leads_id = None
     for s in meta.get("sheets", []):
         if s["properties"]["title"] == "ALL_LEADS":
             all_leads_id = s["properties"]["sheetId"]
             break
-            
+
     if all_leads_id is None:
         raise RuntimeError("ALL_LEADS Sheet nicht gefunden!")
 

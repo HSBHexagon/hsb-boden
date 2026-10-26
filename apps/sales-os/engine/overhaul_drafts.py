@@ -73,7 +73,7 @@ def load_sheet_leads(sheets_svc: Any) -> Tuple[List[Dict[str, Any]], Dict[str, T
     """Loads all leads from ALL_LEADS into memory with row index."""
     res = sheets_svc.spreadsheets().values().get(
         spreadsheetId=SPREADSHEET_ID,
-        range="ALL_LEADS!A:BE"
+        range="ALL_LEADS!A1:BM6425"
     ).execute()
     rows = res.get("values", [])
     if not rows:
@@ -96,11 +96,16 @@ def load_sheet_leads(sheets_svc: Any) -> Tuple[List[Dict[str, Any]], Dict[str, T
     return all_leads, email_map
 
 
-def build_canonical_body_2026(owner: str, anrede: str, target: str = "com") -> str:
+def build_canonical_body_2026(owner: str, anrede: str, target: str = "com", lead_id: str = "", to_email: str = "") -> str:
     flyer = assert_asset_gate(owner)
     anrede_esc = html.escape(anrede)
     mailbox = f"j-cherino@hsb-boden.{target}" if flyer.owner_key == "JOEL" else f"j-post@hsb-boden.{target}"
-    sig = signatur_html(flyer.display_name, mailbox, flyer.mobile)
+    sig = signatur_html(flyer.display_name, mailbox, flyer.mobile, lead_id=lead_id, to_email=to_email)
+
+    flyer_query = f"?utm_source=outreach&utm_medium=email&utm_campaign=industrieboden_2026-10"
+    if lead_id:
+        flyer_query += f"&lead={urllib.parse.quote(str(lead_id))}"
+    flyer_url = f"https://www.hsb-boden.de/flyer{flyer_query}"
 
     return (
         f'<div style="font-family:Arial,Helvetica,sans-serif;font-size:11pt;color:#222222;line-height:1.5;">'
@@ -113,13 +118,12 @@ def build_canonical_body_2026(owner: str, anrede: str, target: str = "com") -> s
         f'&bull; Keimnester in Nassbereichen<br>'
         f'&bull; stehendes Wasser durch falsches Gefälle<br>'
         f'&bull; defekte Rinnen und Abläufe</p>'
-        f'<p style="margin:0 0 12px 0;">Im angehängten Flyer sehen Sie ausgeführte Projektflächen und unser '
-        f'Vorgehen von der Analyse bis zur dokumentierten Übergabe.</p>'
+        f'<p style="margin:0 0 12px 0;">Im Online-Projektflyer sehen Sie ausgeführte Projektflächen und unser '
+        f'Vorgehen von der Analyse bis zur dokumentierten Übergabe:<br>'
+        f'<a href="{flyer_url}" style="color:#1d4ed8;font-weight:600;text-decoration:underline;">www.hsb-boden.de/flyer</a></p>'
         f'<p style="margin:0 0 16px 0;">Gerne prüfen wir Ihr Belastungsprofil unverbindlich und vor Ort.</p>'
         f'<p style="margin:0 0 4px 0;">Mit freundlichen Grüßen</p>'
         f'{sig}'
-        f'<p style="margin:20px 0 0 0;font-family:Arial,Helvetica,sans-serif;font-size:8pt;color:#999999;">'
-        f'---<br>Wenn Sie keine weiteren Informationen erhalten möchten, antworten Sie bitte mit dem Betreff &bdquo;Abmelden&ldquo; auf diese E-Mail.</p>'
         f'</div>'
     )
 
@@ -244,7 +248,7 @@ def run_overhaul(owner: str = "JOEL", target: str = "com", limit: int = 20, dry_
         # 2. Create new enriched draft
         try:
             if target == "com":
-                body_html = build_canonical_body_2026(owner, it["anrede"], target="com")
+                body_html = build_canonical_body_2026(owner, it["anrede"], target="com", lead_id=it["lead_id"], to_email=to_email)
                 ok, new_draft_id = client_com.create_draft(
                     to_email=to_email,
                     subject=it["new_subj"],

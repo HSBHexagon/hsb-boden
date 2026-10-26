@@ -1,21 +1,58 @@
 #!/usr/bin/env python3
 """
 HSB Sales OS - Direkte Synchronisation der 100+100 Drafts in Google Sheet 'ALL_LEADS'.
-Single Source of Truth.
+Single Source of Truth (SSOT).
 """
 import json
+import os
 from pathlib import Path
 from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
-SPREADSHEET_ID = "1W-NjwEq0UhDo2TaeS-2qp_qit4YFMz6k-IqKHlPpHmg"
 
-def get_sheets_service():
-    with open('/Users/joelcherinodiaz/.config/google-workspace-mcp/profiles/cherinodiaz/tokens.json') as f:
+# ==============================================================================
+# UNVERRÜCKBARE SINGLE SOURCE OF TRUTH (SSOT)
+# Master-Sheet ID: 1W-NjwEq0UhDo2TaeS-2qp_qit4YFMz6k-IqKHlPpHmg
+# Name: HSB CRM MASTER SSOT (EINZIGE WAHRHEIT 6424 LEADS) – 2026
+# ==============================================================================
+CANONICAL_SPREADSHEET_ID = "1W-NjwEq0UhDo2TaeS-2qp_qit4YFMz6k-IqKHlPpHmg"
+SPREADSHEET_ID = CANONICAL_SPREADSHEET_ID
+
+FORBIDDEN_SPREADSHEET_IDS = {
+    "1ITFextI-EuDXNG2p9yfmAvzA_7AbFk4HDO-GqB7WyLI",  # Jordi Alt
+    "1FBY9tsDT6ode8QzkSsTQJZxVE81bLZ4DtgDCmojCFoQ",  # Joel Alt
+    "1JJ49g_P-gVSAE0eG9zlAJBAjopBoG0Ntb7tThJvrIvs",  # Master v2 Alt
+    "1mQCHlJ08BUgyBTk5gSwHfWsS7jvW1FkrcPlo5eHoARk",  # Snapshot vor Sales-Ops
+    "1NqAQNuXl3W1OjIQ47ix9ZNYTP0-sLKjVRfeTjXCXR7Q",  # CRM Light Alt
+    "1XmbTXyPS5U0tp6PwT5HdF4zE2E3xdrFL9bIvdUtsCD0",  # HSB Sales OS Alt
+}
+
+def assert_canonical_sheet(spreadsheet_id: str):
+    """Verhindert jeglichen Lese- oder Schreibzugriff auf alte Neben-Sheets."""
+    if spreadsheet_id in FORBIDDEN_SPREADSHEET_IDS:
+        raise PermissionError(
+            f"SSOT SECURITY VIOLATION: Zugriff auf veraltetes/archiviertes Sheet '{spreadsheet_id}' verweigert! "
+            f"Einzige kanonische Wahrheit ist Master-Sheet: '{CANONICAL_SPREADSHEET_ID}'."
+        )
+    if spreadsheet_id != CANONICAL_SPREADSHEET_ID:
+        raise ValueError(
+            f"UNZULÄSSIGE SPREADSHEET-ID: '{spreadsheet_id}'. Nur das Master-SSOT-Sheet "
+            f"'{CANONICAL_SPREADSHEET_ID}' ist für HSB freigegeben."
+        )
+
+def get_sheets_service(spreadsheet_id: str = CANONICAL_SPREADSHEET_ID):
+    assert_canonical_sheet(spreadsheet_id)
+
+    cloud_auth = os.environ.get('HSB_GOOGLE_AUTHORIZED_USER_JSON', '').strip()
+    if cloud_auth:
+        creds = Credentials.from_authorized_user_info(json.loads(cloud_auth))
+        return build('sheets', 'v4', credentials=creds, cache_discovery=False)
+
+    with open(Path.home() / '.config/google-workspace-mcp/profiles/cherinodiaz/tokens.json') as f:
         token_data = json.load(f)
 
-    with open('/Users/joelcherinodiaz/.config/google-workspace-mcp/credentials.json') as f:
+    with open(Path.home() / '.config/google-workspace-mcp/credentials.json') as f:
         client_data = json.load(f)
 
     cinfo = client_data.get('installed') or client_data.get('web')
@@ -31,6 +68,7 @@ def get_sheets_service():
     return build('sheets', 'v4', credentials=creds)
 
 def sync_matrices():
+    assert_canonical_sheet(SPREADSHEET_ID)
     service = get_sheets_service()
 
     # 1. Joel

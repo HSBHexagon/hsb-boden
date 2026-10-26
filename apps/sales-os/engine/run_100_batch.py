@@ -28,6 +28,7 @@ sys.path.insert(0, str(REPO_ROOT / "engine"))
 
 from hsb_core import FLYERS, normalize_owner, EMAIL_RE, sanitize_company_name
 from high_volume_matrix_engine import load_leads_authoritative, write_2d_matrix_bulk
+from optout_helper import build_optout_url, build_tracked_website_url
 
 from hsb_config import (
     FC_CLIENT_ID,
@@ -38,7 +39,7 @@ from hsb_config import (
     get_fc_refresh_token,
 )
 
-JOEL_URL = get_joel_url()
+
 JORDI_CONNECTOR_URL = get_jordi_connector_url()
 
 FIRMA = {
@@ -53,37 +54,39 @@ FIRMA = {
     "geschaeftsfuehrer": "Jordie Post"
 }
 
-def signatur_html(owner_display: str, mailbox: str, mobile: str) -> str:
+def signatur_html(owner_display: str, mailbox: str, mobile: str, lead_id: str = "", to_email: str = "") -> str:
     mobil_zeile = f"Mobil {mobile}<br>" if mobile else ""
+    web_url = f"https://{FIRMA['web']}"
+    logo_url = f"https://{FIRMA['web']}"
+    if lead_id and to_email:
+        optout_url = build_optout_url(lead_id=lead_id, email=to_email, base_url=f"https://{FIRMA['web']}")
+    else:
+        optout_url = f"https://{FIRMA['web']}/abmelden"
+
     return (
-        f'<p style="margin:16px 0 0 0;font-family:Arial,Helvetica,sans-serif;font-size:10pt;color:#222222;line-height:1.45;">'
+        f'<p style="margin:16px 0 0 0;font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#1f2937;line-height:1.5;">'
         f'<strong>{owner_display}</strong><br>'
         f'{FIRMA["name"]}<br>'
         f'{FIRMA["strasse"]} &middot; {FIRMA["plzOrt"]}<br>'
         f'{mobil_zeile}'
         f'Tel. {FIRMA["telefon"]}<br>'
-        f'<a href="mailto:{mailbox}" style="color:#1155cc;">{mailbox}</a> &middot; '
-        f'<a href="https://{FIRMA["web"]}" style="color:#1155cc;">{FIRMA["web"]}</a>'
+        f'<a href="mailto:{mailbox}" style="color:#1d4ed8;text-decoration:none;">{mailbox}</a> &middot; '
+        f'<a href="{web_url}" style="color:#1d4ed8;text-decoration:none;">{FIRMA["web"]}</a>'
         f'</p>'
         f'<p style="margin:14px 0 0 0;">'
-        f'<a href="https://{FIRMA["web"]}" target="_blank" style="text-decoration:none;">'
+        f'<a href="{logo_url}" target="_blank" style="text-decoration:none;">'
         f'<img src="https://{FIRMA["web"]}/brand/hsb-boden-logo.png" '
         f'alt="{FIRMA["name"]}" '
         f'width="102" height="75" '
         f'style="display:block;border:0;outline:none;text-decoration:none;-ms-interpolation-mode:bicubic;width:102px;height:75px;max-width:102px;max-height:75px;" />'
         f'</a>'
         f'</p>'
-        f'<table cellpadding="0" cellspacing="0" border="0" style="margin:16px 0 12px 0;">'
-        f'<tr><td style="padding:8px 14px;background-color:#f4f5f7;border:1px solid #d1d5db;border-radius:5px;font-family:Arial,Helvetica,sans-serif;font-size:9pt;color:#444444;line-height:1.4;">'
-        f'Keine weiteren E-Mails gewünscht?&nbsp;'
-        f'<a href="https://{FIRMA["web"]}/abmelden" target="_blank" style="font-weight:bold;color:#1155cc;text-decoration:underline;"><u>Hier abmelden</u></a>'
-        f'&nbsp;&middot;&nbsp;'
-        f'<a href="mailto:{mailbox}?subject=Abmelden" style="color:#666666;text-decoration:underline;">per E-Mail abmelden</a>'
-        f'</td></tr></table>'
-        f'<p style="margin:14px 0 0 0;font-family:Arial,Helvetica,sans-serif;font-size:8pt;color:#777777;line-height:1.35;">'
+        f'<p style="margin:16px 0 0 0;font-family:Arial,Helvetica,sans-serif;font-size:11px;color:#64748b;line-height:1.45;">'
         f'{FIRMA["name"]} &middot; Sitz: {FIRMA["sitz"]}<br>'
-        f'Registergericht: {FIRMA["registergericht"]}, {FIRMA["hrb"]}<br>'
-        f'Geschäftsführer: {FIRMA["geschaeftsfuehrer"]}'
+        f'Registergericht: {FIRMA["registergericht"]}, {FIRMA["hrb"]} &middot; Geschäftsführer: {FIRMA["geschaeftsfuehrer"]}<br>'
+        f'<a href="https://www.hsb-boden.de/impressum/" style="color:#64748b;text-decoration:underline;">Impressum</a> &middot; '
+        f'<a href="https://www.hsb-boden.de/datenschutz/" style="color:#64748b;text-decoration:underline;">Datenschutz</a> &middot; '
+        f'<a href="{optout_url}" style="color:#64748b;text-decoration:underline;">Hier abmelden</a>'
         f'</p>'
     )
 
@@ -136,9 +139,10 @@ def create_single_draft(owner: str, lead: dict, flyer_b64: str, flyer_name: str,
     company_esc = html.escape(company)
     betreff = f"Industrieböden für {company} – Beratung von {flyer.display_name}"
 
-    sig = signatur_html(flyer.display_name, flyer.mailbox, flyer.mobile)
+    lead_id_str = str(lead.get("Lead_ID") or lead.get("Lead-ID") or "")
+    sig = signatur_html(flyer.display_name, flyer.mailbox, flyer.mobile, lead_id=lead_id_str, to_email=email_str)
     body_html = (
-        f'<div style="font-family:Arial,Helvetica,sans-serif;font-size:11pt;color:#222222;line-height:1.5;">'
+        f'<div style="font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#1f2937;line-height:1.55;">'
         f'<p style="margin:0 0 12px 0;">{anrede_esc}</p>'
         f'<p style="margin:0 0 12px 0;">mein Name ist {flyer.display_name} von der HSB Hexagon Säurebau GmbH. '
         f'Wir planen, bauen und sanieren säurebeständige, hygienische Industrieböden – '
@@ -153,8 +157,6 @@ def create_single_draft(owner: str, lead: dict, flyer_b64: str, flyer_name: str,
         f'<p style="margin:0 0 16px 0;">Gerne prüfen wir Ihr Belastungsprofil unverbindlich und vor Ort.</p>'
         f'<p style="margin:0 0 4px 0;">Mit freundlichen Grüßen</p>'
         f'{sig}'
-        f'<p style="margin:20px 0 0 0;font-family:Arial,Helvetica,sans-serif;font-size:8pt;color:#999999;">'
-        f'---<br>Wenn Sie keine weiteren Informationen erhalten möchten, antworten Sie bitte mit dem Betreff &bdquo;Abmelden&ldquo; auf diese E-Mail.</p>'
         f'</div>'
     )
 
@@ -175,7 +177,7 @@ def create_single_draft(owner: str, lead: dict, flyer_b64: str, flyer_name: str,
     for attempt in range(1, 4):
         try:
             if owner == "JOEL":
-                req = urllib.request.Request(JOEL_URL, data=data, headers={"Content-Type": "application/json"}, method="POST")
+                req = urllib.request.Request(get_joel_url(), data=data, headers={"Content-Type": "application/json"}, method="POST")
                 with urllib.request.urlopen(req, timeout=90) as r:
                     return json.loads(r.read().decode("utf-8"))
             else:

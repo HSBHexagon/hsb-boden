@@ -255,6 +255,96 @@ def process_optouts(
     return total_updated
 
 
+def suppress_lead_direct(
+    email: str,
+    lead_id: Optional[str] = None,
+    reason: str = "",
+    dry_run: bool = False
+) -> Dict[str, Any]:
+    """Sperrt einen Lead direkt anhand von E-Mail oder Lead-ID und invalidiert Postfach-Entwuerfe."""
+    target_email = str(email or "").strip().lower()
+    target_id = str(lead_id or "").strip()
+    if not target_email and not target_id:
+        return {"ok": False, "error": "missing_email_or_lead_id"}
+
+    sheets_svc = get_sheets_service()
+    email_to_lead, existing_event_ids = load_all_leads_index(sheets_svc)
+
+    matched = None
+    if target_email and target_email in email_to_lead:
+        matched = email_to_lead[target_email]
+    elif target_id:
+        for lead in email_to_lead.values():
+            if lead.get("lead_id") == target_id:
+                matched = lead
+                break
+
+    row_num = matched["row"] if matched else None
+    resolved_id = matched["lead_id"] if matched else (target_id or "WEB-DIRECT")
+    resolved_email = matched["email"] if matched else target_email
+
+    now_iso = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
+    note = f"Web Opt-Out [{now_iso}]: {reason}" if reason else f"Web Opt-Out [{now_iso}]"
+
+    updates = []
+    if row_num:
+        updates.append({"range": f"ALL_LEADS!Y{row_num}", "values": [["yes"]]})
+        updates.append({"range": f"ALL_LEADS!Z{row_num}", "values": [["no"]]})
+        updates.append({"range": f"ALL_LEADS!AR{row_num}", "values": [["opt_out"]]})
+        updates.append({"range": f"ALL_LEADS!AT{row_num}", "values": [["yes"]]})
+        updates.append({"range": f"ALL_LEADS!BE{row_num}", "values": [["Abgemeldet"]]})
+
+    event_id = f"INBOUND-WEB-OPTOUT-{resolved_id}"
+    event_row = None
+    if event_id not in existing_event_ids:
+        event_row = build_inbound_event_row(
+            event_id=event_id,
+            msg_date=now_iso,
+            mailbox="web-portal",
+            sender=resolved_email,
+            subject="Web-Abmeldung ueber /abmelden",
+            message_id="",
+            lead_id=resolved_id,
+            classification="OPT_OUT",
+            stop="yes",
+            processed="PROCESSED",
+            notes=note,
+        )
+
+    purged_drafts = 0
+    try:
+        from com_mailbox_manager import ComMailboxClient
+        for owner in ["JOEL", "JORDI"]:
+            c = ComMailboxClient(owner)
+            purged_drafts += c.purge_drafts_for_recipient(resolved_email)
+    except Exception as e:
+        logger.warning(f"Fehler bei IMAP-Entwurf-Loeschung: {e}")
+
+    if not dry_run and updates:
+        sheets_svc.spreadsheets().values().batchUpdate(
+            spreadsheetId=SPREADSHEET_ID,
+            body={"valueInputOption": "USER_ENTERED", "data": updates}
+        ).execute()
+
+    if not dry_run and event_row:
+        sheets_svc.spreadsheets().values().append(
+            spreadsheetId=SPREADSHEET_ID,
+            range="INBOUND_EVENTS!A:L",
+            valueInputOption="USER_ENTERED",
+            insertDataOption="INSERT_ROWS",
+            body={"values": [event_row]}
+        ).execute()
+
+    logger.info(f"Direct Opt-Out: {resolved_id} ({resolved_email}) gesperrt, {purged_drafts} Entwuerfe geloescht.")
+    return {
+        "ok": True,
+        "lead_id": resolved_id,
+        "email": resolved_email,
+        "row": row_num,
+        "purged_drafts": purged_drafts
+    }
+
+
 def main():
     parser = argparse.ArgumentParser(description="HSB Sales OS - Inbound Opt-Out Ingestion Engine")
     parser.add_argument("--owner", choices=["JOEL", "JORDI", "ALL"], default="JOEL", help="Postfach-Eigentuemer")

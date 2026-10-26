@@ -1,0 +1,7 @@
+google-api-python-client==2.196.0
+google-auth==2.50.0
+requests==2.33.1
+pytest==9.0.3
+openpyxl>=3.1,<4
+Pillow>=11,<14
+python-dotenv>=1,<2

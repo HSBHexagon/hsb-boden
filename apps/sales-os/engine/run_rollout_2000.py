@@ -22,25 +22,19 @@ from run_100_batch import run_batch
 
 
 def rollout_jordi(start_from: int = 3534, target_end: int = 4533, chunk_size: int = 40):
-    print(f"
->>> STARTE ROLLOUT JORDIE (Ziel: Zeilen {start_from} bis {target_end}, {target_end - start_from + 1} Leads)...")
+    print(f"\n>>> STARTE ROLLOUT JORDIE (Ziel: Zeilen {start_from} bis {target_end}, {target_end - start_from + 1} Leads)...")
     for start in range(start_from, target_end + 1, chunk_size):
         count = min(chunk_size, target_end + 1 - start)
-        print(f"
-[JORDI] Tranche Zeilen {start} bis {start + count - 1} ({count} Leads)...
-")
+        print(f"\n[JORDI] Tranche Zeilen {start} bis {start + count - 1} ({count} Leads)...\n")
         run_batch("JORDI", count=count, start_row=start)
         time.sleep(1)
 
 
 def rollout_joel(start_from: int = 152, target_end: int = 1151, chunk_size: int = 20):
-    print(f"
->>> STARTE ROLLOUT JOEL (Ziel: Zeilen {start_from} bis {target_end}, {target_end - start_from + 1} Leads)...")
+    print(f"\n>>> STARTE ROLLOUT JOEL (Ziel: Zeilen {start_from} bis {target_end}, {target_end - start_from + 1} Leads)...")
     for start in range(start_from, target_end + 1, chunk_size):
         count = min(chunk_size, target_end + 1 - start)
-        print(f"
-[JOEL] Tranche Zeilen {start} bis {start + count - 1} ({count} Leads)...
-")
+        print(f"\n[JOEL] Tranche Zeilen {start} bis {start + count - 1} ({count} Leads)...\n")
         run_batch("JOEL", count=count, start_row=start)
         time.sleep(1)
 
@@ -62,8 +56,7 @@ def main():
     if args.owner in ["JOEL", "BOTH"]:
         rollout_joel(start_from=args.joel_start, target_end=1151, chunk_size=20)
 
-    print("
-================================================================================")
+    print("\n================================================================================")
     print(" 2.000ER ROLLOUT ABGESCHLOSSEN!")
     print("================================================================================")
 

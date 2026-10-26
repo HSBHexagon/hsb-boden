@@ -18,7 +18,7 @@ REPO_ROOT = Path("/Users/joelcherinodiaz/Projekte/hsb-boden")
 def run_system_verification() -> Dict[str, Any]:
     """Prüft die Kern-Aussagen des Systems anhand harter Terminal-Evidenz."""
     results = {}
-    
+
     # 1. SSOT Linter Check (Jordie Post & Invarianten)
     try:
         ssot_res = subprocess.run(
@@ -80,7 +80,7 @@ def run_system_verification() -> Dict[str, Any]:
 def benchmark_architectures():
     """Simuliert und vergleicht Durchsatz und Latenz beider Architekturen für 1.080 Entwürfe."""
     total_drafts = 1080
-    
+
     status_quo = {
         "name": "Status Quo (LogicFlows APIHub + Sync Google Sheets API)",
         "protocol": "Azure Logic Apps Single REST + Sheets API v4",
@@ -92,7 +92,7 @@ def benchmark_architectures():
         "parallelism": "1 Worker (Single-Thread Sequential)",
         "event_durability": "Cloud-Only (Abhängig von Google Sheets API)"
     }
-    
+
     best_possible = {
         "name": "Maximaleffizienz (Direct Graph $batch + SQLite Shadow Store + 4-Worker Swarm)",
         "protocol": "Microsoft Graph JSON Batching (20 Calls/Payload) + Local DB",
@@ -104,9 +104,9 @@ def benchmark_architectures():
         "parallelism": "4 Parallele Worker (Disjunkte Chunk-Verteilung)",
         "event_durability": "Vollständig (Lokales ACID-SQLite Journaling + Async Sync)"
     }
-    
+
     speedup = round(status_quo["total_estimated_seconds"] / max(best_possible["total_estimated_seconds"], 1), 1)
-    
+
     return {
         "total_drafts": total_drafts,
         "status_quo": status_quo,
@@ -119,10 +119,10 @@ if __name__ == "__main__":
     print("================================================================================")
     print("  HSB SALES OS — EMPIRISCHE VERIFIKATION & ARCHITEKTUR-GEGENÜBERSTELLUNG")
     print("================================================================================")
-    
+
     print("\n[PHASE 1] System-Verifikation & Fakten-Check...")
     veri = run_system_verification()
-    
+
     print(f"  • SSOT Compliance:      {'✅ BESTANDEN' if veri['ssot_compliance'].get('passed') else '❌ FEHLER'}")
     print(f"  • Pytest Testsuite:     {'✅ ' + veri['pytest_suite'].get('summary', '') if veri['pytest_suite'].get('passed') else '❌ FEHLER'}")
     if "deliverability" in veri and "total_score" in veri["deliverability"]:
@@ -134,7 +134,7 @@ if __name__ == "__main__":
     bench = benchmark_architectures()
     sq = bench["status_quo"]
     bp = bench["best_possible"]
-    
+
     print(f"\n┌──────────────────────────────────────┬───────────────────────────────┬───────────────────────────────┐")
     print(f"│ Kriterium                            │ Status Quo (Aktuell)          │ Maximaleffizienz (Ziel)       │")
     print(f"├──────────────────────────────────────┼───────────────────────────────┼───────────────────────────────┤")

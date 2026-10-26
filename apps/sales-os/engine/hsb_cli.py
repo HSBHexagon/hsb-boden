@@ -16,6 +16,7 @@ from __future__ import annotations
 import argparse
 import datetime
 import html
+import json
 import logging
 import os
 import random
@@ -30,7 +31,7 @@ if str(ENGINE_DIR) not in sys.path:
     sys.path.insert(0, str(ENGINE_DIR))
 
 from hsb_config import get_com_mailbox_config
-from hsb_core import assert_asset_gate, normalize_owner, sanitize_company_name
+from hsb_core import assert_asset_gate, check_eligibility, normalize_owner, sanitize_company_name
 from com_mailbox_manager import ComMailboxClient
 from sync_to_google_sheet import get_sheets_service, SPREADSHEET_ID
 from enrich_company_names import enrich_lead, check_domain_mx
@@ -51,7 +52,7 @@ def cmd_status(args):
     print("\n" + "=" * 95)
     print(" HSB SALES OS — SYSTEM & POSTFACH STATUS (2026 ARCHITEKTUR)")
     print("=" * 95)
-    
+
     # 1. COM Mailboxes (All-Inkl)
     print(f"\n[1] ALL-INKL .COM POSTFÄCHER (Outbound Akquise-Shield):")
     print(f"{'Owner':<18} | {'E-Mail':<26} | {'IMAP':<5} | {'SMTP':<5} | {'Drafts':<8} | {'Sent':<6} | {'Inbox':<6}")
@@ -87,7 +88,7 @@ def cmd_status(args):
     print(f"\n[3] GOOGLE SHEET SSOT (ID: {SPREADSHEET_ID}):")
     try:
         sheets_svc = get_sheets_service()
-        res = sheets_svc.spreadsheets().values().get(spreadsheetId=SPREADSHEET_ID, range="ALL_LEADS!A:BE").execute()
+        res = sheets_svc.spreadsheets().values().get(spreadsheetId=SPREADSHEET_ID, range="ALL_LEADS!A1:BM6425").execute()
         rows = res.get("values", [])
         total_leads = len(rows) - 1 if rows else 0
         print(f"  ✓ ALL_LEADS geladen: {total_leads} Leads indiziert.")
@@ -110,7 +111,7 @@ def cmd_purge_de(args):
 
     logger.info(f"Lese Entwürfe aus M365 {owner}...")
     raw_drafts = call_office365_api(token, conn_id, "Entwürfe", top=limit + 50)
-    
+
     # Filter drafts to delete
     to_delete = []
     for d in raw_drafts:
@@ -151,149 +152,89 @@ def cmd_overhaul(args):
     from overhaul_drafts import run_overhaul
     run_overhaul(owner=args.owner, target="com", limit=args.limit, dry_run=not args.apply)
 
+def cmd_overhaul_all(args):
+    from mass_lead_selector import filter_and_partition_leads
+    from mass_draft_generator import generate_drafts_chunked
 
-def cmd_send_batch(args):
-    owner = normalize_owner(args.owner)
-    count = args.count
+    owner = args.owner.upper()
+    limit = args.limit
     apply = args.apply
-    jitter_min = args.jitter_min
-    jitter_max = args.jitter_max
-    cap = args.cap
 
-    logger.info(f"=== AUTOMATED .COM SEND BATCH ===")
-    logger.info(f"Owner: {owner} | Anzahl: {count} | Modus: {'APPLY (Echter Versand)' if apply else 'DRY-RUN (Vorschau)'}")
-    logger.info(f"Anti-Spam Governance: Jitter [{jitter_min}s, {jitter_max}s] | Tages-Cap: {cap} Mails")
+    logger.info(f"=== MASS OVERHAUL ALL UNTOUCHED/OPEN LEADS (2026 ARCHITEKTUR) ===")
+    logger.info(f"Ziel-Owner: {owner} | Limit: {limit} | Modus: {'APPLY (Erstelle Entwürfe in .COM)' if apply else 'DRY-RUN (Vorschau)'}")
 
     sheets_svc = get_sheets_service()
-    all_leads, email_map = load_sheet_leads(sheets_svc)
-    flyer = assert_asset_gate(owner)
+    all_leads, _ = load_sheet_leads(sheets_svc)
 
-    # Filter eligible leads for owner
-    eligible = []
-    for lead in all_leads:
-        lead_owner = str(lead.get("Verantwortlicher") or "").upper()
-        if owner == "JOEL" and "JOEL" not in lead_owner:
+    joel_pool, jordi_pool = filter_and_partition_leads(all_leads)
+    logger.info(f"Qualifizierter unversendeter Gesamt-Pool: {len(joel_pool) + len(jordi_pool)} Leads (Joel: {len(joel_pool)}, Jordi: {len(jordi_pool)})")
+
+    targets = []
+    if owner in ("JOEL", "ALL"):
+        count = limit if owner == "JOEL" else limit // 2
+        targets.append(("JOEL", joel_pool[:count]))
+    if owner in ("JORDI", "ALL"):
+        count = limit if owner == "JORDI" else limit // 2
+        targets.append(("JORDI", jordi_pool[:count]))
+
+    for o, pool in targets:
+        logger.info(f"[{o}] Verarbeite {len(pool)} Leads...")
+        if not pool:
             continue
-        if owner == "JORDI" and "JORDI" not in lead_owner and "JORDIE" not in lead_owner:
-            continue
+        if apply:
+            res = generate_drafts_chunked(o, pool, chunk_size=50)
+            logger.info(f"[{o}] {len(res)} Entwürfe erfolgreich in .COM IMAP erstellt.")
 
-        email = (lead.get("E-Mail") or lead.get("Email") or "").strip().lower()
-        if not email or "@" not in email:
-            continue
+            updates = []
+            now_str = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
+            for l in pool:
+                row = l.get("_row")
+                if row:
+                    updates.append({"range": f"ALL_LEADS!AO{row}", "values": [["drafted"]]})
+                    updates.append({"range": f"ALL_LEADS!AU{row}", "values": [[f"DRAFT_READY_2026_{o}"]]})
+                    updates.append({"range": f"ALL_LEADS!AX{row}", "values": [[now_str]]})
+            if updates:
+                sheets_svc.spreadsheets().values().batchUpdate(
+                    spreadsheetId=SPREADSHEET_ID,
+                    body={"valueInputOption": "USER_ENTERED", "data": updates}
+                ).execute()
+                logger.info(f"[{o}] {len(pool)} Leads im Google Sheet auf 'drafted' / 'DRAFT_READY_2026' gesetzt.")
+        else:
+            print(f"--- [DRY-RUN] Erste 5 Leads für {o}: ---")
+            for l in pool[:5]:
+                print(f"  Row {l.get('_row')}: {l.get('Lead_ID') or l.get('Lead-ID')} | {l.get('E-Mail') or l.get('Email')} | {l.get('Firma') or l.get('Company')}")
 
-        batch_st = str(lead.get("Batch_Status") or "").upper()
-        status = str(lead.get("Status") or "").upper()
-        send_st = str(lead.get("Send_Status") or "").upper()
 
-        if "SENT" in batch_st or "SENT" in send_st or "REPLY" in batch_st or "BOUNCE" in batch_st:
-            continue
-        if str(lead.get("Opt-out-Status") or "").lower() == "yes" or str(lead.get("Suppressed") or "").lower() == "yes":
-            continue
-
-        # Valid candidate
-        eligible.append(lead)
-        if len(eligible) >= count:
-            break
-
-    logger.info(f"{len(eligible)} versandbereite Leads für {owner} ausgewählt.")
-    if not eligible:
-        logger.info("Keine weiteren versandbereiten Leads gefunden.")
-        return
-
-    print("\n" + "=" * 110)
-    print(f"{'Nr':<4} | {'Row':<5} | {'Lead-ID':<18} | {'E-Mail':<30} | {'Firma':<30} | {'MX':<4}")
-    print("-" * 110)
-    for idx, lead in enumerate(eligible, start=1):
-        email = (lead.get("E-Mail") or lead.get("Email") or "").strip().lower()
-        company = sanitize_company_name(lead.get("Firma") or "", email)
-        mx_ok = check_domain_mx(email.split("@")[-1])
-        print(f"{idx:<4} | {lead.get('_row'):<5} | {lead.get('Lead-ID', '')[:18]:<18} | {email[:30]:<30} | {company[:30]:<30} | {'OK' if mx_ok else 'FAIL':<4}")
-    print("=" * 110 + "\n")
-
-    if not apply:
-        logger.info("DRY-RUN abgeschlossen. Zum echten Versand --apply hinzufügen.")
-        return
-
-    client = ComMailboxClient(owner)
-    sent_count = 0
-    now_iso = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
-
-    for idx, lead in enumerate(eligible, start=1):
-        if sent_count >= cap:
-            logger.warning(f"Tages-Cap von {cap} Mails erreicht! Stoppe Versand zur Reputations-Sicherung.")
-            break
-
-        row_num = lead["_row"]
-        email = (lead.get("E-Mail") or lead.get("Email") or "").strip().lower()
-        enr = enrich_lead(row_num, lead)
-        company = enr.enriched_company or sanitize_company_name(lead.get("Firma") or "", email)
-        contact = enr.enriched_contact or lead.get("Ansprechpartner") or ""
-        
-        lead_copy = dict(lead)
-        lead_copy["Firma"] = company
-        lead_copy["Company"] = company
-        lead_copy["Ansprechpartner"] = contact
-        lead_copy["Contact"] = contact
-
-        anrede = anrede_fuer(lead_copy)
-        subject = f"Industrieböden für {company} – Beratung von {flyer.display_name}"
-        body = build_canonical_body_2026(owner, anrede, target="com")
-
-        # Jitter delay before sending (except first)
-        if idx > 1:
-            delay = random.uniform(jitter_min, jitter_max)
-            logger.info(f"Anti-Spam Jitter: Warte {delay:.1f}s vor nächstem Versand...")
-            time.sleep(delay)
-
-        bcc_target = client.cfg.get("reply_to") if getattr(args, "bcc_de", False) else None
-        try:
-            ok, msg_id = client.send_message(
-                to_email=email,
-                subject=subject,
-                body_html=body,
-                flyer_path=str(flyer.path),
-                flyer_filename=flyer.attachment_name,
-                bcc_email=bcc_target
-            )
-            sent_count += 1
-            logger.info(f"[{sent_count:02d}/{len(eligible)}] Z.{row_num} GESENDET an {email} (Message-ID: {msg_id})")
-
-            # Update Sheet row
-            updates = [
-                {"range": f"ALL_LEADS!AO{row_num}", "values": [["sent"]]},
-                {"range": f"ALL_LEADS!AP{row_num}", "values": [[now_iso]]},
-                {"range": f"ALL_LEADS!AU{row_num}", "values": [["SENT_COM_2026"]]},
-                {"range": f"ALL_LEADS!BA{row_num}", "values": [[msg_id]]},
-            ]
-            sheets_svc.spreadsheets().values().batchUpdate(
-                spreadsheetId=SPREADSHEET_ID,
-                body={"valueInputOption": "USER_ENTERED", "data": updates}
-            ).execute()
-
-        except Exception as e:
-            logger.error(f"Fehler beim Senden an {email}: {e}")
-
-    logger.info(f"=== BATCH VERSAND BEENDET: {sent_count} Mails erfolgreich versendet ===")
+def cmd_send_batch(args):
+    from outbound_safety import dispatch_verified
+    result = dispatch_verified(count_per_owner=args.count, owners=(args.owner,),
+        dry_run=not args.apply, cap=args.cap,
+        jitter_min=args.jitter_min, jitter_max=args.jitter_max)
+    print(json.dumps(result, ensure_ascii=False, indent=2))
 
 
 def cmd_test_mail(args):
     owner = normalize_owner(args.owner)
     recipient = args.to.strip()
     logger.info(f"=== LIVE TEST-MAIL FROM {owner} TO {recipient} ===")
-    
+
     client = ComMailboxClient(owner)
     flyer = assert_asset_gate(owner)
-    
-    body = build_canonical_body_2026(owner, f"Sehr geehrte/r Herr/Frau {owner},", target="com")
-    subject = f"TEST: HSB 2026 Standard .com Delivery Check ({owner})"
-    
+
+    body = build_canonical_body_2026(owner, f"Guten Tag,", target="com")
+    subject = getattr(args, "subject", None) or f"Industrieböden für gewerbliche Bauprojekte – Beratung von {flyer.display_name}"
+
+    attach_flyer = getattr(args, "with_attachment", False)
+    fpath = str(flyer.path) if attach_flyer else None
+    fname = flyer.attachment_name if attach_flyer else None
+
     bcc_target = client.cfg.get("reply_to") if getattr(args, "bcc_de", False) else None
     ok, msg_id = client.send_message(
         to_email=recipient,
         subject=subject,
         body_html=body,
-        flyer_path=str(flyer.path),
-        flyer_filename=flyer.attachment_name,
+        flyer_path=fpath,
+        flyer_filename=fname,
         bcc_email=bcc_target
     )
     print(f"✓ Test-E-Mail erfolgreich versendet! Message-ID: {msg_id}")
@@ -301,7 +242,74 @@ def cmd_test_mail(args):
     print(f"  Reply-To: {client.cfg['reply_to']}")
     if bcc_target:
         print(f"  BCC-Kopie: {bcc_target} (im .de Postfach sichtbar)")
-    print(f"  Anhang:   {flyer.attachment_name} ({flyer.path.stat().st_size // 1024} KB)")
+    if attach_flyer:
+        print(f"  Anhang:   {flyer.attachment_name} ({flyer.path.stat().st_size // 1024} KB)")
+    else:
+        print(f"  Format:   Reiner Text/HTML mit Online-Projektflyer-Link (0 KB Anhang)")
+
+
+def cmd_optouts(args):
+    """Zeigt alle gesperrten / abgemeldeten Leads und Inbound-Events an."""
+    print("\n" + "=" * 105)
+    print(" HSB SALES OS — ABMELDUNGEN & WIDERSPRÜCHE (SSOT COCKPIT)")
+    print("=" * 105)
+    sheets_svc = get_sheets_service()
+
+    # 1. Aus ALL_LEADS
+    res = sheets_svc.spreadsheets().values().get(spreadsheetId=SPREADSHEET_ID, range="ALL_LEADS!A1:BM6425").execute()
+    rows = res.get("values", [])
+    optouts = []
+    if rows:
+        col_lead_id = 0
+        col_comp = 1
+        col_email = 8
+        col_opt = 24
+        col_pipe = 56
+        for idx, r in enumerate(rows[1:], start=2):
+            opt_val = r[col_opt] if len(r) > col_opt else ""
+            pipe_val = r[col_pipe] if len(r) > col_pipe else ""
+            if str(opt_val).lower() == "yes" or pipe_val == "Abgemeldet":
+                optouts.append({
+                    "row": idx,
+                    "lead_id": r[col_lead_id] if len(r) > col_lead_id else "",
+                    "company": r[col_comp] if len(r) > col_comp else "",
+                    "email": r[col_email] if len(r) > col_email else "",
+                    "pipeline": pipe_val,
+                })
+
+    print(f"Gesperrte Leads in ALL_LEADS: {len(optouts)}")
+    print(f"{'Row':<5} | {'Lead-ID':<18} | {'E-Mail':<32} | {'Firma':<30} | {'Status'}")
+    print("-" * 105)
+    for it in optouts[-20:]:
+        print(f"{it['row']:<5} | {it['lead_id']:<18} | {it['email'][:32]:<32} | {it['company'][:30]:<30} | {it['pipeline']}")
+
+    # 2. Aus INBOUND_EVENTS
+    ev_res = sheets_svc.spreadsheets().values().get(spreadsheetId=SPREADSHEET_ID, range="INBOUND_EVENTS!A:K").execute()
+    ev_rows = ev_res.get("values", [])
+    ev_count = len(ev_rows) - 1 if ev_rows else 0
+    print(f"\nProtokollierte Inbound-Events: {ev_count}")
+    print("=" * 105 + "\n")
+
+
+def cmd_optout_direct(args):
+    """Sperrt einen Lead manuell oder aus Webhook und löscht Postfach-Entwürfe."""
+    from ingest_optouts import suppress_lead_direct
+    res = suppress_lead_direct(
+        email=args.email,
+        lead_id=getattr(args, "lead_id", None),
+        reason=getattr(args, "reason", "Manuell über CLI"),
+        dry_run=not args.apply
+    )
+    mode_str = "LIVE" if args.apply else "DRY-RUN"
+    print(f"[{mode_str}] Sperre verarbeitet: Lead-ID={res['lead_id']}, E-Mail={res['email']}, Gelöschte Entwürfe={res.get('purged_drafts', 0)}")
+
+
+def cmd_sync(args):
+    from closed_loop_crm import sync_inbounds, sync_sent_messages
+    sent_result=sync_sent_messages(apply=args.apply)
+    result=sync_inbounds(apply=args.apply,include_de=not getattr(args,'com_only',False))
+    result["sent_reconciliation"]=sent_result
+    print(json.dumps(result,ensure_ascii=False,indent=2))
 
 
 def main():
@@ -311,11 +319,27 @@ def main():
     # status
     p_status = subparsers.add_parser("status", help="Status aller Postfächer und Sheets")
 
+    # optouts Cockpit
+    p_optouts = subparsers.add_parser("optouts", help="Alle Abmeldungen & Widersprüche anzeigen")
+
+    # optout Befehl
+    p_optout = subparsers.add_parser("optout", help="Einen Lead sofort sperren und Entwürfe löschen")
+    p_optout.add_argument("--email", required=True, help="E-Mail-Adresse des Leads")
+    p_optout.add_argument("--lead-id", help="Optionale Lead-ID")
+    p_optout.add_argument("--reason", default="Manuell über CLI", help="Grund des Widerspruchs")
+    p_optout.add_argument("--apply", action="store_true", help="Sperre scharf ins Sheet schreiben")
+
     # purge-de
     p_purge = subparsers.add_parser("purge-de", help="Alte .de Entwürfe aus M365 Exchange löschen")
     p_purge.add_argument("--owner", choices=["JOEL", "JORDI"], default="JOEL")
     p_purge.add_argument("--limit", type=int, default=50)
     p_purge.add_argument("--apply", action="store_true", help="Löschung ausführen")
+
+    # overhaul-all
+    p_overhaul_all = subparsers.add_parser("overhaul-all", help="Massen-Vorbereitung offener Leads als 2026-Entwürfe")
+    p_overhaul_all.add_argument("--owner", choices=["JOEL", "JORDI", "ALL"], default="ALL")
+    p_overhaul_all.add_argument("--limit", type=int, default=100)
+    p_overhaul_all.add_argument("--apply", action="store_true", help="Entwurfserstellung ausführen")
 
     # overhaul
     p_overhaul = subparsers.add_parser("overhaul", help="Entwürfe auf 2026-Standard veredeln")
@@ -331,17 +355,21 @@ def main():
     p_send.add_argument("--jitter-max", type=int, default=MAX_JITTER_SECONDS)
     p_send.add_argument("--cap", type=int, default=DAILY_CAP_PER_MAILBOX)
     p_send.add_argument("--bcc-de", action="store_true", help="Blindkopie (BCC) an .de Firmenkonto senden")
+    p_send.add_argument("--with-attachment", action="store_true", help="Optional den 241 KB Flyer als Datei anhängen (Standard: Aus, da Online-Link aktiv)")
     p_send.add_argument("--apply", action="store_true", help="Echten Versand starten")
 
     # sync
-    p_sync = subparsers.add_parser("sync", help="Dual-Domain Reconciliation ausführen")
+    p_sync = subparsers.add_parser("sync", help="Dual-Domain Closed-Loop Reconciliation (Antworten, Bounces, Abwesenheiten)")
     p_sync.add_argument("--limit", type=int, default=100)
+    p_sync.add_argument("--com-only", action="store_true", help="Nur .com IMAP; .de bleibt separat zu verifizieren")
+    p_sync.add_argument("--apply", action="store_true", help="Erkannte Status-Änderungen live ins Google Sheet schreiben")
 
     # test-mail
     p_test = subparsers.add_parser("test-mail", help="Einzelne Test-E-Mail senden")
     p_test.add_argument("--owner", choices=["JOEL", "JORDI"], default="JOEL")
     p_test.add_argument("--to", required=True, help="Empfänger-Adresse")
     p_test.add_argument("--bcc-de", action="store_true", help="Blindkopie (BCC) an .de Firmenkonto senden")
+    p_test.add_argument("--with-attachment", action="store_true", help="Optional den 241 KB Flyer als Datei anhängen (Standard: Aus, da Online-Link aktiv)")
 
     args = parser.parse_args()
 
@@ -351,12 +379,19 @@ def main():
         cmd_purge_de(args)
     elif args.command == "overhaul":
         cmd_overhaul(args)
+    elif args.command == "overhaul-all":
+        cmd_overhaul_all(args)
+
     elif args.command == "send-batch":
         cmd_send_batch(args)
     elif args.command == "sync":
-        run_cloud_sync(limit=args.limit)
+        cmd_sync(args)
     elif args.command == "test-mail":
         cmd_test_mail(args)
+    elif args.command == "optouts":
+        cmd_optouts(args)
+    elif args.command == "optout":
+        cmd_optout_direct(args)
 
 
 if __name__ == "__main__":

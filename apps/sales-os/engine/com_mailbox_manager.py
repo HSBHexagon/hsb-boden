@@ -18,6 +18,8 @@ from email.mime.application import MIMEApplication
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.utils import formatdate, make_msgid
+import html
+import hashlib
 import imaplib
 import os
 from pathlib import Path
@@ -34,6 +36,28 @@ if str(ENGINE_DIR) not in sys.path:
     sys.path.insert(0, str(ENGINE_DIR))
 
 from hsb_config import get_com_mailbox_config
+
+
+def html_to_plaintext(source):
+    from html.parser import HTMLParser
+    class TextParser(HTMLParser):
+        def __init__(self):
+            super().__init__(convert_charrefs=True)
+            self.parts=[];self.hidden=0
+        def handle_starttag(self,tag,attrs):
+            if tag in {'script','style'}:self.hidden+=1
+            elif not self.hidden and tag in {'br','p','div','li'}:self.parts.append('\n')
+        def handle_endtag(self,tag):
+            if tag in {'script','style'}:self.hidden=max(0,self.hidden-1)
+            elif not self.hidden and tag in {'p','div','li'}:self.parts.append('\n')
+        def handle_data(self,data):
+            if not self.hidden:self.parts.append(data)
+    parser=TextParser();parser.feed(source);parser.close()
+    return ''.join(parser.parts).strip()
+
+
+def stable_inbound_id(raw, owner, rfc_message_id=''):
+    return str(rfc_message_id).strip() or f'COM_IMAP:{owner}:SHA256:{hashlib.sha256(raw).hexdigest()}'
 
 
 class ComMailboxClient:
@@ -90,6 +114,22 @@ class ComMailboxClient:
                     pass
         return counts
 
+    def _assert_draft_capacity(self, imap, recipients):
+        """Existing target met or ambiguous retry: preserve all originals."""
+        from email.utils import getaddresses
+        typ,_=imap.select(self.cfg['drafts_folder'],readonly=True)
+        if typ!='OK':raise RuntimeError('DRAFT_FOLDER_UNAVAILABLE')
+        typ,data=imap.uid('search',None,'ALL')
+        if typ!='OK':raise RuntimeError('DRAFT_SEARCH_FAILED')
+        if data and data[0] and len(data[0].split())>=50:
+            raise RuntimeError('DRAFT_TARGET_ALREADY_MET: reconcile existing drafts')
+        normalized=[r.strip().lower() for r in recipients]
+        if len(normalized)!=len(set(normalized)):raise RuntimeError('DUPLICATE_DRAFT_INPUT')
+        for recipient in normalized:
+            typ,data=imap.uid('search',None,'HEADER','To',f'"{recipient}"')
+            if typ!='OK':raise RuntimeError('DRAFT_RECIPIENT_SEARCH_FAILED')
+            if data and data[0]:raise RuntimeError('EXISTING_DRAFT_REQUIRES_RECONCILIATION')
+
     def create_draft(
         self,
         to_email: str,
@@ -105,30 +145,12 @@ class ComMailboxClient:
         if not to_email or '@' not in to_email:
             raise ValueError(f'Ungueltige Empfaengeradresse: {to_email}')
 
-        msg = MIMEMultipart('mixed')
-        msg['From'] = f'{self.cfg["display_name"]} <{self.cfg["email"]}>'
-        if self.cfg.get('reply_to'):
-            msg['Reply-To'] = self.cfg['reply_to']
-        msg['To'] = to_email
-        msg['Subject'] = Header(subject, 'utf-8').encode()
-        msg['Date'] = formatdate(localtime=True)
-        msg_id = custom_message_id or make_msgid(domain='hsb-boden.com')
-        msg['Message-ID'] = msg_id
-        msg['X-Unsent'] = '1'
-
-        part_html = MIMEText(body_html, 'html', 'utf-8')
-        msg.attach(part_html)
-
-        if flyer_path and os.path.exists(flyer_path):
-            with open(flyer_path, 'rb') as f:
-                part_pdf = MIMEApplication(f.read(), _subtype='pdf')
-            fname = flyer_filename or os.path.basename(flyer_path)
-            part_pdf.add_header('Content-Disposition', 'attachment', filename=fname)
-            msg.attach(part_pdf)
-
-        raw_bytes = msg.as_bytes()
+        fbytes = Path(flyer_path).read_bytes() if flyer_path else None
+        raw_bytes, msg_id = self.build_draft_message(to_email,subject,body_html,
+            flyer_bytes=fbytes,flyer_filename=flyer_filename,custom_message_id=custom_message_id)
 
         with self._get_imap() as imap:
+            self._assert_draft_capacity(imap,[to_email])
             folder = self.cfg['drafts_folder']
             res, data = imap.append(
                 folder,
@@ -153,24 +175,28 @@ class ComMailboxClient:
         if not to_email or '@' not in to_email:
             raise ValueError(f'Ungueltige Empfaengeradresse: {to_email}')
 
-        msg = MIMEMultipart('mixed')
+        from email.message import EmailMessage
+        from urllib.parse import unquote
+        msg = EmailMessage()
         msg['From'] = f'{self.cfg["display_name"]} <{self.cfg["email"]}>'
-        if self.cfg.get('reply_to'):
-            msg['Reply-To'] = self.cfg['reply_to']
         msg['To'] = to_email
-        msg['Subject'] = Header(subject, 'utf-8').encode()
+        msg['Subject'] = subject
         msg['Date'] = formatdate(localtime=True)
         msg_id = custom_message_id or make_msgid(domain='hsb-boden.com')
         msg['Message-ID'] = msg_id
         msg['X-Unsent'] = '1'
-
-        part_html = MIMEText(body_html, 'html', 'utf-8')
-        msg.attach(part_html)
+        ids = set(re.findall(r'HSB-\d{8}-\d+',unquote(body_html)))
+        if len(ids)==1:
+            msg['X-HSB-Lead-ID']=next(iter(ids))
+        plain = html_to_plaintext(body_html)
+        # Keep actionable URLs in the plain-text alternative.
+        urls = re.findall(r'https?://[^\s<>"\x27]+',html.unescape(body_html))
+        msg.set_content(html.unescape(plain) + "\n\n" + "\n".join(dict.fromkeys(urls)))
+        msg.add_alternative(body_html,subtype='html')
 
         if flyer_bytes:
-            part_pdf = MIMEApplication(flyer_bytes, _subtype='pdf')
-            part_pdf.add_header('Content-Disposition', 'attachment', filename=flyer_filename or 'HSB-Flyer.pdf')
-            msg.attach(part_pdf)
+            msg.add_attachment(flyer_bytes,maintype='application',subtype='pdf',
+                filename=flyer_filename or 'HSB-HEXAGON-Industrieboeden-Flyer.pdf')
 
         return msg.as_bytes(), msg_id
 
@@ -186,6 +212,7 @@ class ComMailboxClient:
                     flyer_cache[fpath] = f.read()
 
         with self._get_imap() as imap:
+            self._assert_draft_capacity(imap,[it['to_email'] for it in items])
             folder = self.cfg['drafts_folder']
             for it in items:
                 fpath = it.get('flyer_path')
@@ -221,16 +248,53 @@ class ComMailboxClient:
         flyer_path: Optional[str] = None,
         flyer_filename: Optional[str] = "HSB-HEXAGON-Industrieboeden-Flyer.pdf",
         custom_message_id: Optional[str] = None,
-        bcc_email: Optional[str] = None
+        bcc_email: Optional[str] = None,
+        body_plain: Optional[str] = None
     ) -> Tuple[bool, str]:
         """
         Versendet eine E-Mail ueber SMTP-SSL und legt eine Kopie im Ordner Gesendet ab.
-        Unterstuetzt optional verdeckte Blindkopie (BCC), z.B. an das M365 .de Firmenkonto.
+        Erzeugt zwingend RFC-konformes multipart/alternative (Plain-Text + HTML)
+        sowie multipart/mixed falls ein Dateianhang vorhanden ist.
         """
         if not to_email or "@" not in to_email:
             raise ValueError(f"Ungueltige Empfaengeradresse: {to_email}")
 
-        msg = MIMEMultipart("mixed")
+        from outbound_safety import require_internal_test
+        require_internal_test(to_email, bcc_email)
+
+        # Vollstaendiges HTML-Dokument sicherstellen (verhindert HTML_MIME_NO_HTML_TAG)
+        html_content = body_html.strip()
+        if not html_content.lower().startswith("<!doctype") and not html_content.lower().startswith("<html"):
+            html_content = (
+                "<!DOCTYPE html>\n"
+                "<html lang=\"de\">\n"
+                "<head><meta charset=\"utf-8\"><title>" + html.escape(subject) + "</title></head>\n"
+                "<body style=\"margin:0;padding:0;\">\n" + html_content + "\n</body>\n</html>"
+            )
+
+        # Plain-Text Version automatisch erzeugen falls nicht uebergeben
+        if not body_plain:
+            body_plain = html_to_plaintext(body_html)
+
+        # 1. Text-Zweig: multipart/alternative (Plain-Text zuerst, HTML als bevorzugte Alternative)
+        alt_part = MIMEMultipart("alternative")
+        part_text = MIMEText(body_plain, "plain", "utf-8")
+        part_html = MIMEText(html_content, "html", "utf-8")
+        alt_part.attach(part_text)
+        alt_part.attach(part_html)
+
+        # 2. Haupt-Container
+        if flyer_path and os.path.exists(flyer_path):
+            msg = MIMEMultipart("mixed")
+            msg.attach(alt_part)
+            with open(flyer_path, "rb") as f:
+                part_pdf = MIMEApplication(f.read(), _subtype="pdf")
+            fname = flyer_filename or os.path.basename(flyer_path)
+            part_pdf.add_header("Content-Disposition", "attachment", filename=fname)
+            msg.attach(part_pdf)
+        else:
+            msg = alt_part
+
         msg["From"] = f"{self.cfg['display_name']} <{self.cfg['email']}>"
         if self.cfg.get("reply_to"):
             msg["Reply-To"] = self.cfg["reply_to"]
@@ -239,16 +303,6 @@ class ComMailboxClient:
         msg["Date"] = formatdate(localtime=True)
         msg_id = custom_message_id or make_msgid(domain="hsb-boden.com")
         msg["Message-ID"] = msg_id
-
-        part_html = MIMEText(body_html, "html", "utf-8")
-        msg.attach(part_html)
-
-        if flyer_path and os.path.exists(flyer_path):
-            with open(flyer_path, "rb") as f:
-                part_pdf = MIMEApplication(f.read(), _subtype="pdf")
-            fname = flyer_filename or os.path.basename(flyer_path)
-            part_pdf.add_header("Content-Disposition", "attachment", filename=fname)
-            msg.attach(part_pdf)
 
         raw_bytes = msg.as_bytes()
 
@@ -268,20 +322,43 @@ class ComMailboxClient:
             else:
                 smtp.send_message(msg)
 
-        # 2. Append to Sent folder via IMAP
+        # 2. Nach SMTP-Akzeptanz gesonderten IMAP-Nachweis vermerken.
+        # IMAP-Fehler duerfen niemals einen automatischen SMTP-Retry ausloesen.
+        self.last_sent_copy_ok = False
+        self.last_sent_copy_error = None
         try:
             with self._get_imap() as imap:
-                folder = self.cfg["sent_folder"]
-                imap.append(
-                    folder,
+                result, _ = imap.append(
+                    self.cfg["sent_folder"],
                     r"(\Seen)",
                     imaplib.Time2Internaldate(time.time()),
-                    raw_bytes
+                    raw_bytes,
                 )
-        except Exception:
-            pass
+                self.last_sent_copy_ok = result == "OK"
+                if not self.last_sent_copy_ok:
+                    self.last_sent_copy_error = "IMAP_APPEND_NOT_OK"
+        except Exception as exc:
+            self.last_sent_copy_error = type(exc).__name__
 
         return True, msg_id
+
+    def deliver_verified_bytes(self, raw_bytes, recipient, *, journal):
+        from outbound_safety import SendJournal
+        if os.environ.get('HSB_CUSTOMER_SEND_ENABLED') != 'yes' or not isinstance(journal, SendJournal):
+            raise PermissionError('Verified customer dispatch is disabled')
+        parsed = email.message_from_bytes(raw_bytes)
+        mid = str(parsed.get('Message-ID') or '')
+        row = journal.db.execute(
+            "SELECT owner,message_id,state FROM attempts WHERE email=?", (recipient.lower(),)
+        ).fetchone()
+        if row != (self.owner, mid, 'SMTP_UNKNOWN'):
+            raise PermissionError('No durable matching SMTP reservation')
+        with smtplib.SMTP_SSL(self.cfg['smtp_server'], self.cfg['smtp_port'],
+                context=self.ssl_context, timeout=self.timeout) as smtp:
+            smtp.login(self.cfg['username'], self.cfg['password'])
+            refused = smtp.sendmail(self.cfg['email'], [recipient], raw_bytes)
+            if refused:
+                raise RuntimeError('SMTP_RECIPIENT_REFUSED')
 
     def list_drafts(self, limit: int = 10) -> List[Dict[str, Any]]:
         """Liest die neuesten Entwuerfe aus dem Entwurfsordner."""
@@ -294,7 +371,7 @@ class ComMailboxClient:
             if not data or not data[0]:
                 return drafts
             msg_nums = data[0].split()
-            for num in msg_nums[-limit:]:
+            for num in (msg_nums[-limit:] if limit else msg_nums):
                 typ, msg_data = imap.fetch(num, '(RFC822.HEADER)')
                 for part in msg_data:
                     if isinstance(part, tuple):
@@ -314,13 +391,14 @@ class ComMailboxClient:
         with self._get_imap() as imap:
             res, _ = imap.select(self.cfg['sent_folder'], readonly=True)
             if res != 'OK':
-                return items
+                raise RuntimeError('SENT_FOLDER_UNAVAILABLE')
             typ, data = imap.search(None, 'ALL')
             if not data or not data[0]:
                 return items
             msg_nums = data[0].split()
-            for num in msg_nums[-limit:]:
-                typ, msg_data = imap.fetch(num, '(RFC822)')
+            for num in (msg_nums[-limit:] if limit else msg_nums):
+                typ, msg_data = imap.fetch(num, '(BODY.PEEK[HEADER.FIELDS (MESSAGE-ID DATE FROM TO SUBJECT)])')
+                if typ != 'OK': raise RuntimeError('SENT_HEADER_READ_FAILED')
                 for part in msg_data:
                     if isinstance(part, tuple):
                         parsed = email.message_from_bytes(part[1])
@@ -329,6 +407,8 @@ class ComMailboxClient:
                         items.append({
                             'id': str(parsed.get('Message-ID') or num.decode()),
                             'date_str': str(parsed.get('Date') or ''),
+                            'from': str(parsed.get('From') or ''),
+                            'to': recips_raw,
                             'recipients': recips,
                             'subject': str(parsed.get('Subject') or ''),
                             'internet_message_id': str(parsed.get('Message-ID') or ''),
@@ -346,14 +426,16 @@ class ComMailboxClient:
             if not data or not data[0]:
                 return items
             msg_nums = data[0].split()
-            for num in msg_nums[-limit:]:
-                typ, msg_data = imap.fetch(num, '(RFC822)')
+            for num in (msg_nums[-limit:] if limit else msg_nums):
+                typ, msg_data = imap.fetch(num, '(BODY.PEEK[])')
                 for part in msg_data:
                     if isinstance(part, tuple):
                         parsed = email.message_from_bytes(part[1])
                         body = ""
                         if parsed.is_multipart():
                             for p in parsed.walk():
+                                if p.get_content_type() == "message/delivery-status":
+                                    body += p.as_string() + "\n"
                                 if p.get_content_type() in ("text/plain", "text/html"):
                                     payload = p.get_payload(decode=True)
                                     if payload:
@@ -363,7 +445,7 @@ class ComMailboxClient:
                             if payload:
                                 body = payload.decode(errors='replace')
                         items.append({
-                            'id': str(parsed.get('Message-ID') or num.decode()),
+                            'id': stable_inbound_id(part[1],self.owner,parsed.get('Message-ID') or ''),
                             'date_str': str(parsed.get('Date') or ''),
                             'from': str(parsed.get('From') or ''),
                             'to': str(parsed.get('To') or ''),
@@ -404,6 +486,25 @@ class ComMailboxClient:
             if res != 'OK':
                 return 0
             typ, data = imap.search(None, 'ALL')
+            if not data or not data[0]:
+                return 0
+            for num in data[0].split():
+                imap.store(num, '+FLAGS', r'\Deleted')
+                deleted += 1
+            imap.expunge()
+        return deleted
+
+    def purge_drafts_for_recipient(self, to_email: str) -> int:
+        """Loescht alle Entwuerfe fuer eine bestimmte Empfaengeradresse (Opt-Out Schutz)."""
+        target = str(to_email or "").strip().lower()
+        if not target or "@" not in target:
+            return 0
+        deleted = 0
+        with self._get_imap() as imap:
+            res, _ = imap.select(self.cfg['drafts_folder'])
+            if res != 'OK':
+                return 0
+            typ, data = imap.search(None, 'HEADER', 'TO', target)
             if not data or not data[0]:
                 return 0
             for num in data[0].split():

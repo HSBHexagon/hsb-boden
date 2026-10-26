@@ -109,10 +109,12 @@ def test_com_mailbox_send_message_executes_smtp_and_appends_to_sent(monkeypatch)
     import smtplib
     monkeypatch.setattr(smtplib, "SMTP_SSL", FakeSMTP)
 
-    ok, mid = client.send_message("cherinodiaz@outlook.com", "Live Send Test", "<p>Hallo</p>")
+    ok, mid = client.send_message("cherinodiaz@outlook.com", "Live Send Test", "<p>Hallo</p><SCRIPT>hidden_script_payload</SCRIPT   >")
     assert ok is True
     assert captured["imap_folder"] == '"Gesendet"'
     msg = captured["smtp_msg"]
+    plain = next(p for p in msg.walk() if p.get_content_type() == "text/plain").get_payload(decode=True).decode()
+    assert "hidden_script_payload" not in plain
     assert "j-cherino@hsb-boden.com" in msg["From"]
     assert msg["Reply-To"] is None
     assert msg["To"] == "cherinodiaz@outlook.com"

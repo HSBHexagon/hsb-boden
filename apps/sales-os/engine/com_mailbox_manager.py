@@ -257,8 +257,8 @@ class ComMailboxClient:
         # Plain-Text Version automatisch erzeugen falls nicht uebergeben
         if not body_plain:
             # HTML-Tags und HTML-Entities fuer reinen Text aufbereiten
-            text_cleaned = re.sub(r"<style.*?</style>", "", body_html, flags=re.DOTALL | re.IGNORECASE)
-            text_cleaned = re.sub(r"<script.*?</script>", "", text_cleaned, flags=re.DOTALL | re.IGNORECASE)
+            text_cleaned = re.sub(r"<style\b[^>]*>[\s\S]*?</style\s*>", "", body_html, flags=re.DOTALL | re.IGNORECASE)
+            text_cleaned = re.sub(r"<script\b[^>]*>[\s\S]*?</script\s*>", "", text_cleaned, flags=re.DOTALL | re.IGNORECASE)
             text_cleaned = re.sub(r"<br\s*/?>", "\n", text_cleaned, flags=re.IGNORECASE)
             text_cleaned = re.sub(r"</p>", "\n\n", text_cleaned, flags=re.IGNORECASE)
             text_cleaned = re.sub(r"</div>", "\n", text_cleaned, flags=re.IGNORECASE)

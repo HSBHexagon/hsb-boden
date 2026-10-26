@@ -15,7 +15,7 @@ assert(side.includes('id="comOpenLink"'),'sidebar now uses dialog link');
 assert(side.includes("el('comOpenLink').href"),'dialog link follows owner selection');
 assert(!side.includes('id="jordi100Button" onclick='),'fixed 100-draft button removed');
 assert(side.includes('owner='),'owner passed to dialog');
-const script=mobile.match(/<script>([\s\S]*?)<\/script>/);
+const script=mobile.match(/<script\b[^>]*>([\s\S]*?)<\/script\s*>/i);
 assert(script,'mobile JS found');
 assert(script[1].includes('google.script.url.getLocation'),'mobile reads URL owner query');
 assert(script[1].includes('uiMobileComQueueDrafts'),'guarded queue wrapper retained');

@@ -158,4 +158,41 @@ describe("trackEvent", () => {
       send_to: "G-VC4BJBEFTV",
     });
   });
+
+  it("returns false and blocks tracking when localStorage contains invalid JSON", async () => {
+    localStorage.clear();
+    localStorage.setItem("hsb-consent-v1", "{invalid-json");
+    const gtag = vi.fn();
+    win.gtag = gtag;
+    win.dataLayer = [];
+
+    vi.resetModules();
+    const isolated = await import("../src/lib/tracking");
+    isolated.trackEvent(isolated.TrackingEvent.PhoneClick);
+
+    expect(gtag).not.toHaveBeenCalled();
+    expect(win.dataLayer).toHaveLength(0);
+  });
+
+  it("returns false and handles errors gracefully when localStorage.getItem throws", async () => {
+    localStorage.clear();
+    const getItemSpy = vi.spyOn(Storage.prototype, "getItem").mockImplementation(() => {
+      throw new Error("SecurityError: Access is denied");
+    });
+
+    try {
+      const gtag = vi.fn();
+      win.gtag = gtag;
+      win.dataLayer = [];
+
+      vi.resetModules();
+      const isolated = await import("../src/lib/tracking");
+      isolated.trackEvent(isolated.TrackingEvent.PhoneClick);
+
+      expect(gtag).not.toHaveBeenCalled();
+      expect(win.dataLayer).toHaveLength(0);
+    } finally {
+      getItemSpy.mockRestore();
+    }
+  });
 });

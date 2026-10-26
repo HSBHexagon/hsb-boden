@@ -14,7 +14,7 @@ const { lang = "de" } = Astro.props;
 {lang === "de" && (
   <div
     id="lang-suggest"
-    class="hidden border-b border-hsb-line bg-white"
+    class="fixed inset-x-4 top-20 z-30 mx-auto hidden max-w-3xl rounded border border-hsb-line bg-white shadow-lg"
     role="region"
     aria-label="Language suggestion"
   >

@@ -38,6 +38,24 @@ if str(ENGINE_DIR) not in sys.path:
 from hsb_config import get_com_mailbox_config
 
 
+def html_to_plaintext(source):
+    from html.parser import HTMLParser
+    class TextParser(HTMLParser):
+        def __init__(self):
+            super().__init__(convert_charrefs=True)
+            self.parts=[];self.hidden=0
+        def handle_starttag(self,tag,attrs):
+            if tag in {'script','style'}:self.hidden+=1
+            elif not self.hidden and tag in {'br','p','div','li'}:self.parts.append('\n')
+        def handle_endtag(self,tag):
+            if tag in {'script','style'}:self.hidden=max(0,self.hidden-1)
+            elif not self.hidden and tag in {'p','div','li'}:self.parts.append('\n')
+        def handle_data(self,data):
+            if not self.hidden:self.parts.append(data)
+    parser=TextParser();parser.feed(source);parser.close()
+    return ''.join(parser.parts).strip()
+
+
 def stable_inbound_id(raw, owner, rfc_message_id=''):
     return str(rfc_message_id).strip() or f'COM_IMAP:{owner}:SHA256:{hashlib.sha256(raw).hexdigest()}'
 
@@ -170,7 +188,7 @@ class ComMailboxClient:
         ids = set(re.findall(r'HSB-\d{8}-\d+',unquote(body_html)))
         if len(ids)==1:
             msg['X-HSB-Lead-ID']=next(iter(ids))
-        plain = re.sub(r'<[^>]+>', ' ', body_html)
+        plain = html_to_plaintext(body_html)
         # Keep actionable URLs in the plain-text alternative.
         urls = re.findall(r'https?://[^\s<>"\x27]+',html.unescape(body_html))
         msg.set_content(html.unescape(plain) + "\n\n" + "\n".join(dict.fromkeys(urls)))
@@ -256,17 +274,7 @@ class ComMailboxClient:
 
         # Plain-Text Version automatisch erzeugen falls nicht uebergeben
         if not body_plain:
-            # HTML-Tags und HTML-Entities fuer reinen Text aufbereiten
-            text_cleaned = re.sub(r"<style\b[^>]*>[\s\S]*?</style\s*>", "", body_html, flags=re.DOTALL | re.IGNORECASE)
-            text_cleaned = re.sub(r"<script\b[^>]*>[\s\S]*?</script\s*>", "", text_cleaned, flags=re.DOTALL | re.IGNORECASE)
-            text_cleaned = re.sub(r"<br\s*/?>", "\n", text_cleaned, flags=re.IGNORECASE)
-            text_cleaned = re.sub(r"</p>", "\n\n", text_cleaned, flags=re.IGNORECASE)
-            text_cleaned = re.sub(r"</div>", "\n", text_cleaned, flags=re.IGNORECASE)
-            text_cleaned = re.sub(r"&bull;", "•", text_cleaned)
-            text_cleaned = re.sub(r"&middot;", "·", text_cleaned)
-            text_cleaned = re.sub(r"&bdquo;|&ldquo;|&rdquo;|&quot;", '"', text_cleaned)
-            text_cleaned = re.sub(r"<[^>]+>", "", text_cleaned)
-            body_plain = html.unescape(text_cleaned).strip()
+            body_plain = html_to_plaintext(body_html)
 
         # 1. Text-Zweig: multipart/alternative (Plain-Text zuerst, HTML als bevorzugte Alternative)
         alt_part = MIMEMultipart("alternative")

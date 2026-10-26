@@ -34,6 +34,7 @@ import urllib.parse
 import urllib.request
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO_ROOT / "engine"))
@@ -212,11 +213,22 @@ def run_sweep(owner: str = "JOEL", max_batches: int = 20, batch_size: int = 50, 
 
         # LIVE EXECUTION
         # 1. Execute Purges
-        for mid, to, subj, reason in purge_list:
-            ok = delete_draft(token, conn_id, mid)
-            if ok:
-                total_purged += 1
-                logger.info(f"  [PURGED] '{subj[:30]}' ({to}) -> {reason}")
+        if purge_list:
+            max_workers = min(10, len(purge_list))
+            with ThreadPoolExecutor(max_workers=max_workers) as executor:
+                future_to_item = {
+                    executor.submit(delete_draft, token, conn_id, mid): (mid, to, subj, reason)
+                    for mid, to, subj, reason in purge_list
+                }
+                for future in as_completed(future_to_item):
+                    mid, to, subj, reason = future_to_item[future]
+                    try:
+                        ok = future.result()
+                        if ok:
+                            total_purged += 1
+                            logger.info(f"  [PURGED] '{subj[:30]}' ({to}) -> {reason}")
+                    except Exception as e:
+                        logger.warning(f"Fehler beim Löschen des Entwurfs ({mid[:20]}...): {e}")
 
         # 2. Execute Overhauls
         now_iso = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%d %H:%M:%S")

@@ -62,11 +62,13 @@ def run_in_sheet_tests():
     # GATE 2: Schema & Dimensions Gate (ALL_LEADS: 56 Spalten, 6425 Zeilen)
     # --------------------------------------------------------------------------
     try:
-        header_res = service.spreadsheets().values().get(
+        batch_g2_res = service.spreadsheets().values().batchGet(
             spreadsheetId=SPREADSHEET_ID,
-            range="ALL_LEADS!A1:BD1"
+            ranges=["ALL_LEADS!A1:BD1", "ALL_LEADS!A1:A6500"]
         ).execute()
-        headers = header_res.get("values", [[]])[0]
+        vr_g2 = batch_g2_res.get("valueRanges", [])
+
+        headers = vr_g2[0].get("values", [[]])[0] if len(vr_g2) > 0 else []
         col_count = len(headers)
 
         # Unterstützt sowohl deutsche Originalnamen als auch standardisierte Bezeichner
@@ -88,11 +90,8 @@ def run_in_sheet_tests():
                 col_mismatches.append(f"Col {idx+1} ('{actual_name}' not in {valid_names})")
 
         # Zeilenanzahl prüfen
-        lead_ids_res = service.spreadsheets().values().get(
-            spreadsheetId=SPREADSHEET_ID,
-            range="ALL_LEADS!A1:A6500"
-        ).execute()
-        total_rows = len(lead_ids_res.get("values", []))
+        lead_ids_vals = vr_g2[1].get("values", []) if len(vr_g2) > 1 else []
+        total_rows = len(lead_ids_vals)
         total_leads = total_rows - 1
 
         schema_ok = (col_count == 56) and (len(col_mismatches) == 0) and (total_leads == 6424)
@@ -185,17 +184,15 @@ def run_in_sheet_tests():
     # GATE 5: 100+100 Drafts Batch Gate
     # --------------------------------------------------------------------------
     try:
-        # Joel: AN52:BD151
-        joel_drafts = service.spreadsheets().values().get(
+        # Joel: AN52:BD151, Jordie: AN3214:BD3313 in a single batchGet
+        batch_g5_res = service.spreadsheets().values().batchGet(
             spreadsheetId=SPREADSHEET_ID,
-            range="ALL_LEADS!AN52:BD151"
-        ).execute().get("values", [])
+            ranges=["ALL_LEADS!AN52:BD151", "ALL_LEADS!AN3214:BD3313"]
+        ).execute()
+        vr_g5 = batch_g5_res.get("valueRanges", [])
 
-        # Jordie: AN3214:BD3313
-        jordi_drafts = service.spreadsheets().values().get(
-            spreadsheetId=SPREADSHEET_ID,
-            range="ALL_LEADS!AN3214:BD3313"
-        ).execute().get("values", [])
+        joel_drafts = vr_g5[0].get("values", []) if len(vr_g5) > 0 else []
+        jordi_drafts = vr_g5[1].get("values", []) if len(vr_g5) > 1 else []
 
         # Joel hat Internet_Message_ID in Spalte BA (Index 13 ab AN)
         joel_drafted_count = sum(1 for r in joel_drafts if len(r) > 1 and r[1] in ["drafted", "sent"] and len(r) > 13 and "@" in r[13])
@@ -212,15 +209,17 @@ def run_in_sheet_tests():
     # GATE 6: SSOT Name Verification Gate ('Jordi Post' auf DASHBOARD & README)
     # --------------------------------------------------------------------------
     try:
-        dash_name = service.spreadsheets().values().get(
+        batch_g6_res = service.spreadsheets().values().batchGet(
             spreadsheetId=SPREADSHEET_ID,
-            range="DASHBOARD!C3"
-        ).execute().get("values", [[""]])[0][0]
+            ranges=["DASHBOARD!C3", "README!A6"]
+        ).execute()
+        vr_g6 = batch_g6_res.get("valueRanges", [])
 
-        readme_name = service.spreadsheets().values().get(
-            spreadsheetId=SPREADSHEET_ID,
-            range="README!A6"
-        ).execute().get("values", [[""]])[0][0]
+        dash_vals = vr_g6[0].get("values", [[""]]) if len(vr_g6) > 0 else [[""]]
+        readme_vals = vr_g6[1].get("values", [[""]]) if len(vr_g6) > 1 else [[""]]
+
+        dash_name = dash_vals[0][0] if dash_vals and dash_vals[0] else ""
+        readme_name = readme_vals[0][0] if readme_vals and readme_vals[0] else ""
 
         name_ok = (dash_name == "Jordi Post") and ("Jordi Post" in readme_name)
         log_gate("Gate 6 - SSOT Name 'Jordi Post'", name_ok,
@@ -333,17 +332,15 @@ def run_in_sheet_tests():
     # GATE 9: 2.000er Rollout Verification Gate (1.000 Joel / 1.000 Jordie)
     # --------------------------------------------------------------------------
     try:
-        # Joel: AN152:BD1151 (1.000 Leads)
-        joel_rollout = service.spreadsheets().values().get(
+        # Joel: AN152:BD1151 (1.000 Leads), Jordie: AN3534:BD4533 (1.000 Leads) in a single batchGet
+        batch_g9_res = service.spreadsheets().values().batchGet(
             spreadsheetId=SPREADSHEET_ID,
-            range="ALL_LEADS!AN152:BD1151"
-        ).execute().get("values", [])
+            ranges=["ALL_LEADS!AN152:BD1151", "ALL_LEADS!AN3534:BD4533"]
+        ).execute()
+        vr_g9 = batch_g9_res.get("valueRanges", [])
 
-        # Jordie: AN3534:BD4533 (1.000 Leads)
-        jordi_rollout = service.spreadsheets().values().get(
-            spreadsheetId=SPREADSHEET_ID,
-            range="ALL_LEADS!AN3534:BD4533"
-        ).execute().get("values", [])
+        joel_rollout = vr_g9[0].get("values", []) if len(vr_g9) > 0 else []
+        jordi_rollout = vr_g9[1].get("values", []) if len(vr_g9) > 1 else []
 
         # Joel: Status drafted in AO, DRAFTED in AU, echte Outlook Draft-ID (AAMk...) in AW
         joel_ok_count = sum(

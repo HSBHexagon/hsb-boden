@@ -103,7 +103,7 @@ def decode_mime_header(value: str) -> str:
     """RFC-2047-Wörter (z. B. =?UTF-8?B?QWJtZWxkZW4=?=) in Klartext; bei kaputter Kodierung unverändert."""
     try:
         return str(make_header(decode_header(value or "")))
-    except (LookupError, UnicodeError, ValueError):
+    except Exception:  # z. B. HeaderParseError: ein kaputter Betreff darf den Abgleich nie abbrechen
         return value or ""
 
 

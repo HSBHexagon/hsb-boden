@@ -183,3 +183,10 @@ def test_company_domain_from_website():
     import closed_loop_crm
     assert closed_loop_crm.company_domain({"Website": "https://www.Firma.invalid/impressum?x=1"}) == "firma.invalid"
     assert closed_loop_crm.company_domain({"Website": ""}) == ""
+
+
+@pytest.mark.parametrize("subject", ["=?utf-8?b?QQ?=", "=?x-unknown?q?a?=", "=?utf-8?b?=?=", "=?utf-8?q?=FF?="])
+def test_malformed_encoded_subject_never_raises(subject):
+    from inbound_classifier import classify_inbound_message, decode_mime_header
+    assert isinstance(decode_mime_header(subject), str)
+    assert classify_inbound_message("a@firma.invalid", subject, "").category in {"NEUTRAL", "OPTOUT", "HOT_LEAD", "OOO_URLAUB", "BOUNCE"}

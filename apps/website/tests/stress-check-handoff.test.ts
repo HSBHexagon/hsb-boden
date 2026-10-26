@@ -55,4 +55,26 @@ describe("Beanspruchungs-Check → Audit-Formular", () => {
     clearStressCheckHandoff(sessionStorage);
     expect(sessionStorage.getItem(STRESS_CHECK_STORAGE_KEY)).toBeNull();
   });
+
+  it("gibt undefined zurück bei ungültigem JSON oder fehlerhaftem Speicherinhalt", () => {
+    // Ungültiges JSON (JSON.parse SyntaxError)
+    sessionStorage.setItem(STRESS_CHECK_STORAGE_KEY, "{ invalid json");
+    expect(loadStressCheckHandoff(sessionStorage)).toBeUndefined();
+
+    // JSON-Primitivwerte / Nicht-Objekte
+    sessionStorage.setItem(STRESS_CHECK_STORAGE_KEY, "12345");
+    expect(loadStressCheckHandoff(sessionStorage)).toBeUndefined();
+
+    sessionStorage.setItem(STRESS_CHECK_STORAGE_KEY, '"string"');
+    expect(loadStressCheckHandoff(sessionStorage)).toBeUndefined();
+
+    sessionStorage.setItem(STRESS_CHECK_STORAGE_KEY, "true");
+    expect(loadStressCheckHandoff(sessionStorage)).toBeUndefined();
+
+    sessionStorage.setItem(STRESS_CHECK_STORAGE_KEY, "null");
+    expect(loadStressCheckHandoff(sessionStorage)).toBeUndefined();
+
+    sessionStorage.setItem(STRESS_CHECK_STORAGE_KEY, "[]");
+    expect(loadStressCheckHandoff(sessionStorage)).toBeUndefined();
+  });
 });

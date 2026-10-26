@@ -162,3 +162,17 @@ def test_missing_rfc_message_id_uses_stable_namespaced_original_hash():
     assert stable_inbound_id(raw,'JOEL')==stable_inbound_id(raw,'JOEL')
     assert stable_inbound_id(raw,'JOEL')!=stable_inbound_id(raw,'JORDI')
     assert stable_inbound_id(raw,'JOEL','<rfc@example.org>')=='<rfc@example.org>'
+
+
+def test_confirmed_sent_evidence_records_history_without_granting_permission():
+    from closed_loop_crm import select_sent_evidence
+    item=lead(**{'_row':2,'Send_Status':'drafted','Legal_Basis':'UNKNOWN'})
+    msg={'from':'j-post@hsb-boden.com','to':'buyer@example.org',
+         'internet_message_id':'<sent@example.org>','date_str':'Mon, 26 Oct 2026 10:00:00 +0000'}
+    rows=select_sent_evidence([msg],[item])
+    assert rows[0]['updates']['Send_Status']=='sent'
+    assert rows[0]['updates']['Sender_Account']=='j-post@hsb-boden.com'
+    assert rows[0]['updates']['Internet_Message_ID']=='<sent@example.org>'
+    assert 'Legal_Basis' not in rows[0]['updates'] and 'Versandfreigabe' not in rows[0]['updates']
+    assert select_sent_evidence([dict(msg,**{'from':'other@example.org'})],[item])==[]
+    assert select_sent_evidence([msg],[dict(item,Send_Status='sent')])==[]

@@ -12,7 +12,9 @@ Stand: 26.10.2026. Go-live: **NICHT VERSANDBEREIT**.
 - .com-Inbound: 90 Nachrichten gelesen, 2 fehlende Bounces mit Sperren und Readback übernommen; Wiederholung erzeugt 0 Ereignisse.
 - All-Inkl IMAP und SMTP für beide Konten live authentifiziert. Kundenversand in diesem Lauf: 0.
 - Jordies .de-M365-Connector: HTTP 403. Diese historische Antwortquelle bleibt ACCESS_BLOCKED.
-- Python: 165 Tests bestanden, 1 separater Live-Test übersprungen; Authentifizierung separat live geprüft. Website: 335 Tests bestanden.
+- Python: 166 Tests bestanden, 1 separater Live-Test übersprungen; Authentifizierung separat live geprüft. Website: 335 Tests bestanden.
 - GitHub-Actions-Leseabnahme erfolgreich: Run 40332225903. PR #469 enthält die Korrekturen; Kunden-SMTP bleibt deaktiviert. Der stündliche Inbound-Zeitplan aktiviert sich erst im Default-Branch.
 
 Maschinenlesbarer Nachweis: `docs/audits/SALES_OS_VERIFICATION_2026-10-26.json`.
+
+Zusätzlicher Sent-Abgleich: 571 serverseitige Nachrichtenheader gelesen, 295 fehlende Sent-Status bei Jordie samt Datum, Absender und Message-ID ins CRM übernommen und vollständig zurückgelesen. Keine rechtlichen Freigaben verändert.

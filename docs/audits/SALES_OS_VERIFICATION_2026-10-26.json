@@ -152,7 +152,7 @@
     "customer_emails_sent": 0
   },
   "python_tests": {
-    "passed": 165,
+    "passed": 166,
     "skipped": 1,
     "live_auth_separately_verified": true
   },
@@ -173,5 +173,12 @@
   "customer_only_overlap": {
     "JOEL": 3,
     "JORDI": 256
+  },
+  "sent_reconciliation": {
+    "sent_headers_scanned": 571,
+    "missing_sent_status_corrected": 295,
+    "crm_readback_verified": 295,
+    "legal_fields_changed": false,
+    "customer_emails_sent": 0
   }
 }

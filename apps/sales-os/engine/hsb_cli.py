@@ -305,8 +305,10 @@ def cmd_optout_direct(args):
 
 
 def cmd_sync(args):
-    from closed_loop_crm import sync_inbounds
+    from closed_loop_crm import sync_inbounds, sync_sent_messages
+    sent_result=sync_sent_messages(apply=args.apply)
     result=sync_inbounds(apply=args.apply,include_de=not getattr(args,'com_only',False))
+    result["sent_reconciliation"]=sent_result
     print(json.dumps(result,ensure_ascii=False,indent=2))
 
 

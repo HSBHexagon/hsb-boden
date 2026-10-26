@@ -391,13 +391,14 @@ class ComMailboxClient:
         with self._get_imap() as imap:
             res, _ = imap.select(self.cfg['sent_folder'], readonly=True)
             if res != 'OK':
-                return items
+                raise RuntimeError('SENT_FOLDER_UNAVAILABLE')
             typ, data = imap.search(None, 'ALL')
             if not data or not data[0]:
                 return items
             msg_nums = data[0].split()
             for num in (msg_nums[-limit:] if limit else msg_nums):
-                typ, msg_data = imap.fetch(num, '(BODY.PEEK[])')
+                typ, msg_data = imap.fetch(num, '(BODY.PEEK[HEADER.FIELDS (MESSAGE-ID DATE FROM TO SUBJECT)])')
+                if typ != 'OK': raise RuntimeError('SENT_HEADER_READ_FAILED')
                 for part in msg_data:
                     if isinstance(part, tuple):
                         parsed = email.message_from_bytes(part[1])
@@ -406,6 +407,8 @@ class ComMailboxClient:
                         items.append({
                             'id': str(parsed.get('Message-ID') or num.decode()),
                             'date_str': str(parsed.get('Date') or ''),
+                            'from': str(parsed.get('From') or ''),
+                            'to': recips_raw,
                             'recipients': recips,
                             'subject': str(parsed.get('Subject') or ''),
                             'internet_message_id': str(parsed.get('Message-ID') or ''),

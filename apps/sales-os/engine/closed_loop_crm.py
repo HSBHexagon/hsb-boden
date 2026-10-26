@@ -101,3 +101,56 @@ def sync_inbounds(apply=False, include_de=True):
         back=svc.spreadsheets().values().get(spreadsheetId=SPREADSHEET_ID,range=updated).execute().get('values',[])
         if back!=pending:raise RuntimeError('INBOUND_EVENT_READBACK_MISMATCH')
     return {'scanned':len(messages),'matched_new_events':matched,'categories':categories,'applied':apply,'include_de':include_de,'customer_emails_sent':0}
+
+
+def select_sent_evidence(messages, leads):
+    from collections import defaultdict
+    from datetime import timezone
+    from email.utils import parsedate_to_datetime
+    from sales_reconciliation import addresses
+    own={'j-cherino@hsb-boden.com','j-post@hsb-boden.com','j-cherino@hsb-boden.de','j-post@hsb-boden.de'}
+    index=defaultdict(list);found={}
+    for lead in leads:index[str(lead.get('E-Mail') or lead.get('Email') or '').strip().lower()].append(lead)
+    for msg in messages:
+        sender=addresses(msg.get('from'));mid=str(msg.get('internet_message_id') or '').strip()
+        if len(sender)!=1 or sender[0] not in own or not mid.startswith('<') or not mid.endswith('>'):continue
+        try:
+            stamp=parsedate_to_datetime(msg.get('date_str') or '')
+            if stamp.tzinfo is None:continue
+            stamp=stamp.astimezone(timezone.utc).isoformat()
+        except (ValueError,TypeError):continue
+        for email in addresses(msg.get('to')):
+            matches=index.get(email,[])
+            if len(matches)!=1:continue
+            lead=matches[0]
+            if str(lead.get('Send_Status') or '').strip().lower() in {'sent','gesendet'}:continue
+            updates={'Send_Status':'sent','Send_Datum':stamp,'Internet_Message_ID':mid,
+                     'Sender_Account':sender[0],'Batch_Status':'SENT'}
+            if 'Reconciliation_Status' in lead:updates['Reconciliation_Status']='HOLD'
+            if 'Reconciliation_Reasons' in lead:
+                updates['Reconciliation_Reasons']=str(lead.get('Reconciliation_Reasons') or '')+'; CONFIRMED_SENT'
+            key=lead.get('Lead-ID') or lead.get('Lead_ID')
+            if key not in found or found[key]['updates']['Send_Datum']<stamp:
+                found[key]={'lead_id':key,'row':lead['_row'],'updates':updates}
+    return list(found.values())
+
+
+def sync_sent_messages(apply=False):
+    from com_mailbox_manager import ComMailboxClient
+    from sync_to_google_sheet import get_sheets_service,SPREADSHEET_ID
+    from outbound_safety import col_name
+    svc=get_sheets_service();messages=[]
+    for owner in ['JOEL','JORDI']:
+        messages.extend(ComMailboxClient(owner).fetch_sent_messages(limit=0))
+    rows=svc.spreadsheets().values().get(spreadsheetId=SPREADSHEET_ID,range='ALL_LEADS!A1:BR6425').execute()['values']
+    headers=rows[0];leads=[dict(zip(headers,r),_row=i) for i,r in enumerate(rows[1:],2)]
+    evidence=select_sent_evidence(messages,leads)
+    if apply and evidence:
+        data=[{'range':f"ALL_LEADS!{col_name(headers.index(k)+1)}{e['row']}",'values':[[v]]} for e in evidence for k,v in e['updates'].items()]
+        svc.spreadsheets().values().batchUpdate(spreadsheetId=SPREADSHEET_ID,body={'valueInputOption':'RAW','data':data}).execute()
+        back=svc.spreadsheets().values().get(spreadsheetId=SPREADSHEET_ID,range='ALL_LEADS!A1:BR6425').execute()['values']
+        for e in evidence:
+            actual=dict(zip(back[0],back[e['row']-1]))
+            if actual.get('Lead-ID')!=e['lead_id'] or any(actual.get(k)!=v for k,v in e['updates'].items()):
+                raise RuntimeError('SENT_CRM_READBACK_MISMATCH')
+    return {'sent_headers_scanned':len(messages),'missing_sent_status':len(evidence),'applied':apply,'verified_rows':len(evidence) if apply else 0,'customer_emails_sent':0}

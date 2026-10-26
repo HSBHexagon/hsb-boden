@@ -73,10 +73,15 @@ def sync_inbounds(apply=False, include_de=True):
         eid='INBOUND-'+hashlib.sha256((msg.source+'|'+msg.owner+'|'+msg.message_id).encode()).hexdigest()
         already_seen = eid in seen_ids or msg.message_id in seen_mids
         matched_rows=[m for target in targets for m in byemail.get(target,[])]
-        if cls.category=='OPTOUT':
-            # Abmelde-Token aus dem List-Unsubscribe-Link: gilt auch, wenn ein Kollege antwortet.
-            for token in UNSUBSCRIBE_TOKEN_RE.findall(msg.body or ''):
-                matched_rows.extend(bylead.get(token,[]))
+        tokens=set(UNSUBSCRIBE_TOKEN_RE.findall(msg.body or '')) if cls.category=='OPTOUT' else set()
+        if len(tokens)==1:
+            # Abmelde-Token aus dem List-Unsubscribe-Link: gilt auch, wenn ein Kollege antwortet –
+            # aber nur aus derselben Firmendomain und nur ein Token je Mail (keine Fremd-Massensperre).
+            sender_domains={a.rsplit('@',1)[-1] for a in addresses(msg.sender)}
+            for row,lead in bylead.get(next(iter(tokens)),[]):
+                lead_domain=str(lead.get('E-Mail') or '').strip().lower().rsplit('@',1)[-1]
+                if lead_domain and lead_domain in sender_domains:
+                    matched_rows.append((row,lead))
         unique_rows={}
         for row,lead in matched_rows: unique_rows.setdefault(row,lead)
         for row,lead in unique_rows.items():

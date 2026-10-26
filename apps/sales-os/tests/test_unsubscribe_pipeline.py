@@ -131,3 +131,36 @@ def test_lead_token_in_ordinary_reply_does_not_suppress(monkeypatch):
     result = classify_inbound_message("kollege@firma.invalid", "Re: Industrieböden",
                                       "Gerne Termin nächste Woche. HSB-ABMELDUNG: HSB-7")
     assert result.category != "OPTOUT"
+
+
+@pytest.mark.parametrize("sender,body", [
+    ("fremder@andere-firma.invalid", "HSB-ABMELDUNG: HSB-7"),
+    ("kollege@firma.invalid", "HSB-ABMELDUNG: HSB-7 HSB-ABMELDUNG: HSB-8"),
+])
+def test_token_from_foreign_domain_or_multiple_tokens_does_not_suppress(monkeypatch, sender, body):
+    import closed_loop_crm
+    import dual_domain_collector
+    import outbound_safety
+    import sync_to_google_sheet
+    headers = ["Lead-ID", "E-Mail", "Reply_Status", "Suppressed", "Versandfreigabe",
+               "Opt-out-Status", "Suppression_Reason", "Last_Reply_At"]
+    rows = [headers,
+            ["HSB-7", "info@firma.invalid", "", "", "yes", "", "", ""],
+            ["HSB-8", "other@firma.invalid", "", "", "yes", "", "", ""]]
+    events = [["id", "at", "source", "sender", "subject", "mid"]]
+    class Values:
+        def get(self, **kw):
+            value = rows if kw["range"].startswith("ALL_LEADS!") else events
+            return SimpleNamespace(execute=lambda: {"values": value})
+        def append(self, **kw):
+            raise AssertionError("no event expected")
+    values = Values()
+    svc = SimpleNamespace(spreadsheets=lambda: SimpleNamespace(values=lambda: values))
+    monkeypatch.setattr(sync_to_google_sheet, "get_sheets_service", lambda: svc)
+    monkeypatch.setattr(dual_domain_collector, "collect_all_inbounds", lambda **kw: [
+        SimpleNamespace(message_id="<forged@x.invalid>", source="COM", owner="JOEL",
+                        sender=sender, subject="Abmelden", body=body, date="2026-10-26T10:00:00Z")])
+    monkeypatch.setattr(outbound_safety, "crm_write_readback", lambda *a: pytest.fail("no CRM write expected"))
+    result = closed_loop_crm.sync_inbounds(apply=True, include_de=False)
+    assert result["matched_new_events"] == 0
+    assert rows[1][headers.index("Suppressed")] == "" and rows[2][headers.index("Suppressed")] == ""

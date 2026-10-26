@@ -49,7 +49,16 @@ jobs:
         run: npm run check:sitemap
 
       - name: Verify Pages deployment artifacts
-        run: npm run deploy:dry-run
+        # deploy:dry-run rebuilds dist. Keep the same flag as the production
+        # build or the deployed HTML silently disables the lead form.
+        env:
+          PUBLIC_LEAD_FORM_ENABLED: "true"
+        run: |
+          npm run deploy:dry-run
+          # Release gate: confirm the artifact we actually upload has an
+          # enabled form on both the homepage and the contact page.
+          grep -q 'data-delivery-configured="true"' dist/index.html
+          grep -q 'data-delivery-configured="true"' dist/kontakt/index.html
 
       - name: Deploy to Cloudflare Pages (Production)
         # Cloudflare Pages is the live architecture since the static-output

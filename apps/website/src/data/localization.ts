@@ -16,12 +16,27 @@ export const supportedLanguages: Array<{
 
 const fallbackOrder: LanguageCode[] = ["en", "de", "tr", "pl", "fr", "nl"];
 
+const languageMap = new Map(supportedLanguages.map((language) => [language.code, language]));
+
 export function resolveSuggestedLanguages(locale: string | undefined) {
   const normalized = (locale ?? "").toLowerCase();
   const primary = normalized.split("-")[0] as LanguageCode;
-  const direct = supportedLanguages.find((language) => language.code === primary);
-  const order = direct ? [direct.code, ...fallbackOrder.filter((code) => code !== direct.code)] : fallbackOrder;
-  return order
-    .map((code) => supportedLanguages.find((language) => language.code === code))
-    .filter((language): language is (typeof supportedLanguages)[number] => Boolean(language));
+  const direct = languageMap.get(primary);
+
+  const result: Array<(typeof supportedLanguages)[number]> = [];
+  if (direct) {
+    result.push(direct);
+  }
+
+  for (let i = 0; i < fallbackOrder.length; i++) {
+    const code = fallbackOrder[i];
+    if (code !== primary) {
+      const language = languageMap.get(code);
+      if (language) {
+        result.push(language);
+      }
+    }
+  }
+
+  return result;
 }

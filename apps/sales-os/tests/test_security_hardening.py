@@ -266,3 +266,34 @@ def test_mixed_dns_answer_with_private_ip_is_refused(monkeypatch):
     )
     with pytest.raises(ConnectionRefusedError):
         bra._resolve_public_ip("mueller-gmbh.de", 80)
+
+
+def test_redirect_body_is_not_drained(monkeypatch):
+    """Codex-Befund: Zwischenantworten einer Weiterleitung dürfen nicht unbegrenzt gelesen werden."""
+    monkeypatch.setattr(bra, "is_public_hostname", lambda host: True)
+    handler = bra._PublicRedirectHandler()
+    followed = []
+    handler.parent = type("P", (), {"open": lambda self, req, timeout=None: followed.append(req.full_url) or "ziel"})()
+
+    class HugeBody:
+        closed = False
+
+        def read(self, n=-1):
+            raise AssertionError("Redirect-Body darf nicht gelesen werden")
+
+        def close(self):
+            self.closed = True
+
+    fp = HugeBody()
+    req = bra.urllib.request.Request("https://www.mueller-gmbh.de/")
+    req.timeout = 5  # setzt der echte OpenerDirector
+    import email.message
+    headers = email.message.Message()
+    headers["Location"] = "https://www.mueller-gmbh.de/impressum"
+    for code in (301, 302, 303, 307, 308):
+        followed.clear()
+        req = bra.urllib.request.Request("https://www.mueller-gmbh.de/")
+        req.timeout = 5
+        result = getattr(handler, f"http_error_{code}")(req, fp, code, "Moved", headers)
+        assert result == "ziel" and followed == ["https://www.mueller-gmbh.de/impressum"]
+    assert fp.closed

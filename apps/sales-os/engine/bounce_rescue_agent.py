@@ -121,6 +121,14 @@ class _PublicRedirectHandler(urllib.request.HTTPRedirectHandler):
             raise urllib.error.HTTPError(newurl, code, "Weiterleitung auf nicht-öffentliches Ziel verweigert", headers, fp)
         return super().redirect_request(req, fp, code, msg, headers, newurl)
 
+    def http_error_302(self, req, fp, code, msg, headers):
+        # Der geerbte Handler liest den Body der Zwischenantwort ohne Limit (fp.read()).
+        # Nicht leeren, nur schließen – die Weiterleitung braucht den Inhalt nicht.
+        fp.read = lambda *args, **kwargs: b""
+        return super().http_error_302(req, fp, code, msg, headers)
+
+    http_error_301 = http_error_303 = http_error_307 = http_error_308 = http_error_302
+
 
 def build_public_opener() -> urllib.request.OpenerDirector:
     """Nur HTTP(S) ohne Proxy: kein FTP/File/Data-Handler, keine Umgehung der Peer-Prüfung über einen Proxy."""

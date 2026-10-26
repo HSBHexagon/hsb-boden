@@ -50,6 +50,7 @@ def sync_inbounds(apply=False, include_de=True):
     import re
     from dual_domain_collector import collect_all_inbounds
     from inbound_classifier import classify_inbound_message
+    from hsb_core import FREEMAIL_DOMAINS
     from outbound_safety import crm_write_readback, UNSUBSCRIBE_TOKEN_RE
     from sales_reconciliation import addresses
     from sync_to_google_sheet import get_sheets_service, SPREADSHEET_ID
@@ -79,7 +80,10 @@ def sync_inbounds(apply=False, include_de=True):
             # aber nur aus derselben Firmendomain und nur ein Token je Mail (keine Fremd-Massensperre).
             sender_domains={a.rsplit('@',1)[-1] for a in addresses(msg.sender)}
             for row,lead in bylead.get(next(iter(tokens)),[]):
-                lead_domain=str(lead.get('E-Mail') or '').strip().lower().rsplit('@',1)[-1]
+                lead_email=str(lead.get('E-Mail') or '').strip().lower()
+                lead_domain=lead_email.rsplit('@',1)[-1]
+                # Bei Freemail (gmail.com …) ist "gleiche Domain" keine gleiche Firma: nur exakte Adresse.
+                if lead_domain in FREEMAIL_DOMAINS: continue
                 if lead_domain and lead_domain in sender_domains:
                     matched_rows.append((row,lead))
         unique_rows={}

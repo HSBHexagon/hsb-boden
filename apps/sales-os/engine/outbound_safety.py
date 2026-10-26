@@ -169,6 +169,7 @@ def count_owner_attempts_today(leads, owner, today):
 SENDER_BY_OWNER={'JOEL':'j-cherino@hsb-boden.com','JORDI':'j-post@hsb-boden.com'}
 
 
+SMTP_POLICY=policy.SMTP.clone(max_line_length=998)
 UNSUBSCRIBE_TOKEN_RE=re.compile(r'HSB-ABMELDUNG:\s*([A-Za-z0-9._-]{1,64})')
 
 
@@ -178,7 +179,7 @@ def add_list_unsubscribe(msg, owner, lead_id):
     ursprünglichen Lead zu, auch wenn ein anderes Postfach der Firma antwortet."""
     for name in ('List-Unsubscribe','List-Unsubscribe-Post'):
         del msg[name]
-    body=quote(f'Bitte keine weiteren E-Mails. HSB-ABMELDUNG: {lead_id}')
+    body=quote(f'HSB-ABMELDUNG: {lead_id}')
     msg['List-Unsubscribe']=f'<mailto:{SENDER_BY_OWNER[owner]}?subject=Abmelden&body={body}>'
     return msg
 
@@ -245,7 +246,8 @@ def dispatch_verified(count_per_owner=25, owners=('JOEL','JORDI'), dry_run=True,
                 if 'Date' in msg: del msg['Date']
                 msg['Date']=formatdate(localtime=False)
                 add_list_unsubscribe(msg,item['owner'],item['lead_id'])
-                raw=msg.as_bytes(policy=policy.SMTP); mid=str(msg['Message-ID']); em=item['email']
+                # Lange ASCII-Header (List-Unsubscribe) nicht in RFC-2047-Wörter zerlegen, sonst erkennt kein Mailprogramm den Link.
+                raw=msg.as_bytes(policy=SMTP_POLICY); mid=str(msg['Message-ID']); em=item['email']
                 complete_delivery(client,journal,svc,SPREADSHEET_ID,headers,row,item,raw,mid,cap)
                 sent_counts[item['owner']]+=1
                 if item is not selected[-1]: time.sleep(random.uniform(jitter_min,jitter_max))

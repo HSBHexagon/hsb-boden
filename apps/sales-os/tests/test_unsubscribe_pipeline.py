@@ -133,11 +133,12 @@ def test_lead_token_in_ordinary_reply_does_not_suppress(monkeypatch):
     assert result.category != "OPTOUT"
 
 
-@pytest.mark.parametrize("sender,body", [
-    ("fremder@andere-firma.invalid", "HSB-ABMELDUNG: HSB-7"),
-    ("kollege@firma.invalid", "HSB-ABMELDUNG: HSB-7 HSB-ABMELDUNG: HSB-8"),
+@pytest.mark.parametrize("sender,body,lead_email", [
+    ("fremder@andere-firma.invalid", "HSB-ABMELDUNG: HSB-7", "info@firma.invalid"),
+    ("unrelated-person@gmail.com", "HSB-ABMELDUNG: HSB-7", "customer@gmail.com"),
+    ("kollege@firma.invalid", "HSB-ABMELDUNG: HSB-7 HSB-ABMELDUNG: HSB-8", "info@firma.invalid"),
 ])
-def test_token_from_foreign_domain_or_multiple_tokens_does_not_suppress(monkeypatch, sender, body):
+def test_token_from_foreign_domain_or_multiple_tokens_does_not_suppress(monkeypatch, sender, body, lead_email):
     import closed_loop_crm
     import dual_domain_collector
     import outbound_safety
@@ -145,7 +146,7 @@ def test_token_from_foreign_domain_or_multiple_tokens_does_not_suppress(monkeypa
     headers = ["Lead-ID", "E-Mail", "Reply_Status", "Suppressed", "Versandfreigabe",
                "Opt-out-Status", "Suppression_Reason", "Last_Reply_At"]
     rows = [headers,
-            ["HSB-7", "info@firma.invalid", "", "", "yes", "", "", ""],
+            ["HSB-7", lead_email, "", "", "yes", "", "", ""],
             ["HSB-8", "other@firma.invalid", "", "", "yes", "", "", ""]]
     events = [["id", "at", "source", "sender", "subject", "mid"]]
     class Values:

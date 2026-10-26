@@ -79,3 +79,13 @@ def test_single_same_mailbox_reply_to_is_accepted():
     msg = _draft()
     msg["Reply-To"] = "j-post@hsb-boden.com"
     assert has_unreviewed_legacy_variant(msg, "JORDI") is False
+
+
+def test_smtp_bytes_carry_a_plain_mailto_url_for_both_senders():
+    from outbound_safety import SMTP_POLICY
+    for owner, sender in (("JOEL", b"j-cherino@hsb-boden.com"), ("JORDI", b"j-post@hsb-boden.com")):
+        msg = add_list_unsubscribe(_draft(), owner, "HSB-2026-0042")
+        raw = msg.as_bytes(policy=SMTP_POLICY)
+        line = next(l for l in raw.split(b"\r\n") if l.startswith(b"List-Unsubscribe:"))
+        assert line == b"List-Unsubscribe: <mailto:" + sender + b"?subject=Abmelden&body=HSB-ABMELDUNG%3A%20HSB-2026-0042>"
+        assert b"=?utf-8?" not in line

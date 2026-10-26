@@ -11,7 +11,7 @@ Stand 2026-10-26. Auftrag: GitHub, Cloudflare, Google und Design der Website bes
 
 ## Empfohlene Reihenfolge
 
-1. **GitHub 1 bis 4**: ohne Website-Code, sofort wirksam (Dependabot sieht heute weder `apps/website` noch `apps/sales-os`).
+1. **GitHub 1 bis 4**: ohne Website-Code, sofort wirksam. Für `apps/website`, `apps/sales-os` und `marketing/flyer` gibt es heute keine geplanten Version-Updates (die sichtbaren Dependabot-PRs sind alarmgesteuerte Security-Updates).
 2. **Cloudflare 1** (nur Doku) und **Design 1** (Feldkontrast): kleine, klar belegte Korrekturen.
 3. **Google 1** (Consent-Default) und **Google 2** (Origins messen).
 4. **Cloudflare 2** (Turnstile samt CSP-Einträgen), dann **Cloudflare 4** (CSP ohne `unsafe-inline`; braucht Google 2 und Cloudflare 2).

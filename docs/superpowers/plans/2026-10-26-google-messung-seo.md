@@ -62,7 +62,7 @@
 - [ ] **Step 1: Freigabe einholen** für `src/lib/analytics.ts`.
 - [ ] **Step 2: Failing Test schreiben** in `analytics.test.ts`, Name `setzt vor config ein consent default mit allen vier Typen auf denied`. Assertions: Eintrag `consent/default` existiert, enthält `ad_storage`, `analytics_storage`, `ad_user_data`, `ad_personalization` jeweils `"denied"`; sein Index in `dataLayer` ist kleiner als der von `consent/update`, `js` und `config`. Zweiter Test, Name `sendet das consent default bei erneuter Zustimmung nach Widerruf nicht erneut`.
 - [ ] **Step 3: Run.** `cd apps/website && npx vitest run tests/analytics.test.ts`. Expected: die neuen Tests FAIL, die fünf bestehenden PASS.
-- [ ] **Step 4: Implementieren** in `loadAfterConsent`: Der Default wird nur im Zweig `if (loaded) return;` davor einmalig gesetzt (vor dem ersten `update`). Hinweis: In der Basic-Variante existiert vor der Einwilligung kein `gtag`; der Default wirkt daher in demselben Aufruf wie das `update`. Er erfüllt die Reihenfolge aus [S1] und ist in Task 4 im Tag-Assistant zu belegen.
+- [ ] **Step 4: Implementieren** in `loadAfterConsent`: Der Default wird **vor** dem `gtag("consent", "update", …)`-Aufruf gesendet und nur, wenn `!loaded` gilt (der `update` steht im Code vor der Zeile `if (loaded) return;`). So kommt er genau einmal je Seite und nicht bei erneuter Zustimmung nach Widerruf. Hinweis: In der Basic-Variante existiert vor der Einwilligung kein `gtag`; der Default wirkt daher in demselben Aufruf wie das `update`. Er erfüllt die Reihenfolge aus [S1] und ist in Task 4 im Tag-Assistant zu belegen.
 - [ ] **Step 5: Run.** `npx vitest run tests/analytics.test.ts && npm run check`. Expected: alle PASS, 0 Fehler.
 - [ ] **Step 6: Commit.** `git add apps/website/src/lib/analytics.ts apps/website/tests/analytics.test.ts`, Nachricht `fix(analytics): Consent-Default vor config setzen`.
 
@@ -73,12 +73,14 @@
 - Create: `docs/analytics/GOOGLE_ORIGINS_EVIDENCE_2026-10.md`
 
 **Interfaces:**
-- Produces: Skript `node scripts/capture-google-origins.mjs <baseUrl>`; Ausgabe: je Szenario („ohne Einwilligung“, „mit Analytics-Einwilligung“, „nach Widerruf“) eine sortierte Liste der Hosts, an die der Browser Requests sendet. Ergebnisdatei ist die Eingabe für Task 4 im Cloudflare-Plan.
+- Produces: Skript `node scripts/capture-google-origins.mjs <baseUrl> [--har <datei>]`; Ausgabe: je Szenario („ohne Einwilligung“, „mit Analytics-Einwilligung“, „nach Widerruf“) eine sortierte Liste der Hosts, an die der Browser Requests sendet. Ergebnisdatei ist die Eingabe für Task 4 im Cloudflare-Plan.
+- **Beweisregel:** `analytics.ts` lädt GA4 nur auf `www.hsb-boden.de` (`isProductionAnalyticsHost`). Ein Lauf gegen `localhost` zeigt deshalb in **allen** Szenarien keine Google-Hosts, auch nicht nach Einwilligung. Als Beleg für „mit Einwilligung“ und „nach Widerruf“ zählt ausschließlich ein vom Owner auf der Produktionsdomain erzeugter HAR. Die Evidenzdatei trägt je Szenario die Herkunft (`lokal` oder `Produktions-HAR`); ohne Produktions-HAR ist die Liste der benötigten Google-Origins als **unvollständig** markiert.
 
 - [ ] **Step 1: Skript schreiben** mit der vorhandenen Playwright-Version: Seite öffnen, `page.on("request")` sammeln, Einwilligung über den Cookie-Banner setzen (Bedienelemente aus `CookieConsent.astro` lesen), Seiten `/`, `/en/`, `/fr/` je Szenario. Das Skript lädt nur die übergebene URL und setzt kein Produktions-GA4 voraus: gegen die lokale Vorschau `npm run preview` laufen die Google-Requests laut Hostprüfung gar nicht; für den Produktionsbelegfall übergibt der Owner den Mitschnitt aus dem Browser (Netzwerk-Tab, HAR ohne Cookies), den das Skript lesen kann (`--har <datei>`).
-- [ ] **Step 2: Run (ohne Einwilligung).** `node scripts/capture-google-origins.mjs http://localhost:4321`. Expected: keine Hosts mit `google` im Namen.
-- [ ] **Step 3: Ergebnis auswerten:** Liste der benötigten Origins gegen `script-src`, `connect-src` und `img-src` in `public/_headers` halten; Differenz (erlaubt, aber nie genutzt) in die Evidenzdatei schreiben.
-- [ ] **Step 4: Commit.** `git add apps/website/scripts/capture-google-origins.mjs docs/analytics/GOOGLE_ORIGINS_EVIDENCE_2026-10.md`, Nachricht `docs(analytics): benötigte Google-Origins belegt`.
+- [ ] **Step 2: Run (lokal).** `node scripts/capture-google-origins.mjs http://localhost:4321`. Expected: keine Hosts mit `google` im Namen, in jedem Szenario. Das belegt nur, dass lokal nichts geladen wird, nicht den Bedarf in Produktion (siehe Beweisregel).
+- [ ] **Step 3: Owner-Aktion: Produktions-HAR.** Auf `www.hsb-boden.de` in einem frischen Profil Einwilligung erteilen, mehrere Seiten öffnen (`/`, `/en/`, `/fr/`) und die Danke-Seite `/danke-projektanfrage/` direkt aufrufen (keinen echten Lead absenden), danach widerrufen; HAR ohne Cookies exportieren und mit `--har` einlesen.
+- [ ] **Step 4: Ergebnis auswerten:** Liste der benötigten Origins gegen `script-src`, `connect-src` und `img-src` in `public/_headers` halten; Differenz (erlaubt, aber nie genutzt) in die Evidenzdatei schreiben, nur wenn ein Produktions-HAR vorliegt.
+- [ ] **Step 5: Commit.** `git add apps/website/scripts/capture-google-origins.mjs docs/analytics/GOOGLE_ORIGINS_EVIDENCE_2026-10.md`, Nachricht `docs(analytics): benötigte Google-Origins belegt`.
 
 ### Task 3: Einwilligung und Datenschutztext in Einklang bringen (Owner-Entscheidung)
 

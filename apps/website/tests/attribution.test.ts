@@ -5,6 +5,7 @@ import {
   captureAttribution,
   loadAttribution,
   resolveChannel,
+  sanitizeReferrerOrigin,
   updateSessionAttribution,
 } from "../src/lib/attribution";
 
@@ -20,6 +21,41 @@ function memoryStorage(): Pick<Storage, "getItem" | "setItem"> & { data: Map<str
     },
   };
 }
+
+describe("sanitizeReferrerOrigin", () => {
+  it("returns undefined on URL parsing failure (invalid URL strings)", () => {
+    expect(sanitizeReferrerOrigin("not a url")).toBeUndefined();
+    expect(sanitizeReferrerOrigin("http//invalid")).toBeUndefined();
+    expect(sanitizeReferrerOrigin("/relative/path")).toBeUndefined();
+    expect(sanitizeReferrerOrigin("ht#tp://bad")).toBeUndefined();
+  });
+
+  it("returns undefined for non-string, empty, or whitespace-only inputs", () => {
+    expect(sanitizeReferrerOrigin(undefined)).toBeUndefined();
+    expect(sanitizeReferrerOrigin(null)).toBeUndefined();
+    expect(sanitizeReferrerOrigin(123)).toBeUndefined();
+    expect(sanitizeReferrerOrigin({})).toBeUndefined();
+    expect(sanitizeReferrerOrigin("")).toBeUndefined();
+    expect(sanitizeReferrerOrigin("   ")).toBeUndefined();
+  });
+
+  it("returns undefined when referrer matches ownOrigin (self-referral)", () => {
+    expect(sanitizeReferrerOrigin("https://www.hsb-boden.de/leistungen/", ORIGIN)).toBeUndefined();
+    expect(sanitizeReferrerOrigin("https://www.hsb-boden.de", ORIGIN)).toBeUndefined();
+  });
+
+  it("returns undefined for non-http/https protocols", () => {
+    expect(sanitizeReferrerOrigin("javascript:alert(1)")).toBeUndefined();
+    expect(sanitizeReferrerOrigin("ftp://example.com/file")).toBeUndefined();
+    expect(sanitizeReferrerOrigin("file:///C:/test.txt")).toBeUndefined();
+    expect(sanitizeReferrerOrigin("mailto:info@example.com")).toBeUndefined();
+  });
+
+  it("returns sanitized origin string for valid external HTTP/HTTPS referrers", () => {
+    expect(sanitizeReferrerOrigin("https://www.google.com/search?q=test")).toBe("https://www.google.com");
+    expect(sanitizeReferrerOrigin("http://example.org:8080/path/to/page")).toBe("http://example.org:8080");
+  });
+});
 
 describe("captureAttribution", () => {
   it("extracts all five utm parameters from a full campaign URL", () => {

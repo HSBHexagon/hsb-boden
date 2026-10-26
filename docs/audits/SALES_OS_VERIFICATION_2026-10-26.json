@@ -1,6 +1,6 @@
 {
   "timestamp": "2026-10-26T12:45:56.339453+00:00",
-  "reassessed_at": "2026-10-26T14:40:30.850093+00:00",
+  "reassessed_at": "2026-10-26T14:48:20.973032+00:00",
   "crm_total": 6424,
   "crm_owners": {
     "JOEL": 3212,
@@ -13,12 +13,12 @@
       "scanned": 3080,
       "unique_recipients": 3080,
       "crm_unique": 3078,
-      "technical_ready": 0,
-      "sendable": 0,
+      "technical_ready": 1924,
+      "sendable": 1923,
       "issues": {
         "BODY_NOT_COMPANY_OR_CONTACT_SPECIFIC": 1155,
         "FLYER_LINK_MISSING": 531,
-        "HISTORICAL_VARIANT_REQUIRES_REVIEW": 3080,
+        "HISTORICAL_VARIANT_REQUIRES_REVIEW": 531,
         "PERSONAL_OPTOUT_LINK_MISSING": 531,
         "ALREADY_CONTACTED": 5,
         "COMPANY_UNVERIFIED": 4,
@@ -43,14 +43,14 @@
       "scanned": 2538,
       "unique_recipients": 2538,
       "crm_unique": 2536,
-      "technical_ready": 0,
-      "sendable": 0,
+      "technical_ready": 2032,
+      "sendable": 2024,
       "issues": {
         "BODY_NOT_COMPANY_OR_CONTACT_SPECIFIC": 251,
         "COMPANY_UNVERIFIED": 2,
         "CRM_RECIPIENT_MISSING": 2,
         "FLYER_LINK_MISSING": 250,
-        "HISTORICAL_VARIANT_REQUIRES_REVIEW": 2538,
+        "HISTORICAL_VARIANT_REQUIRES_REVIEW": 250,
         "LEAD_ID_INFERRED_ONLY": 2,
         "PERSONAL_OPTOUT_LINK_MISSING": 250,
         "INBOUND_REQUIRES_REVIEW": 30,
@@ -86,7 +86,7 @@
     "Versandfreigabe=no": 502,
     "BODY_NOT_COMPANY_OR_CONTACT_SPECIFIC": 1402,
     "FLYER_LINK_MISSING": 777,
-    "HISTORICAL_VARIANT_REQUIRES_REVIEW": 5614,
+    "HISTORICAL_VARIANT_REQUIRES_REVIEW": 777,
     "PERSONAL_OPTOUT_LINK_MISSING": 777,
     "WRONG_OWNER": 5,
     "Suppression_Reason": 42,
@@ -123,6 +123,25 @@
   },
   "customer_emails_sent": 0,
   "status": "NICHT VERSANDBEREIT",
+  "crm_writeback": {
+    "rows_verified": 6424,
+    "range": "ALL_LEADS!BN1:BR6425",
+    "run_id": "HSB-RECON-910232d605b32580",
+    "customer_emails_sent": 0
+  },
+  "mailbox_uid_sets_reverified_at": "2026-10-26T14:48:35.167775+00:00",
+  "python_tests": {
+    "passed": 193,
+    "skipped": 1,
+    "live_auth_separately_verified": true
+  },
+  "website_tests": {
+    "passed": 337,
+    "check_errors": 0,
+    "check_warnings": 0,
+    "built_pages": 58,
+    "wrangler_dry_run": "PASS"
+  },
   "de_crm_readback": {
     "forensic_headers": [
       "Nr",
@@ -156,15 +175,6 @@
   },
   "m365_jordie": "HTTP_403_ACCESS_BLOCKED",
   "outlook_client": "NOT_VERIFIED: AppleScript exposed no IMAP accounts",
-  "cloud_runtime": {
-    "status": "INBOUND_AND_SENT_SYNC_VERIFIED_ON_MAIN",
-    "workflow_run": "https://github.com/HSBHexagon/hsb-boden/actions/runs/40338208174",
-    "customer_smtp_enabled": false,
-    "hourly_inbound_schedule": "17 * * * * on default main",
-    "manual_start": "sales-os-safety.yml, mode=inbound-sync",
-    "maximum_runtime_minutes": 20,
-    "concurrency": "hsb-sales-os-runtime, cancel-in-progress=false"
-  },
   "operator_legal_review_confirmation": {
     "rows_verified": 6424,
     "range": "ALL_LEADS!BS1:BU6425",
@@ -180,23 +190,18 @@
     "crm_readback": true,
     "messages_scanned": 91
   },
-  "crm_writeback": {
-    "rows_verified": 6424,
-    "range": "ALL_LEADS!BN1:BR6425",
-    "run_id": "HSB-RECON-f6430f6813298eb0",
-    "customer_emails_sent": 0
+  "cloud_runtime": {
+    "status": "INBOUND_AND_SENT_SYNC_VERIFIED_ON_MAIN",
+    "workflow_run": "https://github.com/HSBHexagon/hsb-boden/actions/runs/40338208174",
+    "customer_smtp_enabled": false,
+    "hourly_inbound_schedule": "17 * * * * on default main",
+    "manual_start": "sales-os-safety.yml, mode=inbound-sync",
+    "maximum_runtime_minutes": 20,
+    "concurrency": "hsb-sales-os-runtime, cancel-in-progress=false"
   },
-  "python_tests": {
-    "passed": 188,
-    "skipped": 1,
-    "live_auth_separately_verified": true
-  },
-  "website_tests": {
-    "passed": 337,
-    "check_errors": 0,
-    "check_warnings": 0,
-    "built_pages": 58,
-    "production_workflow_quality_gate": "PASS"
+  "github_merge": {
+    "pr": 469,
+    "merge_sha": "d80c9bb9a228991172d93769e942b2805b200032"
   },
   "unsubscribe_website": {
     "production": "VERIFIED_MONITORED_COM_MAILTO_REQUEST",

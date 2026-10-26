@@ -48,7 +48,10 @@ def run_in_sheet_tests():
     # GATE 1: Live Connection & Tab Inventory Gate
     # --------------------------------------------------------------------------
     try:
-        ss_meta = service.spreadsheets().get(spreadsheetId=SPREADSHEET_ID).execute()
+        ss_meta = service.spreadsheets().get(
+            spreadsheetId=SPREADSHEET_ID,
+            fields="sheets(properties(title,sheetId),conditionalFormats)"
+        ).execute()
         sheet_map = {s["properties"]["title"]: s["properties"]["sheetId"] for s in ss_meta.get("sheets", [])}
         required_sheets = ["ALL_LEADS", "DASHBOARD", "README", "CONTROL_CENTER", "INBOUND_EVENTS", "ACTIVITIES", "BATCHES"]
         missing = [s for s in required_sheets if s not in sheet_map]
@@ -149,14 +152,8 @@ def run_in_sheet_tests():
 
         total_sent = sent_joel + sent_jordi
 
-        # Conditional Formatting prüfen
-        cf_meta = service.spreadsheets().get(
-            spreadsheetId=SPREADSHEET_ID,
-            ranges=["ALL_LEADS!AO2:AO2"],
-            fields="sheets(properties,conditionalFormats)"
-        ).execute()
-
-        all_leads_meta = next(s for s in cf_meta["sheets"] if s["properties"]["title"] == "ALL_LEADS")
+        # Conditional Formatting prüfen (Wiederverwendung von ss_meta aus Gate 1)
+        all_leads_meta = next((s for s in ss_meta.get("sheets", []) if s.get("properties", {}).get("title") == "ALL_LEADS"), {})
         cfs = all_leads_meta.get("conditionalFormats", [])
 
         has_blue_row_rule = False

@@ -33,6 +33,7 @@ import time
 import urllib.parse
 import urllib.request
 from pathlib import Path
+import concurrent.futures
 from typing import Any, Dict, List, Optional, Tuple
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
@@ -211,12 +212,18 @@ def run_sweep(owner: str = "JOEL", max_batches: int = 20, batch_size: int = 50, 
             continue
 
         # LIVE EXECUTION
-        # 1. Execute Purges
-        for mid, to, subj, reason in purge_list:
-            ok = delete_draft(token, conn_id, mid)
-            if ok:
-                total_purged += 1
-                logger.info(f"  [PURGED] '{subj[:30]}' ({to}) -> {reason}")
+        # 1. Execute Purges in parallel
+        if purge_list:
+            def _purge_one(item):
+                mid, to, subj, reason = item
+                ok = delete_draft(token, conn_id, mid)
+                return ok, mid, to, subj, reason
+
+            with concurrent.futures.ThreadPoolExecutor(max_workers=min(10, len(purge_list))) as executor:
+                for ok, mid, to, subj, reason in executor.map(_purge_one, purge_list):
+                    if ok:
+                        total_purged += 1
+                        logger.info(f"  [PURGED] '{subj[:30]}' ({to}) -> {reason}")
 
         # 2. Execute Overhauls
         now_iso = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%d %H:%M:%S")

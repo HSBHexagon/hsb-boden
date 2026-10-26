@@ -176,7 +176,7 @@ def write_crm_audit(output):
     from sync_to_google_sheet import get_sheets_service, SPREADSHEET_ID
     svc=get_sheets_service()
     snapshot=json.loads((output/'crm-original.json').read_text())['valueRanges'][0]['values']
-    live=svc.spreadsheets().values().get(spreadsheetId=SPREADSHEET_ID,range='ALL_LEADS!A1:BM6425').execute().get('values',[])
+    live=svc.spreadsheets().values().get(spreadsheetId=SPREADSHEET_ID,range='ALL_LEADS!A1:BU6425').execute().get('values',[])
     if live!=snapshot:raise RuntimeError('CRM_CHANGED_SINCE_AUDIT: refresh snapshot before audit writeback')
     meta=svc.spreadsheets().get(spreadsheetId=SPREADSHEET_ID,fields='sheets(properties)').execute()
     sheet=next(s['properties'] for s in meta['sheets'] if s['properties']['title']=='ALL_LEADS')
@@ -209,7 +209,7 @@ def run_audit(output, reuse_snapshot=False):
     os.umask(0o077)
     output.mkdir(parents=True, exist_ok=True, mode=0o700)
     svc = get_sheets_service()
-    ranges = ['ALL_LEADS!A1:BM6425', 'DE_VERSENDUNGEN_FORENSIK!A1:J1324', 'INBOUND_EVENTS!A1:M5126']
+    ranges = ['ALL_LEADS!A1:BU6425', 'DE_VERSENDUNGEN_FORENSIK!A1:J1324', 'INBOUND_EVENTS!A1:M5126']
     snapshot = (json.loads((output/'crm-original.json').read_text()) if reuse_snapshot else
         svc.spreadsheets().values().batchGet(spreadsheetId=SPREADSHEET_ID, ranges=ranges).execute())
     if not reuse_snapshot:

@@ -88,7 +88,7 @@ def cmd_status(args):
     print(f"\n[3] GOOGLE SHEET SSOT (ID: {SPREADSHEET_ID}):")
     try:
         sheets_svc = get_sheets_service()
-        res = sheets_svc.spreadsheets().values().get(spreadsheetId=SPREADSHEET_ID, range="ALL_LEADS!A1:BM6425").execute()
+        res = sheets_svc.spreadsheets().values().get(spreadsheetId=SPREADSHEET_ID, range="ALL_LEADS!A1:BU6425").execute()
         rows = res.get("values", [])
         total_leads = len(rows) - 1 if rows else 0
         print(f"  ✓ ALL_LEADS geladen: {total_leads} Leads indiziert.")
@@ -256,7 +256,7 @@ def cmd_optouts(args):
     sheets_svc = get_sheets_service()
 
     # 1. Aus ALL_LEADS
-    res = sheets_svc.spreadsheets().values().get(spreadsheetId=SPREADSHEET_ID, range="ALL_LEADS!A1:BM6425").execute()
+    res = sheets_svc.spreadsheets().values().get(spreadsheetId=SPREADSHEET_ID, range="ALL_LEADS!A1:BU6425").execute()
     rows = res.get("values", [])
     optouts = []
     if rows:

@@ -32,8 +32,8 @@ def main():
 
     # 2. Lade ALL_LEADS
     service = get_sheets_service()
-    print("Lade Google Sheet ALL_LEADS (A1:BM6425)...")
-    res = service.spreadsheets().values().get(spreadsheetId=SPREADSHEET_ID, range="ALL_LEADS!A1:BM6425").execute()
+    print("Lade Google Sheet ALL_LEADS (A1:BU6425)...")
+    res = service.spreadsheets().values().get(spreadsheetId=SPREADSHEET_ID, range="ALL_LEADS!A1:BU6425").execute()
     rows = res.get("values", [])
     header = rows[0]
     data_rows = rows[1:]

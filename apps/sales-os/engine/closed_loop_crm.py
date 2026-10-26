@@ -54,7 +54,7 @@ def sync_inbounds(apply=False, include_de=True):
     from sales_reconciliation import addresses
     from sync_to_google_sheet import get_sheets_service, SPREADSHEET_ID
     svc = get_sheets_service()
-    rows = svc.spreadsheets().values().get(spreadsheetId=SPREADSHEET_ID,range='ALL_LEADS!A1:BM6425').execute()['values']
+    rows = svc.spreadsheets().values().get(spreadsheetId=SPREADSHEET_ID,range='ALL_LEADS!A1:BU6425').execute()['values']
     headers=rows[0]; byemail=defaultdict(list)
     for row,r in enumerate(rows[1:],2):
         d=dict(zip(headers,r));byemail[str(d.get('E-Mail') or '').strip().lower()].append((row,d))
@@ -154,13 +154,13 @@ def sync_sent_messages(apply=False):
     svc=get_sheets_service();messages=[]
     for owner in ['JOEL','JORDI']:
         messages.extend(ComMailboxClient(owner).fetch_sent_messages(limit=0))
-    rows=svc.spreadsheets().values().get(spreadsheetId=SPREADSHEET_ID,range='ALL_LEADS!A1:BR6425').execute()['values']
+    rows=svc.spreadsheets().values().get(spreadsheetId=SPREADSHEET_ID,range='ALL_LEADS!A1:BU6425').execute()['values']
     headers=rows[0];leads=[dict(zip(headers,r),_row=i) for i,r in enumerate(rows[1:],2)]
     evidence=select_sent_evidence(messages,leads)
     if apply and evidence:
         data=[{'range':f"ALL_LEADS!{col_name(headers.index(k)+1)}{e['row']}",'values':[[v]]} for e in evidence for k,v in e['updates'].items()]
         svc.spreadsheets().values().batchUpdate(spreadsheetId=SPREADSHEET_ID,body={'valueInputOption':'RAW','data':data}).execute()
-        back=svc.spreadsheets().values().get(spreadsheetId=SPREADSHEET_ID,range='ALL_LEADS!A1:BR6425').execute()['values']
+        back=svc.spreadsheets().values().get(spreadsheetId=SPREADSHEET_ID,range='ALL_LEADS!A1:BU6425').execute()['values']
         for e in evidence:
             actual=dict(zip(back[0],back[e['row']-1]))
             if actual.get('Lead-ID')!=e['lead_id'] or any(actual.get(k)!=v for k,v in e['updates'].items()):

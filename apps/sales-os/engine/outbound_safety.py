@@ -199,7 +199,7 @@ def dispatch_verified(count_per_owner=25, owners=('JOEL','JORDI'), dry_run=True,
         try:
             for item in selected:
                 # Re-read all permission/suppression columns immediately before reservation.
-                rows=svc.spreadsheets().values().get(spreadsheetId=SPREADSHEET_ID,range='ALL_LEADS!A1:BM6425').execute()['values']
+                rows=svc.spreadsheets().values().get(spreadsheetId=SPREADSHEET_ID,range='ALL_LEADS!A1:BU6425').execute()['values']
                 headers=rows[0]; matches=[(i,dict(zip(headers,r))) for i,r in enumerate(rows[1:],2) if r and r[0]==item['lead_id']]
                 if len(matches)!=1: raise RuntimeError('LEAD_CHANGED_OR_AMBIGUOUS')
                 row,lead=matches[0]; verdict=check_eligibility(lead)

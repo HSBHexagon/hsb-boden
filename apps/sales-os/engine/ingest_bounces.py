@@ -66,7 +66,7 @@ def load_all_leads_index(sheets_svc: Any) -> Tuple[Dict[str, Dict[str, Any]], Se
     logger.info("Lade ALL_LEADS aus Google Sheet...")
     res = sheets_svc.spreadsheets().values().get(
         spreadsheetId=SPREADSHEET_ID,
-        range="ALL_LEADS!A1:BM6425"
+        range="ALL_LEADS!A1:BU6425"
     ).execute()
     rows = res.get("values", [])
     if not rows:

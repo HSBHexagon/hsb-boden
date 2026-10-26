@@ -83,3 +83,51 @@ def test_previously_neutral_unsubscribe_is_repaired_once(monkeypatch, fail_first
     assert second["matched_new_events"] == 0
     assert len(writes) == (2 if fail_first_append else 1)
     assert len(appended) == 1
+
+
+def test_unsubscribe_from_colleague_mailbox_suppresses_original_lead_via_token(monkeypatch):
+    """List-Unsubscribe-Klick aus einem anderen Firmenpostfach: Zuordnung über das Lead-Token im Text."""
+    import closed_loop_crm
+    import dual_domain_collector
+    import outbound_safety
+    import sync_to_google_sheet
+    headers = ["Lead-ID", "E-Mail", "Reply_Status", "Suppressed", "Versandfreigabe",
+               "Opt-out-Status", "Suppression_Reason", "Last_Reply_At"]
+    rows = [headers,
+            ["HSB-7", "info@firma.invalid", "", "", "yes", "", "", ""],
+            ["HSB-8", "other@firma.invalid", "", "", "yes", "", "", ""]]
+    events = [["id", "at", "source", "sender", "subject", "mid"]]
+    appended = []
+    class Values:
+        def get(self, **kw):
+            value = rows if kw["range"].startswith("ALL_LEADS!") else appended if kw["range"] == "INBOUND_EVENTS!A2:M2" else events
+            return SimpleNamespace(execute=lambda: {"values": value})
+        def append(self, **kw):
+            appended[:] = kw["body"]["values"]
+            events.extend(appended)
+            return SimpleNamespace(execute=lambda: {"updates": {"updatedRange": "INBOUND_EVENTS!A2:M2"}})
+    values = Values()
+    svc = SimpleNamespace(spreadsheets=lambda: SimpleNamespace(values=lambda: values))
+    monkeypatch.setattr(sync_to_google_sheet, "get_sheets_service", lambda: svc)
+    monkeypatch.setattr(dual_domain_collector, "collect_all_inbounds", lambda **kw: [
+        SimpleNamespace(message_id="<alias@firma.invalid>", source="COM", owner="JOEL",
+                        sender="kollege@firma.invalid", subject="Abmelden",
+                        body="Bitte keine weiteren E-Mails. HSB-ABMELDUNG: HSB-7",
+                        date="2026-10-26T10:00:00Z")])
+    def write(_svc, _sheet, _headers, row, change):
+        for k, v in change.items():
+            rows[row-1][headers.index(k)] = v
+    monkeypatch.setattr(outbound_safety, "crm_write_readback", write)
+    result = closed_loop_crm.sync_inbounds(apply=True, include_de=False)
+    assert result["matched_new_events"] == 1
+    assert rows[1][headers.index("Opt-out-Status")] == "yes"
+    assert rows[1][headers.index("Suppressed")] == "yes"
+    assert rows[2][headers.index("Suppressed")] == ""
+
+
+def test_lead_token_in_ordinary_reply_does_not_suppress(monkeypatch):
+    """Nur eine echte Abmeldung wertet das Token aus; eine normale Antwort mit zitiertem Link nicht."""
+    from inbound_classifier import classify_inbound_message
+    result = classify_inbound_message("kollege@firma.invalid", "Re: Industrieböden",
+                                      "Gerne Termin nächste Woche. HSB-ABMELDUNG: HSB-7")
+    assert result.category != "OPTOUT"

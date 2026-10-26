@@ -32,8 +32,10 @@ def addresses(value):
 def has_unreviewed_legacy_variant(msg, owner):
     # Same-address Reply-To in an already reconciled original changes no route.
     # New messages still omit Reply-To. Attachments and other routes stay held.
-    reply = msg.get('Reply-To')
-    return bool((reply and addresses(reply) != [SENDERS[owner]])
+    # Every Reply-To header counts: a second header would add an unchecked reply route.
+    replies = msg.get_all('Reply-To') or []
+    return bool(len(replies) > 1
+                or (replies and addresses(replies[0]) != [SENDERS[owner]])
                 or any(p.get_content_disposition() == 'attachment' for p in msg.walk()))
 
 

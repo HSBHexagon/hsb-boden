@@ -12,6 +12,8 @@ from email.parser import BytesParser
 from email.utils import formatdate
 import hashlib
 import imaplib
+from urllib.parse import quote
+import re
 import json
 import os
 from pathlib import Path
@@ -167,11 +169,17 @@ def count_owner_attempts_today(leads, owner, today):
 SENDER_BY_OWNER={'JOEL':'j-cherino@hsb-boden.com','JORDI':'j-post@hsb-boden.com'}
 
 
-def add_list_unsubscribe(msg, owner):
-    """Abmelde-Header für Mailfilter (Gmail/Outlook) nur auf der ausgehenden Kopie; der IMAP-Entwurf bleibt unverändert.
-    Antworten mit Betreff 'Abmelden' erkennt inbound_classifier als ausdrückliche Abmeldung."""
-    if 'List-Unsubscribe' not in msg:
-        msg['List-Unsubscribe']=f'<mailto:{SENDER_BY_OWNER[owner]}?subject=Abmelden>'
+UNSUBSCRIBE_TOKEN_RE=re.compile(r'HSB-ABMELDUNG:\s*([A-Za-z0-9._-]{1,64})')
+
+
+def add_list_unsubscribe(msg, owner, lead_id):
+    """Genau ein kanonischer Abmelde-Header auf der ausgehenden Kopie; der IMAP-Entwurf bleibt unverändert.
+    Betreff 'Abmelden' erkennt inbound_classifier als Abmeldung; das Token im Text ordnet sie dem
+    ursprünglichen Lead zu, auch wenn ein anderes Postfach der Firma antwortet."""
+    for name in ('List-Unsubscribe','List-Unsubscribe-Post'):
+        del msg[name]
+    body=quote(f'Bitte keine weiteren E-Mails. HSB-ABMELDUNG: {lead_id}')
+    msg['List-Unsubscribe']=f'<mailto:{SENDER_BY_OWNER[owner]}?subject=Abmelden&body={body}>'
     return msg
 
 
@@ -236,7 +244,7 @@ def dispatch_verified(count_per_owner=25, owners=('JOEL','JORDI'), dry_run=True,
                 if 'X-Unsent' in msg: del msg['X-Unsent']
                 if 'Date' in msg: del msg['Date']
                 msg['Date']=formatdate(localtime=False)
-                add_list_unsubscribe(msg,item['owner'])
+                add_list_unsubscribe(msg,item['owner'],item['lead_id'])
                 raw=msg.as_bytes(policy=policy.SMTP); mid=str(msg['Message-ID']); em=item['email']
                 complete_delivery(client,journal,svc,SPREADSHEET_ID,headers,row,item,raw,mid,cap)
                 sent_counts[item['owner']]+=1

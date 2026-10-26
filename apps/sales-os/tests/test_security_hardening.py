@@ -195,3 +195,22 @@ def test_connection_to_loopback_is_refused_even_if_dns_check_passed(monkeypatch)
         assert hits == []
     finally:
         srv.shutdown()
+
+
+def test_redirect_to_ftp_is_refused():
+    import urllib.error
+    handler = bra._PublicRedirectHandler()
+    req = bra.urllib.request.Request("https://www.mueller-gmbh.de/impressum")
+    with pytest.raises(urllib.error.HTTPError):
+        handler.redirect_request(req, None, 302, "Found", {}, "ftp://mueller-gmbh.de/x")
+
+
+def test_opener_has_no_proxy_ftp_file_or_data_handler():
+    names = {type(h).__name__ for h in bra.build_public_opener().handlers}
+    assert not names & {"ProxyHandler", "FTPHandler", "FileHandler", "DataHandler", "CacheFTPHandler"}
+
+
+def test_non_http_scheme_is_not_fetched(monkeypatch):
+    agent = BounceRescueAgent()
+    monkeypatch.setattr(agent, "_open", lambda req: pytest.fail("darf nicht abrufen"))
+    assert agent._fetch_url_content("ftp://mueller-gmbh.de/impressum") is None

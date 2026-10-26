@@ -106,13 +106,24 @@ class _PublicRedirectHandler(urllib.request.HTTPRedirectHandler):
     """Prüft jedes Weiterleitungsziel, bevor es aufgerufen wird."""
 
     def redirect_request(self, req, fp, code, msg, headers, newurl):
-        if not is_public_hostname(urllib.parse.urlsplit(newurl).hostname or ""):
+        target = urllib.parse.urlsplit(newurl)
+        if target.scheme not in ("http", "https") or not is_public_hostname(target.hostname or ""):
             raise urllib.error.HTTPError(newurl, code, "Weiterleitung auf nicht-öffentliches Ziel verweigert", headers, fp)
         return super().redirect_request(req, fp, code, msg, headers, newurl)
 
 
 def build_public_opener() -> urllib.request.OpenerDirector:
-    return urllib.request.build_opener(_PublicHTTPHandler, _PublicHTTPSHandler, _PublicRedirectHandler)
+    """Nur HTTP(S) ohne Proxy: kein FTP/File/Data-Handler, keine Umgehung der Peer-Prüfung über einen Proxy."""
+    opener = urllib.request.OpenerDirector()
+    for handler in (
+        _PublicHTTPHandler(),
+        _PublicHTTPSHandler(),
+        _PublicRedirectHandler(),
+        urllib.request.HTTPDefaultErrorHandler(),
+        urllib.request.HTTPErrorProcessor(),
+    ):
+        opener.add_handler(handler)
+    return opener
 
 
 def belongs_to_domain(email_domain: str, domain: str) -> bool:
@@ -148,7 +159,8 @@ class BounceRescueAgent:
 
     def _fetch_url_content(self, url: str) -> Optional[str]:
         try:
-            if not is_public_hostname(urllib.parse.urlsplit(url).hostname or ""):
+            parts = urllib.parse.urlsplit(url)
+            if parts.scheme not in ("http", "https") or not is_public_hostname(parts.hostname or ""):
                 return None
             req = urllib.request.Request(url, headers=self.headers)
             with self._open(req) as resp:

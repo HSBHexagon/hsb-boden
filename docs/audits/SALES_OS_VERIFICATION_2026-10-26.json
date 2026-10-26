@@ -1,0 +1,172 @@
+{
+  "timestamp": "2026-10-26T12:45:56.339453+00:00",
+  "reassessed_at": "2026-10-26T13:02:37.123586+00:00",
+  "crm_total": 6424,
+  "crm_owners": {
+    "JOEL": 3212,
+    "JORDI": 3212
+  },
+  "forensic_rows": 1274,
+  "forensic_unique_recipients": 702,
+  "owners": {
+    "JOEL": {
+      "scanned": 3080,
+      "unique_recipients": 3080,
+      "crm_unique": 3078,
+      "technical_ready": 1924,
+      "sendable": 0,
+      "issues": {
+        "BODY_NOT_COMPANY_OR_CONTACT_SPECIFIC": 1155,
+        "FLYER_LINK_MISSING": 531,
+        "PERSONAL_OPTOUT_LINK_MISSING": 531,
+        "ALREADY_CONTACTED": 5,
+        "COMPANY_UNVERIFIED": 4,
+        "CRM_RECIPIENT_MISSING": 2,
+        "LEAD_ID_INFERRED_ONLY": 2,
+        "INBOUND_REQUIRES_REVIEW": 1,
+        "CRM_LEAD_ID_AMBIGUOUS": 2
+      },
+      "warnings": {
+        "HISTORICAL_REPLY_TO_DE": 531,
+        "PLAIN_TEXT_MISSING": 3079,
+        "HISTORICAL_REPLY_TO_OTHER": 2549
+      },
+      "sent_count": 82,
+      "inbound_count": 18,
+      "imap_auth": true,
+      "smtp_auth": true,
+      "internal_tests": 2,
+      "customer_drafts": 3078
+    },
+    "JORDI": {
+      "scanned": 2538,
+      "unique_recipients": 2538,
+      "crm_unique": 2536,
+      "technical_ready": 2032,
+      "sendable": 0,
+      "issues": {
+        "BODY_NOT_COMPANY_OR_CONTACT_SPECIFIC": 251,
+        "COMPANY_UNVERIFIED": 2,
+        "CRM_RECIPIENT_MISSING": 2,
+        "FLYER_LINK_MISSING": 250,
+        "LEAD_ID_INFERRED_ONLY": 2,
+        "PERSONAL_OPTOUT_LINK_MISSING": 250,
+        "INBOUND_REQUIRES_REVIEW": 30,
+        "CRM_LEAD_ID_AMBIGUOUS": 2,
+        "ALREADY_CONTACTED": 257,
+        "SUBJECT_NOT_COMPANY_SPECIFIC": 2,
+        "WRONG_OWNER": 5
+      },
+      "warnings": {
+        "HISTORICAL_REPLY_TO_DE": 250,
+        "PLAIN_TEXT_MISSING": 2538,
+        "HISTORICAL_REPLY_TO_OTHER": 2288
+      },
+      "sent_count": 489,
+      "inbound_count": 72,
+      "imap_auth": true,
+      "smtp_auth": true,
+      "internal_tests": 2,
+      "customer_drafts": 2536
+    }
+  },
+  "lead_reasons": {
+    "ALREADY_CONTACTED": 1069,
+    "LEGAL_EVIDENCE_DATE_INVALID": 6424,
+    "LEGAL_EVIDENCE_MISSING": 6424,
+    "NO_DRAFT": 810,
+    "SEND_STATE_NOT_READY": 774,
+    "Send_Datum": 774,
+    "bereits gesendet": 774,
+    "Hard Bounce": 17,
+    "INBOUND_REQUIRES_REVIEW": 47,
+    "Opt_Out=YES": 43,
+    "REPLY_ALREADY_PRESENT": 79,
+    "Suppressed=YES": 39,
+    "Versandfreigabe=no": 462,
+    "BODY_NOT_COMPANY_OR_CONTACT_SPECIFIC": 1402,
+    "FLYER_LINK_MISSING": 777,
+    "PERSONAL_OPTOUT_LINK_MISSING": 777,
+    "Legal_Basis=YES": 22,
+    "WRONG_OWNER": 5,
+    "Legal_Basis=UNKNOWN": 91,
+    "Legal_Basis=CONTRACT_APPROVED": 5639,
+    "Legal_Basis=NO": 360,
+    "Suppression_Reason": 1,
+    "COMPANY_UNVERIFIED": 2,
+    "Legal_Basis=OWNER_APPROVED": 63,
+    "SUBJECT_NOT_COMPANY_SPECIFIC": 2
+  },
+  "inbound_categories": {
+    "NEUTRAL": 39,
+    "OOO_URLAUB": 7,
+    "BOUNCE": 44
+  },
+  "links": {
+    "https://www.hsb-boden.de/abmelden": {
+      "status": 200,
+      "final_url": "https://www.hsb-boden.de/abmelden/",
+      "content_type": "text/html; charset=utf-8",
+      "sha256": "42db90c55f7af85d723b2db8f440d9df7dd9675093ba05d4015583bdbc10fade",
+      "bytes": 24502,
+      "valid": true
+    },
+    "https://www.hsb-boden.de/flyer": {
+      "status": 200,
+      "final_url": "https://www.hsb-boden.de/HSB-Flyer-Geschaeftsfuehrer.pdf",
+      "content_type": "application/pdf",
+      "sha256": "763ea1784fe83f0d0fd5ab5214e7fc219f1a3ae203e58987cfbdf56a4c22bd88",
+      "bytes": 253428,
+      "valid": true
+    }
+  },
+  "customer_emails_sent": 0,
+  "status": "NICHT VERSANDBEREIT",
+  "de_crm_readback": {
+    "forensic_headers": [
+      "Nr",
+      "Sendedatum_Uhrzeit",
+      "Absender",
+      "Empfaenger_Email",
+      "Kategorie",
+      "Betreffzeile",
+      "Quelle",
+      "Message_ID"
+    ],
+    "forensic_rows": 1274,
+    "unique_historical_recipients": 702,
+    "crm_matched_unique_recipients": 488,
+    "crm_matched_leads": 488,
+    "crm_marked_sent": 488,
+    "crm_missing_sent_status": 0,
+    "forensic_recipients_outside_master": 214,
+    "missing_by_owner": {}
+  },
+  "crm_writeback": {
+    "rows_verified": 6424,
+    "range": "ALL_LEADS!BN1:BR6425",
+    "run_id": "HSB-RECON-796fb81b392912a7",
+    "customer_emails_sent": 0
+  },
+  "python_tests": {
+    "passed": 162,
+    "skipped": 1,
+    "live_auth_separately_verified": true
+  },
+  "website_tests": {
+    "passed": 335,
+    "runtime": "Node 26 with experimental webstorage disabled; Node22 Homebrew install has missing dylib"
+  },
+  "cloud_runtime": "PENDING_FIRST_RUN",
+  "m365_jordie": "HTTP_403_ACCESS_BLOCKED",
+  "outlook_client": "NOT_VERIFIED: no IMAP accounts exposed by Outlook AppleScript",
+  "automation_limits": {
+    "daily_per_mailbox": 35,
+    "unbounded_loop": false,
+    "customer_send_enabled": false
+  },
+  "customer_only_overlap": {
+    "JOEL": 3,
+    "JORDI": 256
+  }
+}

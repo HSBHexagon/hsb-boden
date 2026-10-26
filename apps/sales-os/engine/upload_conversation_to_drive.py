@@ -46,7 +46,7 @@ conversation_text = """# HSB Sales OS — Gesamtes Gespräch, Audit & Abschluss-
 
 ### 2.1 Power Automate Flow Latenz-Optimierung (Joel)
 - **Problem:** Joels Flow (`137601e8-7369-4a74-9564-959f1551e48d`) hing reproduzierbar an der Aktion `Entwurf_zurueckgelesen` (`GetEmailV2` mit `includeAttachments: true`). Bei jedem Entwurf wurden 1,5 MB Flyer-Bytes aus Exchange zurückgelesen. Dies führte zu Drosselungen, 90-Sekunden-Socket-Timeouts und Verbindungsabbrüchen.
-- **Lösung:** 
+- **Lösung:**
   1. Original-Definition gesichert unter `flows/backup_joel_flow_original.json`.
   2. Flow über Azure Flow REST API gepatcht: `Entwurf_zurueckgelesen` entfernt, Erfolgsantwort `Antwort_OK` direkt an `Draft_an_email_message` gebunden.
   3. Latenz sank von ~98s auf **2,1s – 2,5s pro Lead**.

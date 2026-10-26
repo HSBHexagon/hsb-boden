@@ -26,3 +26,9 @@ data/lead-import/
 *.jsonl
 __pycache__/
 *.pyc
+
+# Private Sales OS runtime evidence and credentials
+apps/sales-os/.env
+apps/sales-os/engine/logs/
+apps/sales-os/data/reconciliation*/
+*.sqlite3

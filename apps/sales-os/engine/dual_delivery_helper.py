@@ -6,19 +6,25 @@ and manages dual-delivery options (241 KB PDF attachment vs. trusted CDN link).
 """
 import subprocess
 import re
+from pathlib import Path
 from typing import Dict, Any, Tuple
+
+REPO_ROOT = Path(__file__).resolve().parent.parent
+CANONICAL_DIR = REPO_ROOT / "assets" / "canonical"
 
 # Canonical Assets
 CANONICAL_FLYERS = {
     "JOEL": {
         "filename": "HSB-Flyer-Joel-Cherino_FINAL.pdf",
-        "local_path": "/Users/joelcherinodiaz/Projekte/hsb-boden/apps/sales-os/assets/canonical/HSB-Flyer-Joel-Cherino_FINAL.pdf",
+        "attachment_name": "HSB-HEXAGON-Industrieboeden-Flyer.pdf",
+        "local_path": str(CANONICAL_DIR / "HSB-Flyer-Joel-Cherino_FINAL.pdf"),
         "cdn_url": "https://www.hsb-boden.de/flyer/HSB-Flyer-Joel-Cherino_FINAL.pdf",
         "size_kb": 241
     },
     "JORDI": {
         "filename": "HSB-Flyer-Jordie-Post_FINAL.pdf",
-        "local_path": "/Users/joelcherinodiaz/Projekte/hsb-boden/apps/sales-os/assets/canonical/HSB-Flyer-Jordie-Post_FINAL.pdf",
+        "attachment_name": "HSB-HEXAGON-Industrieboeden-Flyer.pdf",
+        "local_path": str(CANONICAL_DIR / "HSB-Flyer-Jordie-Post_FINAL.pdf"),
         "cdn_url": "https://www.hsb-boden.de/flyer/HSB-Flyer-Jordie-Post_FINAL.pdf",
         "size_kb": 241
     }
@@ -90,14 +96,14 @@ def get_flyer_delivery_config(owner: str, recipient_email: str) -> Dict[str, Any
     norm_owner = owner.strip().upper()
     if norm_owner not in CANONICAL_FLYERS:
         norm_owner = "JOEL"
-        
+
     flyer_meta = CANONICAL_FLYERS[norm_owner]
     seg_info = classify_recipient_seg(recipient_email)
 
     # Both: Always provide 241 KB attachment + CDN Fallback in footer for maximum deliverability
     return {
         "owner": norm_owner,
-        "flyer_filename": flyer_meta["filename"],
+        "flyer_filename": flyer_meta.get("attachment_name", "HSB-HEXAGON-Industrieboeden-Flyer.pdf"),
         "flyer_local_path": flyer_meta["local_path"],
         "flyer_cdn_url": flyer_meta["cdn_url"],
         "flyer_size_kb": flyer_meta["size_kb"],

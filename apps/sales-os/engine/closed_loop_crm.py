@@ -1,0 +1,103 @@
+# apps/sales-os/engine/closed_loop_crm.py
+from __future__ import annotations
+import logging
+from typing import Any, Dict, List, Optional
+from inbound_classifier import InboundClassificationResult
+
+logger = logging.getLogger("closed_loop_crm")
+
+def compute_lead_update(row_idx: int, lead_id: str, cls_res: InboundClassificationResult) -> Dict[str, Any]:
+    cat = cls_res.category
+    optout_val = None
+    reply_status = "received"
+    pipeline_val = "In Bearbeitung"
+
+    if cat == "BOUNCE":
+        reply_status = "bounced"
+        pipeline_val = "Bounced / Ungültig"
+    elif cat == "OPTOUT":
+        optout_val = "YES"
+        reply_status = "opt_out"
+        pipeline_val = "Abgemeldet / Widerspruch"
+    elif cat == "OOO_URLAUB":
+        reply_status = "auto_reply_ooo"
+        if cls_res.recontact_date:
+            pipeline_val = f"Wiedervorlage {cls_res.recontact_date} (Urlaub)"
+        else:
+            pipeline_val = "Wiedervorlage (Urlaub/Abwesend)"
+    elif cat == "HOT_LEAD":
+        reply_status = "replied_interested"
+        pipeline_val = "HOT LEAD / Terminprüfung"
+    else:
+        reply_status = "replied"
+        pipeline_val = "Antwort erhalten (Manuelle Sichtung)"
+
+    return {
+        "row": row_idx,
+        "lead_id": lead_id,
+        "optout_val": optout_val,
+        "reply_status": reply_status,
+        "pipeline_val": pipeline_val,
+        "notes": cls_res.reason
+    }
+
+
+def sync_inbounds(apply=False, include_de=True):
+    """Replay-safe event ingestion; negative evidence never clears a suppression."""
+    from collections import defaultdict
+    from datetime import datetime, timezone
+    import hashlib
+    import re
+    from dual_domain_collector import collect_all_inbounds
+    from inbound_classifier import classify_inbound_message
+    from outbound_safety import crm_write_readback
+    from sales_reconciliation import addresses
+    from sync_to_google_sheet import get_sheets_service, SPREADSHEET_ID
+    svc = get_sheets_service()
+    rows = svc.spreadsheets().values().get(spreadsheetId=SPREADSHEET_ID,range='ALL_LEADS!A1:BM6425').execute()['values']
+    headers=rows[0]; byemail=defaultdict(list)
+    for row,r in enumerate(rows[1:],2):
+        d=dict(zip(headers,r));byemail[str(d.get('E-Mail') or '').strip().lower()].append((row,d))
+    events=svc.spreadsheets().values().get(spreadsheetId=SPREADSHEET_ID,range='INBOUND_EVENTS!A1:M10000').execute().get('values',[])
+    seen_ids={str(r[0]) for r in events[1:] if r}
+    seen_mids={str(r[5]) for r in events[1:] if len(r)>5 and r[5]}
+    messages=collect_all_inbounds(limit_per_mailbox=0,include_de=include_de)
+    pending=[]; categories={}; matched=0
+    # Process the whole observed set in one call; no newest-N starvation.
+    for msg in messages:
+        if not msg.message_id: raise RuntimeError('INBOUND_MESSAGE_ID_MISSING')
+        cls=classify_inbound_message(msg.sender,msg.subject,msg.body)
+        targets=[cls.extracted_email.lower()] if cls.category=='BOUNCE' and cls.extracted_email else addresses(msg.sender)
+        eid='INBOUND-'+hashlib.sha256((msg.source+'|'+msg.owner+'|'+msg.message_id).encode()).hexdigest()
+        if eid in seen_ids or msg.message_id in seen_mids: continue
+        for target in targets:
+            for row,lead in byemail.get(target,[]):
+                matched+=1;categories[cls.category]=categories.get(cls.category,0)+1
+                blocked=cls.category in {'OPTOUT','BOUNCE'}
+                change={'Last_Reply_At':msg.date or datetime.now(timezone.utc).isoformat()}
+                # Replies on already suppressed records must not erase their status.
+                if str(lead.get('Reply_Status') or '').lower() not in {'opt_out','bounced'}:
+                    change['Reply_Status']=compute_lead_update(row,lead.get('Lead-ID'),cls)['reply_status']
+                if blocked:
+                    change.update({'Suppressed':'yes','Versandfreigabe':'no',
+                        'Suppression_Reason':'INBOUND_'+cls.category})
+                    if cls.category=='OPTOUT':change['Opt-out-Status']='yes'
+                    if cls.category=='BOUNCE':change['Bounce_Status']='hard_bounce' if re.search(r'\b5\.\d\.\d|\b55\d\b|user unknown',msg.body,re.I) else 'bounce_review'
+                if cls.recontact_date:change['Follow-up-Datum']=cls.recontact_date
+                if apply:
+                    crm_write_readback(svc,SPREADSHEET_ID,headers,row,change)
+                pending.append([eid, msg.date or datetime.now(timezone.utc).isoformat(),
+                    msg.source+':'+msg.owner,msg.sender,msg.subject,msg.message_id,
+                    lead.get('Lead-ID',''),cls.category,'yes' if blocked else 'no',
+                    'PROCESSED' if apply else 'PENDING',cls.reason,'','MATCHED'])
+                lead.update(change)
+        seen_ids.add(eid);seen_mids.add(msg.message_id)
+    if apply and pending:
+        # append is never automatically retried after a timeout; message IDs dedupe replay.
+        result=svc.spreadsheets().values().append(spreadsheetId=SPREADSHEET_ID,
+            range='INBOUND_EVENTS!A:M',valueInputOption='RAW',insertDataOption='INSERT_ROWS',body={'values':pending}).execute()
+        updated=result.get('updates',{}).get('updatedRange')
+        if not updated:raise RuntimeError('INBOUND_APPEND_RANGE_MISSING')
+        back=svc.spreadsheets().values().get(spreadsheetId=SPREADSHEET_ID,range=updated).execute().get('values',[])
+        if back!=pending:raise RuntimeError('INBOUND_EVENT_READBACK_MISMATCH')
+    return {'scanned':len(messages),'matched_new_events':matched,'categories':categories,'applied':apply,'include_de':include_de,'customer_emails_sent':0}

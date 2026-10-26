@@ -77,7 +77,7 @@ def load_sheet_index(sheets_svc: Any) -> Tuple[List[Dict[str, Any]], Dict[str, T
     logger.info("Lade und indiziere Google Sheet ALL_LEADS...")
     res = sheets_svc.spreadsheets().values().get(
         spreadsheetId=SPREADSHEET_ID,
-        range="ALL_LEADS!A:BE"
+        range="ALL_LEADS!A1:BM6425"
     ).execute()
     rows = res.get("values", [])
     if not rows:

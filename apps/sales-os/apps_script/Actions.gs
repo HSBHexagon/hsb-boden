@@ -56,6 +56,7 @@ function qualifyLeads(opts) {
       const optOut = String(l.Opt_Out || '').trim().toLowerCase();
       if (optOut === 'yes' || optOut === 'ja' || optOut === 'opt_out') continue;
 
+      if (sendable && !checkEligibility_(Object.assign({}, l, {Legal_Basis: legalBasis, Versandfreigabe: 'yes'})).eligible) continue;
       uLegal[l._row] = legalBasis;
       uFreigabe[l._row] = sendable ? 'yes' : 'no';
       touched++;

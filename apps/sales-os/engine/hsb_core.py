@@ -186,16 +186,27 @@ FREEMAIL_NAMES: set[str] = {
 }
 
 
+GENERIC_COMPANY_NAMES: set[str] = {
+    "contact", "kontakt", "info", "office", "mail", "admin", "service",
+    "support", "headquarters", "zentrale", "empfang", "kunde", "lead",
+    "firma", "unternehmen", "anonym", "unbekannt", "test", "demo"
+}
+
+
 def sanitize_company_name(raw_name: str | None, email: str | None = None) -> str:
     """
     Bereinigt den Firmennamen fuer Anrede und Betreffzeile.
-    Verhindert peinliche Fehler wie 'Industrieböden für T-Online' oder Freemail-Provider.
+    Verhindert peinliche Fehler wie 'Industrieböden für T-Online' oder Platzhalter wie 'Contact'.
     """
     if not raw_name:
         return "Ihr Unternehmen"
     name = str(raw_name).strip()
     norm = name.lower()
     if not norm or norm in {"none", "nan", "null", "undefined", "-", ".", "/"}:
+        return "Ihr Unternehmen"
+
+    # Pruefung gegen generische Platzhalter-Woerter
+    if norm in GENERIC_COMPANY_NAMES:
         return "Ihr Unternehmen"
 
     # Pruefung gegen Freemail-Namen
@@ -215,7 +226,7 @@ def sanitize_company_name(raw_name: str | None, email: str | None = None) -> str
     return name
 
 
-LEGAL_BASIS_SENDABLE = {"OPT_IN", "EXISTING_CUSTOMER_7_3", "OWNER_APPROVED"}
+LEGAL_BASIS_SENDABLE = {"OPT_IN", "EXISTING_CUSTOMER_7_3"}
 LEGAL_BASIS_ALL = LEGAL_BASIS_SENDABLE | {"BLOCKED", "UNKNOWN"}
 
 EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s.]+\.[^@\s]{2,}$")
@@ -257,10 +268,30 @@ def check_eligibility(lead: dict) -> EligibilityResult:
     legal = str(lead.get("Legal_Basis") or "").strip().upper()
     if not legal:
         # Kein explizites Legal_Basis: aus Opt-in-Status ableiten, fail-closed.
-        opt_in = _norm(lead.get("Opt_In"))
+        opt_in = _norm(lead.get("Opt_In") or lead.get("Opt-in-Status"))
         legal = "OPT_IN" if opt_in in {"yes", "ja", "true", "opt_in"} else "UNKNOWN"
     if legal not in LEGAL_BASIS_SENDABLE:
         reasons.append(f"Legal_Basis={legal or 'UNKNOWN'}")
+
+    # Operator flags and generated CRM labels are not recipient evidence.
+    evidence = str(lead.get("Legal_Evidence") or "").strip()
+    if len(evidence) < 8 or evidence.upper() in {"OWNER_APPROVED", "CONTRACT_APPROVED", "APPROVED", "UNKNOWN"}:
+        reasons.append("LEGAL_EVIDENCE_MISSING")
+    try:
+        evidenced_at = datetime.fromisoformat(str(lead.get("Legal_Evidence_At") or "").replace("Z", "+00:00"))
+        if evidenced_at.tzinfo is None or evidenced_at > datetime.now(timezone.utc):
+            raise ValueError("invalid evidence timestamp")
+    except (ValueError, TypeError):
+        reasons.append("LEGAL_EVIDENCE_DATE_INVALID")
+    if not str(lead.get("Lead-ID") or lead.get("Lead_ID") or "").strip():
+        reasons.append("LEAD_ID_MISSING")
+    for key in ("Suppression_Reason", "Last_Send_Attempt_At", "Send_Datum", "Sent_At"):
+        if str(lead.get(key) or "").strip():
+            reasons.append(key)
+    if _norm(lead.get("Send_Status")) not in {"", "not_sent", "prepared", "drafted"}:
+        reasons.append("SEND_STATE_NOT_READY")
+    if _norm(lead.get("Reply_Status")) not in {"", "no", "none", "not_received"}:
+        reasons.append("REPLY_ALREADY_PRESENT")
 
     if _norm(lead.get("Versandfreigabe")) not in {"yes", "ja", "true"}:
         reasons.append(f"Versandfreigabe={lead.get('Versandfreigabe') or 'leer'}")
@@ -268,26 +299,31 @@ def check_eligibility(lead: dict) -> EligibilityResult:
     if _norm(lead.get("Suppressed")) in {"yes", "ja", "true"}:
         reasons.append("Suppressed=YES")
 
-    if _norm(lead.get("Opt_Out")) in {"yes", "ja", "true", "opt_out"}:
+    if any(_norm(lead.get(k)) in {"yes", "ja", "true", "1", "opt_out"} for k in ("Opt_Out", "Opt-out-Status")):
         reasons.append("Opt_Out=YES")
+
+    if lead.get('Email') and lead.get('E-Mail') and _norm(lead['Email']) != _norm(lead['E-Mail']):
+        reasons.append('EMAIL_ALIAS_CONFLICT')
+    if lead.get('Owner') and lead.get('Verantwortlicher') and normalize_owner(lead['Owner']) != normalize_owner(lead['Verantwortlicher']):
+        reasons.append('OWNER_ALIAS_CONFLICT')
 
     if _norm(lead.get("Bounce_Status")) in {"hard_bounce", "hard", "hardbounce"}:
         reasons.append("Hard Bounce")
 
-    if _norm(lead.get("Send_Status")) in {"sent", "gesendet"}:
+    if _norm(lead.get("Send_Status")) in {"sent", "gesendet"} or "SENT" in str(lead.get("Batch_Status") or "").upper():
         reasons.append("bereits gesendet")
 
-    email = str(lead.get("Email") or "").strip()
+    email = str(lead.get("Email") or lead.get("E-Mail") or "").strip()
     if not EMAIL_RE.match(email):
         reasons.append(f"E-Mail ungueltig ({email or 'leer'})")
 
-    if not normalize_owner(lead.get("Owner")) in FLYERS:
-        reasons.append(f"Owner unklar ({lead.get('Owner') or 'leer'})")
+    if not normalize_owner(lead.get("Owner") or lead.get("Verantwortlicher")) in FLYERS:
+        reasons.append(f"Owner unklar ({lead.get('Owner') or lead.get('Verantwortlicher') or 'leer'})")
 
     raw_company = str(lead.get("Company") or lead.get("Firma") or "").strip()
     if raw_company:
         norm_c = raw_company.lower().strip()
-        if norm_c in FREEMAIL_NAMES or (email and "@" in email and norm_c == email.split("@")[-1].split(".")[0]):
+        if norm_c in FREEMAIL_NAMES or (email and "@" in email and email.split("@")[-1].lower() in FREEMAIL_DOMAINS and norm_c == email.split("@")[-1].split(".")[0]):
             reasons.append(f"Freemail/Domain als Firmenname ({raw_company})")
 
     return EligibilityResult(eligible=not reasons, reasons=reasons)

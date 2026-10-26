@@ -109,7 +109,7 @@ def get_flow_details(token: str, flow_id: str) -> Dict[str, Any]:
     triggers_def = definition.get("triggers", {})
     actions_def = definition.get("actions", {})
     connection_refs = props.get("connectionReferences", {})
-    
+
     # Schema validation
     manual_trigger = triggers_def.get("manual", {})
     schema_props = (manual_trigger.get("inputs", {})
@@ -121,13 +121,13 @@ def get_flow_details(token: str, flow_id: str) -> Dict[str, Any]:
     # Connection reference check
     o365_ref = connection_refs.get("shared_office365", {})
     conn_name = o365_ref.get("connectionName")
-    
+
     # Sendesicherheit pruefen: Keine 'Send'-Actions
     has_send_action = any(
         "send" in a.get("swaggerOperationId", "").lower() or "send" in a.get("name", "").lower()
         for a in props.get("definitionSummary", {}).get("actions", [])
     )
-    
+
     return {
         "id": data.get("name"),
         "displayName": props.get("displayName"),
@@ -240,12 +240,12 @@ def main() -> int:
         owner_key = "JORDI" if "Jordi" in meta["name"] else "JOEL"
         details = get_flow_details(token, flow_id)
         runs = get_flow_runs(token, flow_id, limit=5)
-        
+
         # Latest run output details
         latest_output = None
         if runs and runs[0].get("response_outputs_url"):
             latest_output = fetch_response_output(runs[0]["response_outputs_url"])
-        
+
         flows_report[owner_key] = {
             "meta": meta,
             "details": details,

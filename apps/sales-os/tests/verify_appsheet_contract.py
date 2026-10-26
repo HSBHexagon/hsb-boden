@@ -44,7 +44,7 @@ def main():
             assert header[0] == "Lead-ID", f"Expected 'Lead-ID' in col 0, got {header[0]}"
             assert header[26] == "Verantwortlicher", f"Expected 'Verantwortlicher' in col 26, got {header[26]}"
             continue
-        
+
         lead_id = row[0]
         owner = row[26]
 

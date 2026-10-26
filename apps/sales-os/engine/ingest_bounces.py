@@ -66,7 +66,7 @@ def load_all_leads_index(sheets_svc: Any) -> Tuple[Dict[str, Dict[str, Any]], Se
     logger.info("Lade ALL_LEADS aus Google Sheet...")
     res = sheets_svc.spreadsheets().values().get(
         spreadsheetId=SPREADSHEET_ID,
-        range="ALL_LEADS!A:BE"
+        range="ALL_LEADS!A1:BM6425"
     ).execute()
     rows = res.get("values", [])
     if not rows:
@@ -182,7 +182,7 @@ def process_bounces(
 ) -> int:
     """Processes bounces for owner and writes back to Google Sheets."""
     assert REAL_EXTERNAL_PROSPECT_SEND_COUNT == 0, "Sicherheits-Invariante verletzt!"
-    
+
     token = None
     try:
         token = get_az_apihub_token()
@@ -318,7 +318,7 @@ def main():
     dry_run = not args.apply
     logger.info(f"=== HSB BOUNCE INGESTION ENGINE ===")
     logger.info(f"Owner: {args.owner} | Modus: {'DRY-RUN' if dry_run else 'APPLY (Live-Sync)'}")
-    
+
     updated = process_bounces(args.owner, dry_run=dry_run, limit=args.limit)
     logger.info(f"Fertig: {updated} Bounces verarbeitet.")
 

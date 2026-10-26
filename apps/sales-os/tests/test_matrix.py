@@ -29,6 +29,7 @@ REAL_EXTERNAL_SEND_COUNT = 0
 
 def check(name: str, condition: bool, detail: str = "") -> None:
     RESULTS.append((name, bool(condition), detail))
+    assert condition, name + ": " + detail
     print(f"{'PASS' if condition else 'FAIL'}  {name}"
           + (f"  ({detail})" if detail else ""))
 
@@ -47,6 +48,8 @@ def make_lead(i: int, owner: str = "JORDI", **over) -> dict:
         "Industry": "Lebensmittelindustrie",
         "Tier": "A" if i % 3 == 0 else "B",
         "Legal_Basis": "OPT_IN",
+        "Legal_Evidence": "consent-fixture-123",
+        "Legal_Evidence_At": "2026-10-20T10:00:00Z",
         "Versandfreigabe": "yes",
         "Suppressed": "no",
         "Opt_Out": "no",
@@ -115,8 +118,8 @@ def test_compliance_gate() -> None:
 
     check("EXISTING_CUSTOMER_7_3 ist sendefaehig",
           check_eligibility(make_lead(1, Legal_Basis="EXISTING_CUSTOMER_7_3")).eligible)
-    check("OWNER_APPROVED ist neutral protokolliert und sendefaehig",
-          check_eligibility(make_lead(1, Legal_Basis="OWNER_APPROVED")).eligible)
+    check("OWNER_APPROVED ist kein Empfaengernachweis",
+          not check_eligibility(make_lead(1, Legal_Basis="OWNER_APPROVED")).eligible)
 
     check("leeres Legal_Basis faellt auf UNKNOWN zurueck",
           not check_eligibility(make_lead(1, Legal_Basis="", Opt_In="unknown")).eligible)
@@ -258,7 +261,7 @@ def test_eml_structure() -> None:
         check("Abmeldehinweis im Text", "Abmelden" in body)
         # Geschaeftsuebliche Anrede: Vorname/Zaehler entfaellt.
         check("Ansprechpartner personalisiert",
-              "Guten Tag Herr Muster," in body)
+              "Sehr geehrter Herr Muster," in body)
 
         check("manifest.json vorhanden", (out / "manifest.json").exists())
         check("status.csv vorhanden", (out / "status.csv").exists())
@@ -403,7 +406,7 @@ def test_real_data_snapshot() -> None:
     check("reale Daten: kein Ausgewaehlter ohne Rechtsgrundlage/Freigabe",
           not unerlaubt, f"{len(unerlaubt)} unerlaubte Treffer")
 
-    # Nach Qualifizierung muss derselbe Aufruf 100 liefern.
+    # Operator flags without evidence must still select no recipients.
     qualified = []
     for lead in leads:
         l = dict(lead)
@@ -412,11 +415,11 @@ def test_real_data_snapshot() -> None:
             l["Versandfreigabe"] = "yes"
         qualified.append(l)
     b2 = prepare_batch(qualified, "JORDI", 100)
-    check("reale Daten: nach Qualifizierung liefert JORDI+100 genau 100",
-          b2.stats.selected_count == 100, f"selected={b2.stats.selected_count}")
+    check("reale Daten: Zustimmungslabels ohne Nachweise bleiben gesperrt",
+          b2.stats.selected_count == 0, f"selected={b2.stats.selected_count}")
     b3 = prepare_batch(qualified, "JORDI", 250)
-    check("reale Daten: JORDI+250 liefert 250",
-          b3.stats.selected_count == 250, f"selected={b3.stats.selected_count}")
+    check("reale Daten: groessere Batchgroesse umgeht Nachweise nicht",
+          b3.stats.selected_count == 0, f"selected={b3.stats.selected_count}")
 
 
 # --------------------------------------------------------------------------

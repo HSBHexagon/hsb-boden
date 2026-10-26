@@ -1,0 +1,65 @@
+name: Sales OS safety and inbound
+on:
+  pull_request:
+    paths: ['apps/sales-os/**', '.github/workflows/sales-os-safety.yml']
+  push:
+    branches: ['fix/sales-os-completion-20261026']
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: Bounded operation; customer sending is always disabled
+        type: choice
+        options: [audit, inbound-preview, inbound-sync]
+        default: audit
+  schedule:
+    - cron: '17 * * * *'
+permissions:
+  contents: read
+concurrency:
+  group: hsb-sales-os-runtime
+  cancel-in-progress: false
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: '3.14'
+      - run: pip install -r apps/sales-os/requirements.txt
+      - run: python -m pytest apps/sales-os/tests/ -q
+      - run: python scripts/verify_ssot.py
+  live-readonly-and-inbound:
+    if: github.event_name != 'pull_request'
+    needs: tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      HSB_GOOGLE_AUTHORIZED_USER_JSON: ${{ secrets.HSB_SALES_GOOGLE_AUTH }}
+      HSB_MAILBOX_CONFIG_JSON: ${{ secrets.HSB_SALES_MAILBOXES_JSON }}
+      HSB_CUSTOMER_SEND_ENABLED: 'no'
+      HSB_INTERNAL_TEST_SEND_ENABLED: 'no'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: '3.14'
+      - run: pip install -r apps/sales-os/requirements.txt
+      - name: Verify configured authentication without exposing secrets
+        run: |
+          python - <<'PY'
+          import os
+          assert os.environ.get('HSB_GOOGLE_AUTHORIZED_USER_JSON'), 'Missing CRM authentication'
+          assert os.environ.get('HSB_MAILBOX_CONFIG_JSON'), 'Missing mailbox authentication'
+          PY
+      - name: Scheduled or explicitly selected .com reply synchronization
+        if: github.event_name == 'schedule' || inputs.mode == 'inbound-sync'
+        run: python apps/sales-os/engine/hsb_cli.py sync --com-only --apply
+      - name: Preview .com reply synchronization
+        if: inputs.mode == 'inbound-preview'
+        run: python apps/sales-os/engine/hsb_cli.py sync --com-only
+      - name: Full read-only reconciliation
+        if: github.event_name == 'push' || inputs.mode == 'audit'
+        run: python -u apps/sales-os/engine/sales_reconciliation.py --output "$RUNNER_TEMP/hsb-reconciliation"
+      # Raw MIME, customer lists, queue and credentials are never uploaded.

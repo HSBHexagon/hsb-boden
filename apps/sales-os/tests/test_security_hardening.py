@@ -214,3 +214,55 @@ def test_non_http_scheme_is_not_fetched(monkeypatch):
     agent = BounceRescueAgent()
     monkeypatch.setattr(agent, "_open", lambda req: pytest.fail("darf nicht abrufen"))
     assert agent._fetch_url_content("ftp://mueller-gmbh.de/impressum") is None
+
+
+def test_no_tcp_connection_is_opened_to_private_address(monkeypatch):
+    """Codex-Befund: Prüfung muss VOR TCP/TLS greifen – der lokale Listener darf keine Verbindung sehen."""
+    import threading
+    listener = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    listener.bind(("127.0.0.1", 0))
+    listener.listen(5)
+    listener.settimeout(0.5)
+    accepted = []
+
+    def accept_loop():
+        try:
+            while True:
+                conn, _ = listener.accept()
+                accepted.append(conn)
+        except OSError:
+            pass
+
+    threading.Thread(target=accept_loop, daemon=True).start()
+    port = listener.getsockname()[1]
+    try:
+        monkeypatch.setattr(bra, "is_public_hostname", lambda host: True)
+        for scheme in ("http", "https"):
+            assert BounceRescueAgent(timeout=2)._fetch_url_content(f"{scheme}://127.0.0.1:{port}/impressum") is None
+        import time
+        time.sleep(0.6)
+        assert accepted == []
+    finally:
+        listener.close()
+
+
+def test_public_ip_is_pinned_for_the_connection(monkeypatch):
+    monkeypatch.setattr(
+        bra.socket,
+        "getaddrinfo",
+        lambda host, *a, **k: [(socket.AF_INET, socket.SOCK_STREAM, 6, "", ("93.184.216.34", 80))],
+    )
+    assert bra._resolve_public_ip("mueller-gmbh.de", 80) == "93.184.216.34"
+
+
+def test_mixed_dns_answer_with_private_ip_is_refused(monkeypatch):
+    monkeypatch.setattr(
+        bra.socket,
+        "getaddrinfo",
+        lambda host, *a, **k: [
+            (socket.AF_INET, socket.SOCK_STREAM, 6, "", ("93.184.216.34", 80)),
+            (socket.AF_INET, socket.SOCK_STREAM, 6, "", ("10.0.0.1", 80)),
+        ],
+    )
+    with pytest.raises(ConnectionRefusedError):
+        bra._resolve_public_ip("mueller-gmbh.de", 80)

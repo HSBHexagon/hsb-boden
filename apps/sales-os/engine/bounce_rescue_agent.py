@@ -72,24 +72,34 @@ def is_public_hostname(host: str) -> bool:
     return True
 
 
-def _assert_public_peer(sock: socket.socket) -> None:
-    """Prüft die tatsächlich verbundene IP – schützt vor DNS-Rebinding zwischen Prüfung und Abruf."""
-    peer = sock.getpeername()[0].split("%")[0]
-    if not ipaddress.ip_address(peer).is_global:
-        sock.close()
-        raise ConnectionRefusedError(f"Verbindung zu nicht-öffentlicher Adresse {peer} verweigert")
+def _resolve_public_ip(host: str, port: int) -> str:
+    """Löst einmal auf und liefert eine öffentliche IP; jede nicht-öffentliche Antwort blockiert (DNS-Rebinding)."""
+    infos = socket.getaddrinfo(host, port, type=socket.SOCK_STREAM)
+    ips = []
+    for info in infos:
+        ip = info[4][0].split("%")[0]
+        if not ipaddress.ip_address(ip).is_global:
+            raise ConnectionRefusedError(f"Nicht-öffentliche Adresse {ip} für {host} verweigert")
+        ips.append(ip)
+    if not ips:
+        raise ConnectionRefusedError(f"Keine Adresse für {host}")
+    return ips[0]
 
 
 class _PublicHTTPConnection(http.client.HTTPConnection):
+    """Verbindet ausschließlich mit der vorab geprüften IP – vor TCP- und TLS-Aufbau."""
+
     def connect(self):
-        super().connect()
-        _assert_public_peer(self.sock)
+        ip = _resolve_public_ip(self.host, self.port)
+        self.sock = socket.create_connection((ip, self.port), self.timeout, self.source_address)
 
 
 class _PublicHTTPSConnection(http.client.HTTPSConnection):
     def connect(self):
-        super().connect()
-        _assert_public_peer(self.sock)
+        ip = _resolve_public_ip(self.host, self.port)
+        sock = socket.create_connection((ip, self.port), self.timeout, self.source_address)
+        # Hostname bleibt für SNI und Zertifikatsprüfung erhalten.
+        self.sock = self._context.wrap_socket(sock, server_hostname=self.host)
 
 
 class _PublicHTTPHandler(urllib.request.HTTPHandler):

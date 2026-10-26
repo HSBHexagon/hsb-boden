@@ -4,6 +4,7 @@ import datetime
 import html
 import re
 from dataclasses import dataclass
+from email.header import decode_header, make_header
 from typing import Optional
 
 EMAIL_RE = re.compile(r"[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+")
@@ -98,9 +99,17 @@ def extract_return_date(text: str, reference_date: Optional[datetime.date] = Non
     return None
 
 
+def decode_mime_header(value: str) -> str:
+    """RFC-2047-Wörter (z. B. =?UTF-8?B?QWJtZWxkZW4=?=) in Klartext; bei kaputter Kodierung unverändert."""
+    try:
+        return str(make_header(decode_header(value or "")))
+    except (LookupError, UnicodeError, ValueError):
+        return value or ""
+
+
 def classify_inbound_message(sender: str, subject: str, body: str, reference_date: Optional[datetime.date] = None) -> InboundClassificationResult:
     sender_clean = sender.lower().strip()
-    subj_clean = subject.strip()
+    subj_clean = decode_mime_header(subject).strip()
 
     # 1. Bounces / NDRs (haben immer Vorrang, auch bei Mailer-Daemon)
     if BOUNCE_SUBJ_RE.search(subj_clean) or BOUNCE_BODY_RE.search(body) or "mailer-daemon" in sender_clean or "postmaster" in sender_clean:

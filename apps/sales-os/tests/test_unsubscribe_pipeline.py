@@ -93,9 +93,10 @@ def test_unsubscribe_from_colleague_mailbox_suppresses_original_lead_via_token(m
     import sync_to_google_sheet
     headers = ["Lead-ID", "E-Mail", "Reply_Status", "Suppressed", "Versandfreigabe",
                "Opt-out-Status", "Suppression_Reason", "Last_Reply_At"]
+    headers = headers + ["Website"]
     rows = [headers,
-            ["HSB-7", "info@firma.invalid", "", "", "yes", "", "", ""],
-            ["HSB-8", "other@firma.invalid", "", "", "yes", "", "", ""]]
+            ["HSB-7", "info@firma.invalid", "", "", "yes", "", "", "", "https://www.firma.invalid/"],
+            ["HSB-8", "other@firma.invalid", "", "", "yes", "", "", "", "https://www.firma.invalid/"]]
     events = [["id", "at", "source", "sender", "subject", "mid"]]
     appended = []
     class Values:
@@ -136,6 +137,8 @@ def test_lead_token_in_ordinary_reply_does_not_suppress(monkeypatch):
 @pytest.mark.parametrize("sender,body,lead_email", [
     ("fremder@andere-firma.invalid", "HSB-ABMELDUNG: HSB-7", "info@firma.invalid"),
     ("unrelated-person@gmail.com", "HSB-ABMELDUNG: HSB-7", "customer@gmail.com"),
+    ("unrelated@gmx.com", "HSB-ABMELDUNG: HSB-7", "customer@gmx.com"),
+    ("unrelated@pm.me", "HSB-ABMELDUNG: HSB-7", "customer@pm.me"),
     ("kollege@firma.invalid", "HSB-ABMELDUNG: HSB-7 HSB-ABMELDUNG: HSB-8", "info@firma.invalid"),
 ])
 def test_token_from_foreign_domain_or_multiple_tokens_does_not_suppress(monkeypatch, sender, body, lead_email):
@@ -148,6 +151,9 @@ def test_token_from_foreign_domain_or_multiple_tokens_does_not_suppress(monkeypa
     rows = [headers,
             ["HSB-7", lead_email, "", "", "yes", "", "", ""],
             ["HSB-8", "other@firma.invalid", "", "", "yes", "", "", ""]]
+    # Website zeigt bewusst NICHT auf die Freemail-Domain: keine verifizierte Firmendomain.
+    headers = headers + ["Website"]
+    rows = [headers] + [r + ["https://www.firma.invalid/"] for r in rows[1:]]
     events = [["id", "at", "source", "sender", "subject", "mid"]]
     class Values:
         def get(self, **kw):
@@ -165,3 +171,15 @@ def test_token_from_foreign_domain_or_multiple_tokens_does_not_suppress(monkeypa
     result = closed_loop_crm.sync_inbounds(apply=True, include_de=False)
     assert result["matched_new_events"] == 0
     assert rows[1][headers.index("Suppressed")] == "" and rows[2][headers.index("Suppressed")] == ""
+
+
+
+def test_mime_encoded_unsubscribe_subject_is_an_optout():
+    from inbound_classifier import classify_inbound_message
+    assert classify_inbound_message("kollege@firma.invalid", "=?UTF-8?B?QWJtZWxkZW4=?=", "HSB-ABMELDUNG: HSB-7").category == "OPTOUT"
+
+
+def test_company_domain_from_website():
+    import closed_loop_crm
+    assert closed_loop_crm.company_domain({"Website": "https://www.Firma.invalid/impressum?x=1"}) == "firma.invalid"
+    assert closed_loop_crm.company_domain({"Website": ""}) == ""

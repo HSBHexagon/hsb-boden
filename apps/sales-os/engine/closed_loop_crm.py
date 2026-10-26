@@ -42,6 +42,14 @@ def compute_lead_update(row_idx: int, lead_id: str, cls_res: InboundClassificati
     }
 
 
+def company_domain(lead):
+    """Domain der Firmen-Website laut CRM (ohne Schema, www und Pfad); leer, wenn unbekannt."""
+    import re
+    site=str(lead.get('Website') or lead.get('Web') or '').strip().lower()
+    site=re.sub(r'^[a-z]+://','',site).split('/')[0].split('?')[0].split(':')[0]
+    return site[4:] if site.startswith('www.') else site
+
+
 def sync_inbounds(apply=False, include_de=True):
     """Replay-safe event ingestion; negative evidence never clears a suppression."""
     from collections import defaultdict
@@ -82,9 +90,10 @@ def sync_inbounds(apply=False, include_de=True):
             for row,lead in bylead.get(next(iter(tokens)),[]):
                 lead_email=str(lead.get('E-Mail') or '').strip().lower()
                 lead_domain=lead_email.rsplit('@',1)[-1]
-                # Bei Freemail (gmail.com …) ist "gleiche Domain" keine gleiche Firma: nur exakte Adresse.
-                if lead_domain in FREEMAIL_DOMAINS: continue
-                if lead_domain and lead_domain in sender_domains:
+                # Kollegen-Zuordnung nur für verifizierte Firmendomains: Mail-Domain = eigene Website-Domain
+                # des Leads. Freemail-Nutzer (gmail, gmx, pm.me …) sind nie "dieselbe Firma".
+                if lead_domain in FREEMAIL_DOMAINS or lead_domain!=company_domain(lead): continue
+                if lead_domain in sender_domains:
                     matched_rows.append((row,lead))
         unique_rows={}
         for row,lead in matched_rows: unique_rows.setdefault(row,lead)

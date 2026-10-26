@@ -2,19 +2,21 @@
 
 Stand: 26.10.2026. Go-live: **NICHT VERSANDBEREIT**.
 
-- Live-Master: 6.424 Leads, 3.212 Joel / 3.212 Jordie. Audit je Lead in `ALL_LEADS!BN:BR`, alle 6.424 Einträge zurückgelesen.
-- Joel: 3.080 Gesamtentwürfe, davon 3.078 eindeutige CRM-Kundenentwürfe und 2 interne Tests.
-- Jordie: 2.538 Gesamtentwürfe, davon 2.536 eindeutige CRM-Kundenentwürfe und 2 interne Tests.
-- Versandfähig: 0 / 0. Bei allen Leads fehlen hinterlegte Empfängernachweise; keine Freigaben erfinden.
-- Historische .de-Forensik: 1.274 Vorgänge / 702 Empfänger. Alle 488 zugehörigen CRM-Leads stehen bereits als sent; 214 Empfänger liegen außerhalb des Lead-Masters und bleiben in der Forensik.
-- 259 vorhandene Kundenentwürfe überschneiden sich mit dokumentierter früherer Kontaktaufnahme. 5 Entwürfe liegen beim falschen Mitarbeiter. Keine Kunden-Dubletten zwischen den Entwurfsordnern.
-- Original-MIME und Einzelidentifikatoren sind privat gesichert. Keine Entwürfe neu erzeugt, verändert oder gelöscht.
-- .com-Inbound: 90 Nachrichten gelesen, 2 fehlende Bounces mit Sperren und Readback übernommen; Wiederholung erzeugt 0 Ereignisse.
-- All-Inkl IMAP und SMTP für beide Konten live authentifiziert. Kundenversand in diesem Lauf: 0.
-- Jordies .de-M365-Connector: HTTP 403. Diese historische Antwortquelle bleibt ACCESS_BLOCKED.
-- Python: 166 Tests bestanden, 1 separater Live-Test übersprungen; Authentifizierung separat live geprüft. Website: 335 Tests bestanden.
-- GitHub-Actions-Leseabnahme erfolgreich: Run 40332225903. PR #469 enthält die Korrekturen; Kunden-SMTP bleibt deaktiviert. Der stündliche Inbound-Zeitplan aktiviert sich erst im Default-Branch.
+- Master vollständig bilanziert: 6.424 Leads, 3.212 Joel / 3.212 Jordie. Jede Zeile in ALL_LEADS!BN:BR mit Auditstatus, Gründen und Draft-UIDs; alle 6.424 Zeilen zurückgelesen.
+- Joel: 3.080 Entwürfe, davon 3.078 eindeutige CRM-Kundenentwürfe und zwei interne Tests. Jordie: 2.538 / 2.536 / zwei Tests; fünf Kundenentwürfe liegen beim falschen Mitarbeiter.
+- Versandfähig: 0 / 0. Die ausdrückliche datierte Betreiberbestätigung zur §-7-Prüfung steht für alle Leads auf yes und wird als separater manueller Freigabeweg berücksichtigt. Historische Varianten und sonstige Einzelmängel bleiben gehalten; Originale sind gesichert und unverändert.
+- .de-Forensik: 1.274 Vorgänge, 702 Empfänger. Alle 488 zugehörigen CRM-Leads stehen auf sent; 214 Empfänger liegen außerhalb des Masters und bleiben in der Forensik.
+- Zusätzlich 295 bestätigte .com-Versandstatus samt Datum, Message-ID und Sender_Account ins CRM übernommen; insgesamt 1.069 bereits kontaktierte Leads. Wiederholung erzeugt null Sent-Updates.
+- 259 Kundenentwürfe überschneiden sich mit dokumentierter Kontaktaufnahme; keine Kunden-Empfängerdubletten zwischen den Entwurfsordnern.
+- .com-Inbound: zuletzt 91 Nachrichten. Zwei zuvor fehlende Bounce-Ereignisse und 40 unvollständige Bounce-Sperren mit CRM-Readback nachgetragen. Negative Reclassifizierung ist auch nach unterbrochenem Event-Append wiederanlaufsicher.
+- Alle sechs IMAP-Ordner per UID-Satz und UIDVALIDITY erneut abgeglichen; eine neue Inbox-Nachricht archiviert. Keine Entwürfe erzeugt, verändert oder gelöscht.
+- Beide .com-Postfächer per IMAP und SMTP authentifiziert. Kundenversand in diesem Lauf: 0.
+- PR #469 normal in main übernommen (d80c9bb9). GitHub-Actions-Sent-/Inbound-Sync auf main erfolgreich: Run 40338208174. Stündlich Minute 17, maximal 20 Minuten, keine parallelen Cloud-Läufe; Kunden-SMTP ausdrücklich deaktiviert.
+- Start über sales-os-safety.yml / workflow_dispatch / mode=inbound-sync. Kundensenden bleibt ein separat zu aktivierender, begrenzter CLI-Schritt mit globalem Lock, Journal und Readbacks; 35/Postfach/Tag, keine Freigabe für 100/Stunde.
+- Abmeldeseite nach geprüfter manueller Veröffentlichung produktiv per HTTP abgenommen: ehrliche Abmeldeanforderung an überwachte .com-Inbox, keine falsche Sofortbestätigung. Homepage und Kontaktformular bleiben aktiviert. Production-Run 40341382688. Ein Seitenaufruf allein erzeugt keine Sperre.
+- Jordies historische .de-M365-Verbindung: HTTP 403 / ACCESS_BLOCKED. Outlook-Mac-Sichtbarkeit nicht unabhängig verifiziert. Browser-Rendering blockiert durch Host-Zugriffsrichtlinie.
+- 188 Python-Tests bestanden, ein Live-Test separat durch reale Authentifizierung abgedeckt. 337 Website-Tests, Astro ohne Fehler/Warnungen, 58 Seiten gebaut, Wrangler-Dry-Run bestanden. CodeQL und weitere relevante CI in PR #469 erfolgreich.
 
-Maschinenlesbarer Nachweis: `docs/audits/SALES_OS_VERIFICATION_2026-10-26.json`.
+Maschinenlesbarer Nachweis: docs/audits/SALES_OS_VERIFICATION_2026-10-26.json. Einzelgründe und exakte Lead-IDs stehen im CRM; private Originalbelege unter ~/KI-System/07_Logs/hsb-sales-os-20261026/.
 
-Zusätzlicher Sent-Abgleich: 571 serverseitige Nachrichtenheader gelesen, 295 fehlende Sent-Status bei Jordie samt Datum, Absender und Message-ID ins CRM übernommen und vollständig zurückgelesen. Keine rechtlichen Freigaben verändert.
+Aktuelle Betreiberanweisung: §-7-Prüfung laut ausdrücklicher Bestätigung bereits geklärt. Für alle 6.424 Leads ist Legal_Review_Status=yes mit Herkunftsvermerk und Datum in ALL_LEADS!BS:BU geschrieben und zurückgelesen. Vorhandene Opt-outs, Bounces, Versandhistorie und übrige CRM-Felder wurden dabei unverändert erhalten.

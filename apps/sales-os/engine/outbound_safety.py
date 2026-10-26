@@ -12,6 +12,8 @@ from email.parser import BytesParser
 from email.utils import formatdate
 import hashlib
 import imaplib
+from urllib.parse import quote
+import re
 import json
 import os
 from pathlib import Path
@@ -164,10 +166,28 @@ def count_owner_attempts_today(leads, owner, today):
     return count
 
 
+SENDER_BY_OWNER={'JOEL':'j-cherino@hsb-boden.com','JORDI':'j-post@hsb-boden.com'}
+
+
+SMTP_POLICY=policy.SMTP.clone(max_line_length=998)
+UNSUBSCRIBE_TOKEN_RE=re.compile(r'HSB-ABMELDUNG:\s*([A-Za-z0-9._-]{1,64})')
+
+
+def add_list_unsubscribe(msg, owner, lead_id):
+    """Genau ein kanonischer Abmelde-Header auf der ausgehenden Kopie; der IMAP-Entwurf bleibt unverändert.
+    Betreff 'Abmelden' erkennt inbound_classifier als Abmeldung; das Token im Text ordnet sie dem
+    ursprünglichen Lead zu, auch wenn ein anderes Postfach der Firma antwortet."""
+    for name in ('List-Unsubscribe','List-Unsubscribe-Post'):
+        del msg[name]
+    body=quote(f'HSB-ABMELDUNG: {lead_id}')
+    msg['List-Unsubscribe']=f'<mailto:{SENDER_BY_OWNER[owner]}?subject=Abmelden&body={body}>'
+    return msg
+
+
 def dispatch_verified(count_per_owner=25, owners=('JOEL','JORDI'), dry_run=True, cap=35, jitter_min=45, jitter_max=90):
     from com_mailbox_manager import ComMailboxClient
     from sync_to_google_sheet import get_sheets_service, SPREADSHEET_ID
-    from sales_reconciliation import run_audit, assess_message
+    from sales_reconciliation import run_audit, assess_message, has_unreviewed_legacy_variant
     if not 1 <= count_per_owner <= cap <= DAILY_CAP or not 45 <= jitter_min <= jitter_max:
         raise ValueError('INVALID_BATCH_LIMITS')
     owners=tuple(normalize_owner(o) for o in owners)
@@ -199,7 +219,7 @@ def dispatch_verified(count_per_owner=25, owners=('JOEL','JORDI'), dry_run=True,
         try:
             for item in selected:
                 # Re-read all permission/suppression columns immediately before reservation.
-                rows=svc.spreadsheets().values().get(spreadsheetId=SPREADSHEET_ID,range='ALL_LEADS!A1:BM6425').execute()['values']
+                rows=svc.spreadsheets().values().get(spreadsheetId=SPREADSHEET_ID,range='ALL_LEADS!A1:BU6425').execute()['values']
                 headers=rows[0]; matches=[(i,dict(zip(headers,r))) for i,r in enumerate(rows[1:],2) if r and r[0]==item['lead_id']]
                 if len(matches)!=1: raise RuntimeError('LEAD_CHANGED_OR_AMBIGUOUS')
                 row,lead=matches[0]; verdict=check_eligibility(lead)
@@ -221,11 +241,13 @@ def dispatch_verified(count_per_owner=25, owners=('JOEL','JORDI'), dry_run=True,
                 if assess_message(rawparts[0],item['owner'],[lead])['issues']: raise RuntimeError('DRAFT_REVALIDATION_FAILED')
                 msg=BytesParser(policy=policy.default).parsebytes(rawparts[0])
                 # Historical variants need explicit reconciliation; only current standard is sent.
-                if msg.get('Reply-To') or any(p.get_content_disposition()=='attachment' for p in msg.walk()): raise RuntimeError('HISTORICAL_VARIANT_REQUIRES_REVIEW')
+                if has_unreviewed_legacy_variant(msg,item['owner']): raise RuntimeError('HISTORICAL_VARIANT_REQUIRES_REVIEW')
                 if 'X-Unsent' in msg: del msg['X-Unsent']
                 if 'Date' in msg: del msg['Date']
                 msg['Date']=formatdate(localtime=False)
-                raw=msg.as_bytes(policy=policy.SMTP); mid=str(msg['Message-ID']); em=item['email']
+                add_list_unsubscribe(msg,item['owner'],item['lead_id'])
+                # Lange ASCII-Header (List-Unsubscribe) nicht in RFC-2047-Wörter zerlegen, sonst erkennt kein Mailprogramm den Link.
+                raw=msg.as_bytes(policy=SMTP_POLICY); mid=str(msg['Message-ID']); em=item['email']
                 complete_delivery(client,journal,svc,SPREADSHEET_ID,headers,row,item,raw,mid,cap)
                 sent_counts[item['owner']]+=1
                 if item is not selected[-1]: time.sleep(random.uniform(jitter_min,jitter_max))

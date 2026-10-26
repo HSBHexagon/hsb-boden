@@ -13,6 +13,7 @@ from email.parser import BytesParser
 from email.utils import getaddresses
 import hashlib
 import html
+from html.parser import HTMLParser
 import json
 import os
 from pathlib import Path
@@ -26,6 +27,16 @@ SENDERS = {'JOEL': 'j-cherino@hsb-boden.com', 'JORDI': 'j-post@hsb-boden.com'}
 
 def addresses(value):
     return [a.lower().strip() for _, a in getaddresses([str(value or '')]) if a]
+
+
+def has_unreviewed_legacy_variant(msg, owner):
+    # Same-address Reply-To in an already reconciled original changes no route.
+    # New messages still omit Reply-To. Attachments and other routes stay held.
+    # Every Reply-To header counts: a second header would add an unchecked reply route.
+    replies = msg.get_all('Reply-To') or []
+    return bool(len(replies) > 1
+                or (replies and addresses(replies[0]) != [SENDERS[owner]])
+                or any(p.get_content_disposition() == 'attachment' for p in msg.walk()))
 
 
 def assess_message(raw, owner, leads):
@@ -81,7 +92,7 @@ def assess_message(raw, owner, leads):
         issues.append('FLYER_LINK_MISSING')
     if not optout_links or not any(recipients and recipients[0] in unquote(u).lower() for u in optout_links):
         issues.append('PERSONAL_OPTOUT_LINK_MISSING')
-    if msg.get('Reply-To') or any(p.get_content_disposition()=='attachment' for p in msg.walk()):
+    if has_unreviewed_legacy_variant(msg, owner):
         issues.append('HISTORICAL_VARIANT_REQUIRES_REVIEW')
     if msg.get('Reply-To'):
         warnings.append('HISTORICAL_REPLY_TO_' + ('DE' if 'hsb-boden.de' in str(msg.get('Reply-To')) else 'OTHER'))
@@ -148,7 +159,26 @@ def probe_url(url):
     req = Request(url, headers={'User-Agent': 'HSB-Reconciliation/1.0'})
     with urlopen(req, timeout=30) as response:
         data = response.read()
-        return {'status': response.status, 'final_url': response.url, 'content_type': response.headers.get('Content-Type'), 'sha256': hashlib.sha256(data).hexdigest(), 'bytes': len(data), 'valid': response.status == 200 and (data.startswith(b'%PDF-') or (b'<html' in data.lower() and len(data) > 500))}
+        reachable = response.status == 200
+        valid = reachable and (data.startswith(b'%PDF-') or (b'<html' in data.lower() and len(data) > 500))
+        result = {'status': response.status, 'final_url': response.url, 'content_type': response.headers.get('Content-Type'), 'sha256': hashlib.sha256(data).hexdigest(), 'bytes': len(data), 'reachable': reachable, 'valid': valid}
+        if urlsplit(url).path.rstrip('/') == '/abmelden':
+            class Links(HTMLParser):
+                def __init__(self):
+                    super().__init__(); self.hrefs = []
+                def handle_starttag(self, tag, attrs):
+                    if tag == 'a':
+                        self.hrefs.extend(value for key, value in attrs if key == 'href' and value)
+            page = data.decode('utf-8', errors='replace')
+            parsed = Links(); parsed.feed(page)
+            routes = [urlsplit(href) for href in parsed.hrefs]
+            mailto = any(route.scheme == 'mailto' and route.path.lower() in SENDERS.values()
+                         and parse_qs(route.query).get('subject', [''])[0].lower() in {'abmelden', 'abmeldung', 'unsubscribe'}
+                         for route in routes)
+            result.update(valid=bool(valid and mailto and 'erfolgreich abgemeldet' not in page.lower()),
+                          request_route='MONITORED_COM_MAILTO' if mailto else 'MISSING',
+                          crm_update_on_page_load=False)
+        return result
 
 
 def write_crm_audit(output):
@@ -156,7 +186,7 @@ def write_crm_audit(output):
     from sync_to_google_sheet import get_sheets_service, SPREADSHEET_ID
     svc=get_sheets_service()
     snapshot=json.loads((output/'crm-original.json').read_text())['valueRanges'][0]['values']
-    live=svc.spreadsheets().values().get(spreadsheetId=SPREADSHEET_ID,range='ALL_LEADS!A1:BM6425').execute().get('values',[])
+    live=svc.spreadsheets().values().get(spreadsheetId=SPREADSHEET_ID,range='ALL_LEADS!A1:BU6425').execute().get('values',[])
     if live!=snapshot:raise RuntimeError('CRM_CHANGED_SINCE_AUDIT: refresh snapshot before audit writeback')
     meta=svc.spreadsheets().get(spreadsheetId=SPREADSHEET_ID,fields='sheets(properties)').execute()
     sheet=next(s['properties'] for s in meta['sheets'] if s['properties']['title']=='ALL_LEADS')
@@ -189,7 +219,7 @@ def run_audit(output, reuse_snapshot=False):
     os.umask(0o077)
     output.mkdir(parents=True, exist_ok=True, mode=0o700)
     svc = get_sheets_service()
-    ranges = ['ALL_LEADS!A1:BM6425', 'DE_VERSENDUNGEN_FORENSIK!A1:J1324', 'INBOUND_EVENTS!A1:M5126']
+    ranges = ['ALL_LEADS!A1:BU6425', 'DE_VERSENDUNGEN_FORENSIK!A1:J1324', 'INBOUND_EVENTS!A1:M5126']
     snapshot = (json.loads((output/'crm-original.json').read_text()) if reuse_snapshot else
         svc.spreadsheets().values().batchGet(spreadsheetId=SPREADSHEET_ID, ranges=ranges).execute())
     if not reuse_snapshot:
@@ -243,7 +273,7 @@ def run_audit(output, reuse_snapshot=False):
                 try: links[base] = probe_url(base)
                 except Exception as exc: links[base] = {'valid':False, 'error':type(exc).__name__}
             if not links[base]['valid']: d['issues'].append('FLYER_LINK_UNREACHABLE')
-        if not links['https://www.hsb-boden.de/abmelden']['valid']: d['issues'].append('OPTOUT_PAGE_UNREACHABLE')
+        if not links['https://www.hsb-boden.de/abmelden']['valid']: d['issues'].append('OPTOUT_PAGE_NOT_FUNCTIONAL')
         for a in d['recipients']:
             if counts[a] > 1: d['issues'].append('DUPLICATE_DRAFT_RECIPIENT')
             if a in contacted: d['issues'].append('ALREADY_CONTACTED')

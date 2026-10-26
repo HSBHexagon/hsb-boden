@@ -265,24 +265,39 @@ def check_eligibility(lead: dict) -> EligibilityResult:
     """
     reasons: list[str] = []
 
-    legal = str(lead.get("Legal_Basis") or "").strip().upper()
-    if not legal:
-        # Kein explizites Legal_Basis: aus Opt-in-Status ableiten, fail-closed.
-        opt_in = _norm(lead.get("Opt_In") or lead.get("Opt-in-Status"))
-        legal = "OPT_IN" if opt_in in {"yes", "ja", "true", "opt_in"} else "UNKNOWN"
-    if legal not in LEGAL_BASIS_SENDABLE:
-        reasons.append(f"Legal_Basis={legal or 'UNKNOWN'}")
+    if str(lead.get("Legal_Basis") or "").strip().upper() in {"BLOCKED", "NO"}:
+        reasons.append("EXPLICIT_LEGAL_BLOCK")
 
-    # Operator flags and generated CRM labels are not recipient evidence.
-    evidence = str(lead.get("Legal_Evidence") or "").strip()
-    if len(evidence) < 8 or evidence.upper() in {"OWNER_APPROVED", "CONTRACT_APPROVED", "APPROVED", "UNKNOWN"}:
-        reasons.append("LEGAL_EVIDENCE_MISSING")
+    # Explicitly recorded human legal-review decisions remain distinguishable
+    # from recipient opt-in evidence and from old automatically generated flags.
+    manual_review = False
     try:
-        evidenced_at = datetime.fromisoformat(str(lead.get("Legal_Evidence_At") or "").replace("Z", "+00:00"))
-        if evidenced_at.tzinfo is None or evidenced_at > datetime.now(timezone.utc):
-            raise ValueError("invalid evidence timestamp")
+        reviewed_at = datetime.fromisoformat(str(lead.get('Legal_Review_At') or '').replace('Z', '+00:00'))
+        manual_review = (_norm(lead.get('Legal_Review_Status')) in {'yes', 'ja', 'true'}
+                         and len(str(lead.get('Legal_Review_Vermerk') or '').strip()) >= 40
+                         and reviewed_at.tzinfo is not None
+                         and reviewed_at <= datetime.now(timezone.utc))
     except (ValueError, TypeError):
-        reasons.append("LEGAL_EVIDENCE_DATE_INVALID")
+        pass
+    if not manual_review:
+        legal = str(lead.get("Legal_Basis") or "").strip().upper()
+        if not legal:
+            # Kein explizites Legal_Basis: aus Opt-in-Status ableiten, fail-closed.
+            opt_in = _norm(lead.get("Opt_In") or lead.get("Opt-in-Status"))
+            legal = "OPT_IN" if opt_in in {"yes", "ja", "true", "opt_in"} else "UNKNOWN"
+        if legal not in LEGAL_BASIS_SENDABLE:
+            reasons.append(f"Legal_Basis={legal or 'UNKNOWN'}")
+
+        # Operator flags and generated CRM labels are not recipient evidence.
+        evidence = str(lead.get("Legal_Evidence") or "").strip()
+        if len(evidence) < 8 or evidence.upper() in {"OWNER_APPROVED", "CONTRACT_APPROVED", "APPROVED", "UNKNOWN"}:
+            reasons.append("LEGAL_EVIDENCE_MISSING")
+        try:
+            evidenced_at = datetime.fromisoformat(str(lead.get("Legal_Evidence_At") or "").replace("Z", "+00:00"))
+            if evidenced_at.tzinfo is None or evidenced_at > datetime.now(timezone.utc):
+                raise ValueError("invalid evidence timestamp")
+        except (ValueError, TypeError):
+            reasons.append("LEGAL_EVIDENCE_DATE_INVALID")
     if not str(lead.get("Lead-ID") or lead.get("Lead_ID") or "").strip():
         reasons.append("LEAD_ID_MISSING")
     for key in ("Suppression_Reason", "Last_Send_Attempt_At", "Send_Datum", "Sent_At"):

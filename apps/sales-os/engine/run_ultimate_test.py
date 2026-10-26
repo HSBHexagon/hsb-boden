@@ -27,7 +27,7 @@ from hsb_config import (
     get_fc_refresh_token,
 )
 
-JOEL_URL = get_joel_url()
+
 JORDI_CONNECTOR_URL = get_jordi_connector_url()
 
 FIRMA = {
@@ -146,7 +146,7 @@ def create_single_draft(owner: str, lead: dict, flyer_b64: str, flyer_name: str,
     data = json.dumps(payload).encode("utf-8")
 
     if owner == "JOEL":
-        req = urllib.request.Request(JOEL_URL, data=data, headers={"Content-Type": "application/json"}, method="POST")
+        req = urllib.request.Request(get_joel_url(), data=data, headers={"Content-Type": "application/json"}, method="POST")
         with urllib.request.urlopen(req, timeout=45) as r:
             return json.loads(r.read().decode("utf-8"))
     else:

@@ -164,6 +164,17 @@ def count_owner_attempts_today(leads, owner, today):
     return count
 
 
+SENDER_BY_OWNER={'JOEL':'j-cherino@hsb-boden.com','JORDI':'j-post@hsb-boden.com'}
+
+
+def add_list_unsubscribe(msg, owner):
+    """Abmelde-Header für Mailfilter (Gmail/Outlook) nur auf der ausgehenden Kopie; der IMAP-Entwurf bleibt unverändert.
+    Antworten mit Betreff 'Abmelden' erkennt inbound_classifier als ausdrückliche Abmeldung."""
+    if 'List-Unsubscribe' not in msg:
+        msg['List-Unsubscribe']=f'<mailto:{SENDER_BY_OWNER[owner]}?subject=Abmelden>'
+    return msg
+
+
 def dispatch_verified(count_per_owner=25, owners=('JOEL','JORDI'), dry_run=True, cap=35, jitter_min=45, jitter_max=90):
     from com_mailbox_manager import ComMailboxClient
     from sync_to_google_sheet import get_sheets_service, SPREADSHEET_ID
@@ -225,6 +236,7 @@ def dispatch_verified(count_per_owner=25, owners=('JOEL','JORDI'), dry_run=True,
                 if 'X-Unsent' in msg: del msg['X-Unsent']
                 if 'Date' in msg: del msg['Date']
                 msg['Date']=formatdate(localtime=False)
+                add_list_unsubscribe(msg,item['owner'])
                 raw=msg.as_bytes(policy=policy.SMTP); mid=str(msg['Message-ID']); em=item['email']
                 complete_delivery(client,journal,svc,SPREADSHEET_ID,headers,row,item,raw,mid,cap)
                 sent_counts[item['owner']]+=1

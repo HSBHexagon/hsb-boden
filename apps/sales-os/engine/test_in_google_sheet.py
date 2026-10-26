@@ -149,14 +149,8 @@ def run_in_sheet_tests():
 
         total_sent = sent_joel + sent_jordi
 
-        # Conditional Formatting prüfen
-        cf_meta = service.spreadsheets().get(
-            spreadsheetId=SPREADSHEET_ID,
-            ranges=["ALL_LEADS!AO2:AO2"],
-            fields="sheets(properties,conditionalFormats)"
-        ).execute()
-
-        all_leads_meta = next(s for s in cf_meta["sheets"] if s["properties"]["title"] == "ALL_LEADS")
+        # Conditional Formatting prüfen (aus ss_meta aus Gate 1 wiederverwenden, um doppelte API-Calls zu vermeiden)
+        all_leads_meta = next((s for s in ss_meta.get("sheets", []) if s.get("properties", {}).get("title") == "ALL_LEADS"), {})
         cfs = all_leads_meta.get("conditionalFormats", [])
 
         has_blue_row_rule = False

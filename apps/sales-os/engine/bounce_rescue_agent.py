@@ -13,12 +13,14 @@ from __future__ import annotations
 import datetime
 from dataclasses import dataclass
 import html
+import http.client
 import ipaddress
 import json
 import logging
 import re
 import socket
 import sys
+import urllib.error
 import urllib.parse
 import urllib.request
 from pathlib import Path
@@ -70,6 +72,49 @@ def is_public_hostname(host: str) -> bool:
     return True
 
 
+def _assert_public_peer(sock: socket.socket) -> None:
+    """Prüft die tatsächlich verbundene IP – schützt vor DNS-Rebinding zwischen Prüfung und Abruf."""
+    peer = sock.getpeername()[0].split("%")[0]
+    if not ipaddress.ip_address(peer).is_global:
+        sock.close()
+        raise ConnectionRefusedError(f"Verbindung zu nicht-öffentlicher Adresse {peer} verweigert")
+
+
+class _PublicHTTPConnection(http.client.HTTPConnection):
+    def connect(self):
+        super().connect()
+        _assert_public_peer(self.sock)
+
+
+class _PublicHTTPSConnection(http.client.HTTPSConnection):
+    def connect(self):
+        super().connect()
+        _assert_public_peer(self.sock)
+
+
+class _PublicHTTPHandler(urllib.request.HTTPHandler):
+    def http_open(self, req):
+        return self.do_open(_PublicHTTPConnection, req)
+
+
+class _PublicHTTPSHandler(urllib.request.HTTPSHandler):
+    def https_open(self, req):
+        return self.do_open(_PublicHTTPSConnection, req, context=self._context)
+
+
+class _PublicRedirectHandler(urllib.request.HTTPRedirectHandler):
+    """Prüft jedes Weiterleitungsziel, bevor es aufgerufen wird."""
+
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        if not is_public_hostname(urllib.parse.urlsplit(newurl).hostname or ""):
+            raise urllib.error.HTTPError(newurl, code, "Weiterleitung auf nicht-öffentliches Ziel verweigert", headers, fp)
+        return super().redirect_request(req, fp, code, msg, headers, newurl)
+
+
+def build_public_opener() -> urllib.request.OpenerDirector:
+    return urllib.request.build_opener(_PublicHTTPHandler, _PublicHTTPSHandler, _PublicRedirectHandler)
+
+
 def belongs_to_domain(email_domain: str, domain: str) -> bool:
     return email_domain == domain or email_domain.endswith("." + domain)
 
@@ -96,9 +141,10 @@ class BounceRescueAgent:
             "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
             "Accept-Language": "de-DE,de;q=0.9,en;q=0.8"
         }
+        self._opener = build_public_opener()
 
     def _open(self, req: urllib.request.Request):
-        return urllib.request.urlopen(req, timeout=self.timeout)
+        return self._opener.open(req, timeout=self.timeout)
 
     def _fetch_url_content(self, url: str) -> Optional[str]:
         try:

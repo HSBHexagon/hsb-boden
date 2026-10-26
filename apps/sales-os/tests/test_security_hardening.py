@@ -155,3 +155,43 @@ def test_vacation_mail_escapes_company_name():
     assert '<a href="https://evil.example">' not in mail["body_html"]
     assert "&lt;a href=" in mail["body_html"]
     assert "&amp; Co" in mail["body_html"]
+
+
+# --- 5. Schutz auf Verbindungsebene (Weiterleitung, DNS-Rebinding) -------------
+
+def test_redirect_to_internal_target_is_refused_before_request():
+    import urllib.error
+    handler = bra._PublicRedirectHandler()
+    req = bra.urllib.request.Request("https://www.mueller-gmbh.de/impressum")
+    with pytest.raises(urllib.error.HTTPError):
+        handler.redirect_request(req, None, 302, "Found", {}, "http://127.0.0.1:5678/admin")
+
+
+def test_connection_to_loopback_is_refused_even_if_dns_check_passed(monkeypatch):
+    """Simuliert DNS-Rebinding: Vorabprüfung sagt 'öffentlich', die Verbindung landet aber lokal."""
+    import http.server
+    import threading
+
+    hits = []
+
+    class _H(http.server.BaseHTTPRequestHandler):
+        def do_GET(self):
+            hits.append(self.path)
+            self.send_response(200)
+            self.send_header("Content-Type", "text/html")
+            self.end_headers()
+            self.wfile.write(b"info@mueller-gmbh.de")
+
+        def log_message(self, *a):
+            pass
+
+    srv = http.server.HTTPServer(("127.0.0.1", 0), _H)
+    threading.Thread(target=srv.serve_forever, daemon=True).start()
+    try:
+        monkeypatch.setattr(bra, "is_public_hostname", lambda host: True)
+        agent = BounceRescueAgent()
+        url = f"http://127.0.0.1:{srv.server_address[1]}/impressum"
+        assert agent._fetch_url_content(url) is None
+        assert hits == []
+    finally:
+        srv.shutdown()

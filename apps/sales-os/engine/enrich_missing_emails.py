@@ -132,7 +132,7 @@ def run_missing_email_enrichment(limit: int = 20, apply: bool = False) -> int:
 
     res = sheets_svc.spreadsheets().values().get(
         spreadsheetId=SPREADSHEET_ID,
-        range="ALL_LEADS!A1:BM6425"
+        range="ALL_LEADS!A1:BU6425"
     ).execute()
     rows = res.get("values", [])
     if not rows:

@@ -87,6 +87,7 @@ def build_vacation_followup_email(
     lead_copy["Company"] = company
     anrede = anrede_fuer(lead_copy)
     anrede_esc = html.escape(anrede)
+    company_esc = html.escape(company)
 
     mailbox = f"j-cherino@hsb-boden.com" if flyer.owner_key == "JOEL" else f"j-post@hsb-boden.com"
     lead_id = str(lead.get("Lead_ID") or lead.get("Lead-ID") or "")
@@ -100,7 +101,7 @@ def build_vacation_followup_email(
         f'<p style="margin:0 0 12px 0;">ich hoffe, Sie hatten eine erholsame Urlaubs- bzw. Abwesenheitszeit und '
         f'konnten gut wieder in den Betrieb starten.</p>'
         f'<p style="margin:0 0 12px 0;">Ich knüpfe kurz an meine Nachricht vor Ihrer Abwesenheit bezüglich der '
-        f'säurefesten und hygienischen Industrieböden für {company} an. Da im Produktionsalltag oft wenig Zeit bleibt, '
+        f'säurefesten und hygienischen Industrieböden für {company_esc} an. Da im Produktionsalltag oft wenig Zeit bleibt, '
         f'wollte ich mich kurz erkundigen, ob das Thema Bodenbelastung oder Sanierung aktuell bei Ihnen im Fokus steht.</p>'
         f'<p style="margin:0 0 12px 0;">Unser kompakter Online-Flyer mit Referenzflächen aus der Lebensmittel-, '
         f'Brauerei- und Chemiebranche steht Ihnen hier zur Verfügung:<br>'

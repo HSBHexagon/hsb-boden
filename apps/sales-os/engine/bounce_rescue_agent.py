@@ -13,6 +13,7 @@ from __future__ import annotations
 import datetime
 from dataclasses import dataclass
 import html
+import ipaddress
 import json
 import logging
 import re
@@ -43,6 +44,35 @@ EMAIL_EXTRACT_RE = re.compile(r"[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+")
 GENERIC_IGNORE_DOMAINS = {"wix.com", "jimdo.com", "wordpress.com", "squarespace.com", "cloudflare.com", "google.com", "schema.org"}
 GENERIC_IGNORE_PREFIXES = {"webmaster", "postmaster", "hostmaster", "noreply", "no-reply", "datenschutz", "privacy", "dsgvo"}
 
+# Ein Impressum ist nie größer; alles darüber wird verworfen statt in den Speicher geladen.
+MAX_FETCH_BYTES = 2_000_000
+HOSTNAME_RE = re.compile(r"^(?=.{1,253}$)([a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}$")
+
+
+def is_public_hostname(host: str) -> bool:
+    """Nur echte öffentliche Domains: kein Port, keine Zugangsdaten, keine IP, keine interne Auflösung."""
+    host = (host or "").strip().lower().rstrip(".")
+    if not HOSTNAME_RE.match(host):
+        return False
+    try:
+        infos = socket.getaddrinfo(host, None)
+    except (socket.gaierror, UnicodeError, OSError):
+        return False
+    if not infos:
+        return False
+    for info in infos:
+        try:
+            ip = ipaddress.ip_address(info[4][0].split("%")[0])
+        except ValueError:
+            return False
+        if not ip.is_global:
+            return False
+    return True
+
+
+def belongs_to_domain(email_domain: str, domain: str) -> bool:
+    return email_domain == domain or email_domain.endswith("." + domain)
+
 
 @dataclass
 class RescueResult:
@@ -67,14 +97,27 @@ class BounceRescueAgent:
             "Accept-Language": "de-DE,de;q=0.9,en;q=0.8"
         }
 
+    def _open(self, req: urllib.request.Request):
+        return urllib.request.urlopen(req, timeout=self.timeout)
+
     def _fetch_url_content(self, url: str) -> Optional[str]:
         try:
+            if not is_public_hostname(urllib.parse.urlsplit(url).hostname or ""):
+                return None
             req = urllib.request.Request(url, headers=self.headers)
-            with urllib.request.urlopen(req, timeout=self.timeout) as resp:
+            with self._open(req) as resp:
+                # Weiterleitungen dürfen nicht auf interne Ziele führen.
+                if not is_public_hostname(urllib.parse.urlsplit(resp.geturl()).hostname or ""):
+                    return None
                 content_type = resp.headers.get("Content-Type", "")
                 if "text/html" not in content_type and "text/plain" not in content_type:
                     return None
-                raw = resp.read()
+                declared = resp.headers.get("Content-Length")
+                if declared and declared.isdigit() and int(declared) > MAX_FETCH_BYTES:
+                    return None
+                raw = resp.read(MAX_FETCH_BYTES + 1)
+                if len(raw) > MAX_FETCH_BYTES:
+                    return None
                 return raw.decode("utf-8", errors="ignore")
         except Exception:
             return None
@@ -98,6 +141,9 @@ class BounceRescueAgent:
         Gibt eine Liste von (email, quelle_url, confidence) sortiert nach Score zurück.
         """
         if not domain or any(d in domain for d in ["gmail.com", "gmx.de", "web.de", "t-online.de", "outlook.com"]):
+            return []
+        if not is_public_hostname(domain):
+            logger.warning("Domain %r ist keine öffentliche Domain – keine Websuche.", domain)
             return []
 
         base_urls = [
@@ -129,19 +175,19 @@ class BounceRescueAgent:
                     prefix, em_dom = em.split("@", 1)
                     if em_dom in GENERIC_IGNORE_DOMAINS or any(p in prefix for p in GENERIC_IGNORE_PREFIXES):
                         continue
+                    # Im Impressum stehen oft Webagentur, Hoster oder Steuerberater –
+                    # nur Adressen der Firmendomain (inkl. Subdomains) sind eine Rettung.
+                    if not belongs_to_domain(em_dom, domain):
+                        continue
 
                     # Prioritäts-Scoring
-                    score = 0.50
-                    if em_dom == domain or em_dom.endswith("." + domain):
+                    score = 0.70
+                    if prefix in ("info", "kontakt", "contact", "zentrale", "empfang"):
+                        score += 0.25
+                    elif prefix in ("geschaeftsfuehrung", "leitung", "management", "vertrieb", "sales", "einkauf"):
                         score += 0.20
-                        if prefix in ("info", "kontakt", "contact", "zentrale", "empfang"):
-                            score += 0.25
-                        elif prefix in ("geschaeftsfuehrung", "leitung", "management", "vertrieb", "sales", "einkauf"):
-                            score += 0.20
-                        else:
-                            score += 0.10
-                    elif "impressum" in target or "kontakt" in target:
-                        score += 0.15
+                    else:
+                        score += 0.10
 
                     if em not in candidates or score > candidates[em][1]:
                         candidates[em] = (target, round(min(score, 0.98), 2))

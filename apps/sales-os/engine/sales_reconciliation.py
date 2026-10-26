@@ -29,6 +29,14 @@ def addresses(value):
     return [a.lower().strip() for _, a in getaddresses([str(value or '')]) if a]
 
 
+def has_unreviewed_legacy_variant(msg, owner):
+    # Same-address Reply-To in an already reconciled original changes no route.
+    # New messages still omit Reply-To. Attachments and other routes stay held.
+    reply = msg.get('Reply-To')
+    return bool((reply and addresses(reply) != [SENDERS[owner]])
+                or any(p.get_content_disposition() == 'attachment' for p in msg.walk()))
+
+
 def assess_message(raw, owner, leads):
     msg = BytesParser(policy=policy.default).parsebytes(raw)
     recipients = addresses(msg.get('To'))
@@ -82,7 +90,7 @@ def assess_message(raw, owner, leads):
         issues.append('FLYER_LINK_MISSING')
     if not optout_links or not any(recipients and recipients[0] in unquote(u).lower() for u in optout_links):
         issues.append('PERSONAL_OPTOUT_LINK_MISSING')
-    if msg.get('Reply-To') or any(p.get_content_disposition()=='attachment' for p in msg.walk()):
+    if has_unreviewed_legacy_variant(msg, owner):
         issues.append('HISTORICAL_VARIANT_REQUIRES_REVIEW')
     if msg.get('Reply-To'):
         warnings.append('HISTORICAL_REPLY_TO_' + ('DE' if 'hsb-boden.de' in str(msg.get('Reply-To')) else 'OTHER'))

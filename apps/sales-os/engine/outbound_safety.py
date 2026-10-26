@@ -167,7 +167,7 @@ def count_owner_attempts_today(leads, owner, today):
 def dispatch_verified(count_per_owner=25, owners=('JOEL','JORDI'), dry_run=True, cap=35, jitter_min=45, jitter_max=90):
     from com_mailbox_manager import ComMailboxClient
     from sync_to_google_sheet import get_sheets_service, SPREADSHEET_ID
-    from sales_reconciliation import run_audit, assess_message
+    from sales_reconciliation import run_audit, assess_message, has_unreviewed_legacy_variant
     if not 1 <= count_per_owner <= cap <= DAILY_CAP or not 45 <= jitter_min <= jitter_max:
         raise ValueError('INVALID_BATCH_LIMITS')
     owners=tuple(normalize_owner(o) for o in owners)
@@ -221,7 +221,7 @@ def dispatch_verified(count_per_owner=25, owners=('JOEL','JORDI'), dry_run=True,
                 if assess_message(rawparts[0],item['owner'],[lead])['issues']: raise RuntimeError('DRAFT_REVALIDATION_FAILED')
                 msg=BytesParser(policy=policy.default).parsebytes(rawparts[0])
                 # Historical variants need explicit reconciliation; only current standard is sent.
-                if msg.get('Reply-To') or any(p.get_content_disposition()=='attachment' for p in msg.walk()): raise RuntimeError('HISTORICAL_VARIANT_REQUIRES_REVIEW')
+                if has_unreviewed_legacy_variant(msg,item['owner']): raise RuntimeError('HISTORICAL_VARIANT_REQUIRES_REVIEW')
                 if 'X-Unsent' in msg: del msg['X-Unsent']
                 if 'Date' in msg: del msg['Date']
                 msg['Date']=formatdate(localtime=False)

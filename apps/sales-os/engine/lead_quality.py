@@ -160,8 +160,15 @@ CRM_SIGNAL_FIELDS = ("Branche", "Notizen", "Beziehung / Kontaktgrund", "Firma")
 EXPLORATION_SHARE = 0.15
 
 
+_PRODUCTION_BRANCHE_RE = re.compile(r"getränk|getraenk|lebensmittel|produktion|herstell|fertigung|industrie|brauerei|molkerei", re.I)
+
+
 def segment_for(lead: dict) -> Segment:
-    return "architekten" if "architekt" in str(lead.get("Branche") or "").lower() else "produktion"
+    """Produktion nur bei erkannter Branche; leer/unbekannt -> architekten (konservativ, niedrigere Basis)."""
+    branche = str(lead.get("Branche") or "")
+    if "architekt" not in branche.lower() and _PRODUCTION_BRANCHE_RE.search(branche):
+        return "produktion"
+    return "architekten"
 
 
 def _tier_for(score: int) -> str:

@@ -7,6 +7,7 @@ import json
 import re
 import sys
 import urllib.error
+import urllib.request
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -70,6 +71,14 @@ def test_signals_keep_verbatim_quote():
 class Resp(io.BytesIO):
     status = 200
 
+    def __init__(self, data, ctype="text/html; charset=utf-8", url=None):
+        super().__init__(data)
+        self.headers = {"Content-Type": ctype}
+        self._url = url
+
+    def geturl(self):
+        return self._url
+
     def __enter__(self):
         return self
 
@@ -85,7 +94,11 @@ class FakeOpener:
         self.calls.append(req.full_url)
         if req.full_url not in self.pages:
             raise urllib.error.HTTPError(req.full_url, 404, "nf", None, None)
-        return Resp(self.pages[req.full_url])
+        page = self.pages[req.full_url]
+        if isinstance(page, Resp):
+            page._url = page._url or req.full_url
+            return page
+        return Resp(page, url=req.full_url)
 
 
 def test_fetch_respects_robots_disallow(tmp_path):
@@ -204,3 +217,162 @@ def test_score_dry_run_writes_nothing(tmp_path):
     svc = FakeSheets(rows)
     hsb_cli.cmd_score_leads(SimpleNamespace(apply=False), svc=svc, cache_dir=tmp_path, out_path=tmp_path / "o.jsonl")
     assert svc.writes == [] and rows[1][2] == ""
+
+
+def test_segment_unknown_or_empty_branche_is_architekten():
+    assert segment_for({}) == "architekten"
+    assert segment_for({"Branche": "Sonstiges"}) == "architekten"
+    assert segment_for({"Branche": "Lebensmittel"}) == "produktion"
+
+
+def _skip(tmp_path, domain):
+    return json.loads((tmp_path / f"{domain}.skip").read_text())
+
+
+def test_failures_write_skip_markers_and_block_nothing(tmp_path):
+    op = FakeOpener({"https://a.test/robots.txt": b"User-agent: *\nDisallow: /\n"})
+    assert ws.website_text("https://a.test/", tmp_path, opener=op) is None
+    assert _skip(tmp_path, "a.test")["reason"] == "robots"
+    assert ws.cached_website_text("a.test", tmp_path) is None  # Marker ist kein Text-Treffer
+    n = len(op.calls)
+    assert ws.website_text("https://a.test/", tmp_path, opener=op) is None
+    assert len(op.calls) == n  # dauerhaft: kein erneuter Versuch
+    assert ws.website_text("https://e.test/", tmp_path, opener=FakeOpener({"https://e.test/": b"<script>x</script>"})) is None
+    assert _skip(tmp_path, "e.test")["reason"] == "empty"
+    ws._last_request[0] = None
+    assert ws.website_text("https://n.test/", tmp_path, opener=FakeOpener({})) is None  # 404
+    assert _skip(tmp_path, "n.test")["reason"] == "http_4xx"
+
+
+def test_non_text_content_type_is_skipped(tmp_path):
+    op = FakeOpener({"https://p.test/": Resp(b"%PDF", ctype="application/pdf")})
+    assert ws.website_text("https://p.test/", tmp_path, opener=op) is None
+    assert _skip(tmp_path, "p.test")["reason"] == "non_text"
+
+
+def test_transient_error_retried_after_ttl(tmp_path):
+    class Boom:
+        calls = 0
+
+        def open(self, req, timeout=None):
+            Boom.calls += 1
+            raise TimeoutError("t")
+
+    wall = [1000.0]
+    assert ws.website_text("https://t.test/", tmp_path, opener=Boom(), wall=lambda: wall[0], sleep=lambda s: None) is None
+    assert _skip(tmp_path, "t.test")["permanent"] is False
+    assert ws.skip_state("t.test", tmp_path, lambda: wall[0] + 3600)
+    assert ws.skip_state("t.test", tmp_path, lambda: wall[0] + 8 * 24 * 3600) is None
+
+
+def test_fetch_websites_limit_counts_only_real_attempts(tmp_path, capsys):
+    rows = [["Lead-ID", "Website"], ["1", "https://a.test/"], ["2", "https://b.test/"], ["3", "https://c.test/"]]
+    op = FakeOpener({"https://a.test/robots.txt": b"User-agent: *\nDisallow: /\n",
+                     "https://b.test/": b"<p>Brauerei</p>", "https://c.test/": b"<p>Halle</p>"})
+    args = SimpleNamespace(limit=1)
+    hsb_cli.cmd_fetch_websites(args, svc=FakeSheets(rows), cache_dir=tmp_path, opener=op)
+    ws._last_request[0] = None
+    hsb_cli.cmd_fetch_websites(args, svc=FakeSheets(rows), cache_dir=tmp_path, opener=op)  # a.test uebersprungen
+    assert (tmp_path / "b.test.txt").exists()
+
+
+def test_cross_host_redirect_is_rejected(tmp_path):
+    op = FakeOpener({"https://r.test/": Resp(b"<p>Brauerei</p>", url="https://evil.test/")})
+    assert ws.website_text("https://r.test/", tmp_path, opener=op) is None
+    assert _skip(tmp_path, "r.test")["reason"] == "cross_host_redirect"
+
+
+def test_same_host_redirect_rechecks_robots(tmp_path):
+    op = FakeOpener({"https://s.test/robots.txt": b"User-agent: *\nDisallow: /privat\n",
+                     "https://s.test/": Resp(b"<p>Brauerei</p>", url="https://www.s.test/privat/start")})
+    assert ws.website_text("https://s.test/", tmp_path, opener=op) is None
+    assert _skip(tmp_path, "s.test")["reason"] == "robots"
+    op2 = FakeOpener({"https://o.test/": Resp(b"<p>Molkerei</p>", url="https://www.o.test/start")})
+    assert ws.website_text("https://o.test/", tmp_path, opener=op2) == "Molkerei"
+
+
+def test_robots_403_means_disallow_all(tmp_path):
+    class Op(FakeOpener):
+        def open(self, req, timeout=None):
+            if req.full_url.endswith("/robots.txt"):
+                raise urllib.error.HTTPError(req.full_url, 403, "f", None, None)
+            return super().open(req, timeout)
+
+    assert ws.website_text("https://f.test/", tmp_path, opener=Op({"https://f.test/": b"<p>x</p>"})) is None
+    assert _skip(tmp_path, "f.test")["reason"] == "robots"
+
+
+def test_default_opener_is_public_opener(tmp_path, monkeypatch):
+    used = []
+    fake = FakeOpener({"https://d.test/": b"<p>Labor</p>"})
+    monkeypatch.setattr(ws, "build_public_opener", lambda: used.append(1) or fake)
+    assert ws.website_text("https://d.test/", tmp_path) == "Labor"
+    assert used == [1]
+
+
+def test_public_opener_refuses_loopback():
+    import http.server
+    import threading
+    import bounce_rescue_agent
+
+    hits = []
+
+    class H(http.server.BaseHTTPRequestHandler):
+        def do_GET(self):
+            hits.append(self.path)
+            self.send_response(200)
+            self.end_headers()
+
+        def log_message(self, *a):
+            pass
+
+    srv = http.server.HTTPServer(("127.0.0.1", 0), H)
+    t = threading.Thread(target=srv.serve_forever, daemon=True)
+    t.start()
+    try:
+        with pytest.raises(Exception):
+            bounce_rescue_agent.build_public_opener().open(
+                urllib.request.Request(f"http://127.0.0.1:{srv.server_port}/"), timeout=3)
+    finally:
+        srv.shutdown()
+        srv.server_close()
+    assert hits == []
+
+
+def test_slow_drip_hits_total_deadline(tmp_path):
+    now = [0.0]
+
+    class Drip(Resp):
+        def read1(self, n=-1):
+            now[0] += 6.0
+            return b"<p>tropf</p>"
+
+    op = FakeOpener({"https://slow.test/": Drip(b"", url="https://slow.test/")})
+    assert ws.website_text("https://slow.test/", tmp_path, opener=op, clock=lambda: now[0], sleep=lambda s: None) is None
+    assert _skip(tmp_path, "slow.test")["reason"] == "timeout"
+    assert _skip(tmp_path, "slow.test")["permanent"] is False
+
+
+def test_apply_paces_and_retries_readback_mismatch(tmp_path, monkeypatch):
+    rows = [["Lead-ID", "Branche", "Tier", "Score", "Segment"], ["1", "Produktion", "", "", ""], ["2", "Produktion", "", "", ""]]
+    svc = FakeSheets(rows)
+    import outbound_safety
+    real = outbound_safety.crm_write_readback
+    fails = [1]
+
+    def flaky(*a, **k):
+        if fails[0]:
+            fails[0] -= 1
+            raise RuntimeError("CRM_READBACK_MISMATCH")
+        return real(*a, **k)
+
+    monkeypatch.setattr(outbound_safety, "crm_write_readback", flaky)
+    sleeps = []
+    hsb_cli.cmd_score_leads(SimpleNamespace(apply=True), svc=svc, cache_dir=tmp_path, out_path=tmp_path / "o.jsonl", sleep=sleeps.append)
+    assert rows[2][2] == "A" or rows[2][2] == "B"
+    assert 1.0 in sleeps and 2.0 in sleeps
+    # nach 4 Fehlschlaegen: Abbruch
+    fails[0] = 99
+    rows[1][2:] = ["", "", ""]
+    with pytest.raises(RuntimeError):
+        hsb_cli.cmd_score_leads(SimpleNamespace(apply=True), svc=svc, cache_dir=tmp_path, out_path=tmp_path / "o.jsonl", sleep=lambda s: None)

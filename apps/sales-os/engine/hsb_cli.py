@@ -382,19 +382,19 @@ def cmd_fetch_websites(args, svc=None, cache_dir=None, opener=None):
     fetched = skipped = failed = 0
     for lead in leads:
         url = str(lead.get("Website") or "").strip()
-        if not url or ws.cached_website_text(url, cache_dir) is not None:
+        if not url or ws.cached_website_text(url, cache_dir) is not None or ws.skip_state(url, cache_dir):
             skipped += 1
             continue
-        if fetched + failed >= args.limit:
+        if fetched + failed >= args.limit:  # zaehlt nur echte Versuche
             break
         if ws.website_text(url, cache_dir, opener=opener):
             fetched += 1
         else:
             failed += 1
-    print(f"Abgerufen: {fetched}, ohne Text/gesperrt: {failed}, uebersprungen (Cache/ohne URL): {skipped}")
+    print(f"Abgerufen: {fetched}, ohne Text/gesperrt: {failed}, uebersprungen (Cache/Marker/ohne URL): {skipped}")
 
 
-def cmd_score_leads(args, svc=None, cache_dir=None, out_path=None):
+def cmd_score_leads(args, svc=None, cache_dir=None, out_path=None, sleep=time.sleep):
     """Fit-Score je Lead. Dry-Run zeigt nur Zaehlungen; --apply schreibt nur in leere Tier/Score/Segment-Zellen."""
     from collections import Counter
     import website_signals as ws
@@ -427,8 +427,18 @@ def cmd_score_leads(args, svc=None, cache_dir=None, out_path=None):
     if not args.apply:
         print(f"Dry-Run: {len(writes)} Zeilen haetten leere Zellen. Mit --apply schreiben.")
         return
-    for row, expected in writes:
-        crm_write_readback(svc, CANONICAL_SPREADSHEET_ID, headers, row, expected)
+    for i, (row, expected) in enumerate(writes):
+        if i:
+            sleep(1.0)  # ca. 1 Zeile/s gegen Sheets-Quota
+        for attempt in range(4):
+            try:
+                crm_write_readback(svc, CANONICAL_SPREADSHEET_ID, headers, row, expected)
+                break
+            except Exception as exc:
+                transient = "429" in str(exc) or "CRM_READBACK_MISMATCH" in str(exc) or getattr(getattr(exc, "resp", None), "status", None) == 429
+                if not transient or attempt == 3:
+                    raise
+                sleep(2.0 * 2 ** attempt)
     print(f"Geschrieben: {len(writes)} Zeilen (nur leere Zellen).")
 
 

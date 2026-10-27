@@ -138,3 +138,95 @@ def summarize_bounces(messages: Iterable) -> dict:
                 hard_by_domain[domain] += 1
     return {"total": sum(by_class.values()), "by_class": dict(by_class), "by_domain": dict(by_domain),
             "hard_by_domain": dict(hard_by_domain)}
+
+
+# --- Fit-Score (Segment, Signale, Tier) -------------------------------------------------
+
+Segment = Literal["architekten", "produktion"]
+
+POSITIVE_SIGNAL_WORDS = (
+    "industrie", "gewerbe", "hallen", "logistik", "lebensmittel", "brauerei", "molkerei", "produktion",
+    "reinraum", "pharma", "labor", "ingenieur", "tragwerk", "generalplan",
+)
+NEGATIVE_SIGNAL_WORDS = (
+    "innenarchitekt", "interior", "landschaft", "garten", "freiraum", "wohnbau", "möbel", "einrichtung",
+    "messebau",
+)
+# Wortanfang-Grenze: "labor" soll nicht in "Kollaboration", "garten" nicht in "Biergarten" treffen.
+POSITIVE_RE = re.compile(r"\b(" + "|".join(POSITIVE_SIGNAL_WORDS) + ")", re.I)
+NEGATIVE_RE = re.compile(r"\b(" + "|".join(NEGATIVE_SIGNAL_WORDS) + ")", re.I)
+
+CRM_SIGNAL_FIELDS = ("Branche", "Notizen", "Beziehung / Kontaktgrund", "Firma")
+EXPLORATION_SHARE = 0.15
+
+
+def segment_for(lead: dict) -> Segment:
+    return "architekten" if "architekt" in str(lead.get("Branche") or "").lower() else "produktion"
+
+
+def _tier_for(score: int) -> str:
+    return "A" if score >= 75 else "B" if score >= 50 else "C"
+
+
+def fit_score(lead: dict, signals: dict | None) -> tuple[int, str, list[str]]:
+    """Liefert (Score, Tier, Begruendungen). Tier Z = zurueckgestellt (nur negative Signale, Architekten)."""
+    signals = signals or {}
+    reasons: list[str] = []
+    segment = segment_for(lead)
+    score = 70 if segment == "produktion" else 30
+    reasons.append(f"Segment {segment}: Basis {score}")
+
+    pos: list[str] = []
+    neg: list[str] = []
+    for field in CRM_SIGNAL_FIELDS:
+        value = str(lead.get(field) or "")
+        pos += [f"CRM {field}: {m.lower()}" for m in POSITIVE_RE.findall(value)]
+        neg += [f"CRM {field}: {m.lower()}" for m in NEGATIVE_RE.findall(value)]
+    pos += [f"Website: {w}" for w in signals.get("positive", [])]
+    neg += [f"Website: {w}" for w in signals.get("negative", [])]
+
+    if segment == "architekten":
+        if pos:
+            score += 40
+            reasons.append(f"+40 positives Signal ({', '.join(dict.fromkeys(pos))})")
+            if neg:
+                reasons.append(f"negative Signale ueberstimmt ({', '.join(dict.fromkeys(neg))})")
+            for q in list(signals.get("quotes", []))[:3]:
+                reasons.append(f'Zitat: "{q}"')
+        elif neg:
+            reasons.append(f"nur negative Signale ({', '.join(dict.fromkeys(neg))})")
+            for q in list(signals.get("quotes", []))[:3]:
+                reasons.append(f'Zitat: "{q}"')
+            return 0, "Z", reasons
+
+    if str(lead.get("Ansprechpartner") or "").strip():
+        score += 10
+        reasons.append("+10 Ansprechpartner")
+
+    raw_flags = lead.get("Deliverability_Flags") or []
+    if isinstance(raw_flags, str):
+        raw_flags = raw_flags.split(",")
+    if FLAG_DOMAIN_BOUNCED_BEFORE in {str(f).strip().upper() for f in raw_flags}:
+        score -= 20
+        reasons.append("-20 DOMAIN_BOUNCED_BEFORE")
+
+    score = max(0, min(100, score))
+    return score, _tier_for(score), reasons
+
+
+def daily_selection(leads_scored: list[dict], slots: int, day) -> list[dict]:
+    """Tagesauswahl: 15 % der Plaetze zufaellig aus Tier C (Seed = ISO-Datum), Rest Tier A, dann B; Z nie."""
+    import math
+    import random
+
+    def tier(l: dict) -> str:
+        return str(l.get("Tier") or "").strip().upper()
+
+    n_explore = min(slots, math.floor(slots * EXPLORATION_SHARE + 0.5))
+    pool_c = [l for l in leads_scored if tier(l) == "C"]
+    rng = random.Random(day.isoformat())
+    explore = rng.sample(pool_c, min(n_explore, len(pool_c)))
+    main: list[dict] = []
+    for t in ("A", "B"):
+        main += sorted((l for l in leads_scored if tier(l) == t), key=lambda l: -int(l.get("Score") or 0))
+    return main[: slots - n_explore] + explore

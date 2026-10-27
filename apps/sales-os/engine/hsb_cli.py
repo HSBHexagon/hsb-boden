@@ -358,6 +358,80 @@ def cmd_blocklist_check(args):
     print(seed_test.SPAMHAUS_NOTE)
 
 
+def _load_all_leads(svc):
+    """Liest ALL_LEADS komplett: (Kopfzeile, Leads mit _row)."""
+    from hsb_config import CANONICAL_SPREADSHEET_ID
+    rows = svc.spreadsheets().values().get(spreadsheetId=CANONICAL_SPREADSHEET_ID, range="ALL_LEADS").execute().get("values", [])
+    if not rows:
+        return [], []
+    headers = rows[0]
+    leads = []
+    for idx, r in enumerate(rows[1:], start=2):
+        d = {h: (r[i] if i < len(r) else "") for i, h in enumerate(headers)}
+        d["_row"] = idx
+        leads.append(d)
+    return headers, leads
+
+
+def cmd_fetch_websites(args, svc=None, cache_dir=None, opener=None):
+    """Fuellt den Website-Cache (hoeflich: robots.txt, 1 Anfrage/s). Gibt nur Zaehlungen aus."""
+    import website_signals as ws
+    svc = svc or get_sheets_service()
+    cache_dir = Path(cache_dir or ws.DEFAULT_CACHE_DIR)
+    _, leads = _load_all_leads(svc)
+    fetched = skipped = failed = 0
+    for lead in leads:
+        url = str(lead.get("Website") or "").strip()
+        if not url or ws.cached_website_text(url, cache_dir) is not None:
+            skipped += 1
+            continue
+        if fetched + failed >= args.limit:
+            break
+        if ws.website_text(url, cache_dir, opener=opener):
+            fetched += 1
+        else:
+            failed += 1
+    print(f"Abgerufen: {fetched}, ohne Text/gesperrt: {failed}, uebersprungen (Cache/ohne URL): {skipped}")
+
+
+def cmd_score_leads(args, svc=None, cache_dir=None, out_path=None):
+    """Fit-Score je Lead. Dry-Run zeigt nur Zaehlungen; --apply schreibt nur in leere Tier/Score/Segment-Zellen."""
+    from collections import Counter
+    import website_signals as ws
+    from lead_quality import fit_score, segment_for
+    from outbound_safety import crm_write_readback
+    from hsb_config import CANONICAL_SPREADSHEET_ID
+    svc = svc or get_sheets_service()
+    cache_dir = Path(cache_dir or ws.DEFAULT_CACHE_DIR)
+    out_path = Path(out_path or Path(__file__).resolve().parent.parent / "data" / "fit_scores.jsonl")
+    headers, leads = _load_all_leads(svc)
+    counts: Counter = Counter()
+    records = []
+    writes = []
+    for lead in leads:
+        text = ws.cached_website_text(str(lead.get("Website") or ""), cache_dir)
+        signals = ws.website_signals(text) if text else {"positive": [], "negative": [], "quotes": []}
+        score, tier, reasons = fit_score(lead, signals)
+        segment = segment_for(lead)
+        counts[(segment, tier)] += 1
+        records.append({"lead_id": lead.get("Lead-ID", ""), "row": lead["_row"], "segment": segment, "tier": tier,
+                        "score": score, "reasons": reasons, "quotes": signals["quotes"]})
+        wanted = {"Tier": tier, "Score": str(score), "Segment": segment}
+        expected = {k: v for k, v in wanted.items() if k in headers and not str(lead.get(k) or "").strip()}
+        if expected:
+            writes.append((lead["_row"], expected))
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    out_path.write_text("".join(json.dumps(r, ensure_ascii=False) + "\n" for r in records), encoding="utf-8")
+    for (segment, tier), n in sorted(counts.items()):
+        print(f"{segment} {tier}: {n}")
+    if not args.apply:
+        print(f"Dry-Run: {len(writes)} Zeilen haetten leere Zellen. Mit --apply schreiben.")
+        return
+    for row, expected in writes:
+        crm_write_readback(svc, CANONICAL_SPREADSHEET_ID, headers, row, expected)
+    print(f"Geschrieben: {len(writes)} Zeilen (nur leere Zellen).")
+
+
 def main():
     parser = argparse.ArgumentParser(description="HSB Sales OS - Unified Operator CLI")
     subparsers = parser.add_subparsers(dest="command", required=True)
@@ -427,6 +501,12 @@ def main():
     p_bl = subparsers.add_parser("blocklist-check", help="DNSBL-Status einer IPv4 (Spamhaus nur manuell)")
     p_bl.add_argument("ip", help="IPv4-Adresse")
 
+    # fetch-websites / score-leads
+    p_fw = subparsers.add_parser("fetch-websites", help="Website-Texte in den lokalen Cache laden (robots.txt, 1 Anfrage/s)")
+    p_fw.add_argument("--limit", type=int, required=True, help="Max. Abrufe in diesem Lauf")
+    p_sl = subparsers.add_parser("score-leads", help="Fit-Score je Lead (Dry-Run: nur Zaehlungen je Segment und Tier)")
+    p_sl.add_argument("--apply", action="store_true", help="Nur leere Tier/Score/Segment-Zellen im CRM schreiben")
+
     # test-mail
     p_test = subparsers.add_parser("test-mail", help="Einzelne Test-E-Mail senden")
     p_test.add_argument("--owner", choices=["JOEL", "JORDI"], default="JOEL")
@@ -459,6 +539,10 @@ def main():
         cmd_seed_read(args)
     elif args.command == "blocklist-check":
         cmd_blocklist_check(args)
+    elif args.command == "fetch-websites":
+        cmd_fetch_websites(args)
+    elif args.command == "score-leads":
+        cmd_score_leads(args)
     elif args.command == "optouts":
         cmd_optouts(args)
     elif args.command == "optout":

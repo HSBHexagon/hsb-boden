@@ -335,6 +335,15 @@ def check_eligibility(lead: dict) -> EligibilityResult:
     if not normalize_owner(lead.get("Owner") or lead.get("Verantwortlicher")) in FLYERS:
         reasons.append(f"Owner unklar ({lead.get('Owner') or lead.get('Verantwortlicher') or 'leer'})")
 
+    # Zustellbarkeits-Flags (lead_quality.deliverability_flags) werden vorab berechnet,
+    # hier kein Netz: Feld Deliverability_Flags (Liste oder Komma-String).
+    raw_flags = lead.get("Deliverability_Flags") or []
+    if isinstance(raw_flags, str):
+        raw_flags = raw_flags.split(",")
+    for flag in (str(f).strip().upper() for f in raw_flags):
+        if flag and flag != "DOMAIN_BOUNCED_BEFORE":
+            reasons.append(f"Deliverability={flag}")
+
     raw_company = str(lead.get("Company") or lead.get("Firma") or "").strip()
     if raw_company:
         norm_c = raw_company.lower().strip()

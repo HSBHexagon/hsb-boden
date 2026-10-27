@@ -312,6 +312,22 @@ def cmd_sync(args):
     print(json.dumps(result,ensure_ascii=False,indent=2))
 
 
+def cmd_bounce_report(args, collector=None):
+    """Zählt Bounces je DSN-Klasse und Domain (nur Zählungen, keine Adressen)."""
+    from lead_quality import summarize_bounces
+    if collector is None:
+        from dual_domain_collector import collect_all_inbounds as collector
+    msgs = collector(limit_per_mailbox=args.limit, include_de=not getattr(args, "com_only", False))
+    summary = summarize_bounces(msgs)
+    print(f"Bounces gesamt: {summary['total']}")
+    print("Je Klasse:")
+    for cls, n in sorted(summary["by_class"].items(), key=lambda kv: -kv[1]):
+        print(f"  {cls}: {n}")
+    print("Je Domain:")
+    for dom, n in sorted(summary["by_domain"].items(), key=lambda kv: -kv[1]):
+        print(f"  {dom}: {n}")
+
+
 def main():
     parser = argparse.ArgumentParser(description="HSB Sales OS - Unified Operator CLI")
     subparsers = parser.add_subparsers(dest="command", required=True)
@@ -364,6 +380,11 @@ def main():
     p_sync.add_argument("--com-only", action="store_true", help="Nur .com IMAP; .de bleibt separat zu verifizieren")
     p_sync.add_argument("--apply", action="store_true", help="Erkannte Status-Änderungen live ins Google Sheet schreiben")
 
+    # bounce-report
+    p_bounce = subparsers.add_parser("bounce-report", help="Bounce-Zählung je DSN-Klasse und Domain (nur Zählungen)")
+    p_bounce.add_argument("--limit", type=int, default=0, help="Max. Nachrichten je Postfach (0 = alle)")
+    p_bounce.add_argument("--com-only", action="store_true", help="Nur .com IMAP")
+
     # test-mail
     p_test = subparsers.add_parser("test-mail", help="Einzelne Test-E-Mail senden")
     p_test.add_argument("--owner", choices=["JOEL", "JORDI"], default="JOEL")
@@ -388,6 +409,8 @@ def main():
         cmd_sync(args)
     elif args.command == "test-mail":
         cmd_test_mail(args)
+    elif args.command == "bounce-report":
+        cmd_bounce_report(args)
     elif args.command == "optouts":
         cmd_optouts(args)
     elif args.command == "optout":

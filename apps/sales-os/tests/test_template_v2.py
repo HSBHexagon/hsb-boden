@@ -207,7 +207,11 @@ def test_body_word_range_without_company_and_contact(segment):
 
 
 def test_company_named_at_most_once_in_short_form():
+    thread = {'message_id': '<s1@hsb-boden.com>', 'subject': 'Betreff'}
     for seg in SEGMENT_LEADS:
-        r = render_email_v2(SEGMENT_LEADS[seg](Firma='Muster Architekten GmbH, Beratende Ingenieure'), 'JOEL', 1)
-        assert r['body_text'].count('Muster Architekten') <= 1
-        assert 'GmbH, Beratende' not in r['body_text']
+        row = SEGMENT_LEADS[seg](Firma='Muster Architekten GmbH, Beratende Ingenieure')
+        for step in (1, 2, 3):
+            r = render_email_v2(row, 'JOEL', step, thread=thread)
+            assert r['body_text'].count('Muster Architekten') <= 1, (seg, step)
+            assert 'GmbH, Beratende' not in r['body_text']
+            assert 'Projekte bei' not in r['body_text']

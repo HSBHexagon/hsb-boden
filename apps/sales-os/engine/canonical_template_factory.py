@@ -162,10 +162,11 @@ _BODIES_V2 = {
     ),
     ("architekten", 2): (
         "kurz zu meiner Nachricht von vor ein paar Tagen: Gefälle, Rinnenanschlüsse und Fugen lassen sich "
-        "am einfachsten klären, solange die Leistungsphasen 5 bis 7 noch offen sind. Unsere "
-        "herstellerneutralen LV-Bausteine und Detailzeichnungen wären dafür eine Arbeitsgrundlage für "
-        "Ihre Projekte {bei}, die Sie an Ihre Ausschreibung anpassen und frei weiterverwenden können. "
-        "Sie sind so aufgebaut, dass Sie einzelne Bausteine auch getrennt übernehmen können.\n\n"
+        "am einfachsten klären, solange die Leistungsphasen 5 bis 7 noch offen sind. Falls {bei} "
+        "eine Ausschreibung ansteht, wären unsere herstellerneutralen LV-Bausteine und "
+        "Detailzeichnungen dafür eine Arbeitsgrundlage, die Sie anpassen und frei weiterverwenden "
+        "können. Sie sind so aufgebaut, dass Sie einzelne Bausteine auch getrennt übernehmen "
+        "können.\n\n"
         "Darf ich Ihnen die Unterlagen als PDF und DWG zusenden?"
     ),
     ("architekten", 3): (
@@ -202,7 +203,8 @@ _BODIES_V2 = {
 }
 
 # Absenderadresse in der Signatur = From-Postfach (nur dort wird gelesen).
-_SENDER_COM = {"JOEL": "j-cherino@hsb-boden.com", "JORDI": "j-post@hsb-boden.com"}
+_SENDER_COM = {"JOEL": "j-cherino@hsb-boden.com", "JORDI": "j-post@hsb-boden.com",
+               "JORDIE": "j-post@hsb-boden.com"}
 
 _PFLICHTANGABEN_V2 = (
     "HSB Hexagon Säurebau GmbH · Benzstraße 6 · 48599 Gronau\n"
@@ -287,7 +289,7 @@ def render_email_v2(
         f"{meta['sender_role']}\n"
         "HSB Hexagon Säurebau GmbH\n"
         f"{phone_label}: {phone}\n"
-        f"E-Mail: {_SENDER_COM['JORDI' if meta is CANONICAL_FLYERS['JORDI'] else 'JOEL']}"
+        f"E-Mail: {_SENDER_COM[norm_owner]}"
     )
     body_text = (
         f"{anrede_fuer_lead(lead)}\n\n{body}\n\n{signature}\n\n{OPTOUT_LINE_V2}\n\n{_PFLICHTANGABEN_V2}\n"

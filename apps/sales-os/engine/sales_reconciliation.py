@@ -101,7 +101,8 @@ def assess_message(raw, owner, leads):
     if is_v2:
         if template_id.endswith('-s1'):
             surname = contact.split()[-1].casefold() if len(contact.split()) > 1 else ''
-            forbidden = [t for t in ['@', *recipients, *(r.split('@')[0] for r in recipients), surname] if t]
+            forbidden = ['@', *(r.casefold() for r in recipients)]
+            forbidden += [t for t in [*(r.split('@')[0].casefold() for r in recipients), surname] if len(t) >= 3]
 
             def _v2_link_ok(u):
                 parts = urlsplit(u)

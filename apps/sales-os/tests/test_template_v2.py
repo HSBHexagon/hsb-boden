@@ -125,7 +125,7 @@ def test_v1_build_draft_message_unchanged():
 def test_signature_contains_phone(owner):
     r = render_email_v2(lead(), owner, 1)
     assert CANONICAL_FLYERS[owner]['sender_phone'] in r['body_text']
-    assert CANONICAL_FLYERS[owner]['sender_email'] in r['body_text']
+    assert {'JOEL': 'j-cherino@hsb-boden.com', 'JORDI': 'j-post@hsb-boden.com'}[owner] in r['body_text']
     assert 'HRB 21481' in r['body_text'] and 'Jordie Post' in r['body_text']
     assert '‚Abmelden‘' in r['body_text']
 
@@ -180,3 +180,34 @@ def test_v2_assess_flags_violations():
     assert 'V2_LINK_INVALID' in issues(text=res['body_text'] + '\nhttps://evil.example/x')
     assert 'V2_LINK_INVALID' in issues(tid='v2-produktion-s2')
     assert 'V2_OPTOUT_LINE_MISSING' in issues(text=res['body_text'].replace('Abmelden', 'Stopp'))
+
+    assert 'V2_LINK_INVALID' in issues(text=res['body_text'].replace('utm_campaign=', 'x=buyer%40example.org&utm_campaign='))
+    assert 'V2_LINK_INVALID' in issues(text=res['body_text'].replace('utm_campaign=', 'who=buyer&utm_campaign='))
+    assert 'V2_LINK_INVALID' in issues(text=res['body_text'].replace('utm_campaign=', 'n=Beispiel&utm_campaign='))
+
+
+@pytest.mark.parametrize('segment', ['architekten', 'produktion'])
+@pytest.mark.parametrize('owner', ['JOEL', 'JORDI'])
+def test_body_contains_only_from_mailbox_address(segment, owner):
+    from_addr = {'JOEL': 'j-cherino@hsb-boden.com', 'JORDI': 'j-post@hsb-boden.com'}[owner]
+    row = SEGMENT_LEADS[segment]()
+    thread = {'message_id': '<s1@hsb-boden.com>', 'subject': 'Betreff'}
+    for step in (1, 2, 3):
+        r = render_email_v2(row, owner, step, thread=thread)
+        assert set(re.findall(r'[\w.+-]+@[\w.-]+\w', r['body_text'])) == {from_addr}
+
+
+@pytest.mark.parametrize('segment', ['architekten', 'produktion'])
+def test_body_word_range_without_company_and_contact(segment):
+    row = SEGMENT_LEADS[segment](Firma='', Ansprechpartner='')
+    first = render_email_v2(row, 'JOEL', 1)
+    thread = {'message_id': '<s1@hsb-boden.com>', 'subject': first['subject']}
+    for r in [first] + [render_email_v2(row, 'JOEL', s, thread=thread) for s in (2, 3)]:
+        assert 60 <= len(body_only(r['body_text']).split()) <= 120, r['template_id']
+
+
+def test_company_named_at_most_once_in_short_form():
+    for seg in SEGMENT_LEADS:
+        r = render_email_v2(SEGMENT_LEADS[seg](Firma='Muster Architekten GmbH, Beratende Ingenieure'), 'JOEL', 1)
+        assert r['body_text'].count('Muster Architekten') <= 1
+        assert 'GmbH, Beratende' not in r['body_text']

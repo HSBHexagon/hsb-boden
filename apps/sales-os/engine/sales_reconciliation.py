@@ -76,19 +76,23 @@ def assess_message(raw, owner, leads):
         issues.append('WRONG_SENDER')
     if not mid or not re.fullmatch(r'<[^<>\s]+@[^<>\s]+>', mid):
         issues.append('MESSAGE_ID_INVALID')
+    template_id = str(msg.get('X-HSB-Template-ID') or '').strip()
+    is_v2 = template_id.startswith('v2-')
     company = str(lead.get('Firma') or lead.get('Company') or '').strip()
     contact = str(lead.get('Ansprechpartner') or lead.get('Contact') or '').strip()
     if not company or sanitize_company_name(company, recipients[0] if recipients else '') == 'Ihr Unternehmen':
         issues.append('COMPANY_UNVERIFIED')
-    template_id = str(msg.get('X-HSB-Template-ID') or '').strip()
-    is_v2 = template_id.startswith('v2-')
     if is_v2:
         # Folgemails antworten im Thread: das Re:/AW:-Praefix zaehlt nicht zur 50-Zeichen-Grenze.
         if not subject or len(re.sub(r'^(?:re|aw):\s*', '', subject, flags=re.I)) > 50:
             issues.append('SUBJECT_TOO_LONG')
     elif not subject or (company and company.casefold() not in subject.casefold()):
         issues.append('SUBJECT_NOT_COMPANY_SPECIFIC')
-    if not ((company and company.casefold() in body.casefold()) or (len(contact) > 3 and contact.casefold() in body.casefold())):
+    body_names = [company]
+    if is_v2:
+        from canonical_template_factory import short_company
+        body_names.append(short_company(company))
+    if not (any(n and n.casefold() in body.casefold() for n in body_names) or (len(contact) > 3 and contact.casefold() in body.casefold())):
         issues.append('BODY_NOT_COMPANY_OR_CONTACT_SPECIFIC')
     if re.search(r'\{\{|\[FIRMA\]|\[NAME\]|undefined|Sehr geehrte/r', body, re.I):
         issues.append('UNRESOLVED_PLACEHOLDER')
@@ -96,8 +100,13 @@ def assess_message(raw, owner, leads):
     optout_links = [u for u in links if urlsplit(u).netloc.lower() == 'www.hsb-boden.de' and urlsplit(u).path.rstrip('/') == '/abmelden']
     if is_v2:
         if template_id.endswith('-s1'):
+            surname = contact.split()[-1].casefold() if len(contact.split()) > 1 else ''
+            forbidden = [t for t in ['@', *recipients, *(r.split('@')[0] for r in recipients), surname] if t]
+
             def _v2_link_ok(u):
                 parts = urlsplit(u)
+                if any(t in unquote(u).casefold() for t in forbidden):
+                    return False
                 return parts.netloc.lower() == 'www.hsb-boden.de' and (
                     parts.path.rstrip('/') == '/flyer' or re.fullmatch(r'/r/[A-Za-z0-9_\-.~]+', parts.path))
             if len(links) > 1 or not all(_v2_link_ok(u) for u in links):

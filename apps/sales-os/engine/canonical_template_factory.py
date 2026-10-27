@@ -153,52 +153,56 @@ _BODIES_V2 = {
     ("architekten", 1): (
         "mein Name ist {sender} von der HSB Hexagon Säurebau GmbH. Wir planen, bauen und sanieren "
         "säurebeständige Industrieböden.\n\n"
-        "In den Leistungsphasen 5 bis 7 entscheidet sich oft, wie lange ein Boden in Nassbereichen hält: "
-        "Gefälle zu den Rinnen, Fugenplanung und das reale Belastungsprofil. Für Projekte {bei} "
-        "stellen wir dazu herstellerneutrale LV-Bausteine und Detailzeichnungen bereit, die Sie "
-        "frei in Ihre Ausschreibung übernehmen können.\n\n"
+        "Falls {bei} gerade Industrie-, Gewerbe- oder Lebensmittelprojekte in Planung sind: In den "
+        "Leistungsphasen 5 bis 7 entscheidet sich oft, wie lange ein Boden in Nassbereichen hält, etwa "
+        "bei Gefälle zu den Rinnen, Fugenplanung und Belastungsprofil. Wir stellen dafür "
+        "herstellerneutrale LV-Bausteine und Detailzeichnungen bereit, die Sie frei in Ihre "
+        "Ausschreibung übernehmen können.\n\n"
         "Darf ich Ihnen diese Unterlagen unverbindlich zusenden?{link}"
     ),
     ("architekten", 2): (
         "kurz zu meiner Nachricht von vor ein paar Tagen: Gefälle, Rinnenanschlüsse und Fugen lassen sich "
         "am einfachsten klären, solange die Leistungsphasen 5 bis 7 noch offen sind. Unsere "
-        "herstellerneutralen LV-Bausteine und Detailzeichnungen wären dafür eine Arbeitsgrundlage {bei}, "
-        "die Sie ohne Bindung an einen Hersteller anpassen und in Ihre Ausschreibung übernehmen können. "
-        "Sie erhalten sie unverbindlich und ohne weitere Verpflichtung.\n\n"
-        "Darf ich Ihnen die Unterlagen als Entwurf zusenden?"
+        "herstellerneutralen LV-Bausteine und Detailzeichnungen wären dafür eine Arbeitsgrundlage für "
+        "Ihre Projekte {bei}, die Sie an Ihre Ausschreibung anpassen und frei weiterverwenden können. "
+        "Sie sind so aufgebaut, dass Sie einzelne Bausteine auch getrennt übernehmen können.\n\n"
+        "Darf ich Ihnen die Unterlagen als PDF und DWG zusenden?"
     ),
     ("architekten", 3): (
-        "ich melde mich ein letztes Mal zu diesem Thema, damit Ihr Postfach nicht unnötig voll wird. "
-        "Wenn Gefälle, Rinnen und Fugen {bei} gerade kein Thema sind, ist das völlig in Ordnung. "
-        "Sollte bei einem späteren Projekt die Ausschreibung anstehen, antworten Sie einfach auf diese "
-        "Nachricht. Dann sende ich Ihnen gern herstellerneutrale LV-Bausteine und Detailzeichnungen "
-        "zu. Ich wünsche Ihnen weiterhin gutes Gelingen."
+        "ich melde mich ein letztes Mal zu diesem Thema, denn ich möchte Sie nicht weiter mit "
+        "Nachrichten belasten. Wenn Gefälle, Rinnen und Fugen {bei} gerade kein Thema sind, ist das völlig "
+        "in Ordnung. Sollte bei einem späteren Projekt die Ausschreibung anstehen, antworten Sie "
+        "einfach auf diese Nachricht. Dann sende ich Ihnen gern herstellerneutrale LV-Bausteine und "
+        "Detailzeichnungen zu. Ich wünsche Ihnen weiterhin gutes Gelingen bei Ihren Projekten."
     ),
     ("produktion", 1): (
         "mein Name ist {sender} von der HSB Hexagon Säurebau GmbH. Wir planen, bauen und sanieren "
         "säurebeständige, hygienische Industrieböden für Produktionsbetriebe.\n\n"
-        "Vor dem nächsten IFS- oder BRC-Audit zählt {bei} vor allem der Boden: offene Fugen als "
-        "mögliche Keimnester, defekte Rinnen, stehendes Wasser und ausreichende Rutschhemmung. "
-        "Entscheidend ist meist das Stillstandsfenster. Deshalb planen wir Schichtaufbau und "
+        "Falls {bei} IFS- oder BRC-Audits anstehen, rückt der Boden oft in den Blick: Fugen als "
+        "mögliche Keimnester, Rinnen und Abläufe sowie die Rutschhemmung. Bei einer Sanierung "
+        "entscheidet meist das Stillstandsfenster. Deshalb planen wir Schichtaufbau und "
         "Aushärtezeiten auf Ihren Produktionsrhythmus.\n\n"
         "Wäre ein kurzes, unverbindliches Gespräch dazu für Sie interessant?{link}"
     ),
     ("produktion", 2): (
-        "kurz zu meiner Nachricht von vor ein paar Tagen: Je früher Fugen, Rinnen und Rutschhemmung {bei} "
-        "geprüft sind, desto besser lässt sich ein Stillstandsfenster mit passenden Aushärtezeiten "
-        "planen, bevor das nächste IFS- oder BRC-Audit ansteht. Ein Boden, der im Audit auffällt, "
-        "kostet meist mehr Zeit als eine rechtzeitig geplante Maßnahme. Wir stimmen Schichtaufbau und "
-        "Ablauf gern auf Ihren Produktionsrhythmus ab.\n\n"
+        "kurz zu meiner Nachricht von vor ein paar Tagen: Falls ein IFS- oder BRC-Audit {bei} ansteht, lohnt "
+        "es sich, Fugen, Rinnen und Rutschhemmung frühzeitig zu betrachten. Dann lässt sich ein "
+        "Stillstandsfenster mit passenden Aushärtezeiten in Ruhe planen, statt unter Zeitdruck. "
+        "Dabei können auch einzelne Teilflächen getrennt betrachtet werden. Wir stimmen Schichtaufbau "
+        "und Ablauf gern auf Ihren Produktionsrhythmus ab.\n\n"
         "Wäre ein kurzes Gespräch dazu für Sie interessant?"
     ),
     ("produktion", 3): (
-        "ich melde mich ein letztes Mal zu diesem Thema, damit Ihr Postfach nicht unnötig voll wird. "
-        "Wenn Fugen, Rinnen und das Stillstandsfenster {bei} gerade kein Thema sind, ist das völlig "
-        "in Ordnung. Sollte vor einem Audit oder einer Sanierung der Boden wieder in den Fokus "
-        "rücken, antworten Sie einfach auf diese Nachricht. Ich wünsche Ihnen weiterhin einen "
-        "reibungslosen Betrieb."
+        "ich melde mich ein letztes Mal zu diesem Thema, denn ich möchte Sie nicht weiter mit "
+        "Nachrichten belasten. Wenn Fugen, Rinnen und das Stillstandsfenster {bei} gerade kein Thema sind, "
+        "ist das völlig in Ordnung. Sollte vor einem Audit oder einer Sanierung der Boden wieder in "
+        "den Fokus rücken, antworten Sie einfach auf diese Nachricht. Ich wünsche Ihnen weiterhin "
+        "einen reibungslosen Betrieb."
     ),
 }
+
+# Absenderadresse in der Signatur = From-Postfach (nur dort wird gelesen).
+_SENDER_COM = {"JOEL": "j-cherino@hsb-boden.com", "JORDI": "j-post@hsb-boden.com"}
 
 _PFLICHTANGABEN_V2 = (
     "HSB Hexagon Säurebau GmbH · Benzstraße 6 · 48599 Gronau\n"
@@ -263,7 +267,8 @@ def render_email_v2(
         firma = sanitize_company_name(clean_comp, to_addr)
         if firma == "Ihr Unternehmen":
             firma = ""
-    bei = f"bei {firma}" if firma else "bei Ihnen"
+    firma_kurz = short_company(firma) if firma else ""
+    bei = f"bei {firma_kurz}" if firma_kurz else "bei Ihnen"
 
     segment = segment_for(lead)
     template_id = f"v2-{segment}-s{step}"
@@ -282,14 +287,14 @@ def render_email_v2(
         f"{meta['sender_role']}\n"
         "HSB Hexagon Säurebau GmbH\n"
         f"{phone_label}: {phone}\n"
-        f"E-Mail: {meta['sender_email']}"
+        f"E-Mail: {_SENDER_COM['JORDI' if meta is CANONICAL_FLYERS['JORDI'] else 'JOEL']}"
     )
     body_text = (
         f"{anrede_fuer_lead(lead)}\n\n{body}\n\n{signature}\n\n{OPTOUT_LINE_V2}\n\n{_PFLICHTANGABEN_V2}\n"
     )
 
     if step == 1:
-        subject = _subject_v2(segment, short_company(firma))
+        subject = _subject_v2(segment, firma_kurz)
         in_reply_to = references = None
     else:
         original = re.sub(r"^(?:re|aw):\s*", "", str(thread["subject"]).strip(), flags=re.IGNORECASE)

@@ -18,7 +18,9 @@ const DATACENTER_ASNS = new Set([
 
 const LEAD_PATTERN = /^[A-Za-z0-9_-]{1,64}$/;
 const HMAC_PATTERN = /^[0-9a-f]{16}$/;
-const RECORD_TTL_SECONDS = 180 * 24 * 3600;
+// Nur echte Klicks 180 Tage; Bot-/Invalid-Records kurz, damit Floods begrenzt bleiben.
+const HUMAN_TTL_SECONDS = 180 * 24 * 3600;
+const BOT_TTL_SECONDS = 7 * 24 * 3600;
 const REPEAT_WINDOW_MS = 10_000;
 const LAST_KEY_TTL_SECONDS = 60;
 
@@ -100,25 +102,35 @@ async function record(context: Context, token: string): Promise<void> {
   const asn = Number((request as { cf?: { asn?: number } }).cf?.asn ?? 0) || null;
   if (asn !== null && DATACENTER_ASNS.has(asn)) reasons.push("datacenter_asn");
   if (!(request.headers.get("Accept-Language") || "").trim()) reasons.push("no_accept_language");
+  const family = uaFamily(request.headers.get("User-Agent") || "");
+  if (family === "bot" || family === "none") reasons.push("ua_bot");
 
   if (valid) {
+    // Nicht atomar: KV hat kein compare-and-set, zwei gleichzeitige Erstklicks
+    // koennen beide als "erster" durchgehen. Fuer die Bot-Heuristik akzeptiert.
+    let repeat = false;
     const lastKey = `last:${lead}`;
     const last = Number(await kv.get(lastKey));
     if (Number.isFinite(last) && last > 0 && now - last < REPEAT_WINDOW_MS) {
       reasons.push("repeat_click_10s");
+      repeat = true;
     }
     await kv.put(lastKey, String(now), { expirationTtl: LAST_KEY_TTL_SECONDS });
+    // Wiederholungsklick: kein dauerhafter click:-Record, last: genuegt.
+    if (repeat) return;
   }
 
   const value = JSON.stringify({
     class: reasons.length ? "bot" : "human",
     reasons,
     asn,
-    ua_family: uaFamily(request.headers.get("User-Agent") || ""),
+    ua_family: family,
     at: new Date(now).toISOString(),
   });
-  const key = valid ? `click:${lead}:${now}` : `click:invalid:${now}`;
-  await kv.put(key, value, { expirationTtl: RECORD_TTL_SECONDS });
+  // Ungueltige Token: grober Minuten-Key, ein Flood erzeugt max. einen Key je Minute.
+  const key = valid ? `click:${lead}:${now}` : `click:invalid:${Math.floor(now / 60_000)}`;
+  const ttl = reasons.length ? BOT_TTL_SECONDS : HUMAN_TTL_SECONDS;
+  await kv.put(key, value, { expirationTtl: ttl });
 }
 
 function tokenParam(context: Context): string {

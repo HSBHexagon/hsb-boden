@@ -1,4 +1,5 @@
 import json
+import re
 import sys
 from pathlib import Path
 
@@ -26,11 +27,15 @@ class FakeKV:
 
 
 class FakeSheets:
-    def __init__(self, tab=True, rows=None):
+    """Minimales Raster für den Tab CLICK_EVENTS."""
+
+    def __init__(self, tab=True, rows=None, corrupt=False):
         self.tab = tab
-        self.rows = rows or []
+        self.grid = [list(r) for r in (rows if rows is not None else ([click_sync.HEADER] if tab else []))]
         self.appended = []
         self.added = 0
+        self.append_calls = 0
+        self.corrupt = corrupt
 
     def spreadsheets(self):
         return self
@@ -40,16 +45,41 @@ class FakeSheets:
         return _Exec({"sheets": [{"properties": {"title": t}} for t in titles]})
 
     def values(self):
-        return self
+        return _Values(self)
 
     def batchUpdate(self, **kw):
         self.added += 1
         self.tab = True
         return _Exec({})
 
-    def append(self, **kw):
-        self.appended.extend(kw["body"]["values"])
-        return _Exec({})
+
+class _Values:
+    def __init__(self, o):
+        self.o = o
+
+    def get(self, spreadsheetId, range):
+        spec = range.split("!")[1]
+        rows = self.o.grid
+        if spec == "A:A":
+            out = [[r[0]] for r in rows if r]
+        else:
+            m = re.match(r"A(\d+):E(\d+)", spec)
+            lo, hi = int(m.group(1)), int(m.group(2))
+            out = [list(r) for r in rows[lo - 1:hi]]
+            # Sheets kürzt leere Endzellen
+            out = [[c for c in r] for r in out]
+            out = [r[: max([i + 1 for i, c in enumerate(r) if c] or [0])] for r in out]
+            if self.o.corrupt and lo > 1:
+                out = [r[:-1] + ["x"] if r else r for r in out]
+        return _Exec({"values": out})
+
+    def append(self, spreadsheetId, range, valueInputOption, insertDataOption, body):
+        self.o.append_calls += 1
+        start = len(self.o.grid) + 1
+        self.o.grid.extend([list(r) for r in body["values"]])
+        self.o.appended.extend(body["values"])
+        end = len(self.o.grid)
+        return _Exec({"updates": {"updatedRange": f"CLICK_EVENTS!A{start}:E{end}"}})
 
 
 class _Exec:
@@ -91,22 +121,8 @@ def test_sync_appends_new_events_once():
     assert sheets.appended[1] == ["click:L-0001:1000", "2026-10-27T10:00:00.000Z", "L-0001", "human", ""]
     assert sheets.appended[2][2:] == ["", "bot", "invalid_hmac"]
 
-    already = [[r[0]] for r in sheets.appended[1:]]
-    sheets2 = FakeSheets(tab=True)
-    sheets2.values = lambda: _ValuesWithRows(already, sheets2)
-    again = click_sync.sync_clicks(True, kv_client=kv, sheets_svc=sheets2)
-    assert again["new"] == 0 and sheets2.appended == []
-
-
-class _ValuesWithRows:
-    def __init__(self, rows, owner):
-        self.rows, self.owner = rows, owner
-
-    def get(self, **kw):
-        return _Exec({"values": [["event_id"]] + self.rows})
-
-    def append(self, **kw):
-        return self.owner.append(**kw)
+    again = click_sync.sync_clicks(True, kv_client=kv, sheets_svc=sheets)
+    assert again["new"] == 0 and sheets.append_calls == 1
 
 
 def test_sync_never_writes_bot_as_human():
@@ -130,3 +146,62 @@ def test_cli_click_sync_dry_run_prints_counts(capsys):
     hsb_cli.cmd_click_sync(SimpleNamespace(apply=False), kv_client=kv, svc=FakeSheets(tab=True))
     out = json.loads(capsys.readouterr().out)
     assert out["mode"] == "dry-run" and out["new"] == 1
+
+
+def test_header_and_first_rows_in_single_append():
+    sheets = FakeSheets(tab=False)
+    click_sync.sync_clicks(True, kv_client=FakeKV({"click:L-0001:1": _val()}), sheets_svc=sheets)
+    assert sheets.append_calls == 1
+    assert sheets.grid[0] == click_sync.HEADER and len(sheets.grid) == 2
+
+
+def test_readback_mismatch_raises():
+    sheets = FakeSheets(tab=True, corrupt=True)
+    with pytest.raises(RuntimeError, match="CRM_READBACK_MISMATCH"):
+        click_sync.sync_clicks(True, kv_client=FakeKV({"click:L-0001:1": _val()}), sheets_svc=sheets)
+
+
+def test_existing_tab_with_wrong_header_raises_before_writing():
+    sheets = FakeSheets(tab=True, rows=[["foo", "bar"]])
+    with pytest.raises(RuntimeError, match="HEADER_MISMATCH"):
+        click_sync.sync_clicks(True, kv_client=FakeKV({"click:L-0001:1": _val()}), sheets_svc=sheets)
+    assert sheets.append_calls == 0
+
+
+def test_fetch_limit_reports_remaining():
+    kv = FakeKV({f"click:L-{i:04d}:1": _val() for i in range(5)})
+    sheets = FakeSheets(tab=True)
+    res = click_sync.sync_clicks(True, kv_client=kv, sheets_svc=sheets, max_fetch=3)
+    assert res["new"] == 3 and res["remaining"] == 2
+    res2 = click_sync.sync_clicks(True, kv_client=kv, sheets_svc=sheets, max_fetch=3)
+    assert res2["new"] == 2 and res2["remaining"] == 0
+
+
+def test_human_with_reasons_is_bot():
+    sheets = FakeSheets(tab=True)
+    click_sync.sync_clicks(True, kv_client=FakeKV({"click:L-0001:1": _val("human", ["ua_bot"])}), sheets_svc=sheets)
+    assert sheets.appended[0][3] == "bot"
+
+
+@pytest.mark.parametrize("bad", ["", "a.b", "a b", "x" * 65, "L/1"])
+def test_invalid_lead_id_rejected(bad):
+    with pytest.raises(ValueError):
+        click_sync.click_token(bad, "s")
+    with pytest.raises(ValueError):
+        click_sync.click_url(bad, "produktion", "s")
+
+
+def test_cloudflare_kv_get_reraises_auth_errors():
+    import urllib.error
+
+    def opener(req, timeout=0):
+        raise urllib.error.HTTPError(req.full_url, 403, "forbidden", {}, None)
+
+    kv = click_sync.CloudflareKV("a", "t", "n", opener=opener)
+    with pytest.raises(urllib.error.HTTPError):
+        kv.get("click:L-0001:1")
+
+    def opener404(req, timeout=0):
+        raise urllib.error.HTTPError(req.full_url, 404, "nf", {}, None)
+
+    assert click_sync.CloudflareKV("a", "t", "n", opener=opener404).get("k") is None

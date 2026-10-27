@@ -85,8 +85,9 @@ describe("Klick-Zähler /r/<token>", () => {
     expect(res.status).toBe(302);
     const recs = records(kv);
     expect(recs).toHaveLength(1);
-    expect(recs[0][0]).toMatch(/^click:invalid:\d+$/);
+    expect(recs[0][0]).toBe(`click:invalid:${Math.floor(Date.now() / 60_000)}`);
     expect(recs[0][0]).not.toContain("ATTACK");
+    expect(recs[0][1].opts.expirationTtl).toBe(7 * 24 * 3600);
     const val = JSON.parse(recs[0][1].value);
     expect(val.class).toBe("bot");
     expect(val.reasons).toContain("invalid_hmac");
@@ -99,6 +100,34 @@ describe("Klick-Zähler /r/<token>", () => {
     await flush();
     expect(res.status).toBe(302);
     expect(records(kv)[0][0]).toMatch(/^click:invalid:\d+$/);
+  });
+
+  it("invalid_flood_creates_one_key_per_minute", async () => {
+    const kv = new FakeKV();
+    for (let i = 0; i < 20; i++) {
+      const { ctx, flush } = makeContext(`L-${i}.0000000000000000`, { kv });
+      await onRequestGet(ctx);
+      await flush();
+    }
+    expect(records(kv).length).toBeLessThanOrEqual(2);
+  });
+
+  it("bot_records_expire_after_7_days_human_after_180", async () => {
+    const kv = new FakeKV();
+    const { ctx, flush } = makeContext(FIXTURE_TOKEN, { kv, cf: { asn: 16509 } });
+    await onRequestGet(ctx);
+    await flush();
+    expect(records(kv)[0][1].opts.expirationTtl).toBe(7 * 24 * 3600);
+  });
+
+  it.each(["curl/8.4.0", "python-requests/2.31", "SomeLinkPreview/1.0", ""])("ua_bot_reason_for_%s", async (ua) => {
+    const kv = new FakeKV();
+    const { ctx, flush } = makeContext(FIXTURE_TOKEN, { kv, headers: { "User-Agent": ua } });
+    await onRequestGet(ctx);
+    await flush();
+    const val = JSON.parse(records(kv)[0][1].value);
+    expect(val.class).toBe("bot");
+    expect(val.reasons).toContain("ua_bot");
   });
 
   it("head_redirects_without_record", async () => {
@@ -131,19 +160,19 @@ describe("Klick-Zähler /r/<token>", () => {
     expect(val.reasons).toContain("no_accept_language");
   });
 
-  it("second_click_within_10s_records_bot", async () => {
+  it("second_click_within_10s_writes_no_persistent_record", async () => {
     const kv = new FakeKV();
     const first = makeContext(FIXTURE_TOKEN, { kv });
     await onRequestGet(first.ctx);
     await first.flush();
     await new Promise((r) => setTimeout(r, 5));
     const second = makeContext(FIXTURE_TOKEN, { kv });
-    await onRequestGet(second.ctx);
+    const res = await onRequestGet(second.ctx);
     await second.flush();
+    expect(res.status).toBe(302);
     const vals = records(kv).map(([, v]) => JSON.parse(v.value));
-    expect(vals).toHaveLength(2);
-    expect(vals.filter((v) => v.class === "human")).toHaveLength(1);
-    expect(vals.filter((v) => v.reasons.includes("repeat_click_10s"))).toHaveLength(1);
+    expect(vals).toHaveLength(1);
+    expect(vals[0].class).toBe("human");
     expect(kv.store.get("last:L-0001")?.opts.expirationTtl).toBe(60);
   });
 

@@ -79,7 +79,7 @@ def upgrade_drafts(owner, limit=5, cohort='pilot', apply=False, journal_path=Non
     from click_sync import click_url
     from hsb_core import check_eligibility, normalize_owner
     from lead_quality import deliverability_flags, fit_score, segment_for
-    from outbound_safety import crm_write_lead_readback
+    from outbound_safety import crm_write_lead_readback, require_stable_crm_binding
     from sales_reconciliation import assess_message
     from hsb_config import CANONICAL_SPREADSHEET_ID
 
@@ -151,6 +151,8 @@ def upgrade_drafts(owner, limit=5, cohort='pilot', apply=False, journal_path=Non
         return result
     if client is None or svc is None or journal_path is None:
         raise ValueError('APPLY_REQUIRES_CLIENT_CRM_AND_JOURNAL')
+    if os.environ.get('HSB_CRM_BINDINGS_VERIFIED') != 'yes':
+        raise RuntimeError('CRM_STABLE_BINDING_CANARY_REQUIRED')
     # Prüfung vor dem ersten externen Schreibzugriff.
     if any(not l.get('_row') for _, l in selected):
         raise ValueError('CRM_ROW_MISSING')
@@ -177,11 +179,13 @@ def upgrade_drafts(owner, limit=5, cohort='pilot', apply=False, journal_path=Non
                         raise RuntimeError('LIVE_LEAD_NOT_UNIQUE')
                     current_row, current = current_matches[0]
                     current['Deliverability_Flags'] = deliverability_flags(current, {}, set(), mx_check=mx_check)
-                    if not check_eligibility(current).eligible or normalize_owner(current.get('Verantwortlicher')) != owner:
+                    if str(current.get('Tier') or '').strip().upper() == 'Z' or not check_eligibility(current).eligible or normalize_owner(current.get('Verantwortlicher')) != owner:
                         raise RuntimeError('LIVE_LEAD_GATE_BLOCKED')
                     if current.get('E-Mail') != lead.get('E-Mail'):
                         raise RuntimeError('LIVE_RECIPIENT_CHANGED')
                     lead = dict(current, _row=current_row)
+                    # Vor APPEND/MOVE die stabile CRM-Bindung prüfen, nicht erst nach dem Archivieren.
+                    require_stable_crm_binding(svc,CANONICAL_SPREADSHEET_ID,lead['Lead-ID'])
                     key = '|'.join(str(rec[k]) for k in ('owner', 'uidvalidity', 'uid', 'sha256'))
                     _select(imap, rec['folder'], rec['uidvalidity'])
                     row = db.execute('SELECT mid,raw,state,old_raw FROM upgrades WHERE key=?', (key,)).fetchone()

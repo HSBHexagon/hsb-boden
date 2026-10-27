@@ -277,15 +277,45 @@ def dispatch_verified(count_per_owner=25, owners=('JOEL','JORDI'), dry_run=True,
         return {'status':'COMPLETED','sent_counts':sent_counts}
 
 
+def require_stable_crm_binding(svc, spreadsheet_id, lead_id):
+    """Vor Produktiv-Apply muss ein Sortier-Canary die stabilen Zeilenbindungen bestätigen."""
+    if os.environ.get('HSB_CRM_BINDINGS_VERIFIED') != 'yes':
+        raise RuntimeError('CRM_STABLE_BINDING_CANARY_REQUIRED')
+    found=svc.spreadsheets().developerMetadata().search(spreadsheetId=spreadsheet_id,
+        body={'dataFilters':[{'developerMetadataLookup':{'metadataKey':'hsb.lead_id',
+              'metadataValue':lead_id,'locationType':'ROW','visibility':'DOCUMENT'}}]}).execute()
+    entries=found.get('matchedDeveloperMetadata',[])
+    if len(entries)!=1:raise RuntimeError('CRM_STABLE_LEAD_BINDING_REQUIRED')
+    meta=entries[0]['developerMetadata']
+    sheets=svc.spreadsheets().get(spreadsheetId=spreadsheet_id,fields='sheets.properties').execute().get('sheets',[])
+    ids=[s['properties']['sheetId'] for s in sheets if s['properties']['title']=='ALL_LEADS']
+    if len(ids)!=1 or meta.get('location',{}).get('dimensionRange',{}).get('sheetId')!=ids[0]:
+        raise RuntimeError('CRM_BINDING_WRONG_SHEET')
+    return {'developerMetadataLookup':{'metadataId':meta['metadataId']}}
+
+
 def crm_write_lead_readback(svc, spreadsheet_id, lead_id, expected):
-    """Zeile unmittelbar vor Schreiben neu auflösen und Identität vor/nach Readback prüfen."""
-    rows=svc.spreadsheets().values().get(spreadsheetId=spreadsheet_id,range='ALL_LEADS!A1:BU6425').execute().get('values',[])
-    if not rows:raise RuntimeError('CRM_EMPTY')
-    matches=[i for i,row in enumerate(rows[1:],2) if row and row[0]==lead_id]
-    if len(matches)!=1:raise RuntimeError('LIVE_LEAD_NOT_UNIQUE')
-    row=matches[0];target=f'ALL_LEADS!A{row}:A{row}'
-    def identity():
-        return svc.spreadsheets().values().get(spreadsheetId=spreadsheet_id,range=target).execute().get('values',[])
-    if identity()!=[[lead_id]]:raise RuntimeError('CRM_IDENTITY_CHANGED_BEFORE_WRITE')
-    crm_write_readback(svc,spreadsheet_id,rows[0],row,expected)
-    if identity()!=[[lead_id]]:raise RuntimeError('CRM_IDENTITY_CHANGED_DURING_WRITE')
+    """Schreibt über eine geprüfte Zeilenbindung; niemals per zwischengespeicherter Zeilennummer."""
+    binding=require_stable_crm_binding(svc,spreadsheet_id,lead_id)
+    api=svc.spreadsheets().values()
+    headers=api.get(spreadsheetId=spreadsheet_id,range='ALL_LEADS!A1:BU1').execute()['values'][0]
+    def bound_row():
+        values=api.batchGetByDataFilter(spreadsheetId=spreadsheet_id,
+            body={'dataFilters':[binding],'majorDimension':'ROWS'}).execute().get('valueRanges',[])
+        if len(values)!=1:raise RuntimeError('CRM_BINDING_NOT_UNIQUE')
+        rows=values[0].get('valueRange',{}).get('values',[])
+        if len(rows)!=1 or not rows[0] or rows[0][0]!=lead_id:
+            raise RuntimeError('CRM_IDENTITY_BINDING_MISMATCH')
+        return rows[0]
+    bound_row()
+    matrix=[None]*len(headers)
+    for key,value in expected.items():matrix[headers.index(key)]=value
+    result=api.batchUpdateByDataFilter(spreadsheetId=spreadsheet_id,
+        body={'valueInputOption':'RAW','includeValuesInResponse':True,'data':[
+            {'dataFilter':binding,'majorDimension':'ROWS','values':[matrix]}]}).execute()
+    responses=result.get('responses',[])
+    if len(responses)!=1 or responses[0].get('updatedRows')!=1:
+        raise RuntimeError('CRM_STABLE_WRITE_NOT_UNIQUE')
+    actual=bound_row()
+    if any(headers.index(k)>=len(actual) or actual[headers.index(k)]!=v for k,v in expected.items()):
+        raise RuntimeError('CRM_READBACK_MISMATCH')

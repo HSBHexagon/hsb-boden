@@ -10,9 +10,10 @@ from test_outbound_safety_gate import _crm_lead
 
 
 def setup_case(tmp_path,monkeypatch):
+    monkeypatch.setenv('HSB_CRM_BINDINGS_VERIFIED','yes')
     lead=_crm_lead(**{'Lead-ID':'HSB-20261001-0001','Verantwortlicher':'Joel Cherino Diaz',
                      'Branche':'Getraenkeindustrie','Draft_ID':'<old@hsb-boden.com>',
-                     'Email_Template_ID':'v1','Drafted_At':'','_row':2})
+                     'Email_Template_ID':'v1','Drafted_At':'','Tier':'','_row':2})
     m=EmailMessage();m['From']='j-cherino@hsb-boden.com';m['To']=lead['E-Mail'];m['Subject']='Alt';m['Message-ID']='<old@hsb-boden.com>';m.set_content('Original')
     old=m.as_bytes()
     record={'owner':'JOEL','lead_id':lead['Lead-ID'],'folder':'Drafts','uid':'1','uidvalidity':'7','sha256':hashlib.sha256(old).hexdigest(),'issues':[]}
@@ -52,6 +53,8 @@ def setup_case(tmp_path,monkeypatch):
     writes=[]
     def write(svc,sheet,headers,row,values): writes.append(values);lead.update(values)
     monkeypatch.setattr('outbound_safety.crm_write_readback',write)
+    monkeypatch.setattr('outbound_safety.require_stable_crm_binding',lambda *a:{'developerMetadataLookup':{'metadataId':17}})
+    monkeypatch.setattr('outbound_safety.crm_write_lead_readback',lambda svc,sheet,lead_id,values:write(svc,sheet,headers,2,values))
     from contextlib import nullcontext
     monkeypatch.setattr('outbound_safety.mailbox_dispatch_lock',lambda c:nullcontext())
     kwargs=dict(lock_client=client,records=[record],leads=[lead],client=client,svc=svc,mx_check=lambda _:True,journal_path=tmp_path/'upgrade.db')
@@ -157,14 +160,50 @@ def test_done_records_are_filtered_before_limit(tmp_path,monkeypatch):
     assert result['selected']==1 and result['skipped_reasons']['ALREADY_DONE']==1
 
 
-def test_identity_change_blocks_crm_write(monkeypatch):
+def test_stable_binding_never_writes_wrong_lead(monkeypatch):
     from outbound_safety import crm_write_lead_readback
-    headers=['Lead-ID','Draft_ID']
+    binding={'developerMetadataLookup':{'metadataId':17}}
+    monkeypatch.setattr('outbound_safety.require_stable_crm_binding',lambda *a:binding)
     class Values:
-        def get(self,**kw):
-            rows=[headers,['L1','old']] if kw['range'].endswith('BU6425') else [['L2']]
-            return SimpleNamespace(execute=lambda:{'values':rows})
+        def get(self,**kw):return SimpleNamespace(execute=lambda:{'values':[['Lead-ID','Draft_ID']]})
+        def batchGetByDataFilter(self,**kw):return SimpleNamespace(execute=lambda:{'valueRanges':[{'valueRange':{'values':[['OTHER','old']]}}]})
+        def batchUpdateByDataFilter(self,**kw):pytest.fail('falsche Lead-Bindung darf nichts schreiben')
     svc=SimpleNamespace(spreadsheets=lambda:SimpleNamespace(values=lambda:Values()))
-    monkeypatch.setattr('outbound_safety.crm_write_readback',lambda *a:pytest.fail('keine falsche Zeile schreiben'))
-    with pytest.raises(RuntimeError,match='CRM_IDENTITY_CHANGED_BEFORE_WRITE'):
+    with pytest.raises(RuntimeError,match='CRM_IDENTITY_BINDING_MISMATCH'):
         crm_write_lead_readback(svc,'sheet','L1',{'Draft_ID':'new'})
+
+
+def test_stable_binding_uses_metadata_not_row_index(monkeypatch):
+    from outbound_safety import crm_write_lead_readback
+    binding={'developerMetadataLookup':{'metadataId':17}}; current=['L1','old']
+    monkeypatch.setattr('outbound_safety.require_stable_crm_binding',lambda *a:binding)
+    class Values:
+        def get(self,**kw):return SimpleNamespace(execute=lambda:{'values':[['Lead-ID','Draft_ID']]})
+        def batchGetByDataFilter(self,**kw):return SimpleNamespace(execute=lambda:{'valueRanges':[{'valueRange':{'range':'ALL_LEADS!A99:BU99','values':[list(current)]}}]})
+        def batchUpdateByDataFilter(self,**kw):
+            assert kw['body']['data'][0]['dataFilter']==binding
+            assert kw['body']['data'][0]['values']==[[None,'new']]
+            current[1]='new'
+            return SimpleNamespace(execute=lambda:{'responses':[{'updatedRows':1}]})
+    svc=SimpleNamespace(spreadsheets=lambda:SimpleNamespace(values=lambda:Values()))
+    crm_write_lead_readback(svc,'sheet','L1',{'Draft_ID':'new'})
+    assert current==['L1','new']
+
+
+def test_live_tier_z_blocks_before_mailbox_mutation(tmp_path,monkeypatch):
+    kwargs,boxes,calls,writes,old=setup_case(tmp_path,monkeypatch)
+    live=kwargs['leads'][0]
+    kwargs['leads']=[dict(live)]
+    live['Tier']='Z'
+    with pytest.raises(RuntimeError,match='LIVE_LEAD_GATE_BLOCKED'):
+        upgrade_drafts('JOEL',apply=True,**kwargs)
+    assert calls==writes==[]
+
+
+def test_unverified_crm_binding_blocks_before_any_mutation(tmp_path,monkeypatch):
+    kwargs,boxes,calls,writes,old=setup_case(tmp_path,monkeypatch)
+    monkeypatch.delenv('HSB_CRM_BINDINGS_VERIFIED')
+    with pytest.raises(RuntimeError,match='CANARY_REQUIRED'):
+        upgrade_drafts('JOEL',apply=True,**kwargs)
+    assert calls==writes==[]
+    assert not kwargs['journal_path'].exists()

@@ -160,3 +160,20 @@ def test_com_mailbox_send_message_with_bcc(monkeypatch):
     assert captured["to_addrs"] == ["cherinodiaz@outlook.com", "j-cherino@hsb-boden.de"]
     assert captured["smtp_msg"]["To"] == "cherinodiaz@outlook.com"
     assert "Bcc" not in captured["smtp_msg"]
+
+
+def test_inbound_read_failure_never_looks_like_empty_inbox():
+    import pytest
+    from contextlib import contextmanager
+    for failure in ('select','search','fetch'):
+        class IMAP:
+            def __enter__(self):return self
+            def __exit__(self,*a):pass
+            def select(self,*a,**k):return ('NO',[]) if failure=='select' else ('OK',[])
+            def uid(self,verb,*a):
+                if verb==failure:return 'NO',[]
+                if verb=='search':return 'OK',[b'1']
+                return 'OK',[(b'header',b'Subject: Test\r\n\r\ntext')]
+        c=object.__new__(ComMailboxClient);c.owner='JOEL';c.cfg={'inbox_folder':'INBOX'};c._get_imap=lambda:IMAP()
+        with pytest.raises(RuntimeError,match='INBOX_'):
+            c.fetch_inbound_messages(limit=0)

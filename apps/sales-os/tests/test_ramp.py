@@ -5,7 +5,7 @@ from send_governance import daily_budget, pause_reason, enforce_send_health
 
 
 def health():
-    return {'sample_sent':100,'hard_bounces':2,'policy_bounces':0,'deferrals_today':0,'spam_reports':0,'seed_dkim_pass':True,
+    return {'seen_inbound_ids':[],'sample_sent':100,'hard_bounces':2,'policy_bounces':0,'deferrals_today':0,'spam_reports':0,'seed_dkim_pass':True,
             'checked_at':datetime.now(timezone.utc).isoformat(),'first_send_date':date.today().isoformat()}
 
 
@@ -128,3 +128,13 @@ def test_new_policy_event_is_observed_before_next_mail(tmp_path):
     with pytest.raises(RuntimeError,match='DOMAIN_PAUSED:POLICY_BOUNCE'):
         enforce_domain_health(tmp_path,date.today(),shared,collector=collect)
     assert shared.event['state']=='paused'
+
+
+def test_delayed_bounce_with_old_date_is_not_ignored(tmp_path):
+    from types import SimpleNamespace
+    from send_governance import observed_health, pause_reason
+    (tmp_path/'send-health.json').write_text(json.dumps(health()))
+    bounce=SimpleNamespace(message_id='<late@server.invalid>',sender='mailer-daemon@firma.invalid',
+        date='Mon, 1 Jan 2024 10:00:00 +0000',subject='Undeliverable',body='Status: 5.7.1')
+    observed=observed_health(tmp_path,collector=lambda **k:[bounce])
+    assert pause_reason(observed)=='POLICY_BOUNCE'

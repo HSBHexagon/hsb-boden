@@ -234,40 +234,34 @@ def enforce_domain_health(state_dir, today, shared, collector=None):
 
 
 def observed_health(state_dir, collector=None):
-    """Vor jeder Mail neue Rückläufer seit dem zuletzt bestätigten Messstand einbeziehen."""
+    """Neue Eingangsnachrichten nach erfassten IDs erkennen; Date-Header ist kein Eingangsnachweis."""
     import json
     import re
     from pathlib import Path
-    from email.utils import parsedate_to_datetime
-    from datetime import timezone
     from inbound_classifier import classify_inbound_message
     from lead_quality import classify_dsn
     try:
         stats=json.loads((Path(state_dir)/'send-health.json').read_text())
-        since=datetime.datetime.fromisoformat(stats['checked_at'].replace('Z','+00:00'))
-        if since.tzinfo is None:raise ValueError('missing timezone')
+        baseline=stats['seen_inbound_ids']
+        if not isinstance(baseline,list) or any(not isinstance(x,str) for x in baseline):
+            raise ValueError('invalid cursor')
     except (OSError,ValueError,KeyError,TypeError):
-        raise RuntimeError('SEND_HEALTH_MISSING_OR_STALE') from None
+        raise RuntimeError('SEND_HEALTH_CURSOR_MISSING') from None
     if collector is None:
         from dual_domain_collector import collect_all_inbounds
         collector=collect_all_inbounds
-    seen=set()
+    seen=set(baseline)
+    # Der Collector muss SELECT, UID SEARCH und jeden UID FETCH erfolgreich belegen.
     for msg in collector(limit_per_mailbox=0,include_de=False):
+        if not msg.message_id:raise RuntimeError('HEALTH_INBOUND_ID_MISSING')
         if msg.message_id in seen:continue
         seen.add(msg.message_id)
-        try:
-            stamp=parsedate_to_datetime(msg.date)
-        except (ValueError,TypeError):
-            try:stamp=datetime.datetime.fromisoformat(str(msg.date).replace('Z','+00:00'))
-            except (ValueError,TypeError):stamp=None
-        if stamp and stamp.tzinfo is not None and stamp.astimezone(timezone.utc)<=since:
-            continue
         cls=classify_inbound_message(msg.sender,msg.subject,msg.body)
         if cls.category=='BOUNCE':
             kind=classify_dsn(msg.body)
             key={'hard':'hard_bounces','soft':'deferrals_today','policy':'policy_bounces'}.get(kind)
             if key:stats[key]=stats.get(key,0)+1
-            else:stats['policy_bounces']=stats.get('policy_bounces',0)+1  # unklare Ablehnung: halten
+            else:stats['policy_bounces']=stats.get('policy_bounces',0)+1
         if re.search(r'feedback[- ]type:\s*abuse|feedback report|spam complaint',msg.subject+'\n'+msg.body,re.I):
             stats['spam_reports']=stats.get('spam_reports',0)+1
     return stats

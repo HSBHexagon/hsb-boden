@@ -331,6 +331,33 @@ def cmd_bounce_report(args, collector=None):
         print(f"  {dom}: {n}")
 
 
+def cmd_seed_send(args, client=None):
+    import seed_test
+    if client is None:
+        client = ComMailboxClient(normalize_owner(args.owner))
+    token, results = seed_test.send_seed(client, args.seed_file or None, args.to or None)
+    print(f"Seed-Kennung: {token}")
+    for r in results:
+        print(f"  {r['address']}: {'gesendet' if r['ok'] else 'FEHLER'}")
+
+
+def cmd_seed_read(args):
+    import seed_test
+    if args.raw_file:
+        r = seed_test.parse_auth_results(Path(args.raw_file).read_bytes())
+        for k in ("spf", "dkim", "dmarc", "dkim_domain", "folder"):
+            print(f"{k}: {r[k] if r[k] is not None else 'unbekannt'}")
+        return
+    seed_test.print_checklist(seed_test.load_seed_inboxes(args.seed_file or None), args.token or "<Kennung aus seed-send>")
+
+
+def cmd_blocklist_check(args):
+    import seed_test
+    for name, status in seed_test.blocklist_status(args.ip).items():
+        print(f"{name}: {status}")
+    print(seed_test.SPAMHAUS_NOTE)
+
+
 def main():
     parser = argparse.ArgumentParser(description="HSB Sales OS - Unified Operator CLI")
     subparsers = parser.add_subparsers(dest="command", required=True)
@@ -388,6 +415,18 @@ def main():
     p_bounce.add_argument("--limit", type=int, default=0, help="Max. Nachrichten je Postfach (0 = alle)")
     p_bounce.add_argument("--com-only", action="store_true", help="Nur .com IMAP")
 
+    # seed-send / seed-read / blocklist-check
+    p_ss = subparsers.add_parser("seed-send", help="Neutrale Testmail an Seed-Postfaecher (nur Seed-Liste, internes Test-Flag noetig)")
+    p_ss.add_argument("--owner", choices=["JOEL", "JORDI"], default="JOEL")
+    p_ss.add_argument("--to", action="append", help="Nur diese Seed-Adresse (wiederholbar); Standard: alle")
+    p_ss.add_argument("--seed-file", help="Pfad zur Seed-Liste (Standard: config/seed_inboxes.json)")
+    p_sr = subparsers.add_parser("seed-read", help="Checkliste fuer manuelle Platzierungspruefung oder --raw-file auswerten")
+    p_sr.add_argument("--raw-file", help="Gespeicherte Rohnachricht (.eml, 'Original anzeigen')")
+    p_sr.add_argument("--token", help="Seed-Kennung aus seed-send")
+    p_sr.add_argument("--seed-file", help="Pfad zur Seed-Liste")
+    p_bl = subparsers.add_parser("blocklist-check", help="DNSBL-Status einer IPv4 (Spamhaus nur manuell)")
+    p_bl.add_argument("ip", help="IPv4-Adresse")
+
     # test-mail
     p_test = subparsers.add_parser("test-mail", help="Einzelne Test-E-Mail senden")
     p_test.add_argument("--owner", choices=["JOEL", "JORDI"], default="JOEL")
@@ -414,6 +453,12 @@ def main():
         cmd_test_mail(args)
     elif args.command == "bounce-report":
         cmd_bounce_report(args)
+    elif args.command == "seed-send":
+        cmd_seed_send(args)
+    elif args.command == "seed-read":
+        cmd_seed_read(args)
+    elif args.command == "blocklist-check":
+        cmd_blocklist_check(args)
     elif args.command == "optouts":
         cmd_optouts(args)
     elif args.command == "optout":

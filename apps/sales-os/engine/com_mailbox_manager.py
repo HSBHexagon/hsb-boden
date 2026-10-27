@@ -249,7 +249,8 @@ class ComMailboxClient:
         flyer_filename: Optional[str] = "HSB-HEXAGON-Industrieboeden-Flyer.pdf",
         custom_message_id: Optional[str] = None,
         bcc_email: Optional[str] = None,
-        body_plain: Optional[str] = None
+        body_plain: Optional[str] = None,
+        extra_allowed_recipients: Optional[set] = None
     ) -> Tuple[bool, str]:
         """
         Versendet eine E-Mail ueber SMTP-SSL und legt eine Kopie im Ordner Gesendet ab.
@@ -260,7 +261,7 @@ class ComMailboxClient:
             raise ValueError(f"Ungueltige Empfaengeradresse: {to_email}")
 
         from outbound_safety import require_internal_test
-        require_internal_test(to_email, bcc_email)
+        require_internal_test(to_email, bcc_email, extra_allowed_recipients)
 
         # Vollstaendiges HTML-Dokument sicherstellen (verhindert HTML_MIME_NO_HTML_TAG)
         html_content = body_html.strip()

@@ -28,10 +28,11 @@ LOCK_FOLDER = 'HSB-SALES-OS-DISPATCH-LOCK'
 INTERNAL_RECIPIENTS = {'cherinodiaz@outlook.com', 'j-cherino@hsb-boden.com', 'j-post@hsb-boden.com', 'j-cherino@hsb-boden.de', 'j-post@hsb-boden.de'}
 
 
-def require_internal_test(to_email, bcc_email=None):
+def require_internal_test(to_email, bcc_email=None, extra_allowed=None):
     from email.utils import getaddresses
     recipients = [a.lower() for _, a in getaddresses([to_email, bcc_email or '']) if a]
-    if not recipients or any(a not in INTERNAL_RECIPIENTS for a in recipients):
+    allowed = INTERNAL_RECIPIENTS | {a.lower() for a in (extra_allowed or ())}
+    if not recipients or any(a not in allowed for a in recipients):
         raise PermissionError('Customer SMTP requires the verified dispatch queue')
     if os.environ.get('HSB_INTERNAL_TEST_SEND_ENABLED') != 'yes':
         raise PermissionError('Internal test sending is disabled')

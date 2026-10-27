@@ -312,6 +312,13 @@ def cmd_sync(args):
     print(json.dumps(result,ensure_ascii=False,indent=2))
 
 
+def cmd_click_sync(args, kv_client=None, svc=None):
+    """Klick-Ereignisse aus Cloudflare KV in den CRM-Tab CLICK_EVENTS übernehmen (Dry-Run: nur Zählungen)."""
+    import click_sync
+    result = click_sync.sync_clicks(args.apply, kv_client=kv_client, sheets_svc=svc)
+    print(json.dumps(result, ensure_ascii=False, indent=2))
+
+
 def cmd_bounce_report(args, collector=None):
     """Zählt Bounces je DSN-Klasse und Domain (nur Zählungen, keine Adressen)."""
     from lead_quality import summarize_bounces
@@ -494,6 +501,10 @@ def main():
     p_sync.add_argument("--com-only", action="store_true", help="Nur .com IMAP; .de bleibt separat zu verifizieren")
     p_sync.add_argument("--apply", action="store_true", help="Erkannte Status-Änderungen live ins Google Sheet schreiben")
 
+    # click-sync
+    p_click = subparsers.add_parser("click-sync", help="Klick-Zähler aus Cloudflare KV in CRM-Tab CLICK_EVENTS übernehmen")
+    p_click.add_argument("--apply", action="store_true", help="Neue Klicks live ins Google Sheet schreiben (Standard: nur zählen)")
+
     # bounce-report
     p_bounce = subparsers.add_parser("bounce-report", help="Bounce-Zählung je DSN-Klasse und Domain (nur Zählungen)")
     p_bounce.add_argument("--limit", type=int, default=0, help="Max. Nachrichten je Postfach (0 = alle)")
@@ -541,6 +552,8 @@ def main():
         cmd_sync(args)
     elif args.command == "test-mail":
         cmd_test_mail(args)
+    elif args.command == "click-sync":
+        cmd_click_sync(args)
     elif args.command == "bounce-report":
         cmd_bounce_report(args)
     elif args.command == "seed-send":

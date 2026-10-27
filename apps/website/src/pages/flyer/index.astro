@@ -1,0 +1,94 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import CTASection from "../../components/sections/CTASection.astro";
+---
+
+<BaseLayout
+  title="Projektflyer Industrieböden & Sanierung | HSB Hexagon Säurebau"
+  description="Kompakte Übersicht für säurebeständige, hygienische Industrieböden, Rinnensysteme und Sanierung im laufenden Betrieb."
+  path="/flyer/"
+  robots="noindex, follow"
+>
+  <main id="main-content">
+    <section class="section border-b border-hsb-line bg-hsb-mist">
+      <div class="container max-w-4xl">
+        <p class="eyebrow">HSB Hexagon Säurebau &middot; Übersicht</p>
+        <h1 class="h1 mt-4">Industrieböden für gewerbliche Produktionsbetriebe</h1>
+        <p class="lead mt-6">
+          Wir planen, bauen und sanieren säurebeständige, hochbelastbare Industrieböden –
+          ausgelegt auf das reale Belastungsprofil Ihrer Produktionsprozesse statt auf ein Standardprodukt.
+        </p>
+
+        <div class="mt-8 rounded-lg border border-hsb-line bg-white p-6 shadow-sm sm:p-8">
+          <div class="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <span class="inline-block rounded bg-red-50 px-2.5 py-1 text-xs font-semibold text-hsb-red">
+                PDF-Dokument
+              </span>
+              <h2 class="h3 mt-2">HSB-Flyer</h2>
+              <p class="mt-2 text-sm text-hsb-steel">
+                Leistungen, Schichtenaufbauten nach AGI S 40 und der Ablauf einer Sanierung im Überblick.
+              </p>
+            </div>
+            <div class="flex-shrink-0">
+              <a
+                id="flyer-download-btn"
+                href="/HSB-Flyer-Geschaeftsfuehrer.pdf"
+                download="HSB-Flyer.pdf"
+                class="button-primary inline-flex items-center gap-2 px-6 py-3 text-base font-bold shadow-md hover:shadow-lg"
+              >
+                <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+                </svg>
+                Flyer herunterladen
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section border-b border-hsb-line bg-white">
+      <div class="container max-w-4xl">
+        <p class="eyebrow">Schadensbilder &amp; Belastung</p>
+        <h2 class="h2 mt-4">Typische Schwachstellen bei Produktionsböden</h2>
+        <p class="lead mt-4 text-hsb-steel">
+          Mechanische Schläge, thermische Wechselbeanspruchung und aggressive Reinigungsmedien (CIP) fordern Boden und Entwässerung täglich heraus.
+        </p>
+
+        <div class="mt-8 grid gap-6 sm:grid-cols-2">
+          <div class="rounded border border-hsb-line bg-hsb-mist p-5">
+            <h3 class="text-base font-bold text-hsb-black">&bull; Risse, Ablösungen und offene Fugen</h3>
+            <p class="mt-2 text-sm text-hsb-steel">Eindringende Säuren und Fette zerstören den Unterbeton und führen zu statischen Folgeschäden.</p>
+          </div>
+          <div class="rounded border border-hsb-line bg-hsb-mist p-5">
+            <h3 class="text-base font-bold text-hsb-black">&bull; Keimnester in Nassbereichen</h3>
+            <p class="mt-2 text-sm text-hsb-steel">Hygienische Mängel gefährden Audits und die mikrobiologische Sicherheit.</p>
+          </div>
+          <div class="rounded border border-hsb-line bg-hsb-mist p-5">
+            <h3 class="text-base font-bold text-hsb-black">&bull; Stehendes Wasser durch falsches Gefälle</h3>
+            <p class="mt-2 text-sm text-hsb-steel">Rutschgefahren für Mitarbeiter und beschleunigter Verschleiß durch stehende Laugen.</p>
+          </div>
+          <div class="rounded border border-hsb-line bg-hsb-mist p-5">
+            <h3 class="text-base font-bold text-hsb-black">&bull; Defekte Rinnen und Abläufe</h3>
+            <p class="mt-2 text-sm text-hsb-steel">Undichte Übergänge zwischen Rinnenflansch und Bodenbelag sind eine häufige Schadensursache.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <CTASection />
+  </main>
+
+  <script is:inline>
+    document.addEventListener("DOMContentLoaded", function () {
+      var dlBtn = document.getElementById("flyer-download-btn");
+      if (!dlBtn) return;
+      dlBtn.addEventListener("click", function () {
+        if (typeof window.gtag === "function") {
+          window.gtag("event", "flyer_download", { file_name: "HSB-Flyer-Geschaeftsfuehrer.pdf" });
+        }
+      });
+    });
+  </script>
+</BaseLayout>

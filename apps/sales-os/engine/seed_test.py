@@ -32,7 +32,12 @@ def load_seed_inboxes(path=None):
     if not p.exists():
         raise FileNotFoundError(f"Seed-Liste fehlt: {p} (Vorlage: seed_inboxes.example.json)")
     data = json.loads(p.read_text(encoding="utf-8"))
-    return [d for d in data if d.get("address")]
+    seeds = [d for d in data if d.get("address")]
+    for d in seeds:
+        dom = d["address"].lower().rsplit("@", 1)[-1]
+        if dom == "example.com" or dom.endswith(".example"):
+            raise ValueError(f"Platzhalter-Adresse in Seed-Liste: {d['address']}")
+    return seeds
 
 
 def _result(msg, key):
@@ -70,8 +75,12 @@ def blocklist_status(ip: str, resolver=None) -> dict:
     res = {}
     for name, zone in BLOCKLIST_ZONES.items():
         try:
-            if _lookup_zone("127.0.0.2", zone, resolver) is None:
+            test = _lookup_zone("127.0.0.2", zone, resolver)
+            if test is None or ipaddress.IPv4Address(test) in _REFUSAL_NET:
                 res[name] = "check_failed"
+                continue
+            if _lookup_zone("127.0.0.1", zone, resolver) is not None:
+                res[name] = "check_failed"  # Wildcard-Zone
                 continue
             ans = _lookup_zone(ip, zone, resolver)
         except OSError:
@@ -95,6 +104,8 @@ def send_seed(client, seed_path, only_addresses):
     seeds = load_seed_inboxes(seed_path)
     allowed = {s["address"].lower() for s in seeds}
     targets = [a.lower() for a in only_addresses] if only_addresses else sorted(allowed)
+    if not targets:
+        raise ValueError("Keine Seed-Empfaenger ausgewaehlt")
     outside = [a for a in targets if a not in allowed]
     if outside:
         raise PermissionError("Empfaenger nicht in der Seed-Liste: " + ", ".join(outside))

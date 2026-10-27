@@ -131,3 +131,17 @@ def test_cmd_bounce_report_uses_injected_collector(capsys):
     out = capsys.readouterr().out
     assert "policy" in out and "firma-a.de" in out
     assert "a@firma-a.de" not in out
+
+
+def test_dns_failure_is_not_a_deliverability_pass(monkeypatch):
+    from enrich_company_names import check_domain_mx
+    def unavailable(*a,**k): raise TimeoutError('dns unavailable')
+    monkeypatch.setattr('enrich_company_names.subprocess.run',unavailable)
+    assert check_domain_mx('firma.invalid') is False
+
+
+def test_null_mx_rejects_email(monkeypatch):
+    from types import SimpleNamespace
+    from enrich_company_names import check_domain_mx
+    monkeypatch.setattr('enrich_company_names.subprocess.run',lambda *a,**k:SimpleNamespace(stdout='firma.invalid mail is handled by 0 .\n'))
+    assert check_domain_mx('firma.invalid') is False

@@ -44,6 +44,8 @@ class SendJournal:
         self.db = sqlite3.connect(p, isolation_level=None, timeout=10)
         p.chmod(0o600)
         self.db.execute('PRAGMA synchronous=FULL')
+        from sequence import SEQUENCE_SCHEMA
+        self.db.execute(SEQUENCE_SCHEMA)
         self.db.execute('CREATE TABLE IF NOT EXISTS attempts(email TEXT PRIMARY KEY, lead_id TEXT UNIQUE, owner TEXT, message_id TEXT UNIQUE, day TEXT, state TEXT, updated_at TEXT)')
 
     def reserve(self, owner, lead_id, email, message_id, cap):
@@ -144,7 +146,20 @@ def complete_delivery(client, journal, svc, spreadsheet_id, headers, row, item, 
     sent_copy_readback(client,mid,raw,em)
     journal.transition(em,'SENT_COPY_VERIFIED')
     crm_write_readback(svc,spreadsheet_id,headers,row,{'Send_Status':'sent','Send_Datum':now,'Batch_Status':'SENT_COM_VERIFIED','Internet_Message_ID':mid})
-    journal.transition(em,'VERIFIED')
+    msg=BytesParser(policy=policy.default).parsebytes(raw)
+    if str(msg.get('X-HSB-Template-ID') or '').endswith('-s1'):
+        # Sequenzbeleg und finaler Versandzustand teilen sich dieselbe SQLite-Transaktion.
+        journal.db.execute('BEGIN IMMEDIATE')
+        try:
+            journal.db.execute('INSERT INTO sequence VALUES(?,?,?,?,?,?)',
+                (item['lead_id'],1,item['owner'],mid,now,'VERIFIED'))
+            journal.transition(em,'VERIFIED')
+            journal.db.execute('COMMIT')
+        except Exception:
+            journal.db.execute('ROLLBACK')
+            raise
+    else:
+        journal.transition(em,'VERIFIED')
 
 
 def count_owner_attempts_today(leads, owner, today):
@@ -223,13 +238,19 @@ def dispatch_verified(count_per_owner=25, owners=('JOEL','JORDI'), dry_run=True,
                 rows=svc.spreadsheets().values().get(spreadsheetId=SPREADSHEET_ID,range='ALL_LEADS!A1:BU6425').execute()['values']
                 headers=rows[0]; matches=[(i,dict(zip(headers,r))) for i,r in enumerate(rows[1:],2) if r and r[0]==item['lead_id']]
                 if len(matches)!=1: raise RuntimeError('LEAD_CHANGED_OR_AMBIGUOUS')
-                row,lead=matches[0]; verdict=check_eligibility(lead)
+                row,lead=matches[0]
+                from send_governance import enforce_domain_health, MailboxHealthStore
+                from lead_quality import deliverability_flags
+                # Domainweite Gesundheit und Hygiene unmittelbar vor jeder Reservierung.
+                effective_cap=min(cap,enforce_domain_health(state, datetime.now(ZoneInfo('Europe/Berlin')).date(), MailboxHealthStore(clients['JOEL'])))
+                lead['Deliverability_Flags']=deliverability_flags(lead,{},set())
+                verdict=check_eligibility(lead)
                 if not verdict.eligible: raise RuntimeError('LIVE_GATE_BLOCKED:'+','.join(verdict.reasons))
                 if normalize_owner(lead['Verantwortlicher'])!=item['owner'] or lead['E-Mail'].strip().lower()!=item['email']:
                     raise RuntimeError('LIVE_IDENTITY_CHANGED')
                 today=datetime.now(ZoneInfo('Europe/Berlin')).date()
                 used_today=count_owner_attempts_today([dict(zip(headers,r)) for r in rows[1:]],item['owner'],today)
-                if used_today>=cap: raise RuntimeError('DAILY_CAP_REACHED_CRM')
+                if used_today>=effective_cap: raise RuntimeError('DAILY_CAP_REACHED_CRM')
                 d=next(d for d in drafts if d['lead_id']==item['lead_id'] and d['sendable'])
                 client=clients[item['owner']]
                 with client._get_imap() as imap:
@@ -249,7 +270,7 @@ def dispatch_verified(count_per_owner=25, owners=('JOEL','JORDI'), dry_run=True,
                 add_list_unsubscribe(msg,item['owner'],item['lead_id'])
                 # Lange ASCII-Header (List-Unsubscribe) nicht in RFC-2047-Wörter zerlegen, sonst erkennt kein Mailprogramm den Link.
                 raw=msg.as_bytes(policy=SMTP_POLICY); mid=str(msg['Message-ID']); em=item['email']
-                complete_delivery(client,journal,svc,SPREADSHEET_ID,headers,row,item,raw,mid,cap)
+                complete_delivery(client,journal,svc,SPREADSHEET_ID,headers,row,item,raw,mid,effective_cap)
                 sent_counts[item['owner']]+=1
                 if item is not selected[-1]: time.sleep(random.uniform(jitter_min,jitter_max))
         finally: journal.close()

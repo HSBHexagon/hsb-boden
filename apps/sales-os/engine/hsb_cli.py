@@ -449,6 +449,47 @@ def cmd_score_leads(args, svc=None, cache_dir=None, out_path=None, sleep=time.sl
     print(f"Geschrieben: {len(writes)} Zeilen (nur leere Zellen).")
 
 
+def cmd_sequence_preview(args):
+    from datetime import date
+    import sqlite3
+    from sequence import next_step_due
+    journal_path = Path(args.journal)
+    if not journal_path.exists():
+        print(json.dumps({'due': 0, 'customer_emails_sent': 0, 'reason': 'NO_VERIFIED_V2_HISTORY'}))
+        return
+    # Read-only URI verhindert nebenbei eine neue Datenbank anzulegen.
+    db=sqlite3.connect(journal_path.resolve().as_uri()+'?mode=ro',uri=True)
+    db.row_factory=sqlite3.Row
+    try:
+        history=[dict(r) for r in db.execute('SELECT * FROM sequence')]
+    finally:
+        db.close()
+    _,leads=_load_all_leads(get_sheets_service())
+    counts={2:0,3:0}
+    for lead in leads:
+        step=next_step_due(lead,history,date.today())
+        if step:counts[step]+=1
+    print(json.dumps({'due_by_step':counts,'customer_emails_sent':0}))
+
+
+def cmd_upgrade_drafts(args):
+    """Verwendet einen vorhandenen Audit-Snapshot; Apply liest das CRM zusätzlich live zurück."""
+    from draft_upgrade import upgrade_drafts
+    from com_mailbox_manager import ComMailboxClient
+    audit = Path(args.audit_dir)
+    # Ein vorhandener Snapshot ist lesbar, aber ohne frischen Stand kein Apply.
+    if args.apply and time.time()-(audit/'drafts.json').stat().st_mtime > 86400:
+        raise RuntimeError('AUDIT_SNAPSHOT_STALE')
+    records = json.loads((audit/'drafts.json').read_text())
+    original = json.loads((audit/'crm-original.json').read_text())['valueRanges'][0]['values']
+    leads = [dict(zip(original[0],r), _row=i) for i,r in enumerate(original[1:],2)]
+    result = upgrade_drafts(args.owner,args.limit,args.cohort,args.apply,
+        journal_path=Path(args.journal),records=records,leads=leads,
+        client=ComMailboxClient(args.owner) if args.apply else None,
+        svc=get_sheets_service() if args.apply else None)
+    print(json.dumps(result,ensure_ascii=False,default=dict))
+
+
 def main():
     parser = argparse.ArgumentParser(description="HSB Sales OS - Unified Operator CLI")
     subparsers = parser.add_subparsers(dest="command", required=True)
@@ -535,9 +576,22 @@ def main():
     p_test.add_argument("--bcc-de", action="store_true", help="Blindkopie (BCC) an .de Firmenkonto senden")
     p_test.add_argument("--with-attachment", action="store_true", help="Optional den 241 KB Flyer als Datei anhängen (Standard: Aus, da Online-Link aktiv)")
 
+    p_sequence = subparsers.add_parser("sequence-preview", help="Fällige v2-Nachfasskontakte zählen (kein Versand)")
+    p_sequence.add_argument("--journal", default=str(Path.home()/".local/state/hsb-sales-os/outbound.sqlite3"))
+    p_upgrade = subparsers.add_parser("upgrade-drafts", help="Entwürfe anhand eines Audits erneuern; Standard Dry-Run")
+    p_upgrade.add_argument("--owner", choices=["JOEL","JORDI"], required=True)
+    p_upgrade.add_argument("--limit", type=int, default=5)
+    p_upgrade.add_argument("--cohort", choices=["pilot","all"], default="pilot")
+    p_upgrade.add_argument("--audit-dir", required=True)
+    p_upgrade.add_argument("--journal", default=str(Path.home()/".local/state/hsb-sales-os/upgrade.sqlite3"))
+    p_upgrade.add_argument("--apply", action="store_true")
     args = parser.parse_args()
 
-    if args.command == "status":
+    if args.command == "sequence-preview":
+        cmd_sequence_preview(args)
+    elif args.command == "upgrade-drafts":
+        cmd_upgrade_drafts(args)
+    elif args.command == "status":
         cmd_status(args)
     elif args.command == "purge-de":
         cmd_purge_de(args)

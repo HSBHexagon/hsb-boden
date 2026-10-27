@@ -86,3 +86,147 @@ class SendGovernanceQueue:
             "day_sequence_number": current_count + 1,
             "remaining_today": remaining - 1,
         }
+
+
+def daily_budget(first_send_date, today):
+    """Kalenderwochen seit dem belegten Pilotstart, je Postfach; Alter der Domain zählt nicht."""
+    from sequence import as_date
+    age = (as_date(today) - as_date(first_send_date)).days
+    if age < 0:
+        raise ValueError('RAMP_START_IN_FUTURE')
+    return min(DAILY_CAP_PER_MAILBOX, 10 if age < 7 else 20 if age < 14 else 30)
+
+
+def pause_reason(stats):
+    """Statistiken müssen verifiziert sein. Fehlende Beobachtungen bedeuten keine Gesundheit."""
+    required = ('sample_sent', 'hard_bounces', 'policy_bounces', 'deferrals_today', 'spam_reports', 'seed_dkim_pass')
+    if not isinstance(stats, dict) or any(k not in stats for k in required):
+        return 'HEALTH_EVIDENCE_MISSING'
+    counts = [stats[k] for k in required[:-1]]
+    if any(type(x) is not int or x < 0 for x in counts):
+        return 'HEALTH_EVIDENCE_INVALID'
+    sent, hard, policy, deferrals, spam = counts
+    if sent > 100 or hard > sent:
+        return 'HEALTH_EVIDENCE_INVALID'
+    if stats['seed_dkim_pass'] is not True:
+        return 'SEED_DKIM_NOT_PASS'
+    if spam:
+        return 'SPAM_REPORT'
+    if policy:
+        return 'POLICY_BOUNCE'
+    if deferrals >= 3:
+        return 'DEFERRALS'
+    if (sent >= 100 and hard / sent > .02) or (sent < 100 and hard >= 3):
+        return 'HARD_BOUNCES'
+    return None
+
+
+def enforce_send_health(state_dir, today=None):
+    """Frischer, atomarer Read je Mail; Pause bleibt bis zum problemspezifischen ACK bestehen."""
+    import hashlib
+    import json
+    import os
+    from pathlib import Path
+    from datetime import timezone
+    now = datetime.datetime.now(timezone.utc)
+    path = Path(state_dir) / 'send-health.json'
+    try:
+        raw = path.read_bytes()
+        health = json.loads(raw)
+        stamp = datetime.datetime.fromisoformat(health['checked_at'].replace('Z', '+00:00'))
+        age = (now - stamp).total_seconds()
+        if age < 0 or age > 86400:
+            raise ValueError('stale')
+        budget = daily_budget(health['first_send_date'], today or now.date())
+    except (OSError, KeyError, TypeError, ValueError):
+        raise RuntimeError('SEND_HEALTH_MISSING_OR_STALE') from None
+    reason = pause_reason(health)
+    pause_path = Path(state_dir) / 'send-pause.json'
+    if reason:
+        key = hashlib.sha256(raw).hexdigest()[:20]
+        pause_path.write_text(json.dumps({'reason': reason, 'ack_id': key}))
+        pause_path.chmod(0o600)
+        raise RuntimeError('DOMAIN_PAUSED:' + reason)
+    if pause_path.exists():
+        pause = json.loads(pause_path.read_text())
+        if os.environ.get('HSB_SEND_PAUSE_ACK') != pause.get('ack_id'):
+            raise RuntimeError('DOMAIN_PAUSED_ACK_REQUIRED')
+    return budget
+
+
+class MailboxHealthStore:
+    """Append-only Pausenverlauf im gemeinsamen JOEL-Postfach. Keine Kundenmails."""
+    folder = 'HSB-SALES-OS-HEALTH'
+
+    def __init__(self, client):
+        self.client = client
+
+    def read(self):
+        import json
+        from email import policy
+        from email.parser import BytesParser
+        with self.client._get_imap() as imap:
+            typ, _ = imap.select(self.folder, readonly=True)
+            if typ != 'OK':
+                # NO kann auch einen Netzwerk-/Rechtefehler bedeuten: Existenz gesondert prüfen.
+                typ, boxes = imap.list('', self.folder)
+                if typ != 'OK': raise RuntimeError('DOMAIN_HEALTH_UNAVAILABLE')
+                if boxes and any(b for b in boxes): raise RuntimeError('DOMAIN_HEALTH_UNREADABLE')
+                return None
+            typ, data = imap.uid('search',None,'ALL')
+            if typ != 'OK': raise RuntimeError('DOMAIN_HEALTH_UNAVAILABLE')
+            uids=data[0].split() if data and data[0] else []
+            if not uids: raise RuntimeError('DOMAIN_HEALTH_EMPTY_UNVERIFIED')
+            typ, data = imap.uid('fetch',uids[-1],'(BODY.PEEK[])')
+            parts=[x[1] for x in data or [] if isinstance(x,tuple)] if typ=='OK' else []
+            if len(parts)!=1: raise RuntimeError('DOMAIN_HEALTH_READBACK_FAILED')
+            msg=BytesParser(policy=policy.default).parsebytes(parts[0])
+            event=json.loads(msg.get_content())
+            if event.get('state') not in ('paused','ack') or not event.get('ack_id'):
+                raise RuntimeError('DOMAIN_HEALTH_INVALID')
+            return event
+
+    def append(self, event):
+        import imaplib
+        import json
+        import time
+        from email import policy
+        from email.message import EmailMessage
+        msg=EmailMessage()
+        msg['Subject']='HSB technische Versandpause'
+        msg['Message-ID']=__import__('email.utils',fromlist=['make_msgid']).make_msgid(domain='hsb-boden.com')
+        msg.set_content(json.dumps(event))
+        raw=msg.as_bytes(policy=policy.SMTP)
+        with self.client._get_imap() as imap:
+            typ, _ = imap.select(self.folder,readonly=True)
+            if typ!='OK':
+                typ,_=imap.create(self.folder)
+                if typ!='OK':raise RuntimeError('DOMAIN_HEALTH_CREATE_FAILED')
+            typ,_=imap.append(self.folder,r'(\Seen)',imaplib.Time2Internaldate(time.time()),raw)
+            if typ!='OK':raise RuntimeError('DOMAIN_HEALTH_APPEND_FAILED')
+        if self.read()!=event:raise RuntimeError('DOMAIN_HEALTH_READBACK_MISMATCH')
+
+
+def enforce_domain_health(state_dir, today, shared):
+    """Vom globalen IMAP-Lock umschlossen; jede Maschine sieht dieselbe Pause."""
+    import json
+    import os
+    from pathlib import Path
+    remote=shared.read()
+    if remote and remote['state']=='paused' and os.environ.get('HSB_SEND_PAUSE_ACK')!=remote['ack_id']:
+        raise RuntimeError('DOMAIN_PAUSED_SERVER_ACK_REQUIRED')
+    try:
+        budget=enforce_send_health(state_dir,today)
+    except RuntimeError:
+        path=Path(state_dir)/'send-pause.json'
+        if path.exists():
+            pause=json.loads(path.read_text())
+        else:
+            # Auch fehlende Messungen dürfen nicht auf einem anderen Gerät zum PASS werden.
+            import uuid
+            pause={'reason':'SEND_HEALTH_UNVERIFIED','ack_id':uuid.uuid4().hex}
+        shared.append(dict(pause,state='paused'))
+        raise
+    if remote and remote['state']=='paused':
+        shared.append(dict(remote,state='ack'))
+    return budget

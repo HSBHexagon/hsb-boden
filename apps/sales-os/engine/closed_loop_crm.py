@@ -58,6 +58,7 @@ def sync_inbounds(apply=False, include_de=True):
     import re
     from dual_domain_collector import collect_all_inbounds
     from inbound_classifier import classify_inbound_message
+    from sequence import reply_actions
     from hsb_core import FREEMAIL_DOMAINS
     from outbound_safety import crm_write_readback, UNSUBSCRIBE_TOKEN_RE
     from sales_reconciliation import addresses
@@ -120,7 +121,10 @@ def sync_inbounds(apply=False, include_de=True):
                     'Suppression_Reason':'INBOUND_'+cls.category})
                 if cls.category=='OPTOUT':change['Opt-out-Status']='yes'
                 if cls.category=='BOUNCE':change['Bounce_Status']='hard_bounce' if re.search(r'\b5\.\d\.\d|\b55\d\b|user unknown',msg.body,re.I) else 'bounce_review'
-            if cls.recontact_date:change['Follow-up-Datum']=cls.recontact_date
+            if str(lead.get('Reply_Status') or '').lower() not in {'opt_out','bounced'}:
+                actions=reply_actions(cls.category, msg.body, return_date=cls.recontact_date)
+                # Bestehende Sheets können noch das alte Schema haben.
+                change.update({k:v for k,v in actions.items() if k in headers})
             if apply:
                 crm_write_readback(svc,SPREADSHEET_ID,headers,row,change)
             pending.append([event_id, msg.date or datetime.now(timezone.utc).isoformat(),

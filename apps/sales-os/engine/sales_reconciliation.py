@@ -108,7 +108,14 @@ def assess_message(raw, owner, leads):
 
             def _v2_link_ok(u):
                 parts = urlsplit(u)
-                if any(t in unquote(u).casefold() for t in forbidden):
+                decoded = unquote(u).casefold()
+                # Statische Host- und Kampagnennamen sind keine Empfängerdaten.
+                # Personenbezogene Query-Werte prüfen, nicht 'Boden' im eigenen Hostnamen.
+                query_values = [v.casefold() for key, vals in parse_qs(parts.query).items()
+                                if key not in {'utm_source','utm_medium','utm_campaign','utm_content','s'} for v in vals]
+                if '@' in decoded or any(t in val for t in forbidden[1:] for val in query_values):
+                    return False
+                if any(key not in {'utm_source','utm_medium','utm_campaign','utm_content','s'} for key in parse_qs(parts.query)):
                     return False
                 return parts.netloc.lower() == 'www.hsb-boden.de' and (
                     parts.path.rstrip('/') == '/flyer' or re.fullmatch(r'/r/[A-Za-z0-9_\-.~]+', parts.path))
@@ -136,7 +143,7 @@ def assess_message(raw, owner, leads):
     return {'owner': owner, 'recipients': recipients, 'lead_id': lead_id,
             'crm_unique': len(matching) == 1, 'message_id': mid, 'subject': subject,
             'issues': sorted(set(issues)), 'warnings': sorted(set(warnings)),
-            'flyer_links': flyer_links, 'optout_links': optout_links,
+            'links': links, 'flyer_links': flyer_links, 'optout_links': optout_links,
             'pdf_count': sum(p.get_content_type() == 'application/pdf' for p in msg.walk()),
             'eligibility_reasons': check_eligibility(lead).reasons,
             'sha256': hashlib.sha256(raw).hexdigest()}
@@ -214,6 +221,30 @@ def probe_url(url):
                           request_route='MONITORED_COM_MAILTO' if mailto else 'MISSING',
                           crm_update_on_page_load=False)
         return result
+
+
+def link_health(urls, cache=None, probe=None):
+    """Jeden eindeutigen eigenen Link einmal ohne Query prüfen; fremde Ziele geschlossen halten."""
+    cache = {} if cache is None else cache
+    probe = probe or probe_url
+    issues = []
+    for url in urls:
+        try:
+            parsed = urlsplit(url)
+            base = f'{parsed.scheme}://{parsed.netloc}{parsed.path}'
+            if base not in cache:
+                if parsed.scheme != 'https' or parsed.netloc.lower() not in {'www.hsb-boden.de', 'hsb-boden.de'}:
+                    cache[base] = False
+                else:
+                    try:
+                        cache[base] = bool(probe(base).get('valid'))
+                    except Exception:
+                        cache[base] = False
+            if not cache[base]:
+                issues.append(f'LINK_BROKEN:{parsed.netloc}{parsed.path}')
+        except ValueError:
+            issues.append('LINK_BROKEN:INVALID_URL')
+    return sorted(set(issues))
 
 
 def write_crm_audit(output):
@@ -297,6 +328,9 @@ def run_audit(output, reuse_snapshot=False):
             record['internal_test']=bool(record['recipients']) and all(a in INTERNAL_RECIPIENTS for a in record['recipients'])
             draft_records.append(dict(item, **record))
     contacted.update(str(l.get('E-Mail') or '').strip().lower() for l in leads if str(l.get('Send_Status') or '').lower() in {'sent', 'gesendet'} or l.get('Send_Datum'))
+    link_cache = {}
+    for draft in draft_records:
+        draft['issues'].extend(link_health(draft.get('links', draft.get('flyer_links', [])), link_cache))
     counts = Counter(a for d in draft_records if not d['internal_test'] for a in d['recipients'])
     mids = Counter(d['message_id'] for d in draft_records if d['message_id'])
     bylead = defaultdict(list)

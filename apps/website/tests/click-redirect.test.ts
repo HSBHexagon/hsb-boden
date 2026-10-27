@@ -5,7 +5,6 @@ import { onRequestGet, onRequestHead } from "../functions/r/[token]";
 
 const SECRET = "fixture-secret";
 // Querfixture: identisch in apps/sales-os/tests/test_click_sync.py
-const FIXTURE_LEAD = "L-0001";
 const FIXTURE_TOKEN = "L-0001.e1a4bbf8b2bcf786";
 
 class FakeKV {

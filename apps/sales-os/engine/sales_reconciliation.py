@@ -64,7 +64,9 @@ def assess_message(raw, owner, leads):
     lead_id = str(lead.get('Lead-ID') or lead.get('Lead_ID') or '')
     explicit = set(re.findall(r'HSB-\d{8}-\d+', str(msg.get('X-HSB-Lead-ID') or '') + body))
     for url in links:
-        explicit.update(parse_qs(urlsplit(url).query).get('lead', []))
+        query = parse_qs(urlsplit(url).query)
+        explicit.update(query.get('lead', []))
+        explicit.update(query.get('lid', []))
     crm_ids = {str(lead.get(k) or '') for k in ('Draft_ID', 'Internet_Message_ID', 'Outlook_Message_ID')}
     if explicit and explicit != {lead_id}:
         issues.append('LEAD_ID_CONFLICT')
@@ -119,7 +121,11 @@ def assess_message(raw, owner, leads):
     else:
         if not flyer_links:
             issues.append('FLYER_LINK_MISSING')
-        if not optout_links or not any(recipients and recipients[0] in unquote(u).lower() for u in optout_links):
+        # Persoenlich: Lead-ID im Parameter lid (ohne Adresse) oder die bisherige Adressform.
+        def _personal_optout(u):
+            return bool(lead_id and lead_id in parse_qs(urlsplit(u).query).get('lid', [])) or bool(
+                recipients and recipients[0] in unquote(u).lower())
+        if not optout_links or not any(_personal_optout(u) for u in optout_links):
             issues.append('PERSONAL_OPTOUT_LINK_MISSING')
     if has_unreviewed_legacy_variant(msg, owner):
         issues.append('HISTORICAL_VARIANT_REQUIRES_REVIEW')

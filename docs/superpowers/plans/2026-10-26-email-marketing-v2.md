@@ -6,7 +6,7 @@
 
 **Architecture:** Bestehendes Sales-OS (Google Sheets CRM → Python-Engine → All-Inkl IMAP/SMTP) wird um Listenhygiene, Fit-Score, Sequenz, Hochlauf/Stopp und Entwurfsaustausch erweitert. Website (Cloudflare Pages, `hsb-boden.de`) bekommt eine echte `/flyer`-Landingpage (GA4 misst dort wie überall nach Einwilligung) und einen Klick-Zähler `/r/<token>` mit Scanner-Filter, der nur in einen eigenen Speicher (Cloudflare KV) schreibt; ein Abgleich überträgt Klicks in einen CRM-Tab `CLICK_EVENTS`.
 
-**Tech Stack:** Python 3.14 (pytest), TypeScript Pages Functions (vitest), Cloudflare KV (Anlage per Cloudflare-API mit vorhandenem Zugang), Google Sheets API, IMAP/SMTP All-Inkl, `trafilatura` (Website-Text, PyPI-Name verifiziert).
+**Tech Stack:** Python 3.14 (pytest), TypeScript Pages Functions (vitest), Cloudflare KV (Anlage und Binding per Cloudflare-API mit vorhandenem Zugang), Google Sheets API, IMAP/SMTP All-Inkl; Website-Text nur mit Standardbibliothek (`html.parser`) über den gehärteten Fetcher `bounce_rescue_agent.build_public_opener` — keine neue Abhängigkeit.
 
 **Spec:** Bericht `~/KI-System/reports/HSB Kaltakquise ohne DNS Zugriff.md` (Tiefenrecherche 27.10.2026, Notizen in `~/KI-System/research_notes/HSB Kaltakquise ohne DNS Zugriff/`); Codex-Strategiereview 26.10.2026; Nutzervorgabe 27.10.2026: KAS ausgeschlossen, Google-Konten im Browser nutzbar.
 
@@ -28,6 +28,16 @@
 - In keiner URL E-Mail-Adresse oder Name; an GA4 nie Lead-Bezug (GA4 nur über die normale, einwilligungsabhängige Website-Messung).
 - Text v2: reiner Text (`text/plain` als einziger Teil oder multipart/alternative mit Textteil zuerst und minimalem HTML), Siezen, Betreff 2–5 Wörter (≤ 50 Zeichen), Erstmail höchstens ein Link, Folgemails ohne Link, Durchwahl/Mobil in der Signatur, Pflichtangaben als Text, Abmeldezeile („Antworten Sie mit ‚Abmelden‘“) + `List-Unsubscribe`-Header (besteht).
 - `python3 scripts/verify_ssot.py` Exit 0 vor jedem Commit; „Jordie Post“.
+
+## Korrekturen nach Verifikation (27.10.2026)
+
+Plan gegen den Code von `main` (`6cb0083`) geprüft; Basis 246 passed, 1 skipped. Alle genannten Schnittstellen existieren. Geändert:
+
+1. **Kein `trafilatura`:** auf dem Mac nicht installierbar ohne Eingriff in Homebrew-Python (PEP 668); Stichwortsignale brauchen keine Boilerplate-Entfernung. Text per `html.parser` (ohne `script/style/nav/footer`), Abruf über `build_public_opener()` (SSRF-Schutz, Redirect-Prüfung) mit 2 MB / 20 s wie in PR #475.
+2. **`wrangler.toml` bleibt unverändert:** Bindings werden laut Datei bewusst am Pages-Projekt per API verwaltet. `EMAIL_CLICKS` und `CLICK_SECRET` werden in Task 10 gesetzt; ohne Binding oder Secret liefert `/r/<token>` trotzdem 302 (zählt nicht).
+3. **`/Flyer` (großes F) bleibt erreichbar:** Pages unterscheidet Groß-/Kleinschreibung; `_redirects` erhält `/Flyer /flyer/ 301`, nur `/flyer` und `/flyer/` → PDF entfallen; `/HSB-HEXAGON-Industrieboeden-Flyer.pdf` bleibt.
+4. **Inhalte gegen `AGENTS.md`-Non-Negotiables:** Landingpage und v2-Texte ohne Zertifizierungs-/Partnerschafts-/Referenzbehauptungen, ohne Kundennamen/Logos/Standorte. IFS/BRC nur als Thema des Empfängers („Ihr nächstes Audit“), nie als Aussage über HSB.
+5. **Freigabepunkte in Task 10:** Implementierung, PR, Merge (Dauerfreigabe), lesende Live-Läufe und Dry-Runs laufen ohne Rückfrage. Gebündelt freigegeben werden müssen: Production-Deploy, KV/Secret am Production-Projekt, `score-leads --apply`, `upgrade-drafts --apply` (verschiebt Kundenentwürfe), `seed-send`, Pilotversand.
 
 ## Bewusste Entscheidungen
 
@@ -79,7 +89,7 @@
 **Files:** Modify `apps/sales-os/engine/lead_quality.py`; Create `apps/sales-os/engine/website_signals.py`; Modify `hsb_cli.py` (`fetch-websites --limit N`, `score-leads [--apply]`); Test `apps/sales-os/tests/test_fit_score.py`
 
 **Interfaces:**
-- Produces: `segment_for(lead) -> Literal["architekten","produktion"]`; `website_text(url: str, cache_dir: Path) -> str|None` (trafilatura, robots.txt respektiert, 1 Anfrage/s, Cache je Domain); `website_signals(text: str) -> dict` (`positive: list[str]`, `negative: list[str]`, `quotes: list[str]` — wörtliche Fundstellen); `fit_score(lead, signals) -> tuple[int, str, list[str]]` (Tier A ≥ 75, B 50–74, C < 50, Z = zurückgestellt). Gewichte: produktion Basis 70; architekten Basis 30, +40 bei positivem Signal in CRM-Feldern oder Website (`industrie|gewerbe|hallen|logistik|lebensmittel|brauerei|molkerei|produktion|reinraum|pharma|labor|ingenieur|tragwerk|generalplan`), Tier Z bei nur negativen Signalen (`innenarchitekt|interior|landschaft|garten|freiraum|wohnbau|möbel|einrichtung|messebau`); +10 Ansprechpartner; −20 `DOMAIN_BOUNCED_BEFORE`; Exploration: 15 % der Tagesplätze zufällig aus Tier C (Seed fest pro Tag).
+- Produces: `segment_for(lead) -> Literal["architekten","produktion"]`; `website_text(url: str, cache_dir: Path, opener=None) -> str|None` (`html.parser`, `build_public_opener()`, 2 MB/20 s, robots.txt respektiert, 1 Anfrage/s, Cache je Domain); `website_signals(text: str) -> dict` (`positive: list[str]`, `negative: list[str]`, `quotes: list[str]` — wörtliche Fundstellen); `fit_score(lead, signals) -> tuple[int, str, list[str]]` (Tier A ≥ 75, B 50–74, C < 50, Z = zurückgestellt). Gewichte: produktion Basis 70; architekten Basis 30, +40 bei positivem Signal in CRM-Feldern oder Website (`industrie|gewerbe|hallen|logistik|lebensmittel|brauerei|molkerei|produktion|reinraum|pharma|labor|ingenieur|tragwerk|generalplan`), Tier Z bei nur negativen Signalen (`innenarchitekt|interior|landschaft|garten|freiraum|wohnbau|möbel|einrichtung|messebau`); +10 Ansprechpartner; −20 `DOMAIN_BOUNCED_BEFORE`; Exploration: 15 % der Tagesplätze zufällig aus Tier C (Seed fest pro Tag).
 
 - [ ] **Step 1: Failing tests** — `test_production_with_contact_is_a`; `test_architect_with_website_quote_brauerei_is_a`; `test_interior_only_is_z`; `test_unclear_is_c`; `test_signals_keep_verbatim_quote`; `test_score_writes_only_empty_cells`; `test_exploration_share_15_percent_deterministic_per_day`; `test_fetch_respects_robots_disallow` (Fake-Server).
 - [ ] **Steps 2–4:** FAIL → Implementierung → PASS + Suite.
@@ -111,15 +121,15 @@
 
 ### Task 6: `/flyer`-Landingpage und Klick-Zähler `/r/<token>`
 
-**Files:** Create `apps/website/src/pages/flyer/index.astro` (Basis: `git show 3731a83:apps/website/src/pages/flyer/index.astro`, Download-Ziel `/HSB-Flyer-Geschaeftsfuehrer.pdf`); Modify `apps/website/public/_redirects` (Zeilen `/Flyer`, `/flyer`, `/flyer/` entfernen); Create `apps/website/functions/r/[token].ts`; Modify `apps/website/wrangler.toml` (KV-Binding `EMAIL_CLICKS`); Create `apps/sales-os/engine/click_sync.py`; Tests `apps/website/tests/click-redirect.test.ts`, `apps/sales-os/tests/test_click_sync.py`
+**Files:** Create `apps/website/src/pages/flyer/index.astro` (Basis: `git show 3731a83:apps/website/src/pages/flyer/index.astro`, Download-Ziel `/HSB-Flyer-Geschaeftsfuehrer.pdf`); Modify `apps/website/public/_redirects` (`/flyer`, `/flyer/` entfernen, `/Flyer /flyer/ 301`); Create `apps/website/functions/r/[token].ts` (Binding `EMAIL_CLICKS` und Secret `CLICK_SECRET` am Pages-Projekt, nicht in `wrangler.toml`); Create `apps/sales-os/engine/click_sync.py`; Tests `apps/website/tests/click-redirect.test.ts`, `apps/sales-os/tests/test_click_sync.py`
 
 **Interfaces:**
 - Token = `<Lead-ID>.<hmac16>` mit `HMAC-SHA256(CLICK_SECRET, Lead-ID)` gekürzt auf 16 Hex; `CLICK_SECRET` als Pages-Secret und in GitHub Actions/`.env`.
 - `onRequestGet` → `302 Location: /flyer/?utm_source=hsb_outreach&utm_medium=email&utm_campaign=iboden_v2_<segment>`, `Cache-Control: no-store`; `onRequestHead` → 302 ohne Zählung; per `waitUntil` KV-Eintrag `click:<lead>:<ts>` = `{class: "human"|"bot", reasons: [...], asn, ua_family}`; `bot` bei HEAD, ungültigem HMAC, `request.cf.asn` in Rechenzentrums-Liste (8075 Microsoft, 15169 Google, 16509/14618 AWS, 13335 Cloudflare, 396982 Google Cloud, 8068 Microsoft, 30238 Mimecast, 26211/52129 Proofpoint), zweitem Klick < 10 s, fehlendem `Accept-Language`.
 - `click_sync.sync_clicks(apply: bool) -> dict` liest KV über die Cloudflare-API, schreibt neue Zeilen in CRM-Tab `CLICK_EVENTS` (`event_id, at, lead_id, class, reasons`), idempotent über `event_id`.
-- KV-Namespace per Cloudflare-API anlegen (vorhandener Zugang); kein DNS.
+- KV-Namespace und Binding per Cloudflare-API in Task 10 (nach Freigabe); kein DNS. Fehlt Binding oder Secret: 302 ohne Zählung.
 
-- [ ] **Step 1: Failing tests** — `valid_token_human_click_redirects_and_records_human`; `invalid_hmac_records_bot_and_still_redirects`; `head_redirects_without_record`; `datacenter_asn_records_bot`; `second_click_within_10s_records_bot`; `kv_failure_still_redirects`; pytest `test_sync_appends_new_events_once`, `test_sync_never_writes_bot_as_human`.
+- [ ] **Step 1: Failing tests** — `valid_token_human_click_redirects_and_records_human`; `invalid_hmac_records_bot_and_still_redirects`; `head_redirects_without_record`; `datacenter_asn_records_bot`; `second_click_within_10s_records_bot`; `kv_failure_still_redirects`; `missing_binding_or_secret_still_redirects`; `uppercase_Flyer_redirects_to_landingpage` (Test liest `_redirects`); pytest `test_sync_appends_new_events_once`, `test_sync_never_writes_bot_as_human`.
 - [ ] **Steps 2–4:** `npx vitest run tests/click-redirect.test.ts`, `npm run test:run`, `npm run build`, `npm run deploy:dry-run`, pytest.
 - [ ] **Step 5: Commit** `feat(website,sales-os): flyer landing page and first-party click counter`.
 
@@ -157,9 +167,9 @@
 
 ### Task 10: Rollout und Pilot
 
-- [ ] **Step 1:** PR (Tasks 1–9), CI grün, Codex `adversarial-review --base origin/main` ohne offene high-Befunde, Merge (Dauerfreigabe); Website-Deploy über `deploy-production.yml`; prüfen: `/flyer/` liefert 200 mit Landingpage, `/r/<gültiges Token>` → 302, KV-Eintrag `human`.
+- [ ] **Step 1:** PR (Tasks 1–9), CI grün, Codex `adversarial-review --base origin/main` ohne offene high-Befunde, Merge (Dauerfreigabe). **Freigabe nötig:** KV/Secret am Pages-Projekt, Website-Deploy über `deploy-production.yml`; prüfen: `/flyer/` liefert 200 mit Landingpage, `/r/<gültiges Token>` → 302, KV-Eintrag `human`.
 - [ ] **Step 2:** `bounce-report` → Sperrliste angewendet; `blocklist-check` clean; Seed-Test (Nutzer bestätigt Seed-Adressen) mit `dkim=pass` in allen Seeds, Ordner je Anbieter dokumentiert.
-- [ ] **Step 3:** `fetch-websites` + `score-leads --apply`; Pilotkohorte: 100 Produktion Tier A + 25 Architekten Tier A (15–20 %-Anteil), gleich auf beide Owner verteilt; `upgrade-drafts --cohort pilot --apply`; 5 Entwürfe in Webmail sichtbar prüfen.
+- [ ] **Step 3:** `fetch-websites` + `score-leads --apply`; Pilotkohorte: 100 Produktion Tier A + 25 Architekten Tier A (15–20 %-Anteil), gleich auf beide Owner verteilt; `upgrade-drafts --cohort pilot --apply` (**Freigabe nötig**, mit Zählungen aus dem Dry-Run); 5 Entwürfe in Webmail sichtbar prüfen.
 - [ ] **Step 4:** **Nutzerfreigabe im Chat** für den Pilotversand; Versand nur über `dispatch_verified` unter Budget/Pause.
 - [ ] **Step 5 (nach Abschluss der 3 Schritte + 7 Tage):** Kennzahlen je Segment: positive Antworten je kontaktiertem Unternehmen (primär) gegen historische Quote (Produktion 7/134, Architekten 8/935), Termine/LV-Anfragen, Opt-outs, Bounces, Klicks `human`. Weiter, wenn Bounce < 2 % und keine Pause; neuer Text bleibt Standard, wenn positive Antworten ≥ historische Quote; sonst Text überarbeiten. Ergebnis nach `operations/verification/`; danach `--cohort all` in 200er-Batches Tier A → B → C.
 

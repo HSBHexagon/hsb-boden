@@ -105,8 +105,26 @@ def test_pause_propagates_to_second_device(tmp_path,monkeypatch):
     a=tmp_path/'A';b=tmp_path/'B';a.mkdir();b.mkdir()
     h=health();h['policy_bounces']=1;(a/'send-health.json').write_text(json.dumps(h))
     (b/'send-health.json').write_text(json.dumps(health()))
-    with pytest.raises(RuntimeError):enforce_domain_health(a,date.today(),shared)
-    with pytest.raises(RuntimeError,match='SERVER_ACK_REQUIRED'):enforce_domain_health(b,date.today(),shared)
+    with pytest.raises(RuntimeError):enforce_domain_health(a,date.today(),shared,collector=lambda **k:[])
+    with pytest.raises(RuntimeError,match='SERVER_ACK_REQUIRED'):enforce_domain_health(b,date.today(),shared,collector=lambda **k:[])
     monkeypatch.setenv('HSB_SEND_PAUSE_ACK',shared.event['ack_id'])
-    assert enforce_domain_health(b,date.today(),shared)==10
+    assert enforce_domain_health(b,date.today(),shared,collector=lambda **k:[])==10
     assert shared.event['state']=='ack'
+
+
+def test_new_policy_event_is_observed_before_next_mail(tmp_path):
+    from types import SimpleNamespace
+    from send_governance import enforce_domain_health
+    class Shared:
+        event=None
+        def read(self):return self.event
+        def append(self,event):self.event=event
+    (tmp_path/'send-health.json').write_text(json.dumps(health()))
+    shared=Shared()
+    incoming=[]
+    collect=lambda **k:incoming
+    assert enforce_domain_health(tmp_path,date.today(),shared,collector=collect)==10
+    incoming.append(SimpleNamespace(message_id='<new@server.invalid>',sender='mailer-daemon@firma.invalid',date=datetime.now(timezone.utc).isoformat(),subject='Undeliverable',body='Status: 5.7.1\nDiagnostic-Code: smtp; 554 5.7.1 spam policy'))
+    with pytest.raises(RuntimeError,match='DOMAIN_PAUSED:POLICY_BOUNCE'):
+        enforce_domain_health(tmp_path,date.today(),shared,collector=collect)
+    assert shared.event['state']=='paused'

@@ -19,7 +19,7 @@ import os
 from pathlib import Path
 import re
 from urllib.parse import urlsplit, parse_qs, unquote
-from urllib.request import Request, urlopen
+from urllib.request import Request
 from hsb_core import check_eligibility, normalize_owner, sanitize_company_name
 
 SENDERS = {'JOEL': 'j-cherino@hsb-boden.com', 'JORDI': 'j-post@hsb-boden.com'}
@@ -196,11 +196,28 @@ def scan_mailbox(owner, output):
     return result
 
 
+def urlopen(req, timeout=20):
+    # Wiederverwendung des geprüften Openers: Redirect-Prüfung, IP-Pinning, kein Proxy/FTP.
+    from bounce_rescue_agent import build_public_opener
+    return build_public_opener().open(req, timeout=timeout)
+
+
 def probe_url(url):
     # Never request a real recipient's unsubscribe URL: page checks use no email.
     req = Request(url, headers={'User-Agent': 'HSB-Reconciliation/1.0'})
     with urlopen(req, timeout=30) as response:
-        data = response.read()
+        import time
+        deadline=time.monotonic()+20
+        read=getattr(response,'read1',response.read)
+        chunks=[];size=0
+        while True:
+            chunk=read(65536)
+            if time.monotonic()>deadline:raise RuntimeError('LINK_READ_TIMEOUT')
+            if not chunk:break
+            size+=len(chunk)
+            if size>10*1024*1024:raise RuntimeError('LINK_RESPONSE_TOO_LARGE')
+            chunks.append(chunk)
+        data=b''.join(chunks)
         reachable = response.status == 200
         valid = reachable and (data.startswith(b'%PDF-') or (b'<html' in data.lower() and len(data) > 500))
         result = {'status': response.status, 'final_url': response.url, 'content_type': response.headers.get('Content-Type'), 'sha256': hashlib.sha256(data).hexdigest(), 'bytes': len(data), 'reachable': reachable, 'valid': valid}

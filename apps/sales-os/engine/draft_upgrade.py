@@ -79,7 +79,7 @@ def upgrade_drafts(owner, limit=5, cohort='pilot', apply=False, journal_path=Non
     from click_sync import click_url
     from hsb_core import check_eligibility, normalize_owner
     from lead_quality import deliverability_flags, fit_score, segment_for
-    from outbound_safety import crm_write_readback
+    from outbound_safety import crm_write_lead_readback
     from sales_reconciliation import assess_message
     from hsb_config import CANONICAL_SPREADSHEET_ID
 
@@ -94,6 +94,13 @@ def upgrade_drafts(owner, limit=5, cohort='pilot', apply=False, journal_path=Non
     for lead in leads:
         byid.setdefault(str(lead.get('Lead-ID') or ''), []).append(lead)
     counts = Counter((r.get('owner'), r.get('lead_id')) for r in records)
+    done=set()
+    if journal_path and Path(journal_path).is_file():
+        prior=sqlite3.connect(Path(journal_path).resolve().as_uri()+'?mode=ro',uri=True)
+        try:
+            done={r[0] for r in prior.execute("SELECT key FROM upgrades WHERE state='DONE'")}
+        finally:
+            prior.close()
     cache = {}; selected = []
     # Erst Fit, dann Netzwerkprüfungen: knappe Pilotplätze nicht nach IMAP-Reihenfolge vergeben.
     def rank(record):
@@ -106,6 +113,10 @@ def upgrade_drafts(owner, limit=5, cohort='pilot', apply=False, journal_path=Non
     for record in sorted(records, key=rank, reverse=True):
         if record.get('owner') != owner or record.get('internal_test'):
             continue
+        record_key='|'.join(str(record.get(k,'')) for k in ('owner','uidvalidity','uid','sha256'))
+        if record_key in done:
+            result['skipped_reasons']['ALREADY_DONE']+=1
+            continue
         matches = byid.get(str(record.get('lead_id')), [])
         reason = None
         if len(matches) != 1 or counts[(owner, record.get('lead_id'))] != 1:
@@ -116,6 +127,9 @@ def upgrade_drafts(owner, limit=5, cohort='pilot', apply=False, journal_path=Non
             lead = dict(matches[0])
             if str(lead.get('Email_Template_ID') or '').startswith('v2-'):
                 result['skipped_reasons']['ALREADY_V2'] += 1
+                continue
+            if str(lead.get('Tier') or '').strip().upper()=='Z':
+                result['skipped_reasons']['TIER_Z']+=1
                 continue
             segment = segment_for(lead)
             if cohort == 'pilot' and chosen[segment] >= quotas[segment]:
@@ -245,7 +259,7 @@ def upgrade_drafts(owner, limit=5, cohort='pilot', apply=False, journal_path=Non
                     # Spaltenreihenfolge immer vom aktuellen CRM-Header, nicht aus einem veränderten dict.
                     headers = svc.spreadsheets().values().get(spreadsheetId=CANONICAL_SPREADSHEET_ID,
                         range='ALL_LEADS!A1:BU1').execute()['values'][0]
-                    crm_write_readback(svc, CANONICAL_SPREADSHEET_ID, headers, lead['_row'],
+                    crm_write_lead_readback(svc, CANONICAL_SPREADSHEET_ID, lead['Lead-ID'],
                         {'Draft_ID': mid, 'Email_Template_ID': rendered_id(raw), 'Drafted_At': datetime.now(timezone.utc).isoformat()})
                     result['crm_updated'] += 1
                     db.execute("UPDATE upgrades SET state='DONE' WHERE key=?", (key,))

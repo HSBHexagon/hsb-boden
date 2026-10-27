@@ -275,3 +275,17 @@ def dispatch_verified(count_per_owner=25, owners=('JOEL','JORDI'), dry_run=True,
                 if item is not selected[-1]: time.sleep(random.uniform(jitter_min,jitter_max))
         finally: journal.close()
         return {'status':'COMPLETED','sent_counts':sent_counts}
+
+
+def crm_write_lead_readback(svc, spreadsheet_id, lead_id, expected):
+    """Zeile unmittelbar vor Schreiben neu auflösen und Identität vor/nach Readback prüfen."""
+    rows=svc.spreadsheets().values().get(spreadsheetId=spreadsheet_id,range='ALL_LEADS!A1:BU6425').execute().get('values',[])
+    if not rows:raise RuntimeError('CRM_EMPTY')
+    matches=[i for i,row in enumerate(rows[1:],2) if row and row[0]==lead_id]
+    if len(matches)!=1:raise RuntimeError('LIVE_LEAD_NOT_UNIQUE')
+    row=matches[0];target=f'ALL_LEADS!A{row}:A{row}'
+    def identity():
+        return svc.spreadsheets().values().get(spreadsheetId=spreadsheet_id,range=target).execute().get('values',[])
+    if identity()!=[[lead_id]]:raise RuntimeError('CRM_IDENTITY_CHANGED_BEFORE_WRITE')
+    crm_write_readback(svc,spreadsheet_id,rows[0],row,expected)
+    if identity()!=[[lead_id]]:raise RuntimeError('CRM_IDENTITY_CHANGED_DURING_WRITE')

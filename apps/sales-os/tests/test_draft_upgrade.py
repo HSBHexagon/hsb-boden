@@ -46,7 +46,7 @@ def setup_case(tmp_path,monkeypatch):
     headers=[k for k in lead if k!='_row']
     class Values:
         def get(self,**kw):
-            values=[headers] if kw['range'].endswith('BU1') else [headers,[lead.get(k,'') for k in headers]]
+            values=[[lead['Lead-ID']]] if kw['range']=='ALL_LEADS!A2:A2' else [headers] if kw['range'].endswith('BU1') else [headers,[lead.get(k,'') for k in headers]]
             return SimpleNamespace(execute=lambda:{'values':values})
     svc=SimpleNamespace(spreadsheets=lambda:SimpleNamespace(values=lambda:Values()))
     writes=[]
@@ -134,3 +134,37 @@ def test_busy_shared_dispatch_lock_blocks_before_append(tmp_path,monkeypatch):
         upgrade_drafts('JOEL',apply=True,**kwargs)
     assert calls==writes==[]
     assert boxes['Drafts']=={'1':old}
+
+
+def test_saved_tier_z_remains_excluded(tmp_path,monkeypatch):
+    kwargs,boxes,calls,writes,old=setup_case(tmp_path,monkeypatch)
+    kwargs['leads'][0]['Tier']='Z'
+    assert upgrade_drafts('JOEL',apply=True,**kwargs)['selected']==0
+    assert calls==writes==[]
+
+
+def test_done_records_are_filtered_before_limit(tmp_path,monkeypatch):
+    import sqlite3
+    kwargs,boxes,calls,writes,old=setup_case(tmp_path,monkeypatch)
+    first=kwargs['records'][0];lead2=dict(kwargs['leads'][0],**{'Lead-ID':'HSB-20261001-0002','E-Mail':'b@firma.invalid'})
+    kwargs['leads'].append(lead2)
+    kwargs['records'].append(dict(first,lead_id=lead2['Lead-ID'],uid='3'))
+    db=sqlite3.connect(kwargs['journal_path'])
+    db.execute('CREATE TABLE upgrades(key TEXT PRIMARY KEY,mid TEXT,raw BLOB,state TEXT,old_raw BLOB)')
+    key='|'.join(str(first[k]) for k in ('owner','uidvalidity','uid','sha256'))
+    db.execute('INSERT INTO upgrades VALUES(?,?,?,?,?)',(key,'<done@x.invalid>',b'','DONE',old));db.commit();db.close()
+    result=upgrade_drafts('JOEL',limit=1,cohort='all',apply=False,**kwargs)
+    assert result['selected']==1 and result['skipped_reasons']['ALREADY_DONE']==1
+
+
+def test_identity_change_blocks_crm_write(monkeypatch):
+    from outbound_safety import crm_write_lead_readback
+    headers=['Lead-ID','Draft_ID']
+    class Values:
+        def get(self,**kw):
+            rows=[headers,['L1','old']] if kw['range'].endswith('BU6425') else [['L2']]
+            return SimpleNamespace(execute=lambda:{'values':rows})
+    svc=SimpleNamespace(spreadsheets=lambda:SimpleNamespace(values=lambda:Values()))
+    monkeypatch.setattr('outbound_safety.crm_write_readback',lambda *a:pytest.fail('keine falsche Zeile schreiben'))
+    with pytest.raises(RuntimeError,match='CRM_IDENTITY_CHANGED_BEFORE_WRITE'):
+        crm_write_lead_readback(svc,'sheet','L1',{'Draft_ID':'new'})

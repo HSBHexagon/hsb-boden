@@ -75,3 +75,11 @@ def test_first_step_and_final_send_state_are_one_transaction(tmp_path,monkeypatc
     assert journal.db.execute('SELECT state FROM sequence').fetchone()[0]=='VERIFIED'
     journal.close()
 
+
+
+def test_ooo_without_return_date_clears_old_due():
+    changes=reply_actions('OOO_URLAUB')
+    lead={'Lead-ID':'L1','Follow-up-Datum':'2020-01-01'}
+    lead.update(changes)
+    assert lead['Follow-up-Datum']==''
+    assert next_step_due(lead,rows(),date(2026,11,2)) is None

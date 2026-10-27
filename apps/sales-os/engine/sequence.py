@@ -68,7 +68,7 @@ def reply_actions(category, body='', today=None, return_date=None):
     if category in {'BOUNCE', 'OPTOUT'}:
         return {}
     if category == 'OOO_URLAUB':
-        result = {'Reply_Status': 'abwesend', 'Pipeline': 'Abwesend – Wiedervorlage'}
+        result = {'Reply_Status': 'abwesend', 'Pipeline': 'Abwesend – Wiedervorlage', 'Follow-up-Datum': ''}
         if return_date:
             try:
                 result['Follow-up-Datum'] = workday_after(return_date).isoformat()

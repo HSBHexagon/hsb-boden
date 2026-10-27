@@ -326,6 +326,9 @@ def cmd_bounce_report(args, collector=None):
     print("Je Domain:")
     for dom, n in sorted(summary["by_domain"].items(), key=lambda kv: -kv[1]):
         print(f"  {dom}: {n}")
+    print("Nur Hard Bounces je Domain:")
+    for dom, n in sorted(summary["hard_by_domain"].items(), key=lambda kv: -kv[1]):
+        print(f"  {dom}: {n}")
 
 
 def main():

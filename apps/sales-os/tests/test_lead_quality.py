@@ -26,6 +26,27 @@ def test_classify_dsn_hard_soft_policy():
     assert classify_dsn("") == "unknown"
 
 
+def test_classify_dsn_ignores_ip_and_received_headers():
+    body = ("Received: from mx.example.org (10.4.2.3) by 5.9.1.2 with ESMTP\n"
+            "Final-Recipient: rfc822; a@firma-a.de\nStatus: 5.1.1\n"
+            "Diagnostic-Code: smtp; 550 5.1.1 User unknown")
+    assert classify_dsn(body) == "hard"
+    soft = "Received: from 5.9.1.2 by 10.5.7.3\nStatus: 4.2.2\nDiagnostic-Code: smtp; 452 4.2.2 Mailbox full"
+    assert classify_dsn(soft) == "soft"
+
+
+def test_classify_dsn_boilerplate_does_not_override_code():
+    body = ("This is the mail system. Our spam policy blocked nothing here.\n"
+            "550 5.1.1 <a@firma-a.de> User unknown\n"
+            "See our anti-spam policy at https://example.org/policy")
+    assert classify_dsn(body) == "hard"
+
+
+def test_classify_dsn_diagnostic_code_policy():
+    body = "Final-Recipient: rfc822; a@firma-a.de\nDiagnostic-Code: smtp; 554 5.7.1 message rejected as spam"
+    assert classify_dsn(body) == "policy"
+
+
 def test_no_mx_blocks():
     flags = deliverability_flags(_lead(), {}, set(), mx_check=lambda d: False)
     assert "NO_MX" in flags
@@ -54,7 +75,7 @@ def test_noreply_blocks():
 
 
 def test_domain_bounced_before_warns_only():
-    flags = deliverability_flags(_lead(), {"firma-a.de": True}, {"firma-a.de"})
+    flags = deliverability_flags(_lead(), {"firma-a.de": True}, {"Firma-A.de"})
     assert flags == ["DOMAIN_BOUNCED_BEFORE"]
     base = check_eligibility(_lead()).reasons
     warned = check_eligibility(_lead(Deliverability_Flags=flags)).reasons
@@ -91,6 +112,7 @@ def test_summarize_bounces_counts_only():
     summary = summarize_bounces(msgs)
     assert summary["by_class"] == {"hard": 1, "soft": 1}
     assert summary["by_domain"] == {"firma-a.de": 2}
+    assert summary["hard_by_domain"] == {"firma-a.de": 1}
     assert summary["total"] == 2
     assert "a@firma-a.de" not in str(summary)
 

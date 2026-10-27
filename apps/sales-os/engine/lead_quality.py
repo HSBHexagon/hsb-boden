@@ -6,6 +6,8 @@ import re
 from collections import Counter
 from typing import Callable, Iterable, Literal
 
+from hsb_core import EMAIL_RE
+
 DsnClass = Literal["hard", "soft", "policy", "unknown"]
 
 FLAG_NO_MX = "NO_MX"
@@ -17,22 +19,61 @@ FLAG_DOMAIN_BOUNCED_BEFORE = "DOMAIN_BOUNCED_BEFORE"
 # Warnung: verändert die Zulässigkeit nicht (siehe hsb_core.check_eligibility).
 WARNING_FLAGS = frozenset({FLAG_DOMAIN_BOUNCED_BEFORE})
 
-_EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s.]+\.[^@\s]{2,}$")
 _NOREPLY_RE = re.compile(r"^(no[-_.]?reply|do[-_.]?not[-_.]?reply|mailer-daemon|postmaster|bounce[s]?)$", re.I)
-_POLICY_RE = re.compile(r"\b5\.7\.\d+\b|spam|blocklist|blacklist|policy|blocked|rejected as", re.I)
-_SOFT_RE = re.compile(r"\b4\.\d+\.\d+\b|\b452\b|\b5\.2\.2\b|mailbox full|over quota|try again|temporar", re.I)
-_HARD_RE = re.compile(r"\b5\.1\.\d+\b|\b550\b|\b5\.\d+\.\d+\b|user unknown|no such user|unknown recipient|does not exist", re.I)
+
+# Statuscode aus dem DSN, nie aus dem gesamten Text (IPs/Hostnamen/Versionen wuerden matchen).
+_STATUS_RE = re.compile(r"^Status:\s*([245]\.\d{1,3}\.\d{1,3})\b", re.I | re.M)
+_DIAG_RE = re.compile(r"^Diagnostic-Code:[^\n]*(?:\n[ \t]+[^\n]*)*", re.I | re.M)
+_SMTP_LINE_RE = re.compile(r"^[ \t>]*([45]\d\d)[ -][ \t]*(?:([245]\.\d{1,3}\.\d{1,3})\b)?[^\n]*", re.M)
+_ENH_RE = re.compile(r"(?<![\d.])([245]\.\d{1,3}\.\d{1,3})(?![\d.])")
+_SMTP_CODE_RE = re.compile(r"(?<![\d.])([45]\d\d)(?![\d.])")
+_POLICY_WORDS_RE = re.compile(r"spam|blocklist|blacklist|policy|blocked|rejected as", re.I)
+_SOFT_WORDS_RE = re.compile(r"mailbox full|over quota|try again|temporar", re.I)
+_HARD_WORDS_RE = re.compile(r"user unknown|no such user|unknown recipient|does not exist", re.I)
+
+
+def _extract_dsn_code(text: str) -> tuple[str | None, str | None, str]:
+    """Liefert (smtp_code, enhanced_code, diagnosezeile). Reihenfolge: Status, Diagnostic-Code, SMTP-Zeile."""
+    smtp = enhanced = None
+    diag = ""
+    m = _STATUS_RE.search(text)
+    if m:
+        enhanced = m.group(1)
+    m = _DIAG_RE.search(text)
+    if m:
+        diag = " ".join(m.group(0).split())
+        e = _ENH_RE.search(diag)
+        c = _SMTP_CODE_RE.search(diag)
+        enhanced = enhanced or (e.group(1) if e else None)
+        smtp = c.group(1) if c else None
+    m = _SMTP_LINE_RE.search(text)
+    if m:
+        smtp = smtp or m.group(1)
+        enhanced = enhanced or m.group(2)
+        diag = diag or " ".join(m.group(0).split())
+    return smtp, enhanced, diag
 
 
 def classify_dsn(text: str) -> DsnClass:
-    """Ordnet einen Bounce-Text ein: policy (5.7.x/Spam) vor soft (4.x.x/452) vor hard (5.1.x/550)."""
+    """Klassifiziert ueber den extrahierten DSN-Statuscode; Schluesselwoerter nur ohne Code."""
     if not text:
         return "unknown"
-    if _POLICY_RE.search(text):
+    smtp, enh, diag = _extract_dsn_code(text)
+    if enh or smtp:
+        if enh and enh.startswith("5.1."):
+            return "hard"
+        if enh and enh.startswith("5.7."):
+            return "policy"
+        if smtp == "554" and _POLICY_WORDS_RE.search(diag):
+            return "policy"
+        if (enh and (enh.startswith("4.") or enh == "5.2.2")) or (smtp and smtp.startswith("4")):
+            return "soft"
+        return "hard"
+    if _POLICY_WORDS_RE.search(text):
         return "policy"
-    if _SOFT_RE.search(text):
+    if _SOFT_WORDS_RE.search(text):
         return "soft"
-    if _HARD_RE.search(text):
+    if _HARD_WORDS_RE.search(text):
         return "hard"
     return "unknown"
 
@@ -48,9 +89,12 @@ def deliverability_flags(
     bounced_domains: set[str],
     mx_check: Callable[[str], bool] | None = None,
 ) -> list[str]:
-    """Berechnet Zustellbarkeits-Flags. MX wird je Domain nur einmal geprüft (mx_cache)."""
+    """Berechnet Zustellbarkeits-Flags. MX wird je Domain nur einmal geprüft (mx_cache).
+
+    bounced_domains wird einmal in Kleinschreibung normalisiert; Eintraege duerfen beliebig geschrieben sein.
+    """
     email = str(lead.get("Email") or lead.get("E-Mail") or "").strip()
-    if not _EMAIL_RE.match(email):
+    if not EMAIL_RE.match(email):
         return [FLAG_SYNTAX_INVALID]
 
     flags: list[str] = []
@@ -69,7 +113,7 @@ def deliverability_flags(
     if str(lead.get("Bounce_Status") or "").strip().lower() in {"hard_bounce", "hard", "hardbounce"}:
         flags.append(FLAG_PREVIOUS_HARD_BOUNCE)
 
-    if domain in {d.lower() for d in bounced_domains}:
+    if domain in {str(d).strip().lower() for d in bounced_domains}:
         flags.append(FLAG_DOMAIN_BOUNCED_BEFORE)
     return flags
 
@@ -80,11 +124,17 @@ def summarize_bounces(messages: Iterable) -> dict:
 
     by_class: Counter[str] = Counter()
     by_domain: Counter[str] = Counter()
+    hard_by_domain: Counter[str] = Counter()
     for msg in messages:
         cls = classify_inbound_message(msg.sender, msg.subject, msg.body)
         if cls.category != "BOUNCE":
             continue
-        by_class[classify_dsn(msg.body)] += 1
+        dsn = classify_dsn(msg.body)
+        by_class[dsn] += 1
         if cls.extracted_email and "@" in cls.extracted_email:
-            by_domain[cls.extracted_email.rsplit("@", 1)[1].lower()] += 1
-    return {"total": sum(by_class.values()), "by_class": dict(by_class), "by_domain": dict(by_domain)}
+            domain = cls.extracted_email.rsplit("@", 1)[1].lower()
+            by_domain[domain] += 1
+            if dsn == "hard":
+                hard_by_domain[domain] += 1
+    return {"total": sum(by_class.values()), "by_class": dict(by_class), "by_domain": dict(by_domain),
+            "hard_by_domain": dict(hard_by_domain)}

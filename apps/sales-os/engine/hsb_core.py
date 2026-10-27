@@ -337,11 +337,12 @@ def check_eligibility(lead: dict) -> EligibilityResult:
 
     # Zustellbarkeits-Flags (lead_quality.deliverability_flags) werden vorab berechnet,
     # hier kein Netz: Feld Deliverability_Flags (Liste oder Komma-String).
+    from lead_quality import WARNING_FLAGS  # lazy: lead_quality importiert hsb_core
     raw_flags = lead.get("Deliverability_Flags") or []
     if isinstance(raw_flags, str):
         raw_flags = raw_flags.split(",")
     for flag in (str(f).strip().upper() for f in raw_flags):
-        if flag and flag != "DOMAIN_BOUNCED_BEFORE":
+        if flag and flag not in WARNING_FLAGS:
             reasons.append(f"Deliverability={flag}")
 
     raw_company = str(lead.get("Company") or lead.get("Firma") or "").strip()

@@ -58,7 +58,7 @@ master_mailbox_orchestrator.py --owner JOEL --batches 10 [--apply]
 ## 4. Offene Aufgaben (TODO — nächstes Modell)
 
 ### P0 — Sofort
-- [ ] **CURRENT_STATE.md aktualisieren:** PR #405 ist gemergt, TODO-Liste bereinigen
+- [x] **CURRENT_STATE.md aktualisieren:** PR #405 ist gemergt, TODO-Liste bereinigen
 - [ ] **Untracked Files committen oder .gitignore:** 6 untracked Engine-Dateien + 2 Plan-Dokumente
 
 ### P1 — Nächster Schritt

@@ -31,15 +31,12 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
       </p>
     </div>
   </section>
-  <script is:inline>
-    const params = new URLSearchParams(window.location.search);
-    const email = (params.get('email') || '').trim();
-    const link = document.getElementById('unsubscribe-mail');
-    const display = document.getElementById('unsubscribe-address');
-    if (email.length <= 254 && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) && link && display) {
-      display.textContent = 'Angeschriebene Adresse: ' + email;
-      const body = 'Bitte melden Sie die E-Mail-Adresse ' + email + ' von weiteren E-Mails ab.\nVielen Dank.';
-      link.setAttribute('href', 'mailto:j-cherino@hsb-boden.com?subject=Abmelden&body=' + encodeURIComponent(body));
-    }
+  <script>
+    import { buildUnsubscribeMailto } from "../../lib/unsubscribe";
+    const link = document.getElementById("unsubscribe-mail");
+    const display = document.getElementById("unsubscribe-address");
+    const { href, display: shown } = buildUnsubscribeMailto(window.location.search);
+    if (link) link.setAttribute("href", href);
+    if (display && shown) display.textContent = shown;
   </script>
 </BaseLayout>

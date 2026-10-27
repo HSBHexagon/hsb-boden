@@ -1,0 +1,5 @@
+[
+  {"provider": "gmail", "address": "seed-gmail@example.com", "imap": false},
+  {"provider": "outlook", "address": "seed-outlook@example.com", "imap": false},
+  {"provider": "gmx", "address": "seed-gmx@example.com", "imap": false}
+]

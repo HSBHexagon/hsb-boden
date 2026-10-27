@@ -80,7 +80,13 @@ def assess_message(raw, owner, leads):
     contact = str(lead.get('Ansprechpartner') or lead.get('Contact') or '').strip()
     if not company or sanitize_company_name(company, recipients[0] if recipients else '') == 'Ihr Unternehmen':
         issues.append('COMPANY_UNVERIFIED')
-    if not subject or (company and company.casefold() not in subject.casefold()):
+    template_id = str(msg.get('X-HSB-Template-ID') or '').strip()
+    is_v2 = template_id.startswith('v2-')
+    if is_v2:
+        # Folgemails antworten im Thread: das Re:/AW:-Praefix zaehlt nicht zur 50-Zeichen-Grenze.
+        if not subject or len(re.sub(r'^(?:re|aw):\s*', '', subject, flags=re.I)) > 50:
+            issues.append('SUBJECT_TOO_LONG')
+    elif not subject or (company and company.casefold() not in subject.casefold()):
         issues.append('SUBJECT_NOT_COMPANY_SPECIFIC')
     if not ((company and company.casefold() in body.casefold()) or (len(contact) > 3 and contact.casefold() in body.casefold())):
         issues.append('BODY_NOT_COMPANY_OR_CONTACT_SPECIFIC')
@@ -88,10 +94,23 @@ def assess_message(raw, owner, leads):
         issues.append('UNRESOLVED_PLACEHOLDER')
     flyer_links = [u for u in links if urlsplit(u).netloc.lower() in {'www.hsb-boden.de', 'hsb-boden.de'} and ('flyer' in urlsplit(u).path.lower() or urlsplit(u).path.lower().endswith('.pdf'))]
     optout_links = [u for u in links if urlsplit(u).netloc.lower() == 'www.hsb-boden.de' and urlsplit(u).path.rstrip('/') == '/abmelden']
-    if not flyer_links:
-        issues.append('FLYER_LINK_MISSING')
-    if not optout_links or not any(recipients and recipients[0] in unquote(u).lower() for u in optout_links):
-        issues.append('PERSONAL_OPTOUT_LINK_MISSING')
+    if is_v2:
+        if template_id.endswith('-s1'):
+            def _v2_link_ok(u):
+                parts = urlsplit(u)
+                return parts.netloc.lower() == 'www.hsb-boden.de' and (
+                    parts.path.rstrip('/') == '/flyer' or re.fullmatch(r'/r/[A-Za-z0-9_\-.~]+', parts.path))
+            if len(links) > 1 or not all(_v2_link_ok(u) for u in links):
+                issues.append('V2_LINK_INVALID')
+        elif links:
+            issues.append('V2_LINK_INVALID')
+        if not re.search(r'Abmelden', body):
+            issues.append('V2_OPTOUT_LINE_MISSING')
+    else:
+        if not flyer_links:
+            issues.append('FLYER_LINK_MISSING')
+        if not optout_links or not any(recipients and recipients[0] in unquote(u).lower() for u in optout_links):
+            issues.append('PERSONAL_OPTOUT_LINK_MISSING')
     if has_unreviewed_legacy_variant(msg, owner):
         issues.append('HISTORICAL_VARIANT_REQUIRES_REVIEW')
     if msg.get('Reply-To'):

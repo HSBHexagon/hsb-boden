@@ -167,10 +167,15 @@ class ComMailboxClient:
         self,
         to_email: str,
         subject: str,
-        body_html: str,
+        body_html: str = '',
         flyer_bytes: Optional[bytes] = None,
         flyer_filename: Optional[str] = 'HSB-HEXAGON-Industrieboeden-Flyer.pdf',
-        custom_message_id: Optional[str] = None
+        custom_message_id: Optional[str] = None,
+        body_text: Optional[str] = None,
+        template_id: Optional[str] = None,
+        in_reply_to: Optional[str] = None,
+        references: Optional[str] = None,
+        lead_id: Optional[str] = None
     ) -> Tuple[bytes, str]:
         if not to_email or '@' not in to_email:
             raise ValueError(f'Ungueltige Empfaengeradresse: {to_email}')
@@ -185,6 +190,18 @@ class ComMailboxClient:
         msg_id = custom_message_id or make_msgid(domain='hsb-boden.com')
         msg['Message-ID'] = msg_id
         msg['X-Unsent'] = '1'
+        if body_text is not None:
+            # v2: genau ein text/plain-Teil, kein HTML, kein Anhang, nie Reply-To.
+            if lead_id:
+                msg['X-HSB-Lead-ID'] = lead_id
+            if template_id:
+                msg['X-HSB-Template-ID'] = template_id
+            if in_reply_to:
+                msg['In-Reply-To'] = in_reply_to
+            if references:
+                msg['References'] = references
+            msg.set_content(body_text, charset='utf-8')
+            return msg.as_bytes(), msg_id
         ids = set(re.findall(r'HSB-\d{8}-\d+',unquote(body_html)))
         if len(ids)==1:
             msg['X-HSB-Lead-ID']=next(iter(ids))
@@ -221,10 +238,15 @@ class ComMailboxClient:
                     raw_bytes, mid = self.build_draft_message(
                         to_email=it['to_email'],
                         subject=it['subject'],
-                        body_html=it['body_html'],
+                        body_html=it.get('body_html', ''),
                         flyer_bytes=fbytes,
                         flyer_filename=it.get('flyer_filename'),
-                        custom_message_id=it.get('custom_message_id')
+                        custom_message_id=it.get('custom_message_id'),
+                        body_text=it.get('body_text'),
+                        template_id=it.get('template_id'),
+                        in_reply_to=it.get('in_reply_to'),
+                        references=it.get('references'),
+                        lead_id=it.get('lead_id') if it.get('body_text') is not None else None
                     )
                     res, data = imap.append(
                         folder,

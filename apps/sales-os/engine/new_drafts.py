@@ -120,6 +120,8 @@ def _create(owner, limit, apply, leads, client, secret, mx_check):
               'architekten': sum(segment_for(l) == 'architekten' for l in selected),
               'created': 0, 'dry_run': not apply, 'customer_emails_sent': 0}
     if apply and selected:
+        if not secret:
+            raise RuntimeError('CLICK_SECRET_MISSING: ohne Klick-Token keine Entwürfe (Messung wäre unvollständig)')
         results = client.create_drafts_batch(build_items(selected, owner, secret), max_existing=MAX_DRAFTS_PER_MAILBOX)
         result['created'] = sum(1 for r in results if r.get('ok'))
         result['failed'] = sum(1 for r in results if not r.get('ok'))

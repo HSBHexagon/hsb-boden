@@ -56,7 +56,10 @@ def test_dry_run_creates_nothing_and_apply_appends(tmp_path):
     c = FakeClient(); leads = [lead(i) for i in range(1, 4)]
     r = nd.create_v2_drafts('JOEL', 2, False, leads=leads, client=c, mx_check=MX, state_dir=tmp_path)
     assert r['selected'] == 2 and r['created'] == 0 and c.batches == [] and r['customer_emails_sent'] == 0
-    r = nd.create_v2_drafts('JOEL', 2, True, leads=leads, client=c, mx_check=MX, state_dir=tmp_path)
+    import pytest
+    with pytest.raises(RuntimeError, match='CLICK_SECRET_MISSING'):
+        nd.create_v2_drafts('JOEL', 2, True, leads=leads, client=c, mx_check=MX, state_dir=tmp_path)
+    r = nd.create_v2_drafts('JOEL', 2, True, leads=leads, client=c, mx_check=MX, state_dir=tmp_path, secret='s')
     assert r['created'] == 2 and len(c.batches[0]) == 2
     assert c.max_existing == nd.MAX_DRAFTS_PER_MAILBOX
 

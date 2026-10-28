@@ -215,3 +215,12 @@ def test_company_named_at_most_once_in_short_form():
             assert r['body_text'].count('Muster Architekten') <= 1, (seg, step)
             assert 'GmbH, Beratende' not in r['body_text']
             assert 'Projekte bei' not in r['body_text']
+
+
+def test_greeting_uses_surname_only_and_keeps_title_and_particles():
+    from canonical_template_factory import anrede_fuer_lead as a
+    assert a({'Ansprechpartner': 'Herr Per Grunwald'}) == 'Sehr geehrter Herr Grunwald,'
+    assert a({'Ansprechpartner': 'Frau Dr. Anna von der Heide'}) == 'Sehr geehrte Frau Dr. von der Heide,'
+    assert a({'Ansprechpartner': 'Herr Müller'}) == 'Sehr geehrter Herr Müller,'
+    assert a({'Ansprechpartner': 'Guten Tag Herr Günther Jauch'}) == 'Sehr geehrter Herr Jauch,'
+    assert a({'Ansprechpartner': ''}) == 'Guten Tag,'

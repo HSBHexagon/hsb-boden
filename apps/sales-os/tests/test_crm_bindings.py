@@ -42,8 +42,8 @@ class FakeSheets:
         return self
 
     def search(self, spreadsheetId, body):
-        key = body['dataFilters'][0]['developerMetadataLookup']['metadataKey']
-        return _Exec(lambda: {'matchedDeveloperMetadata': [{'developerMetadata': m} for m in self.meta if m['metadataKey'] == key]})
+        key = body['dataFilters'][0]['developerMetadataLookup'].get('metadataKey')
+        return _Exec(lambda: {'matchedDeveloperMetadata': [{'developerMetadata': m} for m in self.meta if key is None or m['metadataKey'] == key]})
 
     def batchUpdate(self, spreadsheetId, body):
         self.batches.append(body)
@@ -90,19 +90,22 @@ def test_dry_run_counts_without_writing():
     assert svc.batches == [] and res['dry_run'] is True
 
 
+ALL2 = {'HSB-20260708-00001', 'HSB-20260708-00002'}
+
+
 def test_apply_creates_row_bindings_once_and_is_idempotent():
     svc = FakeSheets(['HSB-20260708-00001', 'HSB-20260708-00002'])
-    res = cb.ensure_bindings(svc, 'x', apply=True, sleep=lambda s: None)
+    res = cb.ensure_bindings(svc, 'x', apply=True, sleep=lambda s: None, only=ALL2)
     assert res['created'] == 2
     assert cb.existing_bindings(svc, 'x') == {'HSB-20260708-00001': [1], 'HSB-20260708-00002': [2]}
-    again = cb.ensure_bindings(svc, 'x', apply=True, sleep=lambda s: None)
+    again = cb.ensure_bindings(svc, 'x', apply=True, sleep=lambda s: None, only=ALL2)
     assert again['created'] == 0 and again['already_bound'] == 2
 
 
 def test_misplaced_binding_counts_as_conflict_not_rebound():
     svc = FakeSheets(['HSB-20260708-00001'])
     svc.meta.append(cb._row_metadata(5, 0, cb.KEY, 'HSB-20260708-00001')['createDeveloperMetadata']['developerMetadata'])
-    res = cb.ensure_bindings(svc, 'x', apply=True, sleep=lambda s: None)
+    res = cb.ensure_bindings(svc, 'x', apply=True, sleep=lambda s: None, only={'HSB-20260708-00001'})
     assert res['conflicts'] == 1 and res['created'] == 0
 
 
@@ -122,8 +125,9 @@ def test_sort_canary_proves_bindings_follow_rows_and_cleans_up():
 
 
 def test_only_and_prune_limit_bindings_to_pilot():
-    svc = FakeSheets(['HSB-20260708-00001', 'HSB-20260708-00002', 'HSB-20260708-00003'])
-    cb.ensure_bindings(svc, 'x', apply=True, sleep=lambda s: None)
+    ids = ['HSB-20260708-00001', 'HSB-20260708-00002', 'HSB-20260708-00003']
+    svc = FakeSheets(ids)
+    cb.ensure_bindings(svc, 'x', apply=True, sleep=lambda s: None, only=set(ids))
     keep = {'HSB-20260708-00002'}
     assert cb.prune_bindings(svc, 'x', keep) == {'to_remove': 2, 'removed': 0, 'dry_run': True}
     assert cb.prune_bindings(svc, 'x', keep, apply=True)['removed'] == 2
@@ -136,3 +140,40 @@ def test_only_binds_just_the_listed_leads():
     svc = FakeSheets(['HSB-20260708-00001', 'HSB-20260708-00002'])
     res = cb.ensure_bindings(svc, 'x', apply=True, sleep=lambda s: None, only={'HSB-20260708-00001'})
     assert res['created'] == 1 and cb.existing_bindings(svc, 'x') == {'HSB-20260708-00001': [1]}
+
+
+def test_apply_without_leads_file_and_over_capacity_refuse_before_writing():
+    svc = FakeSheets(['HSB-20260708-00001'])
+    with pytest.raises(ValueError, match='APPLY_REQUIRES_LEADS_FILE'):
+        cb.ensure_bindings(svc, 'x', apply=True)
+    big = [f'HSB-20260708-{i:05d}' for i in range(1200)]
+    svc = FakeSheets(big)
+    with pytest.raises(RuntimeError, match='CRM_METADATA_CAPACITY'):
+        cb.ensure_bindings(svc, 'x', apply=True, only=set(big))
+    assert svc.meta == []
+
+
+def test_prune_refuses_invalid_or_unknown_keep_set():
+    svc = FakeSheets(['HSB-20260708-00001'])
+    cb.ensure_bindings(svc, 'x', apply=True, sleep=lambda s: None, only={'HSB-20260708-00001'})
+    for keep in (set(), {'kaputt'}, {'HSB-20260708-99999'}):
+        with pytest.raises(ValueError, match='PRUNE_KEEP_SET_INVALID'):
+            cb.prune_bindings(svc, 'x', keep, apply=True)
+    assert len(svc.meta) == 1
+
+
+def test_identity_mismatch_after_concurrent_reorder_is_removed_and_raised():
+    svc = FakeSheets(['HSB-20260708-00001', 'HSB-20260708-00002'])
+    real_values = svc.values
+    snapshot = svc.tabs['ALL_LEADS'][1]
+    calls = {'n': 0}
+
+    def swapped_get(spreadsheetId, fields=None, range=None):
+        calls['n'] += 1
+        if range is not None and calls['n'] > 2:  # nach dem ersten Lesen sortiert jemand um
+            svc.tabs['ALL_LEADS'] = (0, [snapshot[0], snapshot[2], snapshot[1]])
+        return FakeSheets.get(svc, spreadsheetId, fields, range)
+    svc.get = swapped_get
+    with pytest.raises(RuntimeError, match='CRM_BINDING_IDENTITY_MISMATCH:2'):
+        cb.ensure_bindings(svc, 'x', apply=True, sleep=lambda s: None, only={'HSB-20260708-00001', 'HSB-20260708-00002'})
+    assert svc.meta == []

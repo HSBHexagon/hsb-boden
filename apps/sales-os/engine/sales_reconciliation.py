@@ -243,26 +243,39 @@ def probe_url(url):
 RASTER_FORMATS = {'image/png': 'PNG', 'image/jpeg': 'JPEG', 'image/gif': 'GIF', 'image/webp': 'WEBP'}
 
 
-def _raster_ok(data, expected_format):
-    """Bild vollständig dekodieren (mit Pixel-Grenze); Format muss zum Content-Type passen."""
+def _raster_ok(data, expected_format, max_frames=100, max_pixels=40_000_000):
+    """Struktur per verify(), danach jeden Frame dekodieren; Format muss zum Content-Type passen."""
     from io import BytesIO
-    from PIL import Image
+    from PIL import Image, ImageSequence
     try:
         with Image.open(BytesIO(data)) as img:
-            if img.format != expected_format or img.width * img.height > 40_000_000:
+            if img.format != expected_format:
                 return False
-            img.load()
+            img.verify()
+        with Image.open(BytesIO(data)) as img:
+            pixels = 0
+            for count, frame in enumerate(ImageSequence.Iterator(img), 1):
+                pixels += frame.width * frame.height
+                if count > max_frames or pixels > max_pixels:
+                    return False
+                frame.load()
         return True
     except Exception:
         return False
 
 
 def _svg_ok(data):
+    """Nur striktes UTF-8 ohne DTD/Entities, Wurzelelement <svg>."""
     import xml.etree.ElementTree as ET
-    if b'<!DOCTYPE' in data[:4096].upper() or b'<!ENTITY' in data.upper():
+    try:
+        text = data.decode('utf-8')
+    except UnicodeDecodeError:
+        return False
+    upper = text.upper()
+    if '<!DOCTYPE' in upper or '<!ENTITY' in upper or 'ENCODING="UTF-16' in upper or "ENCODING='UTF-16" in upper:
         return False
     try:
-        root = ET.fromstring(data)
+        root = ET.fromstring(text)
     except ET.ParseError:
         return False
     return root.tag.rsplit('}', 1)[-1] == 'svg'

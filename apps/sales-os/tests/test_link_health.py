@@ -41,3 +41,14 @@ def test_error_pages_truncated_and_mismatched_payloads_stay_invalid():
     assert not link_payload_valid(png, 'application/octet-stream')
     assert not link_payload_valid(b'<h1>Not found</h1>', 'text/html')
     assert not link_payload_valid(b'', 'image/png')
+
+
+def test_utf16_entity_svg_and_truncated_multiframe_gif_rejected():
+    from io import BytesIO
+    from PIL import Image
+    svg16 = '<?xml version="1.0" encoding="UTF-16"?><!DOCTYPE s [<!ENTITY a "x">]><svg>&a;</svg>'.encode('utf-16')
+    assert not link_payload_valid(svg16, 'image/svg+xml')
+    frames = [Image.new('RGB', (8, 8), c) for c in ('red', 'green', 'blue')]
+    buf = BytesIO(); frames[0].save(buf, 'GIF', save_all=True, append_images=frames[1:]); gif = buf.getvalue()
+    assert link_payload_valid(gif, 'image/gif')
+    assert not link_payload_valid(gif[:-20], 'image/gif')

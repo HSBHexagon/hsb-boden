@@ -12,6 +12,7 @@ LEAD_RE = re.compile(r'^HSB-\d{8}-\d+$')
 CANARY_TAB = 'HSB_BINDING_CANARY'
 CANARY_KEY = 'hsb.canary_id'
 BATCH = 400
+METADATA_CHAR_LIMIT = 29_000  # Google: 30.000 Zeichen je Tabelle, Reserve für andere Metadaten
 
 
 def _sheet_id(svc, sid, title):
@@ -69,18 +70,46 @@ def ensure_bindings(svc, sid, apply=False, sleep=time.sleep, only=None):
             requests.append(_row_metadata(row0, sheet_id, KEY, lid))
     result['to_create'] = len(requests)
     if apply:
+        if only is None:
+            raise ValueError('APPLY_REQUIRES_LEADS_FILE')
+        used = metadata_chars(svc, sid)
+        needed = sum(len(KEY) + len(r['createDeveloperMetadata']['developerMetadata']['metadataValue']) for r in requests)
+        if used + needed > METADATA_CHAR_LIMIT:
+            raise RuntimeError(f'CRM_METADATA_CAPACITY:{used}+{needed}>{METADATA_CHAR_LIMIT}')
         for start in range(0, len(requests), BATCH):
             svc.spreadsheets().batchUpdate(spreadsheetId=sid, body={'requests': requests[start:start + BATCH]}).execute()
             result['created'] += len(requests[start:start + BATCH])
             sleep(1.0)
-        after = existing_bindings(svc, sid)
-        created = {r['createDeveloperMetadata']['developerMetadata']['metadataValue']:
-                   r['createDeveloperMetadata']['developerMetadata']['location']['dimensionRange']['startIndex']
-                   for r in requests}
-        bad = [lid for lid, row0 in created.items() if after.get(lid) != [row0]]
-        if bad:
-            raise RuntimeError(f'CRM_BINDING_READBACK_MISMATCH:{len(bad)}')
+        verify_bindings(svc, sid, {r['createDeveloperMetadata']['developerMetadata']['metadataValue'] for r in requests})
     return result
+
+
+def metadata_chars(svc, sid):
+    """Belegte Zeichen (Schlüssel + Wert) aller Developer-Metadaten der Tabelle."""
+    found = svc.spreadsheets().developerMetadata().search(spreadsheetId=sid, body={'dataFilters': [
+        {'developerMetadataLookup': {'visibility': 'DOCUMENT'}}]}).execute()
+    return sum(len(m['developerMetadata'].get('metadataKey', '')) + len(m['developerMetadata'].get('metadataValue', ''))
+               for m in found.get('matchedDeveloperMetadata', []))
+
+
+def verify_bindings(svc, sid, lead_ids):
+    """Liest die echte Lead-ID jeder gebundenen Zeile zurück; Fehlbindungen werden entfernt und gemeldet."""
+    rows = svc.spreadsheets().values().get(spreadsheetId=sid, range='ALL_LEADS!A1:A').execute().get('values', [])
+    found = svc.spreadsheets().developerMetadata().search(spreadsheetId=sid, body={'dataFilters': [
+        {'developerMetadataLookup': {'metadataKey': KEY, 'locationType': 'ROW', 'visibility': 'DOCUMENT'}}]}).execute()
+    wrong = []
+    for m in found.get('matchedDeveloperMetadata', []):
+        meta = m['developerMetadata']
+        if meta.get('metadataValue') not in lead_ids:
+            continue
+        row0 = meta.get('location', {}).get('dimensionRange', {}).get('startIndex')
+        cell = rows[row0][0].strip() if row0 is not None and row0 < len(rows) and rows[row0] else ''
+        if cell != meta.get('metadataValue'):
+            wrong.append(meta['metadataId'])
+    if wrong:
+        svc.spreadsheets().batchUpdate(spreadsheetId=sid, body={'requests': [
+            {'deleteDeveloperMetadata': {'dataFilter': {'developerMetadataLookup': {'metadataId': mid}}}} for mid in wrong]}).execute()
+        raise RuntimeError(f'CRM_BINDING_IDENTITY_MISMATCH:{len(wrong)}')
 
 
 def sort_canary(svc, sid):
@@ -110,6 +139,10 @@ def sort_canary(svc, sid):
 
 def prune_bindings(svc, sid, keep, apply=False):
     """Entfernt nur eigene `hsb.lead_id`-Bindungen außerhalb von `keep`; Zellinhalte bleiben unberührt."""
+    rows = svc.spreadsheets().values().get(spreadsheetId=sid, range='ALL_LEADS!A1:A').execute().get('values', [])
+    present = [r[0].strip() for r in rows[1:] if r]
+    if not keep or any(not LEAD_RE.match(k) or present.count(k) != 1 for k in keep):
+        raise ValueError('PRUNE_KEEP_SET_INVALID')
     found = svc.spreadsheets().developerMetadata().search(spreadsheetId=sid, body={'dataFilters': [
         {'developerMetadataLookup': {'metadataKey': KEY, 'locationType': 'ROW', 'visibility': 'DOCUMENT'}}]}).execute()
     drop = [m['developerMetadata']['metadataId'] for m in found.get('matchedDeveloperMetadata', [])

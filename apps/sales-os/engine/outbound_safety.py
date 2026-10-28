@@ -259,7 +259,10 @@ def dispatch_verified(count_per_owner=25, owners=('JOEL','JORDI'), dry_run=True,
                     raise RuntimeError('LIVE_IDENTITY_CHANGED')
                 today=datetime.now(ZoneInfo('Europe/Berlin')).date()
                 used_today=count_owner_attempts_today([dict(zip(headers,r)) for r in rows[1:]],item['owner'],today)
-                if used_today>=effective_cap: raise RuntimeError('DAILY_CAP_REACHED_CRM')
+                day_str=today.isoformat()
+                journal_today=journal.db.execute('SELECT count(*) FROM attempts WHERE owner=? AND day=?',(item['owner'],day_str)).fetchone()[0]
+                if used_today>=effective_cap or journal_today>=effective_cap:
+                    continue
                 d=next(d for d in drafts if d['lead_id']==item['lead_id'] and d['sendable'])
                 client=clients[item['owner']]
                 with client._get_imap() as imap:

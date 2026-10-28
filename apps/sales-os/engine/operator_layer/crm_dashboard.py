@@ -165,7 +165,7 @@ def formatting_requests(sheet_id, rows=None):
 
 
 def main(apply=False):
-    sh, _ = services("cherinodiaz" if apply else "cherinojoel")
+    sh, _ = services("cherinodiaz")
     rows = dashboard_rows()
     if not apply:
         cur = sh.spreadsheets().values().get(spreadsheetId=SID, range="DASHBOARD!A12:A13").execute().get("values", [])

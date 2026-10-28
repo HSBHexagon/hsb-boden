@@ -59,9 +59,9 @@
 - Consumes: Entwurf mit Header `X-HSB-Template-ID: v2-<segment>-s<step>` (aus `build_draft_message`).
 - Produces: nach erfolgreichem Versand zusätzlich `Email_Template_ID` = Header-Wert und `Segment` = `produktion|architekten` im CRM, über denselben `crm_write_readback`-Aufruf wie `Send_Status`/`Send_Datum`.
 
-- [ ] **Step 1: Failing test** — `test_complete_delivery_writes_template_and_segment` (Fake-svc: erwartete Felder enthalten `Email_Template_ID='v2-produktion-s1'`, `Segment='produktion'`); `test_v1_message_without_header_leaves_fields_untouched`.
-- [ ] **Steps 2–4:** FAIL → Implementierung → PASS + Suite.
-- [ ] **Step 5: Commit** `feat(sales-os): record template id and segment on delivery`.
+- [x] **Step 1: Failing test** — `test_complete_delivery_writes_template_and_segment` (Fake-svc: erwartete Felder enthalten `Email_Template_ID='v2-produktion-s1'`, `Segment='produktion'`); `test_v1_message_without_header_leaves_fields_untouched`.
+- [x] **Steps 2–4:** FAIL → Implementierung → PASS + Suite.
+- [x] **Step 5: Commit** `feat(sales-os): record template id and segment on delivery`.
 
 ### Task 3: Alle Entwürfe neu erzeugen (operativ)
 

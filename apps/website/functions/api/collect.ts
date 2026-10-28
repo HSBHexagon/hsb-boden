@@ -16,15 +16,72 @@ const ALLOWED_ORIGINS = new Set([
 
 const MAX_PAYLOAD_BYTES = 16 * 1024;
 const EVENT_NAME_PATTERN = /^[a-z0-9_]{1,64}$/;
+const CLIENT_ID_PATTERN = /^[a-zA-Z0-9._-]{1,128}$/;
+const PARAM_KEY_PATTERN = /^[a-z0-9_]{1,40}$/i;
+const MAX_PARAMS = 25;
+const MAX_PARAM_VALUE_LENGTH = 500;
 
 function isAllowedOrigin(origin: string | null): boolean {
   if (!origin) return false;
   if (ALLOWED_ORIGINS.has(origin)) return true;
-  // Lokale Entwicklung und Cloudflare Pages Previews zulassen
-  if (origin.startsWith("http://localhost:") || origin.endsWith(".hsb-boden.pages.dev")) {
-    return true;
+
+  try {
+    const url = new URL(origin);
+    if (url.origin !== origin) return false;
+
+    // Lokale Entwicklung zulassen (http://localhost:<port> oder http://127.0.0.1:<port>)
+    if (
+      url.protocol === "http:" &&
+      (url.hostname === "localhost" || url.hostname === "127.0.0.1")
+    ) {
+      return true;
+    }
+
+    // Cloudflare Pages Previews zulassen (https://<preview>.hsb-boden.pages.dev)
+    if (
+      url.protocol === "https:" &&
+      /^[a-z0-9-]+\.hsb-boden\.pages\.dev$/.test(url.hostname)
+    ) {
+      return true;
+    }
+  } catch {
+    return false;
   }
+
   return false;
+}
+
+function sanitizeParams(rawParams: unknown): Record<string, string | number | boolean> {
+  if (!rawParams || typeof rawParams !== "object" || Array.isArray(rawParams)) {
+    return Object.create(null);
+  }
+
+  const sanitized: Record<string, string | number | boolean> = Object.create(null);
+  let count = 0;
+
+  for (const [key, value] of Object.entries(rawParams)) {
+    if (count >= MAX_PARAMS) break;
+    if (typeof key !== "string" || !PARAM_KEY_PATTERN.test(key)) {
+      continue;
+    }
+
+    if (typeof value === "string") {
+      if (value.length <= MAX_PARAM_VALUE_LENGTH) {
+        sanitized[key] = value;
+        count++;
+      }
+    } else if (typeof value === "number") {
+      if (Number.isFinite(value)) {
+        sanitized[key] = value;
+        count++;
+      }
+    } else if (typeof value === "boolean") {
+      sanitized[key] = value;
+      count++;
+    }
+  }
+
+  return sanitized;
 }
 
 export async function onRequestPost(context: {
@@ -67,6 +124,13 @@ export async function onRequestPost(context: {
     });
   }
 
+  const clientId =
+    typeof payload.client_id === "string" && CLIENT_ID_PATTERN.test(payload.client_id)
+      ? payload.client_id
+      : "anonymous-edge-user";
+
+  const sanitizedParams = sanitizeParams(payload.params);
+
   const measurementId = env.GA4_MEASUREMENT_ID || "G-VC4BJBEFTV";
   const apiSecret = env.GA4_API_SECRET;
 
@@ -76,12 +140,12 @@ export async function onRequestPost(context: {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        client_id: payload.client_id || "anonymous-edge-user",
+        client_id: clientId,
         events: [
           {
             name: payload.event_name,
             params: {
-              ...payload.params,
+              ...sanitizedParams,
               engagement_time_msec: "100",
             },
           },

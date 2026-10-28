@@ -1,0 +1,40 @@
+# Spiegelt .github/workflows/ci.yml (Job build-and-test) für die Website in apps/website.
+# Siehe https://circleci.com/docs/reference/configuration-reference/
+version: 2.1
+
+jobs:
+  build-and-test:
+    docker:
+      - image: cimg/node:22.23
+    resource_class: small
+    steps:
+      - checkout
+      - restore_cache:
+          keys:
+            - v1-npm-{{ checksum "apps/website/package-lock.json" }}
+            - v1-npm-
+      - run:
+          name: Install dependencies
+          working_directory: ~/project/apps/website
+          command: npm ci
+      - save_cache:
+          key: v1-npm-{{ checksum "apps/website/package-lock.json" }}
+          paths:
+            - ~/.npm
+      - run:
+          name: Typecheck
+          working_directory: ~/project/apps/website
+          command: npm run check
+      - run:
+          name: Run tests
+          working_directory: ~/project/apps/website
+          command: npm run test:run
+      - run:
+          name: Build project
+          working_directory: ~/project/apps/website
+          command: npm run build
+
+workflows:
+  website:
+    jobs:
+      - build-and-test

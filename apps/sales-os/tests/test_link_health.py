@@ -52,3 +52,8 @@ def test_utf16_entity_svg_and_truncated_multiframe_gif_rejected():
     buf = BytesIO(); frames[0].save(buf, 'GIF', save_all=True, append_images=frames[1:]); gif = buf.getvalue()
     assert link_payload_valid(gif, 'image/gif')
     assert not link_payload_valid(gif[:-20], 'image/gif')
+
+
+def test_bomless_utf16_svg_rejected():
+    payload = '<?xml version="1.0"?><!DOCTYPE s [<!ENTITY a "x">]><svg>&a;</svg>'.encode('utf-16-le')
+    assert not link_payload_valid(payload, 'image/svg+xml')

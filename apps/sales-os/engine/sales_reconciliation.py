@@ -271,6 +271,8 @@ def _svg_ok(data):
         text = data.decode('utf-8')
     except UnicodeDecodeError:
         return False
+    if '\x00' in text or not text.lstrip('\ufeff \t\r\n').startswith('<'):
+        return False
     upper = text.upper()
     if '<!DOCTYPE' in upper or '<!ENTITY' in upper or 'ENCODING="UTF-16' in upper or "ENCODING='UTF-16" in upper:
         return False

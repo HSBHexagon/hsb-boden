@@ -39,8 +39,8 @@ def existing_bindings(svc, sid, key=KEY):
     return out
 
 
-def ensure_bindings(svc, sid, apply=False, sleep=time.sleep):
-    """Legt fehlende Bindungen für jede ALL_LEADS-Zeile mit gültiger, eindeutiger Lead-ID an."""
+def ensure_bindings(svc, sid, apply=False, sleep=time.sleep, only=None):
+    """Legt fehlende Bindungen an; mit `only` nur für diese Lead-IDs (Sheets begrenzt Metadaten auf ~30.000 Zeichen)."""
     rows = svc.spreadsheets().values().get(spreadsheetId=sid, range='ALL_LEADS!A1:A').execute().get('values', [])
     sheet_id = _sheet_id(svc, sid, 'ALL_LEADS')
     if not rows or rows[0][:1] != ['Lead-ID'] or sheet_id is None:
@@ -54,6 +54,8 @@ def ensure_bindings(svc, sid, apply=False, sleep=time.sleep):
               'skipped_duplicate': 0, 'conflicts': 0, 'dry_run': not apply}
     requests = []
     for row0, lid in ids:
+        if only is not None and lid not in only:
+            continue
         if not LEAD_RE.match(lid):
             result['skipped_invalid'] += 1
         elif counts[lid] > 1:
@@ -104,3 +106,17 @@ def sort_canary(svc, sid):
         return {'sorted': cells == [[f'C{i}'] for i in range(5, 0, -1)], 'bindings_follow_rows': ok}
     finally:
         svc.spreadsheets().batchUpdate(spreadsheetId=sid, body={'requests': [{'deleteSheet': {'sheetId': tab}}]}).execute()
+
+
+def prune_bindings(svc, sid, keep, apply=False):
+    """Entfernt nur eigene `hsb.lead_id`-Bindungen außerhalb von `keep`; Zellinhalte bleiben unberührt."""
+    found = svc.spreadsheets().developerMetadata().search(spreadsheetId=sid, body={'dataFilters': [
+        {'developerMetadataLookup': {'metadataKey': KEY, 'locationType': 'ROW', 'visibility': 'DOCUMENT'}}]}).execute()
+    drop = [m['developerMetadata']['metadataId'] for m in found.get('matchedDeveloperMetadata', [])
+            if m['developerMetadata'].get('metadataValue') not in keep]
+    if apply:
+        for start in range(0, len(drop), BATCH):
+            svc.spreadsheets().batchUpdate(spreadsheetId=sid, body={'requests': [
+                {'deleteDeveloperMetadata': {'dataFilter': {'developerMetadataLookup': {'metadataId': mid}}}}
+                for mid in drop[start:start + BATCH]]}).execute()
+    return {'to_remove': len(drop), 'removed': len(drop) if apply else 0, 'dry_run': not apply}

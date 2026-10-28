@@ -147,6 +147,7 @@ def upgrade_drafts(owner, limit=5, cohort='pilot', apply=False, journal_path=Non
         if len(selected) >= limit:
             break
     result['selected'] = len(selected)
+    result['selected_lead_ids'] = [str(lead.get('Lead-ID') or '') for _, lead in selected]
     if not apply:
         return result
     if client is None or svc is None or journal_path is None:

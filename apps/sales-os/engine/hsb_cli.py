@@ -328,7 +328,14 @@ def cmd_crm_bindings(args, svc=None):
     if args.canary:
         print(_json.dumps(crm_bindings.sort_canary(svc, CANONICAL_SPREADSHEET_ID)))
     else:
-        print(_json.dumps(crm_bindings.ensure_bindings(svc, CANONICAL_SPREADSHEET_ID, apply=args.apply)))
+        only = None
+        if args.leads_file:
+            only = {line.strip() for line in open(args.leads_file, encoding="utf-8") if line.strip()}
+        if args.prune:
+            if only is None:
+                raise SystemExit("--prune braucht --leads-file")
+            print(_json.dumps(crm_bindings.prune_bindings(svc, CANONICAL_SPREADSHEET_ID, only, apply=args.apply)))
+        print(_json.dumps(crm_bindings.ensure_bindings(svc, CANONICAL_SPREADSHEET_ID, apply=args.apply, only=only)))
 
 
 def cmd_bounce_report(args, collector=None):
@@ -562,6 +569,8 @@ def main():
     p_bind = subparsers.add_parser("crm-bindings", help="Stabile Zeilenbindungen im CRM anlegen (Dry-Run ohne --apply) bzw. Sortier-Canary")
     p_bind.add_argument("--apply", action="store_true")
     p_bind.add_argument("--canary", action="store_true", help="Nur Sortier-Canary im temporären Tab")
+    p_bind.add_argument("--leads-file", help="Nur diese Lead-IDs binden (eine je Zeile)")
+    p_bind.add_argument("--prune", action="store_true", help="Bindungen außerhalb von --leads-file entfernen")
 
     p_bounce = subparsers.add_parser("bounce-report", help="Bounce-Zählung je DSN-Klasse und Domain (nur Zählungen)")
     p_bounce.add_argument("--limit", type=int, default=0, help="Max. Nachrichten je Postfach (0 = alle)")

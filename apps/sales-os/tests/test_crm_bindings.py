@@ -50,7 +50,13 @@ class FakeSheets:
         replies = []
         for req in body['requests']:
             if 'createDeveloperMetadata' in req:
-                self.meta.append(dict(req['createDeveloperMetadata']['developerMetadata']))
+                m = dict(req['createDeveloperMetadata']['developerMetadata'])
+                m['metadataId'] = len(self.meta) + 1000 + len(self.batches)
+                self.meta.append(m)
+                replies.append({})
+            elif 'deleteDeveloperMetadata' in req:
+                mid = req['deleteDeveloperMetadata']['dataFilter']['developerMetadataLookup']['metadataId']
+                self.meta = [m for m in self.meta if m.get('metadataId') != mid]
                 replies.append({})
             elif 'addSheet' in req:
                 sid = 100 + len(self.tabs)
@@ -113,3 +119,20 @@ def test_sort_canary_proves_bindings_follow_rows_and_cleans_up():
     assert cb.CANARY_TAB not in svc.tabs
     assert not [m for m in svc.meta if m['metadataKey'] == cb.CANARY_KEY]
     assert svc.tabs['ALL_LEADS'][1] == [['Lead-ID'], ['HSB-20260708-00001']]
+
+
+def test_only_and_prune_limit_bindings_to_pilot():
+    svc = FakeSheets(['HSB-20260708-00001', 'HSB-20260708-00002', 'HSB-20260708-00003'])
+    cb.ensure_bindings(svc, 'x', apply=True, sleep=lambda s: None)
+    keep = {'HSB-20260708-00002'}
+    assert cb.prune_bindings(svc, 'x', keep) == {'to_remove': 2, 'removed': 0, 'dry_run': True}
+    assert cb.prune_bindings(svc, 'x', keep, apply=True)['removed'] == 2
+    assert cb.existing_bindings(svc, 'x') == {'HSB-20260708-00002': [2]}
+    res = cb.ensure_bindings(svc, 'x', only=keep)
+    assert res['to_create'] == 0 and res['already_bound'] == 1
+
+
+def test_only_binds_just_the_listed_leads():
+    svc = FakeSheets(['HSB-20260708-00001', 'HSB-20260708-00002'])
+    res = cb.ensure_bindings(svc, 'x', apply=True, sleep=lambda s: None, only={'HSB-20260708-00001'})
+    assert res['created'] == 1 and cb.existing_bindings(svc, 'x') == {'HSB-20260708-00001': [1]}

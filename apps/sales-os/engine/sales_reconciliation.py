@@ -19,7 +19,7 @@ import os
 from pathlib import Path
 import re
 from urllib.parse import urlsplit, parse_qs, unquote
-from urllib.request import Request, urlopen
+from urllib.request import Request
 from hsb_core import check_eligibility, normalize_owner, sanitize_company_name
 
 SENDERS = {'JOEL': 'j-cherino@hsb-boden.com', 'JORDI': 'j-post@hsb-boden.com'}
@@ -64,7 +64,9 @@ def assess_message(raw, owner, leads):
     lead_id = str(lead.get('Lead-ID') or lead.get('Lead_ID') or '')
     explicit = set(re.findall(r'HSB-\d{8}-\d+', str(msg.get('X-HSB-Lead-ID') or '') + body))
     for url in links:
-        explicit.update(parse_qs(urlsplit(url).query).get('lead', []))
+        query = parse_qs(urlsplit(url).query)
+        explicit.update(query.get('lead', []))
+        explicit.update(query.get('lid', []))
     crm_ids = {str(lead.get(k) or '') for k in ('Draft_ID', 'Internet_Message_ID', 'Outlook_Message_ID')}
     if explicit and explicit != {lead_id}:
         issues.append('LEAD_ID_CONFLICT')
@@ -76,22 +78,62 @@ def assess_message(raw, owner, leads):
         issues.append('WRONG_SENDER')
     if not mid or not re.fullmatch(r'<[^<>\s]+@[^<>\s]+>', mid):
         issues.append('MESSAGE_ID_INVALID')
+    template_id = str(msg.get('X-HSB-Template-ID') or '').strip()
+    is_v2 = template_id.startswith('v2-')
     company = str(lead.get('Firma') or lead.get('Company') or '').strip()
     contact = str(lead.get('Ansprechpartner') or lead.get('Contact') or '').strip()
     if not company or sanitize_company_name(company, recipients[0] if recipients else '') == 'Ihr Unternehmen':
         issues.append('COMPANY_UNVERIFIED')
-    if not subject or (company and company.casefold() not in subject.casefold()):
+    if is_v2:
+        # Folgemails antworten im Thread: das Re:/AW:-Praefix zaehlt nicht zur 50-Zeichen-Grenze.
+        if not subject or len(re.sub(r'^(?:re|aw):\s*', '', subject, flags=re.I)) > 50:
+            issues.append('SUBJECT_TOO_LONG')
+    elif not subject or (company and company.casefold() not in subject.casefold()):
         issues.append('SUBJECT_NOT_COMPANY_SPECIFIC')
-    if not ((company and company.casefold() in body.casefold()) or (len(contact) > 3 and contact.casefold() in body.casefold())):
+    body_names = [company]
+    if is_v2:
+        from canonical_template_factory import short_company
+        body_names.append(short_company(company))
+    if not (any(n and n.casefold() in body.casefold() for n in body_names) or (len(contact) > 3 and contact.casefold() in body.casefold())):
         issues.append('BODY_NOT_COMPANY_OR_CONTACT_SPECIFIC')
     if re.search(r'\{\{|\[FIRMA\]|\[NAME\]|undefined|Sehr geehrte/r', body, re.I):
         issues.append('UNRESOLVED_PLACEHOLDER')
     flyer_links = [u for u in links if urlsplit(u).netloc.lower() in {'www.hsb-boden.de', 'hsb-boden.de'} and ('flyer' in urlsplit(u).path.lower() or urlsplit(u).path.lower().endswith('.pdf'))]
     optout_links = [u for u in links if urlsplit(u).netloc.lower() == 'www.hsb-boden.de' and urlsplit(u).path.rstrip('/') == '/abmelden']
-    if not flyer_links:
-        issues.append('FLYER_LINK_MISSING')
-    if not optout_links or not any(recipients and recipients[0] in unquote(u).lower() for u in optout_links):
-        issues.append('PERSONAL_OPTOUT_LINK_MISSING')
+    if is_v2:
+        if template_id.endswith('-s1'):
+            surname = contact.split()[-1].casefold() if len(contact.split()) > 1 else ''
+            forbidden = ['@', *(r.casefold() for r in recipients)]
+            forbidden += [t for t in [*(r.split('@')[0].casefold() for r in recipients), surname] if len(t) >= 3]
+
+            def _v2_link_ok(u):
+                parts = urlsplit(u)
+                decoded = unquote(u).casefold()
+                # Statische Host- und Kampagnennamen sind keine Empfängerdaten.
+                # Personenbezogene Query-Werte prüfen, nicht 'Boden' im eigenen Hostnamen.
+                query_values = [v.casefold() for key, vals in parse_qs(parts.query).items()
+                                if key not in {'utm_source','utm_medium','utm_campaign','utm_content','s'} for v in vals]
+                if '@' in decoded or any(t in val for t in forbidden[1:] for val in query_values):
+                    return False
+                if any(key not in {'utm_source','utm_medium','utm_campaign','utm_content','s'} for key in parse_qs(parts.query)):
+                    return False
+                return parts.netloc.lower() == 'www.hsb-boden.de' and (
+                    parts.path.rstrip('/') == '/flyer' or re.fullmatch(r'/r/[A-Za-z0-9_\-.~]+', parts.path))
+            if len(links) > 1 or not all(_v2_link_ok(u) for u in links):
+                issues.append('V2_LINK_INVALID')
+        elif links:
+            issues.append('V2_LINK_INVALID')
+        if not re.search(r'Abmelden', body):
+            issues.append('V2_OPTOUT_LINE_MISSING')
+    else:
+        if not flyer_links:
+            issues.append('FLYER_LINK_MISSING')
+        # Persoenlich: Lead-ID im Parameter lid (ohne Adresse) oder die bisherige Adressform.
+        def _personal_optout(u):
+            return bool(lead_id and lead_id in parse_qs(urlsplit(u).query).get('lid', [])) or bool(
+                recipients and recipients[0] in unquote(u).lower())
+        if not optout_links or not any(_personal_optout(u) for u in optout_links):
+            issues.append('PERSONAL_OPTOUT_LINK_MISSING')
     if has_unreviewed_legacy_variant(msg, owner):
         issues.append('HISTORICAL_VARIANT_REQUIRES_REVIEW')
     if msg.get('Reply-To'):
@@ -101,7 +143,7 @@ def assess_message(raw, owner, leads):
     return {'owner': owner, 'recipients': recipients, 'lead_id': lead_id,
             'crm_unique': len(matching) == 1, 'message_id': mid, 'subject': subject,
             'issues': sorted(set(issues)), 'warnings': sorted(set(warnings)),
-            'flyer_links': flyer_links, 'optout_links': optout_links,
+            'links': links, 'flyer_links': flyer_links, 'optout_links': optout_links,
             'pdf_count': sum(p.get_content_type() == 'application/pdf' for p in msg.walk()),
             'eligibility_reasons': check_eligibility(lead).reasons,
             'sha256': hashlib.sha256(raw).hexdigest()}
@@ -154,13 +196,30 @@ def scan_mailbox(owner, output):
     return result
 
 
+def urlopen(req, timeout=20):
+    # Wiederverwendung des geprüften Openers: Redirect-Prüfung, IP-Pinning, kein Proxy/FTP.
+    from bounce_rescue_agent import build_public_opener
+    return build_public_opener().open(req, timeout=timeout)
+
+
 def probe_url(url):
     # Never request a real recipient's unsubscribe URL: page checks use no email.
     req = Request(url, headers={'User-Agent': 'HSB-Reconciliation/1.0'})
     with urlopen(req, timeout=30) as response:
-        data = response.read()
+        import time
+        deadline=time.monotonic()+20
+        read=getattr(response,'read1',response.read)
+        chunks=[];size=0
+        while True:
+            chunk=read(65536)
+            if time.monotonic()>deadline:raise RuntimeError('LINK_READ_TIMEOUT')
+            if not chunk:break
+            size+=len(chunk)
+            if size>10*1024*1024:raise RuntimeError('LINK_RESPONSE_TOO_LARGE')
+            chunks.append(chunk)
+        data=b''.join(chunks)
         reachable = response.status == 200
-        valid = reachable and (data.startswith(b'%PDF-') or (b'<html' in data.lower() and len(data) > 500))
+        valid = reachable and link_payload_valid(data, response.headers.get('Content-Type'))
         result = {'status': response.status, 'final_url': response.url, 'content_type': response.headers.get('Content-Type'), 'sha256': hashlib.sha256(data).hexdigest(), 'bytes': len(data), 'reachable': reachable, 'valid': valid}
         if urlsplit(url).path.rstrip('/') == '/abmelden':
             class Links(HTMLParser):
@@ -179,6 +238,85 @@ def probe_url(url):
                           request_route='MONITORED_COM_MAILTO' if mailto else 'MISSING',
                           crm_update_on_page_load=False)
         return result
+
+
+RASTER_FORMATS = {'image/png': 'PNG', 'image/jpeg': 'JPEG', 'image/gif': 'GIF', 'image/webp': 'WEBP'}
+
+
+def _raster_ok(data, expected_format, max_frames=100, max_pixels=40_000_000):
+    """Struktur per verify(), danach jeden Frame dekodieren; Format muss zum Content-Type passen."""
+    from io import BytesIO
+    from PIL import Image, ImageSequence
+    try:
+        with Image.open(BytesIO(data)) as img:
+            if img.format != expected_format:
+                return False
+            img.verify()
+        with Image.open(BytesIO(data)) as img:
+            pixels = 0
+            for count, frame in enumerate(ImageSequence.Iterator(img), 1):
+                pixels += frame.width * frame.height
+                if count > max_frames or pixels > max_pixels:
+                    return False
+                frame.load()
+        return True
+    except Exception:
+        return False
+
+
+def _svg_ok(data):
+    """Nur striktes UTF-8 ohne DTD/Entities, Wurzelelement <svg>."""
+    import xml.etree.ElementTree as ET
+    try:
+        text = data.decode('utf-8')
+    except UnicodeDecodeError:
+        return False
+    if '\x00' in text or not text.lstrip('\ufeff \t\r\n').startswith('<'):
+        return False
+    upper = text.upper()
+    if '<!DOCTYPE' in upper or '<!ENTITY' in upper or 'ENCODING="UTF-16' in upper or "ENCODING='UTF-16" in upper:
+        return False
+    try:
+        root = ET.fromstring(text)
+    except ET.ParseError:
+        return False
+    return root.tag.rsplit('}', 1)[-1] == 'svg'
+
+
+def link_payload_valid(data, content_type=None):
+    """Gültig sind PDF, eine echte HTML-Seite oder ein dekodierbares Bild im deklarierten Format."""
+    if data.startswith(b'%PDF-') or (b'<html' in data.lower() and len(data) > 500):
+        return True
+    ctype = str(content_type or '').split(';')[0].strip().lower()
+    if ctype == 'image/svg+xml':
+        return _svg_ok(data)
+    if ctype in RASTER_FORMATS:
+        return _raster_ok(data, RASTER_FORMATS[ctype])
+    return False
+
+
+def link_health(urls, cache=None, probe=None):
+    """Jeden eindeutigen eigenen Link einmal ohne Query prüfen; fremde Ziele geschlossen halten."""
+    cache = {} if cache is None else cache
+    probe = probe or probe_url
+    issues = []
+    for url in urls:
+        try:
+            parsed = urlsplit(url)
+            base = f'{parsed.scheme}://{parsed.netloc}{parsed.path}'
+            if base not in cache:
+                if parsed.scheme != 'https' or parsed.netloc.lower() not in {'www.hsb-boden.de', 'hsb-boden.de'}:
+                    cache[base] = False
+                else:
+                    try:
+                        cache[base] = bool(probe(base).get('valid'))
+                    except Exception:
+                        cache[base] = False
+            if not cache[base]:
+                issues.append(f'LINK_BROKEN:{parsed.netloc}{parsed.path}')
+        except ValueError:
+            issues.append('LINK_BROKEN:INVALID_URL')
+    return sorted(set(issues))
 
 
 def write_crm_audit(output):
@@ -262,6 +400,9 @@ def run_audit(output, reuse_snapshot=False):
             record['internal_test']=bool(record['recipients']) and all(a in INTERNAL_RECIPIENTS for a in record['recipients'])
             draft_records.append(dict(item, **record))
     contacted.update(str(l.get('E-Mail') or '').strip().lower() for l in leads if str(l.get('Send_Status') or '').lower() in {'sent', 'gesendet'} or l.get('Send_Datum'))
+    link_cache = {}
+    for draft in draft_records:
+        draft['issues'].extend(link_health(draft.get('links', draft.get('flyer_links', [])), link_cache))
     counts = Counter(a for d in draft_records if not d['internal_test'] for a in d['recipients'])
     mids = Counter(d['message_id'] for d in draft_records if d['message_id'])
     bylead = defaultdict(list)

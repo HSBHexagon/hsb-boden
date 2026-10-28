@@ -167,10 +167,15 @@ class ComMailboxClient:
         self,
         to_email: str,
         subject: str,
-        body_html: str,
+        body_html: str = '',
         flyer_bytes: Optional[bytes] = None,
         flyer_filename: Optional[str] = 'HSB-HEXAGON-Industrieboeden-Flyer.pdf',
-        custom_message_id: Optional[str] = None
+        custom_message_id: Optional[str] = None,
+        body_text: Optional[str] = None,
+        template_id: Optional[str] = None,
+        in_reply_to: Optional[str] = None,
+        references: Optional[str] = None,
+        lead_id: Optional[str] = None
     ) -> Tuple[bytes, str]:
         if not to_email or '@' not in to_email:
             raise ValueError(f'Ungueltige Empfaengeradresse: {to_email}')
@@ -185,6 +190,18 @@ class ComMailboxClient:
         msg_id = custom_message_id or make_msgid(domain='hsb-boden.com')
         msg['Message-ID'] = msg_id
         msg['X-Unsent'] = '1'
+        if body_text is not None:
+            # v2: genau ein text/plain-Teil, kein HTML, kein Anhang, nie Reply-To.
+            if lead_id:
+                msg['X-HSB-Lead-ID'] = lead_id
+            if template_id:
+                msg['X-HSB-Template-ID'] = template_id
+            if in_reply_to:
+                msg['In-Reply-To'] = in_reply_to
+            if references:
+                msg['References'] = references
+            msg.set_content(body_text, charset='utf-8')
+            return msg.as_bytes(), msg_id
         ids = set(re.findall(r'HSB-\d{8}-\d+',unquote(body_html)))
         if len(ids)==1:
             msg['X-HSB-Lead-ID']=next(iter(ids))
@@ -221,10 +238,15 @@ class ComMailboxClient:
                     raw_bytes, mid = self.build_draft_message(
                         to_email=it['to_email'],
                         subject=it['subject'],
-                        body_html=it['body_html'],
+                        body_html=it.get('body_html', ''),
                         flyer_bytes=fbytes,
                         flyer_filename=it.get('flyer_filename'),
-                        custom_message_id=it.get('custom_message_id')
+                        custom_message_id=it.get('custom_message_id'),
+                        body_text=it.get('body_text'),
+                        template_id=it.get('template_id'),
+                        in_reply_to=it.get('in_reply_to'),
+                        references=it.get('references'),
+                        lead_id=it.get('lead_id') if it.get('body_text') is not None else None
                     )
                     res, data = imap.append(
                         folder,
@@ -249,7 +271,8 @@ class ComMailboxClient:
         flyer_filename: Optional[str] = "HSB-HEXAGON-Industrieboeden-Flyer.pdf",
         custom_message_id: Optional[str] = None,
         bcc_email: Optional[str] = None,
-        body_plain: Optional[str] = None
+        body_plain: Optional[str] = None,
+        extra_allowed_recipients: Optional[set] = None
     ) -> Tuple[bool, str]:
         """
         Versendet eine E-Mail ueber SMTP-SSL und legt eine Kopie im Ordner Gesendet ab.
@@ -260,7 +283,7 @@ class ComMailboxClient:
             raise ValueError(f"Ungueltige Empfaengeradresse: {to_email}")
 
         from outbound_safety import require_internal_test
-        require_internal_test(to_email, bcc_email)
+        require_internal_test(to_email, bcc_email, extra_allowed_recipients)
 
         # Vollstaendiges HTML-Dokument sicherstellen (verhindert HTML_MIME_NO_HTML_TAG)
         html_content = body_html.strip()
@@ -416,43 +439,43 @@ class ComMailboxClient:
         return items
 
     def fetch_inbound_messages(self, limit: int = 100) -> List[Dict[str, Any]]:
-        """Liest eingehende Nachrichten aus dem Posteingang (INBOX)."""
+        """Vollständiger UID-basierter Inbound-Snapshot; Lesefehler niemals als leer ausgeben."""
         items = []
         with self._get_imap() as imap:
             res, _ = imap.select(self.cfg['inbox_folder'], readonly=True)
             if res != 'OK':
-                return items
-            typ, data = imap.search(None, 'ALL')
-            if not data or not data[0]:
-                return items
-            msg_nums = data[0].split()
-            for num in (msg_nums[-limit:] if limit else msg_nums):
-                typ, msg_data = imap.fetch(num, '(BODY.PEEK[])')
-                for part in msg_data:
-                    if isinstance(part, tuple):
-                        parsed = email.message_from_bytes(part[1])
-                        body = ""
-                        if parsed.is_multipart():
-                            for p in parsed.walk():
-                                if p.get_content_type() == "message/delivery-status":
-                                    body += p.as_string() + "\n"
-                                if p.get_content_type() in ("text/plain", "text/html"):
-                                    payload = p.get_payload(decode=True)
-                                    if payload:
-                                        body += payload.decode(errors='replace') + "\n"
-                        else:
-                            payload = parsed.get_payload(decode=True)
-                            if payload:
-                                body = payload.decode(errors='replace')
-                        items.append({
-                            'id': stable_inbound_id(part[1],self.owner,parsed.get('Message-ID') or ''),
-                            'date_str': str(parsed.get('Date') or ''),
-                            'from': str(parsed.get('From') or ''),
-                            'to': str(parsed.get('To') or ''),
-                            'subject': str(parsed.get('Subject') or ''),
-                            'body': body,
-                            'internet_message_id': str(parsed.get('Message-ID') or ''),
-                        })
+                raise RuntimeError('INBOX_SELECT_FAILED')
+            typ, data = imap.uid('search', None, 'ALL')
+            if typ != 'OK' or not data:
+                raise RuntimeError('INBOX_SEARCH_FAILED')
+            uids = data[0].split() if data[0] else []
+            for uid in (uids[-limit:] if limit else uids):
+                typ, data = imap.uid('fetch', uid, '(BODY.PEEK[])')
+                parts = [part[1] for part in data or [] if isinstance(part, tuple)] if typ == 'OK' else []
+                if len(parts) != 1:
+                    raise RuntimeError('INBOX_FETCH_INCOMPLETE')
+                raw = parts[0]
+                parsed = email.message_from_bytes(raw)
+                bodies = []
+                for part in parsed.walk():
+                    if part.get_content_type() == 'message/delivery-status':
+                        bodies.append(part.as_string())
+                    elif part.get_content_type() in ('text/plain', 'text/html'):
+                        payload = part.get_payload(decode=True)
+                        if payload:
+                            bodies.append(payload.decode(errors='replace'))
+                items.append({
+                    'id': stable_inbound_id(raw, self.owner, parsed.get('Message-ID') or ''),
+                    'date_str': str(parsed.get('Date') or ''),
+                    'from': str(parsed.get('From') or ''),
+                    'to': str(parsed.get('To') or ''),
+                    'subject': str(parsed.get('Subject') or ''),
+                    'body': '\n'.join(bodies),
+                    'internet_message_id': str(parsed.get('Message-ID') or ''),
+                })
+            typ, final = imap.uid('search', None, 'ALL')
+            if typ != 'OK' or not final or (final[0].split() if final[0] else []) != uids:
+                raise RuntimeError('INBOX_CHANGED_DURING_SCAN')
         return items
 
     def clean_test_drafts(self, marker: str = 'TEST') -> int:

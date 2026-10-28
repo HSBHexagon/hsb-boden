@@ -45,11 +45,11 @@
 **Interfaces:**
 - Produces: `dashboard_rows() -> list[list[str]]` mit zusätzlichen Zeilen (Labels exakt): „Bounces“ (korrigiert), „Antworten gesamt“, „v2 versendet Produktion“, „v2 versendet Architekten“, „v2 Antworten Produktion“, „v2 Antworten Architekten“, „Klicks (echt)“, „Entwürfe bereit (v2)“-Hinweiszeile ohne Formel. Bestehende Zeilen 1–17 und Batch-Block bleiben in Reihenfolge erhalten; neue Zeilen kommen **nach** dem Batch-Block (ab Zeile 29), damit vorhandene Formatierung (`formatting_requests`) gültig bleibt.
 
-- [ ] **Step 1: Failing tests** — `test_bounce_formula_reads_bounce_status_column` (Zeile „Bounces“ enthält `ALL_LEADS!AQ2:AQ` und `"hard_bounce"`, nicht `BE2:BE`); `test_v2_rows_count_template_ids` (Formeln enthalten `ALL_LEADS!AF2:AF; "v2-produktion*"` bzw. `"v2-architekten*"` und `ALL_LEADS!AO2:AO; "sent"`); `test_v2_reply_rows_use_reply_status` (`ALL_LEADS!AR2:AR; "<>"` kombiniert mit AF-Filter); `test_click_row_is_error_safe` (Formel beginnt mit `=IFERROR(` und zählt `CLICK_EVENTS!D2:D; "human"`); `test_existing_rows_unchanged` (Zeilen 1–17 identisch zum Stand `origin/main` außer „Bounces“).
-- [ ] **Step 2: Run, expect FAIL** — `cd apps/sales-os && PYTHONPATH=. pytest tests/test_crm_dashboard.py -q`
-- [ ] **Step 3: Implement** — Bounces: `=COUNTIFS(ALL_LEADS!AQ2:AQ; "hard_bounce")+COUNTIFS(ALL_LEADS!AQ2:AQ; "bounce_review")` (je Owner mit `AA` wie bestehend).
-- [ ] **Step 4: PASS + Suite + `verify_ssot.py`**; Dry-Run live: `hsb-sales`-Umgebung, `python -m operator_layer.crm_dashboard` ohne `--apply` zeigt Zeilenzahl.
-- [ ] **Step 5: Commit** `fix(sales-os): cockpit counts .com bounces and v2 sends, replies and clicks`.
+- [x] **Step 1: Failing tests** — `test_bounce_formula_reads_bounce_status_column` (Zeile „Bounces“ enthält `ALL_LEADS!AQ2:AQ` und `"hard_bounce"`, nicht `BE2:BE`); `test_v2_rows_count_template_ids` (Formeln enthalten `ALL_LEADS!AF2:AF; "v2-produktion*"` bzw. `"v2-architekten*"` und `ALL_LEADS!AO2:AO; "sent"`); `test_v2_reply_rows_use_reply_status` (`ALL_LEADS!AR2:AR; "<>"` kombiniert mit AF-Filter); `test_click_row_is_error_safe` (Formel beginnt mit `=IFERROR(` und zählt `CLICK_EVENTS!D2:D; "human"`); `test_existing_rows_unchanged` (Zeilen 1–17 identisch zum Stand `origin/main` außer „Bounces“).
+- [x] **Step 2: Run, expect FAIL** — `cd apps/sales-os && PYTHONPATH=. pytest tests/test_crm_dashboard.py -q`
+- [x] **Step 3: Implement** — Bounces: `=COUNTIFS(ALL_LEADS!AQ2:AQ; "hard_bounce")+COUNTIFS(ALL_LEADS!AQ2:AQ; "bounce_review")` (je Owner mit `AA` wie bestehend).
+- [x] **Step 4: PASS + Suite + `verify_ssot.py`**; Dry-Run live: `hsb-sales`-Umgebung, `python -m operator_layer.crm_dashboard` ohne `--apply` zeigt Zeilenzahl.
+- [x] **Step 5: Commit** `fix(sales-os): cockpit counts .com bounces and v2 sends, replies and clicks`.
 
 ### Task 2: Versand schreibt Template und Segment ins CRM
 

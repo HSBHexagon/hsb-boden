@@ -176,3 +176,26 @@ def test_confirmed_sent_evidence_records_history_without_granting_permission():
     assert 'Legal_Basis' not in rows[0]['updates'] and 'Versandfreigabe' not in rows[0]['updates']
     assert select_sent_evidence([dict(msg,**{'from':'other@example.org'})],[item])==[]
     assert select_sent_evidence([msg],[dict(item,Send_Status='sent')])==[]
+
+
+def _v1_message(optout):
+    from email.message import EmailMessage
+    m = EmailMessage()
+    m['From'] = 'j-cherino@hsb-boden.com'
+    m['To'] = 'buyer@example.org'
+    m['Subject'] = 'Example GmbH'
+    m['Message-ID'] = '<v1@example.org>'
+    m.set_content('Example GmbH https://www.hsb-boden.de/flyer ' + optout)
+    return m.as_bytes()
+
+
+def test_optout_link_with_lid_is_personal():
+    from sales_reconciliation import assess_message
+    leads = [lead(**{'Lead-ID': 'HSB-20260708-01170'})]
+    ok = assess_message(_v1_message('https://www.hsb-boden.de/abmelden?lid=HSB-20260708-01170&o=JOEL'), 'JOEL', leads)
+    assert 'PERSONAL_OPTOUT_LINK_MISSING' not in ok['issues']
+    assert 'LEAD_ID_CONFLICT' not in ok['issues']
+    other = assess_message(_v1_message('https://www.hsb-boden.de/abmelden?lid=HSB-20260708-09999&o=JOEL'), 'JOEL', leads)
+    assert 'PERSONAL_OPTOUT_LINK_MISSING' in other['issues']
+    legacy = assess_message(_v1_message('https://www.hsb-boden.de/abmelden?email=buyer%40example.org'), 'JOEL', leads)
+    assert 'PERSONAL_OPTOUT_LINK_MISSING' not in legacy['issues']

@@ -145,9 +145,18 @@ def complete_delivery(client, journal, svc, spreadsheet_id, headers, row, item, 
     journal.transition(em,'SMTP_ACCEPTED')
     sent_copy_readback(client,mid,raw,em)
     journal.transition(em,'SENT_COPY_VERIFIED')
-    crm_write_readback(svc,spreadsheet_id,headers,row,{'Send_Status':'sent','Send_Datum':now,'Batch_Status':'SENT_COM_VERIFIED','Internet_Message_ID':mid})
     msg=BytesParser(policy=policy.default).parsebytes(raw)
-    if str(msg.get('X-HSB-Template-ID') or '').endswith('-s1'):
+    final_fields={'Send_Status':'sent','Send_Datum':now,'Batch_Status':'SENT_COM_VERIFIED','Internet_Message_ID':mid}
+    tmpl=str(msg.get('X-HSB-Template-ID') or '').strip()
+    if tmpl:
+        if 'Email_Template_ID' in headers:
+            final_fields['Email_Template_ID']=tmpl
+        parts=tmpl.split('-')
+        seg=parts[1] if len(parts)>=2 and parts[1] in ('produktion','architekten') else item.get('segment')
+        if seg and 'Segment' in headers:
+            final_fields['Segment']=seg
+    crm_write_readback(svc,spreadsheet_id,headers,row,final_fields)
+    if tmpl.endswith('-s1'):
         # Sequenzbeleg und finaler Versandzustand teilen sich dieselbe SQLite-Transaktion.
         journal.db.execute('BEGIN IMMEDIATE')
         try:

@@ -18,7 +18,8 @@ def test_bounce_rescue_fallback_to_email_domain():
     domain = agent._derive_domain("", "einkauf@molkerei-alpen.de")
     assert domain == "molkerei-alpen.de"
 
-def test_bounce_rescue_skips_failed_email():
+def test_bounce_rescue_skips_failed_email(monkeypatch):
+    monkeypatch.setattr("bounce_rescue_agent.check_domain_mx", lambda dom: True)
     agent = BounceRescueAgent()
     # Mock search_alternative_emails
     agent.search_alternative_emails = lambda dom: [

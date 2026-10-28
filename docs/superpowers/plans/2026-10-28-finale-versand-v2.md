@@ -79,12 +79,12 @@
 
 **Interfaces:** Consumes `dispatch_verified(count_per_owner, owners, dry_run, cap)` und `send_governance.daily_budget(first_send_date, today)`.
 
-- [ ] **Step 1: Failing test** `test_second_run_same_day_respects_cap` (zweiter Aufruf am selben Tag sendet 0, wenn Budget erschöpft).
-- [ ] **Steps 2–4:** FAIL → (falls nötig) Implementierung → PASS + Suite.
-- [ ] **Step 5:** `hsb-dispatch-daily`: Werktag-Prüfung, `count_per_owner=daily_budget(...)`, setzt `HSB_CUSTOMER_SEND_ENABLED=yes` nur im eigenen Prozess, schreibt Log nach `~/.local/state/hsb-sales-os/dispatch-YYYY-MM-DD.log`; danach Cockpit-Update (`crm_dashboard --apply`).
-- [ ] **Step 6:** Dry-Run live: `dispatch_verified(count_per_owner=10, dry_run=True)` → Zählung je Owner, `customer_emails_sent=0`.
+- [x] **Step 1: Failing test** `test_second_run_same_day_respects_cap` (zweiter Aufruf am selben Tag sendet 0, wenn Budget erschöpft).
+- [x] **Steps 2–4:** FAIL → (falls nötig) Implementierung → PASS + Suite.
+- [x] **Step 5:** `hsb-dispatch-daily`: Werktag-Prüfung, `count_per_owner=daily_budget(...)`, setzt `HSB_CUSTOMER_SEND_ENABLED=yes` nur im eigenen Prozess, schreibt Log nach `~/.local/state/hsb-sales-os/dispatch-YYYY-MM-DD.log`; danach Cockpit-Update (`crm_dashboard --apply`).
+- [x] **Step 6:** Dry-Run live: `dispatch_verified(count_per_owner=10, dry_run=True)` → Zählung je Owner, `customer_emails_sent=0`.
 - [ ] **Step 7:** LaunchAgent (Mo–Fr 09:30) **erst nach Nutzerfreigabe** laden.
-- [ ] **Step 8: Commit** `feat(sales-os): daily ramped dispatch job`.
+- [x] **Step 8: Commit** `feat(sales-os): daily ramped dispatch job`.
 
 ### Task 5: PR abschließen
 

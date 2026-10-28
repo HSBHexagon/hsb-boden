@@ -16,16 +16,28 @@ def test_broken_and_untrusted_urls():
     assert calls==[]
 
 
-def test_images_with_matching_content_type_are_valid():
-    png=b'\x89PNG\r\n\x1a\n'+b'0'*100
-    assert link_payload_valid(png,'image/png')
-    assert link_payload_valid(b'\xff\xd8\xff\xe0'+b'0'*50,'image/jpeg')
-    assert link_payload_valid(b'<?xml version="1.0"?><svg xmlns="x"></svg>','image/svg+xml; charset=utf-8')
-    assert link_payload_valid(b'RIFF\x00\x00\x00\x00WEBPVP8 ','image/webp')
+def _img(fmt):
+    from io import BytesIO
+    from PIL import Image
+    buf = BytesIO(); Image.new('RGB', (4, 4), 'red').save(buf, fmt); return buf.getvalue()
 
 
-def test_error_pages_and_mismatched_payloads_stay_invalid():
-    assert not link_payload_valid(b'<h1>Not found</h1>','text/html')
-    assert not link_payload_valid(b'not an image','image/png')
-    assert not link_payload_valid(b'\x89PNG\r\n\x1a\n','application/octet-stream')
-    assert not link_payload_valid(b'','image/png')
+def test_decodable_images_in_declared_format_are_valid():
+    assert link_payload_valid(_img('PNG'), 'image/png')
+    assert link_payload_valid(_img('JPEG'), 'image/jpeg')
+    assert link_payload_valid(_img('GIF'), 'image/gif')
+    assert link_payload_valid(_img('WEBP'), 'image/webp')
+    assert link_payload_valid(b'<?xml version="1.0"?><svg xmlns="http://www.w3.org/2000/svg"></svg>', 'image/svg+xml; charset=utf-8')
+
+
+def test_error_pages_truncated_and_mismatched_payloads_stay_invalid():
+    png = _img('PNG')
+    assert not link_payload_valid(b'<h1>Not found</h1><!-- <svg -->', 'image/svg+xml')
+    assert not link_payload_valid(b'<html><body>404</body></html>', 'image/svg+xml')
+    assert not link_payload_valid(b'\x89PNG\r\n\x1a\n', 'image/png')
+    assert not link_payload_valid(png[:len(png) // 2], 'image/png')
+    assert not link_payload_valid(png, 'image/jpeg')
+    assert not link_payload_valid(b'RIFF\x00\x00\x00\x00WEBPVP8 ', 'image/webp')
+    assert not link_payload_valid(png, 'application/octet-stream')
+    assert not link_payload_valid(b'<h1>Not found</h1>', 'text/html')
+    assert not link_payload_valid(b'', 'image/png')

@@ -240,21 +240,44 @@ def probe_url(url):
         return result
 
 
-IMAGE_MAGIC = (b'\x89PNG\r\n\x1a\n', b'\xff\xd8\xff', b'GIF87a', b'GIF89a')
+RASTER_FORMATS = {'image/png': 'PNG', 'image/jpeg': 'JPEG', 'image/gif': 'GIF', 'image/webp': 'WEBP'}
+
+
+def _raster_ok(data, expected_format):
+    """Bild vollständig dekodieren (mit Pixel-Grenze); Format muss zum Content-Type passen."""
+    from io import BytesIO
+    from PIL import Image
+    try:
+        with Image.open(BytesIO(data)) as img:
+            if img.format != expected_format or img.width * img.height > 40_000_000:
+                return False
+            img.load()
+        return True
+    except Exception:
+        return False
+
+
+def _svg_ok(data):
+    import xml.etree.ElementTree as ET
+    if b'<!DOCTYPE' in data[:4096].upper() or b'<!ENTITY' in data.upper():
+        return False
+    try:
+        root = ET.fromstring(data)
+    except ET.ParseError:
+        return False
+    return root.tag.rsplit('}', 1)[-1] == 'svg'
 
 
 def link_payload_valid(data, content_type=None):
-    """Gültig sind PDF, eine echte HTML-Seite oder ein Bild, dessen Inhalt zum Bild-Content-Type passt."""
+    """Gültig sind PDF, eine echte HTML-Seite oder ein dekodierbares Bild im deklarierten Format."""
     if data.startswith(b'%PDF-') or (b'<html' in data.lower() and len(data) > 500):
         return True
     ctype = str(content_type or '').split(';')[0].strip().lower()
-    if not ctype.startswith('image/'):
-        return False
     if ctype == 'image/svg+xml':
-        return b'<svg' in data[:2048].lower()
-    if ctype == 'image/webp':
-        return data[:4] == b'RIFF' and data[8:12] == b'WEBP'
-    return data.startswith(IMAGE_MAGIC)
+        return _svg_ok(data)
+    if ctype in RASTER_FORMATS:
+        return _raster_ok(data, RASTER_FORMATS[ctype])
+    return False
 
 
 def link_health(urls, cache=None, probe=None):

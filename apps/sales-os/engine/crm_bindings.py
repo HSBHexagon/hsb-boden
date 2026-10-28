@@ -1,0 +1,106 @@
+"""Stabile Zeilenbindungen im CRM (Developer-Metadaten `hsb.lead_id` je ALL_LEADS-Zeile).
+
+`crm_write_lead_readback` schreibt nie über Zeilennummern, sondern über diese Bindungen. Hier werden
+sie angelegt und per Sortier-Canary in einem temporären Tab nachgewiesen, dass Sheets sie beim
+Sortieren mit der Zeile mitführt. Lead-Daten selbst werden nicht verändert.
+"""
+import re
+import time
+
+KEY = 'hsb.lead_id'
+LEAD_RE = re.compile(r'^HSB-\d{8}-\d+$')
+CANARY_TAB = 'HSB_BINDING_CANARY'
+CANARY_KEY = 'hsb.canary_id'
+BATCH = 400
+
+
+def _sheet_id(svc, sid, title):
+    sheets = svc.spreadsheets().get(spreadsheetId=sid, fields='sheets.properties').execute().get('sheets', [])
+    ids = [s['properties']['sheetId'] for s in sheets if s['properties']['title'] == title]
+    return ids[0] if len(ids) == 1 else None
+
+
+def _row_metadata(row0, sheet_id, key, value):
+    return {'createDeveloperMetadata': {'developerMetadata': {
+        'metadataKey': key, 'metadataValue': value, 'visibility': 'DOCUMENT',
+        'location': {'dimensionRange': {'sheetId': sheet_id, 'dimension': 'ROWS',
+                                        'startIndex': row0, 'endIndex': row0 + 1}}}}}
+
+
+def existing_bindings(svc, sid, key=KEY):
+    """{metadataValue: [startIndex, ...]} aller vorhandenen Zeilenbindungen eines Schlüssels."""
+    found = svc.spreadsheets().developerMetadata().search(spreadsheetId=sid, body={'dataFilters': [
+        {'developerMetadataLookup': {'metadataKey': key, 'locationType': 'ROW', 'visibility': 'DOCUMENT'}}]}).execute()
+    out = {}
+    for m in found.get('matchedDeveloperMetadata', []):
+        meta = m['developerMetadata']
+        rng = meta.get('location', {}).get('dimensionRange', {})
+        out.setdefault(meta.get('metadataValue'), []).append(rng.get('startIndex'))
+    return out
+
+
+def ensure_bindings(svc, sid, apply=False, sleep=time.sleep):
+    """Legt fehlende Bindungen für jede ALL_LEADS-Zeile mit gültiger, eindeutiger Lead-ID an."""
+    rows = svc.spreadsheets().values().get(spreadsheetId=sid, range='ALL_LEADS!A1:A').execute().get('values', [])
+    sheet_id = _sheet_id(svc, sid, 'ALL_LEADS')
+    if not rows or rows[0][:1] != ['Lead-ID'] or sheet_id is None:
+        raise RuntimeError('ALL_LEADS_HEADER_OR_SHEET_MISSING')
+    ids = [(i, (r[0].strip() if r else '')) for i, r in enumerate(rows) if i > 0]
+    counts = {}
+    for _, lid in ids:
+        counts[lid] = counts.get(lid, 0) + 1
+    have = existing_bindings(svc, sid)
+    result = {'rows': len(ids), 'already_bound': 0, 'created': 0, 'skipped_invalid': 0,
+              'skipped_duplicate': 0, 'conflicts': 0, 'dry_run': not apply}
+    requests = []
+    for row0, lid in ids:
+        if not LEAD_RE.match(lid):
+            result['skipped_invalid'] += 1
+        elif counts[lid] > 1:
+            result['skipped_duplicate'] += 1
+        elif lid in have:
+            if have[lid] == [row0]:
+                result['already_bound'] += 1
+            else:
+                result['conflicts'] += 1
+        else:
+            requests.append(_row_metadata(row0, sheet_id, KEY, lid))
+    result['to_create'] = len(requests)
+    if apply:
+        for start in range(0, len(requests), BATCH):
+            svc.spreadsheets().batchUpdate(spreadsheetId=sid, body={'requests': requests[start:start + BATCH]}).execute()
+            result['created'] += len(requests[start:start + BATCH])
+            sleep(1.0)
+        after = existing_bindings(svc, sid)
+        created = {r['createDeveloperMetadata']['developerMetadata']['metadataValue']:
+                   r['createDeveloperMetadata']['developerMetadata']['location']['dimensionRange']['startIndex']
+                   for r in requests}
+        bad = [lid for lid, row0 in created.items() if after.get(lid) != [row0]]
+        if bad:
+            raise RuntimeError(f'CRM_BINDING_READBACK_MISMATCH:{len(bad)}')
+    return result
+
+
+def sort_canary(svc, sid):
+    """Temporärer Tab: 5 Zeilen binden, absteigend sortieren, prüfen, dass jede Bindung bei ihrem Wert bleibt."""
+    if _sheet_id(svc, sid, CANARY_TAB) is not None:
+        raise RuntimeError('CANARY_TAB_EXISTS')
+    add = svc.spreadsheets().batchUpdate(spreadsheetId=sid, body={'requests': [
+        {'addSheet': {'properties': {'title': CANARY_TAB}}}]}).execute()
+    tab = add['replies'][0]['addSheet']['properties']['sheetId']
+    try:
+        values = [[f'C{i}'] for i in range(1, 6)]
+        svc.spreadsheets().values().update(spreadsheetId=sid, range=f'{CANARY_TAB}!A1:A5',
+                                           valueInputOption='RAW', body={'values': values}).execute()
+        svc.spreadsheets().batchUpdate(spreadsheetId=sid, body={'requests': [
+            _row_metadata(i, tab, CANARY_KEY, v[0]) for i, v in enumerate(values)]}).execute()
+        svc.spreadsheets().batchUpdate(spreadsheetId=sid, body={'requests': [{'sortRange': {
+            'range': {'sheetId': tab, 'startRowIndex': 0, 'endRowIndex': 5, 'startColumnIndex': 0, 'endColumnIndex': 1},
+            'sortSpecs': [{'dimensionIndex': 0, 'sortOrder': 'DESCENDING'}]}}]}).execute()
+        cells = svc.spreadsheets().values().get(spreadsheetId=sid, range=f'{CANARY_TAB}!A1:A5').execute().get('values', [])
+        moved = existing_bindings(svc, sid, CANARY_KEY)
+        ok = (cells == [[f'C{i}'] for i in range(5, 0, -1)]
+              and all(moved.get(f'C{i}') == [5 - i] for i in range(1, 6)))
+        return {'sorted': cells == [[f'C{i}'] for i in range(5, 0, -1)], 'bindings_follow_rows': ok}
+    finally:
+        svc.spreadsheets().batchUpdate(spreadsheetId=sid, body={'requests': [{'deleteSheet': {'sheetId': tab}}]}).execute()

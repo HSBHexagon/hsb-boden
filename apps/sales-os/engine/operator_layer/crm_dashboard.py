@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Ersetzt den Kennzahlenblock des DASHBOARD (Opt-out/Bounce/Klaerfall-Zahlen, 30-Tage-Trend,
-Abgleich-Anker) und haengt den Batch-Block (ERZEUGTE BATCHES) unmittelbar darunter wieder an,
-statt ihn zu ueberschreiben. Idempotent."""
+Abgleich-Anker) und haengt den Batch-Block (ERZEUGTE BATCHES) sowie die v2-Kampagnenkennzahlen
+unmittelbar darunter wieder an, statt ihn zu ueberschreiben. Idempotent."""
 import sys
 from crm_common import services, SID
 from crm_operator_layer import rgb
@@ -14,10 +14,11 @@ def per_owner(f_all, f_owner):
 
 
 def dashboard_rows():
-    """A1:E27 des DASHBOARD-Tabs.
+    """A1:E36 des DASHBOARD-Tabs.
 
     Zeilen 1-14 = KPI-Block exakt in Brief-Reihenfolge, 15 leer, 16-17 Batch-Ueberschrift/-Kopf,
-    18-27 = 10 Batch-Zeilen (Formeln auf BATCHES!). Zeile 7 = Abgemeldet, Zeile 8 = Bounces,
+    18-27 = 10 Batch-Zeilen (Formeln auf BATCHES!). 28 leer, 29 = v2-Ueberschrift,
+    30-36 = v2-Kampagnenblock und Klick-Kennzahlen. Zeile 7 = Abgemeldet, Zeile 8 = Bounces,
     Zeile 10 = Klaerfaelle offen, Zeile 16 = Batch-Ueberschrift, Zeile 17 = Batch-Kopf. Die
     Formatierung in formatting_requests() ermittelt diese Zeilennummern per Label-Lookup aus
     dieser Liste, statt sie erneut hart zu kodieren — damit beide nicht wieder auseinanderlaufen.
@@ -31,15 +32,16 @@ def dashboard_rows():
         R("Versendet", '=COUNTIF(ALL_LEADS!AO2:AO; "sent")', '=COUNTIFS(ALL_LEADS!AA2:AA; "*{o}*"; ALL_LEADS!AO2:AO; "sent")', "automatisch aus Gesendete Elemente"),  # 5
         R("Antworten offen", '=COUNTIFS(ALL_LEADS!BE2:BE; "Antwort"; ALL_LEADS!R2:R; "")', '=COUNTIFS(ALL_LEADS!AA2:AA; "*{o}*"; ALL_LEADS!BE2:BE; "Antwort"; ALL_LEADS!R2:R; "")', "ohne Follow-up-Datum"),  # 6
         R("Abgemeldet (Opt-out)", '=COUNTIF(ALL_LEADS!Y2:Y; "yes")', '=COUNTIFS(ALL_LEADS!AA2:AA; "*{o}*"; ALL_LEADS!Y2:Y; "yes")', "dauerhaft gesperrt"),  # 7
-        R("Bounces", '=COUNTIF(ALL_LEADS!BE2:BE; "Bounce")', '=COUNTIFS(ALL_LEADS!AA2:AA; "*{o}*"; ALL_LEADS!BE2:BE; "Bounce")', "unzustellbar"),  # 8
+        R("Bounces", '=COUNTIFS(ALL_LEADS!AQ2:AQ; "hard_bounce")+COUNTIFS(ALL_LEADS!AQ2:AQ; "bounce_review")',
+          '=COUNTIFS(ALL_LEADS!AA2:AA; "*{o}*"; ALL_LEADS!AQ2:AQ; "hard_bounce")+COUNTIFS(ALL_LEADS!AA2:AA; "*{o}*"; ALL_LEADS!AQ2:AQ; "bounce_review")', "unzustellbar (.com & .de)"),  # 8
         R("Freigegeben, noch nicht versendet", '=COUNTIF(ALL_LEADS!BE2:BE; "Freigegeben")+COUNTIF(ALL_LEADS!BE2:BE; "Entwurf")', '=COUNTIFS(ALL_LEADS!AA2:AA; "*{o}*"; ALL_LEADS!BE2:BE; "Freigegeben")+COUNTIFS(ALL_LEADS!AA2:AA; "*{o}*"; ALL_LEADS!BE2:BE; "Entwurf")', "naechste Sendungen"),  # 9
         ["Klärfälle offen", '=COUNTIF(INBOUND_EVENTS!J2:J; "NEEDS_REVIEW")',
-         '=COUNTIFS(INBOUND_EVENTS!J2:J; "NEEDS_REVIEW"; INBOUND_EVENTS!C2:C; "j-post@hsb-boden.de")',
-         '=COUNTIFS(INBOUND_EVENTS!J2:J; "NEEDS_REVIEW"; INBOUND_EVENTS!C2:C; "j-cherino@hsb-boden.de")', "im Tab POSTEINGANG loesen"],  # 10
+         '=COUNTIFS(INBOUND_EVENTS!J2:J; "NEEDS_REVIEW"; INBOUND_EVENTS!C2:C; "*j-post@hsb-boden.*")',
+         '=COUNTIFS(INBOUND_EVENTS!J2:J; "NEEDS_REVIEW"; INBOUND_EVENTS!C2:C; "*j-cherino@hsb-boden.*")', "im Tab POSTEINGANG loesen"],  # 10
         [],  # 11
         ["Versendet letzte 30 Tage", '=SPARKLINE(MAP(SEQUENCE(30; 1; TODAY()-29; 1); LAMBDA(t; COUNTIFS(ALL_LEADS!AP2:AP; ">="&t; ALL_LEADS!AP2:AP; "<"&(t+1)))); {"charttype"\\"column"})', "", "", "Tage links = älter"],  # 12
-        ["Letzter Abgleich Joel", '=IFERROR(TEXT(VLOOKUP("j-cherino@hsb-boden.de"; SYNC_STATUS!A:H; 2; FALSE); "dd.mm.yyyy hh:mm"); "noch nicht")', "", "", "alle 15 Minuten"],  # 13
-        ["Letzter Abgleich Jordi", '=IFERROR(TEXT(VLOOKUP("j-post@hsb-boden.de"; SYNC_STATUS!A:H; 2; FALSE); "dd.mm.yyyy hh:mm"); "noch nicht")', "", "", "alle 15 Minuten"],  # 14
+        ["Letzter Abgleich Joel", '=IFERROR(TEXT(VLOOKUP("j-cherino@hsb-boden.com"; SYNC_STATUS!A:H; 2; FALSE); "dd.mm.yyyy hh:mm"); IFERROR(TEXT(VLOOKUP("j-cherino@hsb-boden.de"; SYNC_STATUS!A:H; 2; FALSE); "dd.mm.yyyy hh:mm"); "noch nicht"))', "", "", "alle 15 Minuten"],  # 13
+        ["Letzter Abgleich Jordi", '=IFERROR(TEXT(VLOOKUP("j-post@hsb-boden.com"; SYNC_STATUS!A:H; 2; FALSE); "dd.mm.yyyy hh:mm"); IFERROR(TEXT(VLOOKUP("j-post@hsb-boden.de"; SYNC_STATUS!A:H; 2; FALSE); "dd.mm.yyyy hh:mm"); "noch nicht"))', "", "", "alle 15 Minuten"],  # 14
         [],  # 15
         ["ERZEUGTE BATCHES (Letzte 10)"],  # 16
         ["Batch ID", "Owner", "Status", "Anzahl Leads", "Erstellt am"],  # 17
@@ -54,6 +56,32 @@ def dashboard_rows():
             f'=IF(ISBLANK(BATCHES!F{r}); ""; BATCHES!F{r})',
             f'=IF(ISBLANK(BATCHES!K{r}); ""; BATCHES!K{r})',
         ])
+    # 28-36: Kampagne v2 & Klick-Kennzahlen (Task 1)
+    rows.append([])  # 28
+    rows.append(["KAMPAGNE v2 · KENNZAHLEN"])  # 29
+    rows.append(R("Antworten gesamt",
+                  '=COUNTIF(ALL_LEADS!AR2:AR; "<>")',
+                  '=COUNTIFS(ALL_LEADS!AA2:AA; "*{o}*"; ALL_LEADS!AR2:AR; "<>")',
+                  "alle eingegangenen Antworten"))  # 30
+    rows.append(R("v2 versendet Produktion",
+                  '=COUNTIFS(ALL_LEADS!AF2:AF; "v2-produktion*"; ALL_LEADS!AO2:AO; "sent")',
+                  '=COUNTIFS(ALL_LEADS!AA2:AA; "*{o}*"; ALL_LEADS!AF2:AF; "v2-produktion*"; ALL_LEADS!AO2:AO; "sent")',
+                  "Lebensmittel/Getraenke"))  # 31
+    rows.append(R("v2 versendet Architekten",
+                  '=COUNTIFS(ALL_LEADS!AF2:AF; "v2-architekten*"; ALL_LEADS!AO2:AO; "sent")',
+                  '=COUNTIFS(ALL_LEADS!AA2:AA; "*{o}*"; ALL_LEADS!AF2:AF; "v2-architekten*"; ALL_LEADS!AO2:AO; "sent")',
+                  "Architekturbueros"))  # 32
+    rows.append(R("v2 Antworten Produktion",
+                  '=COUNTIFS(ALL_LEADS!AF2:AF; "v2-produktion*"; ALL_LEADS!AR2:AR; "<>")',
+                  '=COUNTIFS(ALL_LEADS!AA2:AA; "*{o}*"; ALL_LEADS!AF2:AF; "v2-produktion*"; ALL_LEADS!AR2:AR; "<>")',
+                  "Antworten auf v2"))  # 33
+    rows.append(R("v2 Antworten Architekten",
+                  '=COUNTIFS(ALL_LEADS!AF2:AF; "v2-architekten*"; ALL_LEADS!AR2:AR; "<>")',
+                  '=COUNTIFS(ALL_LEADS!AA2:AA; "*{o}*"; ALL_LEADS!AF2:AF; "v2-architekten*"; ALL_LEADS!AR2:AR; "<>")',
+                  "Antworten auf v2"))  # 34
+    rows.append(["Klicks (echt)", '=IFERROR(COUNTIF(CLICK_EVENTS!D2:D; "human"); 0)', "", "", "Landingpage /flyer/ via /r/<token>"])  # 35
+    rows.append(["Entwürfe bereit (v2)", "siehe Postfach", "", "", "Ordner Entwuerfe in All-Inkl"])  # 36
+
     # Jede Zeile auf 5 Zellen auffuellen, sonst laesst values().update() Altinhalt
     # in kuerzeren Zeilen (Titel, Leerzeilen) unangetastet stehen (Minor 9).
     return [r + [""] * (5 - len(r)) for r in rows]
@@ -80,6 +108,7 @@ def formatting_requests(sheet_id, rows=None):
     row_klaerfaelle = _row_of(rows, "Klärfälle offen")
     row_batch_titel = _row_of(rows, "ERZEUGTE BATCHES (Letzte 10)")
     row_batch_header = _row_of(rows, "Batch ID")
+    row_v2_titel = _row_of(rows, "KAMPAGNE v2 · KENNZAHLEN")
 
     def row_fmt(row_1based, bg=None, bold=False, size=None, fg=None, cols=5):
         fmt = {}
@@ -89,9 +118,9 @@ def formatting_requests(sheet_id, rows=None):
         if bold:
             tf["bold"] = True
         if size:
-            tf["fontSize"] = size
+            fmt["fontSize"] = size
         if fg:
-            tf["foregroundColor"] = rgb(fg)
+            fmt["foregroundColor"] = rgb(fg)
         if tf:
             fmt["textFormat"] = tf
         fields = ",".join("userEnteredFormat." + k for k in fmt)
@@ -112,6 +141,7 @@ def formatting_requests(sheet_id, rows=None):
         row_fmt(row_klaerfaelle, bg="FCE8B2"),
         row_fmt(row_batch_titel, bg="e8eaed", bold=True, size=12),
         row_fmt(row_batch_header, bg="e8eaed", bold=True),
+        row_fmt(row_v2_titel, bg="e8eaed", bold=True, size=12),
     ]
 
 

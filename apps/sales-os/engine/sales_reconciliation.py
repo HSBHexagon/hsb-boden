@@ -219,7 +219,7 @@ def probe_url(url):
             chunks.append(chunk)
         data=b''.join(chunks)
         reachable = response.status == 200
-        valid = reachable and (data.startswith(b'%PDF-') or (b'<html' in data.lower() and len(data) > 500))
+        valid = reachable and link_payload_valid(data, response.headers.get('Content-Type'))
         result = {'status': response.status, 'final_url': response.url, 'content_type': response.headers.get('Content-Type'), 'sha256': hashlib.sha256(data).hexdigest(), 'bytes': len(data), 'reachable': reachable, 'valid': valid}
         if urlsplit(url).path.rstrip('/') == '/abmelden':
             class Links(HTMLParser):
@@ -238,6 +238,23 @@ def probe_url(url):
                           request_route='MONITORED_COM_MAILTO' if mailto else 'MISSING',
                           crm_update_on_page_load=False)
         return result
+
+
+IMAGE_MAGIC = (b'\x89PNG\r\n\x1a\n', b'\xff\xd8\xff', b'GIF87a', b'GIF89a')
+
+
+def link_payload_valid(data, content_type=None):
+    """Gültig sind PDF, eine echte HTML-Seite oder ein Bild, dessen Inhalt zum Bild-Content-Type passt."""
+    if data.startswith(b'%PDF-') or (b'<html' in data.lower() and len(data) > 500):
+        return True
+    ctype = str(content_type or '').split(';')[0].strip().lower()
+    if not ctype.startswith('image/'):
+        return False
+    if ctype == 'image/svg+xml':
+        return b'<svg' in data[:2048].lower()
+    if ctype == 'image/webp':
+        return data[:4] == b'RIFF' and data[8:12] == b'WEBP'
+    return data.startswith(IMAGE_MAGIC)
 
 
 def link_health(urls, cache=None, probe=None):

@@ -47,13 +47,31 @@ class FakeImap:
 class FakeClient:
     def __init__(self): self.batches = []
     def _get_imap(self): return FakeImap()
-    def create_drafts_batch(self, items):
+    def create_drafts_batch(self, items, max_existing=50):
+        self.max_existing = max_existing
         self.batches.append(items); return [{'ok': True} for _ in items]
 
 
-def test_dry_run_creates_nothing_and_apply_appends():
+def test_dry_run_creates_nothing_and_apply_appends(tmp_path):
     c = FakeClient(); leads = [lead(i) for i in range(1, 4)]
-    r = nd.create_v2_drafts('JOEL', 2, False, leads=leads, client=c, mx_check=MX)
+    r = nd.create_v2_drafts('JOEL', 2, False, leads=leads, client=c, mx_check=MX, state_dir=tmp_path)
     assert r['selected'] == 2 and r['created'] == 0 and c.batches == [] and r['customer_emails_sent'] == 0
-    r = nd.create_v2_drafts('JOEL', 2, True, leads=leads, client=c, mx_check=MX)
+    r = nd.create_v2_drafts('JOEL', 2, True, leads=leads, client=c, mx_check=MX, state_dir=tmp_path)
     assert r['created'] == 2 and len(c.batches[0]) == 2
+    assert c.max_existing == nd.MAX_DRAFTS_PER_MAILBOX
+
+
+def test_recipient_in_several_crm_rows_is_never_selected():
+    leads = [lead(1), lead(2, **{'E-Mail': 'info@firma1.de'}, Send_Status='sent'), lead(3)]
+    ids = [l['Lead-ID'] for l in nd.select_leads(leads, 'JOEL', 10, set(), mx_check=MX)]
+    assert ids == ['HSB-20260708-00003']
+
+
+def test_parallel_run_for_same_mailbox_is_refused(tmp_path):
+    import pytest
+    with nd.owner_lock('JOEL', tmp_path):
+        with pytest.raises(RuntimeError, match='CREATE_V2_ALREADY_RUNNING'):
+            with nd.owner_lock('JOEL', tmp_path):
+                pass
+    with nd.owner_lock('JORDI', tmp_path):
+        pass

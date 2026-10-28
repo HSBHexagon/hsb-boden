@@ -4,8 +4,11 @@ Kein Austausch alter Entwürfe, keine Zeilenbindungen. Der Versand (`dispatch_ve
 Entwurf vor dem Senden erneut gegen das CRM. Auswahl: nur sendefähige Leads des Owners ohne
 vorhandenen v2-Entwurf, Produktion vor Architekten (80/20), innerhalb des Segments Tier A → B → C.
 """
+import fcntl
 import os
 import subprocess
+from contextlib import contextmanager
+from pathlib import Path
 
 from canonical_template_factory import render_email_v2
 from click_sync import click_url
@@ -13,6 +16,7 @@ from hsb_core import check_eligibility, normalize_owner
 from lead_quality import deliverability_flags, fit_score, segment_for
 
 PRODUCTION_SHARE = 0.8
+MAX_DRAFTS_PER_MAILBOX = 6000
 TIER_ORDER = {'A': 0, 'B': 1, 'C': 2}
 
 
@@ -33,10 +37,17 @@ def select_leads(leads, owner, limit, existing_ids, mx_check=None):
     """Sendefähige Leads des Owners ohne bestehenden v2-Entwurf, 80 % Produktion, Tier A → B → C."""
     owner = normalize_owner(owner)
     mx_cache = {}
+    # Sperren gelten je Empfänger: eine Adresse in mehreren CRM-Zeilen wird nie angeschrieben.
+    counts = {}
+    for row in leads:
+        email = str(row.get('E-Mail') or '').strip().lower()
+        counts[email] = counts.get(email, 0) + 1
     buckets = {'produktion': [], 'architekten': []}
     for lead in leads:
         lid = str(lead.get('Lead-ID') or '').strip()
         if not lid or lid in existing_ids or normalize_owner(lead.get('Verantwortlicher')) != owner:
+            continue
+        if counts.get(str(lead.get('E-Mail') or '').strip().lower(), 0) != 1:
             continue
         lead = dict(lead)
         lead['Deliverability_Flags'] = deliverability_flags(lead, mx_cache, set(), mx_check=mx_check)
@@ -81,8 +92,26 @@ def existing_v2_lead_ids(imap, folder='"Entw&APw-rfe"'):
     return ids
 
 
-def create_v2_drafts(owner, limit, apply=False, *, leads, client, secret=None, mx_check=None):
+@contextmanager
+def owner_lock(owner, state_dir=None):
+    """Exklusive Sperre je Postfach über Bestandsprüfung und APPEND (parallele Läufe warten nicht, sie brechen ab)."""
+    base = Path(state_dir or os.environ.get('HSB_SALES_STATE_DIR', str(Path.home() / '.local/state/hsb-sales-os')))
+    base.mkdir(parents=True, exist_ok=True)
+    with open(base / f'create-v2-{normalize_owner(owner)}.lock', 'w') as fh:
+        try:
+            fcntl.flock(fh, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except BlockingIOError:
+            raise RuntimeError('CREATE_V2_ALREADY_RUNNING')
+        yield
+
+
+def create_v2_drafts(owner, limit, apply=False, *, leads, client, secret=None, mx_check=None, state_dir=None):
     """Dry-Run zählt nur; mit apply werden die Entwürfe per IMAP APPEND angelegt. Nie Versand."""
+    with owner_lock(owner, state_dir):
+        return _create(owner, limit, apply, leads, client, secret, mx_check)
+
+
+def _create(owner, limit, apply, leads, client, secret, mx_check):
     with client._get_imap() as imap:
         existing = existing_v2_lead_ids(imap)
     selected = select_leads(leads, owner, limit, existing, mx_check=mx_check)
@@ -91,7 +120,7 @@ def create_v2_drafts(owner, limit, apply=False, *, leads, client, secret=None, m
               'architekten': sum(segment_for(l) == 'architekten' for l in selected),
               'created': 0, 'dry_run': not apply, 'customer_emails_sent': 0}
     if apply and selected:
-        results = client.create_drafts_batch(build_items(selected, owner, secret))
+        results = client.create_drafts_batch(build_items(selected, owner, secret), max_existing=MAX_DRAFTS_PER_MAILBOX)
         result['created'] = sum(1 for r in results if r.get('ok'))
         result['failed'] = sum(1 for r in results if not r.get('ok'))
     return result

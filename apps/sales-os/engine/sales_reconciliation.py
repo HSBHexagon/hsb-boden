@@ -219,7 +219,7 @@ def probe_url(url):
             chunks.append(chunk)
         data=b''.join(chunks)
         reachable = response.status == 200
-        valid = reachable and (data.startswith(b'%PDF-') or (b'<html' in data.lower() and len(data) > 500))
+        valid = reachable and link_payload_valid(data, response.headers.get('Content-Type'))
         result = {'status': response.status, 'final_url': response.url, 'content_type': response.headers.get('Content-Type'), 'sha256': hashlib.sha256(data).hexdigest(), 'bytes': len(data), 'reachable': reachable, 'valid': valid}
         if urlsplit(url).path.rstrip('/') == '/abmelden':
             class Links(HTMLParser):
@@ -238,6 +238,61 @@ def probe_url(url):
                           request_route='MONITORED_COM_MAILTO' if mailto else 'MISSING',
                           crm_update_on_page_load=False)
         return result
+
+
+RASTER_FORMATS = {'image/png': 'PNG', 'image/jpeg': 'JPEG', 'image/gif': 'GIF', 'image/webp': 'WEBP'}
+
+
+def _raster_ok(data, expected_format, max_frames=100, max_pixels=40_000_000):
+    """Struktur per verify(), danach jeden Frame dekodieren; Format muss zum Content-Type passen."""
+    from io import BytesIO
+    from PIL import Image, ImageSequence
+    try:
+        with Image.open(BytesIO(data)) as img:
+            if img.format != expected_format:
+                return False
+            img.verify()
+        with Image.open(BytesIO(data)) as img:
+            pixels = 0
+            for count, frame in enumerate(ImageSequence.Iterator(img), 1):
+                pixels += frame.width * frame.height
+                if count > max_frames or pixels > max_pixels:
+                    return False
+                frame.load()
+        return True
+    except Exception:
+        return False
+
+
+def _svg_ok(data):
+    """Nur striktes UTF-8 ohne DTD/Entities, Wurzelelement <svg>."""
+    import xml.etree.ElementTree as ET
+    try:
+        text = data.decode('utf-8')
+    except UnicodeDecodeError:
+        return False
+    if '\x00' in text or not text.lstrip('\ufeff \t\r\n').startswith('<'):
+        return False
+    upper = text.upper()
+    if '<!DOCTYPE' in upper or '<!ENTITY' in upper or 'ENCODING="UTF-16' in upper or "ENCODING='UTF-16" in upper:
+        return False
+    try:
+        root = ET.fromstring(text)
+    except ET.ParseError:
+        return False
+    return root.tag.rsplit('}', 1)[-1] == 'svg'
+
+
+def link_payload_valid(data, content_type=None):
+    """Gültig sind PDF, eine echte HTML-Seite oder ein dekodierbares Bild im deklarierten Format."""
+    if data.startswith(b'%PDF-') or (b'<html' in data.lower() and len(data) > 500):
+        return True
+    ctype = str(content_type or '').split(';')[0].strip().lower()
+    if ctype == 'image/svg+xml':
+        return _svg_ok(data)
+    if ctype in RASTER_FORMATS:
+        return _raster_ok(data, RASTER_FORMATS[ctype])
+    return False
 
 
 def link_health(urls, cache=None, probe=None):

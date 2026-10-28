@@ -319,6 +319,25 @@ def cmd_click_sync(args, kv_client=None, svc=None):
     print(json.dumps(result, ensure_ascii=False, indent=2))
 
 
+def cmd_crm_bindings(args, svc=None):
+    """Bindungen anlegen oder Sortier-Canary ausführen; gibt nur Zählungen aus."""
+    import json as _json
+    import crm_bindings
+    from hsb_config import CANONICAL_SPREADSHEET_ID
+    svc = svc or get_sheets_service()
+    if args.canary:
+        print(_json.dumps(crm_bindings.sort_canary(svc, CANONICAL_SPREADSHEET_ID)))
+    else:
+        only = None
+        if args.leads_file:
+            only = {line.strip() for line in open(args.leads_file, encoding="utf-8") if line.strip()}
+        if args.prune:
+            if only is None:
+                raise SystemExit("--prune braucht --leads-file")
+            print(_json.dumps(crm_bindings.prune_bindings(svc, CANONICAL_SPREADSHEET_ID, only, apply=args.apply)))
+        print(_json.dumps(crm_bindings.ensure_bindings(svc, CANONICAL_SPREADSHEET_ID, apply=args.apply, only=only)))
+
+
 def cmd_bounce_report(args, collector=None):
     """Zählt Bounces je DSN-Klasse und Domain (nur Zählungen, keine Adressen)."""
     from lead_quality import summarize_bounces
@@ -547,6 +566,12 @@ def main():
     p_click.add_argument("--apply", action="store_true", help="Neue Klicks live ins Google Sheet schreiben (Standard: nur zählen)")
 
     # bounce-report
+    p_bind = subparsers.add_parser("crm-bindings", help="Stabile Zeilenbindungen im CRM anlegen (Dry-Run ohne --apply) bzw. Sortier-Canary")
+    p_bind.add_argument("--apply", action="store_true")
+    p_bind.add_argument("--canary", action="store_true", help="Nur Sortier-Canary im temporären Tab")
+    p_bind.add_argument("--leads-file", help="Nur diese Lead-IDs binden (eine je Zeile)")
+    p_bind.add_argument("--prune", action="store_true", help="Bindungen außerhalb von --leads-file entfernen")
+
     p_bounce = subparsers.add_parser("bounce-report", help="Bounce-Zählung je DSN-Klasse und Domain (nur Zählungen)")
     p_bounce.add_argument("--limit", type=int, default=0, help="Max. Nachrichten je Postfach (0 = alle)")
     p_bounce.add_argument("--com-only", action="store_true", help="Nur .com IMAP")
@@ -608,6 +633,8 @@ def main():
         cmd_test_mail(args)
     elif args.command == "click-sync":
         cmd_click_sync(args)
+    elif args.command == "crm-bindings":
+        cmd_crm_bindings(args)
     elif args.command == "bounce-report":
         cmd_bounce_report(args)
     elif args.command == "seed-send":

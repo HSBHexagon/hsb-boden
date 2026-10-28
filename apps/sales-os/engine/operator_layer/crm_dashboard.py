@@ -13,6 +13,25 @@ def per_owner(f_all, f_owner):
     return [f_all, f_owner.format(o="Jordi"), f_owner.format(o="Joel")]
 
 
+def reply_count_formula(template_pattern=None, owner_pattern=None):
+    """Zaehlt ausschliesslich echte Antworten ('replied', 'replied_interested', 'received').
+    opt_out, bounced und auto_reply_ooo duerfen niemals als Antwort gezaehlt werden."""
+    statuses = ["replied", "replied_interested", "received"]
+    parts = []
+    for s in statuses:
+        criteria = []
+        if owner_pattern:
+            criteria.append(f'ALL_LEADS!AA2:AA; "{owner_pattern}"')
+        if template_pattern:
+            criteria.append(f'ALL_LEADS!AF2:AF; "{template_pattern}"')
+        criteria.append(f'ALL_LEADS!AR2:AR; "{s}"')
+        if len(criteria) == 1:
+            parts.append(f"COUNTIF({criteria[0]})")
+        else:
+            parts.append(f"COUNTIFS({'; '.join(criteria)})")
+    return "=" + "+".join(parts)
+
+
 def dashboard_rows():
     """A1:E36 des DASHBOARD-Tabs.
 
@@ -60,9 +79,9 @@ def dashboard_rows():
     rows.append([])  # 28
     rows.append(["KAMPAGNE v2 · KENNZAHLEN"])  # 29
     rows.append(R("Antworten gesamt",
-                  '=COUNTIF(ALL_LEADS!AR2:AR; "<>")',
-                  '=COUNTIFS(ALL_LEADS!AA2:AA; "*{o}*"; ALL_LEADS!AR2:AR; "<>")',
-                  "alle eingegangenen Antworten"))  # 30
+                  reply_count_formula(),
+                  reply_count_formula(owner_pattern="*{o}*"),
+                  "alle qualifizierten Antworten (replied, replied_interested, received)"))  # 30
     rows.append(R("v2 versendet Produktion",
                   '=COUNTIFS(ALL_LEADS!AF2:AF; "v2-produktion*"; ALL_LEADS!AO2:AO; "sent")',
                   '=COUNTIFS(ALL_LEADS!AA2:AA; "*{o}*"; ALL_LEADS!AF2:AF; "v2-produktion*"; ALL_LEADS!AO2:AO; "sent")',
@@ -72,12 +91,12 @@ def dashboard_rows():
                   '=COUNTIFS(ALL_LEADS!AA2:AA; "*{o}*"; ALL_LEADS!AF2:AF; "v2-architekten*"; ALL_LEADS!AO2:AO; "sent")',
                   "Architekturbueros"))  # 32
     rows.append(R("v2 Antworten Produktion",
-                  '=COUNTIFS(ALL_LEADS!AF2:AF; "v2-produktion*"; ALL_LEADS!AR2:AR; "<>")',
-                  '=COUNTIFS(ALL_LEADS!AA2:AA; "*{o}*"; ALL_LEADS!AF2:AF; "v2-produktion*"; ALL_LEADS!AR2:AR; "<>")',
+                  reply_count_formula(template_pattern="v2-produktion*"),
+                  reply_count_formula(template_pattern="v2-produktion*", owner_pattern="*{o}*"),
                   "Antworten auf v2"))  # 33
     rows.append(R("v2 Antworten Architekten",
-                  '=COUNTIFS(ALL_LEADS!AF2:AF; "v2-architekten*"; ALL_LEADS!AR2:AR; "<>")',
-                  '=COUNTIFS(ALL_LEADS!AA2:AA; "*{o}*"; ALL_LEADS!AF2:AF; "v2-architekten*"; ALL_LEADS!AR2:AR; "<>")',
+                  reply_count_formula(template_pattern="v2-architekten*"),
+                  reply_count_formula(template_pattern="v2-architekten*", owner_pattern="*{o}*"),
                   "Antworten auf v2"))  # 34
     rows.append(["Klicks (echt)", '=IFERROR(COUNTIF(CLICK_EVENTS!D2:D; "human"); 0)', "", "", "Landingpage /flyer/ via /r/<token>"])  # 35
     rows.append(["Entwürfe bereit (v2)", "siehe Postfach", "", "", "Ordner Entwuerfe in All-Inkl"])  # 36

@@ -35,11 +35,29 @@ def test_v2_reply_rows_use_reply_status():
     assert "v2 Antworten Produktion" in rows
     assert "v2 Antworten Architekten" in rows
     assert "Antworten gesamt" in rows
-    assert 'ALL_LEADS!AR2:AR; "<>"' in rows["v2 Antworten Produktion"][1]
     assert 'ALL_LEADS!AF2:AF; "v2-produktion*"' in rows["v2 Antworten Produktion"][1]
-    assert 'ALL_LEADS!AR2:AR; "<>"' in rows["v2 Antworten Architekten"][1]
+    assert 'ALL_LEADS!AR2:AR; "replied"' in rows["v2 Antworten Produktion"][1]
     assert 'ALL_LEADS!AF2:AF; "v2-architekten*"' in rows["v2 Antworten Architekten"][1]
-    assert 'ALL_LEADS!AR2:AR; "<>"' in rows["Antworten gesamt"][1]
+    assert 'ALL_LEADS!AR2:AR; "replied"' in rows["v2 Antworten Architekten"][1]
+    assert 'ALL_LEADS!AR2:AR; "replied"' in rows["Antworten gesamt"][1]
+
+
+def test_reply_formulas_exclude_optout_bounced_and_ooo():
+    """Antworten-Formeln dürfen NIEMALS '<>' zählen, sondern ausschließlich replied, replied_interested und received.
+    opt_out, bounced und auto_reply_ooo dürfen nicht erfasst werden."""
+    rows = {r[0]: r for r in dashboard_rows() if r}
+    reply_rows = ["Antworten gesamt", "v2 Antworten Produktion", "v2 Antworten Architekten"]
+    for row_name in reply_rows:
+        row = rows[row_name]
+        # Prüfe Gesamt (Index 1), Jordi (Index 2), Joel (Index 3) -> 6 Segment-Formeln + 3 Gesamt-Formeln
+        for col_idx in (1, 2, 3):
+            formula = row[col_idx]
+            assert '<>' not in formula, f"Unerlaubtes '<>' in {row_name}[{col_idx}]: {formula}"
+            assert 'auto_reply_ooo' not in formula, f"auto_reply_ooo fälschlich in {row_name}[{col_idx}]"
+            assert 'bounced' not in formula, f"bounced fälschlich in {row_name}[{col_idx}]"
+            assert 'opt_out' not in formula, f"opt_out fälschlich in {row_name}[{col_idx}]"
+            for valid_status in ('"replied"', '"replied_interested"', '"received"'):
+                assert valid_status in formula, f"{valid_status} fehlt in {row_name}[{col_idx}]: {formula}"
 
 
 def test_click_row_is_error_safe():

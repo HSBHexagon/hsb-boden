@@ -35,6 +35,19 @@ describe("LogoCloud Branchenfilter", () => {
     for (const entry of entries) expect(entry.proofTag.length).toBeGreaterThan(0);
   });
 
+  it("stellt Gaffel genau einmal im bestehenden Brauerei-Logo-Raster dar", () => {
+    const entries = getLogoCloudEntries("brauerei-getraenkeindustrie");
+    const matches = entries.filter((entry) => entry.name === "Gaffel Privatbrauerei");
+    expect(matches).toHaveLength(1);
+    expect(matches[0]).toMatchObject({
+      logo: "/logos/gaffel.svg",
+      meta: "Brauerei",
+      proofTag: "Kundenstandort Brauerei",
+      industry: "brauerei-getraenkeindustrie",
+    });
+    expect(entries.indexOf(matches[0])).toBeLessThan(entries.findIndex((entry) => entry.name === "Concept Color GmbH"));
+  });
+
   it("erfindet keinen Eintrag für Kunden ohne Logo-Freigabe", () => {
     const names = getLogoCloudEntries("brauerei-getraenkeindustrie").map((entry) => entry.name);
     expect(names).not.toContain("Krombacher Brauerei GmbH & Co. KG");

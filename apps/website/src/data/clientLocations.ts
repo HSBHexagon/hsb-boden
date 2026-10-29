@@ -15,6 +15,9 @@
 // Referenz hat dabei Vorrang. Fehlt die ID bei einer Doppelung, schlägt
 // tests/reference-deduplication.test.ts fehl.
 export const clientLocations = [
+  // Website-Referenz mit Original-Logo auf ausdrücklichen Nutzerauftrag vom 2026-10-29.
+  // Stadtmarker Köln; keine genaue Baustellenadresse oder unbelegte Projektbeschreibung.
+  { name: "Gaffel Privatbrauerei", city: "Köln", region: "Nordrhein-Westfalen", lat: 50.94, lng: 6.96, branche: "Brauerei", logo: "/logos/gaffel.svg" },
   { name: "HWB-Nussweit GmbH", city: "Husum", region: "Schleswig-Holstein", lat: 54.48, lng: 9.05, branche: "Lebensmittel" },
   { name: "Salvus Mineralbrunnen GmbH", city: "Emsdetten", region: "Nordrhein-Westfalen", lat: 52.18, lng: 7.53, branche: "Getränke" },
   { name: "Auerquelle Bissingen", city: "Bissingen an der Teck", region: "Baden-Württemberg", lat: 48.58, lng: 9.49, branche: "Getränke" },

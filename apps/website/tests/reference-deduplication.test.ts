@@ -97,6 +97,22 @@ describe("Kundenstandorte auf der Deutschlandkarte", () => {
   });
 });
 
+describe("Saalfelder Brauhaus auf der Deutschlandkarte", () => {
+  it("bewahrt den vorhandenen Saalfeld-Standort ohne Dublette", () => {
+    const matches = getSupplementalClientLocations().filter(
+      (location) => location.name === "Saalfelder Brauhaus",
+    );
+    expect(matches).toHaveLength(1);
+    expect(matches[0]).toMatchObject({
+      city: "Saalfeld",
+      region: "Thüringen",
+      lat: 50.65,
+      lng: 11.37,
+      logo: "/logos/saalfelder-brauhaus.png",
+    });
+  });
+});
+
 describe("Kartenkomponenten nutzen die deduplizierte Quelle", () => {
   it("uebergibt der ReferenceMap nirgends die ungefilterten clientLocations", () => {
     const astroFiles = collectAstroFiles(join(process.cwd(), "src"));

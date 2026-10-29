@@ -64,6 +64,20 @@ describe("LogoCloud Branchenfilter", () => {
     }
   });
 
+  it("zeigt Saalfelder Brauhaus genau einmal mit Original-Logo", () => {
+    const matches = getLogoCloudEntries("brauerei-getraenkeindustrie").filter(
+      (entry) => entry.name === "Saalfelder Brauhaus",
+    );
+    expect(matches).toHaveLength(1);
+    expect(matches[0]).toMatchObject({
+      logo: "/logos/saalfelder-brauhaus.png",
+      meta: "Brauerei",
+      proofTag: "Kundenstandort Brauerei",
+      industry: "brauerei-getraenkeindustrie",
+    });
+    expect(matches[0].systems).toEqual([]);
+  });
+
   it("erfindet keinen Eintrag für Kunden ohne Logo-Freigabe", () => {
     const names = getLogoCloudEntries("brauerei-getraenkeindustrie").map((entry) => entry.name);
     expect(names).not.toContain("Krombacher Brauerei GmbH & Co. KG");

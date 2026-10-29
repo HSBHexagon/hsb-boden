@@ -24,10 +24,13 @@ const logos = getLogoCloudEntries(industryFilter);
     </div>
 
     <div class="mx-auto grid max-w-6xl grid-cols-2 overflow-hidden rounded-[4px] border border-hsb-line bg-hsb-line sm:grid-cols-3">
-      {logos.map((reference) => (
+      {logos.map((reference, index) => (
         <a
           href="/referenzen/"
-          class="group grid min-h-[148px] content-between justify-items-center gap-4 bg-white px-4 py-5 no-underline transition-colors hover:bg-[#fbfcfd] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-hsb-red"
+          class:list={[
+            "group grid min-h-[148px] content-between justify-items-center gap-4 bg-white px-4 py-5 no-underline transition-colors hover:bg-[#fbfcfd] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-hsb-red",
+            logos.length % 3 === 1 && index === logos.length - 1 && "sm:col-start-2",
+          ]}
           data-logo-entry
           data-client={reference.name}
           data-industry={reference.industry ?? ""}

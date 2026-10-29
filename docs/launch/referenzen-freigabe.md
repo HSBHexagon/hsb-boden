@@ -1,5 +1,16 @@
 # Referenzen-Freigabe & Logo-Liste (Arbeitsstand 2026-06-10, aktualisiert)
 
+## Ergänzung 2026-10-29: Gaffel
+
+Joel beauftragt ausdrücklich, das Gaffel-Logo als weitere Website-Referenz wie die
+vorhandenen Kunden darzustellen. Umsetzung über `clientLocations.ts`: Gaffel
+Privatbrauerei, Köln, Brauerei, mit Original-SVG unter `public/logos/gaffel.svg`.
+Logoquelle: https://gaffel.de/wp-content/uploads/2021/04/Gaffel-Logo.svg
+(am 2026-10-29 auf https://gaffel.de/ eingebunden und abgerufen).
+Der Kartenpunkt steht für die Stadt Köln, nicht für eine bestätigte Baustellenadresse.
+Keine Angaben zu Leistungen, Projektjahr, Flächen oder Ergebnissen ergänzt.
+Dieser Vermerk dokumentiert den Nutzerauftrag, keine gesonderte Erklärung des Markeninhabers.
+
 > Ziel: „Alle Referenzen live schalten, die stimmen" + Kundenlogos einbinden + Referenzkarte auf ganz Deutschland erweitern.
 
 ## 0. Update 2026-06-10 (zweite Iteration): Freigabe per interner Referenzkundenliste

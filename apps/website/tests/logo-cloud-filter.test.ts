@@ -48,6 +48,22 @@ describe("LogoCloud Branchenfilter", () => {
     expect(entries.indexOf(matches[0])).toBeLessThan(entries.findIndex((entry) => entry.name === "Concept Color GmbH"));
   });
 
+  it("zeigt MAGNUS, Rolinck und Glossner je einmal im vorhandenen Logo-Raster", () => {
+    const entries = getLogoCloudEntries();
+    for (const [name, logo, industry] of [
+      ["MAGNUS Mineralbrunnen GmbH & Co. KG", "/logos/magnus.png", "brauerei-getraenkeindustrie"],
+      ["Rolinck Privatbrauerei", "/logos/rolinck.svg", "brauerei-getraenkeindustrie"],
+      ["Neumarkter Glossnerbräu", "/logos/glossnerbraeu.png", "brauerei-getraenkeindustrie"],
+    ]) {
+      const matches = entries.filter((entry) => entry.name === name);
+      expect(matches).toHaveLength(1);
+      expect(matches[0].logo).toBe(logo);
+      expect(matches[0].industry).toBe(industry);
+      expect(matches[0].systems).toEqual([]);
+      expect(matches[0].proofTag).toMatch(/^Kundenstandort /);
+    }
+  });
+
   it("erfindet keinen Eintrag für Kunden ohne Logo-Freigabe", () => {
     const names = getLogoCloudEntries("brauerei-getraenkeindustrie").map((entry) => entry.name);
     expect(names).not.toContain("Krombacher Brauerei GmbH & Co. KG");

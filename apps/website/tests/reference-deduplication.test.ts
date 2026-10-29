@@ -78,6 +78,25 @@ describe("Ergaenzende Kundenstandorte", () => {
   });
 });
 
+describe("Kundenstandorte auf der Deutschlandkarte", () => {
+  it("markiert Magnus, Rolinck und Glossner genau einmal am bestätigten Ort", () => {
+    const clients = getSupplementalClientLocations();
+    for (const [name, city] of [
+      ["MAGNUS Mineralbrunnen GmbH & Co. KG", "Norderstedt"],
+      ["Rolinck Privatbrauerei", "Steinfurt"],
+      ["Neumarkter Glossnerbräu", "Neumarkt i.d.OPf."],
+    ]) {
+      const hits = clients.filter((client) => client.name === name);
+      expect(hits).toHaveLength(1);
+      expect(hits[0].city).toBe(city);
+      expect(hits[0].lat).toBeGreaterThan(47);
+      expect(hits[0].lat).toBeLessThan(56);
+      expect(hits[0].lng).toBeGreaterThan(5);
+      expect(hits[0].lng).toBeLessThan(16);
+    }
+  });
+});
+
 describe("Kartenkomponenten nutzen die deduplizierte Quelle", () => {
   it("uebergibt der ReferenceMap nirgends die ungefilterten clientLocations", () => {
     const astroFiles = collectAstroFiles(join(process.cwd(), "src"));

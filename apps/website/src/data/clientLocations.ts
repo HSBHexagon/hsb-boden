@@ -25,7 +25,7 @@ export const clientLocations = [
   { name: "Sahnemolkerei H. Wiesehoff GmbH", city: "Schöppingen", region: "Nordrhein-Westfalen", lat: 52.13, lng: 7.20, branche: "Molkerei" },
   { name: "KESSLER-ZINK GmbH", city: "Flonheim", region: "Rheinland-Pfalz", lat: 49.79, lng: 8.04, branche: "Getränke" },
   { name: "Weingut Dohlmühle-Genussreich", city: "Flonheim", region: "Rheinland-Pfalz", lat: 49.79, lng: 8.04, branche: "Getränke" },
-  { name: "Rolinck Privatbrauerei", city: "Steinfurt", region: "Nordrhein-Westfalen", lat: 52.15, lng: 7.34, branche: "Brauerei" },
+  { name: "Rolinck Privatbrauerei", city: "Steinfurt", region: "Nordrhein-Westfalen", lat: 52.15311, lng: 7.3401, branche: "Brauerei", logo: "/logos/rolinck.svg" },
   { name: "Krombacher Brauerei GmbH & Co. KG", city: "Steinfurt", region: "Nordrhein-Westfalen", lat: 52.16, lng: 7.36, branche: "Brauerei" },
   { name: "Milchwerke Ingolstadt Thalmässing eG", city: "Thalmässing", region: "Bayern", lat: 49.10, lng: 11.23, branche: "Molkerei" },
   { name: "Griesson - de Beukelaer GmbH & Co. KG", city: "Polch", region: "Rheinland-Pfalz", lat: 50.30, lng: 7.31, branche: "Lebensmittel" },
@@ -39,6 +39,11 @@ export const clientLocations = [
   { name: "Goldmilch", city: "Ingolstadt", region: "Bayern", lat: 48.76, lng: 11.42, branche: "Molkerei" },
   // Öffentliche Logo-/Namensdarstellung nach ausdrücklicher Betreiberanweisung vom 29.10.2026.
   { name: "Gaffel Privatbrauerei", city: "Köln", region: "Nordrhein-Westfalen", lat: 50.9115, lng: 7.0595, branche: "Brauerei", logo: "/logos/gaffel.svg" },
+  // Betreiberanweisung 29.10.2026: Logos und Kartenmarker, ohne erfundene Fallstudien/Leistungsclaims.
+  // MAGNUS: magnus.de/home (Firmensitz), Logo als freigestellte Markenwortmarke.
+  { name: "MAGNUS Mineralbrunnen GmbH & Co. KG", city: "Norderstedt", region: "Schleswig-Holstein", lat: 53.70942, lng: 10.0005, branche: "Getränke", logo: "/logos/magnus.png" },
+  // Neumarkter Glossnerbräu: glossner.de, Brauereistandort Neumarkt in der Oberpfalz.
+  { name: "Neumarkter Glossnerbräu", city: "Neumarkt i.d.OPf.", region: "Bayern", lat: 49.26565, lng: 11.47063, branche: "Brauerei", logo: "/logos/glossnerbraeu.png" },
   // Kyritzer Fruchtsäfte (Mosterei/Getränke), Pritzwalker Straße 25, 16866 Kyritz – kyritzer-fruchtsaefte.de
   { name: "Kyritzer Fruchtsäfte", city: "Kyritz", region: "Brandenburg", lat: 52.94, lng: 12.40, branche: "Getränke", logo: "/logos/kyritzer-fruchtsaefte.png" },
 ] as const;

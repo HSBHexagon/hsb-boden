@@ -66,7 +66,8 @@ def test_reply_formulas_include_apps_script_statuses():
 
 
 @pytest.mark.row_guard
-def test_complete_delivery_stops_before_any_write_when_row_moved():
+def test_complete_delivery_stops_before_any_write_when_row_moved(monkeypatch):
+    monkeypatch.setenv('HSB_CRM_BINDINGS_VERIFIED', 'yes')
     import outbound_safety
 
     class Journal:
@@ -108,3 +109,20 @@ def test_principal_cache_is_bound_to_the_credential_not_the_profile_name(monkeyp
         monkeypatch.setattr(sg, '_profile_credentials', lambda p, rt=rt: C(rt))
         sg.get_sheets_service()
     assert keys[0] != keys[1]
+
+
+
+@pytest.mark.row_guard
+def test_missing_canary_stops_before_journal_reservation(monkeypatch):
+    import outbound_safety
+    monkeypatch.delenv('HSB_CRM_BINDINGS_VERIFIED', raising=False)
+
+    class Journal:
+        events = []
+        def reserve(self, *a): self.events.append('reserve')
+
+    with pytest.raises(RuntimeError, match='CRM_STABLE_BINDING_CANARY_REQUIRED'):
+        outbound_safety.complete_delivery(object(), Journal(), _Sheet('HSB-20260708-00001'), 'x', ['Lead-ID'], 5,
+                                          {'email': 'a@b.de', 'owner': 'JOEL', 'lead_id': 'HSB-20260708-00001'},
+                                          b'raw', '<m@x>', 10)
+    assert Journal.events == []

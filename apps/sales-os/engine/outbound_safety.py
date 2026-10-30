@@ -161,6 +161,8 @@ def _release_binding(svc, spreadsheet_id, lead_id):
 def complete_delivery(client, journal, svc, spreadsheet_id, headers, row, item, raw, mid, cap):
     """Commit intent before SMTP; any later failure leaves a non-retryable attempt."""
     em=item['email']
+    if os.environ.get('HSB_CRM_BINDINGS_VERIFIED')!='yes':
+        raise RuntimeError('CRM_STABLE_BINDING_CANARY_REQUIRED')
     assert_row_lead(svc,spreadsheet_id,row,item['lead_id'])
     journal.reserve(item['owner'],item['lead_id'],em,mid,cap)
     now=datetime.now(timezone.utc).isoformat()

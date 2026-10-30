@@ -3,6 +3,7 @@
 HSB Sales OS - Direkte Synchronisation der 100+100 Drafts in Google Sheet 'ALL_LEADS'.
 Single Source of Truth (SSOT).
 """
+import hashlib
 import json
 import re
 import os
@@ -79,11 +80,11 @@ def get_sheets_service(spreadsheet_id: str = CANONICAL_SPREADSHEET_ID):
     cloud_auth = os.environ.get('HSB_GOOGLE_AUTHORIZED_USER_JSON', '').strip()
     if cloud_auth:
         creds = Credentials.from_authorized_user_info(json.loads(cloud_auth))
-        key = 'cloud'
+        key = f'cloud:{hashlib.sha256(cloud_auth.encode()).hexdigest()[:16]}'
     else:
         profile = os.environ.get('HSB_GOOGLE_PROFILE', 'hsb-boden').strip()
         creds = _profile_credentials(profile)
-        key = f'profile:{profile}'
+        key = f'profile:{profile}:{hashlib.sha256(str(creds.refresh_token).encode()).hexdigest()[:16]}'
     assert_hsb_principal(creds, key)
     return build('sheets', 'v4', credentials=creds, cache_discovery=False)
 

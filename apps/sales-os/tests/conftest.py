@@ -15,6 +15,10 @@ def _row_guard_off_for_simple_sheet_fakes(request, monkeypatch):
         return
     import outbound_safety
     monkeypatch.setattr(outbound_safety, 'assert_row_lead', lambda *a, **k: None)
+    # Einfache Attrappen kennen keine Developer-Metadaten: Versand-Writes dort zeilenbasiert simulieren.
+    monkeypatch.setattr(outbound_safety, '_send_write',
+                        lambda svc, sid, headers, row, lead_id, fields: outbound_safety.crm_write_readback(svc, sid, headers, row, fields))
+    monkeypatch.setattr(outbound_safety, '_release_binding', lambda *a, **k: None)
 
 
 def pytest_configure(config):

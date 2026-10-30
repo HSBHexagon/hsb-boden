@@ -141,13 +141,30 @@ def assert_row_lead(svc, spreadsheet_id, row, lead_id):
         raise RuntimeError('CRM_ROW_MOVED: Zeile gehört nicht mehr zu diesem Lead')
 
 
+def _send_write(svc, spreadsheet_id, headers, row, lead_id, fields):
+    """Versand-Writes nur über eine stabile Lead-Bindung (Developer-Metadaten), nie per Zeilennummer.
+    Die Bindung wird bei Bedarf genau für diesen Lead angelegt; headers/row bleiben für Test-Attrappen."""
+    import crm_bindings
+    crm_bindings.ensure_bindings(svc, spreadsheet_id, apply=True, sleep=lambda s: None, only={lead_id})
+    crm_write_lead_readback(svc, spreadsheet_id, lead_id, fields)
+
+
+def _release_binding(svc, spreadsheet_id, lead_id):
+    """Bindung nach Abschluss entfernen (Metadaten-Kapazität); Fehler hier blockieren den Versand nicht."""
+    try:
+        import crm_bindings
+        crm_bindings.remove_binding(svc, spreadsheet_id, lead_id)
+    except Exception as exc:  # noqa: BLE001 - nur Aufräumen
+        print(f'WARNUNG: Bindung {lead_id} nicht entfernt: {exc}')
+
+
 def complete_delivery(client, journal, svc, spreadsheet_id, headers, row, item, raw, mid, cap):
     """Commit intent before SMTP; any later failure leaves a non-retryable attempt."""
     em=item['email']
     assert_row_lead(svc,spreadsheet_id,row,item['lead_id'])
     journal.reserve(item['owner'],item['lead_id'],em,mid,cap)
     now=datetime.now(timezone.utc).isoformat()
-    crm_write_readback(svc,spreadsheet_id,headers,row,{'Send_Status':'SENDING','Last_Send_Attempt_At':now,'Outbound_ID':mid,'Sender_Account':client.cfg['email']})
+    _send_write(svc,spreadsheet_id,headers,row,item['lead_id'],{'Send_Status':'SENDING','Last_Send_Attempt_At':now,'Outbound_ID':mid,'Sender_Account':client.cfg['email']})
     journal.transition(em,'SMTP_UNKNOWN')
     client.deliver_verified_bytes(raw,em,journal=journal)
     journal.transition(em,'SMTP_ACCEPTED')
@@ -163,8 +180,8 @@ def complete_delivery(client, journal, svc, spreadsheet_id, headers, row, item, 
         seg=parts[1] if len(parts)>=2 and parts[1] in ('produktion','architekten') else item.get('segment')
         if seg and 'Segment' in headers:
             final_fields['Segment']=seg
-    assert_row_lead(svc,spreadsheet_id,row,item['lead_id'])
-    crm_write_readback(svc,spreadsheet_id,headers,row,final_fields)
+    _send_write(svc,spreadsheet_id,headers,row,item['lead_id'],final_fields)
+    _release_binding(svc,spreadsheet_id,item['lead_id'])
     if tmpl.endswith('-s1'):
         # Sequenzbeleg und finaler Versandzustand teilen sich dieselbe SQLite-Transaktion.
         journal.db.execute('BEGIN IMMEDIATE')

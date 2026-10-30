@@ -29,7 +29,9 @@ def test_default_profile_is_hsb_not_private(monkeypatch):
     seen = {}
     monkeypatch.delenv('HSB_GOOGLE_AUTHORIZED_USER_JSON', raising=False)
     monkeypatch.delenv('HSB_GOOGLE_PROFILE', raising=False)
-    monkeypatch.setattr(sg, '_profile_credentials', lambda p: seen.setdefault('profile', p))
+    class C:
+        refresh_token = 'rt'
+    monkeypatch.setattr(sg, '_profile_credentials', lambda p: (seen.setdefault('profile', p), C())[1])
     monkeypatch.setattr(sg, 'assert_hsb_principal', lambda c, k: 'info@hsb-boden.de')
     monkeypatch.setattr(sg, 'build', lambda *a, **k: 'svc')
     assert sg.get_sheets_service() == 'svc' and seen['profile'] == 'hsb-boden'
@@ -82,3 +84,27 @@ def test_complete_delivery_stops_before_any_write_when_row_moved():
                                           {'email': 'a@b.de', 'owner': 'JOEL', 'lead_id': 'HSB-20260708-00001'},
                                           b'raw', '<m@x>', 10)
     assert j.events == []
+
+
+
+@pytest.mark.row_guard
+def test_send_write_uses_lead_binding_not_row_number(monkeypatch):
+    import outbound_safety, crm_bindings
+    calls = []
+    monkeypatch.setattr(crm_bindings, 'ensure_bindings', lambda svc, sid, **k: calls.append(('bind', k['only'], k['apply'])))
+    monkeypatch.setattr(outbound_safety, 'crm_write_lead_readback', lambda svc, sid, lead, fields: calls.append(('write', lead, fields)))
+    outbound_safety._send_write('svc', 'sid', ['Lead-ID'], 999, 'HSB-20260708-00001', {'Send_Status': 'sent'})
+    assert calls == [('bind', {'HSB-20260708-00001'}, True), ('write', 'HSB-20260708-00001', {'Send_Status': 'sent'})]
+
+
+def test_principal_cache_is_bound_to_the_credential_not_the_profile_name(monkeypatch):
+    class C:
+        def __init__(self, rt): self.refresh_token = rt
+    keys = []
+    monkeypatch.delenv('HSB_GOOGLE_AUTHORIZED_USER_JSON', raising=False)
+    monkeypatch.setattr(sg, 'build', lambda *a, **k: 'svc')
+    monkeypatch.setattr(sg, 'assert_hsb_principal', lambda c, k: keys.append(k))
+    for rt in ('token-a', 'token-b'):
+        monkeypatch.setattr(sg, '_profile_credentials', lambda p, rt=rt: C(rt))
+        sg.get_sheets_service()
+    assert keys[0] != keys[1]

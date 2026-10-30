@@ -319,6 +319,18 @@ def cmd_click_sync(args, kv_client=None, svc=None):
     print(json.dumps(result, ensure_ascii=False, indent=2))
 
 
+def cmd_create_v2_drafts(args, svc=None, client=None):
+    """Lead → v2-Entwurf; gibt nur Zählungen aus, versendet nie."""
+    from com_mailbox_manager import ComMailboxClient
+    from new_drafts import click_secret, create_v2_drafts
+    if not 1 <= args.limit <= 200:
+        raise SystemExit("--limit muss zwischen 1 und 200 liegen")
+    _, leads = _load_all_leads(svc or get_sheets_service())
+    result = create_v2_drafts(args.owner, args.limit, args.apply, leads=leads,
+                              client=client or ComMailboxClient(args.owner), secret=click_secret())
+    print(json.dumps(result))
+
+
 def cmd_crm_bindings(args, svc=None):
     """Bindungen anlegen oder Sortier-Canary ausführen; gibt nur Zählungen aus."""
     import json as _json
@@ -566,6 +578,11 @@ def main():
     p_click.add_argument("--apply", action="store_true", help="Neue Klicks live ins Google Sheet schreiben (Standard: nur zählen)")
 
     # bounce-report
+    p_new = subparsers.add_parser("create-v2-drafts", help="Neue v2-Entwürfe direkt aus dem CRM anlegen (Dry-Run ohne --apply)")
+    p_new.add_argument("--owner", required=True, choices=["JOEL", "JORDI"])
+    p_new.add_argument("--limit", type=int, default=10)
+    p_new.add_argument("--apply", action="store_true")
+
     p_bind = subparsers.add_parser("crm-bindings", help="Stabile Zeilenbindungen im CRM anlegen (Dry-Run ohne --apply) bzw. Sortier-Canary")
     p_bind.add_argument("--apply", action="store_true")
     p_bind.add_argument("--canary", action="store_true", help="Nur Sortier-Canary im temporären Tab")
@@ -633,6 +650,8 @@ def main():
         cmd_test_mail(args)
     elif args.command == "click-sync":
         cmd_click_sync(args)
+    elif args.command == "create-v2-drafts":
+        cmd_create_v2_drafts(args)
     elif args.command == "crm-bindings":
         cmd_crm_bindings(args)
     elif args.command == "bounce-report":

@@ -153,3 +153,14 @@ def prune_bindings(svc, sid, keep, apply=False):
                 {'deleteDeveloperMetadata': {'dataFilter': {'developerMetadataLookup': {'metadataId': mid}}}}
                 for mid in drop[start:start + BATCH]]}).execute()
     return {'to_remove': len(drop), 'removed': len(drop) if apply else 0, 'dry_run': not apply}
+
+
+def remove_binding(svc, sid, lead_id):
+    """Entfernt die `hsb.lead_id`-Bindung genau dieses Leads (Zellinhalte bleiben unberührt)."""
+    found = svc.spreadsheets().developerMetadata().search(spreadsheetId=sid, body={'dataFilters': [
+        {'developerMetadataLookup': {'metadataKey': KEY, 'metadataValue': lead_id, 'locationType': 'ROW', 'visibility': 'DOCUMENT'}}]}).execute()
+    ids = [m['developerMetadata']['metadataId'] for m in found.get('matchedDeveloperMetadata', [])]
+    if ids:
+        svc.spreadsheets().batchUpdate(spreadsheetId=sid, body={'requests': [
+            {'deleteDeveloperMetadata': {'dataFilter': {'developerMetadataLookup': {'metadataId': mid}}}} for mid in ids]}).execute()
+    return len(ids)

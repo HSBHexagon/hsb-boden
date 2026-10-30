@@ -73,12 +73,13 @@ from crm_dashboard import dashboard_rows
 def test_dashboard_formulas():
     rows = {r[0]: r for r in dashboard_rows() if r}
     assert rows["Abgemeldet (Opt-out)"][1] == '=COUNTIF(ALL_LEADS!Y2:Y; "yes")'
-    assert rows["Bounces"][1] == '=COUNTIF(ALL_LEADS!BE2:BE; "Bounce")'
+    assert rows["Bounces"][1] == ('=COUNTIFS(ALL_LEADS!AQ2:AQ; "hard_bounce")+COUNTIFS(ALL_LEADS!AQ2:AQ; "bounce_review")'
+                                  '+COUNTIFS(ALL_LEADS!AQ2:AQ; "soft_bounce")+COUNTIFS(ALL_LEADS!AQ2:AQ; "hard")')
     assert rows["Antworten offen"][1] == '=COUNTIFS(ALL_LEADS!BE2:BE; "Antwort"; ALL_LEADS!R2:R; "")'
     assert rows["Klärfälle offen"][1] == '=COUNTIF(INBOUND_EVENTS!J2:J; "NEEDS_REVIEW")'
     assert rows["Versendet letzte 30 Tage"][1].startswith("=SPARKLINE(")
     assert "COUNTIFS(" in rows["Versendet letzte 30 Tage"][1]
-    assert len(dashboard_rows()) == 27
+    assert len(dashboard_rows()) == 36
     assert all(len(r) == 5 for r in dashboard_rows())
     assert rows["ERZEUGTE BATCHES (Letzte 10)"]
     assert dashboard_rows()[17] == [

@@ -114,14 +114,14 @@ class ComMailboxClient:
                     pass
         return counts
 
-    def _assert_draft_capacity(self, imap, recipients):
+    def _assert_draft_capacity(self, imap, recipients, max_existing=50):
         """Existing target met or ambiguous retry: preserve all originals."""
         from email.utils import getaddresses
         typ,_=imap.select(self.cfg['drafts_folder'],readonly=True)
         if typ!='OK':raise RuntimeError('DRAFT_FOLDER_UNAVAILABLE')
         typ,data=imap.uid('search',None,'ALL')
         if typ!='OK':raise RuntimeError('DRAFT_SEARCH_FAILED')
-        if data and data[0] and len(data[0].split())>=50:
+        if data and data[0] and len(data[0].split())>=max_existing:
             raise RuntimeError('DRAFT_TARGET_ALREADY_MET: reconcile existing drafts')
         normalized=[r.strip().lower() for r in recipients]
         if len(normalized)!=len(set(normalized)):raise RuntimeError('DUPLICATE_DRAFT_INPUT')
@@ -217,7 +217,7 @@ class ComMailboxClient:
 
         return msg.as_bytes(), msg_id
 
-    def create_drafts_batch(self, items: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    def create_drafts_batch(self, items: List[Dict[str, Any]], max_existing: int = 50) -> List[Dict[str, Any]]:
         """Erstellt eine Liste von Entwuerfen in einer einzigen persistenten IMAP-Verbindung."""
         results = []
         flyer_cache: Dict[str, bytes] = {}
@@ -229,7 +229,7 @@ class ComMailboxClient:
                     flyer_cache[fpath] = f.read()
 
         with self._get_imap() as imap:
-            self._assert_draft_capacity(imap,[it['to_email'] for it in items])
+            self._assert_draft_capacity(imap,[it['to_email'] for it in items],max_existing)
             folder = self.cfg['drafts_folder']
             for it in items:
                 fpath = it.get('flyer_path')

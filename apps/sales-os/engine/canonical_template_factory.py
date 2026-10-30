@@ -36,18 +36,41 @@ CANONICAL_FLYERS["JORDIE"] = CANONICAL_FLYERS["JORDI"]
 LOGO_URL = "https://www.hsb-boden.de/brand/hsb-boden-logo.png"
 
 
+_TITLES = {'dr.', 'prof.', 'dipl.-ing.', 'dr.-ing.'}
+_SUFFIXES = {'jun.', 'sen.', 'jr.', 'sr.', 'jun', 'sen'}
+_PARTICLES = {'von', 'van', 'de', 'der', 'den', 'zu', 'zur', 'ten', 'ter', 'vom', 'di', 'da', 'le', 'la'}
+
+
+def _nachname_mit_titel(teile):
+    """'Dr. Anna von der Heide' → 'Dr. von der Heide'; Vornamen entfallen."""
+    titel = [t for t in teile if t.lower() in _TITLES]
+    rest = [t for t in teile if t.lower() not in _TITLES]
+    zusatz = []
+    while len(rest) > 1 and rest[-1].lower() in _SUFFIXES:
+        zusatz.insert(0, rest.pop())
+    if not rest:
+        return ' '.join(titel)
+    start = len(rest) - 1
+    for i, t in enumerate(rest[:-1]):
+        if t.lower() in _PARTICLES:
+            start = i
+            break
+    return ' '.join(titel + rest[start:] + zusatz)
+
+
 def anrede_fuer_lead(lead: Dict[str, Any]) -> str:
     ap = str(lead.get("Ansprechpartner") or "").strip()
+    ap = re.sub(r'(?i)^(guten tag|sehr geehrte[rs]?|hallo|liebe[rs]?)\s+', '', ap).strip(' ,')
     if not ap or ap.lower() in ["none", "nan", "null"]:
         return "Guten Tag,"
     teile = ap.split()
     if len(teile) >= 2:
-        anr = teile[0].lower()
-        nachname = " ".join(teile[1:])
-        if "herr" in anr:
-            return f"Sehr geehrter Herr {nachname},"
-        if "frau" in anr:
-            return f"Sehr geehrte Frau {nachname},"
+        # "Herrn"/"Herr."/"Frau." waren mit dem früheren Teilstring-Abgleich gültig und bleiben es.
+        anr = teile[0].lower().rstrip(".")
+        if anr in ("herr", "herrn", "hr"):
+            return f"Sehr geehrter Herr {_nachname_mit_titel(teile[1:])},"
+        if anr in ("frau", "fr"):
+            return f"Sehr geehrte Frau {_nachname_mit_titel(teile[1:])},"
     return f"Guten Tag {ap},"
 
 

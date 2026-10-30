@@ -134,20 +134,66 @@ def sent_copy_readback(client, message_id, raw, recipient):
         return uids[0].decode()
 
 
+def assert_row_lead(svc, spreadsheet_id, row, lead_id):
+    """Vor jedem Versand-Write: steht in dieser Zeile noch derselbe Lead? Sonst kein Write (Sortierung o. Ä.)."""
+    got=svc.spreadsheets().values().get(spreadsheetId=spreadsheet_id,range=f'ALL_LEADS!A{row}').execute().get('values',[[""]])
+    if str((got[0] or [""])[0]).strip()!=str(lead_id).strip():
+        raise RuntimeError('CRM_ROW_MOVED: Zeile gehört nicht mehr zu diesem Lead')
+
+
+def prepare_lead_binding(svc, spreadsheet_id, lead_id):
+    """Bindung für genau diesen Lead anlegen und als eindeutig bestätigen – vor journal.reserve(),
+    damit ein Bindungsfehler keinen RESERVED-Rest hinterlässt, der jeden Folgeversand sperrt."""
+    import crm_bindings
+    result=crm_bindings.ensure_bindings(svc, spreadsheet_id, apply=True, sleep=lambda s: None, only={lead_id})
+    if any(result.get(k) for k in ('conflicts','skipped_duplicate','skipped_invalid')):
+        raise RuntimeError('CRM_LEAD_BINDING_NOT_CREATED')
+    require_stable_crm_binding(svc, spreadsheet_id, lead_id)
+
+
+def _send_write(svc, spreadsheet_id, headers, row, lead_id, fields):
+    """Versand-Writes nur über die vorab angelegte Lead-Bindung (Developer-Metadaten), nie per Zeilennummer.
+    headers/row bleiben für Test-Attrappen."""
+    crm_write_lead_readback(svc, spreadsheet_id, lead_id, fields)
+
+
+def _release_binding(svc, spreadsheet_id, lead_id):
+    """Bindung nach Abschluss entfernen (Metadaten-Kapazität); Fehler hier blockieren den Versand nicht."""
+    try:
+        import crm_bindings
+        crm_bindings.remove_binding(svc, spreadsheet_id, lead_id)
+    except Exception as exc:  # noqa: BLE001 - nur Aufräumen
+        print(f'WARNUNG: Bindung {lead_id} nicht entfernt: {exc}')
+
+
 def complete_delivery(client, journal, svc, spreadsheet_id, headers, row, item, raw, mid, cap):
     """Commit intent before SMTP; any later failure leaves a non-retryable attempt."""
     em=item['email']
+    if os.environ.get('HSB_CRM_BINDINGS_VERIFIED')!='yes':
+        raise RuntimeError('CRM_STABLE_BINDING_CANARY_REQUIRED')
+    assert_row_lead(svc,spreadsheet_id,row,item['lead_id'])
+    prepare_lead_binding(svc,spreadsheet_id,item['lead_id'])
     journal.reserve(item['owner'],item['lead_id'],em,mid,cap)
     now=datetime.now(timezone.utc).isoformat()
-    crm_write_readback(svc,spreadsheet_id,headers,row,{'Send_Status':'SENDING','Last_Send_Attempt_At':now,'Outbound_ID':mid,'Sender_Account':client.cfg['email']})
+    _send_write(svc,spreadsheet_id,headers,row,item['lead_id'],{'Send_Status':'SENDING','Last_Send_Attempt_At':now,'Outbound_ID':mid,'Sender_Account':client.cfg['email']})
     journal.transition(em,'SMTP_UNKNOWN')
     client.deliver_verified_bytes(raw,em,journal=journal)
     journal.transition(em,'SMTP_ACCEPTED')
     sent_copy_readback(client,mid,raw,em)
     journal.transition(em,'SENT_COPY_VERIFIED')
-    crm_write_readback(svc,spreadsheet_id,headers,row,{'Send_Status':'sent','Send_Datum':now,'Batch_Status':'SENT_COM_VERIFIED','Internet_Message_ID':mid})
     msg=BytesParser(policy=policy.default).parsebytes(raw)
-    if str(msg.get('X-HSB-Template-ID') or '').endswith('-s1'):
+    final_fields={'Send_Status':'sent','Send_Datum':now,'Batch_Status':'SENT_COM_VERIFIED','Internet_Message_ID':mid}
+    tmpl=str(msg.get('X-HSB-Template-ID') or '').strip()
+    if tmpl:
+        if 'Email_Template_ID' in headers:
+            final_fields['Email_Template_ID']=tmpl
+        parts=tmpl.split('-')
+        seg=parts[1] if len(parts)>=2 and parts[1] in ('produktion','architekten') else item.get('segment')
+        if seg and 'Segment' in headers:
+            final_fields['Segment']=seg
+    _send_write(svc,spreadsheet_id,headers,row,item['lead_id'],final_fields)
+    _release_binding(svc,spreadsheet_id,item['lead_id'])
+    if tmpl.endswith('-s1'):
         # Sequenzbeleg und finaler Versandzustand teilen sich dieselbe SQLite-Transaktion.
         journal.db.execute('BEGIN IMMEDIATE')
         try:
@@ -200,7 +246,39 @@ def add_list_unsubscribe(msg, owner, lead_id):
     return msg
 
 
-def dispatch_verified(count_per_owner=25, owners=('JOEL','JORDI'), dry_run=True, cap=35, jitter_min=45, jitter_max=90):
+SEGMENT_CODES={'p':'produktion','a':'architekten'}
+
+
+def draft_segment(draft):
+    """Segment eines v2-Entwurfs aus seinem Klick-Link (?s=p / ?s=a); None, wenn nicht bestimmbar."""
+    from urllib.parse import urlsplit, parse_qs
+    for url in draft.get('links') or []:
+        parts=urlsplit(url)
+        if parts.netloc.lower()=='www.hsb-boden.de' and parts.path.startswith('/r/'):
+            code=(parse_qs(parts.query).get('s') or [''])[0]
+            return SEGMENT_CODES.get(code)
+    return None
+
+
+def select_queue(queue, drafts, owners, count_per_owner, segments=None):
+    """Reihenfolge der Warteschlange beibehalten; optional nur Leads, deren versandbereiter Entwurf zu `segments` gehört."""
+    seg_by_lead={}
+    if segments:
+        for d in drafts:
+            if d.get('sendable'):
+                seg_by_lead.setdefault(d['lead_id'], draft_segment(d))
+    selected=[];used={o:0 for o in owners}
+    for item in queue:
+        o=item['owner']
+        if o not in owners or used[o]>=count_per_owner:
+            continue
+        if segments and seg_by_lead.get(item['lead_id']) not in segments:
+            continue
+        selected.append(item);used[o]+=1
+    return selected, used
+
+
+def dispatch_verified(count_per_owner=25, owners=('JOEL','JORDI'), dry_run=True, cap=35, jitter_min=45, jitter_max=90, segments=None):
     from com_mailbox_manager import ComMailboxClient
     from sync_to_google_sheet import get_sheets_service, SPREADSHEET_ID
     from sales_reconciliation import run_audit, assess_message, has_unreviewed_legacy_variant
@@ -224,21 +302,23 @@ def dispatch_verified(count_per_owner=25, owners=('JOEL','JORDI'), dry_run=True,
         run_audit(output)
         queue=json.loads((output/'queue.json').read_text())
         drafts=json.loads((output/'drafts.json').read_text())
-        selected=[];used={o:0 for o in owners}
-        for item in queue:
-            o=item['owner']
-            if o in owners and used[o]<count_per_owner:
-                selected.append(item);used[o]+=1
+        selected,used=select_queue(queue,drafts,owners,count_per_owner,segments)
         if dry_run: return {'status':'DRY_RUN_COMPLETED','selected':used,'sent_counts':{o:0 for o in owners},'customer_emails_sent':0}
         svc=get_sheets_service(); journal=SendJournal(state/'outbound.sqlite3')
         sent_counts={o:0 for o in owners}
+        capped=set()  # Owner am Tageslimit: restliche Einträge ohne Sheet-/IMAP-Abfragen überspringen.
         try:
             for item in selected:
+                if item['owner'] in capped:
+                    continue
                 # Re-read all permission/suppression columns immediately before reservation.
                 rows=svc.spreadsheets().values().get(spreadsheetId=SPREADSHEET_ID,range='ALL_LEADS!A1:BU6425').execute()['values']
                 headers=rows[0]; matches=[(i,dict(zip(headers,r))) for i,r in enumerate(rows[1:],2) if r and r[0]==item['lead_id']]
                 if len(matches)!=1: raise RuntimeError('LEAD_CHANGED_OR_AMBIGUOUS')
                 row,lead=matches[0]
+                # Zurückgestellt (CRM-Tier Z) ist kein Fehler, sondern "nie senden": überspringen, Lauf läuft weiter.
+                if str(lead.get('Tier') or '').strip().upper()=='Z':
+                    print(f"SKIP {item['lead_id']}: TIER_Z"); continue
                 from send_governance import enforce_domain_health, MailboxHealthStore
                 from lead_quality import deliverability_flags
                 # Domainweite Gesundheit und Hygiene unmittelbar vor jeder Reservierung.
@@ -250,7 +330,10 @@ def dispatch_verified(count_per_owner=25, owners=('JOEL','JORDI'), dry_run=True,
                     raise RuntimeError('LIVE_IDENTITY_CHANGED')
                 today=datetime.now(ZoneInfo('Europe/Berlin')).date()
                 used_today=count_owner_attempts_today([dict(zip(headers,r)) for r in rows[1:]],item['owner'],today)
-                if used_today>=effective_cap: raise RuntimeError('DAILY_CAP_REACHED_CRM')
+                day_str=today.isoformat()
+                journal_today=journal.db.execute('SELECT count(*) FROM attempts WHERE owner=? AND day=?',(item['owner'],day_str)).fetchone()[0]
+                if used_today>=effective_cap or journal_today>=effective_cap:
+                    capped.add(item['owner']); continue
                 d=next(d for d in drafts if d['lead_id']==item['lead_id'] and d['sendable'])
                 client=clients[item['owner']]
                 with client._get_imap() as imap:

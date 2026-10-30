@@ -25,6 +25,15 @@ from hsb_core import check_eligibility, normalize_owner, sanitize_company_name
 SENDERS = {'JOEL': 'j-cherino@hsb-boden.com', 'JORDI': 'j-post@hsb-boden.com'}
 
 
+def queue_block_reasons(lead):
+    """Sperrgründe für die Versand-Warteschlange: Eignung plus zurückgestellt (CRM-Tier Z).
+    Tier Z muss vor select_queue raus, sonst belegt er Tagesplätze, die das Live-Gate dann leer überspringt."""
+    reasons = list(check_eligibility(lead).reasons)
+    if str(lead.get('Tier') or '').strip().upper() == 'Z':
+        reasons.append('TIER_Z')
+    return reasons
+
+
 def addresses(value):
     return [a.lower().strip() for _, a in getaddresses([str(value or '')]) if a]
 
@@ -427,7 +436,7 @@ def run_audit(output, reuse_snapshot=False):
     balances = []
     for l in leads:
         lid = str(l.get('Lead-ID') or ''); em = str(l.get('E-Mail') or '').strip().lower()
-        ds = bylead[lid]; reasons = list(check_eligibility(l).reasons)
+        ds = bylead[lid]; reasons = queue_block_reasons(l)
         if em in contacted: reasons.append('ALREADY_CONTACTED')
         if em in inbound_blocked: reasons.append('INBOUND_REQUIRES_REVIEW')
         if emails[em] != 1 or lead_ids[lid] != 1: reasons.append('CRM_DUPLICATE')

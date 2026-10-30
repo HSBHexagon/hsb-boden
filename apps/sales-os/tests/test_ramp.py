@@ -138,3 +138,152 @@ def test_delayed_bounce_with_old_date_is_not_ignored(tmp_path):
         date='Mon, 1 Jan 2024 10:00:00 +0000',subject='Undeliverable',body='Status: 5.7.1')
     observed=observed_health(tmp_path,collector=lambda **k:[bounce])
     assert pause_reason(observed)=='POLICY_BOUNCE'
+
+
+def test_second_run_same_day_respects_cap(tmp_path, monkeypatch):
+    """Zweiter dispatch_verified-Lauf am selben Tag sendet 0, wenn das Tagesbudget bereits erschöpft ist."""
+    import hashlib
+    from contextlib import nullcontext
+    from email.message import EmailMessage
+    from types import SimpleNamespace
+    from zoneinfo import ZoneInfo
+    import outbound_safety as out
+    import sales_reconciliation as recon
+    import sync_to_google_sheet as sheets
+    import com_mailbox_manager as mail
+    import closed_loop_crm as inbound
+    import send_governance as guard
+    from test_outbound_safety_gate import _crm_lead
+
+    # Lead mit Sendedatum heute
+    now_berlin = datetime.now(ZoneInfo('Europe/Berlin')).isoformat()
+    leads = [
+        _crm_lead(**{
+            'Lead-ID': 'L1',
+            'Verantwortlicher': 'Joel Cherino Diaz',
+            'E-Mail': 'test1@firma.invalid',
+            'Sender_Account': 'j-cherino@hsb-boden.com',
+            'Send_Datum': now_berlin,
+            'Send_Status': 'sent',
+        }),
+        _crm_lead(**{
+            'Lead-ID': 'L2',
+            'Verantwortlicher': 'Joel Cherino Diaz',
+            'E-Mail': 'test2@firma.invalid',
+        })
+    ]
+    headers = list(leads[0])
+    raws = {}
+    queue = [{'lead_id': 'L2', 'owner': 'JOEL', 'email': 'test2@firma.invalid'}]
+    drafts = []
+    msg = EmailMessage()
+    msg['To'] = 'test2@firma.invalid'
+    msg['From'] = 'j-cherino@hsb-boden.com'
+    msg['Subject'] = 'Test'
+    msg['Message-ID'] = '<2@hsb-boden.com>'
+    msg.set_content('Test')
+    raw = msg.as_bytes()
+    raws['2'] = raw
+    drafts.append({
+        'lead_id': 'L2',
+        'sendable': True,
+        'folder': 'Drafts',
+        'uidvalidity': '7',
+        'uid': '2',
+        'sha256': hashlib.sha256(raw).hexdigest(),
+    })
+
+    class IMAP:
+        def __enter__(self): return self
+        def __exit__(self, *a): pass
+        def select(self, *a, **k): return 'OK', []
+        def response(self, *a): return None, [b'7']
+        def uid(self, cmd, uid, *a): return 'OK', [(b'h', raws[uid])]
+
+    client = SimpleNamespace(_get_imap=lambda: IMAP(), cfg={'email': 'j-cherino@hsb-boden.com'})
+    monkeypatch.setattr(mail, 'ComMailboxClient', lambda o: client)
+    monkeypatch.setattr(out, 'mailbox_dispatch_lock', lambda c: nullcontext())
+    monkeypatch.setattr(inbound, 'sync_inbounds', lambda **k: None)
+
+    def audit(path):
+        path.mkdir(parents=True, exist_ok=True)
+        (path / 'queue.json').write_text(json.dumps(queue))
+        (path / 'drafts.json').write_text(json.dumps(drafts))
+
+    monkeypatch.setattr(recon, 'run_audit', audit)
+    monkeypatch.setattr(recon, 'assess_message', lambda *a: {'issues': []})
+    monkeypatch.setattr(recon, 'has_unreviewed_legacy_variant', lambda *a: False)
+
+    values = SimpleNamespace(
+        get=lambda **k: SimpleNamespace(
+            execute=lambda: {'values': [headers] + [[l.get(h, '') for h in headers] for l in leads]}
+        )
+    )
+    monkeypatch.setattr(sheets, 'get_sheets_service', lambda: SimpleNamespace(spreadsheets=lambda: SimpleNamespace(values=lambda: values)))
+    monkeypatch.setattr('lead_quality.deliverability_flags', lambda *a: [])
+    # Cap = 1 (Tagesbudget 1 wurde durch L1 bereits erreicht)
+    monkeypatch.setattr(guard, 'enforce_domain_health', lambda *a: 1)
+
+    deliveries = []
+    monkeypatch.setattr(out, 'complete_delivery', lambda *a: deliveries.append(a))
+    monkeypatch.setattr(out.time, 'sleep', lambda *a: None)
+    monkeypatch.setenv('HSB_CUSTOMER_SEND_ENABLED', 'yes')
+    monkeypatch.setenv('HSB_SALES_STATE_DIR', str(tmp_path))
+
+    # Aufruf mit count_per_owner=1, cap=1 -> Budget von 1 ist durch L1 bereits verbraucht.
+    result = out.dispatch_verified(1, owners=('JOEL',), dry_run=False, cap=1)
+    assert result['status'] == 'COMPLETED'
+    assert result['sent_counts']['JOEL'] == 0
+    assert len(deliveries) == 0
+
+
+
+def test_deferred_tier_z_lead_is_skipped_at_live_gate(tmp_path,monkeypatch):
+    """Ein schon erzeugter Entwurf an einen inzwischen zurückgestellten Lead (CRM-Tier Z) wird nie gesendet."""
+    import hashlib
+    from contextlib import nullcontext
+    from email.message import EmailMessage
+    from types import SimpleNamespace
+    import outbound_safety as out
+    import sales_reconciliation as recon
+    import sync_to_google_sheet as sheets
+    import com_mailbox_manager as mail
+    import closed_loop_crm as inbound
+    import send_governance as guard
+    from test_outbound_safety_gate import _crm_lead
+    leads=[_crm_lead(**{'Lead-ID':f'L{i}','Verantwortlicher':'Joel Cherino Diaz','E-Mail':f'test{i}@firma.invalid','Tier':tier})
+           for i,tier in ((1,'Z'),(2,'B'))]
+    headers=list(leads[0])
+    raws={};queue=[];drafts=[]
+    for i,lead in enumerate(leads,1):
+        msg=EmailMessage();msg['To']=lead['E-Mail'];msg['From']='j-cherino@hsb-boden.com';msg['Subject']='x';msg['Message-ID']=f'<{i}@hsb-boden.com>';msg.set_content('Test')
+        raw=msg.as_bytes();raws[str(i)]=raw
+        queue.append({'lead_id':lead['Lead-ID'],'owner':'JOEL','email':lead['E-Mail']})
+        drafts.append({'lead_id':lead['Lead-ID'],'sendable':True,'folder':'Drafts','uidvalidity':'7','uid':str(i),'sha256':hashlib.sha256(raw).hexdigest()})
+    class IMAP:
+        def __enter__(self):return self
+        def __exit__(self,*a):pass
+        def select(self,*a,**k):return 'OK',[]
+        def response(self,*a):return None,[b'7']
+        def uid(self,cmd,uid,*a):return 'OK',[(b'h',raws[uid])]
+    client=SimpleNamespace(_get_imap=lambda:IMAP(),cfg={})
+    monkeypatch.setattr(mail,'ComMailboxClient',lambda o:client)
+    monkeypatch.setattr(out,'mailbox_dispatch_lock',lambda c:nullcontext())
+    monkeypatch.setattr(inbound,'sync_inbounds',lambda **k:None)
+    def audit(path):
+        path.mkdir(parents=True)
+        (path/'queue.json').write_text(json.dumps(queue));(path/'drafts.json').write_text(json.dumps(drafts))
+    monkeypatch.setattr(recon,'run_audit',audit)
+    monkeypatch.setattr(recon,'assess_message',lambda *a:{'issues':[]})
+    monkeypatch.setattr(recon,'has_unreviewed_legacy_variant',lambda *a:False)
+    values=SimpleNamespace(get=lambda **k:SimpleNamespace(execute=lambda:{'values':[headers]+[[l.get(h,'') for h in headers] for l in leads]}))
+    monkeypatch.setattr(sheets,'get_sheets_service',lambda:SimpleNamespace(spreadsheets=lambda:SimpleNamespace(values=lambda:values)))
+    monkeypatch.setattr('lead_quality.deliverability_flags',lambda *a:[])
+    monkeypatch.setattr(guard,'enforce_domain_health',lambda *a:10)
+    deliveries=[]
+    monkeypatch.setattr(out,'complete_delivery',lambda *a:deliveries.append(a[6]['lead_id']))
+    monkeypatch.setattr(out.time,'sleep',lambda *a:None)
+    monkeypatch.setenv('HSB_CUSTOMER_SEND_ENABLED','yes')
+    monkeypatch.setenv('HSB_SALES_STATE_DIR',str(tmp_path))
+    out.dispatch_verified(2,owners=('JOEL',),dry_run=False)
+    assert deliveries==['L2']

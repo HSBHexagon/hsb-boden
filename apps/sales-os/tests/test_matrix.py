@@ -10,6 +10,8 @@ import json
 import shutil
 import sys
 import tempfile
+
+import pytest
 from email import policy
 from email.parser import BytesParser
 from pathlib import Path
@@ -352,7 +354,9 @@ def test_anrede() -> None:
     # Zusicherung ueber die realen Daten: die Anrede ist immer die Anredeform
     # plus ein zusammenhaengendes Ende des Namens. Damit kann nie ein Stueck
     # aus der Mitte stehenbleiben und nie ein fremder Name entstehen.
-    from sheet_loader import load_from_xlsx
+    from sheet_loader import has_export, load_from_xlsx
+    if not has_export():
+        pytest.skip("kein Sheet-Export mit Kundendaten (z. B. chunk-Sidecar)")
     verstoesse, leer = [], 0
     for lead in load_from_xlsx():
         roh = " ".join(str(lead.get("Contact") or "").split())
@@ -377,6 +381,9 @@ def test_anrede() -> None:
 
 
 def test_real_data_snapshot() -> None:
+    from sheet_loader import has_export
+    if not has_export():
+        pytest.skip("kein Sheet-Export mit Kundendaten (z. B. chunk-Sidecar)")
     try:
         from sheet_loader import load_from_xlsx, summarize
         leads = load_from_xlsx()

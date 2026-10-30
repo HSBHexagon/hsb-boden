@@ -1,3 +1,13 @@
+import sys
+from pathlib import Path
+
+# Sicherstellen, dass engine/ und operator_layer/ immer im Suchpfad liegen
+_ENGINE_DIR = Path(__file__).resolve().parent.parent / "engine"
+_OPERATOR_DIR = _ENGINE_DIR / "operator_layer"
+for _d in (str(_ENGINE_DIR), str(_OPERATOR_DIR)):
+    if _d not in sys.path:
+        sys.path.insert(0, _d)
+
 import pytest
 """Unit tests never depend on production mailbox credentials."""
 import os

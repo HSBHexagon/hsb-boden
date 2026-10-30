@@ -127,3 +127,14 @@ def test_extraction_never_takes_a_suffix_of_an_unsupported_address():
 def test_extraction_keeps_quoted_and_sentence_final_addresses():
     html = "<a href='mailto:info@kunde.de'>Mail</a> E-Mail: buero@kunde.de. &lt;team@kunde.de&gt;"
     assert sorted(enrich_missing_emails.extract_emails_from_html(html, "kunde.de")) == ["buero@kunde.de", "info@kunde.de", "team@kunde.de"]
+
+
+def test_extraction_drops_addresses_with_valid_but_unsupported_local_chars():
+    # Codex-Review PR #510 Runde 2: '=' und '&' sind im Local-Part erlaubt; nie den Suffix übernehmen.
+    html = "<p>a=b@kunde.de</p><p>a&amp;b@kunde.de</p><p>x!y@kunde.de</p>"
+    assert enrich_missing_emails.extract_emails_from_html(html, "kunde.de") == []
+
+
+def test_extraction_keeps_mailto_with_query():
+    html = '<a href="mailto:info@kunde.de?subject=Anfrage">Mail</a>'
+    assert enrich_missing_emails.extract_emails_from_html(html, "kunde.de") == ["info@kunde.de"]

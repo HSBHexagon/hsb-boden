@@ -51,11 +51,14 @@ def extract_emails_from_html(html_text: str, domain: str) -> List[str]:
     """Findet E-Mail-Adressen im HTML und filtert Rauschen & Systemadressen aus."""
     # Ganze Kandidaten bis zum nächsten Trenner nehmen und vollständig prüfen: eine nicht unterstützte
     # Adresse (o'brien@, sales/europe@) wird verworfen, nie ihr Suffix (brien@) übernommen.
+    # Trenner links sind nur Zeichen, die im Local-Part nie vorkommen; rechts endet die Domain am
+    # ersten Nicht-Domain-Zeichen (z. B. ?subject=). Entities vorher auflösen (&lt; &amp;).
     raw_matches = []
-    for cand in re.findall(r"[^\s<>\"(),;:\[\]=&]+@[^\s<>\"(),;:\[\]=&]+", html_text or ""):
-        cand = cand.strip("'").rstrip(".")
-        if re.fullmatch(r"(?i)[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}", cand):
-            raw_matches.append(cand)
+    text = html.unescape(html_text or "")
+    for local, dom in re.findall(r"([^\s<>\"(),;:\[\]\\@]+)@([A-Za-z0-9.-]+)", text):
+        local, dom = local.strip("'"), dom.rstrip(".")
+        if re.fullmatch(r"(?i)[A-Z0-9._%+-]+", local) and re.fullmatch(r"(?i)[A-Z0-9.-]+\.[A-Z]{2,}", dom):
+            raw_matches.append(f"{local}@{dom}")
     raw_host = str(domain or "").strip().lower()
     if not raw_host.startswith(("http://", "https://")):
         raw_host = "https://" + raw_host

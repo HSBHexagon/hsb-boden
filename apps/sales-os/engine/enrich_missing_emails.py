@@ -29,7 +29,7 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO_ROOT / "engine"))
 sys.path.insert(0, str(REPO_ROOT / "engine" / "operator_layer"))
 
-from hsb_core import FREEMAIL_DOMAINS, EMAIL_RE, sanitize_company_name
+from hsb_core import FREEMAIL_DOMAINS, sanitize_company_name
 from sync_to_google_sheet import get_sheets_service, SPREADSHEET_ID
 from enrich_company_names import check_domain_mx, EXCLUDED_ENTITIES, USER_AGENT
 
@@ -49,8 +49,20 @@ IGNORE_EMAIL_PREFIXES = {
 
 def extract_emails_from_html(html_text: str, domain: str) -> List[str]:
     """Findet E-Mail-Adressen im HTML und filtert Rauschen & Systemadressen aus."""
-    raw_matches = EMAIL_RE.findall(html_text)
-    clean_domain = domain.lower().replace("www.", "").strip()
+    # Ganze Kandidaten bis zum nächsten Trenner nehmen und vollständig prüfen: eine nicht unterstützte
+    # Adresse (o'brien@, sales/europe@) wird verworfen, nie ihr Suffix (brien@) übernommen.
+    # Trenner links sind nur Zeichen, die im Local-Part nie vorkommen; rechts endet die Domain am
+    # ersten Nicht-Domain-Zeichen (z. B. ?subject=). Entities vorher auflösen (&lt; &amp;).
+    raw_matches = []
+    text = html.unescape(html_text or "")
+    for local, dom in re.findall(r"([^\s<>\"(),;:\[\]\\@]+)@([A-Za-z0-9.-]+)", text):
+        local, dom = local.strip("'"), dom.rstrip(".")
+        if re.fullmatch(r"(?i)[A-Z0-9._%+-]+", local) and re.fullmatch(r"(?i)[A-Z0-9.-]+\.[A-Z]{2,}", dom):
+            raw_matches.append(f"{local}@{dom}")
+    raw_host = str(domain or "").strip().lower()
+    if not raw_host.startswith(("http://", "https://")):
+        raw_host = "https://" + raw_host
+    clean_domain = (urllib.parse.urlsplit(raw_host).hostname or "").removeprefix("www.")
 
     valid_emails = []
     seen = set()
@@ -77,7 +89,10 @@ def extract_emails_from_html(html_text: str, domain: str) -> List[str]:
         valid_emails.append(em)
 
     # Bevorzuge Adressen mit derselben Domain wie die Website
-    same_domain = [e for e in valid_emails if clean_domain in e]
+    same_domain = [
+        e for e in valid_emails
+        if clean_domain and (e.partition("@")[2] == clean_domain or e.partition("@")[2].endswith("." + clean_domain))
+    ]
     if same_domain:
         # Priorisiere info@, kontakt@, mail@, anfrage@
         priority = sorted(
@@ -86,7 +101,7 @@ def extract_emails_from_html(html_text: str, domain: str) -> List[str]:
         )
         return priority
 
-    return valid_emails
+    return []  # Keine fremden Adressen (Agentur, Hoster) aus Footer-Text übernehmen.
 
 
 def crawl_domain_for_email(domain: str, timeout: int = 10) -> Optional[str]:
@@ -142,7 +157,7 @@ def run_missing_email_enrichment(limit: int = 20, apply: bool = False) -> int:
     col_lead_id = 0
     col_comp = 1
     col_email = 8
-    col_website = 9
+    col_website = next((i for i, value in enumerate(hdr) if str(value).strip().lower() == 'website'), 10)
     col_opt = 24
     col_bounce = 42
     col_supp = 45

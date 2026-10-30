@@ -530,10 +530,19 @@ class ComMailboxClient:
             typ, data = imap.search(None, 'HEADER', 'TO', target)
             if not data or not data[0]:
                 return 0
+            from email.utils import getaddresses
+            # IMAP HEADER TO ist eine Teilstring-Suche (ann@ trifft joann@): exakt nachprüfen.
             for num in data[0].split():
+                typ, msg_data = imap.fetch(num, '(BODY.PEEK[HEADER.FIELDS (TO)])')
+                raw = b''.join(p[1] for p in (msg_data or []) if isinstance(p, tuple))
+                parsed = email.message_from_bytes(raw)
+                recipients = {addr.strip().lower() for _, addr in getaddresses(parsed.get_all('To', []))}
+                if target not in recipients:
+                    continue
                 imap.store(num, '+FLAGS', r'\Deleted')
                 deleted += 1
-            imap.expunge()
+            if deleted:
+                imap.expunge()
         return deleted
 
 

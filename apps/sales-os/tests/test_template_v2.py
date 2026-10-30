@@ -224,3 +224,9 @@ def test_greeting_uses_surname_only_and_keeps_title_and_particles():
     assert a({'Ansprechpartner': 'Herr Müller'}) == 'Sehr geehrter Herr Müller,'
     assert a({'Ansprechpartner': 'Guten Tag Herr Günther Jauch'}) == 'Sehr geehrter Herr Jauch,'
     assert a({'Ansprechpartner': ''}) == 'Guten Tag,'
+
+
+def test_greeting_keeps_name_suffix_with_surname():
+    from canonical_template_factory import anrede_fuer_lead as a
+    assert a({'Ansprechpartner': 'Herr Peter Wacker jun.'}) == 'Sehr geehrter Herr Wacker jun.,'
+    assert a({'Ansprechpartner': 'Herr Hans Meier sen.'}) == 'Sehr geehrter Herr Meier sen.,'

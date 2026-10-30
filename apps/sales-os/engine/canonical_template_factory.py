@@ -37,6 +37,7 @@ LOGO_URL = "https://www.hsb-boden.de/brand/hsb-boden-logo.png"
 
 
 _TITLES = {'dr.', 'prof.', 'dipl.-ing.', 'dr.-ing.'}
+_SUFFIXES = {'jun.', 'sen.', 'jr.', 'sr.', 'jun', 'sen'}
 _PARTICLES = {'von', 'van', 'de', 'der', 'den', 'zu', 'zur', 'ten', 'ter', 'vom', 'di', 'da', 'le', 'la'}
 
 
@@ -44,6 +45,9 @@ def _nachname_mit_titel(teile):
     """'Dr. Anna von der Heide' → 'Dr. von der Heide'; Vornamen entfallen."""
     titel = [t for t in teile if t.lower() in _TITLES]
     rest = [t for t in teile if t.lower() not in _TITLES]
+    zusatz = []
+    while len(rest) > 1 and rest[-1].lower() in _SUFFIXES:
+        zusatz.insert(0, rest.pop())
     if not rest:
         return ' '.join(titel)
     start = len(rest) - 1
@@ -51,7 +55,7 @@ def _nachname_mit_titel(teile):
         if t.lower() in _PARTICLES:
             start = i
             break
-    return ' '.join(titel + rest[start:])
+    return ' '.join(titel + rest[start:] + zusatz)
 
 
 def anrede_fuer_lead(lead: Dict[str, Any]) -> str:

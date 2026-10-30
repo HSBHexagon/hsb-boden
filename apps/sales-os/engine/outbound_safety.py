@@ -306,8 +306,11 @@ def dispatch_verified(count_per_owner=25, owners=('JOEL','JORDI'), dry_run=True,
         if dry_run: return {'status':'DRY_RUN_COMPLETED','selected':used,'sent_counts':{o:0 for o in owners},'customer_emails_sent':0}
         svc=get_sheets_service(); journal=SendJournal(state/'outbound.sqlite3')
         sent_counts={o:0 for o in owners}
+        capped=set()  # Owner am Tageslimit: restliche Einträge ohne Sheet-/IMAP-Abfragen überspringen.
         try:
             for item in selected:
+                if item['owner'] in capped:
+                    continue
                 # Re-read all permission/suppression columns immediately before reservation.
                 rows=svc.spreadsheets().values().get(spreadsheetId=SPREADSHEET_ID,range='ALL_LEADS!A1:BU6425').execute()['values']
                 headers=rows[0]; matches=[(i,dict(zip(headers,r))) for i,r in enumerate(rows[1:],2) if r and r[0]==item['lead_id']]
@@ -330,7 +333,7 @@ def dispatch_verified(count_per_owner=25, owners=('JOEL','JORDI'), dry_run=True,
                 day_str=today.isoformat()
                 journal_today=journal.db.execute('SELECT count(*) FROM attempts WHERE owner=? AND day=?',(item['owner'],day_str)).fetchone()[0]
                 if used_today>=effective_cap or journal_today>=effective_cap:
-                    continue
+                    capped.add(item['owner']); continue
                 d=next(d for d in drafts if d['lead_id']==item['lead_id'] and d['sendable'])
                 client=clients[item['owner']]
                 with client._get_imap() as imap:

@@ -65,10 +65,11 @@ def anrede_fuer_lead(lead: Dict[str, Any]) -> str:
         return "Guten Tag,"
     teile = ap.split()
     if len(teile) >= 2:
-        anr = teile[0].lower()
-        if anr in ("herr", "hr.", "hr"):
+        # "Herrn"/"Herr."/"Frau." waren mit dem früheren Teilstring-Abgleich gültig und bleiben es.
+        anr = teile[0].lower().rstrip(".")
+        if anr in ("herr", "herrn", "hr"):
             return f"Sehr geehrter Herr {_nachname_mit_titel(teile[1:])},"
-        if anr in ("frau", "fr.", "fr"):
+        if anr in ("frau", "fr"):
             return f"Sehr geehrte Frau {_nachname_mit_titel(teile[1:])},"
     return f"Guten Tag {ap},"
 

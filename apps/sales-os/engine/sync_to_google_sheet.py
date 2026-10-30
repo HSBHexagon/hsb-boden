@@ -10,6 +10,7 @@ import os
 from pathlib import Path
 from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
+from googleapiclient.errors import HttpError
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 
@@ -63,10 +64,21 @@ def _profile_credentials(profile):
     )
 
 
+def _drive_about(creds):
+    """Kontoidentität über Drive about.get; braucht einen Drive-Scope (z. B. drive.metadata.readonly)."""
+    try:
+        return build('drive', 'v3', credentials=creds, cache_discovery=False).about().get(fields='user(emailAddress)').execute()
+    except HttpError as exc:
+        if getattr(exc.resp, 'status', None) == 403:
+            raise RuntimeError('CRM_AUTH_SCOPE_MISSING: Google-Token ohne Drive-Scope; Kontoprüfung braucht '
+                               'drive.metadata.readonly (Token mit diesem Scope neu autorisieren)') from exc
+        raise
+
+
 def assert_hsb_principal(creds, cache_key):
     """Nur HSB-Konten (@hsb-boden.de/.com) dürfen das CRM lesen/schreiben; kein privater Fallback."""
     if cache_key not in _VERIFIED_PRINCIPALS:
-        about = build('drive', 'v3', credentials=creds, cache_discovery=False).about().get(fields='user(emailAddress)').execute()
+        about = _drive_about(creds)
         _VERIFIED_PRINCIPALS[cache_key] = str(about.get('user', {}).get('emailAddress', ''))
     email = _VERIFIED_PRINCIPALS[cache_key]
     if not HSB_PRINCIPAL_RE.search(email):

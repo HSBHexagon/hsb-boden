@@ -2,11 +2,17 @@
 """Ersetzt den Kennzahlenblock des DASHBOARD (Opt-out/Bounce/Klaerfall-Zahlen, 30-Tage-Trend,
 Abgleich-Anker) und haengt den Batch-Block (ERZEUGTE BATCHES) sowie die v2-Kampagnenkennzahlen
 unmittelbar darunter wieder an, statt ihn zu ueberschreiben. Idempotent."""
+import os
 import sys
+# Als Skript gestartet liegt nur operator_layer/ im Suchpfad; engine/ (sync_to_google_sheet) gehört dazu.
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(1, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from crm_common import services, SID
 from crm_operator_layer import rgb
 
 DASHBOARD_TITLE = "DASHBOARD"
+# Alle Bounce_Status-Werte der Erzeuger: ingest_bounces/Apps Script (hard_/soft_bounce), Abgleich (bounce_review), Datenreparatur 2026-09-17 (hard).
+BOUNCE_STATUSES = ("hard_bounce", "bounce_review", "soft_bounce", "hard")
 
 
 def per_owner(f_all, f_owner):
@@ -14,9 +20,11 @@ def per_owner(f_all, f_owner):
 
 
 def reply_count_formula(template_pattern=None, owner_pattern=None):
-    """Zaehlt ausschliesslich echte Antworten (Python: replied/replied_interested/received; Apps Script: reply/positive_reply/negative_reply).
+    """Zaehlt ausschliesslich echte Antworten (Python: replied/replied_interested/received und die von
+    sequence.reply_actions geschriebenen positiv/negativ/weiterleitung; Apps Script: reply/positive_reply/negative_reply).
     opt_out, bounced und auto_reply_ooo duerfen niemals als Antwort gezaehlt werden."""
-    statuses = ["replied", "replied_interested", "received", "reply", "positive_reply", "negative_reply"]
+    statuses = ["replied", "replied_interested", "received", "reply", "positive_reply", "negative_reply",
+                "positiv", "negativ", "weiterleitung"]
     parts = []
     for s in statuses:
         criteria = []
@@ -51,8 +59,9 @@ def dashboard_rows():
         R("Versendet", '=COUNTIF(ALL_LEADS!AO2:AO; "sent")', '=COUNTIFS(ALL_LEADS!AA2:AA; "*{o}*"; ALL_LEADS!AO2:AO; "sent")', "automatisch aus Gesendete Elemente"),  # 5
         R("Antworten offen", '=COUNTIFS(ALL_LEADS!BE2:BE; "Antwort"; ALL_LEADS!R2:R; "")', '=COUNTIFS(ALL_LEADS!AA2:AA; "*{o}*"; ALL_LEADS!BE2:BE; "Antwort"; ALL_LEADS!R2:R; "")', "ohne Follow-up-Datum"),  # 6
         R("Abgemeldet (Opt-out)", '=COUNTIF(ALL_LEADS!Y2:Y; "yes")', '=COUNTIFS(ALL_LEADS!AA2:AA; "*{o}*"; ALL_LEADS!Y2:Y; "yes")', "dauerhaft gesperrt"),  # 7
-        R("Bounces", '=COUNTIFS(ALL_LEADS!AQ2:AQ; "hard_bounce")+COUNTIFS(ALL_LEADS!AQ2:AQ; "bounce_review")',
-          '=COUNTIFS(ALL_LEADS!AA2:AA; "*{o}*"; ALL_LEADS!AQ2:AQ; "hard_bounce")+COUNTIFS(ALL_LEADS!AA2:AA; "*{o}*"; ALL_LEADS!AQ2:AQ; "bounce_review")', "unzustellbar (.com & .de)"),  # 8
+        R("Bounces", "=" + "+".join(f'COUNTIFS(ALL_LEADS!AQ2:AQ; "{s}")' for s in BOUNCE_STATUSES),
+          "=" + "+".join(f'COUNTIFS(ALL_LEADS!AA2:AA; "*{{o}}*"; ALL_LEADS!AQ2:AQ; "{s}")' for s in BOUNCE_STATUSES),
+          "unzustellbar (.com & .de)"),  # 8
         R("Freigegeben, noch nicht versendet", '=COUNTIF(ALL_LEADS!BE2:BE; "Freigegeben")+COUNTIF(ALL_LEADS!BE2:BE; "Entwurf")', '=COUNTIFS(ALL_LEADS!AA2:AA; "*{o}*"; ALL_LEADS!BE2:BE; "Freigegeben")+COUNTIFS(ALL_LEADS!AA2:AA; "*{o}*"; ALL_LEADS!BE2:BE; "Entwurf")', "naechste Sendungen"),  # 9
         ["Klärfälle offen", '=COUNTIF(INBOUND_EVENTS!J2:J; "NEEDS_REVIEW")',
          '=COUNTIFS(INBOUND_EVENTS!J2:J; "NEEDS_REVIEW"; INBOUND_EVENTS!C2:C; "*j-post@hsb-boden.*")',

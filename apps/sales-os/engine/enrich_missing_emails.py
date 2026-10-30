@@ -49,8 +49,13 @@ IGNORE_EMAIL_PREFIXES = {
 
 def extract_emails_from_html(html_text: str, domain: str) -> List[str]:
     """Findet E-Mail-Adressen im HTML und filtert Rauschen & Systemadressen aus."""
-    # hsb_core.EMAIL_RE ist für Vollstring-Prüfung verankert; zum Extrahieren eigenes Muster.
-    raw_matches = re.findall(r"(?i)(?<![\w.+-])[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}(?![\w.-])", html_text)
+    # Ganze Kandidaten bis zum nächsten Trenner nehmen und vollständig prüfen: eine nicht unterstützte
+    # Adresse (o'brien@, sales/europe@) wird verworfen, nie ihr Suffix (brien@) übernommen.
+    raw_matches = []
+    for cand in re.findall(r"[^\s<>\"(),;:\[\]=&]+@[^\s<>\"(),;:\[\]=&]+", html_text or ""):
+        cand = cand.strip("'").rstrip(".")
+        if re.fullmatch(r"(?i)[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}", cand):
+            raw_matches.append(cand)
     raw_host = str(domain or "").strip().lower()
     if not raw_host.startswith(("http://", "https://")):
         raw_host = "https://" + raw_host

@@ -116,3 +116,14 @@ def test_cli_reports_rejected_optout_instead_of_crashing(monkeypatch, capsys):
         hsb_cli.cmd_optout_direct(args)
     assert exc.value.code == 1
     assert "lead_id_email_mismatch" in capsys.readouterr().out
+
+
+def test_extraction_never_takes_a_suffix_of_an_unsupported_address():
+    # Codex-Review PR #510: o'brien@ wurde zu brien@, sales/europe@ zu europe@ (fremder Empfänger).
+    html = "<p>o'brien@kunde.de</p><p>sales/europe@kunde.de</p>"
+    assert enrich_missing_emails.extract_emails_from_html(html, "kunde.de") == []
+
+
+def test_extraction_keeps_quoted_and_sentence_final_addresses():
+    html = "<a href='mailto:info@kunde.de'>Mail</a> E-Mail: buero@kunde.de. &lt;team@kunde.de&gt;"
+    assert sorted(enrich_missing_emails.extract_emails_from_html(html, "kunde.de")) == ["buero@kunde.de", "info@kunde.de", "team@kunde.de"]

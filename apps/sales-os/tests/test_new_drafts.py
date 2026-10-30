@@ -78,3 +78,45 @@ def test_parallel_run_for_same_mailbox_is_refused(tmp_path):
                 pass
     with nd.owner_lock('JORDI', tmp_path):
         pass
+
+
+def test_deferred_tier_z_lead_is_never_selected():
+    """Gespeicherter CRM-Tier Z (Website-Signale/Operator) gilt, auch wenn die Neuberechnung ohne Signale C ergibt."""
+    leads = [lead(1, 'Architekten', Tier='Z'), lead(2, 'Architekten', Tier=' z '), lead(3, 'Architekten')]
+    ids = [l['Lead-ID'] for l in nd.select_leads(leads, 'JOEL', 10, set(), mx_check=MX)]
+    assert ids == ['HSB-20260708-00003']
+
+
+def test_recipient_with_any_existing_draft_is_skipped_not_selected():
+    leads = [lead(1), lead(2), lead(3)]
+    ids = [l['Lead-ID'] for l in nd.select_leads(leads, 'JOEL', 10, set(), mx_check=MX,
+                                                 draft_recipients={'INFO@firma2.de'})]
+    assert ids == ['HSB-20260708-00001', 'HSB-20260708-00003']
+
+
+class DraftImap(FakeImap):
+    """Entwurfsordner mit einem alten v1-/Hand-Entwurf an firma2 (ohne X-HSB-Lead-ID)."""
+    def uid(self, cmd, *args):
+        if cmd.upper() == 'SEARCH' and args[1:3] == ('HEADER', 'To'):
+            return 'OK', [b'7' if 'info@firma2.de' in args[3] else b'']
+        if cmd.upper() == 'SEARCH' and args[1:] == ('ALL',):
+            return 'OK', [b'7']
+        if cmd.upper() == 'FETCH' and args[0] in (b'7', '7', b'1:*', '1:*'):
+            return 'OK', [(b'7 (BODY[HEADER.FIELDS (TO)] {30}', b'To: Info <info@firma2.de>\r\n\r\n'), b')']
+        return 'OK', [b'']
+
+
+class StrictClient(FakeClient):
+    """Bricht wie ComMailboxManager._assert_draft_capacity ab, sobald ein Empfänger schon einen Entwurf hat."""
+    def _get_imap(self): return DraftImap()
+    def create_drafts_batch(self, items, max_existing=50):
+        if any(i['to_email'] == 'info@firma2.de' for i in items):
+            raise RuntimeError('EXISTING_DRAFT_REQUIRES_RECONCILIATION')
+        return super().create_drafts_batch(items, max_existing)
+
+
+def test_leftover_non_v2_draft_does_not_abort_the_batch(tmp_path):
+    c = StrictClient(); leads = [lead(i) for i in range(1, 4)]
+    r = nd.create_v2_drafts('JOEL', 3, True, leads=leads, client=c, mx_check=MX, state_dir=tmp_path, secret='s')
+    assert r['created'] == 2 and r['existing_draft_recipients'] == 1
+    assert [i['lead_id'] for i in c.batches[0]] == ['HSB-20260708-00001', 'HSB-20260708-00003']

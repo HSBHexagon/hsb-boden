@@ -141,11 +141,19 @@ def assert_row_lead(svc, spreadsheet_id, row, lead_id):
         raise RuntimeError('CRM_ROW_MOVED: Zeile gehört nicht mehr zu diesem Lead')
 
 
-def _send_write(svc, spreadsheet_id, headers, row, lead_id, fields):
-    """Versand-Writes nur über eine stabile Lead-Bindung (Developer-Metadaten), nie per Zeilennummer.
-    Die Bindung wird bei Bedarf genau für diesen Lead angelegt; headers/row bleiben für Test-Attrappen."""
+def prepare_lead_binding(svc, spreadsheet_id, lead_id):
+    """Bindung für genau diesen Lead anlegen und als eindeutig bestätigen – vor journal.reserve(),
+    damit ein Bindungsfehler keinen RESERVED-Rest hinterlässt, der jeden Folgeversand sperrt."""
     import crm_bindings
-    crm_bindings.ensure_bindings(svc, spreadsheet_id, apply=True, sleep=lambda s: None, only={lead_id})
+    result=crm_bindings.ensure_bindings(svc, spreadsheet_id, apply=True, sleep=lambda s: None, only={lead_id})
+    if any(result.get(k) for k in ('conflicts','skipped_duplicate','skipped_invalid')):
+        raise RuntimeError('CRM_LEAD_BINDING_NOT_CREATED')
+    require_stable_crm_binding(svc, spreadsheet_id, lead_id)
+
+
+def _send_write(svc, spreadsheet_id, headers, row, lead_id, fields):
+    """Versand-Writes nur über die vorab angelegte Lead-Bindung (Developer-Metadaten), nie per Zeilennummer.
+    headers/row bleiben für Test-Attrappen."""
     crm_write_lead_readback(svc, spreadsheet_id, lead_id, fields)
 
 
@@ -164,6 +172,7 @@ def complete_delivery(client, journal, svc, spreadsheet_id, headers, row, item, 
     if os.environ.get('HSB_CRM_BINDINGS_VERIFIED')!='yes':
         raise RuntimeError('CRM_STABLE_BINDING_CANARY_REQUIRED')
     assert_row_lead(svc,spreadsheet_id,row,item['lead_id'])
+    prepare_lead_binding(svc,spreadsheet_id,item['lead_id'])
     journal.reserve(item['owner'],item['lead_id'],em,mid,cap)
     now=datetime.now(timezone.utc).isoformat()
     _send_write(svc,spreadsheet_id,headers,row,item['lead_id'],{'Send_Status':'SENDING','Last_Send_Attempt_At':now,'Outbound_ID':mid,'Sender_Account':client.cfg['email']})
@@ -304,6 +313,9 @@ def dispatch_verified(count_per_owner=25, owners=('JOEL','JORDI'), dry_run=True,
                 headers=rows[0]; matches=[(i,dict(zip(headers,r))) for i,r in enumerate(rows[1:],2) if r and r[0]==item['lead_id']]
                 if len(matches)!=1: raise RuntimeError('LEAD_CHANGED_OR_AMBIGUOUS')
                 row,lead=matches[0]
+                # Zurückgestellt (CRM-Tier Z) ist kein Fehler, sondern "nie senden": überspringen, Lauf läuft weiter.
+                if str(lead.get('Tier') or '').strip().upper()=='Z':
+                    print(f"SKIP {item['lead_id']}: TIER_Z"); continue
                 from send_governance import enforce_domain_health, MailboxHealthStore
                 from lead_quality import deliverability_flags
                 # Domainweite Gesundheit und Hygiene unmittelbar vor jeder Reservierung.

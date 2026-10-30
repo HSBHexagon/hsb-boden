@@ -90,12 +90,35 @@ def test_complete_delivery_stops_before_any_write_when_row_moved(monkeypatch):
 
 @pytest.mark.row_guard
 def test_send_write_uses_lead_binding_not_row_number(monkeypatch):
+    """Die Bindung entsteht einmal vor reserve(); Versand-Writes schreiben nur noch über sie."""
     import outbound_safety, crm_bindings
     calls = []
     monkeypatch.setattr(crm_bindings, 'ensure_bindings', lambda svc, sid, **k: calls.append(('bind', k['only'], k['apply'])))
     monkeypatch.setattr(outbound_safety, 'crm_write_lead_readback', lambda svc, sid, lead, fields: calls.append(('write', lead, fields)))
     outbound_safety._send_write('svc', 'sid', ['Lead-ID'], 999, 'HSB-20260708-00001', {'Send_Status': 'sent'})
-    assert calls == [('bind', {'HSB-20260708-00001'}, True), ('write', 'HSB-20260708-00001', {'Send_Status': 'sent'})]
+    assert calls == [('write', 'HSB-20260708-00001', {'Send_Status': 'sent'})]
+
+
+@pytest.mark.row_guard
+def test_binding_is_prepared_once_before_reservation(monkeypatch):
+    import outbound_safety
+    monkeypatch.setenv('HSB_CRM_BINDINGS_VERIFIED', 'yes')
+    events = []
+    monkeypatch.setattr(outbound_safety, 'prepare_lead_binding', lambda svc, sid, lead: events.append('bind'))
+    monkeypatch.setattr(outbound_safety, '_send_write', lambda *a: events.append('write'))
+
+    class Journal:
+        def reserve(self, *a): events.append('reserve')
+        def transition(self, *a): raise RuntimeError('STOP_AFTER_FIRST_WRITE')
+
+    class Client:
+        cfg = {'email': 'j-cherino@hsb-boden.com'}
+
+    with pytest.raises(RuntimeError, match='STOP_AFTER_FIRST_WRITE'):
+        outbound_safety.complete_delivery(Client(), Journal(), _Sheet('HSB-20260708-00001'), 'x', ['Lead-ID'], 5,
+                                          {'email': 'a@b.de', 'owner': 'JOEL', 'lead_id': 'HSB-20260708-00001'},
+                                          b'raw', '<m@x>', 10)
+    assert events == ['bind', 'reserve', 'write']
 
 
 def test_principal_cache_is_bound_to_the_credential_not_the_profile_name(monkeypatch):
@@ -126,3 +149,40 @@ def test_missing_canary_stops_before_journal_reservation(monkeypatch):
                                           {'email': 'a@b.de', 'owner': 'JOEL', 'lead_id': 'HSB-20260708-00001'},
                                           b'raw', '<m@x>', 10)
     assert Journal.events == []
+
+
+@pytest.mark.row_guard
+@pytest.mark.parametrize('failure', ['CRM_METADATA_CAPACITY:29990+20>30000', 'CRM_STABLE_LEAD_BINDING_REQUIRED'])
+def test_binding_failure_stops_before_journal_reservation(monkeypatch, failure):
+    """Bindung anlegen und Eindeutigkeit prüfen gehören vor reserve(): sonst blockiert ein RESERVED-Rest jeden Folgeversand."""
+    import outbound_safety, crm_bindings
+    monkeypatch.setenv('HSB_CRM_BINDINGS_VERIFIED', 'yes')
+    def fail(*a, **k): raise RuntimeError(failure)
+    if failure.startswith('CRM_METADATA'):
+        monkeypatch.setattr(crm_bindings, 'ensure_bindings', fail)
+    else:
+        monkeypatch.setattr(crm_bindings, 'ensure_bindings', lambda svc, sid, **k: {'conflicts': 0, 'skipped_duplicate': 0, 'skipped_invalid': 0})
+        monkeypatch.setattr(outbound_safety, 'require_stable_crm_binding', fail)
+
+    class Journal:
+        def __init__(self): self.events = []
+        def reserve(self, *a): self.events.append('reserve')
+        def transition(self, *a): self.events.append('transition')
+
+    j = Journal()
+    with pytest.raises(RuntimeError, match=failure.split(':')[0]):
+        outbound_safety.complete_delivery(object(), j, _Sheet('HSB-20260708-00001'), 'x', ['Lead-ID'], 5,
+                                          {'email': 'a@b.de', 'owner': 'JOEL', 'lead_id': 'HSB-20260708-00001'},
+                                          b'raw', '<m@x>', 10)
+    assert j.events == []
+
+
+@pytest.mark.row_guard
+@pytest.mark.parametrize('field', ['conflicts', 'skipped_duplicate', 'skipped_invalid'])
+def test_binding_that_was_silently_skipped_is_refused(monkeypatch, field):
+    import outbound_safety, crm_bindings
+    result = {'conflicts': 0, 'skipped_duplicate': 0, 'skipped_invalid': 0, field: 1}
+    monkeypatch.setattr(crm_bindings, 'ensure_bindings', lambda svc, sid, **k: result)
+    monkeypatch.setattr(outbound_safety, 'require_stable_crm_binding', lambda *a: {'ok': 1})
+    with pytest.raises(RuntimeError, match='CRM_LEAD_BINDING_NOT_CREATED'):
+        outbound_safety.prepare_lead_binding('svc', 'sid', 'HSB-20260708-00001')

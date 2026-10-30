@@ -1,13 +1,14 @@
 """Neue v2-Entwürfe direkt aus dem CRM erzeugen: Lead → Text → Entwurf.
 
 Kein Austausch alter Entwürfe, keine Zeilenbindungen. Der Versand (`dispatch_verified`) prüft jeden
-Entwurf vor dem Senden erneut gegen das CRM. Auswahl: nur sendefähige Leads des Owners ohne
-vorhandenen v2-Entwurf, Produktion vor Architekten (80/20), innerhalb des Segments Tier A → B → C.
+Entwurf vor dem Senden erneut gegen das CRM. Auswahl: nur sendefähige Leads des Owners (nie CRM-Tier Z) ohne
+vorhandenen Entwurf, Produktion vor Architekten (80/20), innerhalb des Segments Tier A → B → C.
 """
 import fcntl
 import os
 import subprocess
 from contextlib import contextmanager
+from email.utils import getaddresses
 from pathlib import Path
 
 from canonical_template_factory import render_email_v2
@@ -33,9 +34,11 @@ def click_secret():
         return None
 
 
-def select_leads(leads, owner, limit, existing_ids, mx_check=None):
-    """Sendefähige Leads des Owners ohne bestehenden v2-Entwurf, 80 % Produktion, Tier A → B → C."""
+def select_leads(leads, owner, limit, existing_ids, mx_check=None, draft_recipients=()):
+    """Sendefähige Leads des Owners ohne bestehenden Entwurf (v2 per Lead-ID, jeder andere per Empfänger),
+    nie CRM-Tier Z, 80 % Produktion, Tier A → B → C."""
     owner = normalize_owner(owner)
+    draft_recipients = {str(r).strip().lower() for r in draft_recipients}
     mx_cache = {}
     # Sperren gelten je Empfänger: eine Adresse in mehreren CRM-Zeilen wird nie angeschrieben.
     counts = {}
@@ -48,6 +51,11 @@ def select_leads(leads, owner, limit, existing_ids, mx_check=None):
         if not lid or lid in existing_ids or normalize_owner(lead.get('Verantwortlicher')) != owner:
             continue
         if counts.get(str(lead.get('E-Mail') or '').strip().lower(), 0) != 1:
+            continue
+        if str(lead.get('E-Mail') or '').strip().lower() in draft_recipients:
+            continue
+        # Zurückgestellt (Website-Signale oder Operator): die Neuberechnung ohne Signale darf das nicht aufheben.
+        if str(lead.get('Tier') or '').strip().upper() == 'Z':
             continue
         lead = dict(lead)
         lead['Deliverability_Flags'] = deliverability_flags(lead, mx_cache, set(), mx_check=mx_check)
@@ -92,6 +100,24 @@ def existing_v2_lead_ids(imap, folder='"Entw&APw-rfe"'):
     return ids
 
 
+def existing_draft_recipients(imap, folder='"Entw&APw-rfe"'):
+    """Empfängeradressen aller Entwürfe im Ordner, auch alter v1-/Hand-Entwürfe ohne X-HSB-Lead-ID."""
+    imap.select(folder, readonly=True)
+    typ, data = imap.uid('SEARCH', None, 'ALL')
+    if typ != 'OK' or not data or not data[0]:
+        return set()
+    typ, msg = imap.uid('FETCH', '1:*', '(BODY.PEEK[HEADER.FIELDS (TO)])')
+    headers = [part[1].decode('utf-8', 'replace') for part in msg or [] if isinstance(part, tuple)]
+    values = [line.split(':', 1)[1] for h in headers for line in h.splitlines() if line.lower().startswith('to:')]
+    return {addr.strip().lower() for _, addr in getaddresses(values) if addr}
+
+
+def has_draft_for(imap, recipient):
+    """Gleiche Suche wie ComMailboxManager._assert_draft_capacity – ein Treffer dort bricht den ganzen Batch ab."""
+    typ, data = imap.uid('search', None, 'HEADER', 'To', f'"{recipient.strip().lower()}"')
+    return typ != 'OK' or bool(data and data[0])
+
+
 @contextmanager
 def owner_lock(owner, state_dir=None):
     """Exklusive Sperre je Postfach über Bestandsprüfung und APPEND (parallele Läufe warten nicht, sie brechen ab)."""
@@ -114,8 +140,12 @@ def create_v2_drafts(owner, limit, apply=False, *, leads, client, secret=None, m
 def _create(owner, limit, apply, leads, client, secret, mx_check):
     with client._get_imap() as imap:
         existing = existing_v2_lead_ids(imap)
-    selected = select_leads(leads, owner, limit, existing, mx_check=mx_check)
-    result = {'owner': normalize_owner(owner), 'existing_v2': len(existing), 'selected': len(selected),
+        recipients = existing_draft_recipients(imap)
+        selected = select_leads(leads, owner, limit, existing, mx_check=mx_check, draft_recipients=recipients)
+        # Rest-Absicherung: IMAP sucht To als Teilstring; was dort trifft, wird übersprungen statt den Batch abzubrechen.
+        selected = [l for l in selected if not has_draft_for(imap, str(l['E-Mail']))]
+    result = {'owner': normalize_owner(owner), 'existing_v2': len(existing),
+              'existing_draft_recipients': len(recipients), 'selected': len(selected),
               'produktion': sum(segment_for(l) == 'produktion' for l in selected),
               'architekten': sum(segment_for(l) == 'architekten' for l in selected),
               'created': 0, 'dry_run': not apply, 'customer_emails_sent': 0}

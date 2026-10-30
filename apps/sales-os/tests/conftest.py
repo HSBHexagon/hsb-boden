@@ -18,6 +18,7 @@ def _row_guard_off_for_simple_sheet_fakes(request, monkeypatch):
     # Einfache Attrappen kennen keine Developer-Metadaten: Versand-Writes dort zeilenbasiert simulieren.
     monkeypatch.setattr(outbound_safety, '_send_write',
                         lambda svc, sid, headers, row, lead_id, fields: outbound_safety.crm_write_readback(svc, sid, headers, row, fields))
+    monkeypatch.setattr(outbound_safety, 'prepare_lead_binding', lambda *a, **k: None)
     monkeypatch.setattr(outbound_safety, '_release_binding', lambda *a, **k: None)
     monkeypatch.setenv('HSB_CRM_BINDINGS_VERIFIED', 'yes')
 

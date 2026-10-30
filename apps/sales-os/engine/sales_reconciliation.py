@@ -150,7 +150,7 @@ def assess_message(raw, owner, leads):
     if 'text/plain' not in [p.get_content_type() for p in msg.walk()]:
         warnings.append('PLAIN_TEXT_MISSING')
     return {'owner': owner, 'recipients': recipients, 'lead_id': lead_id,
-            'crm_unique': len(matching) == 1, 'message_id': mid, 'subject': subject,
+            'crm_unique': len(matching) == 1, 'message_id': mid, 'subject': subject, 'template_id': template_id,
             'issues': sorted(set(issues)), 'warnings': sorted(set(warnings)),
             'links': links, 'flyer_links': flyer_links, 'optout_links': optout_links,
             'pdf_count': sum(p.get_content_type() == 'application/pdf' for p in msg.walk()),

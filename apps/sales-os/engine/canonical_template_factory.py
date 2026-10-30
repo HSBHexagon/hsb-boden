@@ -228,24 +228,24 @@ _BODIES_V2 = {
 
 _SUBJECTS_REPARATUR = {
     "architekten": ("Industrieböden im Bestand", "Industrieböden im Bestand"),
-    "produktion": ("Bodenschäden bei {firma}", "Schadstellen im Industrieboden"),
+    "produktion": ("Reparatur statt Neuverlegung", "Reparatur statt Neuverlegung"),
 }
 
 _BODIES_REPARATUR = {
     ("architekten", 1): (
         "mein Name ist {sender} von der HSB Hexagon Säurebau GmbH. Wir planen, bauen und sanieren "
         "säurebeständige Industrieböden.\n\n"
-        "Falls {bei} Umbauten oder Sanierungen in Produktions- oder Lebensmittelbetrieben anstehen: "
+        "Falls {bei} Umbauten oder Sanierungen für Produktions- oder Lebensmittelbetriebe anstehen: "
         "Nicht jeder Bestandsboden muss komplett neu verlegt werden. Ob eine gezielte Reparatur und Instandsetzung "
         "von Fugen, Rinnen- und Wandanschlüssen reicht, hängt vom Schadensbild, vom Restzustand des Systems "
-        "und vom Verhältnis zu den Sanierungskosten ab. Diese Punkte bewerten wir gern mit Ihnen, bevor die "
+        "und vom Verhältnis von Reparatur- zu Sanierungskosten ab. Diese Punkte bewerten wir gern mit Ihnen, bevor die "
         "Ausschreibung steht.\n\n"
         "Ist das für ein aktuelles Vorhaben in Ihrem Büro interessant?{link}"
     ),
     ("architekten", 2): (
         "kurz zu meiner Nachricht von vor ein paar Tagen: Beim Bauen im Bestand entscheidet oft das Detail "
-        "an Anschlüssen und Übergängen. Für eine fachgerechte Reparatur und Instandsetzung prüfen wir Untergrund, "
-        "Haftzug und Bestandsaufbau, um Gefälle und Dichtigkeit wiederherzustellen.\n\n"
+        "an Anschlüssen und Übergängen. Vor einer Reparatur und Instandsetzung prüfen wir Untergrund, Haftzug "
+        "und Bestandsaufbau; danach stellen wir Gefälle und Dichtigkeit wieder her.\n\n"
         "Wir stimmen diese Punkte gern anhand Ihrer aktuellen Planung ab, bevor Ausschreibungsdetails "
         "festgelegt werden. Falls das Thema {bei} jemand anderes betreut, freue ich mich über einen kurzen "
         "Hinweis.\n\n"
@@ -255,8 +255,8 @@ _BODIES_REPARATUR = {
         "ich melde mich ein letztes Mal zu diesem Thema. Wenn Industrieböden und Instandsetzungen im Bestand "
         "{bei} aktuell keine Rolle spielen, ist das völlig in Ordnung.\n\n"
         "Sollte später ein Industrie- oder Gewerbeprojekt anstehen, antworten Sie gern auf diese Nachricht. "
-        "Anhand der Schadensbilder bewerten wir dann gemeinsam vor Ort, ob eine gezielte Reparatur "
-        "wirtschaftlicher ist oder eine Neuverlegung mehr Sicherheit bietet.\n\n"
+        "Bei Bestandsböden bewerten wir dann gemeinsam vor Ort, ob eine gezielte Reparatur reicht "
+        "oder ab wann eine Sanierung wirtschaftlicher ist.\n\n"
         "Bis dahin wünsche ich Ihnen viel Erfolg bei Ihren Projekten und werde Sie hierzu nicht weiter "
         "kontaktieren."
     ),
@@ -264,7 +264,7 @@ _BODIES_REPARATUR = {
         "mein Name ist {sender} von der HSB Hexagon Säurebau GmbH. Wir planen, bauen und sanieren "
         "säurebeständige, hygienische Industrieböden für Produktionsbetriebe.\n\n"
         "Falls Ihnen {bei} ausgebrochene Fugen, lose Fliesen oder undichte Rinnenanschlüsse auffallen: "
-        "Nicht jeder Schaden braucht eine Neuverlegung. Häufig lassen sich die Stellen gezielt instand setzen, "
+        "Nicht jeder Schaden braucht eine Neuverlegung. Punktuelle Schäden lassen sich gezielt instand setzen, "
         "mit säure- und chemikalienbeständigen Reparaturmörteln und in vielen Fällen ohne kompletten "
         "Produktionsstopp.\n\n"
         "Schicken Sie mir gern ein Foto der Stelle, dann gebe ich Ihnen eine erste Einschätzung, ob eine "
@@ -272,9 +272,9 @@ _BODIES_REPARATUR = {
     ),
     ("produktion", 2): (
         "kurz zu meiner Nachricht von vor ein paar Tagen: Wenn Feuchte durch offene Fugen oder Schadstellen "
-        "eindringt, drohen Folgeschäden am Untergrund und am Schichtaufbau. Frühzeitig instand gesetzt, bleibt "
-        "der Eingriff meist klein und lässt sich mit kurzen Sperrzeiten oder auf Teilflächen umsetzen, oft im "
-        "laufenden Betrieb.\n\n"
+        "eindringt, drohen Folgeschäden. Je früher eine Schadstelle instand gesetzt wird, desto kleiner bleibt "
+        "der Eingriff; über Teilflächen und kurze Sperrzeiten ist das in vielen Fällen im laufenden Betrieb "
+        "möglich.\n\n"
         "Fällt Ihnen {bei} eine Stelle ein, die Sie schon länger beobachten? Schicken Sie mir gern ein Foto für "
         "eine erste Einschätzung, ob eine Reparatur wirtschaftlich ist."
     ),

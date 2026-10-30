@@ -15,7 +15,9 @@ SEGMENTS = ['architekten', 'produktion']
 # Aussagen nur aus apps/website/src/data/services/boden-reparatur-instandsetzung.ts belegt;
 # unbelegte Zusagen dürfen nie in einer Mail stehen.
 UNBELEGT = ['24 Stunden', 'Montag', 'garantiert', 'verbindlich', 'sofort', '65 %', 'Haftung',
-            'Südzucker', 'Notfall', 'innerhalb von']
+            'Südzucker', 'Notfall', 'innerhalb von',
+            # Review PR #511: unterstellt Schaden, unbelegte Mengen/Wertungen.
+            'Bodenschäden bei', 'mehr Sicherheit', 'Häufig', 'meist ', 'Schichtaufbau']
 
 
 def render_all(factory, owner='JOEL'):

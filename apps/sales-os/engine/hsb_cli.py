@@ -209,7 +209,8 @@ def cmd_send_batch(args):
     from outbound_safety import dispatch_verified
     result = dispatch_verified(count_per_owner=args.count, owners=(args.owner,),
         dry_run=not args.apply, cap=args.cap,
-        jitter_min=args.jitter_min, jitter_max=args.jitter_max)
+        jitter_min=args.jitter_min, jitter_max=args.jitter_max,
+        segments=set(args.segment) if args.segment else None, variant=args.variant)
     print(json.dumps(result, ensure_ascii=False, indent=2))
 
 
@@ -568,6 +569,9 @@ def main():
     p_send.add_argument("--cap", type=int, default=DAILY_CAP_PER_MAILBOX)
     p_send.add_argument("--bcc-de", action="store_true", help="Blindkopie (BCC) an .de Firmenkonto senden")
     p_send.add_argument("--with-attachment", action="store_true", help="Optional den 241 KB Flyer als Datei anhängen (Standard: Aus, da Online-Link aktiv)")
+    p_send.add_argument("--segment", action="append", choices=["produktion", "architekten"],
+                        help="Nur Entwürfe dieses Segments (wiederholbar)")
+    p_send.add_argument("--variant", choices=["reparatur"], help="Nur Entwürfe dieser Textvariante")
     p_send.add_argument("--apply", action="store_true", help="Echten Versand starten")
 
     # sync

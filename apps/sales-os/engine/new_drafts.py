@@ -131,10 +131,23 @@ def owner_lock(owner, state_dir=None):
         yield
 
 
-def create_v2_drafts(owner, limit, apply=False, *, leads, client, secret=None, mx_check=None, state_dir=None):
-    """Dry-Run zählt nur; mit apply werden die Entwürfe per IMAP APPEND angelegt. Nie Versand."""
+def create_v2_drafts(owner, limit, apply=False, *, leads, client, secret=None, mx_check=None, state_dir=None,
+                     lock_client=None):
+    """Dry-Run zählt nur; mit apply werden die Entwürfe per IMAP APPEND angelegt. Nie Versand.
+    Apply hält zusätzlich die gemeinsame JOEL-Versandsperre: ein APPEND während eines Versand-Scans
+    würde MAILBOX_CHANGED_DURING_SCAN auslösen und den Versand bis zur manuellen Klärung sperren."""
     with owner_lock(owner, state_dir):
-        return _create(owner, limit, apply, leads, client, secret, mx_check)
+        if not apply:
+            return _create(owner, limit, apply, leads, client, secret, mx_check)
+        # Vorbedingung vor der Sperre: sie bleibt bei jedem Fehler stehen und würde sonst den Versand blockieren.
+        if not secret:
+            raise RuntimeError('CLICK_SECRET_MISSING: ohne Klick-Token keine Entwürfe (Messung wäre unvollständig)')
+        from outbound_safety import mailbox_dispatch_lock
+        if lock_client is None:
+            from com_mailbox_manager import ComMailboxClient
+            lock_client = ComMailboxClient('JOEL')
+        with mailbox_dispatch_lock(lock_client):
+            return _create(owner, limit, apply, leads, client, secret, mx_check)
 
 
 def _create(owner, limit, apply, leads, client, secret, mx_check):

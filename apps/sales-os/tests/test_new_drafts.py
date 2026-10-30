@@ -58,8 +58,10 @@ def test_dry_run_creates_nothing_and_apply_appends(tmp_path):
     assert r['selected'] == 2 and r['created'] == 0 and c.batches == [] and r['customer_emails_sent'] == 0
     import pytest
     with pytest.raises(RuntimeError, match='CLICK_SECRET_MISSING'):
-        nd.create_v2_drafts('JOEL', 2, True, leads=leads, client=c, mx_check=MX, state_dir=tmp_path)
-    r = nd.create_v2_drafts('JOEL', 2, True, leads=leads, client=c, mx_check=MX, state_dir=tmp_path, secret='s')
+        nd.create_v2_drafts('JOEL', 2, True, leads=leads, client=c, mx_check=MX, state_dir=tmp_path,
+                            lock_client=LockClient([]))
+    r = nd.create_v2_drafts('JOEL', 2, True, leads=leads, client=c, mx_check=MX, state_dir=tmp_path, secret='s',
+                            lock_client=LockClient([]))
     assert r['created'] == 2 and len(c.batches[0]) == 2
     assert c.max_existing == nd.MAX_DRAFTS_PER_MAILBOX
 
@@ -117,6 +119,62 @@ class StrictClient(FakeClient):
 
 def test_leftover_non_v2_draft_does_not_abort_the_batch(tmp_path):
     c = StrictClient(); leads = [lead(i) for i in range(1, 4)]
-    r = nd.create_v2_drafts('JOEL', 3, True, leads=leads, client=c, mx_check=MX, state_dir=tmp_path, secret='s')
+    r = nd.create_v2_drafts('JOEL', 3, True, leads=leads, client=c, mx_check=MX, state_dir=tmp_path, secret='s',
+                            lock_client=LockClient([]))
     assert r['created'] == 2 and r['existing_draft_recipients'] == 1
     assert [i['lead_id'] for i in c.batches[0]] == ['HSB-20260708-00001', 'HSB-20260708-00003']
+
+
+class LockImap:
+    """JOEL-Sperrordner wie in outbound_safety.mailbox_dispatch_lock; `held` simuliert einen laufenden Versand."""
+    def __init__(self, events, held=False): self.events, self.held = events, held
+    def create(self, folder):
+        self.events.append('lock'); return ('NO' if self.held else 'OK'), [b'']
+    def delete(self, folder):
+        self.events.append('unlock'); return 'OK', [b'']
+    def logout(self): pass
+
+
+class LockClient:
+    def __init__(self, events, held=False): self.imap = LockImap(events, held)
+    def _get_imap(self): return self.imap
+
+
+class RecordingClient(FakeClient):
+    def __init__(self, events): super().__init__(); self.events = events
+    def create_drafts_batch(self, items, max_existing=50):
+        self.events.append('append'); return super().create_drafts_batch(items, max_existing)
+
+
+def test_apply_holds_the_shared_dispatch_lock_around_append(tmp_path):
+    """Codex [high]: ohne gemeinsame Sperre ändert APPEND den Ordner mitten im Versand-Scan (MAILBOX_CHANGED_DURING_SCAN)."""
+    events = []
+    nd.create_v2_drafts('JOEL', 2, True, leads=[lead(i) for i in range(1, 4)], client=RecordingClient(events),
+                        mx_check=MX, state_dir=tmp_path, secret='s', lock_client=LockClient(events))
+    assert events == ['lock', 'append', 'unlock']
+
+
+def test_running_dispatch_blocks_draft_creation(tmp_path):
+    import pytest
+    events = []
+    with pytest.raises(RuntimeError, match='DISPATCH_LOCK_EXISTS'):
+        nd.create_v2_drafts('JOEL', 2, True, leads=[lead(i) for i in range(1, 4)], client=RecordingClient(events),
+                            mx_check=MX, state_dir=tmp_path, secret='s', lock_client=LockClient(events, held=True))
+    assert 'append' not in events
+
+
+def test_dry_run_takes_no_dispatch_lock(tmp_path):
+    events = []
+    nd.create_v2_drafts('JOEL', 2, False, leads=[lead(i) for i in range(1, 4)], client=RecordingClient(events),
+                        mx_check=MX, state_dir=tmp_path, lock_client=LockClient(events))
+    assert events == []
+
+
+def test_missing_click_secret_fails_before_taking_the_dispatch_lock(tmp_path):
+    """Die Versandsperre bleibt bei Fehlern absichtlich stehen – eine Vorbedingung darf sie nie auslösen."""
+    import pytest
+    events = []
+    with pytest.raises(RuntimeError, match='CLICK_SECRET_MISSING'):
+        nd.create_v2_drafts('JOEL', 2, True, leads=[lead(i) for i in range(1, 4)], client=RecordingClient(events),
+                            mx_check=MX, state_dir=tmp_path, lock_client=LockClient(events))
+    assert events == []

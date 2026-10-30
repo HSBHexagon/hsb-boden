@@ -245,7 +245,7 @@ _BODIES_REPARATUR = {
     ("architekten", 2): (
         "kurz zu meiner Nachricht von vor ein paar Tagen: Beim Bauen im Bestand entscheidet oft das Detail "
         "an Anschlüssen und Übergängen. Für eine fachgerechte Reparatur und Instandsetzung prüfen wir Untergrund, "
-        "Haftzug und Bestandsaufbau, um Gefälle und Dichtigkeit dauerhaft wiederherzustellen.\n\n"
+        "Haftzug und Bestandsaufbau, um Gefälle und Dichtigkeit wiederherzustellen.\n\n"
         "Wir stimmen diese Punkte gern anhand Ihrer aktuellen Planung ab, bevor Ausschreibungsdetails "
         "festgelegt werden. Falls das Thema {bei} jemand anderes betreut, freue ich mich über einen kurzen "
         "Hinweis.\n\n"
@@ -263,7 +263,7 @@ _BODIES_REPARATUR = {
     ("produktion", 1): (
         "mein Name ist {sender} von der HSB Hexagon Säurebau GmbH. Wir planen, bauen und sanieren "
         "säurebeständige, hygienische Industrieböden für Produktionsbetriebe.\n\n"
-        "Falls {bei} ausgebrochene Fugen, lose Fliesen oder undichte Rinnenanschlüsse auffallen: "
+        "Falls Ihnen {bei} ausgebrochene Fugen, lose Fliesen oder undichte Rinnenanschlüsse auffallen: "
         "Nicht jeder Schaden braucht eine Neuverlegung. Häufig lassen sich die Stellen gezielt instand setzen, "
         "mit säure- und chemikalienbeständigen Reparaturmörteln und in vielen Fällen ohne kompletten "
         "Produktionsstopp.\n\n"

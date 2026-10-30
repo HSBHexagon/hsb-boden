@@ -4,6 +4,7 @@ HSB Sales OS - Direkte Synchronisation der 100+100 Drafts in Google Sheet 'ALL_L
 Single Source of Truth (SSOT).
 """
 import json
+import re
 import os
 from pathlib import Path
 from google.oauth2.credentials import Credentials
@@ -41,23 +42,17 @@ def assert_canonical_sheet(spreadsheet_id: str):
             f"'{CANONICAL_SPREADSHEET_ID}' ist für HSB freigegeben."
         )
 
-def get_sheets_service(spreadsheet_id: str = CANONICAL_SPREADSHEET_ID):
-    assert_canonical_sheet(spreadsheet_id)
+HSB_PRINCIPAL_RE = re.compile(r'@hsb-boden\.(de|com)$', re.I)
+_VERIFIED_PRINCIPALS = {}
 
-    cloud_auth = os.environ.get('HSB_GOOGLE_AUTHORIZED_USER_JSON', '').strip()
-    if cloud_auth:
-        creds = Credentials.from_authorized_user_info(json.loads(cloud_auth))
-        return build('sheets', 'v4', credentials=creds, cache_discovery=False)
 
-    with open(Path.home() / '.config/google-workspace-mcp/profiles/cherinodiaz/tokens.json') as f:
+def _profile_credentials(profile):
+    with open(Path.home() / f'.config/google-workspace-mcp/profiles/{profile}/tokens.json') as f:
         token_data = json.load(f)
-
     with open(Path.home() / '.config/google-workspace-mcp/credentials.json') as f:
         client_data = json.load(f)
-
     cinfo = client_data.get('installed') or client_data.get('web')
-
-    creds = Credentials(
+    return Credentials(
         token=token_data.get('access_token'),
         refresh_token=token_data.get('refresh_token'),
         token_uri='https://oauth2.googleapis.com/token',
@@ -65,7 +60,32 @@ def get_sheets_service(spreadsheet_id: str = CANONICAL_SPREADSHEET_ID):
         client_secret=cinfo.get('client_secret'),
         scopes=token_data.get('scope', '').split()
     )
-    return build('sheets', 'v4', credentials=creds)
+
+
+def assert_hsb_principal(creds, cache_key):
+    """Nur HSB-Konten (@hsb-boden.de/.com) dürfen das CRM lesen/schreiben; kein privater Fallback."""
+    if cache_key not in _VERIFIED_PRINCIPALS:
+        about = build('drive', 'v3', credentials=creds, cache_discovery=False).about().get(fields='user(emailAddress)').execute()
+        _VERIFIED_PRINCIPALS[cache_key] = str(about.get('user', {}).get('emailAddress', ''))
+    email = _VERIFIED_PRINCIPALS[cache_key]
+    if not HSB_PRINCIPAL_RE.search(email):
+        raise RuntimeError('CRM_AUTH_NOT_HSB: Google-Konto ist kein HSB-Konto')
+    return email
+
+
+def get_sheets_service(spreadsheet_id: str = CANONICAL_SPREADSHEET_ID):
+    """Sheets-Service ausschließlich mit HSB-Identität (Cloud-JSON oder Profil HSB_GOOGLE_PROFILE, Standard 'hsb-boden')."""
+    assert_canonical_sheet(spreadsheet_id)
+    cloud_auth = os.environ.get('HSB_GOOGLE_AUTHORIZED_USER_JSON', '').strip()
+    if cloud_auth:
+        creds = Credentials.from_authorized_user_info(json.loads(cloud_auth))
+        key = 'cloud'
+    else:
+        profile = os.environ.get('HSB_GOOGLE_PROFILE', 'hsb-boden').strip()
+        creds = _profile_credentials(profile)
+        key = f'profile:{profile}'
+    assert_hsb_principal(creds, key)
+    return build('sheets', 'v4', credentials=creds, cache_discovery=False)
 
 def sync_matrices():
     assert_canonical_sheet(SPREADSHEET_ID)

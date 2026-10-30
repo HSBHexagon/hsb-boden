@@ -14,9 +14,9 @@ def per_owner(f_all, f_owner):
 
 
 def reply_count_formula(template_pattern=None, owner_pattern=None):
-    """Zaehlt ausschliesslich echte Antworten ('replied', 'replied_interested', 'received').
+    """Zaehlt ausschliesslich echte Antworten (Python: replied/replied_interested/received; Apps Script: reply/positive_reply/negative_reply).
     opt_out, bounced und auto_reply_ooo duerfen niemals als Antwort gezaehlt werden."""
-    statuses = ["replied", "replied_interested", "received"]
+    statuses = ["replied", "replied_interested", "received", "reply", "positive_reply", "negative_reply"]
     parts = []
     for s in statuses:
         criteria = []
@@ -137,9 +137,9 @@ def formatting_requests(sheet_id, rows=None):
         if bold:
             tf["bold"] = True
         if size:
-            fmt["fontSize"] = size
+            tf["fontSize"] = size
         if fg:
-            fmt["foregroundColor"] = rgb(fg)
+            tf["foregroundColor"] = rgb(fg)
         if tf:
             fmt["textFormat"] = tf
         fields = ",".join("userEnteredFormat." + k for k in fmt)
@@ -165,7 +165,8 @@ def formatting_requests(sheet_id, rows=None):
 
 
 def main(apply=False):
-    sh, _ = services("cherinodiaz")
+    from sync_to_google_sheet import get_sheets_service
+    sh = get_sheets_service()
     rows = dashboard_rows()
     if not apply:
         cur = sh.spreadsheets().values().get(spreadsheetId=SID, range="DASHBOARD!A12:A13").execute().get("values", [])

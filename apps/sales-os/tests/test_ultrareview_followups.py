@@ -118,3 +118,10 @@ def test_owner_at_cap_skips_remaining_items_without_io(tmp_path, monkeypatch):
     monkeypatch.setenv('HSB_SALES_STATE_DIR', str(tmp_path))
     out.dispatch_verified(3, owners=('JOEL',), dry_run=False)
     assert len(reads) == 1
+
+
+# Codex-Nachprüfung zu Befund 2: Tier Z darf keinen Versandplatz belegen (select_queue begrenzt vor dem Live-Gate).
+def test_tier_z_lead_never_enters_the_dispatch_queue():
+    import sales_reconciliation as recon
+    assert 'TIER_Z' in recon.queue_block_reasons({'Tier': ' z '})
+    assert 'TIER_Z' not in recon.queue_block_reasons({'Tier': 'B'})

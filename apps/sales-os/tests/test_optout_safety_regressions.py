@@ -103,3 +103,16 @@ def test_enrichment_uses_website_column_not_phone(monkeypatch):
     monkeypatch.setattr(enrich_missing_emails, "crawl_domain_for_email", crawler)
     assert enrich_missing_emails.run_missing_email_enrichment(limit=1, apply=False) == 1
     assert domains == ["kunde.de"]
+
+
+def test_cli_reports_rejected_optout_instead_of_crashing(monkeypatch, capsys):
+    import types
+    import pytest
+    import hsb_cli
+    monkeypatch.setattr(ingest_optouts, "suppress_lead_direct",
+                        lambda **_k: {"ok": False, "error": "lead_id_email_mismatch"})
+    args = types.SimpleNamespace(email="ann@example.com", lead_id="SOMEONE_ELSE", reason="x", apply=True)
+    with pytest.raises(SystemExit) as exc:
+        hsb_cli.cmd_optout_direct(args)
+    assert exc.value.code == 1
+    assert "lead_id_email_mismatch" in capsys.readouterr().out

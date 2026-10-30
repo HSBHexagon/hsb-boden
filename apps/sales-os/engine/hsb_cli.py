@@ -301,6 +301,9 @@ def cmd_optout_direct(args):
         dry_run=not args.apply
     )
     mode_str = "LIVE" if args.apply else "DRY-RUN"
+    if not res.get("ok"):
+        print(f"[{mode_str}] Sperre abgelehnt: {res.get('error')} (nichts geändert)")
+        sys.exit(1)
     print(f"[{mode_str}] Sperre verarbeitet: Lead-ID={res['lead_id']}, E-Mail={res['email']}, Gelöschte Entwürfe={res.get('purged_drafts', 0)}")
 
 

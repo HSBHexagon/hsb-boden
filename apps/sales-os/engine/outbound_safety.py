@@ -209,7 +209,39 @@ def add_list_unsubscribe(msg, owner, lead_id):
     return msg
 
 
-def dispatch_verified(count_per_owner=25, owners=('JOEL','JORDI'), dry_run=True, cap=35, jitter_min=45, jitter_max=90):
+SEGMENT_CODES={'p':'produktion','a':'architekten'}
+
+
+def draft_segment(draft):
+    """Segment eines v2-Entwurfs aus seinem Klick-Link (?s=p / ?s=a); None, wenn nicht bestimmbar."""
+    from urllib.parse import urlsplit, parse_qs
+    for url in draft.get('links') or []:
+        parts=urlsplit(url)
+        if parts.netloc.lower()=='www.hsb-boden.de' and parts.path.startswith('/r/'):
+            code=(parse_qs(parts.query).get('s') or [''])[0]
+            return SEGMENT_CODES.get(code)
+    return None
+
+
+def select_queue(queue, drafts, owners, count_per_owner, segments=None):
+    """Reihenfolge der Warteschlange beibehalten; optional nur Leads, deren versandbereiter Entwurf zu `segments` gehört."""
+    seg_by_lead={}
+    if segments:
+        for d in drafts:
+            if d.get('sendable'):
+                seg_by_lead.setdefault(d['lead_id'], draft_segment(d))
+    selected=[];used={o:0 for o in owners}
+    for item in queue:
+        o=item['owner']
+        if o not in owners or used[o]>=count_per_owner:
+            continue
+        if segments and seg_by_lead.get(item['lead_id']) not in segments:
+            continue
+        selected.append(item);used[o]+=1
+    return selected, used
+
+
+def dispatch_verified(count_per_owner=25, owners=('JOEL','JORDI'), dry_run=True, cap=35, jitter_min=45, jitter_max=90, segments=None):
     from com_mailbox_manager import ComMailboxClient
     from sync_to_google_sheet import get_sheets_service, SPREADSHEET_ID
     from sales_reconciliation import run_audit, assess_message, has_unreviewed_legacy_variant
@@ -233,11 +265,7 @@ def dispatch_verified(count_per_owner=25, owners=('JOEL','JORDI'), dry_run=True,
         run_audit(output)
         queue=json.loads((output/'queue.json').read_text())
         drafts=json.loads((output/'drafts.json').read_text())
-        selected=[];used={o:0 for o in owners}
-        for item in queue:
-            o=item['owner']
-            if o in owners and used[o]<count_per_owner:
-                selected.append(item);used[o]+=1
+        selected,used=select_queue(queue,drafts,owners,count_per_owner,segments)
         if dry_run: return {'status':'DRY_RUN_COMPLETED','selected':used,'sent_counts':{o:0 for o in owners},'customer_emails_sent':0}
         svc=get_sheets_service(); journal=SendJournal(state/'outbound.sqlite3')
         sent_counts={o:0 for o in owners}

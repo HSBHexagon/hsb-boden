@@ -518,7 +518,7 @@ def cmd_upgrade_drafts(args):
     original = json.loads((audit/'crm-original.json').read_text())['valueRanges'][0]['values']
     leads = [dict(zip(original[0],r), _row=i) for i,r in enumerate(original[1:],2)]
     result = upgrade_drafts(args.owner,args.limit,args.cohort,args.apply,
-        journal_path=Path(args.journal),records=records,leads=leads,
+        journal_path=Path(args.journal),variant=getattr(args,'variant','standard'),records=records,leads=leads,
         client=ComMailboxClient(args.owner) if args.apply else None,
         svc=get_sheets_service() if args.apply else None)
     print(json.dumps(result,ensure_ascii=False,default=dict))
@@ -627,6 +627,7 @@ def main():
     p_upgrade.add_argument("--owner", choices=["JOEL","JORDI"], required=True)
     p_upgrade.add_argument("--limit", type=int, default=5)
     p_upgrade.add_argument("--cohort", choices=["pilot","all"], default="pilot")
+    p_upgrade.add_argument("--variant", choices=["standard","reparatur"], default="standard")
     p_upgrade.add_argument("--audit-dir", required=True)
     p_upgrade.add_argument("--journal", default=str(Path.home()/".local/state/hsb-sales-os/upgrade.sqlite3"))
     p_upgrade.add_argument("--apply", action="store_true")

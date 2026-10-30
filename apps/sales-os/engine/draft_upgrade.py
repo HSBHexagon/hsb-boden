@@ -72,7 +72,7 @@ def _find(imap, mid):
     return data[0].split() if data and data[0] else []
 
 
-def upgrade_drafts(owner, limit=5, cohort='pilot', apply=False, journal_path=None, *,
+def upgrade_drafts(owner, limit=5, cohort='pilot', apply=False, journal_path=None, variant='standard', *,
                    records=None, leads=None, client=None, svc=None, mx_check=None, signals=None, lock_client=None):
     """Nur erste v2-Nachricht; Folgekontakte brauchen später das verifizierte Sequenzjournal."""
     from canonical_template_factory import render_email_v2
@@ -84,7 +84,7 @@ def upgrade_drafts(owner, limit=5, cohort='pilot', apply=False, journal_path=Non
     from hsb_config import CANONICAL_SPREADSHEET_ID
 
     owner = normalize_owner(owner)
-    if owner not in ('JOEL', 'JORDI') or type(limit) is not int or not 1 <= limit <= 100 or cohort not in ('pilot', 'all'):
+    if owner not in ('JOEL', 'JORDI') or type(limit) is not int or not 1 <= limit <= 100 or cohort not in ('pilot', 'all') or variant not in ('standard', 'reparatur'):
         raise ValueError('INVALID_UPGRADE_SELECTION')
     if records is None or leads is None:
         raise ValueError('FRESH_AUDIT_AND_CRM_REQUIRED')
@@ -125,7 +125,8 @@ def upgrade_drafts(owner, limit=5, cohort='pilot', apply=False, journal_path=Non
             reason = 'IDENTITY_OR_HISTORY_ISSUE'
         else:
             lead = dict(matches[0])
-            if str(lead.get('Email_Template_ID') or '').startswith('v2-'):
+            tmpl = str(lead.get('Email_Template_ID') or '')
+            if (variant == 'reparatur' and '-reparatur-' in tmpl) or (variant != 'reparatur' and tmpl.startswith('v2-')):
                 result['skipped_reasons']['ALREADY_V2'] += 1
                 continue
             if str(lead.get('Tier') or '').strip().upper()=='Z':
@@ -198,7 +199,7 @@ def upgrade_drafts(owner, limit=5, cohort='pilot', apply=False, journal_path=Non
                         continue
                     row = db.execute('SELECT mid,raw,state,old_raw FROM upgrades WHERE key=?', (key,)).fetchone()
                     if row is None:
-                        rendered = render_email_v2(lead, owner, click_url=click_url(lead['Lead-ID'], segment_for(lead), os.environ.get('HSB_CLICK_SECRET')))
+                        rendered = render_email_v2(lead, owner, click_url=click_url(lead['Lead-ID'], segment_for(lead), os.environ.get('HSB_CLICK_SECRET')), variant=variant)
                         mid = make_msgid(domain='hsb-boden.com')
                         raw, _ = client.build_draft_message(rendered['to_email'], rendered['subject'], body_text=rendered['body_text'],
                                 template_id=rendered['template_id'], lead_id=lead['Lead-ID'], custom_message_id=mid)

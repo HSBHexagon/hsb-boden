@@ -207,3 +207,22 @@ def test_unverified_crm_binding_blocks_before_any_mutation(tmp_path,monkeypatch)
         upgrade_drafts('JOEL',apply=True,**kwargs)
     assert calls==writes==[]
     assert not kwargs['journal_path'].exists()
+
+
+def test_upgrade_v2_standard_to_reparatur(tmp_path, monkeypatch):
+    kwargs, boxes, calls, writes, old = setup_case(tmp_path, monkeypatch)
+    kwargs['leads'][0]['Email_Template_ID'] = 'v2-produktion-s1'
+    result = upgrade_drafts('JOEL', apply=True, variant='reparatur', **kwargs)
+    assert result['selected'] == 1
+    assert result['appended'] == 1
+    assert calls.count('APPEND') == 1
+    assert writes and writes[-1]['Email_Template_ID'] == 'v2-produktion-reparatur-s1'
+
+
+def test_upgrade_reparatur_already_done_skipped(tmp_path, monkeypatch):
+    kwargs, boxes, calls, writes, old = setup_case(tmp_path, monkeypatch)
+    kwargs['leads'][0]['Email_Template_ID'] = 'v2-produktion-reparatur-s1'
+    result = upgrade_drafts('JOEL', apply=True, variant='reparatur', **kwargs)
+    assert result['selected'] == 0
+    assert result['skipped_reasons']['ALREADY_V2'] == 1
+    assert calls == writes == []

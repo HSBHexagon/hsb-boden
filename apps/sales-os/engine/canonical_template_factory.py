@@ -226,6 +226,68 @@ _BODIES_V2 = {
     ),
 }
 
+_SUBJECTS_REPARATUR = {
+    "architekten": ("Industrieböden im Bestand", "Industrieböden im Bestand"),
+    "produktion": ("Bodenschäden bei {firma}", "Schadstellen im Industrieboden"),
+}
+
+_BODIES_REPARATUR = {
+    ("architekten", 1): (
+        "mein Name ist {sender} von der HSB Hexagon Säurebau GmbH. Wir planen, bauen und sanieren "
+        "säurebeständige Industrieböden.\n\n"
+        "Falls {bei} Umbauten oder Sanierungen in Produktions- oder Lebensmittelbetrieben anstehen: "
+        "Nicht jeder Bestandsboden muss komplett neu verlegt werden. Ob eine gezielte Reparatur und Instandsetzung "
+        "von Fugen, Rinnen- und Wandanschlüssen reicht, hängt vom Schadensbild, vom Restzustand des Systems "
+        "und vom Verhältnis zu den Sanierungskosten ab. Diese Punkte bewerten wir gern mit Ihnen, bevor die "
+        "Ausschreibung steht.\n\n"
+        "Ist das für ein aktuelles Vorhaben in Ihrem Büro interessant?{link}"
+    ),
+    ("architekten", 2): (
+        "kurz zu meiner Nachricht von vor ein paar Tagen: Beim Bauen im Bestand entscheidet oft das Detail "
+        "an Anschlüssen und Übergängen. Für eine fachgerechte Reparatur und Instandsetzung prüfen wir Untergrund, "
+        "Haftzug und Bestandsaufbau, um Gefälle und Dichtigkeit dauerhaft wiederherzustellen.\n\n"
+        "Wir stimmen diese Punkte gern anhand Ihrer aktuellen Planung ab, bevor Ausschreibungsdetails "
+        "festgelegt werden. Falls das Thema {bei} jemand anderes betreut, freue ich mich über einen kurzen "
+        "Hinweis.\n\n"
+        "Wer ist dafür bei Ihnen der richtige Ansprechpartner?"
+    ),
+    ("architekten", 3): (
+        "ich melde mich ein letztes Mal zu diesem Thema. Wenn Industrieböden und Instandsetzungen im Bestand "
+        "{bei} aktuell keine Rolle spielen, ist das völlig in Ordnung.\n\n"
+        "Sollte später ein Industrie- oder Gewerbeprojekt anstehen, antworten Sie gern auf diese Nachricht. "
+        "Anhand der Schadensbilder bewerten wir dann gemeinsam vor Ort, ob eine gezielte Reparatur "
+        "wirtschaftlicher ist oder eine Neuverlegung mehr Sicherheit bietet.\n\n"
+        "Bis dahin wünsche ich Ihnen viel Erfolg bei Ihren Projekten und werde Sie hierzu nicht weiter "
+        "kontaktieren."
+    ),
+    ("produktion", 1): (
+        "mein Name ist {sender} von der HSB Hexagon Säurebau GmbH. Wir planen, bauen und sanieren "
+        "säurebeständige, hygienische Industrieböden für Produktionsbetriebe.\n\n"
+        "Falls {bei} ausgebrochene Fugen, lose Fliesen oder undichte Rinnenanschlüsse auffallen: "
+        "Nicht jeder Schaden braucht eine Neuverlegung. Häufig lassen sich die Stellen gezielt instand setzen, "
+        "mit säure- und chemikalienbeständigen Reparaturmörteln und in vielen Fällen ohne kompletten "
+        "Produktionsstopp.\n\n"
+        "Schicken Sie mir gern ein Foto der Stelle, dann gebe ich Ihnen eine erste Einschätzung, ob eine "
+        "Reparatur reicht.{link}"
+    ),
+    ("produktion", 2): (
+        "kurz zu meiner Nachricht von vor ein paar Tagen: Wenn Feuchte durch offene Fugen oder Schadstellen "
+        "eindringt, drohen Folgeschäden am Untergrund und am Schichtaufbau. Frühzeitig instand gesetzt, bleibt "
+        "der Eingriff meist klein und lässt sich mit kurzen Sperrzeiten oder auf Teilflächen umsetzen, oft im "
+        "laufenden Betrieb.\n\n"
+        "Fällt Ihnen {bei} eine Stelle ein, die Sie schon länger beobachten? Schicken Sie mir gern ein Foto für "
+        "eine erste Einschätzung, ob eine Reparatur wirtschaftlich ist."
+    ),
+    ("produktion", 3): (
+        "ich melde mich ein letztes Mal zu diesem Thema, um Sie nicht weiter zu belasten. Wenn Fugen, Kanten "
+        "und Bodenflächen {bei} derzeit intakt sind, ist das erfreulich.\n\n"
+        "Sollten später Schadstellen auffallen oder Sanierungsfragen auftauchen, antworten Sie einfach auf "
+        "diese Nachricht. Vor jeder Reparatur klären wir Ursache und Umfang, damit der Boden fachgerecht "
+        "instand gesetzt wird, statt nur kosmetisch überdeckt zu werden.\n\n"
+        "Bis dahin wünsche ich Ihnen weiterhin einen reibungslosen Betrieb."
+    ),
+}
+
 # Absenderadresse in der Signatur = From-Postfach (nur dort wird gelesen).
 _SENDER_COM = {"JOEL": "j-cherino@hsb-boden.com", "JORDI": "j-post@hsb-boden.com",
                "JORDIE": "j-post@hsb-boden.com"}
@@ -252,8 +314,9 @@ def short_company(name: Any) -> str:
     return text
 
 
-def _subject_v2(segment: str, firma_short: str) -> str:
-    with_firma, topic_only = _SUBJECTS_V2[segment]
+def _subject_v2(segment: str, firma_short: str, variant: str = "standard") -> str:
+    subjects = _SUBJECTS_REPARATUR if variant == "reparatur" else _SUBJECTS_V2
+    with_firma, topic_only = subjects[segment]
     if firma_short:
         candidate = with_firma.format(firma=firma_short)
         if len(candidate) <= 50 and len(candidate.split()) <= 5:
@@ -267,8 +330,11 @@ def render_email_v2(
     step: Literal[1, 2, 3] = 1,
     thread: Optional[Dict[str, str]] = None,
     click_url: Optional[str] = None,
+    variant: Literal["standard", "reparatur"] = "standard",
 ) -> Dict[str, Any]:
     """Reiner-Text-Mail v2. Schritt 2/3 antworten im Thread von Schritt 1 und enthalten keinen Link."""
+    if variant not in ("standard", "reparatur"):
+        raise ValueError(f"Unknown variant: {variant!r}")
     if step not in (1, 2, 3):
         raise ValueError(f"step must be 1, 2 or 3, got {step!r}")
     norm_owner = owner.strip().upper() if owner else "JOEL"
@@ -297,13 +363,14 @@ def render_email_v2(
     bei = f"bei {firma_kurz}" if firma_kurz else "bei Ihnen"
 
     segment = segment_for(lead)
-    template_id = f"v2-{segment}-s{step}"
+    template_id = f"v2-{segment}-reparatur-s{step}" if variant == "reparatur" else f"v2-{segment}-s{step}"
 
     link = ""
     if step == 1:
         url = click_url or FLYER_LANDING_URL.format(segment=segment)
         link = f"\n\nEine Übersicht finden Sie hier:\n{url}"
-    body = _BODIES_V2[(segment, step)].format(sender=meta["sender_name"], bei=bei, link=link)
+    bodies = _BODIES_REPARATUR if variant == "reparatur" else _BODIES_V2
+    body = bodies[(segment, step)].format(sender=meta["sender_name"], bei=bei, link=link)
 
     phone = meta["sender_phone"]
     phone_label = "Mobil" if phone.replace(" ", "").startswith("01") else "Telefon"
@@ -320,7 +387,7 @@ def render_email_v2(
     )
 
     if step == 1:
-        subject = _subject_v2(segment, firma_kurz)
+        subject = _subject_v2(segment, firma_kurz, variant=variant)
         in_reply_to = references = None
     else:
         original = re.sub(r"^(?:re|aw):\s*", "", str(thread["subject"]).strip(), flags=re.IGNORECASE)

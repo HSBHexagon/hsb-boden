@@ -55,4 +55,36 @@ describe("Beanspruchungs-Check → Audit-Formular", () => {
     clearStressCheckHandoff(sessionStorage);
     expect(sessionStorage.getItem(STRESS_CHECK_STORAGE_KEY)).toBeNull();
   });
+
+  it("behandelt Fehler in der Storage-Schnittstelle geräuschlos", () => {
+    const prefill = buildLeadPrefill(input, resolveStressSystem(input));
+
+    const mockStorage: Storage = {
+      length: 0,
+      clear: () => {},
+      getItem: () => {
+        throw new Error("Storage blocked");
+      },
+      key: () => null,
+      removeItem: () => {
+        throw new Error("Storage blocked");
+      },
+      setItem: () => {
+        throw new Error("QuotaExceededError");
+      },
+    };
+
+    // saveStressCheckHandoff fängt setItem-Fehler ab
+    expect(() => saveStressCheckHandoff(mockStorage, prefill)).not.toThrow();
+
+    // loadStressCheckHandoff fängt getItem-Fehler ab
+    expect(loadStressCheckHandoff(mockStorage)).toBeUndefined();
+
+    // loadStressCheckHandoff behandelt ungültiges JSON
+    sessionStorage.setItem(STRESS_CHECK_STORAGE_KEY, "invalid-json{");
+    expect(loadStressCheckHandoff(sessionStorage)).toBeUndefined();
+
+    // clearStressCheckHandoff fängt removeItem-Fehler ab
+    expect(() => clearStressCheckHandoff(mockStorage)).not.toThrow();
+  });
 });

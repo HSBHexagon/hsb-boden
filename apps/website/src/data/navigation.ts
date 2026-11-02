@@ -2,7 +2,9 @@ export const navigation = [
   { label: "Leistungen", href: "/leistungen/" },
   { label: "Branchen", href: "/branchen/" },
   { label: "Referenzen", href: "/referenzen/" },
+  { label: "Beanspruchungs-Check", href: "/beanspruchungs-check/" },
   { label: "Wissen", href: "/wissen/" },
+  { label: "Planer", href: "/planer/" },
   { label: "Projektablauf", href: "/projektablauf/" },
   { label: "Karriere", href: "/karriere/" },
   { label: "Kontakt", href: "/kontakt/" },
@@ -20,6 +22,8 @@ export const footerGroups = [
       { label: "WHG-Abdichtung", href: "/leistungen/whg-abdichtung-industrieboden/" },
       { label: "Sanierung", href: "/leistungen/bodensanierung-laufender-betrieb/" },
       { label: "Reparatur & Instandsetzung", href: "/leistungen/boden-reparatur-instandsetzung/" },
+      { label: "Beanspruchungs-Check", href: "/beanspruchungs-check/" },
+      { label: "Planer & LV-Texte", href: "/planer/" },
     ],
   },
   {
@@ -34,18 +38,22 @@ export const footerGroups = [
     ],
   },
   {
+    title: "Wissen & Forensik",
+    links: [
+      { label: "Wissensmagazin", href: "/wissen/" },
+      { label: "Fugen-Forensik", href: "/wissen/fugen-forensik/" },
+      { label: "Rüttelkeramik AGI S 40", href: "/wissen/ruettelkeramik-agi-s-40/" },
+      { label: "Muster-Abnahmeprotokoll", href: "/wissen/muster-abnahmeprotokoll/" },
+      { label: "HACCP & Audit Prüfpunkte", href: "/wissen/haccp-audit-industrieboden-pruefpunkte/" },
+    ],
+  },
+  {
     title: "Unternehmen & Team",
     links: [
       { label: "Über uns", href: "/#ueber-uns" },
       { label: "Referenzen", href: "/referenzen/" },
-      { label: "Wissen", href: "/wissen/" },
       { label: "Karriere", href: "/karriere/" },
       { label: "Kontakt", href: "/kontakt/" },
-    ],
-  },
-  {
-    title: "Rechtliches",
-    links: [
       { label: "Impressum", href: "/impressum/" },
       { label: "Datenschutz", href: "/datenschutz/" },
     ],

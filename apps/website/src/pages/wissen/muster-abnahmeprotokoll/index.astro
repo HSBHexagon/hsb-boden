@@ -1,0 +1,149 @@
+---
+import BaseLayout from "../../../layouts/BaseLayout.astro";
+import PageHero from "../../../components/sections/PageHero.astro";
+import LeadFormSection from "../../../components/forms/LeadFormSection.astro";
+import { buildBreadcrumbJsonLd } from "../../../lib/schema";
+
+export const prerender = true;
+
+const path = "/wissen/muster-abnahmeprotokoll/";
+const title = "Muster-Abnahmeprotokoll & Boden-Checkliste für IFS & HACCP | HSB";
+const description = "Anonymisiertes Muster-Abnahmeprotokoll für Industrieböden: Ebenheitsprüfung nach DIN 18202, Gefälle, Abreißfestigkeit, Rinnenanschlüsse und IFS/BRC-Audit-Checkliste.";
+---
+
+<BaseLayout
+  title={title}
+  description={description}
+  path={path}
+  jsonLd={[
+    buildBreadcrumbJsonLd([
+      { name: "Start", path: "/" },
+      { name: "Wissen", path: "/wissen/" },
+      { name: "Muster-Abnahmeprotokoll", path },
+    ]),
+  ]}
+>
+  <PageHero
+    eyebrow="Qualitätssicherung & Audit-Nachweis"
+    title="Muster-Abnahmeprotokoll: Was ein belastbares Gutachten ausmacht"
+    text="Viele Betriebe stehen vor der Herausforderung, dass ein neuer Bodenbelag zwar optisch glänzt, bei der ersten IFS- oder WHG-Prüfung jedoch durchfällt. HSB liefert zu jeder Ausführung ein lückenloses, ingenieurmäßiges Abnahmeprotokoll. Hier sehen Sie den Aufbau und die Prüfpunkte."
+  />
+
+  <section class="section border-b border-hsb-line bg-white">
+    <div class="container max-w-4xl">
+      <div class="prose max-w-none text-hsb-steel">
+        <h2 class="text-2xl font-black text-hsb-black">Transparenz vor der ersten Produktionscharge</h2>
+        <p>
+          Ein normgerechtes Abnahmeprotokoll schützt Betreiber, Instandhalter und Auditoren vor versteckten Mängeln. Es dokumentiert verbindlich die Einhaltung baurechtlicher, chemischer und hygienischer Kennwerte direkt nach der Fertigstellung.
+        </p>
+
+        <!-- Interaktives / Strukturiertes Muster-Protokoll -->
+        <div class="my-8 rounded border-2 border-hsb-black bg-white p-6 shadow-sm">
+          <div class="flex flex-wrap items-center justify-between border-b-2 border-hsb-red pb-4">
+            <div>
+              <span class="text-xs font-black uppercase tracking-widest text-hsb-red">HSB Hexagon Säurebau GmbH</span>
+              <h3 class="text-xl font-black text-hsb-black mt-1">Werks-Abnahmeprotokoll (Muster-Auszug)</h3>
+            </div>
+            <span class="rounded bg-hsb-mist px-3 py-1 text-xs font-bold text-hsb-black">Projekt: Molkerei-Produktionshalle Süd</span>
+          </div>
+
+          <div class="mt-6 space-y-6 text-sm">
+            <!-- Prüfpunkt 1 -->
+            <div class="border-b border-hsb-line pb-4">
+              <div class="flex items-center justify-between">
+                <strong class="text-hsb-black">1. Ebenheit nach DIN 18202 (Tabelle 3, Zeile 3)</strong>
+                <span class="text-xs font-bold text-green-700 bg-green-50 px-2 py-0.5 rounded">BESTANDEN (Grenzabmaß &le; 4 mm auf 2 m)</span>
+              </div>
+              <p class="text-xs text-hsb-steel mt-1">Geprüft mit Richtlatte und Keilmesslehre über 12 Messachsen in der Produktionslinie. Keine stauenden Unebenheiten.</p>
+            </div>
+
+            <!-- Prüfpunkt 2 -->
+            <div class="border-b border-hsb-line pb-4">
+              <div class="flex items-center justify-between">
+                <strong class="text-hsb-black">2. Gefälleausbildung zu den Entwässerungsrinnen</strong>
+                <span class="text-xs font-bold text-green-700 bg-green-50 px-2 py-0.5 rounded">BESTANDEN (Ist-Gefälle: 1,8 % durchgehend)</span>
+              </div>
+              <p class="text-xs text-hsb-steel mt-1">Wasserprobe durchgeführt mit 500 l Prüfwasser. Vollständiger Ablauf ohne Pfützenbildung nach 10 Minuten.</p>
+            </div>
+
+            <!-- Prüfpunkt 3 -->
+            <div class="border-b border-hsb-line pb-4">
+              <div class="flex items-center justify-between">
+                <strong class="text-hsb-black">3. Haftzugfestigkeit / Abreißfestigkeit (Untergrund)</strong>
+                <span class="text-xs font-bold text-green-700 bg-green-50 px-2 py-0.5 rounded">BESTANDEN (Mittelwert: 2,1 N/mm²)</span>
+              </div>
+              <p class="text-xs text-hsb-steel mt-1">Prüfung nach DIN EN 1542 (3 Prüfkerne &Oslash; 50 mm). 100 % Betongefügebruch, keine Adhäsionsbrüche an der Haftbrücke.</p>
+            </div>
+
+            <!-- Prüfpunkt 4 -->
+            <div class="border-b border-hsb-line pb-4">
+              <div class="flex items-center justify-between">
+                <strong class="text-hsb-black">4. Rinnenanbindung & Elastische Dehnungsfugen</strong>
+                <span class="text-xs font-bold text-green-700 bg-green-50 px-2 py-0.5 rounded">BESTANDEN (Flankenhaftung & Höhe &minus;1,5 mm)</span>
+              </div>
+              <p class="text-xs text-hsb-steel mt-1">Rinnenkörper kraftschlüssig mit EP-Mörtel untergossen. 2-Flanken-Hybridfuge eingebracht und sichtgeprüft.</p>
+            </div>
+
+            <!-- Prüfpunkt 5 -->
+            <div>
+              <div class="flex items-center justify-between">
+                <strong class="text-hsb-black">5. Rutschhemmungsklasse (DIN EN 16165 / BGR 181)</strong>
+                <span class="text-xs font-bold text-green-700 bg-green-50 px-2 py-0.5 rounded">BESTANDEN (Klasse R12 / Verdrängungsraum V4)</span>
+              </div>
+              <p class="text-xs text-hsb-steel mt-1">Prüfzeugnis des Herstellers für das gewählte Spaltklinkerprofil beigelegt. Eignung für Nassanlagen bestätigt.</p>
+            </div>
+          </div>
+        </div>
+
+        <h2 class="text-2xl font-black text-hsb-black">Die IFS & HACCP Boden-Checkliste</h2>
+        <p>
+          Für QM- und Betriebsleiter haben wir die wesentlichen Punkte zusammengefasst, auf die IFS Food, BRCGS und Behörden bei Bodenbegehungen achten:
+        </p>
+
+        <div class="my-6 grid gap-4 sm:grid-cols-2 not-prose">
+          <div class="rounded border border-hsb-line p-5 bg-[#f8f9fb]">
+            <h4 class="font-bold text-hsb-black text-base">Hygienische Schnittstellen</h4>
+            <ul class="mt-2 space-y-1.5 text-xs text-hsb-steel">
+              <li>✓ Hohlkehlen am Sockel mit Mindestradius r &ge; 50 mm</li>
+              <li>✓ Keine 90°-Kanten an Boden-Wand-Übergängen</li>
+              <li>✓ Dichte Reaktionsharzverfugung ohne Auswaschungen</li>
+              <li>✓ Keine porösen oder kreidenden Zementfugen</li>
+            </ul>
+          </div>
+          <div class="rounded border border-hsb-line p-5 bg-[#f8f9fb]">
+            <h4 class="font-bold text-hsb-black text-base">Entwässerung & Gefälle</h4>
+            <ul class="mt-2 space-y-1.5 text-xs text-hsb-steel">
+              <li>✓ Staufreies Gefälle (mindestens 1,5 %) zu Abläufen</li>
+              <li>✓ Keine stehenden Wasserpfützen in Verkehrswegen</li>
+              <li>✓ Geruchverschlüsse und Schlammeimer in Rinnen intakt</li>
+              <li>✓ Rinnenoberkante bündig bis leicht unter Belagsniveau</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="mt-10 rounded border border-hsb-line bg-hsb-mist p-6 flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <h3 class="text-base font-bold text-hsb-black">Audit-Checkliste als PDF herunterladen</h3>
+            <p class="text-xs text-hsb-steel mt-1">Kompakte 1-Seiten-Checkliste zur internen Begehung vor Ihrem nächsten IFS- oder HACCP-Audit.</p>
+          </div>
+          <button
+            type="button"
+            class="button-primary text-xs"
+            data-download="checkliste"
+            data-placement="muster_abnahmeprotokoll"
+            onclick="window.print()"
+          >
+            Checkliste drucken / PDF speichern
+          </button>
+        </div>
+
+        <div class="mt-10 flex flex-wrap items-center gap-4 border-t border-hsb-line pt-8">
+          <a class="button-primary" href="/kontakt/">Eigenes Projekt auditieren lassen</a>
+          <a class="button-secondary" href="/wissen/ruettelkeramik-agi-s-40/">AGI S 40 Ausführungsnorm ansehen</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <LeadFormSection />
+</BaseLayout>

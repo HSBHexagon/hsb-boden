@@ -1,0 +1,75 @@
+---
+import BaseLayout from "../../../layouts/BaseLayout.astro";
+import PageHero from "../../../components/sections/PageHero.astro";
+import LeadFormSection from "../../../components/forms/LeadFormSection.astro";
+import { buildBreadcrumbJsonLd } from "../../../lib/schema";
+
+export const prerender = true;
+
+const path = "/wissen/fugen-forensik/fuge-ausgewaschen/";
+const title = "Schadensbild: Ausgewaschene & poröse Fugen im Industrieboden | HSB";
+const description = "Ursachen und Sanierung ausgewaschener Fugen in Lebensmittelbetrieben: Wie Milchsäure, Fette und CIP-Reiniger zementäre Fugen zerstören und wie Reaktionsharzfugen dauerhaft schützen.";
+---
+
+<BaseLayout
+  title={title}
+  description={description}
+  path={path}
+  jsonLd={[
+    buildBreadcrumbJsonLd([
+      { name: "Start", path: "/" },
+      { name: "Wissen", path: "/wissen/" },
+      { name: "Fugen-Forensik", path: "/wissen/fugen-forensik/" },
+      { name: "Fuge ausgewaschen", path },
+    ]),
+  ]}
+>
+  <PageHero
+    eyebrow="Fugen-Forensik · Fall 01"
+    title="Ausgewaschene Fugen: Wenn Reinigungschemie den Boden zersetzt"
+    text="Vertiefte Fugenflanken, mehliger Mörtel und stehendes Schmutzwasser: Ausgewaschene Fugen sind der häufigste Mangel bei Hygieneaudits nach IFS Food oder BRC. Erfahren Sie, warum Zementfugen versagen und wie eine Reaktionsharzsanierung im laufenden Betrieb gelingt."
+  />
+
+  <section class="section border-b border-hsb-line bg-white">
+    <div class="container max-w-4xl">
+      <div class="prose max-w-none text-hsb-steel">
+        <h2 class="text-2xl font-black text-hsb-black">Das typische Schadensbild in der Praxis</h2>
+        <p>
+          In vielen lebensmittelverarbeitenden Betrieben – insbesondere in Molkereien, Käsereien, Brauereien und Fleischereien – zeigt sich nach 2 bis 5 Jahren das gleiche Bild: Die keramischen Fliesen sind intakt, aber der Fugenmörtel zwischen den Platten ist um mehrere Millimeter abgetragen oder vollständig ausgewaschen. An den Kanten entstehen tiefe Rillen, in denen sich organisches Material, Fettreste und Spülwasser sammeln.
+        </p>
+
+        <div class="my-8 rounded border-l-4 border-hsb-red bg-hsb-mist p-6 text-hsb-black">
+          <h3 class="text-lg font-bold">Die forensische Ursache: Säure-Lauge-Wechselbeanspruchung</h3>
+          <p class="mt-2 text-sm leading-6 text-hsb-steel">
+            Zementäre Fugenmörtel enthalten Calciumhydroxid. Dieses basische Bindemittel reagiert hochgradig empfindlich auf organische Säuren (z. B. Milchsäure mit pH 3,5–4,5 oder Essigsäure). Die Säure löst das Calcium heraus – der Zement verliert seine Festigkeit und kreidet aus. Nachfolgende Reinigungen mit alkalischen Schaumreinigern und Hochdrucklanzen (100–150 bar) spülen das zersetzte Material mechanisch aus.
+          </p>
+        </div>
+
+        <h2 class="text-2xl font-black text-hsb-black">Betriebliche Risiken: Warum schnelles Handeln zwingend ist</h2>
+        <ul class="space-y-3">
+          <li><strong>Audit-Beanstandung (IFS Food / BRC):</strong> Auditoren beanstanden offene Fugen sofort als potenziellen Herd für Schimmel- und Listerienkontaminationen.</li>
+          <li><strong>Unterwanderung des Fliesenbelags:</strong> Wasser und Reinigungsmittel dringen unter die Fliesen ein, weichen den Verlegemörtel auf und führen binnen Monaten zu hohl liegenden, brechenden Fliesen.</li>
+          <li><strong>Geruchsbildung:</strong> In den Fugenvertiefungen zersetzen sich anaerob Milchreste oder Fleischsäfte – es kommt zu unkontrollierbarer Geruchsentwicklung.</li>
+        </ul>
+
+        <h2 class="mt-10 text-2xl font-black text-hsb-black">Die fachgerechte Sanierung nach AGI S 40</h2>
+        <p>
+          Ein einfaches „Drüberschmieren“ von neuem Mörtel hält maximal wenige Wochen. Die HSB-Sanierungsmethode erfolgt strukturiert:
+        </p>
+        <ol class="space-y-4">
+          <li><strong>1. Mechanisches Ausfräsen:</strong> Die schadhaften Fugen werden mit Diamant-Nutfräsen auf eine Tiefe von mindestens 15 bis 20 mm sauber und flankenparallel ausgeräumt.</li>
+          <li><strong>2. Trocknung & Entfettung:</strong> Gründliche Heißlufttrocknung und chemische Neutralisation der Flanken, um Restfeuchte zu eliminieren.</li>
+          <li><strong>3. Reaktionsharzverfugung:</strong> Einbringen von hoch chemikalienbeständigem 2K-Epoxidharzfugenmörtel oder Novolac-Vinylesterharz im Schlämm- oder Fugpressverfahren.</li>
+          <li><strong>4. Schnelle Wiederinbetriebnahme:</strong> Vollständige chemische Aushärtung innerhalb von 12 bis 24 Stunden – ideal für Wochenendmontagen.</li>
+        </ol>
+
+        <div class="mt-10 flex flex-wrap items-center gap-4 border-t border-hsb-line pt-8">
+          <a class="button-primary" href="/beanspruchungs-check/">Zum Beanspruchungs-Check</a>
+          <a class="button-secondary" href="/wissen/fugen-forensik/">Alle Schadensbilder ansehen</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <LeadFormSection />
+</BaseLayout>

@@ -1,0 +1,75 @@
+---
+import BaseLayout from "../../../layouts/BaseLayout.astro";
+import PageHero from "../../../components/sections/PageHero.astro";
+import LeadFormSection from "../../../components/forms/LeadFormSection.astro";
+import { buildBreadcrumbJsonLd } from "../../../lib/schema";
+
+export const prerender = true;
+
+const path = "/wissen/fugen-forensik/hohlkehle-undicht/";
+const title = "Schadensbild: Undichte Hohlkehlen & Wandanschlüsse | HSB";
+const description = "Undichte Hohlkehlen und Sockelbereiche in der Lebensmittelindustrie: Wie Feuchtigkeit hinter Sockel fliesen kriecht, Keimnester bildet und wie entkoppelte Hohlkehlensysteme dicht halten.";
+---
+
+<BaseLayout
+  title={title}
+  description={description}
+  path={path}
+  jsonLd={[
+    buildBreadcrumbJsonLd([
+      { name: "Start", path: "/" },
+      { name: "Wissen", path: "/wissen/" },
+      { name: "Fugen-Forensik", path: "/wissen/fugen-forensik/" },
+      { name: "Hohlkehle undicht", path },
+    ]),
+  ]}
+>
+  <PageHero
+    eyebrow="Fugen-Forensik · Fall 04"
+    title="Undichte Hohlkehlen: Die unterschätzte Gefahr am Wandanschluss"
+    text="Hohlkehlen sind im Lebensmittel- und Pharmabereich zwingend vorgeschrieben, um 90°-Schmutzkanten zu vermeiden. Wenn sich der Sockel jedoch von der Wand löst oder am Boden abreißt, wird die Hohlkehle zum gefährlichen Keimdepot. So lösen wir das Problem dauerhaft."
+  />
+
+  <section class="section border-b border-hsb-line bg-white">
+    <div class="container max-w-4xl">
+      <div class="prose max-w-none text-hsb-steel">
+        <h2 class="text-2xl font-black text-hsb-black">Symptome: Schimmel hinter den Sockelfliesen</h2>
+        <p>
+          Auf den ersten Blick sieht die Hohlkehle oft noch akzeptabel aus. Bei genauerer Betrachtung im Rahmen von IFS-, BRC- oder EHEDG-Audits fallen jedoch Abrissfugen zwischen Sockelstein und Bodenfliese auf. Dahinter hat sich Feuchtigkeit angesammelt; es bilden sich mikrobielle Beläge und Verfärbungen.
+        </p>
+
+        <div class="my-8 rounded border-l-4 border-hsb-red bg-hsb-mist p-6 text-hsb-black">
+          <h3 class="text-lg font-bold">Die forensische Ursache: Starre Anbindung an bewegliche Bauteile</h3>
+          <p class="mt-2 text-sm leading-6 text-hsb-steel">
+            Der Boden (Estrichplatte) „arbeitet“ kontinuierlich: Er dehnt sich thermisch aus, federt unter Staplerverkehr leicht durch und schwindet nach dem Einbau. Die aufgehende Hallenwand (oft Porenbeton, Sandwichpaneel oder Mauerwerk) bewegt sich dagegen völlig unabhängig. Wird die Hohlkehle starr mit Wand UND Boden verklebt, reißt die Verbindung an der schwächsten Stelle ab.
+          </p>
+        </div>
+
+        <h2 class="text-2xl font-black text-hsb-black">Folgen für Audit und Bauwerkszustand</h2>
+        <ul class="space-y-3">
+          <li><strong>Audit-K.O.-Kriterium:</strong> Bei IFS- oder BRC-Audits führen undichte Sockelanschlüsse regelmäßig zu Nichtkonformitäten, da Reinigungswasser und Schmutz nicht rückstandslos abgeführt werden.</li>
+          <li><strong>Durchfeuchtung von Wandelementen:</strong> Bei Sandwichpaneelen dringt Salzlake oder CIP-Reinigungsflüssigkeit in den Dämmkern ein und zerstört das Paneel von innen.</li>
+          <li><strong>Bakterielle Kontamination:</strong> Feuchtwarme Hohlräume bieten ideale Vermehrungsbedingungen für Listerien und Salmonellen.</li>
+        </ul>
+
+        <h2 class="mt-10 text-2xl font-black text-hsb-black">Dauerhafte Sanierung: Entkoppelte Hohlkehlen nach HSB-Standard</h2>
+        <p>
+          Eine hygienische Hohlkehle muss bauphysikalisch entkoppelt und gleichzeitig flüssigkeitsdicht ausgeführt werden:
+        </p>
+        <ol class="space-y-4">
+          <li><strong>1. Abriss des starren Sockels:</strong> Kompletter Rückbau gerissener Keramik- oder Mörtelsockel bis auf den tragenden Untergrund.</li>
+          <li><strong>2. Einbau eines Entkopplungsstreifens:</strong> Trennung der Bodenplatte von der Wand durch einen kompressiblen PE-Randdämmstreifen.</li>
+          <li><strong>3. Montage von formgeschäumten Hohlkehlformteilen:</strong> Einsatz von vorgefertigten keramischen Hohlkehlen oder mineralisch gebundenen Polymer-Hohlkehlkörpern mit definiertem Radius (r = 50 bis 100 mm).</li>
+          <li><strong>4. Abdichtungsebene & Dichtstofffuge:</strong> Hochflexible 2K-Verbundabdichtung bis 15 cm über Oberkante Fertigfußboden (OKFF) und Abschluss mit chemikalienbeständiger Fugendichtmasse.</li>
+        </ol>
+
+        <div class="mt-10 flex flex-wrap items-center gap-4 border-t border-hsb-line pt-8">
+          <a class="button-primary" href="/wissen/hohlkehle-sockelausbildung-industrieboden/">Fachartikel Hohlkehle & Sockel</a>
+          <a class="button-secondary" href="/wissen/fugen-forensik/">Zur Forensik-Übersicht</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <LeadFormSection />
+</BaseLayout>

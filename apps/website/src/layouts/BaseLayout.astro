@@ -85,8 +85,29 @@ const skipLabel = ui[lang].skip;
     </script>
     <script>
       import { initializeCloudflareAnalytics } from "../lib/cloudflareAnalytics";
+      import { trackEvent, TrackingEvent } from "../lib/tracking";
 
       initializeCloudflareAnalytics(window, document);
+
+      // Sekundäre Konversions- und Interaktions-Ereignisse erfassen
+      document.addEventListener("click", (event) => {
+        const target = (event.target as HTMLElement | null)?.closest("a, button");
+        if (!target) return;
+        const href = target.getAttribute("href") || "";
+        const downloadType = target.getAttribute("data-download");
+
+        if (downloadType === "checkliste") {
+          trackEvent(TrackingEvent.DownloadCheckliste, { placement: target.getAttribute("data-placement") || "global_download" });
+        } else if (downloadType === "zertifikat" || downloadType === "abnahmeprotokoll") {
+          trackEvent(TrackingEvent.DownloadZertifikat, { placement: target.getAttribute("data-placement") || "global_download" });
+        }
+
+        if (href.startsWith("tel:")) {
+          trackEvent(TrackingEvent.PhoneClick, { placement: "global_link" });
+        } else if (href.startsWith("mailto:")) {
+          trackEvent(TrackingEvent.EmailClick, { placement: "global_link" });
+        }
+      });
     </script>
   </body>
 </html>

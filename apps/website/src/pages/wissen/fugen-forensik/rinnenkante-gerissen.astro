@@ -1,0 +1,75 @@
+---
+import BaseLayout from "../../../layouts/BaseLayout.astro";
+import PageHero from "../../../components/sections/PageHero.astro";
+import LeadFormSection from "../../../components/forms/LeadFormSection.astro";
+import { buildBreadcrumbJsonLd } from "../../../lib/schema";
+
+export const prerender = true;
+
+const path = "/wissen/fugen-forensik/rinnenkante-gerissen/";
+const title = "Schadensbild: Gerissene Rinnenkanten & Entwässerungsanschlüsse | HSB";
+const description = "Ursachen und Sanierung von Rissen an Entwässerungsrinnen in der Lebensmittelproduktion: Warum Edelstahl und Beton ohne elastische Hybridfuge reißen und wie HSB dauerhafte Rinnenanschlüsse baut.";
+---
+
+<BaseLayout
+  title={title}
+  description={description}
+  path={path}
+  jsonLd={[
+    buildBreadcrumbJsonLd([
+      { name: "Start", path: "/" },
+      { name: "Wissen", path: "/wissen/" },
+      { name: "Fugen-Forensik", path: "/wissen/fugen-forensik/" },
+      { name: "Rinnenkante gerissen", path },
+    ]),
+  ]}
+>
+  <PageHero
+    eyebrow="Fugen-Forensik · Fall 03"
+    title="Gerissene Rinnenkanten: Die kritische Schnittstelle zwischen Stahl und Estrich"
+    text="Entwässerungsrinnen sind das Herzstück jedes Nassbetriebs – und gleichzeitig die mechanisch und thermisch am stärksten beanspruchte Zone. Wenn Risse parallel zur Rinne verlaufen, droht die Unterspülung des Hallenbodens. So lösen wir das Schnittstellenproblem dauerhaft."
+  />
+
+  <section class="section border-b border-hsb-line bg-white">
+    <div class="container max-w-4xl">
+      <div class="prose max-w-none text-hsb-steel">
+        <h2 class="text-2xl font-black text-hsb-black">Das Phänomen: Abriss direkt am Rinnenkörper</h2>
+        <p>
+          Entlang von Schlitz- oder Kastenrinnen aus V2A/V4A-Edelstahl bilden sich häufig schon nach kurzer Betriebsdauer durchgehende Längsrisse. Bei Stoßbelastung durch Querverkehr (z. B. Stapler mit Stahlrollen) splittern die angrenzenden Fliesenflanken ab. Reinigungswasser fließt nicht mehr in die Rinne, sondern versickert im entstandenen Spalt.
+        </p>
+
+        <div class="my-8 rounded border-l-4 border-hsb-red bg-hsb-mist p-6 text-hsb-black">
+          <h3 class="text-lg font-bold">Die forensische Ursache: Ungleiche thermische Ausdehnung & Schwingungen</h3>
+          <p class="mt-2 text-sm leading-6 text-hsb-steel">
+            Edelstahl dehnt sich bei Temperaturanstieg (z. B. durch 80 °C heißes Spülwasser) rund doppelt so stark aus wie der umgebende Beton oder keramische Fliesenbelag (&alpha; ≈ 16×10⁻⁶ K⁻¹ gegenüber &alpha; ≈ 8–10×10⁻⁶ K⁻¹). Wurde die Rinne starr angebunden oder ohne Verankerungseisen nur mit einfachem Mörtel hinterfüllt, reißen die Spannungen die Fuge unwiderruflich auf.
+          </p>
+        </div>
+
+        <h2 class="text-2xl font-black text-hsb-black">Gefahren für Bausubstanz und Betrieb</h2>
+        <ul class="space-y-3">
+          <li><strong>Unterspülung des Rinnenkörpers:</strong> Einfließendes Wasser spült den Sand aus dem Unterbeton; die Rinne verliert ihr Auflager und senkt sich unter Last ab.</li>
+          <li><strong>Korrosion der Bewehrung:</strong> Chloride aus Reinigern oder Tausalzen greifen die Stahlbewehrung der Betondecke an (Lochfraß, Betonschäden).</li>
+          <li><strong>Schwere Geruchsemissionen:</strong> Abwasser fault unkontrolliert im Hohlraum unter der Rinne.</li>
+        </ul>
+
+        <h2 class="mt-10 text-2xl font-black text-hsb-black">Das HSB-Systemdetail für langlebige Rinnenanbindungen</h2>
+        <p>
+          HSB plant und baut Entwässerungsrinnen nicht als isoliertes Bauteil, sondern als integrale Systemeinheit:
+        </p>
+        <ol class="space-y-4">
+          <li><strong>1. Massive Rinnenkörper mit Randeinfassung:</strong> V4A-Rinnen mit angeschweißten Rinnenverankerungspratzen, die im 30-cm-Abstand formschlüssig in den Unterbeton verdübelt werden.</li>
+          <li><strong>2. Kraftschlüssiger Reaktionsharz-Unterguss:</strong> Vollflächige Unterfütterung des Rinnenflansches mit schrumpffreiem Epoxidharz-Vergussmörtel zur Aufnahme dynamischer Radstöße.</li>
+          <li><strong>3. Dauerelastische Hybrid-Dehnungsfuge:</strong> Einbau einer 10 bis 15 mm breiten, chemikalien- und mikrobenbeständigen Polyurethan- oder MS-Polymer-Fuge mit geschlossenzelligem PE-Hinterfüllprofil (Zweiflankenhaftung).</li>
+          <li><strong>4. Höhengleicher Übergang:</strong> Rinnenoberkante wird 1 bis 2 mm tiefer als der angrenzende Fliesenbelag gesetzt, um Anfahrkanten für Staplerräder auszuschließen.</li>
+        </ol>
+
+        <div class="mt-10 flex flex-wrap items-center gap-4 border-t border-hsb-line pt-8">
+          <a class="button-primary" href="/leistungen/entwaesserung-industrieboden/">Mehr zu Entwässerungssystemen</a>
+          <a class="button-secondary" href="/wissen/fugen-forensik/">Zur Forensik-Übersicht</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <LeadFormSection />
+</BaseLayout>

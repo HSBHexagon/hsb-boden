@@ -24,6 +24,32 @@ const steps = [
 const systems = Object.values(STRESS_SYSTEMS);
 ---
 
+<style>
+  @media print {
+    :global(header), :global(footer), :global(#mobile-menu), :global(.skip-link), :global(#cookie-consent-banner), :global(nav), :global(form), :global([data-no-print]) {
+      display: none !important;
+    }
+    :global(body) {
+      background: white !important;
+      color: #161a20 !important;
+      font-size: 11pt !important;
+    }
+    [data-stress-check] {
+      background: white !important;
+      padding: 0 !important;
+    }
+    [data-stress-result] {
+      display: block !important;
+    }
+    article[data-system] {
+      border: 1px solid #161a20 !important;
+      box-shadow: none !important;
+      padding: 24px !important;
+      page-break-inside: avoid;
+    }
+  }
+</style>
+
 <section class="section bg-hsb-mist" id="beanspruchungs-check" data-stress-check data-audit-anchor={auditAnchor}>
   <div class="container max-w-5xl">
     <p class="eyebrow">Technischer Beanspruchungs-Check</p>
@@ -89,8 +115,28 @@ const systems = Object.values(STRESS_SYSTEMS);
               })}
             </div>
           )}
-          <div class="flex flex-wrap gap-3">
+
+          <!-- Eingegebene Parameter & Zusammenfassung für Werksbegehung -->
+          <div class="rounded border border-hsb-line bg-white p-5 print:border-black print:p-4">
+            <h4 class="text-xs font-black uppercase tracking-[0.16em] text-hsb-black">Erfasstes Belastungsprofil (Grundlage für Werksbegehung & Audit)</h4>
+            <div class="mt-3 grid gap-3 sm:grid-cols-2 text-sm text-hsb-steel" data-input-summary>
+              <div><strong class="text-hsb-black">Chemisches Medium:</strong> <span data-val-medium>-</span></div>
+              <div><strong class="text-hsb-black">Thermische Belastung:</strong> <span data-val-temp>-</span></div>
+              <div><strong class="text-hsb-black">Mechanische Last:</strong> <span data-val-mech>-</span></div>
+              <div><strong class="text-hsb-black">Sanierungsfenster:</strong> <span data-val-time>-</span></div>
+            </div>
+          </div>
+
+          <div class="flex flex-wrap items-center gap-3" data-no-print>
             <a class="button-primary" href={auditAnchor} data-audit-cta>Qualifiziertes Vor-Ort-Audit anfragen</a>
+            <button type="button" class="button-secondary flex items-center gap-2" data-print-pdf>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <polyline points="6 9 6 2 18 2 18 9"></polyline>
+                <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
+                <rect x="6" y="14" width="12" height="8"></rect>
+              </svg>
+              <span>1-Seiten-PDF drucken / exportieren</span>
+            </button>
             <a class="button-secondary" href={`/leistungen/${system.serviceSlug}/`}>Systemdetails ansehen</a>
           </div>
         </article>
@@ -101,8 +147,18 @@ const systems = Object.values(STRESS_SYSTEMS);
 
 <script>
   import { trackB2BConversion, trackNormInteraction, trackStressCheck } from "../../lib/analytics";
+  import { trackEvent, TrackingEvent } from "../../lib/tracking";
   import { NORM_IDS, type NormId } from "../../data/standards";
-  import { isStressCheckInput, resolveStressSystem, type StressCheckInput, type StressCheckResult } from "../../data/stressMatrix";
+  import {
+    STRESS_MECHANICAL,
+    STRESS_MEDIA,
+    STRESS_TEMPERATURES,
+    STRESS_TIME_WINDOWS,
+    isStressCheckInput,
+    resolveStressSystem,
+    type StressCheckInput,
+    type StressCheckResult
+  } from "../../data/stressMatrix";
   import { STRESS_CHECK_EVENT, buildLeadPrefill, saveStressCheckHandoff } from "../../lib/stressCheckHandoff";
 
   const root = document.querySelector<HTMLElement>("[data-stress-check]");
@@ -203,6 +259,21 @@ const systems = Object.values(STRESS_SYSTEMS);
         note.classList.toggle("hidden", !result.windowNote);
       }
 
+      // Zusammenfassungstexte für 1-Seiten-Druck / PDF
+      const mediumLabel = STRESS_MEDIA.find((m) => m.id === input.medium)?.label ?? input.medium;
+      const tempLabel = STRESS_TEMPERATURES.find((t) => t.id === input.tempRange)?.label ?? input.tempRange;
+      const mechLabel = STRESS_MECHANICAL.find((m) => m.id === input.mechanicalLoad)?.label ?? input.mechanicalLoad;
+      const timeLabel = STRESS_TIME_WINDOWS.find((w) => w.id === input.timeWindow)?.label ?? input.timeWindow;
+
+      const valMed = card.querySelector<HTMLElement>("[data-val-medium]");
+      if (valMed) valMed.textContent = mediumLabel;
+      const valTemp = card.querySelector<HTMLElement>("[data-val-temp]");
+      if (valTemp) valTemp.textContent = tempLabel;
+      const valMech = card.querySelector<HTMLElement>("[data-val-mech]");
+      if (valMech) valMech.textContent = mechLabel;
+      const valTime = card.querySelector<HTMLElement>("[data-val-time]");
+      if (valTime) valTime.textContent = timeLabel;
+
     });
 
     current = { input, result };
@@ -222,6 +293,14 @@ const systems = Object.values(STRESS_SYSTEMS);
     error?.classList.add("hidden");
     const result = resolveStressSystem(partial);
     trackStressCheck(5, { ...partial, recommendedSystem: result.system.id });
+    trackEvent(TrackingEvent.CheckComplete, {
+      placement: "stress_check",
+      medium: partial.medium,
+      temp_range: partial.tempRange,
+      mechanical_load: partial.mechanicalLoad,
+      time_window: partial.timeWindow,
+      recommended_system: result.system.id,
+    });
     render(partial, result);
   });
 
@@ -235,6 +314,13 @@ const systems = Object.values(STRESS_SYSTEMS);
     details.addEventListener("toggle", () => {
       const norm = details.dataset.norm ?? "";
       if (details.open && isNormId(norm)) trackNormInteraction(norm, "expand");
+    });
+  });
+
+  resultContainer?.querySelectorAll<HTMLButtonElement>("[data-print-pdf]").forEach((button) => {
+    button.addEventListener("click", () => {
+      trackEvent(TrackingEvent.DownloadZertifikat, { placement: "stress_check_pdf" });
+      window.print();
     });
   });
 </script>

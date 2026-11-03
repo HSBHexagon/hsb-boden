@@ -7,8 +7,8 @@ import { buildBreadcrumbJsonLd } from "../../../lib/schema";
 export const prerender = true;
 
 const path = "/wissen/muster-abnahmeprotokoll/";
-const title = "Muster-Abnahmeprotokoll & Boden-Checkliste für IFS & HACCP | HSB";
-const description = "Anonymisiertes Muster-Abnahmeprotokoll für Industrieböden: Ebenheitsprüfung nach DIN 18202, Gefälle, Abreißfestigkeit, Rinnenanschlüsse und IFS/BRC-Audit-Checkliste.";
+const title = "Muster-Abnahmeprotokoll & IFS-Checkliste Boden | HSB";
+const description = "Muster-Abnahmeprotokoll für Industrieböden: Prüfung nach DIN 18202, Gefälle, Haftzug, Rinnenanschlüsse und IFS/BRC-Audit-Checkliste zum Download.";
 ---
 
 <BaseLayout
@@ -131,7 +131,6 @@ const description = "Anonymisiertes Muster-Abnahmeprotokoll für Industrieböden
             class="button-primary text-xs"
             data-download="checkliste"
             data-placement="muster_abnahmeprotokoll"
-            onclick="window.print()"
           >
             Checkliste drucken / PDF speichern
           </button>
@@ -147,3 +146,9 @@ const description = "Anonymisiertes Muster-Abnahmeprotokoll für Industrieböden
 
   <LeadFormSection />
 </BaseLayout>
+
+<script>
+  document.querySelector<HTMLButtonElement>('[data-download="checkliste"]')?.addEventListener("click", () => {
+    window.print();
+  });
+</script>

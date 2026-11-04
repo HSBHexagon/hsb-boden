@@ -16,6 +16,8 @@ from typing import Any, Dict, List, Optional
 CLICK_BASE_URL = "https://www.hsb-boden.de/r/"
 SEGMENT_CODES = {"architekten": "a", "produktion": "p"}
 KV_PREFIX = "click:"
+# Anonyme Tageszählung des Mail-Links /reparatur/ (functions/reparatur/index.ts): agg:reparatur:<Tag>:<human|bot>:<id>
+REPAIR_PREFIX = "agg:reparatur:"
 TAB = "CLICK_EVENTS"
 HEADER = ["event_id", "at", "lead_id", "class", "reasons"]
 LEAD_PATTERN = re.compile(r"^[A-Za-z0-9_-]{1,64}$")
@@ -135,6 +137,22 @@ def _readback(svc, spreadsheet_id: str, response: Dict[str, Any], sent: List[Lis
         raise RuntimeError("CRM_READBACK_MISMATCH")
 
 
+def repair_link_clicks(kv) -> Dict[str, Any]:
+    """Klicks auf /reparatur/ je Tag und Klasse; liest nur Schlüssel, keine Personendaten."""
+    by_day: Dict[str, Dict[str, int]] = {}
+    for key in kv.list_keys(REPAIR_PREFIX):
+        parts = key.split(":")
+        if len(parts) != 5 or parts[3] not in ("human", "bot"):
+            continue
+        day = by_day.setdefault(parts[2], {"human": 0, "bot": 0})
+        day[parts[3]] += 1
+    return {
+        "human": sum(d["human"] for d in by_day.values()),
+        "bot": sum(d["bot"] for d in by_day.values()),
+        "by_day": dict(sorted(by_day.items())),
+    }
+
+
 def sync_clicks(
     apply: bool,
     *,
@@ -188,6 +206,7 @@ def sync_clicks(
         "human": sum(1 for r in rows if r[3] == "human"),
         "bot": sum(1 for r in rows if r[3] == "bot"),
         "tab_missing": not tab_exists,
+        "repair_link_clicks": repair_link_clicks(kv),
     }
     if not apply:
         return result

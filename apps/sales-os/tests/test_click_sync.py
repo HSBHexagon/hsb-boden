@@ -205,3 +205,16 @@ def test_cloudflare_kv_get_reraises_auth_errors():
         raise urllib.error.HTTPError(req.full_url, 404, "nf", {}, None)
 
     assert click_sync.CloudflareKV("a", "t", "n", opener=opener404).get("k") is None
+
+
+def test_repair_link_clicks_counted_per_day_without_personal_data():
+    kv = FakeKV({
+        "agg:reparatur:2026-11-05:human:1-a": "1",
+        "agg:reparatur:2026-11-05:bot:2-b": "1",
+        "agg:reparatur:2026-11-06:human:3-c": "1",
+        "agg:reparatur:kaputt": "1",
+    })
+    res = click_sync.sync_clicks(False, kv_client=kv, sheets_svc=FakeSheets(tab=False))
+    assert res["repair_link_clicks"] == {"human": 2, "bot": 1, "by_day": {
+        "2026-11-05": {"human": 1, "bot": 1}, "2026-11-06": {"human": 1, "bot": 0}}}
+    assert res["kv_keys"] == 0  # agg:-Schlüssel landen nie als Einzelereignis im CRM

@@ -25,5 +25,3 @@ https://www.hsb-boden.com/*    https://www.hsb-boden.de/:splat  301!
 
 # 2026-11-04: Lesbarer Kurzlink aus den Reparatur-Entwürfen (canonical_template_factory.REPAIR_URL)
 # auf die Reparatur-Ersteinschätzung. 302, damit das Ziel ohne Cachefalle wechseln kann.
-/reparatur                          /leistungen/boden-reparatur-instandsetzung/?utm_source=email&utm_medium=outreach&utm_campaign=reparatur-2026-11  302
-/reparatur/                         /leistungen/boden-reparatur-instandsetzung/?utm_source=email&utm_medium=outreach&utm_campaign=reparatur-2026-11  302

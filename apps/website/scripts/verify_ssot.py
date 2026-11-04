@@ -170,6 +170,8 @@ def site_path_exists(repo_root, path):
     fparent = functions.joinpath(*segments[:-1]) if len(segments) > 1 else functions / segments[0]
     if len(segments) == 1 and path.endswith("/") and any((functions / segments[0]).glob("[[]*[]].ts")):
         return True
+    if (functions.joinpath(*segments) / "index.ts").is_file() or functions.joinpath(*segments[:-1], segments[-1] + ".ts").is_file():
+        return True
     if len(segments) > 1 and any(fparent.glob("[[]*[]].ts")):
         return True
     return False

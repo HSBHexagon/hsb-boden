@@ -34,7 +34,8 @@ jobs:
     if: github.event_name != 'pull_request'
     needs: tests
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    # Full reconciliation reads original MIME from both mailboxes. The regular sync only reads what it needs.
+    timeout-minutes: ${{ (github.event_name == 'push' || inputs.mode == 'audit') && 60 || 20 }}
     env:
       HSB_GOOGLE_AUTHORIZED_USER_JSON: ${{ secrets.HSB_SALES_GOOGLE_AUTH }}
       HSB_MAILBOX_CONFIG_JSON: ${{ secrets.HSB_SALES_MAILBOXES_JSON }}

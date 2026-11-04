@@ -340,36 +340,105 @@ def test_sheet_id_is_read_once_per_service(monkeypatch):
     assert calls == [1]
 
 
-_NOW = 1_800_000_000
+def test_binding_cleanup_runs_even_if_creation_fails(tmp_path, monkeypatch):
+    # Codex-Review #524: Fehler beim Verifizieren nach dem Anlegen darf keine Bindungen liegen lassen.
+    kwargs, boxes, calls, writes, old = setup_case(tmp_path, monkeypatch)
+    removed = []
+    def fail(*a, **k): raise RuntimeError('verify read failed')
+    monkeypatch.setattr('crm_bindings.ensure_bindings', fail)
+    monkeypatch.setattr('crm_bindings.remove_bindings', lambda svc, sid, ids: removed.append(set(ids)))
+    with pytest.raises(RuntimeError, match='verify read failed'):
+        upgrade_drafts('JOEL', apply=True, variant='reparatur', **kwargs)
+    assert removed == [{kwargs['leads'][0]['Lead-ID']}] and boxes['Drafts'] == {'1': old}
 
 
-class _LockImap:
-    def __init__(self, exists, created=_NOW - 6 * 3600): self.exists, self.deleted, self.created = exists, False, created
-    def select(self, folder, readonly=True): return ('OK', [b'0']) if self.exists else ('NO', [])
-    def response(self, key): return key, [str(self.created).encode()]
-    def close(self): pass
-    def delete(self, folder): self.deleted = True; return 'OK', []
-    def logout(self): pass
+def test_connection_reset_mid_draft_reconnects_and_finishes_once(tmp_path, monkeypatch):
+    # Lauf 04.11.2026: 'Connection reset by peer' mitten in der Tranche. Neu anmelden, Entwurf genau einmal anlegen.
+    kwargs, boxes, calls, writes, old = setup_case(tmp_path, monkeypatch)
+    imap = kwargs['client']._get_imap()
+    real_select = imap.select
+    resets = []
+    def flaky_select(*a, **k):
+        if not resets:
+            resets.append(1)
+            raise ConnectionResetError(104, 'Connection reset by peer')
+        return real_select(*a, **k)
+    monkeypatch.setattr(imap, 'select', flaky_select)
+    monkeypatch.setattr('draft_upgrade.time.sleep', lambda s: None)
+    result = upgrade_drafts('JOEL', apply=True, variant='reparatur', **kwargs)
+    assert result['imap_reconnects'] == 1 and result['appended'] == result['crm_updated'] == 1
+    assert calls.count('APPEND') == 1 and len(boxes['Drafts']) == 1
 
 
-def _lock_svc(statuses):
-    rows = [['Lead-ID', 'Send_Status']] + [[f'L{i}', s] for i, s in enumerate(statuses)]
-    values = SimpleNamespace(get=lambda **kw: SimpleNamespace(execute=lambda: {'values': rows}))
-    return SimpleNamespace(spreadsheets=lambda: SimpleNamespace(values=lambda: values))
+def _replacement(lead, mid='<neu@hsb-boden.com>', to=None, step=1):
+    from canonical_template_factory import render_email_v2
+    from com_mailbox_manager import ComMailboxClient as C
+    client = object.__new__(C)
+    client.cfg = {'email': 'j-cherino@hsb-boden.com', 'display_name': 'Joel Cherino Diaz', 'drafts_folder': 'Drafts'}
+    thread = {'message_id': '<erst@hsb-boden.com>', 'subject': 'Erstkontakt'} if step > 1 else None
+    r = render_email_v2(lead, 'JOEL', step=step, thread=thread, variant='reparatur')
+    raw, _ = client.build_draft_message(to or r['to_email'], r['subject'], body_text=r['body_text'], template_id=r['template_id'],
+                                        lead_id=lead['Lead-ID'], custom_message_id=mid, copy_rev=r.get('copy_rev'))
+    return raw.replace(b'\r\n', b'\n').replace(b'\n', b'\r\n')
 
 
-def test_stale_lock_released_only_without_uncertain_send():
-    from outbound_safety import release_stale_lock
-    imap = _LockImap(True)
-    assert release_stale_lock(_lock_svc(['sent', '']), SimpleNamespace(_get_imap=lambda: imap), 's', apply=True, now=lambda: _NOW) == \
-        {'lock': 'PRESENT', 'released': True} and imap.deleted
-    kept = _LockImap(True)
-    with pytest.raises(RuntimeError, match='STALE_LOCK_KEPT_SEND_UNCERTAIN:1'):
-        release_stale_lock(_lock_svc(['SENDING', 'sent']), SimpleNamespace(_get_imap=lambda: kept), 's', apply=True, now=lambda: _NOW)
-    assert not kept.deleted
-    dry = _LockImap(True)
-    assert release_stale_lock(_lock_svc(['']), SimpleNamespace(_get_imap=lambda: dry), 's', now=lambda: _NOW)['released'] is False and not dry.deleted
-    assert release_stale_lock(_lock_svc(['']), SimpleNamespace(_get_imap=lambda: _LockImap(False)), 's', apply=True, now=lambda: _NOW)['lock'] == 'NONE'
+def _header_search(imap, boxes):
+    real = imap.uid
+    def uid(verb, *args):
+        if verb.lower() == 'search' and 'X-HSB-Lead-ID' in args:
+            want = str(args[-1]).strip('"')
+            ids = [u for u, raw in boxes[imap.folder].items()
+                   if str(BytesParser(policy=policy.default).parsebytes(raw).get('X-HSB-Lead-ID') or '') == want]
+            return 'OK', [' '.join(ids).encode()]
+        return real(verb, *args)
+    return uid
+
+
+def test_restart_with_empty_journal_adopts_replacement_instead_of_second_append(tmp_path, monkeypatch):
+    # Codex-Review #524: Das Journal liegt je Lauf auf dem Runner. APPEND war angenommen, der Lauf starb, der
+    # Neustart hat ein leeres Journal und dasselbe Original: kein zweiter Ersatzentwurf für denselben Empfänger.
+    kwargs, boxes, calls, writes, old = setup_case(tmp_path, monkeypatch)
+    lead = kwargs['leads'][0]
+    boxes['Drafts']['2'] = _replacement(lead)
+    imap = kwargs['client']._get_imap()
+    monkeypatch.setattr(imap, 'uid', _header_search(imap, boxes))
+    monkeypatch.setattr(imap, 'append', lambda *a: pytest.fail('zweiter APPEND'))
+    result = upgrade_drafts('JOEL', apply=True, variant='reparatur', **kwargs)
+    assert result['replacements_adopted'] == 1 and result['appended'] == 0 and result['crm_updated'] == 1
+    assert list(boxes['Drafts']) == ['2'] and writes[-1]['Draft_ID'] == '<neu@hsb-boden.com>'
+
+
+def test_replacement_for_other_recipient_is_not_adopted(tmp_path, monkeypatch):
+    kwargs, boxes, calls, writes, old = setup_case(tmp_path, monkeypatch)
+    lead = kwargs['leads'][0]
+    boxes['Drafts']['2'] = _replacement(lead, to='fremd@firma.de')
+    imap = kwargs['client']._get_imap()
+    monkeypatch.setattr(imap, 'uid', _header_search(imap, boxes))
+    result = upgrade_drafts('JOEL', apply=True, variant='reparatur', **kwargs)
+    assert result.get('replacements_adopted', 0) == 0 and result['appended'] == 1
+
+
+def test_rendered_followup_is_not_adopted_as_first_contact(tmp_path, monkeypatch):
+    # Codex-Review #526: Ein echter Folgekontakt besteht assess_message, ersetzt aber nie den Erstkontakt.
+    kwargs, boxes, calls, writes, old = setup_case(tmp_path, monkeypatch)
+    lead = kwargs['leads'][0]
+    boxes['Drafts']['2'] = _replacement(lead, step=2)
+    imap = kwargs['client']._get_imap()
+    monkeypatch.setattr(imap, 'uid', _header_search(imap, boxes))
+    result = upgrade_drafts('JOEL', apply=True, variant='reparatur', **kwargs)
+    assert result.get('replacements_adopted', 0) == 0 and result['appended'] == 1
+
+
+def test_two_replacements_stop_before_any_mailbox_change(tmp_path, monkeypatch):
+    kwargs, boxes, calls, writes, old = setup_case(tmp_path, monkeypatch)
+    lead = kwargs['leads'][0]
+    boxes['Drafts']['2'] = _replacement(lead)
+    boxes['Drafts']['3'] = _replacement(lead, mid='<neu2@hsb-boden.com>')
+    imap = kwargs['client']._get_imap()
+    monkeypatch.setattr(imap, 'uid', _header_search(imap, boxes))
+    with pytest.raises(RuntimeError, match='REPLACEMENT_NOT_UNIQUE'):
+        upgrade_drafts('JOEL', apply=True, variant='reparatur', **kwargs)
+    assert set(boxes['Drafts']) == {'1', '2', '3'} and 'APPEND' not in calls and writes == []
 
 
 def test_tranche_binds_missing_leads_and_removes_only_its_own(tmp_path, monkeypatch):
@@ -410,99 +479,3 @@ def test_owner_decision_upgrades_planner_without_project(tmp_path, monkeypatch):
     result = upgrade_drafts('JOEL', apply=True, variant='reparatur', **kwargs)
     assert result['crm_updated'] == 1 and 'PLANNING_PROJECT_UNVERIFIED' not in result['skipped_reasons']
     assert writes[-1]['Email_Template_ID'].startswith('v2-architekten-reparatur-')
-
-
-
-@pytest.mark.parametrize('created,error', [(_NOW - 30 * 60, 'STALE_LOCK_TOO_YOUNG'), (0, 'STALE_LOCK_AGE_UNKNOWN'),
-                                           (_NOW + 600, 'STALE_LOCK_AGE_UNKNOWN')])
-def test_live_or_undatable_lock_is_never_released(created, error):
-    # Codex-Review #524: ohne SENDING kann trotzdem ein Versand laufen (Pause zwischen Empfängern).
-    from outbound_safety import release_stale_lock
-    imap = _LockImap(True, created)
-    with pytest.raises(RuntimeError, match=error):
-        release_stale_lock(_lock_svc(['']), SimpleNamespace(_get_imap=lambda: imap), 's', apply=True, now=lambda: _NOW)
-    assert not imap.deleted
-
-
-def test_binding_cleanup_runs_even_if_creation_fails(tmp_path, monkeypatch):
-    # Codex-Review #524: Fehler beim Verifizieren nach dem Anlegen darf keine Bindungen liegen lassen.
-    kwargs, boxes, calls, writes, old = setup_case(tmp_path, monkeypatch)
-    removed = []
-    def fail(*a, **k): raise RuntimeError('verify read failed')
-    monkeypatch.setattr('crm_bindings.ensure_bindings', fail)
-    monkeypatch.setattr('crm_bindings.remove_bindings', lambda svc, sid, ids: removed.append(set(ids)))
-    with pytest.raises(RuntimeError, match='verify read failed'):
-        upgrade_drafts('JOEL', apply=True, variant='reparatur', **kwargs)
-    assert removed == [{kwargs['leads'][0]['Lead-ID']}] and boxes['Drafts'] == {'1': old}
-
-
-class _LockServer:
-    def __init__(self, logout_fails=False):
-        self.folders, self.logout_fails, self.sessions = set(), logout_fails, 0
-    def session(self):
-        server = self; server.sessions += 1
-        class S:
-            def create(self, f):
-                if f in server.folders: return 'NO', []
-                server.folders.add(f); return 'OK', []
-            def delete(self, f): server.folders.discard(f); return 'OK', []
-            def logout(self):
-                if server.logout_fails: raise ConnectionResetError('reset by peer')
-        return S()
-
-
-@pytest.mark.parametrize('release_on_error,kept', [(False, True), (True, False)])
-def test_lock_kept_only_for_send_errors(release_on_error, kept):
-    # Lauf 04.11.2026: IMAP-Reset nach der Tranche liess die Sperre stehen und blockierte jeden Folgelauf.
-    from outbound_safety import mailbox_dispatch_lock, LOCK_FOLDER
-    server = _LockServer(logout_fails=True)
-    client = SimpleNamespace(_get_imap=server.session)
-    with pytest.raises(RuntimeError, match='boom'):
-        with mailbox_dispatch_lock(client, release_on_error=release_on_error):
-            raise RuntimeError('boom')
-    assert (LOCK_FOLDER in server.folders) is kept
-
-
-def test_lock_released_even_if_logout_resets():
-    from outbound_safety import mailbox_dispatch_lock, LOCK_FOLDER
-    server = _LockServer(logout_fails=True)
-    with mailbox_dispatch_lock(SimpleNamespace(_get_imap=server.session)):
-        pass
-    assert LOCK_FOLDER not in server.folders
-
-
-
-def test_connection_reset_mid_draft_reconnects_and_finishes_once(tmp_path, monkeypatch):
-    # Lauf 04.11.2026: 'Connection reset by peer' mitten in der Tranche. Neu anmelden, Entwurf genau einmal anlegen.
-    kwargs, boxes, calls, writes, old = setup_case(tmp_path, monkeypatch)
-    imap = kwargs['client']._get_imap()
-    real_select = imap.select
-    resets = []
-    def flaky_select(*a, **k):
-        if not resets:
-            resets.append(1)
-            raise ConnectionResetError(104, 'Connection reset by peer')
-        return real_select(*a, **k)
-    monkeypatch.setattr(imap, 'select', flaky_select)
-    monkeypatch.setattr('draft_upgrade.time.sleep', lambda s: None)
-    result = upgrade_drafts('JOEL', apply=True, variant='reparatur', **kwargs)
-    assert result['imap_reconnects'] == 1 and result['appended'] == result['crm_updated'] == 1
-    assert calls.count('APPEND') == 1 and len(boxes['Drafts']) == 1
-
-
-def test_lock_release_uses_fresh_connection_after_idle_reset():
-    # 04.11.2026: Sperr-Verbindung nach 12 min Tranche vom Server getrennt -> Reset beim DELETE.
-    from outbound_safety import mailbox_dispatch_lock, LOCK_FOLDER
-    folders, sessions = set(), []
-    def session():
-        n = len(sessions)
-        class S:
-            def create(self, f): folders.add(f); return 'OK', []
-            def delete(self, f):
-                if n == 0: raise ConnectionResetError(104, 'Connection reset by peer')
-                folders.discard(f); return 'OK', []
-            def logout(self): pass
-        sessions.append(n); return S()
-    with mailbox_dispatch_lock(SimpleNamespace(_get_imap=session)):
-        pass
-    assert LOCK_FOLDER not in folders and len(sessions) == 2

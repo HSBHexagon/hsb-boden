@@ -14,7 +14,8 @@ from pathlib import Path
 from canonical_template_factory import render_email_v2
 from click_sync import click_url
 from hsb_core import check_eligibility, normalize_owner
-from lead_quality import deliverability_flags, fit_score, has_relevant_planning_project, segment_for
+import lead_quality
+from lead_quality import deliverability_flags, fit_score, segment_for
 
 PRODUCTION_SHARE = 0.8
 MAX_DRAFTS_PER_MAILBOX = 6000
@@ -58,7 +59,7 @@ def select_leads(leads, owner, limit, existing_ids, mx_check=None, draft_recipie
         if str(lead.get('Tier') or '').strip().upper() == 'Z':
             continue
         segment = segment_for(lead)
-        if segment == 'architekten' and not has_relevant_planning_project(lead):
+        if segment == 'architekten' and not lead_quality.planner_outreach_allowed(lead):
             continue
         lead = dict(lead)
         lead['Deliverability_Flags'] = deliverability_flags(lead, mx_cache, set(), mx_check=mx_check)

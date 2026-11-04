@@ -56,8 +56,11 @@ def setup_case(tmp_path,monkeypatch):
     monkeypatch.setattr('outbound_safety.crm_write_readback',write)
     monkeypatch.setattr('outbound_safety.require_stable_crm_binding',lambda *a:{'developerMetadataLookup':{'metadataId':17}})
     monkeypatch.setattr('outbound_safety.crm_write_lead_readback',lambda svc,sheet,lead_id,values,**k:write(svc,sheet,headers,2,values))
+    monkeypatch.setattr('crm_bindings.existing_bindings',lambda *a,**k:{})
+    monkeypatch.setattr('crm_bindings.ensure_bindings',lambda *a,**k:{'created':len(k.get('only') or ())})
+    monkeypatch.setattr('crm_bindings.remove_bindings',lambda *a,**k:0)
     from contextlib import nullcontext
-    monkeypatch.setattr('outbound_safety.mailbox_dispatch_lock',lambda c:nullcontext())
+    monkeypatch.setattr('outbound_safety.mailbox_dispatch_lock',lambda c,**k:nullcontext())
     kwargs=dict(lock_client=client,records=[record],leads=[lead],client=client,svc=svc,mx_check=lambda _:True,journal_path=tmp_path/'upgrade.db')
     return kwargs, boxes, calls, writes, old
 
@@ -94,11 +97,14 @@ def test_changed_original_and_optout_untouched(tmp_path,monkeypatch):
 def test_uncertain_append_never_repeated(tmp_path,monkeypatch):
     kwargs,boxes,calls,writes,old=setup_case(tmp_path,monkeypatch)
     imap=kwargs['client']._get_imap()
-    def uncertain(*a): raise TimeoutError('lost response')
+    appends=[]
+    def uncertain(*a): appends.append(1); raise TimeoutError('lost response')
     monkeypatch.setattr(imap,'append',uncertain)
-    with pytest.raises(TimeoutError): upgrade_drafts('JOEL',apply=True,**kwargs)
+    monkeypatch.setattr('draft_upgrade.time.sleep',lambda s:None)
+    # Nach dem Wiederverbinden ist der APPEND-Zustand unklar: nie wiederholen, sondern anhalten.
     with pytest.raises(RuntimeError,match='UNCERTAIN_APPEND'): upgrade_drafts('JOEL',apply=True,**kwargs)
-    assert boxes['Drafts']=={'1':old}
+    with pytest.raises(RuntimeError,match='UNCERTAIN_APPEND'): upgrade_drafts('JOEL',apply=True,**kwargs)
+    assert appends==[1] and boxes['Drafts']=={'1':old}
 
 
 def test_archive_encoding():
@@ -130,7 +136,7 @@ def test_busy_shared_dispatch_lock_blocks_before_append(tmp_path,monkeypatch):
     from contextlib import contextmanager
     kwargs,boxes,calls,writes,old=setup_case(tmp_path,monkeypatch)
     @contextmanager
-    def busy(client):
+    def busy(client, **k):
         raise RuntimeError('DISPATCH_LOCK_EXISTS')
         yield
     monkeypatch.setattr('outbound_safety.mailbox_dispatch_lock',busy)
@@ -235,6 +241,7 @@ def test_upgrade_reparatur_already_done_skipped(tmp_path, monkeypatch):
     ('', False),
 ])
 def test_upgrade_replaces_obsolete_planner_copy_only_once(tmp_path, monkeypatch, project, interrupted):
+    monkeypatch.setattr('lead_quality.PLANNER_OUTREACH_WITHOUT_PROJECT', False)
     kwargs, boxes, calls, writes, _ = setup_case(tmp_path, monkeypatch)
     lead = kwargs['leads'][0]
     lead.update({'Branche': 'Architekturbüro', 'Projektart': project,
@@ -333,9 +340,13 @@ def test_sheet_id_is_read_once_per_service(monkeypatch):
     assert calls == [1]
 
 
+_NOW = 1_800_000_000
+
+
 class _LockImap:
-    def __init__(self, exists): self.exists, self.deleted = exists, False
+    def __init__(self, exists, created=_NOW - 6 * 3600): self.exists, self.deleted, self.created = exists, False, created
     def select(self, folder, readonly=True): return ('OK', [b'0']) if self.exists else ('NO', [])
+    def response(self, key): return key, [str(self.created).encode()]
     def close(self): pass
     def delete(self, folder): self.deleted = True; return 'OK', []
     def logout(self): pass
@@ -350,12 +361,130 @@ def _lock_svc(statuses):
 def test_stale_lock_released_only_without_uncertain_send():
     from outbound_safety import release_stale_lock
     imap = _LockImap(True)
-    assert release_stale_lock(_lock_svc(['sent', '']), SimpleNamespace(_get_imap=lambda: imap), 's', apply=True) == \
+    assert release_stale_lock(_lock_svc(['sent', '']), SimpleNamespace(_get_imap=lambda: imap), 's', apply=True, now=lambda: _NOW) == \
         {'lock': 'PRESENT', 'released': True} and imap.deleted
     kept = _LockImap(True)
     with pytest.raises(RuntimeError, match='STALE_LOCK_KEPT_SEND_UNCERTAIN:1'):
-        release_stale_lock(_lock_svc(['SENDING', 'sent']), SimpleNamespace(_get_imap=lambda: kept), 's', apply=True)
+        release_stale_lock(_lock_svc(['SENDING', 'sent']), SimpleNamespace(_get_imap=lambda: kept), 's', apply=True, now=lambda: _NOW)
     assert not kept.deleted
     dry = _LockImap(True)
-    assert release_stale_lock(_lock_svc(['']), SimpleNamespace(_get_imap=lambda: dry), 's')['released'] is False and not dry.deleted
-    assert release_stale_lock(_lock_svc(['']), SimpleNamespace(_get_imap=lambda: _LockImap(False)), 's', apply=True)['lock'] == 'NONE'
+    assert release_stale_lock(_lock_svc(['']), SimpleNamespace(_get_imap=lambda: dry), 's', now=lambda: _NOW)['released'] is False and not dry.deleted
+    assert release_stale_lock(_lock_svc(['']), SimpleNamespace(_get_imap=lambda: _LockImap(False)), 's', apply=True, now=lambda: _NOW)['lock'] == 'NONE'
+
+
+def test_tranche_binds_missing_leads_and_removes_only_its_own(tmp_path, monkeypatch):
+    # Lauf 04.11.2026 brach mit CRM_STABLE_LEAD_BINDING_REQUIRED ab: Umstellung legte keine Bindungen an.
+    kwargs, boxes, calls, writes, old = setup_case(tmp_path, monkeypatch)
+    seen = {}
+    monkeypatch.setattr('crm_bindings.ensure_bindings', lambda *a, **k: seen.setdefault('ensure', set(k['only'])))
+    monkeypatch.setattr('crm_bindings.remove_bindings', lambda svc, sid, ids: seen.setdefault('remove', set(ids)))
+    lead_id = kwargs['leads'][0]['Lead-ID']
+    result = upgrade_drafts('JOEL', apply=True, variant='reparatur', **kwargs)
+    assert result['crm_updated'] == 1
+    assert seen == {'ensure': {lead_id}, 'remove': {lead_id}}
+
+
+def test_prebound_lead_binding_is_kept(tmp_path, monkeypatch):
+    kwargs, boxes, calls, writes, old = setup_case(tmp_path, monkeypatch)
+    lead_id = kwargs['leads'][0]['Lead-ID']
+    removed = []
+    monkeypatch.setattr('crm_bindings.existing_bindings', lambda *a, **k: {lead_id: [1]})
+    monkeypatch.setattr('crm_bindings.remove_bindings', lambda svc, sid, ids: removed.append(set(ids)))
+    upgrade_drafts('JOEL', apply=True, variant='reparatur', **kwargs)
+    assert removed == [set()]
+
+
+def test_missing_binding_skips_draft_without_touching_mailbox(tmp_path, monkeypatch):
+    kwargs, boxes, calls, writes, old = setup_case(tmp_path, monkeypatch)
+    def no_binding(*a): raise RuntimeError('CRM_STABLE_LEAD_BINDING_REQUIRED')
+    monkeypatch.setattr('outbound_safety.require_stable_crm_binding', no_binding)
+    result = upgrade_drafts('JOEL', apply=True, variant='reparatur', **kwargs)
+    assert result['skipped_reasons']['CRM_BINDING_UNAVAILABLE'] == 1 and result['appended'] == 0
+    assert boxes['Drafts'] == {'1': old} and 'APPEND' not in calls and writes == []
+
+
+def test_owner_decision_upgrades_planner_without_project(tmp_path, monkeypatch):
+    # Owner-Entscheidung 04.11.2026: jeder offene Entwurf, auch Planer ohne belegtes Projekt.
+    kwargs, boxes, calls, writes, _ = setup_case(tmp_path, monkeypatch)
+    kwargs['leads'][0].update({'Branche': 'Architekturbüro', 'Projektart': ''})
+    result = upgrade_drafts('JOEL', apply=True, variant='reparatur', **kwargs)
+    assert result['crm_updated'] == 1 and 'PLANNING_PROJECT_UNVERIFIED' not in result['skipped_reasons']
+    assert writes[-1]['Email_Template_ID'].startswith('v2-architekten-reparatur-')
+
+
+
+@pytest.mark.parametrize('created,error', [(_NOW - 30 * 60, 'STALE_LOCK_TOO_YOUNG'), (0, 'STALE_LOCK_AGE_UNKNOWN'),
+                                           (_NOW + 600, 'STALE_LOCK_AGE_UNKNOWN')])
+def test_live_or_undatable_lock_is_never_released(created, error):
+    # Codex-Review #524: ohne SENDING kann trotzdem ein Versand laufen (Pause zwischen Empfängern).
+    from outbound_safety import release_stale_lock
+    imap = _LockImap(True, created)
+    with pytest.raises(RuntimeError, match=error):
+        release_stale_lock(_lock_svc(['']), SimpleNamespace(_get_imap=lambda: imap), 's', apply=True, now=lambda: _NOW)
+    assert not imap.deleted
+
+
+def test_binding_cleanup_runs_even_if_creation_fails(tmp_path, monkeypatch):
+    # Codex-Review #524: Fehler beim Verifizieren nach dem Anlegen darf keine Bindungen liegen lassen.
+    kwargs, boxes, calls, writes, old = setup_case(tmp_path, monkeypatch)
+    removed = []
+    def fail(*a, **k): raise RuntimeError('verify read failed')
+    monkeypatch.setattr('crm_bindings.ensure_bindings', fail)
+    monkeypatch.setattr('crm_bindings.remove_bindings', lambda svc, sid, ids: removed.append(set(ids)))
+    with pytest.raises(RuntimeError, match='verify read failed'):
+        upgrade_drafts('JOEL', apply=True, variant='reparatur', **kwargs)
+    assert removed == [{kwargs['leads'][0]['Lead-ID']}] and boxes['Drafts'] == {'1': old}
+
+
+class _LockServer:
+    def __init__(self, logout_fails=False):
+        self.folders, self.logout_fails, self.sessions = set(), logout_fails, 0
+    def session(self):
+        server = self; server.sessions += 1
+        class S:
+            def create(self, f):
+                if f in server.folders: return 'NO', []
+                server.folders.add(f); return 'OK', []
+            def delete(self, f): server.folders.discard(f); return 'OK', []
+            def logout(self):
+                if server.logout_fails: raise ConnectionResetError('reset by peer')
+        return S()
+
+
+@pytest.mark.parametrize('release_on_error,kept', [(False, True), (True, False)])
+def test_lock_kept_only_for_send_errors(release_on_error, kept):
+    # Lauf 04.11.2026: IMAP-Reset nach der Tranche liess die Sperre stehen und blockierte jeden Folgelauf.
+    from outbound_safety import mailbox_dispatch_lock, LOCK_FOLDER
+    server = _LockServer(logout_fails=True)
+    client = SimpleNamespace(_get_imap=server.session)
+    with pytest.raises(RuntimeError, match='boom'):
+        with mailbox_dispatch_lock(client, release_on_error=release_on_error):
+            raise RuntimeError('boom')
+    assert (LOCK_FOLDER in server.folders) is kept
+
+
+def test_lock_released_even_if_logout_resets():
+    from outbound_safety import mailbox_dispatch_lock, LOCK_FOLDER
+    server = _LockServer(logout_fails=True)
+    with mailbox_dispatch_lock(SimpleNamespace(_get_imap=server.session)):
+        pass
+    assert LOCK_FOLDER not in server.folders
+
+
+
+def test_connection_reset_mid_draft_reconnects_and_finishes_once(tmp_path, monkeypatch):
+    # Lauf 04.11.2026: 'Connection reset by peer' mitten in der Tranche. Neu anmelden, Entwurf genau einmal anlegen.
+    kwargs, boxes, calls, writes, old = setup_case(tmp_path, monkeypatch)
+    imap = kwargs['client']._get_imap()
+    real_select = imap.select
+    resets = []
+    def flaky_select(*a, **k):
+        if not resets:
+            resets.append(1)
+            raise ConnectionResetError(104, 'Connection reset by peer')
+        return real_select(*a, **k)
+    monkeypatch.setattr(imap, 'select', flaky_select)
+    monkeypatch.setattr('draft_upgrade.time.sleep', lambda s: None)
+    result = upgrade_drafts('JOEL', apply=True, variant='reparatur', **kwargs)
+    assert result['imap_reconnects'] == 1 and result['appended'] == result['crm_updated'] == 1
+    assert calls.count('APPEND') == 1 and len(boxes['Drafts']) == 1

@@ -176,6 +176,17 @@ def segment_for(lead: dict) -> Segment:
     return "architekten"
 
 
+# Owner-Entscheidung 04.11.2026: Jeder offene, nicht versendete Entwurf beider Postfächer wird versandfertig gemacht,
+# auch Planer ohne belegtes Bauprojekt (Vorlage "Industrieböden im Bestand – Einschätzung vor der Ausschreibung").
+# Harte Sperren (Kontakt, Opt-out, Bounce, Antwort, Legal-Block, Versandfreigabe=no) bleiben unberührt.
+PLANNER_OUTREACH_WITHOUT_PROJECT = True
+
+
+def planner_outreach_allowed(lead: dict) -> bool:
+    """Darf ein Planer-Lead angeschrieben werden? Ohne Owner-Freigabe nur mit belegtem Bauprojekt."""
+    return PLANNER_OUTREACH_WITHOUT_PROJECT or has_relevant_planning_project(lead)
+
+
 def has_relevant_planning_project(lead: dict) -> bool:
     """Ein Scoring-Fallback oder Adresslistenimport belegt keine fachliche Passung."""
     branche = str(lead.get("Branche") or "")

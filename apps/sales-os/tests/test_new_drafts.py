@@ -32,7 +32,9 @@ def test_architects_fill_when_production_runs_out():
     assert len(picked) == 5 and sum(nd.segment_for(l) == 'produktion' for l in picked) == 1
 
 
-def test_planners_need_a_relevant_project_type():
+def test_planners_need_a_relevant_project_type(monkeypatch):
+    # Sperrlogik bleibt prüfbar, wenn die Owner-Freigabe vom 04.11.2026 zurückgenommen wird.
+    monkeypatch.setattr('lead_quality.PLANNER_OUTREACH_WITHOUT_PROJECT', False)
     leads = [lead(1, 'Architekten', Projektart='', Notizen='Import Architektenliste'),
              lead(2, 'Sonstiges', Projektart='Umbau Lebensmittelbetrieb'),
              lead(3, 'Architekten', Projektart='Wohnbau'),

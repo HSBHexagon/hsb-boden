@@ -69,7 +69,7 @@ def test_health_guard_runs_before_each_delivery(tmp_path,monkeypatch):
         def uid(self,cmd,uid,*a):return 'OK',[(b'h',raws[uid])]
     client=SimpleNamespace(_get_imap=lambda:IMAP(),cfg={})
     monkeypatch.setattr(mail,'ComMailboxClient',lambda o:client)
-    monkeypatch.setattr(out,'mailbox_dispatch_lock',lambda c:nullcontext())
+    monkeypatch.setattr(out,'mailbox_dispatch_lock',lambda c,**k:nullcontext())
     monkeypatch.setattr(inbound,'sync_inbounds',lambda **k:None)
     def audit(path):
         path.mkdir(parents=True)
@@ -202,7 +202,7 @@ def test_second_run_same_day_respects_cap(tmp_path, monkeypatch):
 
     client = SimpleNamespace(_get_imap=lambda: IMAP(), cfg={'email': 'j-cherino@hsb-boden.com'})
     monkeypatch.setattr(mail, 'ComMailboxClient', lambda o: client)
-    monkeypatch.setattr(out, 'mailbox_dispatch_lock', lambda c: nullcontext())
+    monkeypatch.setattr(out, 'mailbox_dispatch_lock', lambda c, **k: nullcontext())
     monkeypatch.setattr(inbound, 'sync_inbounds', lambda **k: None)
 
     def audit(path):
@@ -268,7 +268,7 @@ def test_deferred_tier_z_lead_is_skipped_at_live_gate(tmp_path,monkeypatch):
         def uid(self,cmd,uid,*a):return 'OK',[(b'h',raws[uid])]
     client=SimpleNamespace(_get_imap=lambda:IMAP(),cfg={})
     monkeypatch.setattr(mail,'ComMailboxClient',lambda o:client)
-    monkeypatch.setattr(out,'mailbox_dispatch_lock',lambda c:nullcontext())
+    monkeypatch.setattr(out,'mailbox_dispatch_lock',lambda c,**k:nullcontext())
     monkeypatch.setattr(inbound,'sync_inbounds',lambda **k:None)
     def audit(path):
         path.mkdir(parents=True)
@@ -298,7 +298,7 @@ def test_dispatch_passes_inbound_scope_to_sync(tmp_path, monkeypatch, flag, expe
     import sales_reconciliation as recon_mod
     seen = []
     monkeypatch.setattr(mail_mod, 'ComMailboxClient', lambda o: SimpleNamespace(cfg={}))
-    monkeypatch.setattr(out_mod, 'mailbox_dispatch_lock', lambda c: nullcontext())
+    monkeypatch.setattr(out_mod, 'mailbox_dispatch_lock', lambda c, **k: nullcontext())
     monkeypatch.setattr(inbound_mod, 'sync_inbounds', lambda **k: seen.append(k))
     def stop(path): raise RuntimeError('AUDIT_REACHED')
     monkeypatch.setattr(recon_mod, 'run_audit', stop)

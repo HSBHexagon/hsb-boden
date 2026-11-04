@@ -22,6 +22,7 @@ import time
 
 from sales_reconciliation import OUTDATED_PLANNER_COPY, OUTDATED_REPAIR_COPY
 
+IMAP_RETRIES = 3
 ARCHIVE = 'Entwürfe-Archiv-v1'
 REPAIRABLE = {'BODY_NOT_COMPANY_OR_CONTACT_SPECIFIC', 'SUBJECT_NOT_COMPANY_SPECIFIC',
               'UNRESOLVED_PLACEHOLDER', 'FLYER_LINK_MISSING', 'PERSONAL_OPTOUT_LINK_MISSING',
@@ -81,7 +82,7 @@ def upgrade_drafts(owner, limit=5, cohort='pilot', apply=False, journal_path=Non
     from canonical_template_factory import render_email_v2
     from click_sync import click_url
     from hsb_core import check_eligibility, normalize_owner
-    from lead_quality import deliverability_flags, fit_score, has_relevant_planning_project, segment_for
+    from lead_quality import deliverability_flags, fit_score, planner_outreach_allowed, segment_for
     from outbound_safety import crm_write_lead_readback, require_stable_crm_binding
     from sales_reconciliation import assess_message
     from hsb_config import CANONICAL_SPREADSHEET_ID
@@ -134,7 +135,7 @@ def upgrade_drafts(owner, limit=5, cohort='pilot', apply=False, journal_path=Non
             lead = dict(matches[0])
             tmpl = str(lead.get('Email_Template_ID') or '')
             segment = segment_for(lead)
-            if segment == 'architekten' and not has_relevant_planning_project(lead):
+            if segment == 'architekten' and not planner_outreach_allowed(lead):
                 result['skipped_reasons']['PLANNING_PROJECT_UNVERIFIED'] += 1
                 continue
             # Veraltete Fassung derselben Vorlage: nur ersetzen, wenn CRM genau diesen Entwurf bindet.
@@ -178,7 +179,7 @@ def upgrade_drafts(owner, limit=5, cohort='pilot', apply=False, journal_path=Non
         from com_mailbox_manager import ComMailboxClient
         lock_client = ComMailboxClient('JOEL')
     # Derselbe JOEL-Lock wie im Versand; schützt beide Postfächer und alle Geräte.
-    with mailbox_dispatch_lock(lock_client):
+    with mailbox_dispatch_lock(lock_client, release_on_error=True):
         journal_path = Path(journal_path)
         journal_path.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
         db = sqlite3.connect(journal_path, isolation_level=None)
@@ -186,116 +187,158 @@ def upgrade_drafts(owner, limit=5, cohort='pilot', apply=False, journal_path=Non
         db.execute('PRAGMA synchronous=FULL')
         db.execute('CREATE TABLE IF NOT EXISTS upgrades(key TEXT PRIMARY KEY, mid TEXT, raw BLOB, state TEXT, old_raw BLOB)')
         try:
-            with client._get_imap() as imap:
-                # Ein frischer CRM-Stand je Tranche (höchstens 100 Entwürfe) statt je Entwurf: Google erlaubt nur
-                # 60 Lesezugriffe pro Minute. Die Umstellung sendet nichts; der Versand prüft jede Sperre erneut live.
-                current_rows = svc.spreadsheets().values().get(spreadsheetId=CANONICAL_SPREADSHEET_ID,
-                    range='ALL_LEADS!A1:BU6425').execute().get('values', [])
-                for rec, lead in selected:
-                    current_matches = [(idx, dict(zip(current_rows[0], r))) for idx, r in enumerate(current_rows[1:], 2)
-                        if r and r[0] == lead['Lead-ID']]
-                    if len(current_matches) != 1:
-                        raise RuntimeError('LIVE_LEAD_NOT_UNIQUE')
-                    current_row, current = current_matches[0]
-                    current['Deliverability_Flags'] = deliverability_flags(current, {}, set(), mx_check=mx_check)
-                    if str(current.get('Tier') or '').strip().upper() == 'Z' or not check_eligibility(current).eligible or normalize_owner(current.get('Verantwortlicher')) != owner:
-                        raise RuntimeError('LIVE_LEAD_GATE_BLOCKED')
-                    if current.get('E-Mail') != lead.get('E-Mail'):
-                        raise RuntimeError('LIVE_RECIPIENT_CHANGED')
-                    segment = segment_for(current)
-                    if (segment != segment_for(lead)
-                            or (segment == 'architekten' and not has_relevant_planning_project(current))):
-                        raise RuntimeError('LIVE_PROJECT_FIT_CHANGED')
-                    # Vor APPEND/MOVE die stabile CRM-Bindung prüfen, nicht erst nach dem Archivieren.
-                    binding = require_stable_crm_binding(svc,CANONICAL_SPREADSHEET_ID,lead['Lead-ID'])
-                    key = '|'.join(str(rec[k]) for k in ('owner', 'uidvalidity', 'uid', 'sha256'))
-                    row = db.execute('SELECT mid,raw,state,old_raw FROM upgrades WHERE key=?', (key,)).fetchone()
-                    if row and row[2] == 'DONE':
-                        continue
-                    if outdated & set(rec.get('issues', [])):
-                        live_binding = (current.get('Draft_ID'), current.get('Email_Template_ID'))
-                        original_binding = (lead.get('Draft_ID'), lead.get('Email_Template_ID'))
-                        resumed = (row and row[2] == 'ARCHIVED'
-                                   and live_binding == (row[0], rendered_id(row[1])))
-                        if live_binding != original_binding and not resumed:
-                            raise RuntimeError('LIVE_DRAFT_BINDING_CHANGED')
-                    lead = dict(current, _row=current_row)
-                    _select(imap, rec['folder'], rec['uidvalidity'])
-                    old = row[3] if row and row[2] in ('MOVE_UNKNOWN', 'ARCHIVED') else _raw(imap, rec['uid'])
-                    if hashlib.sha256(old).hexdigest() != rec['sha256']:
-                        result['skipped_reasons']['CHANGED_V1_HASH'] += 1
-                        continue
-                    if row is None:
-                        rendered = render_email_v2(lead, owner, click_url=click_url(lead['Lead-ID'], segment_for(lead), os.environ.get('HSB_CLICK_SECRET')), variant=variant)
-                        mid = make_msgid(domain='hsb-boden.com')
-                        raw, _ = client.build_draft_message(rendered['to_email'], rendered['subject'], body_text=rendered['body_text'],
-                                template_id=rendered['template_id'], lead_id=lead['Lead-ID'], custom_message_id=mid,
-                                copy_rev=rendered.get('copy_rev'))
-                        # imaplib.append normalisiert CRLF; Readback und Journal speichern dieselben Bytes.
-                        raw = raw.replace(b'\r\n', b'\n').replace(b'\r', b'\n').replace(b'\n', b'\r\n')
-                        if assess_message(raw, owner, [lead])['issues']:
-                            raise RuntimeError('V2_REVALIDATION_FAILED')
-                        db.execute('INSERT INTO upgrades VALUES(?,?,?,?,?)', (key, mid, raw, 'PREPARED', old))
-                        row = (mid, raw, 'PREPARED', old)
-                    mid, raw, state, saved_old = row
-                    if saved_old != old:
-                        raise RuntimeError('ORIGINAL_BACKUP_MISMATCH')
-                    if state == 'DONE':
-                        continue
-                    matches = _find(imap, mid)
-                    if len(matches) > 1:
-                        raise RuntimeError('REPLACEMENT_NOT_UNIQUE')
-                    if not matches:
-                        if state != 'PREPARED':
-                            raise RuntimeError('UNCERTAIN_APPEND_REQUIRES_RECONCILIATION')
-                        db.execute("UPDATE upgrades SET state='APPEND_UNKNOWN' WHERE key=?", (key,))
-                        typ, _ = imap.append(rec['folder'], r'(\Draft)', imaplib.Time2Internaldate(time.time()), raw)
-                        if typ != 'OK':
-                            raise RuntimeError('REPLACEMENT_APPEND_FAILED')
-                        result['appended'] += 1
+            # Stabile Zeilenbindungen für genau diese Tranche anlegen und danach wieder entfernen
+            # (Google begrenzt Developer-Metadaten auf ~30.000 Zeichen je Tabelle).
+            import crm_bindings
+            tranche_ids = {str(l.get('Lead-ID') or '') for _, l in selected}
+            prebound = set(crm_bindings.existing_bindings(svc, CANONICAL_SPREADSHEET_ID)) & tranche_ids
+            created_bindings = tranche_ids - prebound
+            try:
+                # Auch ein Fehler mitten im Anlegen/Verifizieren räumt die angeforderten Bindungen wieder ab.
+                crm_bindings.ensure_bindings(svc, CANONICAL_SPREADSHEET_ID, apply=True, only=created_bindings)
+                imap = client._get_imap()
+                try:
+                    # Ein frischer CRM-Stand je Tranche (höchstens 100 Entwürfe) statt je Entwurf: Google erlaubt nur
+                    # 60 Lesezugriffe pro Minute. Die Umstellung sendet nichts; der Versand prüft jede Sperre erneut live.
+                    current_rows = svc.spreadsheets().values().get(spreadsheetId=CANONICAL_SPREADSHEET_ID,
+                        range='ALL_LEADS!A1:BU6425').execute().get('values', [])
+                    def handle(rec, lead, imap):
+                        current_matches = [(idx, dict(zip(current_rows[0], r))) for idx, r in enumerate(current_rows[1:], 2)
+                            if r and r[0] == lead['Lead-ID']]
+                        if len(current_matches) != 1:
+                            raise RuntimeError('LIVE_LEAD_NOT_UNIQUE')
+                        current_row, current = current_matches[0]
+                        current['Deliverability_Flags'] = deliverability_flags(current, {}, set(), mx_check=mx_check)
+                        if str(current.get('Tier') or '').strip().upper() == 'Z' or not check_eligibility(current).eligible or normalize_owner(current.get('Verantwortlicher')) != owner:
+                            raise RuntimeError('LIVE_LEAD_GATE_BLOCKED')
+                        if current.get('E-Mail') != lead.get('E-Mail'):
+                            raise RuntimeError('LIVE_RECIPIENT_CHANGED')
+                        segment = segment_for(current)
+                        if (segment != segment_for(lead)
+                                or (segment == 'architekten' and not planner_outreach_allowed(current))):
+                            raise RuntimeError('LIVE_PROJECT_FIT_CHANGED')
+                        # Vor APPEND/MOVE die stabile CRM-Bindung prüfen, nicht erst nach dem Archivieren.
+                        try:
+                            binding = require_stable_crm_binding(svc,CANONICAL_SPREADSHEET_ID,lead['Lead-ID'])
+                        except RuntimeError as exc:
+                            # Ohne eindeutige Bindung nichts anfassen; dieser eine Entwurf bleibt wie er ist.
+                            if 'CRM_STABLE_LEAD_BINDING_REQUIRED' not in str(exc) and 'CRM_BINDING_WRONG_SHEET' not in str(exc):
+                                raise
+                            result['skipped_reasons']['CRM_BINDING_UNAVAILABLE'] += 1
+                            return
+                        key = '|'.join(str(rec[k]) for k in ('owner', 'uidvalidity', 'uid', 'sha256'))
+                        row = db.execute('SELECT mid,raw,state,old_raw FROM upgrades WHERE key=?', (key,)).fetchone()
+                        if row and row[2] == 'DONE':
+                            return
+                        if outdated & set(rec.get('issues', [])):
+                            live_binding = (current.get('Draft_ID'), current.get('Email_Template_ID'))
+                            original_binding = (lead.get('Draft_ID'), lead.get('Email_Template_ID'))
+                            resumed = (row and row[2] == 'ARCHIVED'
+                                       and live_binding == (row[0], rendered_id(row[1])))
+                            if live_binding != original_binding and not resumed:
+                                raise RuntimeError('LIVE_DRAFT_BINDING_CHANGED')
+                        lead = dict(current, _row=current_row)
+                        _select(imap, rec['folder'], rec['uidvalidity'])
+                        old = row[3] if row and row[2] in ('MOVE_UNKNOWN', 'ARCHIVED') else _raw(imap, rec['uid'])
+                        if hashlib.sha256(old).hexdigest() != rec['sha256']:
+                            result['skipped_reasons']['CHANGED_V1_HASH'] += 1
+                            return
+                        if row is None:
+                            rendered = render_email_v2(lead, owner, click_url=click_url(lead['Lead-ID'], segment_for(lead), os.environ.get('HSB_CLICK_SECRET')), variant=variant)
+                            mid = make_msgid(domain='hsb-boden.com')
+                            raw, _ = client.build_draft_message(rendered['to_email'], rendered['subject'], body_text=rendered['body_text'],
+                                    template_id=rendered['template_id'], lead_id=lead['Lead-ID'], custom_message_id=mid,
+                                    copy_rev=rendered.get('copy_rev'))
+                            # imaplib.append normalisiert CRLF; Readback und Journal speichern dieselben Bytes.
+                            raw = raw.replace(b'\r\n', b'\n').replace(b'\r', b'\n').replace(b'\n', b'\r\n')
+                            if assess_message(raw, owner, [lead])['issues']:
+                                raise RuntimeError('V2_REVALIDATION_FAILED')
+                            db.execute('INSERT INTO upgrades VALUES(?,?,?,?,?)', (key, mid, raw, 'PREPARED', old))
+                            row = (mid, raw, 'PREPARED', old)
+                        mid, raw, state, saved_old = row
+                        if saved_old != old:
+                            raise RuntimeError('ORIGINAL_BACKUP_MISMATCH')
+                        if state == 'DONE':
+                            return
                         matches = _find(imap, mid)
-                    if len(matches) != 1 or _raw(imap, matches[0].decode()) != raw:
-                        raise RuntimeError('REPLACEMENT_READBACK_MISMATCH')
-                    archive = mailbox_arg(ARCHIVE)
-                    typ, _ = imap.select(archive, readonly=True)
-                    if typ != 'OK':
-                        typ, _ = imap.create(archive)
+                        if len(matches) > 1:
+                            raise RuntimeError('REPLACEMENT_NOT_UNIQUE')
+                        if not matches:
+                            if state != 'PREPARED':
+                                raise RuntimeError('UNCERTAIN_APPEND_REQUIRES_RECONCILIATION')
+                            db.execute("UPDATE upgrades SET state='APPEND_UNKNOWN' WHERE key=?", (key,))
+                            typ, _ = imap.append(rec['folder'], r'(\Draft)', imaplib.Time2Internaldate(time.time()), raw)
+                            if typ != 'OK':
+                                raise RuntimeError('REPLACEMENT_APPEND_FAILED')
+                            result['appended'] += 1
+                            matches = _find(imap, mid)
+                        if len(matches) != 1 or _raw(imap, matches[0].decode()) != raw:
+                            raise RuntimeError('REPLACEMENT_READBACK_MISMATCH')
+                        archive = mailbox_arg(ARCHIVE)
+                        typ, _ = imap.select(archive, readonly=True)
                         if typ != 'OK':
-                            raise RuntimeError('ARCHIVE_CREATE_FAILED')
-                        _select(imap, archive)
-                    original_mid = str(BytesParser(policy=policy.default).parsebytes(old).get('Message-ID') or '')
-                    if not original_mid:
-                        raise RuntimeError('ORIGINAL_MESSAGE_ID_MISSING')
-                    archived = _find(imap, original_mid)
-                    if not archived:
-                        capabilities = {x.decode().upper() if isinstance(x, bytes) else str(x).upper() for x in imap.capabilities}
-                        if 'MOVE' not in capabilities:
-                            raise RuntimeError('UID_MOVE_REQUIRED_ORIGINAL_RETAINED')
-                        if state in ('MOVE_UNKNOWN', 'ARCHIVED'):
-                            raise RuntimeError('UNCERTAIN_MOVE_REQUIRES_RECONCILIATION')
-                        _select(imap, rec['folder'], rec['uidvalidity'], readonly=False)
-                        # Vor MOVE noch einmal gegen das gesicherte Original vergleichen.
-                        if _raw(imap, rec['uid']) != old:
-                            raise RuntimeError('ORIGINAL_CHANGED_BEFORE_MOVE')
-                        db.execute("UPDATE upgrades SET state='MOVE_UNKNOWN' WHERE key=?", (key,))
-                        typ, _ = imap.uid('MOVE', rec['uid'], archive)
-                        if typ != 'OK':
-                            raise RuntimeError('ARCHIVE_MOVE_FAILED')
-                        _select(imap, archive)
+                            typ, _ = imap.create(archive)
+                            if typ != 'OK':
+                                raise RuntimeError('ARCHIVE_CREATE_FAILED')
+                            _select(imap, archive)
+                        original_mid = str(BytesParser(policy=policy.default).parsebytes(old).get('Message-ID') or '')
+                        if not original_mid:
+                            raise RuntimeError('ORIGINAL_MESSAGE_ID_MISSING')
                         archived = _find(imap, original_mid)
-                    if len(archived) != 1 or _raw(imap, archived[0].decode()) != old:
-                        raise RuntimeError('ARCHIVE_READBACK_MISMATCH')
-                    result['archived'] += 1
-                    db.execute("UPDATE upgrades SET state='ARCHIVED' WHERE key=?", (key,))
-                    _select(imap, rec['folder'], rec['uidvalidity'])
-                    if _find(imap, original_mid):
-                        raise RuntimeError('ORIGINAL_STILL_IN_DRAFTS')
-                    # Spaltenreihenfolge vom CRM-Header dieser Tranche; Bindung aus der Prüfung vor APPEND.
-                    crm_write_lead_readback(svc, CANONICAL_SPREADSHEET_ID, lead['Lead-ID'],
-                        {'Draft_ID': mid, 'Email_Template_ID': rendered_id(raw), 'Drafted_At': datetime.now(timezone.utc).isoformat()},
-                        binding=binding, headers=current_rows[0])
-                    result['crm_updated'] += 1
-                    db.execute("UPDATE upgrades SET state='DONE' WHERE key=?", (key,))
+                        if not archived:
+                            capabilities = {x.decode().upper() if isinstance(x, bytes) else str(x).upper() for x in imap.capabilities}
+                            if 'MOVE' not in capabilities:
+                                raise RuntimeError('UID_MOVE_REQUIRED_ORIGINAL_RETAINED')
+                            if state in ('MOVE_UNKNOWN', 'ARCHIVED'):
+                                raise RuntimeError('UNCERTAIN_MOVE_REQUIRES_RECONCILIATION')
+                            _select(imap, rec['folder'], rec['uidvalidity'], readonly=False)
+                            # Vor MOVE noch einmal gegen das gesicherte Original vergleichen.
+                            if _raw(imap, rec['uid']) != old:
+                                raise RuntimeError('ORIGINAL_CHANGED_BEFORE_MOVE')
+                            db.execute("UPDATE upgrades SET state='MOVE_UNKNOWN' WHERE key=?", (key,))
+                            typ, _ = imap.uid('MOVE', rec['uid'], archive)
+                            if typ != 'OK':
+                                raise RuntimeError('ARCHIVE_MOVE_FAILED')
+                            _select(imap, archive)
+                            archived = _find(imap, original_mid)
+                        if len(archived) != 1 or _raw(imap, archived[0].decode()) != old:
+                            raise RuntimeError('ARCHIVE_READBACK_MISMATCH')
+                        result['archived'] += 1
+                        db.execute("UPDATE upgrades SET state='ARCHIVED' WHERE key=?", (key,))
+                        _select(imap, rec['folder'], rec['uidvalidity'])
+                        if _find(imap, original_mid):
+                            raise RuntimeError('ORIGINAL_STILL_IN_DRAFTS')
+                        # Spaltenreihenfolge vom CRM-Header dieser Tranche; Bindung aus der Prüfung vor APPEND.
+                        crm_write_lead_readback(svc, CANONICAL_SPREADSHEET_ID, lead['Lead-ID'],
+                            {'Draft_ID': mid, 'Email_Template_ID': rendered_id(raw), 'Drafted_At': datetime.now(timezone.utc).isoformat()},
+                            binding=binding, headers=current_rows[0])
+                        result['crm_updated'] += 1
+                        db.execute("UPDATE upgrades SET state='DONE' WHERE key=?", (key,))
+                    # Reißt die IMAP-Verbindung ab, neu anmelden und denselben Entwurf ab dem letzten Journal-Zustand
+                    # fortsetzen: PREPARED/APPEND/MOVE werden über Message-ID live nachgeprüft, nie doppelt ausgeführt.
+                    for rec, lead in selected:
+                        for attempt in range(1, IMAP_RETRIES + 1):
+                            try:
+                                handle(rec, lead, imap)
+                                break
+                            except (imaplib.IMAP4.abort, OSError):
+                                if attempt == IMAP_RETRIES:
+                                    raise
+                                result['imap_reconnects'] = result.get('imap_reconnects', 0) + 1
+                                try:
+                                    imap.logout()
+                                except Exception:  # noqa: BLE001
+                                    pass
+                                time.sleep(5 * attempt)
+                                imap = client._get_imap()
+                finally:
+                    try:
+                        imap.logout()
+                    except Exception:  # noqa: BLE001 - Server trennt nach langer Tranche; Daten sind geschrieben
+                        pass
+            finally:
+                # Nur selbst angelegte Bindungen entfernen; vorher vorhandene bleiben.
+                crm_bindings.remove_bindings(svc, CANONICAL_SPREADSHEET_ID, created_bindings)
         finally:
             db.close()
         result['originals_retained'] = True

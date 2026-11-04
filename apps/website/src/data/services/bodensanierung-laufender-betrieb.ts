@@ -58,6 +58,11 @@ export const bodensanierungLaufenderBetrieb: Service = {
       answer:
         "Geeignete Trennwände, Absaugung und abgestimmte Arbeitsverfahren reduzieren Staubeintrag. Vollständige Staubfreiheit darf ohne Prüfung der örtlichen Bedingungen nicht zugesagt werden.",
     },
+    {
+      question: "Kann ich mein Sanierungsfenster vorab online kalkulieren?",
+      answer:
+        "Ja. Mit unserem Sanierungsfenster-Rechner können Sie Hallenfläche, Schichtbetrieb und Bodensystem indikativ auf Bauabschnitte und Aushärtezeiten planen.",
+    },
   ],
   ctaLabel: "Sanierungsfenster analysieren",
   ctaTarget: "/kontakt/",

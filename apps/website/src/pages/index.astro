@@ -8,6 +8,7 @@ import LogoCloud from "../components/sections/LogoCloud.astro";
 import ManufacturerProof from "../components/sections/ManufacturerProof.astro";
 import ProofMediaSection from "../components/sections/ProofMediaSection.astro";
 import SchmerzpunkteSection from "../components/sections/SchmerzpunkteSection.astro";
+import PersonaEntrySection from "../components/sections/PersonaEntrySection.astro";
 import ServiceGrid from "../components/sections/ServiceGrid.astro";
 import BaseLayout from "../layouts/BaseLayout.astro";
 import { site } from "../data/site";
@@ -29,7 +30,7 @@ import { homepageFaqs } from "../data/homepageFaqs";
             <svg width="11" height="12.7" viewBox="0 0 26 30" fill="none" aria-hidden="true" class="shrink-0">
               <path d="M12.9904 0L25.9808 7.5V22.5L12.9904 30L0 22.5V7.5L12.9904 0Z" fill="#cb0000" />
             </svg>
-            Zertifizierter WHG-Fachbetrieb · Industrieböden & Säureschutz
+            WHG-konform ausgeführt nach WHG § 62 · Industrieböden & Säureschutz
           </p>
           <h1 class="hero-h1 max-w-[18ch]">
             Spezialisierte Industrieböden für Lebensmittel-, Pharma- und <span class="text-hsb-red-light">Chemieproduktion</span>
@@ -118,6 +119,9 @@ import { homepageFaqs } from "../data/homepageFaqs";
 
   <!-- SCHMERZPUNKTE -->
   <SchmerzpunkteSection />
+
+  <!-- ZIELGRUPPEN / PERSONA EINSTIEGE -->
+  <PersonaEntrySection />
 
   <!-- LEISTUNGEN -->
   <ServiceGrid />

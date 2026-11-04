@@ -250,6 +250,64 @@ const deliveryConfigured = site.hasLeadEndpoint;
     form.dataset.stressCheckSystem = prefill.recommendedSystem;
   }
 
+  function applyCalculatorQueryPrefill() {
+    if (!form) return;
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const rawArea = params.get("areaSize");
+      const rawSystem = params.get("system");
+      const rawWindow = params.get("timeWindow");
+      const rawSections = params.get("sections");
+
+      if (!rawArea && !rawSystem && !rawWindow && !rawSections) return;
+
+      const areaNum = rawArea ? parseInt(rawArea, 10) : NaN;
+      const areaControl = form.elements.namedItem("areaSize");
+      if (areaControl instanceof HTMLInputElement && Number.isFinite(areaNum) && areaNum >= 1 && areaNum <= 50000) {
+        areaControl.value = `${areaNum} m²`;
+      }
+
+      const projectTypeControl = form.elements.namedItem("projectType");
+      if (projectTypeControl instanceof HTMLSelectElement && !projectTypeControl.value) {
+        projectTypeControl.value = "sanierung";
+      }
+
+      const liveOpControl = form.elements.namedItem("liveOperation");
+      if (liveOpControl instanceof HTMLSelectElement && rawWindow) {
+        if (rawWindow === "laufender-betrieb" || rawWindow === "wochenende-60h") {
+          liveOpControl.value = "ja";
+        } else if (rawWindow === "betriebsurlaub") {
+          liveOpControl.value = "nein";
+        }
+      }
+
+      const systemLabels: Record<string, string> = {
+        "pu-beton": "Hochtemperatur-PU-Beton (9 mm)",
+        "ruettelkeramik": "Keramischer Rüttelboden (AGI S 40)",
+        "schnellreparatur": "Schnellreparatur-Mörtel",
+      };
+      const windowLabels: Record<string, string> = {
+        "wochenende-60h": "Wochenend-Stillstand (60 h)",
+        "betriebsurlaub": "Geplanter Stillstand / Werksferien",
+        "laufender-betrieb": "Laufender 3-Schicht-Betrieb",
+      };
+
+      const parts: string[] = [];
+      if (Number.isFinite(areaNum) && areaNum >= 1 && areaNum <= 50000) parts.push(`Fläche: ca. ${areaNum} m²`);
+      if (rawSystem && systemLabels[rawSystem]) parts.push(`System: ${systemLabels[rawSystem]}`);
+      if (rawWindow && windowLabels[rawWindow]) parts.push(`Zeitfenster: ${windowLabels[rawWindow]}`);
+      const secNum = rawSections ? parseInt(rawSections, 10) : NaN;
+      if (Number.isFinite(secNum) && secNum >= 1 && secNum <= 200) parts.push(`Simulierte Abschnitte (MOCK_DATA): ${secNum}`);
+
+      const messageControl = form.elements.namedItem("message");
+      if (messageControl instanceof HTMLTextAreaElement && messageControl.value.trim() === "" && parts.length > 0) {
+        messageControl.value = `Übernahme aus Sanierungsfenster-Rechner:\n- ${parts.join("\n- ")}\n\nBitte um Prüfung im Vor-Ort-Audit.`;
+      }
+    } catch {
+      // Query-Parsing darf Formular nie blockieren
+    }
+  }
+
   if (form?.dataset.repairRequest !== "true") {
     window.addEventListener(STRESS_CHECK_EVENT, (event) => {
       const detail = (event as CustomEvent<LeadPrefill>).detail;
@@ -265,6 +323,8 @@ const deliveryConfigured = site.hasLeadEndpoint;
     } catch {
       // sessionStorage blockiert: Formular bleibt unbefüllt nutzbar.
     }
+
+    applyCalculatorQueryPrefill();
   }
 
   form?.addEventListener("focusin", onFocus, { once: true });

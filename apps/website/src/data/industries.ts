@@ -171,7 +171,7 @@ export const industries: Industry[] = [
     title: "Chemieindustrie",
     seoTitle: "Industrieboden Chemieindustrie & Säureschutz | HSB",
     description:
-      "Zertifizierter WHG-Fachbetrieb für chemisch belastete Bereiche. Wir planen und bauen hochresistente Systeme für Produktion, Lager und Havarieflächen.",
+      "WHG-konform ausgeführte Systeme für chemisch belastete Bereiche. Wir planen und bauen hochresistente Systeme für Produktion, Lager und Havarieflächen nach WHG § 62 und AwSV.",
     h1: "Industrieböden für chemisch belastete Produktionsbereiche",
     searchIntent:
       "Chemiebetriebe suchen technisch belegte Sicherheit durch WHG-konforme Abdichtung und Beständigkeit gegen Mineralsäuren und Lösungsmittel.",
@@ -194,7 +194,7 @@ export const industries: Industry[] = [
       "epoxidharz-bodenbeschichtung",
     ],
     proofPoints: [
-      "Zertifizierter WHG-Fachbetrieb",
+      "WHG-konform ausgeführt nach WHG § 62 / AwSV",
       "Detaillierte Beständigkeitsprüfungen nach Medienliste",
       "Dokumentation für Behörden und Sachverständige",
     ],

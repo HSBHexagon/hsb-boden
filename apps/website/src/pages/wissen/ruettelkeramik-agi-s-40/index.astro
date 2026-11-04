@@ -1,0 +1,114 @@
+---
+import BaseLayout from "../../../layouts/BaseLayout.astro";
+import PageHero from "../../../components/sections/PageHero.astro";
+import LeadFormSection from "../../../components/forms/LeadFormSection.astro";
+import { buildBreadcrumbJsonLd } from "../../../lib/schema";
+
+export const prerender = true;
+
+const path = "/wissen/ruettelkeramik-agi-s-40/";
+const title = "Rüttelkeramik AGI S 40: Säureschutz-Rüttelbelag | HSB";
+const description = "Leitfaden zu AGI S 40 Rüttelbelägen: Maschinelle Vollbettung, Druckfestigkeit laut Herstellerdatenblatt und Säureschutz für Lebensmittel- und Chemiebetriebe.";
+---
+
+<BaseLayout
+  title={title}
+  description={description}
+  path={path}
+  jsonLd={[
+    buildBreadcrumbJsonLd([
+      { name: "Start", path: "/" },
+      { name: "Wissen", path: "/wissen/" },
+      { name: "Rüttelkeramik AGI S 40", path },
+    ]),
+  ]}
+>
+  <PageHero
+    eyebrow="Fachnorm & Ingenieurbau"
+    title="Rüttelkeramik nach AGI S 40: Der Industriestandard für Säureschutz und Schwerlast"
+    text="Während herkömmliche Fliesenverlegung im Industriebau an Hohlräumen und Scherspannungen scheitert, definiert das Arbeitsblatt AGI S 40 („Chemisch beständige Bodenbeläge im Rüttelverfahren (Säureschutzbau)“, Ausgabe Mai 1999) den anerkannten Industriestandard für produktionskritische Böden. Erfahren Sie alles über das maschinelle Rüttelverfahren, Materialkennwerte und die fachgerechte Ausführung."
+  />
+
+  <section class="section border-b border-hsb-line bg-white">
+    <div class="container max-w-4xl">
+      <div class="prose max-w-none text-hsb-steel">
+        <h2 class="text-2xl font-black text-hsb-black">Was regelt das Arbeitsblatt AGI S 40?</h2>
+        <p>
+          Das Arbeitsblatt <strong>AGI S 40</strong> mit dem Titel <em>„Chemisch beständige Bodenbeläge im Rüttelverfahren (Säureschutzbau)“</em> (Ausgabe Mai 1999) wird von der Arbeitsgemeinschaft Industriebau e. V. herausgegeben und regelt die Planung, Ausführung und Gütesicherung von keramischen Belägen im industriellen Säureschutzbau. Es richtet sich an Betriebe, in denen Bodenflächen gleichzeitig extremen chemischen Angriffen (Säuren, Laugen, Fette) und mechanischen Einwirkungen (Flurförderzeuge, dynamische Radstöße) standhalten müssen.
+        </p>
+
+        <div class="my-8 rounded border-l-4 border-hsb-red bg-hsb-mist p-6 text-hsb-black">
+          <h3 class="text-lg font-bold">Der entscheidende Unterschied zur Handverlegung</h3>
+          <p class="mt-2 text-sm leading-6 text-hsb-steel">
+            Bei der Handverlegung (ob Dünnbett oder Dickbett) verbleiben unvermeidbar Lufteinschlüsse unter den Fliesen. Unter harter Staplerüberrollung bricht die Fliese genau an diesen Hohlräumen. Beim <strong>maschinellen Rüttelverfahren</strong> nach AGI S 40 werden die Platten mit hochfrequenten Flächenrüttlern in das plastische Mörtelbett eingerüttelt. Die Vibration verflüssigt den Verlegemörtel kurzzeitig thixotrop: Der Mörtel umschließt jede Fliese zu <strong>100 % hohlraumfrei</strong> und steigt in den Fugenflanken auf.
+          </p>
+        </div>
+
+        <h2 class="text-2xl font-black text-hsb-black">Technische Leistungswerte im Vergleich</h2>
+        <div class="not-prose my-6 overflow-x-auto">
+          <table class="w-full text-left text-sm border border-hsb-line">
+            <thead class="bg-hsb-mist text-hsb-black">
+              <tr>
+                <th class="p-3 border-b border-hsb-line">Leistungsparameter</th>
+                <th class="p-3 border-b border-hsb-line">Handverlegte Fliese</th>
+                <th class="p-3 border-b border-hsb-line text-hsb-red font-bold">AGI S 40 Rüttelkeramik</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-hsb-line text-hsb-steel">
+              <tr>
+                <td class="p-3 font-semibold text-hsb-black">Bettungsgrad (Vollbettung)</td>
+                <td class="p-3">60 % – 75 %</td>
+                <td class="p-3 font-bold text-hsb-black">100 % (hohlraumfrei)</td>
+              </tr>
+              <tr>
+                <td class="p-3 font-semibold text-hsb-black">Druckfestigkeit System</td>
+                <td class="p-3">25 – 30 N/mm² (estrichabhängig)</td>
+                <td class="p-3 font-bold text-hsb-black">Druckfestigkeit laut Herstellerdatenblatt</td>
+              </tr>
+              <tr>
+                <td class="p-3 font-semibold text-hsb-black">Temperaturbeständigkeit</td>
+                <td class="p-3">Bis 60 °C</td>
+                <td class="p-3 font-bold text-hsb-black">Bis 120 °C (laut Herstellerdatenblatt, CIP-geeignet)</td>
+              </tr>
+              <tr>
+                <td class="p-3 font-semibold text-hsb-black">Punktlast (Vulkollanrollen)</td>
+                <td class="p-3">Bruchgefahr bei Hohlstellen</td>
+                <td class="p-3 font-bold text-hsb-black">Hohe Belastbarkeit durch hohlraumfreie Bettung</td>
+              </tr>
+              <tr>
+                <td class="p-3 font-semibold text-hsb-black">Verfugungsmaterial</td>
+                <td class="p-3">Zementär / Dispersionsfuge</td>
+                <td class="p-3 font-bold text-hsb-black">2K-Epoxid- / Novolac-Harz</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h2 class="text-2xl font-black text-hsb-black">Typische Einsatzbereiche in der Industrie</h2>
+        <p>Rüttelkeramik nach AGI S 40 wird überall dort eingesetzt, wo ein Bodenausfall existenzbedrohend ist:</p>
+        <ul class="space-y-2">
+          <li><strong>Molkereien & Käsereien:</strong> Beständigkeit gegen Milchsäure, Salzlake und tägliche CIP-Reinigung mit 85 °C Heißwasser.</li>
+          <li><strong>Brauereien & Getränkeindustrie:</strong> Schutz vor Fruchtsäuren, Kohlensäure, Laugen und schweren Fassrollern.</li>
+          <li><strong>Fleisch- & Feinkostbetriebe:</strong> Fett-, Blut- und Eiweißbeständigkeit bei geforderter Rutschhemmklasse R12 bis R13 V4.</li>
+          <li><strong>Chemie & Batterieproduktion:</strong> Säureschutz nach WHG § 62 und Beständigkeit gegen anorganische Säuren (z. B. Schwefel-, Salzsäure).</li>
+        </ul>
+
+        <h2 class="mt-10 text-2xl font-black text-hsb-black">Systemaufbau eines AGI S 40 Rüttelbodens</h2>
+        <ol class="space-y-4">
+          <li><strong>1. Tragfähiger Unterbeton:</strong> Kugelgestrahlt oder gefräst, Mindesthaftzugfestigkeit 1,5 N/mm².</li>
+          <li><strong>2. Haftbrücke / Dichtschicht:</strong> Reaktionsharz-Grundierung oder polymermodifizierte Kontaktschlämme.</li>
+          <li><strong>3. Rüttelbettmörtel:</strong> Erdfeuchter, kunststoffvergüteter Spezialmörtel mit optimierter Sieblinie (Schichtdicke ca. 50–80 mm).</li>
+          <li><strong>4. Säureschutz-Spaltklinker / Steinzeug:</strong> Hochabriebfeste, säurebeständige Platten mit 15 bis 18 mm Materialstärke.</li>
+          <li><strong>5. Chemikalienbeständige Verfugung:</strong> Vollfugiger Verguss mit 2K-Epoxidharzmörtel nach AGI S 40.</li>
+        </ol>
+
+        <div class="mt-10 flex flex-wrap items-center gap-4 border-t border-hsb-line pt-8">
+          <a class="button-primary" href="/beanspruchungs-check/">System im Beanspruchungs-Check berechnen</a>
+          <a class="button-secondary" href="/planer/">Ausschreibungstexte (LV) für Planer ansehen</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <LeadFormSection />
+</BaseLayout>

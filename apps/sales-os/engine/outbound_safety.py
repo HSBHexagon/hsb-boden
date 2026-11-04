@@ -94,7 +94,11 @@ def mailbox_dispatch_lock(client):
         imap.logout()
 
 
-def release_stale_lock(svc, client, spreadsheet_id, apply=False):
+STALE_LOCK_MIN_AGE_MIN = 270          # länger als jeder GitHub-Job (240 min) und jeder Mac-Versand
+STALE_LOCK_EPOCH_MIN = 1_600_000_000   # plausibler Unix-Zeitstempel (Sept. 2020)
+
+
+def release_stale_lock(svc, client, spreadsheet_id, apply=False, now=time.time):
     """Hängengebliebene Versandsperre nach einem abgebrochenen Lauf lösen – nur ohne unklaren Versand.
 
     Ein Versand schreibt Send_Status=SENDING vor SMTP und erst nach Sent-Readback 'sent'. Steht irgendwo noch
@@ -113,7 +117,16 @@ def release_stale_lock(svc, client, spreadsheet_id, apply=False):
         typ, _ = imap.select(LOCK_FOLDER, readonly=True)
         if typ != 'OK':
             return {'lock': 'NONE', 'released': False}
+        # Lebt der Sperrinhaber noch? Dovecot (All-Inkl) vergibt UIDVALIDITY als Anlage-Zeitstempel. Nur eine
+        # Sperre, die älter als jeder mögliche Lauf ist (GitHub-Job max. 240 min), gilt als verwaist.
+        validity = imap.response('UIDVALIDITY')[1]
+        created = int(validity[0]) if validity and validity[0] and str(validity[0], 'ascii', 'ignore').isdigit() else 0
+        age_min = (now() - created) / 60 if created else -1
         imap.close()
+        if not (STALE_LOCK_EPOCH_MIN <= created <= now()):
+            raise RuntimeError('STALE_LOCK_AGE_UNKNOWN: reconcile manually')
+        if age_min < STALE_LOCK_MIN_AGE_MIN:
+            raise RuntimeError(f'STALE_LOCK_TOO_YOUNG:{int(age_min)}min')
         if not apply:
             return {'lock': 'PRESENT', 'released': False}
         typ, _ = imap.delete(LOCK_FOLDER)

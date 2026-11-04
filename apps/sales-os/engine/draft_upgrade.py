@@ -191,9 +191,10 @@ def upgrade_drafts(owner, limit=5, cohort='pilot', apply=False, journal_path=Non
             import crm_bindings
             tranche_ids = {str(l.get('Lead-ID') or '') for _, l in selected}
             prebound = set(crm_bindings.existing_bindings(svc, CANONICAL_SPREADSHEET_ID)) & tranche_ids
-            crm_bindings.ensure_bindings(svc, CANONICAL_SPREADSHEET_ID, apply=True, only=tranche_ids - prebound)
             created_bindings = tranche_ids - prebound
             try:
+                # Auch ein Fehler mitten im Anlegen/Verifizieren räumt die angeforderten Bindungen wieder ab.
+                crm_bindings.ensure_bindings(svc, CANONICAL_SPREADSHEET_ID, apply=True, only=created_bindings)
                 upgrade_with_imap = client._get_imap()
                 with upgrade_with_imap as imap:
                     # Ein frischer CRM-Stand je Tranche (höchstens 100 Entwürfe) statt je Entwurf: Google erlaubt nur

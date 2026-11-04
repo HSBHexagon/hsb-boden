@@ -337,9 +337,13 @@ def test_sheet_id_is_read_once_per_service(monkeypatch):
     assert calls == [1]
 
 
+_NOW = 1_800_000_000
+
+
 class _LockImap:
-    def __init__(self, exists): self.exists, self.deleted = exists, False
+    def __init__(self, exists, created=_NOW - 6 * 3600): self.exists, self.deleted, self.created = exists, False, created
     def select(self, folder, readonly=True): return ('OK', [b'0']) if self.exists else ('NO', [])
+    def response(self, key): return key, [str(self.created).encode()]
     def close(self): pass
     def delete(self, folder): self.deleted = True; return 'OK', []
     def logout(self): pass
@@ -354,15 +358,15 @@ def _lock_svc(statuses):
 def test_stale_lock_released_only_without_uncertain_send():
     from outbound_safety import release_stale_lock
     imap = _LockImap(True)
-    assert release_stale_lock(_lock_svc(['sent', '']), SimpleNamespace(_get_imap=lambda: imap), 's', apply=True) == \
+    assert release_stale_lock(_lock_svc(['sent', '']), SimpleNamespace(_get_imap=lambda: imap), 's', apply=True, now=lambda: _NOW) == \
         {'lock': 'PRESENT', 'released': True} and imap.deleted
     kept = _LockImap(True)
     with pytest.raises(RuntimeError, match='STALE_LOCK_KEPT_SEND_UNCERTAIN:1'):
-        release_stale_lock(_lock_svc(['SENDING', 'sent']), SimpleNamespace(_get_imap=lambda: kept), 's', apply=True)
+        release_stale_lock(_lock_svc(['SENDING', 'sent']), SimpleNamespace(_get_imap=lambda: kept), 's', apply=True, now=lambda: _NOW)
     assert not kept.deleted
     dry = _LockImap(True)
-    assert release_stale_lock(_lock_svc(['']), SimpleNamespace(_get_imap=lambda: dry), 's')['released'] is False and not dry.deleted
-    assert release_stale_lock(_lock_svc(['']), SimpleNamespace(_get_imap=lambda: _LockImap(False)), 's', apply=True)['lock'] == 'NONE'
+    assert release_stale_lock(_lock_svc(['']), SimpleNamespace(_get_imap=lambda: dry), 's', now=lambda: _NOW)['released'] is False and not dry.deleted
+    assert release_stale_lock(_lock_svc(['']), SimpleNamespace(_get_imap=lambda: _LockImap(False)), 's', apply=True, now=lambda: _NOW)['lock'] == 'NONE'
 
 
 def test_tranche_binds_missing_leads_and_removes_only_its_own(tmp_path, monkeypatch):
@@ -403,3 +407,27 @@ def test_owner_decision_upgrades_planner_without_project(tmp_path, monkeypatch):
     result = upgrade_drafts('JOEL', apply=True, variant='reparatur', **kwargs)
     assert result['crm_updated'] == 1 and 'PLANNING_PROJECT_UNVERIFIED' not in result['skipped_reasons']
     assert writes[-1]['Email_Template_ID'].startswith('v2-architekten-reparatur-')
+
+
+
+@pytest.mark.parametrize('created,error', [(_NOW - 30 * 60, 'STALE_LOCK_TOO_YOUNG'), (0, 'STALE_LOCK_AGE_UNKNOWN'),
+                                           (_NOW + 600, 'STALE_LOCK_AGE_UNKNOWN')])
+def test_live_or_undatable_lock_is_never_released(created, error):
+    # Codex-Review #524: ohne SENDING kann trotzdem ein Versand laufen (Pause zwischen Empfängern).
+    from outbound_safety import release_stale_lock
+    imap = _LockImap(True, created)
+    with pytest.raises(RuntimeError, match=error):
+        release_stale_lock(_lock_svc(['']), SimpleNamespace(_get_imap=lambda: imap), 's', apply=True, now=lambda: _NOW)
+    assert not imap.deleted
+
+
+def test_binding_cleanup_runs_even_if_creation_fails(tmp_path, monkeypatch):
+    # Codex-Review #524: Fehler beim Verifizieren nach dem Anlegen darf keine Bindungen liegen lassen.
+    kwargs, boxes, calls, writes, old = setup_case(tmp_path, monkeypatch)
+    removed = []
+    def fail(*a, **k): raise RuntimeError('verify read failed')
+    monkeypatch.setattr('crm_bindings.ensure_bindings', fail)
+    monkeypatch.setattr('crm_bindings.remove_bindings', lambda svc, sid, ids: removed.append(set(ids)))
+    with pytest.raises(RuntimeError, match='verify read failed'):
+        upgrade_drafts('JOEL', apply=True, variant='reparatur', **kwargs)
+    assert removed == [{kwargs['leads'][0]['Lead-ID']}] and boxes['Drafts'] == {'1': old}

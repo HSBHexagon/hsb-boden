@@ -25,6 +25,8 @@ from lead_quality import has_relevant_planning_project, segment_for
 
 SENDERS = {'JOEL': 'j-cherino@hsb-boden.com', 'JORDI': 'j-post@hsb-boden.com'}
 OUTDATED_PLANNER_COPY = 'OUTDATED_PLANNER_COPY'
+# Reparatur-Erstkontakt ohne aktuelle Fassung (X-HSB-Copy-Rev) gilt als ersetzbar.
+OUTDATED_REPAIR_COPY = 'OUTDATED_REPAIR_COPY'
 _OLD_PLANNER_LINES = {
     'v2-architekten-s1': 'Gefälle, Rinnenanschlüsse und Fugen lassen sich besonders gut in der Ausführungsplanung',
     'v2-architekten-reparatur-s1': 'Nicht jeder Bestandsboden muss komplett neu verlegt werden',
@@ -95,6 +97,12 @@ def assess_message(raw, owner, leads):
         issues.append('MESSAGE_ID_INVALID')
     template_id = str(msg.get('X-HSB-Template-ID') or '').strip()
     is_v2 = template_id.startswith('v2-')
+    is_repair = '-reparatur-' in template_id
+    from canonical_template_factory import REPAIR_URL, REPARATUR_COPY_REV
+    current_repair_s1 = (is_repair and template_id.endswith('-s1')
+                         and str(msg.get('X-HSB-Copy-Rev') or '').strip() == REPARATUR_COPY_REV)
+    if is_repair and template_id.endswith('-s1') and not current_repair_s1:
+        issues.append(OUTDATED_REPAIR_COPY)
     if template_id.startswith('v2-architekten-') and (
             segment_for(lead) != 'architekten' or not has_relevant_planning_project(lead)):
         issues.append('PLANNING_PROJECT_UNVERIFIED')
@@ -107,7 +115,8 @@ def assess_message(raw, owner, leads):
         issues.append('COMPANY_UNVERIFIED')
     if is_v2:
         # Folgemails antworten im Thread: das Re:/AW:-Praefix zaehlt nicht zur 50-Zeichen-Grenze.
-        if not subject or len(re.sub(r'^(?:re|aw):\s*', '', subject, flags=re.I)) > 50:
+        # Reparatur-Betreffzeilen sind feste Owner-Vorgaben (bis 65 Zeichen).
+        if not subject or len(re.sub(r'^(?:re|aw):\s*', '', subject, flags=re.I)) > (65 if is_repair else 50):
             issues.append('SUBJECT_TOO_LONG')
     elif not subject or (company and company.casefold() not in subject.casefold()):
         issues.append('SUBJECT_NOT_COMPANY_SPECIFIC')
@@ -115,7 +124,8 @@ def assess_message(raw, owner, leads):
     if is_v2:
         from canonical_template_factory import short_company
         body_names.append(short_company(company))
-    if not (any(n and n.casefold() in body.casefold() for n in body_names) or (len(contact) > 3 and contact.casefold() in body.casefold())):
+    # Reparatur-Fassung nennt bewusst keine CRM-Firmen-/Titeldaten im Fließtext.
+    if not is_repair and not (any(n and n.casefold() in body.casefold() for n in body_names) or (len(contact) > 3 and contact.casefold() in body.casefold())):
         issues.append('BODY_NOT_COMPANY_OR_CONTACT_SPECIFIC')
     if re.search(r'\{\{|\[FIRMA\]|\[NAME\]|undefined|Sehr geehrte/r', body, re.I):
         issues.append('UNRESOLVED_PLACEHOLDER')
@@ -140,7 +150,11 @@ def assess_message(raw, owner, leads):
                     return False
                 return parts.netloc.lower() == 'www.hsb-boden.de' and (
                     parts.path.rstrip('/') == '/flyer' or re.fullmatch(r'/r/[A-Za-z0-9_\-.~]+', parts.path))
-            if len(links) > 1 or not all(_v2_link_ok(u) for u in links):
+            if current_repair_s1:
+                # Genau der lesbare Reparatur-Link, kein Klick-Token im Sichttext.
+                if links != [REPAIR_URL]:
+                    issues.append('V2_LINK_INVALID')
+            elif len(links) > 1 or not all(_v2_link_ok(u) for u in links):
                 issues.append('V2_LINK_INVALID')
         elif links:
             issues.append('V2_LINK_INVALID')

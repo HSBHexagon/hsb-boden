@@ -20,12 +20,13 @@ from pathlib import Path
 import sqlite3
 import time
 
-from sales_reconciliation import OUTDATED_PLANNER_COPY
+from sales_reconciliation import OUTDATED_PLANNER_COPY, OUTDATED_REPAIR_COPY
 
 ARCHIVE = 'Entwürfe-Archiv-v1'
 REPAIRABLE = {'BODY_NOT_COMPANY_OR_CONTACT_SPECIFIC', 'SUBJECT_NOT_COMPANY_SPECIFIC',
               'UNRESOLVED_PLACEHOLDER', 'FLYER_LINK_MISSING', 'PERSONAL_OPTOUT_LINK_MISSING',
-              'HISTORICAL_VARIANT_REQUIRES_REVIEW', 'PLAIN_TEXT_MISSING', OUTDATED_PLANNER_COPY}
+              'HISTORICAL_VARIANT_REQUIRES_REVIEW', 'PLAIN_TEXT_MISSING', OUTDATED_PLANNER_COPY,
+              OUTDATED_REPAIR_COPY}
 
 
 def modified_utf7(value):
@@ -104,7 +105,10 @@ def upgrade_drafts(owner, limit=5, cohort='pilot', apply=False, journal_path=Non
         finally:
             prior.close()
     cache = {}; selected = []
-    target_template = 'v2-architekten-reparatur-s1' if variant == 'reparatur' else 'v2-architekten-s1'
+    outdated = {OUTDATED_PLANNER_COPY, OUTDATED_REPAIR_COPY}
+
+    def target_template(segment):
+        return f'v2-{segment}-reparatur-s1' if variant == 'reparatur' else f'v2-{segment}-s1'
     # Erst Fit, dann Netzwerkprüfungen: knappe Pilotplätze nicht nach IMAP-Reihenfolge vergeben.
     def rank(record):
         matches = byid.get(str(record.get('lead_id')), [])
@@ -133,9 +137,10 @@ def upgrade_drafts(owner, limit=5, cohort='pilot', apply=False, journal_path=Non
             if segment == 'architekten' and not has_relevant_planning_project(lead):
                 result['skipped_reasons']['PLANNING_PROJECT_UNVERIFIED'] += 1
                 continue
-            obsolete = (segment == 'architekten' and tmpl == record.get('template_id') == target_template
+            # Veraltete Fassung derselben Vorlage: nur ersetzen, wenn CRM genau diesen Entwurf bindet.
+            obsolete = (tmpl == record.get('template_id') == target_template(segment)
                         and lead.get('Draft_ID') == record.get('message_id')
-                        and OUTDATED_PLANNER_COPY in record.get('issues', []))
+                        and bool(outdated & set(record.get('issues', []))))
             already_v2 = '-reparatur-' in tmpl if variant == 'reparatur' else tmpl.startswith('v2-')
             if already_v2 and not obsolete:
                 result['skipped_reasons']['ALREADY_V2'] += 1
@@ -205,7 +210,7 @@ def upgrade_drafts(owner, limit=5, cohort='pilot', apply=False, journal_path=Non
                     row = db.execute('SELECT mid,raw,state,old_raw FROM upgrades WHERE key=?', (key,)).fetchone()
                     if row and row[2] == 'DONE':
                         continue
-                    if OUTDATED_PLANNER_COPY in rec.get('issues', []):
+                    if outdated & set(rec.get('issues', [])):
                         live_binding = (current.get('Draft_ID'), current.get('Email_Template_ID'))
                         original_binding = (lead.get('Draft_ID'), lead.get('Email_Template_ID'))
                         resumed = (row and row[2] == 'ARCHIVED'
@@ -222,7 +227,8 @@ def upgrade_drafts(owner, limit=5, cohort='pilot', apply=False, journal_path=Non
                         rendered = render_email_v2(lead, owner, click_url=click_url(lead['Lead-ID'], segment_for(lead), os.environ.get('HSB_CLICK_SECRET')), variant=variant)
                         mid = make_msgid(domain='hsb-boden.com')
                         raw, _ = client.build_draft_message(rendered['to_email'], rendered['subject'], body_text=rendered['body_text'],
-                                template_id=rendered['template_id'], lead_id=lead['Lead-ID'], custom_message_id=mid)
+                                template_id=rendered['template_id'], lead_id=lead['Lead-ID'], custom_message_id=mid,
+                                copy_rev=rendered.get('copy_rev'))
                         # imaplib.append normalisiert CRLF; Readback und Journal speichern dieselben Bytes.
                         raw = raw.replace(b'\r\n', b'\n').replace(b'\r', b'\n').replace(b'\n', b'\r\n')
                         if assess_message(raw, owner, [lead])['issues']:

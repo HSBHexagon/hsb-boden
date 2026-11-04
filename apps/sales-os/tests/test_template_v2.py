@@ -53,7 +53,7 @@ def build(res):
     raw, mid = client().build_draft_message(
         res['to_email'], res['subject'], body_text=res['body_text'], template_id=res['template_id'],
         in_reply_to=res['in_reply_to'], references=res['references'], lead_id=res['lead_id'],
-        custom_message_id='<m1@hsb-boden.com>')
+        custom_message_id='<m1@hsb-boden.com>', copy_rev=res.get('copy_rev'))
     return raw, mid
 
 
@@ -104,13 +104,38 @@ def test_plain_text_part_first_no_attachment_no_reply_to():
     res = render_email_v2(lead(), 'JOEL', 1)
     raw, _ = build(res)
     msg = BytesParser(policy=policy.default).parsebytes(raw)
-    assert not msg.is_multipart()
-    assert msg.get_content_type() == 'text/plain' and msg.get_content_charset() == 'utf-8'
+    # text/plain zuerst, dann gleichlautendes HTML: Outlook bearbeitet IMAP-Entwürfe im HTML-Editor.
+    assert [p.get_content_type() for p in msg.walk()] == ['multipart/alternative', 'text/plain', 'text/html']
+    plain = msg.get_body(('plain',))
+    assert plain.get_content_charset() == 'utf-8'
     assert msg['Reply-To'] is None
     assert msg['X-HSB-Template-ID'] == 'v2-produktion-s1'
     assert msg['X-HSB-Lead-ID'] == 'HSB-20261027-1'
-    assert msg.get_content() == res['body_text'] or msg.get_content().strip() == res['body_text'].strip()
+    assert plain.get_content().replace('\r\n', '\n').strip() == res['body_text'].strip()
     assert not any(p.get_content_disposition() == 'attachment' for p in msg.walk())
+
+
+@pytest.mark.parametrize('variant', ['standard', 'reparatur'])
+def test_paragraphs_survive_in_plain_and_html_with_crlf(variant):
+    import html as _html
+    import re as _re
+    res = render_email_v2(lead(), 'JOEL', 1, variant=variant)
+    raw, _ = build(res)
+    # Nur CRLF-Zeilenenden: nackte LF lassen Outlook-Entwürfe zu einem Block zusammenfallen.
+    assert raw.replace(b'\r\n', b'').count(b'\n') == 0 and b'\r' not in raw.replace(b'\r\n', b'')
+    msg = BytesParser(policy=policy.default).parsebytes(raw)
+    plain = msg.get_body(('plain',)).get_content().replace('\r\n', '\n')
+    html_part = msg.get_body(('html',)).get_content()
+    paragraphs = [p for p in plain.strip().split('\n\n') if p.strip()]
+    assert len(paragraphs) >= 6
+    assert html_part.count('<p ') == len(paragraphs)
+    # Jede Zeile innerhalb eines Absatzes bleibt im HTML als Umbruch erhalten.
+    assert html_part.count('<br>') == sum(p.count('\n') for p in paragraphs)
+    assert all(p.get('Content-Transfer-Encoding') == 'quoted-printable'
+               for p in msg.walk() if not p.is_multipart())
+    for url in _re.findall(r'https?://[^\s<>"\x27]+', plain):
+        esc = _html.escape(url, quote=True)
+        assert f'<a href="{esc}">{esc}</a>' in html_part
 
 
 def test_v1_build_draft_message_unchanged():
@@ -133,7 +158,7 @@ def test_signature_contains_phone(owner):
 
 def test_greeting_without_contact():
     r = render_email_v2(lead(Ansprechpartner=''), 'JOEL', 1)
-    assert r['body_text'].startswith('Guten Tag,\n')
+    assert r['body_text'].startswith('Sehr geehrte Damen und Herren,\n')
     r = render_email_v2(lead(), 'JOEL', 1)
     assert r['body_text'].startswith('Sehr geehrter Herr Beispiel,\n')
 
@@ -216,6 +241,29 @@ def test_company_named_at_most_once_in_short_form():
             assert r['body_text'].count('Muster Architekten') <= 1, (seg, step)
             assert 'GmbH, Beratende' not in r['body_text']
             assert 'Projekte bei' not in r['body_text']
+
+
+@pytest.mark.parametrize('contact,expected', [
+    ('Herr Max Müller', 'Sehr geehrter Herr Müller,'),
+    ('Frau Dr. Anna von der Heide', 'Sehr geehrte Frau Dr. von der Heide,'),
+    ('Mag. Arch. Raimund', 'Sehr geehrte Damen und Herren,'),
+    ('Architekturhalle Mag. Arch. Raimund', 'Sehr geehrte Damen und Herren,'),
+    ('Herr Dipl.-Ing. Peter Lang', 'Sehr geehrte Damen und Herren,'),
+    ('Frau Einkauf', 'Sehr geehrte Damen und Herren,'),
+    ('Herr hans meier', 'Sehr geehrte Damen und Herren,'),
+    ('Raimund', 'Sehr geehrte Damen und Herren,'),
+    ('', 'Sehr geehrte Damen und Herren,'),
+])
+def test_v2_greeting_only_with_verified_salutation_and_surname(contact, expected):
+    from canonical_template_factory import anrede_v2
+    assert anrede_v2({'Ansprechpartner': contact}) == expected
+    assert render_email_v2(lead(Ansprechpartner=contact), 'JOEL', 1)['body_text'].startswith(expected + '\n')
+
+
+def test_v2_greeting_prefers_explicit_salutation_fields():
+    from canonical_template_factory import anrede_v2
+    assert anrede_v2({'Anrede': 'Frau', 'Nachname': 'Kowalski'}) == 'Sehr geehrte Frau Kowalski,'
+    assert anrede_v2({'Anrede': 'Divers', 'Nachname': 'Kowalski'}) == 'Sehr geehrte Damen und Herren,'
 
 
 def test_greeting_uses_surname_only_and_keeps_title_and_particles():

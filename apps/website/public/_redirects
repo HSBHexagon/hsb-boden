@@ -22,3 +22,8 @@ https://www.hsb-boden.com/*    https://www.hsb-boden.de/:splat  301!
 # 302: spaeterer Wechsel auf die verifizierte Landingpage ohne permanente Cachefalle.
 /Flyer                              /flyer/  301
 /HSB-HEXAGON-Industrieboeden-Flyer.pdf /HSB-Flyer-Geschaeftsfuehrer.pdf 302
+
+# 2026-11-04: Lesbarer Kurzlink aus den Reparatur-Entwürfen (canonical_template_factory.REPAIR_URL)
+# auf die Reparatur-Ersteinschätzung. 302, damit das Ziel ohne Cachefalle wechseln kann.
+/reparatur                          /leistungen/boden-reparatur-instandsetzung/  302
+/reparatur/                         /leistungen/boden-reparatur-instandsetzung/  302

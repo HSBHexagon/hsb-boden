@@ -97,11 +97,14 @@ def test_changed_original_and_optout_untouched(tmp_path,monkeypatch):
 def test_uncertain_append_never_repeated(tmp_path,monkeypatch):
     kwargs,boxes,calls,writes,old=setup_case(tmp_path,monkeypatch)
     imap=kwargs['client']._get_imap()
-    def uncertain(*a): raise TimeoutError('lost response')
+    appends=[]
+    def uncertain(*a): appends.append(1); raise TimeoutError('lost response')
     monkeypatch.setattr(imap,'append',uncertain)
-    with pytest.raises(TimeoutError): upgrade_drafts('JOEL',apply=True,**kwargs)
+    monkeypatch.setattr('draft_upgrade.time.sleep',lambda s:None)
+    # Nach dem Wiederverbinden ist der APPEND-Zustand unklar: nie wiederholen, sondern anhalten.
     with pytest.raises(RuntimeError,match='UNCERTAIN_APPEND'): upgrade_drafts('JOEL',apply=True,**kwargs)
-    assert boxes['Drafts']=={'1':old}
+    with pytest.raises(RuntimeError,match='UNCERTAIN_APPEND'): upgrade_drafts('JOEL',apply=True,**kwargs)
+    assert appends==[1] and boxes['Drafts']=={'1':old}
 
 
 def test_archive_encoding():
@@ -466,3 +469,22 @@ def test_lock_released_even_if_logout_resets():
     with mailbox_dispatch_lock(SimpleNamespace(_get_imap=server.session)):
         pass
     assert LOCK_FOLDER not in server.folders
+
+
+
+def test_connection_reset_mid_draft_reconnects_and_finishes_once(tmp_path, monkeypatch):
+    # Lauf 04.11.2026: 'Connection reset by peer' mitten in der Tranche. Neu anmelden, Entwurf genau einmal anlegen.
+    kwargs, boxes, calls, writes, old = setup_case(tmp_path, monkeypatch)
+    imap = kwargs['client']._get_imap()
+    real_select = imap.select
+    resets = []
+    def flaky_select(*a, **k):
+        if not resets:
+            resets.append(1)
+            raise ConnectionResetError(104, 'Connection reset by peer')
+        return real_select(*a, **k)
+    monkeypatch.setattr(imap, 'select', flaky_select)
+    monkeypatch.setattr('draft_upgrade.time.sleep', lambda s: None)
+    result = upgrade_drafts('JOEL', apply=True, variant='reparatur', **kwargs)
+    assert result['imap_reconnects'] == 1 and result['appended'] == result['crm_updated'] == 1
+    assert calls.count('APPEND') == 1 and len(boxes['Drafts']) == 1

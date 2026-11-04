@@ -22,6 +22,7 @@ import time
 
 from sales_reconciliation import OUTDATED_PLANNER_COPY, OUTDATED_REPAIR_COPY
 
+IMAP_RETRIES = 3
 ARCHIVE = 'Entwürfe-Archiv-v1'
 REPAIRABLE = {'BODY_NOT_COMPANY_OR_CONTACT_SPECIFIC', 'SUBJECT_NOT_COMPANY_SPECIFIC',
               'UNRESOLVED_PLACEHOLDER', 'FLYER_LINK_MISSING', 'PERSONAL_OPTOUT_LINK_MISSING',
@@ -201,7 +202,7 @@ def upgrade_drafts(owner, limit=5, cohort='pilot', apply=False, journal_path=Non
                     # 60 Lesezugriffe pro Minute. Die Umstellung sendet nichts; der Versand prüft jede Sperre erneut live.
                     current_rows = svc.spreadsheets().values().get(spreadsheetId=CANONICAL_SPREADSHEET_ID,
                         range='ALL_LEADS!A1:BU6425').execute().get('values', [])
-                    for rec, lead in selected:
+                    def handle(rec, lead, imap):
                         current_matches = [(idx, dict(zip(current_rows[0], r))) for idx, r in enumerate(current_rows[1:], 2)
                             if r and r[0] == lead['Lead-ID']]
                         if len(current_matches) != 1:
@@ -224,11 +225,11 @@ def upgrade_drafts(owner, limit=5, cohort='pilot', apply=False, journal_path=Non
                             if 'CRM_STABLE_LEAD_BINDING_REQUIRED' not in str(exc) and 'CRM_BINDING_WRONG_SHEET' not in str(exc):
                                 raise
                             result['skipped_reasons']['CRM_BINDING_UNAVAILABLE'] += 1
-                            continue
+                            return
                         key = '|'.join(str(rec[k]) for k in ('owner', 'uidvalidity', 'uid', 'sha256'))
                         row = db.execute('SELECT mid,raw,state,old_raw FROM upgrades WHERE key=?', (key,)).fetchone()
                         if row and row[2] == 'DONE':
-                            continue
+                            return
                         if outdated & set(rec.get('issues', [])):
                             live_binding = (current.get('Draft_ID'), current.get('Email_Template_ID'))
                             original_binding = (lead.get('Draft_ID'), lead.get('Email_Template_ID'))
@@ -241,7 +242,7 @@ def upgrade_drafts(owner, limit=5, cohort='pilot', apply=False, journal_path=Non
                         old = row[3] if row and row[2] in ('MOVE_UNKNOWN', 'ARCHIVED') else _raw(imap, rec['uid'])
                         if hashlib.sha256(old).hexdigest() != rec['sha256']:
                             result['skipped_reasons']['CHANGED_V1_HASH'] += 1
-                            continue
+                            return
                         if row is None:
                             rendered = render_email_v2(lead, owner, click_url=click_url(lead['Lead-ID'], segment_for(lead), os.environ.get('HSB_CLICK_SECRET')), variant=variant)
                             mid = make_msgid(domain='hsb-boden.com')
@@ -258,7 +259,7 @@ def upgrade_drafts(owner, limit=5, cohort='pilot', apply=False, journal_path=Non
                         if saved_old != old:
                             raise RuntimeError('ORIGINAL_BACKUP_MISMATCH')
                         if state == 'DONE':
-                            continue
+                            return
                         matches = _find(imap, mid)
                         if len(matches) > 1:
                             raise RuntimeError('REPLACEMENT_NOT_UNIQUE')
@@ -313,6 +314,23 @@ def upgrade_drafts(owner, limit=5, cohort='pilot', apply=False, journal_path=Non
                             binding=binding, headers=current_rows[0])
                         result['crm_updated'] += 1
                         db.execute("UPDATE upgrades SET state='DONE' WHERE key=?", (key,))
+                    # Reißt die IMAP-Verbindung ab, neu anmelden und denselben Entwurf ab dem letzten Journal-Zustand
+                    # fortsetzen: PREPARED/APPEND/MOVE werden über Message-ID live nachgeprüft, nie doppelt ausgeführt.
+                    for rec, lead in selected:
+                        for attempt in range(1, IMAP_RETRIES + 1):
+                            try:
+                                handle(rec, lead, imap)
+                                break
+                            except (imaplib.IMAP4.abort, OSError):
+                                if attempt == IMAP_RETRIES:
+                                    raise
+                                result['imap_reconnects'] = result.get('imap_reconnects', 0) + 1
+                                try:
+                                    imap.logout()
+                                except Exception:  # noqa: BLE001
+                                    pass
+                                time.sleep(5 * attempt)
+                                imap = client._get_imap()
                 finally:
                     try:
                         imap.logout()

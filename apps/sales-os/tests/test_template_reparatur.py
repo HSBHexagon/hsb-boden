@@ -43,6 +43,18 @@ def test_text_differs_from_standard_and_names_repair(segment):
         assert re.search(r'[Rr]eparatur|[Ii]nstand', body_only(r['body_text'])), r['template_id']
 
 
+@pytest.mark.parametrize('variant', ['standard', 'reparatur'])
+def test_architect_first_contact_names_the_client_project_and_planning_role(variant):
+    lead = SEGMENT_LEADS['architekten'](Firma='Muster Architekten GmbH')
+    message = render_email_v2(lead, 'JOEL', 1, variant=variant)
+    body = body_only(message['body_text'])
+
+    assert 'für einen Bauherrn' in body
+    assert 'Ausschreibung' in body
+    assert 'Muster Architekten' in body
+    assert 'Falls bei Muster Architekten' not in body
+
+
 @pytest.mark.parametrize('segment', SEGMENTS)
 def test_subject_2_to_5_words_max_50(segment):
     for firma in ('Musterbrauerei GmbH', 'Müller-Lüdenscheidt Industrieanlagenbau Nordwest GmbH', ''):

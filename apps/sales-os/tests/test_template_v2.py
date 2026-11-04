@@ -23,7 +23,8 @@ def lead(**overrides):
 
 
 def arch(**o):
-    return lead(**{'Branche': 'Architekturbüro', 'Firma': 'Beispiel Architekten GmbH', **o})
+    return lead(**{'Branche': 'Architekturbüro', 'Firma': 'Beispiel Architekten GmbH',
+                   'Projektart': 'Umbau Produktionsstandort', **o})
 
 
 SEGMENT_LEADS = {'architekten': arch, 'produktion': lead}

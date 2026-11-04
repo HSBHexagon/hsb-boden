@@ -161,14 +161,26 @@ EXPLORATION_SHARE = 0.15
 
 
 _PRODUCTION_BRANCHE_RE = re.compile(r"getränk|getraenk|lebensmittel|produktion|herstell|fertigung|industrie|brauerei|molkerei", re.I)
+_PLANNING_BRANCHE_RE = re.compile(r"architekt|ingenieurbüro|ingenieurbuero|generalplan|fachplan", re.I)
+_PLANNING_PROJECT_RE = re.compile(
+    r"\b(?:industriebau|industriegebäude|industriestandort|produktion(?:s\w+)?|lebensmittel\w*|brauerei|molkerei|abfüll\w*)",
+    re.I,
+)
 
 
 def segment_for(lead: dict) -> Segment:
     """Produktion nur bei erkannter Branche; leer/unbekannt -> architekten (konservativ, niedrigere Basis)."""
     branche = str(lead.get("Branche") or "")
-    if "architekt" not in branche.lower() and _PRODUCTION_BRANCHE_RE.search(branche):
+    if not _PLANNING_BRANCHE_RE.search(branche) and _PRODUCTION_BRANCHE_RE.search(branche):
         return "produktion"
     return "architekten"
+
+
+def has_relevant_planning_project(lead: dict) -> bool:
+    """Ein Scoring-Fallback oder Adresslistenimport belegt keine fachliche Passung."""
+    branche = str(lead.get("Branche") or "")
+    project = str(lead.get("Projektart") or "")
+    return bool(_PLANNING_BRANCHE_RE.search(branche) and _PLANNING_PROJECT_RE.search(project))
 
 
 def _tier_for(score: int) -> str:

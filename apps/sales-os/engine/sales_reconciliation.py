@@ -21,8 +21,14 @@ import re
 from urllib.parse import urlsplit, parse_qs, unquote
 from urllib.request import Request
 from hsb_core import check_eligibility, normalize_owner, sanitize_company_name
+from lead_quality import has_relevant_planning_project, segment_for
 
 SENDERS = {'JOEL': 'j-cherino@hsb-boden.com', 'JORDI': 'j-post@hsb-boden.com'}
+OUTDATED_PLANNER_COPY = 'OUTDATED_PLANNER_COPY'
+_OLD_PLANNER_LINES = {
+    'v2-architekten-s1': 'Gefälle, Rinnenanschlüsse und Fugen lassen sich besonders gut in der Ausführungsplanung',
+    'v2-architekten-reparatur-s1': 'Nicht jeder Bestandsboden muss komplett neu verlegt werden',
+}
 
 
 def queue_block_reasons(lead):
@@ -89,6 +95,12 @@ def assess_message(raw, owner, leads):
         issues.append('MESSAGE_ID_INVALID')
     template_id = str(msg.get('X-HSB-Template-ID') or '').strip()
     is_v2 = template_id.startswith('v2-')
+    if template_id.startswith('v2-architekten-') and (
+            segment_for(lead) != 'architekten' or not has_relevant_planning_project(lead)):
+        issues.append('PLANNING_PROJECT_UNVERIFIED')
+    old_planner_line = _OLD_PLANNER_LINES.get(template_id)
+    if old_planner_line and old_planner_line in ' '.join(body.split()):
+        issues.append(OUTDATED_PLANNER_COPY)
     company = str(lead.get('Firma') or lead.get('Company') or '').strip()
     contact = str(lead.get('Ansprechpartner') or lead.get('Contact') or '').strip()
     if not company or sanitize_company_name(company, recipients[0] if recipients else '') == 'Ihr Unternehmen':

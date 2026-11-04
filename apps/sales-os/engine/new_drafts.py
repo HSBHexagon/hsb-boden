@@ -14,7 +14,7 @@ from pathlib import Path
 from canonical_template_factory import render_email_v2
 from click_sync import click_url
 from hsb_core import check_eligibility, normalize_owner
-from lead_quality import deliverability_flags, fit_score, segment_for
+from lead_quality import deliverability_flags, fit_score, has_relevant_planning_project, segment_for
 
 PRODUCTION_SHARE = 0.8
 MAX_DRAFTS_PER_MAILBOX = 6000
@@ -57,6 +57,9 @@ def select_leads(leads, owner, limit, existing_ids, mx_check=None, draft_recipie
         # Zurückgestellt (Website-Signale oder Operator): die Neuberechnung ohne Signale darf das nicht aufheben.
         if str(lead.get('Tier') or '').strip().upper() == 'Z':
             continue
+        segment = segment_for(lead)
+        if segment == 'architekten' and not has_relevant_planning_project(lead):
+            continue
         lead = dict(lead)
         lead['Deliverability_Flags'] = deliverability_flags(lead, mx_cache, set(), mx_check=mx_check)
         if not check_eligibility(lead).eligible:
@@ -64,7 +67,7 @@ def select_leads(leads, owner, limit, existing_ids, mx_check=None, draft_recipie
         score, tier, _ = fit_score(lead, {'positive': [], 'negative': [], 'quotes': []})
         if tier not in TIER_ORDER:
             continue
-        buckets[segment_for(lead)].append((TIER_ORDER[tier], -score, lid, lead))
+        buckets[segment].append((TIER_ORDER[tier], -score, lid, lead))
     for items in buckets.values():
         items.sort(key=lambda x: x[:3])
     want_prod = min(len(buckets['produktion']), round(limit * PRODUCTION_SHARE))

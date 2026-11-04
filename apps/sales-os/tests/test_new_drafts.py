@@ -7,6 +7,8 @@ def lead(i, branche='Getraenkeindustrie', owner='JOEL', **kw):
             'Verantwortlicher': owner, 'Legal_Basis': 'LEGITIMATE_INTEREST', 'Legal_Review_Status': 'yes',
             'Legal_Review_Vermerk': 'x' * 45, 'Legal_Review_At': '2026-10-01T00:00:00+00:00',
             'Versandfreigabe': 'yes', 'Opt-in-Status': 'yes'}
+    if branche == 'Architekten':
+        base['Projektart'] = 'Umbau eines Produktionsstandorts'
     base.update(kw)
     return base
 
@@ -28,6 +30,15 @@ def test_architects_fill_when_production_runs_out():
     leads = [lead(1)] + [lead(i, 'Architekten') for i in range(2, 12)]
     picked = nd.select_leads(leads, 'JOEL', 5, set(), mx_check=MX)
     assert len(picked) == 5 and sum(nd.segment_for(l) == 'produktion' for l in picked) == 1
+
+
+def test_planners_need_a_relevant_project_type():
+    leads = [lead(1, 'Architekten', Projektart='', Notizen='Import Architektenliste'),
+             lead(2, 'Sonstiges', Projektart='Umbau Lebensmittelbetrieb'),
+             lead(3, 'Architekten', Projektart='Wohnbau'),
+             lead(4, 'Architekten', Projektart='Umbau Lebensmittelbetrieb')]
+    picked = nd.select_leads(leads, 'JOEL', 10, set(), mx_check=MX)
+    assert [l['Lead-ID'] for l in picked] == [leads[3]['Lead-ID']]
 
 
 def test_build_items_are_plain_v2_with_lead_header_and_click_url():

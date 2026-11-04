@@ -42,6 +42,7 @@ from reconcile_cloud_mailbox import (
     INTERNAL_DOMAINS,
     get_az_apihub_token,
     call_office365_api,
+    APIHubRateLimited,
     parse_rfc3464_dsn,
     build_inbound_event_row,
 )
@@ -135,6 +136,9 @@ def scan_mailbox_for_bounces(
                         "failed_recipients": failed_recips,
                         "source_folder": folder,
                     })
+        except APIHubRateLimited:
+            # Drosselung: abbrechen statt die übrigen Ordner weiter zu belasten; Lauf meldet den Fehler.
+            raise
         except Exception as e:
             # Folder does not exist or access forbidden
             continue

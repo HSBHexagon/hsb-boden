@@ -140,3 +140,8 @@ master_mailbox_orchestrator.py --owner JOEL --batches 10 [--apply]
 3. Prüfe `CURRENT_STATE.md` und aktualisiere die TODO-Liste
 4. Führe nach Änderungen `python3 apps/website/scripts/verify_ssot.py` aus
 5. Teste mit `pytest apps/sales-os/tests/ -q`
+
+### Ein-Befehl-Abläufe (04.11.2026, ergänzt)
+- `bash apps/sales-os/bin/postfach-lauf.sh` zeigt im Probelauf alle Zahlen; mit `--apply` laufen Audit, Dubletten-Archiv, Audit, Reparatur-Erneuerung in 100er-Tranchen und das Abschluss-Audit. Versendet wird dabei nichts.
+- `bash apps/sales-os/bin/versand-tranche.sh <1-35>` ist ein Probelauf. Mit `--apply` gehen bis zu N Entwürfe je Postfach raus, 45–90 s Abstand, höchstens 35 je Postfach und Tag, alle Sperren werden vorher frisch geprüft.
+- Beide Skripte laden die Zugangsdaten aus der Umgebung oder aus `~/.config/hsb-sales-os/env` (nicht im Repo). Laufen müssen sie auf dem Mac, weil nur dort der Google-Zugang liegt. WG01 erreicht IMAP, hat aber keinen CRM-Zugang.

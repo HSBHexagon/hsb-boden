@@ -25,8 +25,12 @@ import datetime
 import json
 import os
 import re
+import email.utils
+import random
 import subprocess
 import sys
+import threading
+import time
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -110,14 +114,67 @@ def get_current_az_account() -> str:
         return ""
 
 
+class APIHubRateLimited(RuntimeError):
+    """APIHUB drosselt weiter (HTTP 429/503) nachdem alle Wiederholungen ausgeschöpft sind."""
+
+
+# Gemeinsames Rate-Limit für alle APIHUB-Abfragen dieses Prozesses (beide Postfächer, alle Ordner).
+APIHUB_MIN_INTERVAL_S = float(os.environ.get("HSB_APIHUB_MIN_INTERVAL_S", "1.0"))
+APIHUB_MAX_ATTEMPTS = 6
+APIHUB_MAX_BACKOFF_S = 120.0
+_THROTTLE_CODES = {429, 503}
+_apihub_lock = threading.Lock()
+_apihub_next_slot = [0.0]
+
+
+def _wait_for_slot(clock=time.monotonic, sleep=time.sleep):
+    with _apihub_lock:
+        now = clock()
+        wait = _apihub_next_slot[0] - now
+        _apihub_next_slot[0] = max(now, _apihub_next_slot[0]) + APIHUB_MIN_INTERVAL_S
+    if wait > 0:
+        sleep(wait)
+
+
+def _push_back_slot(delay, clock=time.monotonic):
+    # Retry-After gilt für den Connector, nicht nur für diese Anfrage: alle folgenden Aufrufe warten mit.
+    with _apihub_lock:
+        _apihub_next_slot[0] = max(_apihub_next_slot[0], clock() + delay)
+
+
+def retry_after_seconds(value, now=None):
+    """Retry-After als Sekunden oder HTTP-Datum; None, wenn nicht lesbar."""
+    if value is None:
+        return None
+    value = str(value).strip()
+    if value.isdigit():
+        return float(value)
+    try:
+        when = email.utils.parsedate_to_datetime(value)
+    except (TypeError, ValueError):
+        return None
+    if when is None:
+        return None
+    current = now or datetime.datetime.now(datetime.timezone.utc)
+    return max(0.0, (when - current).total_seconds())
+
+
 def call_office365_api(
     token: str,
     conn_id: str,
     folder_path: str,
     top: int = 50,
     fetch_only_unread: bool = False,
+    *,
+    urlopen=urllib.request.urlopen,
+    sleep=time.sleep,
+    clock=time.monotonic,
 ) -> List[Dict[str, Any]]:
-    """Ruft die GetEmailsV3 Operation auf dem Office365 APIHub-Connector auf."""
+    """Ruft GetEmailsV3 auf dem Office365 APIHub-Connector auf.
+
+    Gemeinsames Rate-Limit, bei HTTP 429/503 Retry-After beachten, sonst exponentielles Backoff
+    mit Jitter. Nach ausgeschöpften Versuchen APIHubRateLimited (kein stiller Leerabgleich).
+    """
     params = urllib.parse.urlencode(
         {
             "folderPath": folder_path,
@@ -126,23 +183,44 @@ def call_office365_api(
         }
     )
     url = f"{RUNTIME_URL}/{conn_id}/v3/Mail?{params}"
-    req = urllib.request.Request(url, headers={"Authorization": f"Bearer {token}"})
+    for attempt in range(1, APIHUB_MAX_ATTEMPTS + 1):
+        _wait_for_slot(clock=clock, sleep=sleep)
+        req = urllib.request.Request(url, headers={"Authorization": f"Bearer {token}"})
+        try:
+            with urlopen(req, timeout=30) as resp:
+                data = json.loads(resp.read().decode("utf-8"))
+                return data.get("value", [])
+        except urllib.error.HTTPError as e:
+            err_msg = e.read().decode("utf-8", "replace")
+            if e.code not in _THROTTLE_CODES:
+                raise RuntimeError(f"Office365 API Fehler (HTTP {e.code}) fuer {folder_path}: {err_msg}")
+            delay = retry_after_seconds(e.headers.get("Retry-After") if e.headers else None)
+            if delay is None:
+                delay = min(APIHUB_MAX_BACKOFF_S, 2.0 ** attempt) * (0.5 + random.random() / 2)
+            delay = min(delay, APIHUB_MAX_BACKOFF_S)
+            # Cooldown auch beim letzten Versuch eintragen, damit Folgeaufrufe (z. B. Inbox nach Sent) mitwarten.
+            _push_back_slot(delay, clock=clock)
+            if attempt == APIHUB_MAX_ATTEMPTS:
+                raise APIHubRateLimited(
+                    f"Office365 API gedrosselt (HTTP {e.code}) fuer {folder_path} nach {attempt} Versuchen")
+            print(f"[APIHUB] HTTP {e.code} fuer {folder_path}: warte {delay:.1f}s (Versuch {attempt}/{APIHUB_MAX_ATTEMPTS})",
+                  flush=True)
+    raise APIHubRateLimited(f"Office365 API gedrosselt fuer {folder_path}")
 
+
+def _call_with_folder_fallback(token, conn_id, primary, fallback, limit):
+    """Englischer Ordnername nur bei echtem Ordnerfehler, nie bei Drosselung (verdoppelt sonst die Last)."""
     try:
-        with urllib.request.urlopen(req, timeout=30) as resp:
-            data = json.loads(resp.read().decode("utf-8"))
-            return data.get("value", [])
-    except urllib.error.HTTPError as e:
-        err_msg = e.read().decode("utf-8", "replace")
-        raise RuntimeError(f"Office365 API Fehler (HTTP {e.code}) fuer {folder_path}: {err_msg}")
+        return call_office365_api(token, conn_id, primary, top=limit)
+    except APIHubRateLimited:
+        raise
+    except Exception:
+        return call_office365_api(token, conn_id, fallback, top=limit)
 
 
 def fetch_cloud_sent_messages(token: str, conn_id: str, limit: int = 100) -> List[Dict[str, Any]]:
     """Holt gesendete Nachrichten aus Gesendete Elemente (mit Fallback auf SentItems)."""
-    try:
-        msgs = call_office365_api(token, conn_id, "Gesendete Elemente", top=limit)
-    except Exception:
-        msgs = call_office365_api(token, conn_id, "SentItems", top=limit)
+    msgs = _call_with_folder_fallback(token, conn_id, "Gesendete Elemente", "SentItems", limit)
 
     sent_items = []
     for m in msgs:
@@ -170,10 +248,7 @@ def fetch_cloud_sent_messages(token: str, conn_id: str, limit: int = 100) -> Lis
 
 def fetch_cloud_inbound_messages(token: str, conn_id: str, limit: int = 100) -> List[Dict[str, Any]]:
     """Holt eingehende Nachrichten aus Posteingang (mit Fallback auf Inbox)."""
-    try:
-        msgs = call_office365_api(token, conn_id, "Posteingang", top=limit)
-    except Exception:
-        msgs = call_office365_api(token, conn_id, "Inbox", top=limit)
+    msgs = _call_with_folder_fallback(token, conn_id, "Posteingang", "Inbox", limit)
 
     inbound_items = []
     for m in msgs:

@@ -12,6 +12,7 @@ wurde, die eine Antwort/Abmeldung offen haben oder deren CRM-Zuordnung nicht ein
 from __future__ import annotations
 
 from collections import Counter, defaultdict
+from contextlib import ExitStack
 import hashlib
 import sqlite3
 from pathlib import Path
@@ -22,6 +23,19 @@ from hsb_core import normalize_owner
 # Diese Befunde sperren eine Empfängergruppe vollständig gegen jede Änderung.
 PROTECTED_ISSUES = frozenset({'ALREADY_CONTACTED', 'ALREADY_CONTACTED_DOMAIN', 'INBOUND_REQUIRES_REVIEW',
                               'CRM_RECIPIENT_AMBIGUOUS', 'CRM_LEAD_ID_AMBIGUOUS', 'LEAD_ID_CONFLICT'})
+
+
+# CRM-Sperren erscheinen im Audit als Eignungsgründe, nicht als Befunde; sie sperren ebenso.
+PROTECTED_ELIGIBILITY = ('Opt_Out', 'Suppressed', 'Suppression_Reason', 'bereits gesendet', 'Hard Bounce',
+                         'REPLY_ALREADY_PRESENT', 'SEND_STATE_NOT_READY', 'Send_Datum', 'Sent_At',
+                         'Last_Send_Attempt_At', 'EXPLICIT_LEGAL_BLOCK')
+_YES = {'yes', 'ja', 'true', '1', 'opt_out'}
+
+
+def _crm_blocked(lead):
+    return (any(str(lead.get(k) or '').strip().lower() in _YES for k in ('Opt-out-Status', 'Opt_Out', 'Suppressed'))
+            or str(lead.get('Send_Status') or '').strip().lower() in {'sent', 'gesendet'}
+            or bool(str(lead.get('Send_Datum') or '').strip()))
 
 
 def _is_current(record):
@@ -38,7 +52,7 @@ def plan_dedupe(records, leads):
         if rec.get('internal_test') or len(rec.get('recipients') or []) != 1:
             continue
         groups[rec['recipients'][0]].append(rec)
-    plan = {'keep': [], 'archive': [], 'protected_groups': [], 'ambiguous_groups': [],
+    plan = {'keep': [], 'archive': [], 'groups': [], 'protected_groups': [], 'ambiguous_groups': [],
             'groups_with_duplicates': 0, 'reasons': Counter()}
     for email, recs in sorted(groups.items()):
         if len(recs) < 2:
@@ -50,6 +64,11 @@ def plan_dedupe(records, leads):
             plan['reasons']['PROTECTED_' + sorted(issues & PROTECTED_ISSUES)[0]] += 1
             continue
         matches = by_email.get(email, [])
+        eligibility = [str(x) for r in recs for x in r.get('eligibility_reasons', [])]
+        if any(x.startswith(PROTECTED_ELIGIBILITY) for x in eligibility) or any(_crm_blocked(l) for l in matches):
+            plan['protected_groups'].append(email)
+            plan['reasons']['PROTECTED_CRM_BLOCK'] += 1
+            continue
         if len(matches) != 1:
             plan['ambiguous_groups'].append(email)
             plan['reasons']['CRM_NOT_UNIQUE'] += 1
@@ -70,7 +89,9 @@ def plan_dedupe(records, leads):
             keeper = max(own, key=lambda r: (_is_current(r), int(r.get('uid') or 0)))
             plan['reasons']['KEEP_NEWEST' if not _is_current(keeper) else 'KEEP_CURRENT_COPY'] += 1
         plan['keep'].append(keeper)
-        plan['archive'].extend(r for r in recs if r is not keeper)
+        dups = [r for r in recs if r is not keeper]
+        plan['archive'].extend(dups)
+        plan['groups'].append((keeper, dups))
     plan['archive_count'] = len(plan['archive'])
     plan['archive_by_owner'] = dict(Counter(r['owner'] for r in plan['archive']))
     return plan
@@ -85,13 +106,12 @@ def apply_dedupe(plan, clients, journal_path):
     db.execute('PRAGMA synchronous=FULL')
     db.execute('CREATE TABLE IF NOT EXISTS dedupe(key TEXT PRIMARY KEY, mid TEXT, state TEXT)')
     result = {'archived': 0, 'skipped': Counter(), 'customer_emails_sent': 0}
-    by_owner = defaultdict(list)
-    for rec in plan['archive']:
-        by_owner[rec['owner']].append(rec)
+    owners = {r['owner'] for keeper, dups in plan['groups'] for r in [keeper, *dups]}
+    archive = mailbox_arg(ARCHIVE)
     try:
-        for owner, recs in by_owner.items():
-            with clients[owner]._get_imap() as imap:
-                archive = mailbox_arg(ARCHIVE)
+        with ExitStack() as stack:
+            imaps = {o: stack.enter_context(clients[o]._get_imap()) for o in sorted(owners)}
+            for imap in imaps.values():
                 typ, _ = imap.select(archive, readonly=True)
                 if typ != 'OK':
                     typ, _ = imap.create(archive)
@@ -100,7 +120,19 @@ def apply_dedupe(plan, clients, journal_path):
                 capabilities = {x.decode().upper() if isinstance(x, bytes) else str(x).upper() for x in imap.capabilities}
                 if 'MOVE' not in capabilities:
                     raise RuntimeError('UID_MOVE_REQUIRED_ORIGINAL_RETAINED')
-                for rec in recs:
+            for keeper, dups in plan['groups']:
+                # Erst den verbleibenden Entwurf live bestätigen; sonst bleibt die Gruppe unangetastet.
+                kimap = imaps[keeper['owner']]
+                _select(kimap, keeper['folder'], keeper['uidvalidity'])
+                try:
+                    kraw = _raw(kimap, keeper['uid'])
+                except RuntimeError:
+                    kraw = None
+                if kraw is None or hashlib.sha256(kraw).hexdigest() != keeper['sha256']:
+                    result['skipped']['KEEPER_CHANGED_GROUP_UNTOUCHED'] += len(dups)
+                    continue
+                for rec in dups:
+                    imap = imaps[rec['owner']]
                     key = '|'.join(str(rec[k]) for k in ('owner', 'uidvalidity', 'uid', 'sha256'))
                     row = db.execute('SELECT state FROM dedupe WHERE key=?', (key,)).fetchone()
                     if row and row[0] == 'DONE':

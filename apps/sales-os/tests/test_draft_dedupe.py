@@ -129,3 +129,44 @@ def test_apply_skips_draft_changed_since_audit(tmp_path):
     res = apply_dedupe(plan, {'JOEL': Client(imap)}, tmp_path / 'j.sqlite3')
     assert res['archived'] == 0 and res['skipped']['CHANGED_SINCE_AUDIT'] == 1
     assert set(imap.boxes['Drafts']) == {'1', '2'}
+
+
+def test_keeper_gone_since_audit_leaves_group_untouched(tmp_path):
+    # Codex-Review #465: ohne Prüfung des behaltenen Entwurfs bliebe der Empfänger ohne Entwurf.
+    keep, dup = _rec(1, 'x@firma.de', '<a@h>'), _rec(2, 'x@firma.de', '<b@h>')
+    imap = FakeImap({'Drafts': {'2': dup['_raw']}})
+    plan = plan_dedupe([keep, dup], [_lead('x@firma.de', draft_id='<a@h>')])
+    res = apply_dedupe(plan, {'JOEL': Client(imap)}, tmp_path / 'j.sqlite3')
+    assert res['archived'] == 0 and res['skipped']['KEEPER_CHANGED_GROUP_UNTOUCHED'] == 1
+    assert list(imap.boxes['Drafts']) == ['2'] and 'MOVE' not in imap.calls
+
+
+def test_keeper_changed_since_audit_leaves_group_untouched(tmp_path):
+    keep, dup = _rec(1, 'x@firma.de', '<a@h>'), _rec(2, 'x@firma.de', '<b@h>')
+    imap = FakeImap({'Drafts': {'1': keep['_raw'] + b'edited', '2': dup['_raw']}})
+    plan = plan_dedupe([keep, dup], [_lead('x@firma.de', draft_id='<a@h>')])
+    assert apply_dedupe(plan, {'JOEL': Client(imap)}, tmp_path / 'j.sqlite3')['archived'] == 0
+    assert set(imap.boxes['Drafts']) == {'1', '2'}
+
+
+def test_cross_mailbox_apply_checks_keeper_in_other_mailbox(tmp_path):
+    keep, dup = _rec(1, 'x@firma.de', '<a@h>'), _rec(9, 'x@firma.de', '<b@h>', owner='JORDI')
+    joel, jordi = FakeImap({'Drafts': {'1': keep['_raw']}}), FakeImap({'Drafts': {'9': dup['_raw']}})
+    plan = plan_dedupe([keep, dup], [_lead('x@firma.de', draft_id='<a@h>')])
+    res = apply_dedupe(plan, {'JOEL': Client(joel), 'JORDI': Client(jordi)}, tmp_path / 'j.sqlite3')
+    assert res['archived'] == 1 and list(joel.boxes['Drafts']) == ['1'] and jordi.boxes['Drafts'] == {}
+
+
+@pytest.mark.parametrize('field,value', [('Opt-out-Status', 'yes'), ('Suppressed', 'ja'), ('Send_Status', 'sent'),
+                                         ('Send_Datum', '2026-10-01')])
+def test_crm_blocked_recipients_are_protected(field, value):
+    # Codex-Review #465: CRM-Sperren stehen im Audit unter eligibility_reasons, nicht unter issues.
+    recs = [_rec(1, 'x@firma.de', '<a@h>'), _rec(2, 'x@firma.de', '<b@h>')]
+    plan = plan_dedupe(recs, [dict(_lead('x@firma.de', draft_id='<a@h>'), **{field: value})])
+    assert plan['archive'] == [] and plan['protected_groups'] == ['x@firma.de']
+
+
+def test_eligibility_optout_reason_protects_group():
+    recs = [dict(_rec(1, 'x@firma.de', '<a@h>'), eligibility_reasons=['Opt_Out=YES']), _rec(2, 'x@firma.de', '<b@h>')]
+    plan = plan_dedupe(recs, [_lead('x@firma.de', draft_id='<a@h>')])
+    assert plan['archive'] == [] and plan['reasons']['PROTECTED_CRM_BLOCK'] == 1

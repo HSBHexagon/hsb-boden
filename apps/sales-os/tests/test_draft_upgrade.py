@@ -56,6 +56,9 @@ def setup_case(tmp_path,monkeypatch):
     monkeypatch.setattr('outbound_safety.crm_write_readback',write)
     monkeypatch.setattr('outbound_safety.require_stable_crm_binding',lambda *a:{'developerMetadataLookup':{'metadataId':17}})
     monkeypatch.setattr('outbound_safety.crm_write_lead_readback',lambda svc,sheet,lead_id,values,**k:write(svc,sheet,headers,2,values))
+    monkeypatch.setattr('crm_bindings.existing_bindings',lambda *a,**k:{})
+    monkeypatch.setattr('crm_bindings.ensure_bindings',lambda *a,**k:{'created':len(k.get('only') or ())})
+    monkeypatch.setattr('crm_bindings.remove_bindings',lambda *a,**k:0)
     from contextlib import nullcontext
     monkeypatch.setattr('outbound_safety.mailbox_dispatch_lock',lambda c:nullcontext())
     kwargs=dict(lock_client=client,records=[record],leads=[lead],client=client,svc=svc,mx_check=lambda _:True,journal_path=tmp_path/'upgrade.db')
@@ -359,3 +362,34 @@ def test_stale_lock_released_only_without_uncertain_send():
     dry = _LockImap(True)
     assert release_stale_lock(_lock_svc(['']), SimpleNamespace(_get_imap=lambda: dry), 's')['released'] is False and not dry.deleted
     assert release_stale_lock(_lock_svc(['']), SimpleNamespace(_get_imap=lambda: _LockImap(False)), 's', apply=True)['lock'] == 'NONE'
+
+
+def test_tranche_binds_missing_leads_and_removes_only_its_own(tmp_path, monkeypatch):
+    # Lauf 04.11.2026 brach mit CRM_STABLE_LEAD_BINDING_REQUIRED ab: Umstellung legte keine Bindungen an.
+    kwargs, boxes, calls, writes, old = setup_case(tmp_path, monkeypatch)
+    seen = {}
+    monkeypatch.setattr('crm_bindings.ensure_bindings', lambda *a, **k: seen.setdefault('ensure', set(k['only'])))
+    monkeypatch.setattr('crm_bindings.remove_bindings', lambda svc, sid, ids: seen.setdefault('remove', set(ids)))
+    lead_id = kwargs['leads'][0]['Lead-ID']
+    result = upgrade_drafts('JOEL', apply=True, variant='reparatur', **kwargs)
+    assert result['crm_updated'] == 1
+    assert seen == {'ensure': {lead_id}, 'remove': {lead_id}}
+
+
+def test_prebound_lead_binding_is_kept(tmp_path, monkeypatch):
+    kwargs, boxes, calls, writes, old = setup_case(tmp_path, monkeypatch)
+    lead_id = kwargs['leads'][0]['Lead-ID']
+    removed = []
+    monkeypatch.setattr('crm_bindings.existing_bindings', lambda *a, **k: {lead_id: [1]})
+    monkeypatch.setattr('crm_bindings.remove_bindings', lambda svc, sid, ids: removed.append(set(ids)))
+    upgrade_drafts('JOEL', apply=True, variant='reparatur', **kwargs)
+    assert removed == [set()]
+
+
+def test_missing_binding_skips_draft_without_touching_mailbox(tmp_path, monkeypatch):
+    kwargs, boxes, calls, writes, old = setup_case(tmp_path, monkeypatch)
+    def no_binding(*a): raise RuntimeError('CRM_STABLE_LEAD_BINDING_REQUIRED')
+    monkeypatch.setattr('outbound_safety.require_stable_crm_binding', no_binding)
+    result = upgrade_drafts('JOEL', apply=True, variant='reparatur', **kwargs)
+    assert result['skipped_reasons']['CRM_BINDING_UNAVAILABLE'] == 1 and result['appended'] == 0
+    assert boxes['Drafts'] == {'1': old} and 'APPEND' not in calls and writes == []

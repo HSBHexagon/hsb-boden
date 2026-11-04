@@ -164,3 +164,18 @@ def remove_binding(svc, sid, lead_id):
         svc.spreadsheets().batchUpdate(spreadsheetId=sid, body={'requests': [
             {'deleteDeveloperMetadata': {'dataFilter': {'developerMetadataLookup': {'metadataId': mid}}}} for mid in ids]}).execute()
     return len(ids)
+
+
+def remove_bindings(svc, sid, lead_ids):
+    """Entfernt die Bindungen genau dieser Leads in einem Aufruf (eine Suche, ein batchUpdate)."""
+    lead_ids = set(lead_ids)
+    if not lead_ids:
+        return 0
+    found = svc.spreadsheets().developerMetadata().search(spreadsheetId=sid, body={'dataFilters': [
+        {'developerMetadataLookup': {'metadataKey': KEY, 'locationType': 'ROW', 'visibility': 'DOCUMENT'}}]}).execute()
+    ids = [m['developerMetadata']['metadataId'] for m in found.get('matchedDeveloperMetadata', [])
+           if m['developerMetadata'].get('metadataValue') in lead_ids]
+    if ids:
+        svc.spreadsheets().batchUpdate(spreadsheetId=sid, body={'requests': [
+            {'deleteDeveloperMetadata': {'dataFilter': {'developerMetadataLookup': {'metadataId': mid}}}} for mid in ids]}).execute()
+    return len(ids)

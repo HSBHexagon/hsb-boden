@@ -287,3 +287,23 @@ def test_deferred_tier_z_lead_is_skipped_at_live_gate(tmp_path,monkeypatch):
     monkeypatch.setenv('HSB_SALES_STATE_DIR',str(tmp_path))
     out.dispatch_verified(2,owners=('JOEL',),dry_run=False)
     assert deliveries==['L2']
+
+
+@pytest.mark.parametrize('flag,expected', [(True, True), (False, False)])
+def test_dispatch_passes_inbound_scope_to_sync(tmp_path, monkeypatch, flag, expected):
+    from types import SimpleNamespace
+    from contextlib import nullcontext
+    # GitHub-Lauf ohne Azure: nur .com-Antworten; Standard bleibt der vollständige Abgleich inkl. .de.
+    import closed_loop_crm as inbound_mod, com_mailbox_manager as mail_mod, outbound_safety as out_mod
+    import sales_reconciliation as recon_mod
+    seen = []
+    monkeypatch.setattr(mail_mod, 'ComMailboxClient', lambda o: SimpleNamespace(cfg={}))
+    monkeypatch.setattr(out_mod, 'mailbox_dispatch_lock', lambda c: nullcontext())
+    monkeypatch.setattr(inbound_mod, 'sync_inbounds', lambda **k: seen.append(k))
+    def stop(path): raise RuntimeError('AUDIT_REACHED')
+    monkeypatch.setattr(recon_mod, 'run_audit', stop)
+    monkeypatch.setenv('HSB_CUSTOMER_SEND_ENABLED', 'yes')
+    monkeypatch.setenv('HSB_SALES_STATE_DIR', str(tmp_path))
+    with pytest.raises(RuntimeError, match='AUDIT_REACHED'):
+        out_mod.dispatch_verified(1, owners=('JOEL',), dry_run=False, include_de_inbound=flag)
+    assert seen == [{'apply': True, 'include_de': expected}]

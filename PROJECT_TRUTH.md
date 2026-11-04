@@ -17,7 +17,7 @@ Stand: 04.11.2026. Aktueller Auftrag und frische Messungen ersetzen ältere Abna
 - Ein Timeout nach möglicher SMTP-Annahme wird nicht automatisch wiederholt. Unklare Versuche und verbleibende Locks blockieren weitere Ausführung.
 - 35 Nachrichten pro Postfach und Tag bleiben Obergrenze. 100 pro Stunde sind nicht freigegeben.
 - Entwurfsoriginale werden erhalten. Kein Massen-Purge. Vor Reparaturen Original-MIME, UIDVALIDITY, UID, Message-ID und Hash sichern.
-- Der Workflow `sales-os-safety.yml` erlaubt Tests, lesende Abnahmen und .com-Inbound-Sync. Kundenversand ist dort ausdrücklich deaktiviert. Zeitpläne sind erst nach Übernahme in den Default-Branch aktiv.
+- Der Workflow `sales-os-safety.yml` erlaubt Tests, lesende Abnahmen und .com-Inbound-Sync. Owner-Entscheidung 04.11.2026 (geräteunabhängig): zusätzlich `prepare-drafts-preview`/`prepare-drafts` (Dubletten-Archiv und Reparatur-Erneuerung, kein Versand) und `send-preview`/`send` (Tranche 1–35 je Postfach, nur manuell gestartet, Environment `customer-send`). Zeitgesteuert wird nie gesendet. Doppelversand bleibt ausgeschlossen: CRM `SENDING` vor SMTP, IMAP-Sperre bleibt nach Abbruch stehen. Ohne Azure gleicht der GitHub-Versand nur .com-Antworten ab; .de-Antwortende sind über Forensik/CRM gesperrt.
 - Die geprüfte Abmeldekorrektur wurde über den vorhandenen manuellen Production-Workflow veröffentlicht (Run 40341382688); öffentlicher HTTP-Readback bestanden. Kein ungeprüfter Website-Deploy.
 
 Die vollständigen Einzelbilanzen stehen im Master unter `ALL_LEADS!BN:BR`. Rohbelege liegen privat unter `~/KI-System/07_Logs/hsb-sales-os-20261026/`. Kundendaten und Zugangsdaten gehören nicht in neue Git-Commits oder öffentliche CI-Artefakte.

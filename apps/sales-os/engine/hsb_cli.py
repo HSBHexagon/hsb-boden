@@ -210,7 +210,8 @@ def cmd_send_batch(args):
     result = dispatch_verified(count_per_owner=args.count, owners=(args.owner,),
         dry_run=not args.apply, cap=args.cap,
         jitter_min=args.jitter_min, jitter_max=args.jitter_max,
-        segments=set(args.segment) if args.segment else None, variant=args.variant)
+        segments=set(args.segment) if args.segment else None, variant=args.variant,
+        include_de_inbound=not args.com_only_inbound)
     print(json.dumps(result, ensure_ascii=False, indent=2))
 
 
@@ -595,6 +596,8 @@ def main():
                         help="Nur Entwürfe dieses Segments (wiederholbar)")
     p_send.add_argument("--variant", choices=["reparatur"], help="Nur Entwürfe dieser Textvariante")
     p_send.add_argument("--apply", action="store_true", help="Echten Versand starten")
+    p_send.add_argument("--com-only-inbound", action="store_true",
+                        help="Vor dem Versand nur .com-Antworten abgleichen (Läufe ohne Azure-Zugang, z. B. GitHub Actions)")
 
     # sync
     p_sync = subparsers.add_parser("sync", help="Dual-Domain Closed-Loop Reconciliation (Antworten, Bounces, Abwesenheiten)")

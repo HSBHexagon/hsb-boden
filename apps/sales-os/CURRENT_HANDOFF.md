@@ -1,3 +1,43 @@
+# CURRENT_HANDOFF — 2026-11-04 (Reparatur-zuerst-Vorlagen, Duplikat-Bereinigung, SSOT-Checks)
+
+- **Betreiber:** Joel Cherino Diaz · **Ausführung:** Claude Code
+- **Branch:** `claude/marketing-strategy-url-bug-ddllet` (PR #465), enthält zusätzlich `main`, PR #515, #516, #517
+- **Kundenversand in diesem Lauf:** 0. Keine Postfach-Änderung aus dieser Cloud-Sitzung (kein IMAP-/Sheet-Zugang hier).
+
+## Owner-Entscheidung 2026-11-04 (jetzt in PROJECT_TRUTH.md)
+- Akquise-Entwürfe: kein Anhang, kein Flyer-Link, kein Klick-Token im Sichttext. Einziger Link `https://www.hsb-boden.de/reparatur/` (302 auf die Reparaturseite).
+- Vorlage „Reparatur zuerst": Produktion über den konkreten Schadensfall (Foto, Ersteinschätzung binnen eines Arbeitstags kostenfrei — Owner-Zusage, nicht auf der Website belegt); Planer über Bestandsprüfung vor der Ausschreibung. Floskel „Ist das für ein aktuelles Vorhaben in Ihrem Büro interessant?" entfernt.
+- Anrede nur mit belegter Anrede + Nachname, sonst „Sehr geehrte Damen und Herren,". Keine CRM-Firmen-/Titelangaben im Fließtext.
+- MIME: multipart/alternative (text/plain + text/html), CRLF, quoted-printable (Absätze bleiben in Outlook beim Bearbeiten erhalten).
+- `/flyer`-Weiterleitungen aus #466 bleiben aktiv.
+
+## Umgesetzt (Code, getestet)
+- `canonical_template_factory.py`: neue Reparatur-Texte, `anrede_v2`, `REPAIR_URL`, `REPARATUR_COPY_REV`.
+- `com_mailbox_manager.py`: `plaintext_to_html`, v2-Entwürfe als multipart/alternative mit `X-HSB-Copy-Rev`.
+- `sales_reconciliation.py`: `OUTDATED_REPAIR_COPY`, `ALREADY_CONTACTED_DOMAIN`, Reparatur-Link-Regel.
+- `draft_upgrade.py`: ersetzt veraltete Reparatur-/Planer-Fassungen beider Segmente.
+- `draft_dedupe.py` + `hsb_cli.py dedupe-drafts`: ein Entwurf je Empfänger, Dubletten per UID MOVE ins Archiv, geschützte Gruppen unberührt.
+- `verify_ssot.py`: Asset-Hashes, neutraler Anhangsname, Mail-URLs (statisch; `--live` per HTTP). Production-Deploy prüft die Links danach live.
+- `_redirects`: `/reparatur` und `/reparatur/` → `/leistungen/boden-reparatur-instandsetzung/` (302).
+- Nachweis: 556 Python-Tests, 366 Website-Tests, Astro-Check 0/0/0, 59 Seiten, Worker-Dry-Run ok, `verify_ssot.py` Exit 0.
+
+## Offen (Reihenfolge einhalten)
+1. PR #465 mergen und Production-Deploy auslösen; danach muss `python3 scripts/verify_ssot.py --live` grün sein (`/reparatur/` liefert vor dem Deploy 404).
+2. Auf dem Mac: frischer Audit `python3 apps/sales-os/engine/sales_reconciliation.py --output <dir>`.
+3. `hsb_cli.py dedupe-drafts --audit-dir <dir>` (Dry-Run), Zahlen prüfen, dann `--apply`.
+4. Erneut auditieren, dann `hsb_cli.py upgrade-drafts --owner JOEL|JORDI --variant reparatur --cohort all --limit 100 --audit-dir <dir>` (Dry-Run), danach mit `--apply` in Schleifen bis 0 ausgewählt.
+5. Stichprobe in Outlook (Desktop + Mobil): Entwurf öffnen, bearbeiten, Absätze prüfen.
+
+---
+
+# Nachtrag — 2026-09-26 (fehlender Handoff, aus Git-Historie rekonstruiert)
+
+- An diesem Tag entstanden ohne Handoff-Eintrag u. a. `.com`-Migration (KASServer IMAP/SMTP), Rapid-Batch-Runner, `hsb_cli.py`, Cockpit, Bounce-Engine, 2×100 Entwürfe und in Commit `4527f90` `dual_delivery_helper.py`.
+- `dual_delivery_helper.py` sah „PDF-Anhang + CDN-Link" vor; der Link `https://www.hsb-boden.de/flyer/HSB-Flyer-*_FINAL.pdf` existierte nie (HTTP 404). Der Helper war nirgends eingebunden; der tote Link ist nun entfernt und per `verify_ssot.py` gesperrt.
+- Ein späterer Korrekturversuch (ChatGPT) brach ab und hinterließ keinen Commit; ungesicherte lokale Änderungen auf dem Mac sind von hier aus nicht prüfbar.
+
+---
+
 # CURRENT_HANDOFF — 2026-09-21 (HSB Sales OS Ultimate Pipeline Merge)
 
 - **Datum / Uhrzeit:** 2026-09-21T16:18:00+02:00

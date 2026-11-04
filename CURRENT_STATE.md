@@ -1,6 +1,14 @@
 # CURRENT_STATE — HSB Sales OS
 
-Stand: 26.10.2026. Go-live: **NICHT VERSANDBEREIT**.
+Stand: 04.11.2026. Go-live: **NICHT VERSANDBEREIT**.
+
+## 04.11.2026 — Reparatur-zuerst-Vorlagen und Bereinigung (Code fertig, Postfächer offen)
+- Code auf Branch `claude/marketing-strategy-url-bug-ddllet` (PR #465, inkl. #515/#516/#517): neue Reparatur-Texte, Anrede-Regel, ein lesbarer Link `/reparatur/`, kein Anhang, MIME multipart/alternative mit CRLF, Duplikat-Bereinigung (`dedupe-drafts`), Domain-Sperre, SSOT-Checks für Hashes/Anhangsname/URLs.
+- Tests: 556 Python, 366 Website, Astro-Check 0 Fehler, 59 Seiten, Worker-Dry-Run ok.
+- Postfächer: in dieser Sitzung NICHT geändert. Zahlen zu aktualisierten Entwürfen und Dubletten stehen aus (Lauf auf dem Mac nötig, siehe apps/sales-os/CURRENT_HANDOFF.md).
+- `/reparatur/` ist erst nach dem nächsten Production-Deploy erreichbar; bis dahin keine Entwürfe senden.
+
+## Stand 26.10.2026
 
 - Master vollständig bilanziert: 6.424 Leads, 3.212 Joel / 3.212 Jordie. Jede Zeile in ALL_LEADS!BN:BR mit Auditstatus, Gründen und Draft-UIDs; alle 6.424 Zeilen zurückgelesen.
 - Joel: 3.080 Entwürfe, davon 3.078 eindeutige CRM-Kundenentwürfe und zwei interne Tests. Jordie: 2.538 / 2.536 / zwei Tests; fünf Kundenentwürfe liegen beim falschen Mitarbeiter.

@@ -478,3 +478,12 @@ Fortlaufendes Log jeder KI-Session. Jeder Eintrag: Zeit · Modell · Phase · Au
   - Astro Build: 58 Seiten generiert (inkl. `/abmelden/index.html`)
   - `REAL_EXTERNAL_PROSPECT_SEND_COUNT = 0` strikt gewahrt.
 - **Handoff-Dokumentation:** `docs/handoff/2026-09-19-session-summary-outbound-hardening.md` und `apps/sales-os/docs/handoff/HSB_Sales_OS_Outbound_Hardening_Gesamtes_Gespraech_2026-09-19.md` angelegt vor System-Update.
+
+---
+
+## 2026-11-04 — Claude Code — Reparatur-zuerst, MIME-Fix, Dubletten, SSOT-Checks
+- **Branch:** `claude/marketing-strategy-url-bug-ddllet` (PR #465), zusammengeführt mit `main`, #515, #516, #517.
+- **Anlass:** Owner-Auftrag: fehlerhafte .com-Entwürfe (CRM-Rohdaten im Satz, Spam-Floskel, Absatzverlust in Outlook, doppelte Entwürfe, Hash-URLs).
+- **Umgesetzt:** siehe `apps/sales-os/CURRENT_HANDOFF.md` (Eintrag 2026-11-04) und Nachtrag für 2026-09-26.
+- **Verifikation:** 556 Python-Tests, 366 Website-Tests, Astro-Check 0/0/0, Build 59 Seiten, Worker-Dry-Run, `verify_ssot.py` Exit 0; `verify_ssot.py --live` meldet erwartungsgemäß `/reparatur/` 404 bis zum Deploy.
+- **Nicht ausgeführt:** IMAP-/Sheet-Läufe (keine Zugangsdaten in der Cloud-Sitzung). Kundenversand: 0.

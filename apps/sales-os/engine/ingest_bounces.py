@@ -137,8 +137,10 @@ def scan_mailbox_for_bounces(
                         "source_folder": folder,
                     })
         except APIHubRateLimited:
-            # Drosselung: abbrechen statt die übrigen Ordner weiter zu belasten; Lauf meldet den Fehler.
-            raise
+            # Drosselung: keine weiteren Ordner abfragen, bereits gefundene Bounces aber verarbeiten.
+            skipped = candidate_folders[candidate_folders.index(folder):]
+            logger.warning(f"[{owner_name}] APIHUB gedrosselt, Scan unvollständig; nicht gescannt: {skipped}")
+            break
         except Exception as e:
             # Folder does not exist or access forbidden
             continue

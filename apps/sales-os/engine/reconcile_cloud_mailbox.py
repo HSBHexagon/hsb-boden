@@ -198,12 +198,13 @@ def call_office365_api(
             if delay is None:
                 delay = min(APIHUB_MAX_BACKOFF_S, 2.0 ** attempt) * (0.5 + random.random() / 2)
             delay = min(delay, APIHUB_MAX_BACKOFF_S)
+            # Cooldown auch beim letzten Versuch eintragen, damit Folgeaufrufe (z. B. Inbox nach Sent) mitwarten.
+            _push_back_slot(delay, clock=clock)
             if attempt == APIHUB_MAX_ATTEMPTS:
                 raise APIHubRateLimited(
                     f"Office365 API gedrosselt (HTTP {e.code}) fuer {folder_path} nach {attempt} Versuchen")
             print(f"[APIHUB] HTTP {e.code} fuer {folder_path}: warte {delay:.1f}s (Versuch {attempt}/{APIHUB_MAX_ATTEMPTS})",
                   flush=True)
-            _push_back_slot(delay, clock=clock)
     raise APIHubRateLimited(f"Office365 API gedrosselt fuer {folder_path}")
 
 

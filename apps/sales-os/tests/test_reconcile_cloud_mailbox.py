@@ -195,3 +195,30 @@ def test_retry_after_http_date():
     now = _dt.datetime(2026, 11, 4, 17, 0, 0, tzinfo=_dt.timezone.utc)
     assert rcm.retry_after_seconds('Wed, 04 Nov 2026 17:00:30 GMT', now=now) == 30.0
     assert rcm.retry_after_seconds('kaputt') is None
+
+
+def test_final_throttle_still_sets_shared_cooldown(fresh_limiter):
+    # Codex-Review #518: Retry-After der letzten Antwort muss auch den nächsten Aufruf bremsen.
+    urlopen = _fake([_http_error(429, '1')] * (rcm.APIHUB_MAX_ATTEMPTS - 1) + [_http_error(429, '100')], [])
+    with pytest.raises(rcm.APIHubRateLimited):
+        rcm.call_office365_api('t', 'c', 'Gesendete Elemente', urlopen=urlopen, sleep=lambda s: None, clock=lambda: 0.0)
+    sleeps = []
+    rcm.call_office365_api('t', 'c', 'Posteingang', urlopen=_fake([b'{"value": []}'], []),
+                           sleep=sleeps.append, clock=lambda: 0.0)
+    assert sleeps == [100.0]
+
+
+def test_bounce_scan_keeps_results_when_later_folder_throttled(monkeypatch):
+    # Codex-Review #518: bereits gefundene Bounces dürfen bei Drosselung nicht verloren gehen.
+    import ingest_bounces as ib
+    seen = []
+
+    def fake_call(token, conn, folder, top=50):
+        seen.append(folder)
+        if folder == 'Unzustellbar':
+            return [{'id': 'b1', 'subject': 'Undeliverable: x', 'body': 'x'}]
+        raise rcm.APIHubRateLimited('429')
+    monkeypatch.setattr(ib, 'call_office365_api', fake_call)
+    monkeypatch.setattr(ib, 'parse_rfc3464_dsn', lambda s, b: (True, '5.1.1', ['x@firma.de']))
+    found = ib.scan_mailbox_for_bounces('t', 'c', 'JOEL')
+    assert [f['msg_id'] for f in found] == ['b1'] and seen == ['Unzustellbar', 'Bounces']

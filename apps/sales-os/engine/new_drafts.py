@@ -81,9 +81,11 @@ def build_items(selected, owner, secret):
     for lead in selected:
         lid = str(lead['Lead-ID']).strip()
         seg = segment_for(lead)
-        mail = render_email_v2(lead, owner, step=1, click_url=click_url(lid, seg, secret))
+        # Owner-Entscheidung 2026-11-04: neue .com-Entwürfe nur noch in der Reparatur-Fassung,
+        # mit lesbarem Reparatur-Link statt Klick-Token.
+        mail = render_email_v2(lead, owner, step=1, click_url=click_url(lid, seg, secret), variant='reparatur')
         items.append({'to_email': mail['to_email'], 'subject': mail['subject'], 'body_text': mail['body_text'],
-                      'template_id': mail['template_id'], 'lead_id': lid})
+                      'template_id': mail['template_id'], 'lead_id': lid, 'copy_rev': mail['copy_rev']})
     return items
 
 

@@ -73,3 +73,15 @@ def test_send_batch_cli_passes_segment_and_variant(monkeypatch):
                                       '--segment', 'produktion', '--variant', 'reparatur'])
     hsb_cli.main()
     assert seen['segments'] == {'produktion'} and seen['variant'] == 'reparatur' and seen['dry_run'] is True
+
+
+def test_repair_drafts_without_click_token_keep_their_segment():
+    # Codex-Review #465: der lesbare Reparatur-Link trägt kein ?s=…; das Segment kommt aus der Vorlagen-ID.
+    prod = {'lead_id': 'L1', 'sendable': True, 'template_id': 'v2-produktion-reparatur-s1',
+            'links': ['https://www.hsb-boden.de/reparatur/']}
+    arch = {'lead_id': 'L2', 'sendable': True, 'template_id': 'v2-architekten-reparatur-s1',
+            'links': ['https://www.hsb-boden.de/reparatur/']}
+    assert draft_segment(prod) == 'produktion' and draft_segment(arch) == 'architekten'
+    queue = [{'owner': 'JOEL', 'lead_id': 'L1'}, {'owner': 'JOEL', 'lead_id': 'L2'}]
+    sel, _ = select_queue(queue, [prod, arch], ('JOEL',), 5, segments={'produktion'})
+    assert [i['lead_id'] for i in sel] == ['L1']

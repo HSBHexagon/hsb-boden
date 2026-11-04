@@ -41,11 +41,13 @@ def test_planners_need_a_relevant_project_type():
     assert [l['Lead-ID'] for l in picked] == [leads[3]['Lead-ID']]
 
 
-def test_build_items_are_plain_v2_with_lead_header_and_click_url():
+def test_build_items_are_repair_v2_with_lead_header_and_readable_link():
     items = nd.build_items([lead(1)], 'JOEL', 'fixture-secret')
     it = items[0]
-    assert it['template_id'] == 'v2-produktion-s1' and it['lead_id'] == 'HSB-20260708-00001'
-    assert '/r/HSB-20260708-00001.' in it['body_text'] and 'info@firma1.de' not in it['body_text']
+    assert it['template_id'] == 'v2-produktion-reparatur-s1' and it['lead_id'] == 'HSB-20260708-00001'
+    # Owner-Entscheidung 2026-11-04: lesbarer Reparatur-Link statt Klick-Token, keine Empfängeradresse im Text.
+    assert 'https://www.hsb-boden.de/reparatur/' in it['body_text'] and '/r/' not in it['body_text']
+    assert 'info@firma1.de' not in it['body_text']
 
 
 class FakeImap:
@@ -189,3 +191,14 @@ def test_missing_click_secret_fails_before_taking_the_dispatch_lock(tmp_path):
         nd.create_v2_drafts('JOEL', 2, True, leads=[lead(i) for i in range(1, 4)], client=RecordingClient(events),
                             mx_check=MX, state_dir=tmp_path, lock_client=LockClient(events))
     assert events == []
+
+
+def test_new_drafts_use_repair_copy_without_click_token():
+    # Codex-Review #465: neue Entwürfe dürfen keinen /r/-Token und keine alte Fassung mehr tragen.
+    from new_drafts import build_items
+    from canonical_template_factory import REPAIR_URL, REPARATUR_COPY_REV
+    lead = {'Lead-ID': 'HSB-20261104-0001', 'E-Mail': 'einkauf@musterbrauerei.de', 'Firma': 'Musterbrauerei GmbH',
+            'Branche': 'Brauerei', 'Ansprechpartner': 'Herr Beispiel'}
+    item = build_items([lead], 'JOEL', 'secret')[0]
+    assert item['template_id'] == 'v2-produktion-reparatur-s1' and item['copy_rev'] == REPARATUR_COPY_REV
+    assert REPAIR_URL in item['body_text'] and '/r/' not in item['body_text']

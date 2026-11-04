@@ -658,7 +658,7 @@ def main():
     p_upgrade.add_argument("--owner", choices=["JOEL","JORDI"], required=True)
     p_upgrade.add_argument("--limit", type=int, default=5)
     p_upgrade.add_argument("--cohort", choices=["pilot","all"], default="pilot")
-    p_upgrade.add_argument("--variant", choices=["standard","reparatur"], default="standard")
+    p_upgrade.add_argument("--variant", choices=["standard","reparatur"], default="reparatur")
     p_upgrade.add_argument("--audit-dir", required=True)
     p_upgrade.add_argument("--journal", default=str(Path.home()/".local/state/hsb-sales-os/upgrade.sqlite3"))
     p_upgrade.add_argument("--apply", action="store_true")

@@ -8,6 +8,7 @@ from __future__ import annotations
 from contextlib import contextmanager
 from datetime import datetime, timezone
 from email import policy
+from email.message import EmailMessage
 from email.parser import BytesParser
 from email.utils import formatdate
 import hashlib
@@ -18,6 +19,7 @@ import json
 import os
 from pathlib import Path
 import random
+import secrets
 import sqlite3
 import time
 from zoneinfo import ZoneInfo
@@ -73,51 +75,154 @@ class SendJournal:
         self.db.close()
 
 
+# Sperrordner + Inhaber-Nachricht. Die Sperre hält keine Verbindung offen: All-Inkl trennt ungenutzte Sitzungen nach
+# etwa 12 Minuten, das Lösen lief deshalb in "Connection reset by peer" und liess die Sperre stehen.
+LOCK_RELEASE_ATTEMPTS = 3
+# Länger als jeder GitHub-Job (240 min) und jeder Mac-Versand. Bewusst nicht per Umgebung abschaltbar.
+STALE_LOCK_MIN_AGE_MIN = 270
+STALE_LOCK_EPOCH_MIN = 1_600_000_000   # plausibler Unix-Zeitstempel (Sept. 2020)
+
+
+def _logout_quietly(imap):
+    try:
+        imap.logout()
+    except Exception:  # noqa: BLE001 - Abmelden ist kein Datenvorgang
+        pass
+
+
+def _github_run():
+    """Kennung genau dieses Laufs (inkl. Wiederholung) oder '' außerhalb von GitHub Actions."""
+    run_id = os.environ.get('GITHUB_RUN_ID', '').strip()
+    if not run_id:
+        return ''
+    return f"{os.environ.get('GITHUB_WORKFLOW', '').strip()}#{run_id}/{os.environ.get('GITHUB_RUN_ATTEMPT', '1').strip()}"
+
+
+def _lock_marker(token, now=time.time):
+    msg = EmailMessage()
+    msg['Subject'] = 'HSB Sales OS dispatch lock'
+    msg['From'] = 'sales-os@hsb-boden.com'
+    msg['X-HSB-Lock-Token'] = token
+    msg['X-HSB-Lock-Run'] = _github_run() or 'local'
+    msg['X-HSB-Lock-Started'] = str(int(now()))
+    msg.set_content('Interne Sperre, keine Kundenmail.')
+    return msg.as_bytes()
+
+
+def _read_lock_owner(imap):
+    """Inhaber aus dem gerade ausgewählten Sperrordner; None, wenn keine Inhaber-Nachricht vorliegt (Altbestand)."""
+    typ, data = imap.uid('search', None, 'ALL')
+    uids = data[0].split() if typ == 'OK' and data and data[0] else []
+    if not uids:
+        return None
+    typ, data = imap.uid('fetch', uids[0].decode(), '(BODY.PEEK[])')
+    parts = [x[1] for x in data or [] if isinstance(x, tuple)] if typ == 'OK' else []
+    if len(parts) != 1:
+        return None
+    msg = BytesParser(policy=policy.default).parsebytes(parts[0])
+    token = str(msg.get('X-HSB-Lock-Token') or '').strip()
+    if not token:
+        return None
+    started = str(msg.get('X-HSB-Lock-Started') or '').strip()
+    return {'token': token, 'run': str(msg.get('X-HSB-Lock-Run') or '').strip(),
+            'started': int(started) if started.isdigit() else 0}
+
+
+class DispatchLock:
+    """Eigene Sperre: frei geben und prüfen nur über die Inhaber-Kennung (Fencing gegen fremde Freigaben)."""
+
+    def __init__(self, client, token):
+        self.client, self.token = client, token
+
+    def _current_owner(self, imap):
+        typ, _ = imap.select(LOCK_FOLDER, readonly=True)
+        return _read_lock_owner(imap) if typ == 'OK' else None
+
+    def assert_held(self):
+        """Direkt vor unumkehrbaren Schritten: gehört die Sperre noch uns?"""
+        imap = self.client._get_imap()
+        try:
+            owner = self._current_owner(imap)
+        finally:
+            _logout_quietly(imap)
+        if not owner or owner['token'] != self.token:
+            raise RuntimeError('DISPATCH_LOCK_OWNERSHIP_LOST')
+
+    def release(self):
+        """Löscht nur die eigene Sperre, jeweils über eine frische Verbindung."""
+        last = None
+        for _ in range(LOCK_RELEASE_ATTEMPTS):
+            imap = None
+            try:
+                imap = self.client._get_imap()
+                owner = self._current_owner(imap)
+                if not owner or owner['token'] != self.token:
+                    raise RuntimeError('DISPATCH_LOCK_OWNERSHIP_LOST')
+                # Dovecot verweigert DELETE auf dem ausgewählten Ordner nicht zuverlässig: erst abwählen.
+                imap.close()
+                typ, _ = imap.delete(LOCK_FOLDER)
+                if typ != 'OK':
+                    raise RuntimeError('DISPATCH_LOCK_RELEASE_UNVERIFIED')
+                return
+            except (imaplib.IMAP4.abort, OSError) as exc:
+                last = exc
+            finally:
+                if imap is not None:
+                    _logout_quietly(imap)
+        raise RuntimeError('DISPATCH_LOCK_RELEASE_UNVERIFIED') from last
+
+
 @contextmanager
 def mailbox_dispatch_lock(client, release_on_error=False):
     """Geräteübergreifende Sperre. Beim Versand bleibt sie nach einem Fehler stehen (SMTP-Zustand unklar).
-    Entwurfs-Umstellung und Dubletten-Archiv senden nichts und setzen über Journal/Audit wieder auf:
+    Entwurfs-Umstellung und Dubletten-Archiv senden nichts und setzen über Audit und Live-Abgleich wieder auf:
     sie geben die Sperre auch bei Fehlern frei (release_on_error=True)."""
+    token = secrets.token_hex(16)
     imap = client._get_imap()
-    acquired = False
-    completed = False
     try:
         typ, _ = imap.create(LOCK_FOLDER)
         if typ != 'OK':
             raise RuntimeError('DISPATCH_LOCK_EXISTS: reconcile before unlocking')
-        acquired = True
-        yield
+        typ, _ = imap.append(LOCK_FOLDER, None, None, _lock_marker(token))
+        if typ != 'OK':
+            imap.delete(LOCK_FOLDER)
+            raise RuntimeError('DISPATCH_LOCK_MARKER_FAILED')
+    finally:
+        _logout_quietly(imap)
+    lock = DispatchLock(client, token)
+    completed = False
+    try:
+        yield lock
         completed = True
     finally:
-        # A failure retains the lock; automatic stale-lock removal is unsafe.
-        if acquired and (completed or release_on_error):
-            if not completed:
-                # Verbindung kann der Grund des Fehlers sein: für die Freigabe neu anmelden.
-                try:
-                    imap.logout()
-                except Exception:  # noqa: BLE001
-                    pass
-                imap = client._get_imap()
-            typ, _ = imap.delete(LOCK_FOLDER)
-            if typ != 'OK':
-                raise RuntimeError('DISPATCH_LOCK_RELEASE_UNVERIFIED')
-        try:
-            imap.logout()
-        except Exception:  # noqa: BLE001 - Abmelden ist kein Datenvorgang
-            pass
+        # Ein Fehler beim Versand behält die Sperre; automatisches Lösen wäre dort unsicher.
+        if completed:
+            lock.release()
+        elif release_on_error:
+            try:
+                lock.release()
+            except Exception as exc:  # noqa: BLE001 - den eigentlichen Fehler nicht überdecken
+                print(f'WARNUNG: Sperre nach Fehler nicht gelöst: {exc}')
 
 
-# Länger als jeder GitHub-Job (240 min) und jeder Mac-Versand. Owner-Sofortfreigabe: HSB_STALE_LOCK_MIN_AGE_MIN=0.
-STALE_LOCK_MIN_AGE_MIN = int(os.environ.get('HSB_STALE_LOCK_MIN_AGE_MIN', '270'))
-STALE_LOCK_EPOCH_MIN = 1_600_000_000   # plausibler Unix-Zeitstempel (Sept. 2020)
+def _finished_owner_reason(owner, now):
+    """Warum ist der Inhaber sicher beendet? Ohne Nachweis None: die Sperre bleibt."""
+    current = _github_run()
+    if owner and current and owner['run'] != 'local' and owner['run'] != current:
+        same_workflow = owner['run'].split('#', 1)[0] == current.split('#', 1)[0]
+        if same_workflow and owner['run'].split('#', 1)[0]:
+            # Workflow-Concurrency erlaubt nur einen Lauf gleichzeitig: ein fremder Lauf desselben Workflows ist beendet.
+            return 'OWNER_RUN_FINISHED'
+    return None
 
 
 def release_stale_lock(svc, client, spreadsheet_id, apply=False, now=time.time):
-    """Hängengebliebene Versandsperre nach einem abgebrochenen Lauf lösen – nur ohne unklaren Versand.
+    """Hängengebliebene Versandsperre nach einem hart beendeten Lauf lösen – nur ohne unklaren Versand und nur,
+    wenn der Inhaber nachweislich beendet oder die Sperre älter als jeder mögliche Lauf ist.
 
     Ein Versand schreibt Send_Status=SENDING vor SMTP und erst nach Sent-Readback 'sent'. Steht irgendwo noch
-    SENDING, ist ein Versand unklar: dann bleibt die Sperre und es braucht einen manuellen Abgleich. Abgebrochene
-    Entwurfs-Umstellungen heilen sich über Audit und Dubletten-Archiv selbst.
+    SENDING, ist ein Versand unklar: dann bleibt die Sperre und es braucht einen manuellen Abgleich. Fehlendes
+    SENDING allein beweist nichts, denn ein aktiver Versand steht zwischen zwei Empfängern ohne SENDING da.
     """
     rows = svc.spreadsheets().values().get(spreadsheetId=spreadsheet_id, range='ALL_LEADS!A1:BU6425').execute().get('values', [])
     if not rows or 'Send_Status' not in rows[0]:
@@ -131,24 +236,29 @@ def release_stale_lock(svc, client, spreadsheet_id, apply=False, now=time.time):
         typ, _ = imap.select(LOCK_FOLDER, readonly=True)
         if typ != 'OK':
             return {'lock': 'NONE', 'released': False}
-        # Lebt der Sperrinhaber noch? Dovecot (All-Inkl) vergibt UIDVALIDITY als Anlage-Zeitstempel. Nur eine
-        # Sperre, die älter als jeder mögliche Lauf ist (GitHub-Job max. 240 min), gilt als verwaist.
         validity = imap.response('UIDVALIDITY')[1]
-        created = int(validity[0]) if validity and validity[0] and str(validity[0], 'ascii', 'ignore').isdigit() else 0
-        age_min = (now() - created) / 60 if created else -1
+        owner = _read_lock_owner(imap)
         imap.close()
-        if not (STALE_LOCK_EPOCH_MIN <= created <= now()):
-            raise RuntimeError('STALE_LOCK_AGE_UNKNOWN: reconcile manually')
-        if age_min < STALE_LOCK_MIN_AGE_MIN:
-            raise RuntimeError(f'STALE_LOCK_TOO_YOUNG:{int(age_min)}min')
+        reason = _finished_owner_reason(owner, now)
+        if not reason:
+            # Inhaber-Zeit, sonst Altbestand: Dovecot vergibt UIDVALIDITY als Anlage-Zeitstempel.
+            created = owner['started'] if owner and owner['started'] else 0
+            if not created and validity and validity[0] and str(validity[0], 'ascii', 'ignore').isdigit():
+                created = int(validity[0])
+            if not (STALE_LOCK_EPOCH_MIN <= created <= now()):
+                raise RuntimeError('STALE_LOCK_AGE_UNKNOWN: reconcile manually')
+            age_min = (now() - created) / 60
+            if age_min < STALE_LOCK_MIN_AGE_MIN:
+                raise RuntimeError(f'STALE_LOCK_TOO_YOUNG:{int(age_min)}min')
+            reason = 'OLDER_THAN_ANY_RUN'
         if not apply:
-            return {'lock': 'PRESENT', 'released': False}
+            return {'lock': 'PRESENT', 'released': False, 'reason': reason}
         typ, _ = imap.delete(LOCK_FOLDER)
         if typ != 'OK':
             raise RuntimeError('DISPATCH_LOCK_RELEASE_UNVERIFIED')
-        return {'lock': 'PRESENT', 'released': True}
+        return {'lock': 'PRESENT', 'released': True, 'reason': reason}
     finally:
-        imap.logout()
+        _logout_quietly(imap)
 
 
 def col_name(index):
@@ -363,7 +473,7 @@ def dispatch_verified(count_per_owner=25, owners=('JOEL','JORDI'), dry_run=True,
     clients={o:ComMailboxClient(o) for o in {'JOEL','JORDI'}}
     @contextmanager
     def preview_lock(): yield
-    with (preview_lock() if dry_run else mailbox_dispatch_lock(clients['JOEL'])):
+    with (preview_lock() if dry_run else mailbox_dispatch_lock(clients['JOEL'])) as lock:
         if not dry_run:
             from closed_loop_crm import sync_inbounds
             sync_inbounds(apply=True,include_de=include_de_inbound)
@@ -422,6 +532,9 @@ def dispatch_verified(count_per_owner=25, owners=('JOEL','JORDI'), dry_run=True,
                 add_list_unsubscribe(msg,item['owner'],item['lead_id'])
                 # Lange ASCII-Header (List-Unsubscribe) nicht in RFC-2047-Wörter zerlegen, sonst erkennt kein Mailprogramm den Link.
                 raw=msg.as_bytes(policy=SMTP_POLICY); mid=str(msg['Message-ID']); em=item['email']
+                # Fencing: wurde die Sperre inzwischen fremd gelöst, nichts mehr senden.
+                if lock:
+                    lock.assert_held()
                 complete_delivery(client,journal,svc,SPREADSHEET_ID,headers,row,item,raw,mid,effective_cap)
                 sent_counts[item['owner']]+=1
                 if item is not selected[-1]: time.sleep(random.uniform(jitter_min,jitter_max))

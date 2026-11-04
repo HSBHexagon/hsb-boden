@@ -145,6 +145,12 @@ class LockImap:
     def __init__(self, events, held=False): self.events, self.held = events, held
     def create(self, folder):
         self.events.append('lock'); return ('NO' if self.held else 'OK'), [b'']
+    def append(self, folder, flags, date, raw):
+        self.marker = raw; return 'OK', [b'']
+    def select(self, folder, readonly=True): return 'OK', [b'1']
+    def uid(self, verb, *args):
+        return ('OK', [b'1']) if verb == 'search' else ('OK', [(b'h', self.marker)])
+    def close(self): pass
     def delete(self, folder):
         self.events.append('unlock'); return 'OK', [b'']
     def logout(self): pass

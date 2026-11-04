@@ -81,7 +81,7 @@ def upgrade_drafts(owner, limit=5, cohort='pilot', apply=False, journal_path=Non
     from canonical_template_factory import render_email_v2
     from click_sync import click_url
     from hsb_core import check_eligibility, normalize_owner
-    from lead_quality import deliverability_flags, fit_score, has_relevant_planning_project, segment_for
+    from lead_quality import deliverability_flags, fit_score, planner_outreach_allowed, segment_for
     from outbound_safety import crm_write_lead_readback, require_stable_crm_binding
     from sales_reconciliation import assess_message
     from hsb_config import CANONICAL_SPREADSHEET_ID
@@ -134,7 +134,7 @@ def upgrade_drafts(owner, limit=5, cohort='pilot', apply=False, journal_path=Non
             lead = dict(matches[0])
             tmpl = str(lead.get('Email_Template_ID') or '')
             segment = segment_for(lead)
-            if segment == 'architekten' and not has_relevant_planning_project(lead):
+            if segment == 'architekten' and not planner_outreach_allowed(lead):
                 result['skipped_reasons']['PLANNING_PROJECT_UNVERIFIED'] += 1
                 continue
             # Veraltete Fassung derselben Vorlage: nur ersetzen, wenn CRM genau diesen Entwurf bindet.
@@ -213,7 +213,7 @@ def upgrade_drafts(owner, limit=5, cohort='pilot', apply=False, journal_path=Non
                             raise RuntimeError('LIVE_RECIPIENT_CHANGED')
                         segment = segment_for(current)
                         if (segment != segment_for(lead)
-                                or (segment == 'architekten' and not has_relevant_planning_project(current))):
+                                or (segment == 'architekten' and not planner_outreach_allowed(current))):
                             raise RuntimeError('LIVE_PROJECT_FIT_CHANGED')
                         # Vor APPEND/MOVE die stabile CRM-Bindung prüfen, nicht erst nach dem Archivieren.
                         try:

@@ -238,6 +238,7 @@ def test_upgrade_reparatur_already_done_skipped(tmp_path, monkeypatch):
     ('', False),
 ])
 def test_upgrade_replaces_obsolete_planner_copy_only_once(tmp_path, monkeypatch, project, interrupted):
+    monkeypatch.setattr('lead_quality.PLANNER_OUTREACH_WITHOUT_PROJECT', False)
     kwargs, boxes, calls, writes, _ = setup_case(tmp_path, monkeypatch)
     lead = kwargs['leads'][0]
     lead.update({'Branche': 'Architekturbüro', 'Projektart': project,
@@ -393,3 +394,12 @@ def test_missing_binding_skips_draft_without_touching_mailbox(tmp_path, monkeypa
     result = upgrade_drafts('JOEL', apply=True, variant='reparatur', **kwargs)
     assert result['skipped_reasons']['CRM_BINDING_UNAVAILABLE'] == 1 and result['appended'] == 0
     assert boxes['Drafts'] == {'1': old} and 'APPEND' not in calls and writes == []
+
+
+def test_owner_decision_upgrades_planner_without_project(tmp_path, monkeypatch):
+    # Owner-Entscheidung 04.11.2026: jeder offene Entwurf, auch Planer ohne belegtes Projekt.
+    kwargs, boxes, calls, writes, _ = setup_case(tmp_path, monkeypatch)
+    kwargs['leads'][0].update({'Branche': 'Architekturbüro', 'Projektart': ''})
+    result = upgrade_drafts('JOEL', apply=True, variant='reparatur', **kwargs)
+    assert result['crm_updated'] == 1 and 'PLANNING_PROJECT_UNVERIFIED' not in result['skipped_reasons']
+    assert writes[-1]['Email_Template_ID'].startswith('v2-architekten-reparatur-')

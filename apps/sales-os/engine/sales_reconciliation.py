@@ -21,7 +21,8 @@ import re
 from urllib.parse import urlsplit, parse_qs, unquote
 from urllib.request import Request
 from hsb_core import check_eligibility, normalize_owner, sanitize_company_name
-from lead_quality import has_relevant_planning_project, segment_for
+import lead_quality
+from lead_quality import segment_for
 
 SENDERS = {'JOEL': 'j-cherino@hsb-boden.com', 'JORDI': 'j-post@hsb-boden.com'}
 OUTDATED_PLANNER_COPY = 'OUTDATED_PLANNER_COPY'
@@ -111,7 +112,7 @@ def assess_message(raw, owner, leads):
     if is_repair and template_id.endswith('-s1') and not current_repair_s1:
         issues.append(OUTDATED_REPAIR_COPY)
     if template_id.startswith('v2-architekten-') and (
-            segment_for(lead) != 'architekten' or not has_relevant_planning_project(lead)):
+            segment_for(lead) != 'architekten' or not lead_quality.planner_outreach_allowed(lead)):
         issues.append('PLANNING_PROJECT_UNVERIFIED')
     old_planner_line = _OLD_PLANNER_LINES.get(template_id)
     if old_planner_line and old_planner_line in ' '.join(body.split()):

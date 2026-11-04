@@ -148,6 +148,8 @@ master_mailbox_orchestrator.py --owner JOEL --batches 10 [--apply]
 - Geräteunabhängig (ohne Mac): GitHub → Actions → „Sales OS safety and inbound“ → Run workflow. Modus `prepare-drafts-preview` liefert nur Zahlen, `prepare-drafts` führt aus. `send-preview` bzw. `send` mit `count` 1–35 je Postfach. Zugang über die vorhandenen Secrets `HSB_SALES_GOOGLE_AUTH` / `HSB_SALES_MAILBOXES_JSON`.
 
 ### Stand 04.11.2026, 23:00 Uhr: prepare-drafts
+
+- Lauf-Kette: Kontrakt `docs/ai_state/loops/2026-11-04-prepare-drafts-kette.md`. Erster Kettenlauf per einmaligem Cron `55 1 5 11 *`; die Weitergabe ist erst nach dem ersten Lauf nachgewiesen. Nach Abschluss die Cron-Zeile und den Job `chain-start` entfernen.
 - Ursache der Abbrüche nach je 100 Entwürfen: Die Sperr-Verbindung blieb ungenutzt offen, All-Inkl trennte sie nach etwa 12 Minuten, das Lösen der Sperre schlug fehl. Behoben: Die Sperre nutzt je Schritt eine frische Verbindung.
 - Codex-Review zu #524 umgesetzt: Inhaber-Kennung statt `force_unlock`; ein Neustart übernimmt vorhandene Ersatzentwürfe live, statt einen zweiten anzulegen.
 - CRM-Stand vor dem Neustart: 204 Entwürfe umgestellt. Kundenversand: 0.

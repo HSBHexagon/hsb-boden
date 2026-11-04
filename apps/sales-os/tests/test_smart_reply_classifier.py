@@ -51,7 +51,7 @@ def test_classify_generic_needs_review():
 def test_evaluate_cadence_due_logic():
     import datetime
     now = datetime.datetime.now()
-    
+
     # 8 days ago -> Due!
     sent_8d = (now - datetime.timedelta(days=8)).strftime("%Y-%m-%d %H:%M:%S")
     due, reason = evaluate_cadence_due(sent_8d, reply_status="")

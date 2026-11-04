@@ -130,14 +130,16 @@ def check_domain_mx(domain: str) -> bool:
         res = subprocess.run(["host", "-t", "mx", domain], capture_output=True, text=True, timeout=4)
         out = res.stdout.lower()
         if "mail is handled by" in out:
-            return True
+            # Null-MX (RFC 7505) bedeutet ausdrücklich: keine E-Mails annehmen.
+            return not bool(re.search(r"mail is handled by 0 \.\s*$", out, re.M))
         if "has no mx record" in out or "not found" in out or "nxdomain" in out:
             return False
         # Fallback A-Record
         res_a = subprocess.run(["host", "-t", "a", domain], capture_output=True, text=True, timeout=4)
         return "has address" in res_a.stdout.lower()
     except Exception:
-        return True
+        # DNS-Ausfall ist kein Nachweis einer zustellbaren Domain.
+        return False
 
 
 def extract_domain(email: str | None) -> str | None:

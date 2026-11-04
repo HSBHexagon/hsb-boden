@@ -33,11 +33,11 @@ class GraphBatchEngine:
             raise ValueError(f"Batch size exceeds Microsoft Graph limit of {MAX_BATCH_SIZE} (got {len(sub_requests)})")
 
         payload = {"requests": sub_requests}
-        
+
         for attempt in range(1, self.max_retries + 1):
             try:
                 response = self.session.post(GRAPH_BATCH_ENDPOINT, json=payload, timeout=30)
-                
+
                 # Check for rate limiting / throttling (HTTP 429)
                 if response.status_code == 429:
                     retry_after = int(response.headers.get("Retry-After", 2 ** attempt))
@@ -47,7 +47,7 @@ class GraphBatchEngine:
 
                 response.raise_for_status()
                 data = response.json()
-                
+
                 # Parse responses into a lookup map {id: response_dict}
                 responses_map = {}
                 for resp in data.get("responses", []):

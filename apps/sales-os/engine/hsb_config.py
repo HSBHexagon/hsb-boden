@@ -6,10 +6,21 @@ Keine Klartext-Secrets im Quelltext.
 from __future__ import annotations
 
 import os
+import json
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 ENV_FILE = REPO_ROOT / ".env"
+
+# ==============================================================================
+# UNVERRÜCKBARE SINGLE SOURCE OF TRUTH (SSOT)
+# Master-Sheet ID: 1W-NjwEq0UhDo2TaeS-2qp_qit4YFMz6k-IqKHlPpHmg
+# Name: HSB CRM MASTER SSOT (EINZIGE WAHRHEIT 6424 LEADS) – 2026
+# ==============================================================================
+CANONICAL_SPREADSHEET_ID = "1W-NjwEq0UhDo2TaeS-2qp_qit4YFMz6k-IqKHlPpHmg"
+
+def get_canonical_spreadsheet_id() -> str:
+    return CANONICAL_SPREADSHEET_ID
 
 def _load_env_file():
     """Einfacher, robuster .env Loader ohne externe Abhaengigkeit."""
@@ -31,6 +42,13 @@ def _load_env_file():
         print(f"Warnung: .env konnte nicht gelesen werden: {e}")
 
 _load_env_file()
+
+# One encrypted secret in the existing CI runtime; accept mailbox fields only.
+_runtime_mailboxes = os.environ.get('HSB_MAILBOX_CONFIG_JSON', '')
+if _runtime_mailboxes:
+    for _key, _value in json.loads(_runtime_mailboxes).items():
+        if _key.startswith('HSB_COM_') and _key.endswith(('_USER','_PASS','_EMAIL','_SERVER','_PORT')):
+            os.environ.setdefault(_key,str(_value))
 
 def get_joel_url() -> str:
     url = os.getenv("HSB_ADAPTER_URL_JOEL", "").strip()
@@ -70,14 +88,14 @@ def get_com_mailbox_config(owner: str) -> dict:
         user = os.getenv('HSB_COM_JORDI_USER', '').strip()
         pwd = os.getenv('HSB_COM_JORDI_PASS', '').strip()
         display_name = 'Jordie Post'
-        reply_to = os.getenv('HSB_COM_JORDI_REPLY_TO', 'Jordie Post <j-post@hsb-boden.de>').strip()
+        reply_to = ''  # New messages reply directly to this .com mailbox
     elif norm in ('JOEL', 'J-CHERINO'):
         owner_key = 'JOEL'
         email = os.getenv('HSB_COM_JOEL_EMAIL', 'j-cherino@hsb-boden.com').strip()
         user = os.getenv('HSB_COM_JOEL_USER', '').strip()
         pwd = os.getenv('HSB_COM_JOEL_PASS', '').strip()
         display_name = 'Joel Cherino Diaz'
-        reply_to = os.getenv('HSB_COM_JOEL_REPLY_TO', 'Joel Cherino Diaz <j-cherino@hsb-boden.de>').strip()
+        reply_to = ''  # New messages reply directly to this .com mailbox
     else:
         raise ValueError(f'Unbekannter Owner: {owner}. Erlaubt sind JOEL oder JORDI.')
 

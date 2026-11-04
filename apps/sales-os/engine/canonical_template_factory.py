@@ -1,15 +1,18 @@
 import os
 import re
 from pathlib import Path
-from typing import Dict, Any
+from typing import Dict, Any, Literal, Optional
 
 from hsb_core import sanitize_company_name
+from lead_quality import segment_for
+from optout_helper import build_optout_url, build_tracked_website_url
 
 ASSETS_DIR = Path(__file__).resolve().parent.parent / "assets" / "canonical"
 
 CANONICAL_FLYERS = {
     "JOEL": {
         "filename": "HSB-Flyer-Joel-Cherino_FINAL.pdf",
+        "attachment_name": "HSB-HEXAGON-Industrieboeden-Flyer.pdf",
         "path": str(ASSETS_DIR / "HSB-Flyer-Joel-Cherino_FINAL.pdf"),
         "sender_name": "Joel Cherino Diaz",
         "sender_role": "Vertrieb & Kundenbetreuung",
@@ -19,6 +22,7 @@ CANONICAL_FLYERS = {
     },
     "JORDI": {
         "filename": "HSB-Flyer-Jordie-Post_FINAL.pdf",
+        "attachment_name": "HSB-HEXAGON-Industrieboeden-Flyer.pdf",
         "path": str(ASSETS_DIR / "HSB-Flyer-Jordie-Post_FINAL.pdf"),
         "sender_name": "Jordie Post",
         "sender_role": "Geschäftsführer",
@@ -30,21 +34,43 @@ CANONICAL_FLYERS = {
 CANONICAL_FLYERS["JORDIE"] = CANONICAL_FLYERS["JORDI"]
 
 LOGO_URL = "https://www.hsb-boden.de/brand/hsb-boden-logo.png"
-ATTACHMENT_NAME = "HSB-HEXAGON-Industrieboeden-Flyer.pdf"  # neutraler Name beim Empfaenger, nie ein Personenname
+
+
+_TITLES = {'dr.', 'prof.', 'dipl.-ing.', 'dr.-ing.'}
+_SUFFIXES = {'jun.', 'sen.', 'jr.', 'sr.', 'jun', 'sen'}
+_PARTICLES = {'von', 'van', 'de', 'der', 'den', 'zu', 'zur', 'ten', 'ter', 'vom', 'di', 'da', 'le', 'la'}
+
+
+def _nachname_mit_titel(teile):
+    """'Dr. Anna von der Heide' → 'Dr. von der Heide'; Vornamen entfallen."""
+    titel = [t for t in teile if t.lower() in _TITLES]
+    rest = [t for t in teile if t.lower() not in _TITLES]
+    zusatz = []
+    while len(rest) > 1 and rest[-1].lower() in _SUFFIXES:
+        zusatz.insert(0, rest.pop())
+    if not rest:
+        return ' '.join(titel)
+    start = len(rest) - 1
+    for i, t in enumerate(rest[:-1]):
+        if t.lower() in _PARTICLES:
+            start = i
+            break
+    return ' '.join(titel + rest[start:] + zusatz)
 
 
 def anrede_fuer_lead(lead: Dict[str, Any]) -> str:
     ap = str(lead.get("Ansprechpartner") or "").strip()
+    ap = re.sub(r'(?i)^(guten tag|sehr geehrte[rs]?|hallo|liebe[rs]?)\s+', '', ap).strip(' ,')
     if not ap or ap.lower() in ["none", "nan", "null"]:
         return "Guten Tag,"
     teile = ap.split()
     if len(teile) >= 2:
-        anr = teile[0].lower()
-        nachname = " ".join(teile[1:])
-        if "herr" in anr:
-            return f"Sehr geehrter Herr {nachname},"
-        if "frau" in anr:
-            return f"Sehr geehrte Frau {nachname},"
+        # "Herrn"/"Herr."/"Frau." waren mit dem früheren Teilstring-Abgleich gültig und bleiben es.
+        anr = teile[0].lower().rstrip(".")
+        if anr in ("herr", "herrn", "hr"):
+            return f"Sehr geehrter Herr {_nachname_mit_titel(teile[1:])},"
+        if anr in ("frau", "fr"):
+            return f"Sehr geehrte Frau {_nachname_mit_titel(teile[1:])},"
     return f"Guten Tag {ap},"
 
 
@@ -62,10 +88,12 @@ def render_canonical_email(lead: Dict[str, Any], owner: str = "JOEL", domain: st
     if not to_addr or "@" not in to_addr:
         raise ValueError(f"Recipient email missing or invalid in lead {lead.get('Lead_ID') or lead.get('Lead-ID')}")
 
+    lead_id = str(lead.get("Lead_ID") or lead.get("Lead-ID") or "").strip()
+
     raw_comp = str(lead.get("Firma") or lead.get("Firmenname") or lead.get("Company") or "").strip()
     clean_comp = re.sub(r"https?://(?:www\.)?", "", raw_comp, flags=re.IGNORECASE)
     clean_comp = re.sub(r"\.(?:de|com|ch|at)/?$", "", clean_comp, flags=re.IGNORECASE).strip()
-    
+
     # Consumer freemail fallback (z.B. gmail, gmx, web.de) oder privater Bauherr
     is_consumer_freemail = any(f in to_addr.lower() for f in ["@gmail.", "@gmx.", "@web."])
     if not clean_comp or is_consumer_freemail or clean_comp.lower() in ["private bauherr", "privat", "keine"]:
@@ -76,7 +104,11 @@ def render_canonical_email(lead: Dict[str, Any], owner: str = "JOEL", domain: st
     subject = f"Industrieböden für {subject_target} – Beratung von {owner_meta['sender_name']}"
     greeting = anrede_fuer_lead(lead)
 
-    body_html = f"""<div style="font-family: Arial, sans-serif; font-size: 14px; color: #222; line-height: 1.5;">
+    tracked_web_url = build_tracked_website_url("signature_website")
+    tracked_logo_url = build_tracked_website_url("signature_logo")
+    optout_url = build_optout_url(lead_id=lead_id, email=to_addr)
+
+    body_html = f"""<div style="font-family: Arial, Helvetica, sans-serif; font-size: 14px; color: #1f2937; line-height: 1.55;">
     <p>{greeting}</p>
     <p>mein Name ist {owner_meta['sender_name']} von der HSB Hexagon Säurebau GmbH. Wir planen, bauen und sanieren säurebeständige, hygienische Industrieböden – ausgelegt auf das reale Belastungsprofil statt auf ein Standardprodukt.</p>
     <p>Typische Themen bei Produktionsbetrieben:<br>
@@ -92,23 +124,283 @@ def render_canonical_email(lead: Dict[str, Any], owner: str = "JOEL", domain: st
     HSB Hexagon Säurebau GmbH<br />
     Telefon: {owner_meta['sender_phone']}<br />
     E-Mail: {sender_email}<br />
-    Web: <a href="https://www.hsb-boden.de" style="color: #0051c3; text-decoration: none;">www.hsb-boden.de</a></p>
-    <p style="margin-top: 15px; margin-bottom: 15px;"><img src="{LOGO_URL}" alt="HSB Hexagon Säurebau Logo" width="102" height="75" style="display: block; border: 0; outline: none; text-decoration: none;" /></p>
-    <hr style="border: 0; border-top: 1px solid #ccc; margin: 20px 0;" />
-    <p style="font-size: 11px; color: #777;">
+    Web: <a href="https://www.hsb-boden.de" style="color: #1d4ed8; text-decoration: none;">www.hsb-boden.de</a></p>
+    <p style="margin-top: 15px; margin-bottom: 15px;"><a href="https://www.hsb-boden.de"><img src="{LOGO_URL}" alt="HSB Hexagon Säurebau Logo" width="102" height="75" style="display: block; border: 0; outline: none; text-decoration: none;" /></a></p>
+    <hr style="border: 0; border-top: 1px solid #e2e8f0; margin: 18px 0 14px 0;" />
+    <p style="font-size: 11px; color: #64748b; line-height: 1.45;">
     <strong>HSB Hexagon Säurebau GmbH</strong> &middot; Benzstraße 6 &middot; 48599 Gronau<br />
-    Registergericht: Amtsgericht Coesfeld, HRB 21481 &middot; Sitz: Gronau<br />
-    Geschäftsführer: Jordie Post<br />
-    Falls Sie keine weiteren Informationen wünschen: <a href="https://www.hsb-boden.de/abmelden">Hier abmelden</a> oder per Antwort mit dem Betreff &bdquo;Abmelden&ldquo;.
+    Registergericht: Amtsgericht Coesfeld, HRB 21481 &middot; Sitz: Gronau &middot; Geschäftsführer: Jordie Post<br />
+    <a href="https://www.hsb-boden.de/impressum/" style="color: #64748b; text-decoration: underline;">Impressum</a> &middot; <a href="https://www.hsb-boden.de/datenschutz/" style="color: #64748b; text-decoration: underline;">Datenschutz</a> &middot; <a href="{optout_url}" style="color: #64748b; text-decoration: underline;">Hier abmelden</a>
     </p>
 </div>"""
+
+    if domain.lower() == 'com':
+        body_html = body_html.replace('Im angehängten Flyer sehen Sie ausgeführte Projektflächen und unser Vorgehen von der Analyse bis zur dokumentierten Übergabe.',
+            'Für ' + __import__('html').escape(subject_target) + ' zeigen wir im <a href="https://www.hsb-boden.de/flyer">Online-Projektflyer</a> unser Vorgehen von der Analyse bis zur dokumentierten Übergabe.')
 
     return {
         "subject": subject,
         "body_html": body_html,
         "to_address": to_addr,
-        "flyer_path": owner_meta["path"],
-        "flyer_filename": ATTACHMENT_NAME,
+        "flyer_path": None if domain.lower() == "com" else owner_meta["path"],
+        "flyer_filename": owner_meta.get("attachment_name", owner_meta["filename"]),
         "logo_url": LOGO_URL,
-        "reply_to": owner_meta["reply_to"],
+        "reply_to": "" if domain.lower() == "com" else owner_meta["reply_to"],
+    }
+
+
+# ---------------------------------------------------------------------------
+# Vorlage v2: reiner Text, 2 Segmente (architekten/produktion), 3 Schritte.
+# ---------------------------------------------------------------------------
+
+# Ohne Click-Token (siehe click_sync.click_url) bleibt der Link ohne Lead-Bezug.
+FLYER_LANDING_URL = (
+    "https://www.hsb-boden.de/flyer/?utm_source=hsb_outreach&utm_medium=email"
+    "&utm_campaign=iboden_v2_{segment}"
+)
+
+OPTOUT_LINE_V2 = "Kein Interesse? Antworten Sie kurz mit ‚Abmelden‘, dann melden wir uns nicht wieder."
+
+_LEGAL_FORM_RE = re.compile(
+    r"[\s,]*(?:&\s*Co\.?\s*)?(?<![\w.])(?:GmbH|mbH|AG|KG|GbR|PartGmbB|PartG|"
+    r"Partnerschaftsgesellschaft|e\.\s?K\.|UG(?:\s*\(haftungsbeschränkt\))?)\.?\s*$",
+    re.IGNORECASE,
+)
+
+_SUBJECTS_V2 = {
+    "architekten": ("Industrieboden-Details für {firma}", "Industrieboden-Details für Ihre Planung"),
+    "produktion": ("Hygieneboden bei {firma}", "Hygieneboden vor dem Audit"),
+}
+
+_BODIES_V2 = {
+    ("architekten", 1): (
+        "mein Name ist {sender} von der HSB Hexagon Säurebau GmbH. Wir planen, bauen und sanieren "
+        "säurebeständige Industrieböden.\n\n"
+        "Falls {bei} gerade Industrie-, Gewerbe- oder Lebensmittelprojekte in Planung sind: "
+        "Gefälle, Rinnenanschlüsse und Fugen lassen sich besonders gut in der Ausführungsplanung "
+        "aufeinander abstimmen. Wichtig sind dabei das tatsächliche Belastungsprofil und die spätere "
+        "Reinigung. Gern besprechen wir mit Ihnen, welche Punkte bei einem konkreten Projekt bereits "
+        "in der Ausschreibung berücksichtigt werden sollten.\n\n"
+        "Ist das für eines Ihrer aktuellen Projekte interessant?{link}"
+    ),
+    ("architekten", 2): (
+        "kurz zu meiner Nachricht von vor ein paar Tagen: Falls {bei} eine Ausschreibung für "
+        "Industrie- oder Lebensmittelbereiche ansteht, lohnt sich ein Blick auf die Übergänge zwischen "
+        "Boden, Rinnen und Wandanschlüssen. Dort treffen verschiedene Bauteile und Belastungen "
+        "aufeinander. Wir können diese Punkte anhand Ihres Vorhabens gemeinsam durchgehen, bevor "
+        "die Ausführung festgelegt wird. Falls das Thema gerade jemand anderes in Ihrem Büro betreut, "
+        "freue ich mich auch über einen kurzen Hinweis.\n\n"
+        "Wer ist dafür bei Ihnen der richtige Ansprechpartner?"
+    ),
+    ("architekten", 3): (
+        "ich melde mich ein letztes Mal zu diesem Thema. Wenn Industrieböden, Gefälle und Fugen "
+        "{bei} aktuell keine Rolle spielen, ist das völlig in Ordnung. Sollte später ein "
+        "Industrie- oder Lebensmittelprojekt anstehen, können Sie auf diese Nachricht antworten. "
+        "Wir besprechen dann gern das Belastungsprofil und mögliche Details der Bodenausführung "
+        "anhand des konkreten Vorhabens. Bis dahin wünsche ich Ihnen gutes Gelingen bei Ihren Projekten "
+        "und werde hierzu keine weitere Nachricht schicken."
+    ),
+    ("produktion", 1): (
+        "mein Name ist {sender} von der HSB Hexagon Säurebau GmbH. Wir planen, bauen und sanieren "
+        "säurebeständige, hygienische Industrieböden für Produktionsbetriebe.\n\n"
+        "Falls {bei} IFS- oder BRC-Audits anstehen, rückt der Boden oft in den Blick: Fugen als "
+        "mögliche Keimnester, Rinnen und Abläufe sowie die Rutschhemmung. Bei einer Sanierung "
+        "entscheidet meist das Stillstandsfenster. Deshalb planen wir Schichtaufbau und "
+        "Aushärtezeiten auf Ihren Produktionsrhythmus.\n\n"
+        "Wäre ein kurzes, unverbindliches Gespräch dazu für Sie interessant?{link}"
+    ),
+    ("produktion", 2): (
+        "kurz zu meiner Nachricht von vor ein paar Tagen: Falls ein IFS- oder BRC-Audit {bei} ansteht, lohnt "
+        "es sich, Fugen, Rinnen und Rutschhemmung frühzeitig zu betrachten. Dann lässt sich ein "
+        "Stillstandsfenster mit passenden Aushärtezeiten in Ruhe planen, statt unter Zeitdruck. "
+        "Dabei können auch einzelne Teilflächen getrennt betrachtet werden. Wir stimmen Schichtaufbau "
+        "und Ablauf gern auf Ihren Produktionsrhythmus ab.\n\n"
+        "Wäre ein kurzes Gespräch dazu für Sie interessant?"
+    ),
+    ("produktion", 3): (
+        "ich melde mich ein letztes Mal zu diesem Thema, denn ich möchte Sie nicht weiter mit "
+        "Nachrichten belasten. Wenn Fugen, Rinnen und das Stillstandsfenster {bei} gerade kein Thema sind, "
+        "ist das völlig in Ordnung. Sollte vor einem Audit oder einer Sanierung der Boden wieder in "
+        "den Fokus rücken, antworten Sie einfach auf diese Nachricht. Ich wünsche Ihnen weiterhin "
+        "einen reibungslosen Betrieb."
+    ),
+}
+
+_SUBJECTS_REPARATUR = {
+    "architekten": ("Industrieböden im Bestand", "Industrieböden im Bestand"),
+    "produktion": ("Reparatur statt Neuverlegung", "Reparatur statt Neuverlegung"),
+}
+
+_BODIES_REPARATUR = {
+    ("architekten", 1): (
+        "mein Name ist {sender} von der HSB Hexagon Säurebau GmbH. Wir planen, bauen und sanieren "
+        "säurebeständige Industrieböden.\n\n"
+        "Falls {bei} Umbauten oder Sanierungen für Produktions- oder Lebensmittelbetriebe anstehen: "
+        "Nicht jeder Bestandsboden muss komplett neu verlegt werden. Ob eine gezielte Reparatur und Instandsetzung "
+        "von Fugen, Rinnen- und Wandanschlüssen reicht, hängt vom Schadensbild, vom Restzustand des Systems "
+        "und vom Verhältnis von Reparatur- zu Sanierungskosten ab. Diese Punkte bewerten wir gern mit Ihnen, bevor die "
+        "Ausschreibung steht.\n\n"
+        "Ist das für ein aktuelles Vorhaben in Ihrem Büro interessant?{link}"
+    ),
+    ("architekten", 2): (
+        "kurz zu meiner Nachricht von vor ein paar Tagen: Beim Bauen im Bestand entscheidet oft das Detail "
+        "an Anschlüssen und Übergängen. Vor einer Reparatur und Instandsetzung prüfen wir Untergrund, Haftzug "
+        "und Bestandsaufbau; danach stellen wir Gefälle und Dichtigkeit wieder her.\n\n"
+        "Wir stimmen diese Punkte gern anhand Ihrer aktuellen Planung ab, bevor Ausschreibungsdetails "
+        "festgelegt werden. Falls das Thema {bei} jemand anderes betreut, freue ich mich über einen kurzen "
+        "Hinweis.\n\n"
+        "Wer ist dafür bei Ihnen der richtige Ansprechpartner?"
+    ),
+    ("architekten", 3): (
+        "ich melde mich ein letztes Mal zu diesem Thema. Wenn Industrieböden und Instandsetzungen im Bestand "
+        "{bei} aktuell keine Rolle spielen, ist das völlig in Ordnung.\n\n"
+        "Sollte später ein Industrie- oder Gewerbeprojekt anstehen, antworten Sie gern auf diese Nachricht. "
+        "Bei Bestandsböden bewerten wir dann gemeinsam vor Ort, ob eine gezielte Reparatur reicht "
+        "oder ab wann eine Sanierung wirtschaftlicher ist.\n\n"
+        "Bis dahin wünsche ich Ihnen viel Erfolg bei Ihren Projekten und werde Sie hierzu nicht weiter "
+        "kontaktieren."
+    ),
+    ("produktion", 1): (
+        "mein Name ist {sender} von der HSB Hexagon Säurebau GmbH. Wir planen, bauen und sanieren "
+        "säurebeständige, hygienische Industrieböden für Produktionsbetriebe.\n\n"
+        "Falls Ihnen {bei} ausgebrochene Fugen, lose Fliesen oder undichte Rinnenanschlüsse auffallen: "
+        "Nicht jeder Schaden braucht eine Neuverlegung. Punktuelle Schäden lassen sich gezielt instand setzen, "
+        "mit säure- und chemikalienbeständigen Reparaturmörteln und in vielen Fällen ohne kompletten "
+        "Produktionsstopp.\n\n"
+        "Schicken Sie mir gern ein Foto der Stelle, dann gebe ich Ihnen eine erste Einschätzung, ob eine "
+        "Reparatur reicht.{link}"
+    ),
+    ("produktion", 2): (
+        "kurz zu meiner Nachricht von vor ein paar Tagen: Wenn Feuchte durch offene Fugen oder Schadstellen "
+        "eindringt, drohen Folgeschäden. Je früher eine Schadstelle instand gesetzt wird, desto kleiner bleibt "
+        "der Eingriff; über Teilflächen und kurze Sperrzeiten ist das in vielen Fällen im laufenden Betrieb "
+        "möglich.\n\n"
+        "Fällt Ihnen {bei} eine Stelle ein, die Sie schon länger beobachten? Schicken Sie mir gern ein Foto für "
+        "eine erste Einschätzung, ob eine Reparatur wirtschaftlich ist."
+    ),
+    ("produktion", 3): (
+        "ich melde mich ein letztes Mal zu diesem Thema, um Sie nicht weiter zu belasten. Wenn Fugen, Kanten "
+        "und Bodenflächen {bei} derzeit intakt sind, ist das erfreulich.\n\n"
+        "Sollten später Schadstellen auffallen oder Sanierungsfragen auftauchen, antworten Sie einfach auf "
+        "diese Nachricht. Vor jeder Reparatur klären wir Ursache und Umfang, damit der Boden fachgerecht "
+        "instand gesetzt wird, statt nur kosmetisch überdeckt zu werden.\n\n"
+        "Bis dahin wünsche ich Ihnen weiterhin einen reibungslosen Betrieb."
+    ),
+}
+
+# Absenderadresse in der Signatur = From-Postfach (nur dort wird gelesen).
+_SENDER_COM = {"JOEL": "j-cherino@hsb-boden.com", "JORDI": "j-post@hsb-boden.com",
+               "JORDIE": "j-post@hsb-boden.com"}
+
+_PFLICHTANGABEN_V2 = (
+    "HSB Hexagon Säurebau GmbH · Benzstraße 6 · 48599 Gronau\n"
+    "Registergericht: Amtsgericht Coesfeld, HRB 21481 · Sitz: Gronau · Geschäftsführer: Jordie Post\n"
+    "Impressum und Datenschutz: www.hsb-boden.de/impressum/ und www.hsb-boden.de/datenschutz/"
+)
+
+
+def short_company(name: Any) -> str:
+    """Kurzname fuer Betreffzeilen: Zusaetze nach dem Komma und Rechtsform entfernt, hoechstens 40 Zeichen."""
+    text = re.sub(r"\s+", " ", str(name or "")).strip()
+    text = text.split(",", 1)[0].strip()
+    while True:
+        stripped = _LEGAL_FORM_RE.sub("", text).strip()
+        if stripped == text or not stripped:
+            break
+        text = stripped
+    if len(text) > 40:
+        cut = text[:40].rsplit(" ", 1)[0] if " " in text[:40] else text[:40]
+        text = cut.strip()
+    return text
+
+
+def _subject_v2(segment: str, firma_short: str, variant: str = "standard") -> str:
+    subjects = _SUBJECTS_REPARATUR if variant == "reparatur" else _SUBJECTS_V2
+    with_firma, topic_only = subjects[segment]
+    if firma_short:
+        candidate = with_firma.format(firma=firma_short)
+        if len(candidate) <= 50 and len(candidate.split()) <= 5:
+            return candidate
+    return topic_only
+
+
+def render_email_v2(
+    lead: Dict[str, Any],
+    owner: str = "JOEL",
+    step: Literal[1, 2, 3] = 1,
+    thread: Optional[Dict[str, str]] = None,
+    click_url: Optional[str] = None,
+    variant: Literal["standard", "reparatur"] = "standard",
+) -> Dict[str, Any]:
+    """Reiner-Text-Mail v2. Schritt 2/3 antworten im Thread von Schritt 1 und enthalten keinen Link."""
+    if variant not in ("standard", "reparatur"):
+        raise ValueError(f"Unknown variant: {variant!r}")
+    if step not in (1, 2, 3):
+        raise ValueError(f"step must be 1, 2 or 3, got {step!r}")
+    norm_owner = owner.strip().upper() if owner else "JOEL"
+    if norm_owner not in CANONICAL_FLYERS:
+        norm_owner = "JOEL"
+    meta = CANONICAL_FLYERS[norm_owner]
+
+    to_addr = str(lead.get("Email") or lead.get("E-Mail") or "").strip()
+    if not to_addr or "@" not in to_addr:
+        raise ValueError(f"Recipient email missing or invalid in lead {lead.get('Lead_ID') or lead.get('Lead-ID')}")
+    lead_id = str(lead.get("Lead_ID") or lead.get("Lead-ID") or "").strip()
+    if step > 1 and not (thread and thread.get("message_id") and thread.get("subject")):
+        raise ValueError("thread with message_id and subject is required for step 2 and 3")
+
+    raw_comp = str(lead.get("Firma") or lead.get("Firmenname") or lead.get("Company") or "").strip()
+    clean_comp = re.sub(r"https?://(?:www\.)?", "", raw_comp, flags=re.IGNORECASE)
+    clean_comp = re.sub(r"\.(?:de|com|ch|at)/?$", "", clean_comp, flags=re.IGNORECASE).strip()
+    is_consumer_freemail = any(f in to_addr.lower() for f in ["@gmail.", "@gmx.", "@web."])
+    if not clean_comp or is_consumer_freemail or clean_comp.lower() in ["private bauherr", "privat", "keine"]:
+        firma = ""
+    else:
+        firma = sanitize_company_name(clean_comp, to_addr)
+        if firma == "Ihr Unternehmen":
+            firma = ""
+    firma_kurz = short_company(firma) if firma else ""
+    bei = f"bei {firma_kurz}" if firma_kurz else "bei Ihnen"
+
+    segment = segment_for(lead)
+    template_id = f"v2-{segment}-reparatur-s{step}" if variant == "reparatur" else f"v2-{segment}-s{step}"
+
+    link = ""
+    if step == 1:
+        url = click_url or FLYER_LANDING_URL.format(segment=segment)
+        link = f"\n\nEine Übersicht finden Sie hier:\n{url}"
+    bodies = _BODIES_REPARATUR if variant == "reparatur" else _BODIES_V2
+    body = bodies[(segment, step)].format(sender=meta["sender_name"], bei=bei, link=link)
+
+    phone = meta["sender_phone"]
+    phone_label = "Mobil" if phone.replace(" ", "").startswith("01") else "Telefon"
+    signature = (
+        "Mit freundlichen Grüßen\n"
+        f"{meta['sender_name']}\n"
+        f"{meta['sender_role']}\n"
+        "HSB Hexagon Säurebau GmbH\n"
+        f"{phone_label}: {phone}\n"
+        f"E-Mail: {_SENDER_COM[norm_owner]}"
+    )
+    body_text = (
+        f"{anrede_fuer_lead(lead)}\n\n{body}\n\n{signature}\n\n{OPTOUT_LINE_V2}\n\n{_PFLICHTANGABEN_V2}\n"
+    )
+
+    if step == 1:
+        subject = _subject_v2(segment, firma_kurz, variant=variant)
+        in_reply_to = references = None
+    else:
+        original = re.sub(r"^(?:re|aw):\s*", "", str(thread["subject"]).strip(), flags=re.IGNORECASE)
+        subject = f"Re: {original}"
+        in_reply_to = references = thread["message_id"]
+
+    return {
+        "subject": subject,
+        "body_text": body_text,
+        "to_email": to_addr,
+        "lead_id": lead_id,
+        "segment": segment,
+        "template_id": template_id,
+        "in_reply_to": in_reply_to,
+        "references": references,
     }

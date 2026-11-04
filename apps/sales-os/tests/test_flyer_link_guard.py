@@ -1,7 +1,7 @@
 """Regressionsschutz: Mails duerfen keine Flyer-/PDF-Links auf nicht existierende Seiten enthalten.
 
-Hintergrund: dual_delivery_helper.py verwies auf https://www.hsb-boden.de/flyer/*_FINAL.pdf
-(live HTTP 404). Der Flyer geht ausschliesslich als Anhang raus.
+Hintergrund: dual_delivery_helper.py verwies auf eine Flyer-PDF unter /flyer/ (live HTTP 404).
+Seit 2026-11-04 tragen Akquise-Entwuerfe weder Anhang noch Flyer-Link.
 """
 import re
 import sys
@@ -23,10 +23,10 @@ PDF_URL_RE = re.compile(r"https?://(?:www\.)?hsb-boden\.(?:de|com)(/[^\s\"'<>)\\
 
 
 @pytest.mark.parametrize("owner", ["JOEL", "JORDI", "JORDIE"])
-def test_flyer_delivery_is_attachment_only(owner):
+def test_flyer_delivery_has_no_attachment_and_no_link(owner):
     with mock.patch.object(dual_delivery_helper, "get_mx_records", return_value=[]):
         cfg = dual_delivery_helper.get_flyer_delivery_config(owner, "info@example.de")
-    assert cfg["attach_physical_pdf"] is True
+    assert cfg["attach_physical_pdf"] is False
     assert cfg["include_cdn_link"] is False
     assert cfg["flyer_cdn_url"] is None
     assert cfg["flyer_filename"] == "HSB-HEXAGON-Industrieboeden-Flyer.pdf"

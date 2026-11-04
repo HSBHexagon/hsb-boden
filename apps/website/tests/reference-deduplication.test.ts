@@ -78,6 +78,41 @@ describe("Ergaenzende Kundenstandorte", () => {
   });
 });
 
+describe("Kundenstandorte auf der Deutschlandkarte", () => {
+  it("markiert Magnus, Rolinck und Glossner genau einmal am bestätigten Ort", () => {
+    const clients = getSupplementalClientLocations();
+    for (const [name, city] of [
+      ["MAGNUS Mineralbrunnen GmbH & Co. KG", "Norderstedt"],
+      ["Rolinck Privatbrauerei", "Steinfurt"],
+      ["Neumarkter Glossnerbräu", "Neumarkt i.d.OPf."],
+    ]) {
+      const hits = clients.filter((client) => client.name === name);
+      expect(hits).toHaveLength(1);
+      expect(hits[0].city).toBe(city);
+      expect(hits[0].lat).toBeGreaterThan(47);
+      expect(hits[0].lat).toBeLessThan(56);
+      expect(hits[0].lng).toBeGreaterThan(5);
+      expect(hits[0].lng).toBeLessThan(16);
+    }
+  });
+});
+
+describe("Saalfelder Brauhaus auf der Deutschlandkarte", () => {
+  it("bewahrt den vorhandenen Saalfeld-Standort ohne Dublette", () => {
+    const matches = getSupplementalClientLocations().filter(
+      (location) => location.name === "Saalfelder Brauhaus",
+    );
+    expect(matches).toHaveLength(1);
+    expect(matches[0]).toMatchObject({
+      city: "Saalfeld",
+      region: "Thüringen",
+      lat: 50.65,
+      lng: 11.37,
+      logo: "/logos/saalfelder-brauhaus.png",
+    });
+  });
+});
+
 describe("Kartenkomponenten nutzen die deduplizierte Quelle", () => {
   it("uebergibt der ReferenceMap nirgends die ungefilterten clientLocations", () => {
     const astroFiles = collectAstroFiles(join(process.cwd(), "src"));

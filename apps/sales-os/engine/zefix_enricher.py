@@ -49,7 +49,7 @@ def normalize_dach_company_name(name: str, lead: Optional[Dict[str, Any]] = None
         return ""
 
     cleaned = name.strip()
-    
+
     # Strip URL protocols and domains
     cleaned = re.sub(r'https?://(?:www\.)?', '', cleaned, flags=re.IGNORECASE)
     cleaned = re.sub(r'\.(?:de|com|ch|at|net|org|eu|info)/?$', '', cleaned, flags=re.IGNORECASE)
@@ -59,7 +59,7 @@ def normalize_dach_company_name(name: str, lead: Optional[Dict[str, Any]] = None
 
     # Detect legal suffix
     legal = extract_legal_form(cleaned)
-    
+
     return cleaned
 
 if __name__ == "__main__":

@@ -1,56 +1,22 @@
-# CURRENT_STATE — Live-Fortschritt & Taskboard (SSOT)
+# CURRENT_STATE — HSB Sales OS
 
-> **Stand:** 2026-09-22 19:36 CEST  
-> **Aktiver Git-Branch:** `main`  
-> **Letzter Merge:** PR #405 → Squash `957922a` (21. Sep. 2026)  
-> **System-Status:** 15/15 TESTS PASS (100% GRÜN) · `REAL_EXTERNAL_PROSPECT_SEND_COUNT = 0`
+Stand: 26.10.2026. Go-live: **NICHT VERSANDBEREIT**.
 
----
+- Master vollständig bilanziert: 6.424 Leads, 3.212 Joel / 3.212 Jordie. Jede Zeile in ALL_LEADS!BN:BR mit Auditstatus, Gründen und Draft-UIDs; alle 6.424 Zeilen zurückgelesen.
+- Joel: 3.080 Entwürfe, davon 3.078 eindeutige CRM-Kundenentwürfe und zwei interne Tests. Jordie: 2.538 / 2.536 / zwei Tests; fünf Kundenentwürfe liegen beim falschen Mitarbeiter.
+- Versandfähig: 0 / 0. Die ausdrückliche datierte Betreiberbestätigung zur §-7-Prüfung steht für alle Leads auf yes und wird als separater manueller Freigabeweg berücksichtigt. Historische Varianten und sonstige Einzelmängel bleiben gehalten; Originale sind gesichert und unverändert.
+- .de-Forensik: 1.274 Vorgänge, 702 Empfänger. Alle 488 zugehörigen CRM-Leads stehen auf sent; 214 Empfänger liegen außerhalb des Masters und bleiben in der Forensik.
+- Zusätzlich 295 bestätigte .com-Versandstatus samt Datum, Message-ID und Sender_Account ins CRM übernommen; insgesamt 1.069 bereits kontaktierte Leads. Wiederholung erzeugt null Sent-Updates.
+- 259 Kundenentwürfe überschneiden sich mit dokumentierter Kontaktaufnahme; keine Kunden-Empfängerdubletten zwischen den Entwurfsordnern.
+- .com-Inbound: zuletzt 91 Nachrichten. Zwei zuvor fehlende Bounce-Ereignisse und 40 unvollständige Bounce-Sperren mit CRM-Readback nachgetragen. Negative Reclassifizierung ist auch nach unterbrochenem Event-Append wiederanlaufsicher.
+- Alle sechs IMAP-Ordner per UID-Satz und UIDVALIDITY erneut abgeglichen; eine neue Inbox-Nachricht archiviert. Keine Entwürfe erzeugt, verändert oder gelöscht.
+- Beide .com-Postfächer per IMAP und SMTP authentifiziert. Kundenversand in diesem Lauf: 0.
+- PR #469 normal in main übernommen (d80c9bb9). GitHub-Actions-Sent-/Inbound-Sync auf main erfolgreich: Run 40338208174. Stündlich Minute 17, maximal 20 Minuten, keine parallelen Cloud-Läufe; Kunden-SMTP ausdrücklich deaktiviert.
+- Start über sales-os-safety.yml / workflow_dispatch / mode=inbound-sync. Kundensenden bleibt ein separat zu aktivierender, begrenzter CLI-Schritt mit globalem Lock, Journal und Readbacks; 35/Postfach/Tag, keine Freigabe für 100/Stunde.
+- Abmeldeseite nach geprüfter manueller Veröffentlichung produktiv per HTTP abgenommen: ehrliche Abmeldeanforderung an überwachte .com-Inbox, keine falsche Sofortbestätigung. Homepage und Kontaktformular bleiben aktiviert. Production-Run 40341382688. Ein Seitenaufruf allein erzeugt keine Sperre.
+- Jordies historische .de-M365-Verbindung: HTTP 403 / ACCESS_BLOCKED. Outlook-Mac-Sichtbarkeit nicht unabhängig verifiziert. Browser-Rendering blockiert durch Host-Zugriffsrichtlinie.
+- 188 Python-Tests bestanden, ein Live-Test separat durch reale Authentifizierung abgedeckt. 337 Website-Tests, Astro ohne Fehler/Warnungen, 58 Seiten gebaut, Wrangler-Dry-Run bestanden. CodeQL und weitere relevante CI in PR #469 erfolgreich.
 
-## 1. Abgeschlossene Meilensteine (DONE)
+Maschinenlesbarer Nachweis: docs/audits/SALES_OS_VERIFICATION_2026-10-26.json. Einzelgründe und exakte Lead-IDs stehen im CRM; private Originalbelege unter ~/KI-System/07_Logs/hsb-sales-os-20261026/.
 
-- [x] **Dev-Dummy Bereinigung:** 4 Entwicklungs-Mails restlos aus Exchange gelöscht.
-- [x] **Inbound Automation Workers:** `ingest_bounces.py` + `ingest_optouts.py` implementiert und ausgeführt.
-- [x] **Pre-Send DNS/MX-Guard:** `check_domain_mx` fängt ungültige Domains automatisch ab.
-- [x] **Pilot-Veredelung Joel (49 Leads):** 49 Entwürfe in-place überarbeitet und synchronisiert.
-- [x] **Kanonisches Namens-Hardening:** `Jordie Post` (mit -ie) in allen 18 Dateien.
-- [x] **Multi-Owner Overhaul Runner:** `overhaul_drafts.py --owner {JOEL,JORDI,ALL}` implementiert.
-- [x] **SSOT-Architektur:** `PROJECT_TRUTH.md` und `scripts/verify_ssot.py` etabliert.
-- [x] **Ultimate Execution Pipeline (5 Module, TDD):**
-  - `canonical_template_factory.py` — Fail-closed Recipient Gate
-  - `sqlite_shadow_store.py` — ACID WAL-Modus Event-Store
-  - `graph_batch_worker.py` — Graph $batch 20-Call Worker
-  - `async_sheet_sync_daemon.py` — 2D-Bulk Sheets Sync
-  - `master_mailbox_orchestrator.py` — CLI mit SSOT+DNS Preflight
-- [x] **PR #405 gemergt:** Squash-Merge auf `main` @ `957922a`.
-- [x] **Feature-Branch aufgeräumt:** `feat/b2b-copy-purge` lokal + remote gelöscht.
-
----
-
-## 2. Nächste Schritte (TODO)
-
-### P1 — Operativ
-- [ ] **Jordie Postfach-Veredelung:** `overhaul_drafts.py --owner JORDI --limit 50 --apply`
-- [ ] **Joel Restliche Drafts:** `overhaul_drafts.py --owner JOEL --limit 100 --apply`
-- [ ] **Untracked Files bereinigen:** 6 Engine-Dateien + 2 Plan-Docs committen oder .gitignore
-
-### P2 — Integration
-- [ ] **Master Orchestrator Live-Test:** `master_mailbox_orchestrator.py --owner JOEL --batches 5`
-- [ ] **Graph Batch Worker Live-Test:** Echter Access Token statt Mock
-- [ ] **4.081 verbleibende Leads:** Golden Blueprint generieren
-
-### P3 — Langfristig
-- [ ] **Flyer-Kompression:** 1,58 MB → < 450 KB
-- [ ] **Data Hygiene Gate:** 323 Leads mit Legal_Basis=UNKNOWN
-- [ ] **Web Performance Optimierungen**
-
----
-
-## 3. Tool-Start-Anweisung für KIs
-
-Vor jeder Bearbeitung:
-1. Lies `PROJECT_TRUTH.md`
-2. Lies `apps/sales-os/CURRENT_HANDOFF.md`
-3. Lies `CURRENT_STATE.md` (diese Datei)
-4. Führe nach Änderungen `python3 apps/website/scripts/verify_ssot.py` aus
-5. Teste mit `pytest apps/sales-os/tests/ -q`
+Aktuelle Betreiberanweisung: §-7-Prüfung laut ausdrücklicher Bestätigung bereits geklärt. Für alle 6.424 Leads ist Legal_Review_Status=yes mit Herkunftsvermerk und Datum in ALL_LEADS!BS:BU geschrieben und zurückgelesen. Vorhandene Opt-outs, Bounces, Versandhistorie und übrige CRM-Felder wurden dabei unverändert erhalten.

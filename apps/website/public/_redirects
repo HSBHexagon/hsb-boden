@@ -16,10 +16,9 @@ https://hsb-boden.com/*        https://www.hsb-boden.de/:splat  301!
 https://www.hsb-boden.com/*    https://www.hsb-boden.de/:splat  301!
 
 # 2026-10-25 HOTFIX: Outreach verweist auf noch nicht produktiv ausgerollte
-# /Flyer, /flyer und den generischen PDF-Namen. Bis zur Landingpage-Freigabe
-# auf den bereits produktiv erreichbaren, neutralen Unternehmensflyer umleiten.
+# /Flyer und den generischen PDF-Namen. /flyer/ ist jetzt die Landingpage;
+# /Flyer (Grossschreibung) leitet dauerhaft dorthin, das alte PDF auf den
+# produktiv erreichbaren, neutralen Unternehmensflyer.
 # 302: spaeterer Wechsel auf die verifizierte Landingpage ohne permanente Cachefalle.
-/Flyer                              /HSB-Flyer-Geschaeftsfuehrer.pdf  302
-/flyer                              /HSB-Flyer-Geschaeftsfuehrer.pdf  302
-/flyer/                             /HSB-Flyer-Geschaeftsfuehrer.pdf  302
+/Flyer                              /flyer/  301
 /HSB-HEXAGON-Industrieboeden-Flyer.pdf /HSB-Flyer-Geschaeftsfuehrer.pdf 302

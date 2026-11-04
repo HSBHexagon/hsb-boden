@@ -52,7 +52,7 @@ def run_in_sheet_tests():
         sheet_map = {s["properties"]["title"]: s["properties"]["sheetId"] for s in ss_meta.get("sheets", [])}
         required_sheets = ["ALL_LEADS", "DASHBOARD", "README", "CONTROL_CENTER", "INBOUND_EVENTS", "ACTIVITIES", "BATCHES"]
         missing = [s for s in required_sheets if s not in sheet_map]
-        log_gate("Gate 1 - Tab Inventory", len(missing) == 0, 
+        log_gate("Gate 1 - Tab Inventory", len(missing) == 0,
                  f"{len(sheet_map)} Tabs gefunden. Alle Pflicht-Tabs vorhanden: {', '.join(required_sheets)}" if not missing else f"Fehlend: {missing}")
     except Exception as e:
         log_gate("Gate 1 - Tab Inventory", False, f"Verbindungsfehler: {e}")
@@ -68,7 +68,7 @@ def run_in_sheet_tests():
         ).execute()
         headers = header_res.get("values", [[]])[0]
         col_count = len(headers)
-        
+
         # Unterstützt sowohl deutsche Originalnamen als auch standardisierte Bezeichner
         expected_cols = {
             0: ["lead_id", "lead-id"],
@@ -96,7 +96,7 @@ def run_in_sheet_tests():
         total_leads = total_rows - 1
 
         schema_ok = (col_count == 56) and (len(col_mismatches) == 0) and (total_leads == 6424)
-        log_gate("Gate 2 - Schema & Dimensions", schema_ok, 
+        log_gate("Gate 2 - Schema & Dimensions", schema_ok,
                  f"Spalten: {col_count}/56, Leads: {total_leads}/6424, Validierte Headers OK")
     except Exception as e:
         log_gate("Gate 2 - Schema & Dimensions", False, str(e))
@@ -115,7 +115,7 @@ def run_in_sheet_tests():
         other_count = len(owners) - (joel_count + jordi_count)
 
         dist_ok = (joel_count == 3212) and (jordi_count == 3212) and (other_count == 0)
-        log_gate("Gate 3 - Owner Distribution", dist_ok, 
+        log_gate("Gate 3 - Owner Distribution", dist_ok,
                  f"Joel: {joel_count}/3212, Jordie: {jordi_count}/3212, Sonstige/Fehler: {other_count}")
     except Exception as e:
         log_gate("Gate 3 - Owner Distribution", False, str(e))
@@ -127,7 +127,7 @@ def run_in_sheet_tests():
         ranges = ["ALL_LEADS!AA2:AA6425", "ALL_LEADS!AO2:AO6425", "ALL_LEADS!AP2:AP6425", "ALL_LEADS!AU2:AU6425"]
         batch_res = service.spreadsheets().values().batchGet(spreadsheetId=SPREADSHEET_ID, ranges=ranges).execute()
         v_ranges = batch_res.get("valueRanges", [])
-        
+
         col_owner = [r[0] if r else "" for r in v_ranges[0].get("values", [])]
         col_status = [r[0] if r else "" for r in v_ranges[1].get("values", [])]
         col_datum = [r[0] if r else "" for r in v_ranges[2].get("values", [])]
@@ -155,10 +155,10 @@ def run_in_sheet_tests():
             ranges=["ALL_LEADS!AO2:AO2"],
             fields="sheets(properties,conditionalFormats)"
         ).execute()
-        
+
         all_leads_meta = next(s for s in cf_meta["sheets"] if s["properties"]["title"] == "ALL_LEADS")
         cfs = all_leads_meta.get("conditionalFormats", [])
-        
+
         has_blue_row_rule = False
         has_blue_chip_rule = False
 
@@ -278,22 +278,22 @@ def run_in_sheet_tests():
             insertDataOption="INSERT_ROWS",
             body={"values": [test_payload]}
         ).execute()
-        
+
         updated_range = append_res.get("updates", {}).get("updatedRange", "")
-        
+
         # 2. Zeile direkt zuruecklesen
         readback_res = service.spreadsheets().values().get(
             spreadsheetId=SPREADSHEET_ID,
             range=updated_range
         ).execute()
         readback_val = readback_res.get("values", [[]])[0]
-        
+
         write_read_match = (readback_val[0] == test_event_id) and (readback_val[6] == "TEST-LEAD-0000")
 
         # 3. Testzeile wieder loeschen (sauberes CRM ohne Test-Verschmutzung)
         row_num_str = updated_range.split("!")[-1].split(":")[0][1:]
         row_index = int(row_num_str) - 1 # 0-indexed fuer BatchUpdate
-        
+
         inbound_sheet_id = sheet_map["INBOUND_EVENTS"]
         delete_request = {
             "deleteDimension": {
@@ -316,7 +316,7 @@ def run_in_sheet_tests():
             range=f"INBOUND_EVENTS!A{row_num_str}:H{row_num_str}"
         ).execute()
         post_delete_val = post_delete_res.get("values", [])
-        
+
         # Bereinigt wenn Zeile leer ist oder nicht mehr die Test-ID enthaelt
         if not post_delete_val or not post_delete_val[0]:
             is_cleaned = True

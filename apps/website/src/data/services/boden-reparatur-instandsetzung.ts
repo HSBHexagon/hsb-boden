@@ -6,7 +6,7 @@ export const bodenReparaturInstandsetzung: Service = {
   seoTitle:
     "Industrieboden reparieren & instandsetzen | HSB",
   description:
-    "Industrieböden reparieren & instandsetzen: Fugen-Sanierung, Hohlstellen, Risse & Kantenbrüche schnell beheben im laufenden Betrieb ohne Stillstand.",
+    "Industrieböden reparieren & instandsetzen: Fugen, Hohlstellen, Risse und Kantenbrüche gezielt beheben – oft ohne kompletten Produktionsstopp.",
   h1: "Reparatur und Instandsetzung von Industrieböden",
   primaryKeyword: "Industrieboden reparieren",
   secondaryKeywords: [

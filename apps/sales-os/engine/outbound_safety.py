@@ -91,13 +91,13 @@ def mailbox_dispatch_lock(client, release_on_error=False):
     finally:
         # A failure retains the lock; automatic stale-lock removal is unsafe.
         if acquired and (completed or release_on_error):
-            if not completed:
-                # Verbindung kann der Grund des Fehlers sein: für die Freigabe neu anmelden.
-                try:
-                    imap.logout()
-                except Exception:  # noqa: BLE001
-                    pass
-                imap = client._get_imap()
+            # Die Sperr-Verbindung liegt während der Arbeit oft lange unbenutzt und wird vom Server getrennt
+            # (04.11.2026: 'Connection reset by peer' beim Löschen). Freigabe deshalb immer frisch anmelden.
+            try:
+                imap.logout()
+            except Exception:  # noqa: BLE001
+                pass
+            imap = client._get_imap()
             typ, _ = imap.delete(LOCK_FOLDER)
             if typ != 'OK':
                 raise RuntimeError('DISPATCH_LOCK_RELEASE_UNVERIFIED')

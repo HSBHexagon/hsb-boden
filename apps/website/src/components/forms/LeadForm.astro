@@ -2,11 +2,16 @@
 import { loadOptions } from "../../lib/validation";
 import { site } from "../../data/site";
 
+interface Props {
+  repairRequest?: boolean;
+}
+
+const { repairRequest = false } = Astro.props;
 // Online-Versand nur aktiv, wenn der serverseitige Lead-Endpoint konfiguriert ist.
 const deliveryConfigured = site.hasLeadEndpoint;
 ---
 
-<form id="lead-form" class="surface grid gap-4 p-5" data-delivery-configured={deliveryConfigured}>
+<form id="lead-form" method="post" action="/api/lead" class="surface grid gap-4 p-5" data-delivery-configured={deliveryConfigured} data-repair-request={repairRequest ? "true" : undefined}>
   {!deliveryConfigured ? (
     <div class="rounded border border-hsb-red/30 bg-hsb-red/5 p-4 text-sm leading-6 text-hsb-black">
       <p class="font-black">Direkter Draht ins Projektgeschäft</p>
@@ -64,7 +69,7 @@ const deliveryConfigured = site.hasLeadEndpoint;
       <select required name="projectType" class="rounded border border-hsb-line px-3 py-3 font-normal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-hsb-red">
         <option value="">Bitte wählen</option>
         <option value="neubau">Neubau</option>
-        <option value="sanierung">Sanierung</option>
+        <option value="sanierung" selected={repairRequest}>{repairRequest ? "Reparatur oder Sanierung" : "Sanierung"}</option>
         <option value="bewertung">Technische Bewertung</option>
       </select>
     </label>
@@ -80,7 +85,7 @@ const deliveryConfigured = site.hasLeadEndpoint;
         <option value="">Bitte wählen</option>
         <option value="ja">Ja</option>
         <option value="nein">Nein</option>
-        <option value="unklar">Unklar</option>
+        <option value="unklar" selected={repairRequest}>Unklar</option>
       </select>
     </label>
   </div>
@@ -97,7 +102,7 @@ const deliveryConfigured = site.hasLeadEndpoint;
   </fieldset>
   <label class="grid gap-2 text-sm font-bold">
     <span>Nachricht <span class="text-hsb-red" aria-hidden="true">*</span></span>
-    <textarea required minlength={10} maxlength={2000} name="message" rows={5} class="rounded border border-hsb-line px-3 py-3 font-normal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-hsb-red" />
+    <textarea required minlength={10} maxlength={2000} name="message" rows={5} placeholder={repairRequest ? "Beispiel: Fuge an einer Rinne ausgebrochen, Halle 2, Stillstandsfenster am Wochenende." : undefined} class="rounded border border-hsb-line px-3 py-3 font-normal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-hsb-red" />
   </label>
   <label class="flex items-start gap-3 text-sm leading-6 text-hsb-steel">
     <input required type="checkbox" name="privacyConsent" class="mt-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-hsb-red" />
@@ -245,19 +250,21 @@ const deliveryConfigured = site.hasLeadEndpoint;
     form.dataset.stressCheckSystem = prefill.recommendedSystem;
   }
 
-  window.addEventListener(STRESS_CHECK_EVENT, (event) => {
-    const detail = (event as CustomEvent<LeadPrefill>).detail;
-    if (detail) applyPrefill(detail);
-  });
+  if (form?.dataset.repairRequest !== "true") {
+    window.addEventListener(STRESS_CHECK_EVENT, (event) => {
+      const detail = (event as CustomEvent<LeadPrefill>).detail;
+      if (detail) applyPrefill(detail);
+    });
 
-  try {
-    const stored = loadStressCheckHandoff(window.sessionStorage);
-    if (stored) {
-      applyPrefill(stored);
-      clearStressCheckHandoff(window.sessionStorage);
+    try {
+      const stored = loadStressCheckHandoff(window.sessionStorage);
+      if (stored) {
+        applyPrefill(stored);
+        clearStressCheckHandoff(window.sessionStorage);
+      }
+    } catch {
+      // sessionStorage blockiert: Formular bleibt unbefüllt nutzbar.
     }
-  } catch {
-    // sessionStorage blockiert: Formular bleibt unbefüllt nutzbar.
   }
 
   form?.addEventListener("focusin", onFocus, { once: true });

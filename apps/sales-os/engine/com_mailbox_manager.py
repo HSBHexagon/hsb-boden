@@ -56,6 +56,34 @@ def html_to_plaintext(source):
     return ''.join(parser.parts).strip()
 
 
+_URL_IN_TEXT_RE = re.compile(r'https?://[^\s<>"\x27]+')
+
+
+def plaintext_to_html(text):
+    """Absatzgetreues HTML zum Text: Leerzeile -> neuer <p>, Zeilenumbruch -> <br>.
+
+    Outlook öffnet IMAP-Entwürfe zum Bearbeiten im HTML-Editor; ohne HTML-Teil gehen
+    dort die Absätze verloren. Links werden mit dem sichtbaren Text als Ziel verlinkt.
+    """
+    paragraphs = [p for p in re.split(r'\n\s*\n', text.replace('\r\n', '\n').strip()) if p.strip()]
+    out = []
+    for para in paragraphs:
+        lines = []
+        for line in para.split('\n'):
+            pos, chunks = 0, []
+            for m in _URL_IN_TEXT_RE.finditer(line):
+                chunks.append(html.escape(line[pos:m.start()]))
+                url = html.escape(m.group(0), quote=True)
+                chunks.append(f'<a href="{url}">{url}</a>')
+                pos = m.end()
+            chunks.append(html.escape(line[pos:]))
+            lines.append(''.join(chunks))
+        out.append('<p style="margin:0 0 12px 0;">' + '<br>\n'.join(lines) + '</p>')
+    return ('<!DOCTYPE html>\n<html><head><meta charset="utf-8"></head>\n'
+            '<body style="font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.5;color:#1f2937;">\n'
+            + '\n'.join(out) + '\n</body></html>\n')
+
+
 def stable_inbound_id(raw, owner, rfc_message_id=''):
     return str(rfc_message_id).strip() or f'COM_IMAP:{owner}:SHA256:{hashlib.sha256(raw).hexdigest()}'
 
@@ -175,7 +203,8 @@ class ComMailboxClient:
         template_id: Optional[str] = None,
         in_reply_to: Optional[str] = None,
         references: Optional[str] = None,
-        lead_id: Optional[str] = None
+        lead_id: Optional[str] = None,
+        copy_rev: Optional[str] = None
     ) -> Tuple[bytes, str]:
         if not to_email or '@' not in to_email:
             raise ValueError(f'Ungueltige Empfaengeradresse: {to_email}')
@@ -191,17 +220,24 @@ class ComMailboxClient:
         msg['Message-ID'] = msg_id
         msg['X-Unsent'] = '1'
         if body_text is not None:
-            # v2: genau ein text/plain-Teil, kein HTML, kein Anhang, nie Reply-To.
+            # v2: multipart/alternative aus text/plain und gleichlautendem text/html, kein Anhang,
+            # nie Reply-To. CRLF und quoted-printable, damit Outlook (Lesen und Bearbeiten) die
+            # Absätze behält.
+            from email import policy as email_policy
             if lead_id:
                 msg['X-HSB-Lead-ID'] = lead_id
             if template_id:
                 msg['X-HSB-Template-ID'] = template_id
+            if copy_rev:
+                msg['X-HSB-Copy-Rev'] = copy_rev
             if in_reply_to:
                 msg['In-Reply-To'] = in_reply_to
             if references:
                 msg['References'] = references
-            msg.set_content(body_text, charset='utf-8')
-            return msg.as_bytes(), msg_id
+            plain = body_text.replace('\r\n', '\n').replace('\r', '\n')
+            msg.set_content(plain, charset='utf-8', cte='quoted-printable')
+            msg.add_alternative(plaintext_to_html(plain), subtype='html', charset='utf-8', cte='quoted-printable')
+            return msg.as_bytes(policy=email_policy.SMTP), msg_id
         ids = set(re.findall(r'HSB-\d{8}-\d+',unquote(body_html)))
         if len(ids)==1:
             msg['X-HSB-Lead-ID']=next(iter(ids))
@@ -246,7 +282,8 @@ class ComMailboxClient:
                         template_id=it.get('template_id'),
                         in_reply_to=it.get('in_reply_to'),
                         references=it.get('references'),
-                        lead_id=it.get('lead_id') if it.get('body_text') is not None else None
+                        lead_id=it.get('lead_id') if it.get('body_text') is not None else None,
+                        copy_rev=it.get('copy_rev')
                     )
                     res, data = imap.append(
                         folder,

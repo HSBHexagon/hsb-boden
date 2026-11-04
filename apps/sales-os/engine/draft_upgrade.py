@@ -20,10 +20,13 @@ from pathlib import Path
 import sqlite3
 import time
 
+from sales_reconciliation import OUTDATED_PLANNER_COPY, OUTDATED_REPAIR_COPY
+
 ARCHIVE = 'Entwürfe-Archiv-v1'
 REPAIRABLE = {'BODY_NOT_COMPANY_OR_CONTACT_SPECIFIC', 'SUBJECT_NOT_COMPANY_SPECIFIC',
               'UNRESOLVED_PLACEHOLDER', 'FLYER_LINK_MISSING', 'PERSONAL_OPTOUT_LINK_MISSING',
-              'HISTORICAL_VARIANT_REQUIRES_REVIEW', 'PLAIN_TEXT_MISSING'}
+              'HISTORICAL_VARIANT_REQUIRES_REVIEW', 'PLAIN_TEXT_MISSING', OUTDATED_PLANNER_COPY,
+              OUTDATED_REPAIR_COPY}
 
 
 def modified_utf7(value):
@@ -78,7 +81,7 @@ def upgrade_drafts(owner, limit=5, cohort='pilot', apply=False, journal_path=Non
     from canonical_template_factory import render_email_v2
     from click_sync import click_url
     from hsb_core import check_eligibility, normalize_owner
-    from lead_quality import deliverability_flags, fit_score, segment_for
+    from lead_quality import deliverability_flags, fit_score, has_relevant_planning_project, segment_for
     from outbound_safety import crm_write_lead_readback, require_stable_crm_binding
     from sales_reconciliation import assess_message
     from hsb_config import CANONICAL_SPREADSHEET_ID
@@ -102,6 +105,10 @@ def upgrade_drafts(owner, limit=5, cohort='pilot', apply=False, journal_path=Non
         finally:
             prior.close()
     cache = {}; selected = []
+    outdated = {OUTDATED_PLANNER_COPY, OUTDATED_REPAIR_COPY}
+
+    def target_template(segment):
+        return f'v2-{segment}-reparatur-s1' if variant == 'reparatur' else f'v2-{segment}-s1'
     # Erst Fit, dann Netzwerkprüfungen: knappe Pilotplätze nicht nach IMAP-Reihenfolge vergeben.
     def rank(record):
         matches = byid.get(str(record.get('lead_id')), [])
@@ -126,13 +133,21 @@ def upgrade_drafts(owner, limit=5, cohort='pilot', apply=False, journal_path=Non
         else:
             lead = dict(matches[0])
             tmpl = str(lead.get('Email_Template_ID') or '')
-            if (variant == 'reparatur' and '-reparatur-' in tmpl) or (variant != 'reparatur' and tmpl.startswith('v2-')):
+            segment = segment_for(lead)
+            if segment == 'architekten' and not has_relevant_planning_project(lead):
+                result['skipped_reasons']['PLANNING_PROJECT_UNVERIFIED'] += 1
+                continue
+            # Veraltete Fassung derselben Vorlage: nur ersetzen, wenn CRM genau diesen Entwurf bindet.
+            obsolete = (tmpl == record.get('template_id') == target_template(segment)
+                        and lead.get('Draft_ID') == record.get('message_id')
+                        and bool(outdated & set(record.get('issues', []))))
+            already_v2 = '-reparatur-' in tmpl if variant == 'reparatur' else tmpl.startswith('v2-')
+            if already_v2 and not obsolete:
                 result['skipped_reasons']['ALREADY_V2'] += 1
                 continue
             if str(lead.get('Tier') or '').strip().upper()=='Z':
                 result['skipped_reasons']['TIER_Z']+=1
                 continue
-            segment = segment_for(lead)
             if cohort == 'pilot' and chosen[segment] >= quotas[segment]:
                 result['skipped_reasons']['PILOT_SEGMENT_QUOTA'] += 1
                 continue
@@ -149,7 +164,7 @@ def upgrade_drafts(owner, limit=5, cohort='pilot', apply=False, journal_path=Non
             break
     result['selected'] = len(selected)
     result['selected_lead_ids'] = [str(lead.get('Lead-ID') or '') for _, lead in selected]
-    if not apply:
+    if not apply or not selected:
         return result
     if client is None or svc is None or journal_path is None:
         raise ValueError('APPLY_REQUIRES_CLIENT_CRM_AND_JOURNAL')
@@ -185,24 +200,35 @@ def upgrade_drafts(owner, limit=5, cohort='pilot', apply=False, journal_path=Non
                         raise RuntimeError('LIVE_LEAD_GATE_BLOCKED')
                     if current.get('E-Mail') != lead.get('E-Mail'):
                         raise RuntimeError('LIVE_RECIPIENT_CHANGED')
-                    lead = dict(current, _row=current_row)
+                    segment = segment_for(current)
+                    if (segment != segment_for(lead)
+                            or (segment == 'architekten' and not has_relevant_planning_project(current))):
+                        raise RuntimeError('LIVE_PROJECT_FIT_CHANGED')
                     # Vor APPEND/MOVE die stabile CRM-Bindung prüfen, nicht erst nach dem Archivieren.
                     require_stable_crm_binding(svc,CANONICAL_SPREADSHEET_ID,lead['Lead-ID'])
                     key = '|'.join(str(rec[k]) for k in ('owner', 'uidvalidity', 'uid', 'sha256'))
-                    _select(imap, rec['folder'], rec['uidvalidity'])
                     row = db.execute('SELECT mid,raw,state,old_raw FROM upgrades WHERE key=?', (key,)).fetchone()
                     if row and row[2] == 'DONE':
                         continue
+                    if outdated & set(rec.get('issues', [])):
+                        live_binding = (current.get('Draft_ID'), current.get('Email_Template_ID'))
+                        original_binding = (lead.get('Draft_ID'), lead.get('Email_Template_ID'))
+                        resumed = (row and row[2] == 'ARCHIVED'
+                                   and live_binding == (row[0], rendered_id(row[1])))
+                        if live_binding != original_binding and not resumed:
+                            raise RuntimeError('LIVE_DRAFT_BINDING_CHANGED')
+                    lead = dict(current, _row=current_row)
+                    _select(imap, rec['folder'], rec['uidvalidity'])
                     old = row[3] if row and row[2] in ('MOVE_UNKNOWN', 'ARCHIVED') else _raw(imap, rec['uid'])
                     if hashlib.sha256(old).hexdigest() != rec['sha256']:
                         result['skipped_reasons']['CHANGED_V1_HASH'] += 1
                         continue
-                    row = db.execute('SELECT mid,raw,state,old_raw FROM upgrades WHERE key=?', (key,)).fetchone()
                     if row is None:
                         rendered = render_email_v2(lead, owner, click_url=click_url(lead['Lead-ID'], segment_for(lead), os.environ.get('HSB_CLICK_SECRET')), variant=variant)
                         mid = make_msgid(domain='hsb-boden.com')
                         raw, _ = client.build_draft_message(rendered['to_email'], rendered['subject'], body_text=rendered['body_text'],
-                                template_id=rendered['template_id'], lead_id=lead['Lead-ID'], custom_message_id=mid)
+                                template_id=rendered['template_id'], lead_id=lead['Lead-ID'], custom_message_id=mid,
+                                copy_rev=rendered.get('copy_rev'))
                         # imaplib.append normalisiert CRLF; Readback und Journal speichern dieselben Bytes.
                         raw = raw.replace(b'\r\n', b'\n').replace(b'\r', b'\n').replace(b'\n', b'\r\n')
                         if assess_message(raw, owner, [lead])['issues']:

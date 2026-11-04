@@ -84,6 +84,136 @@ def check_file_content(path: Path):
                 ERRORS.append(f"[{rel}] Verbotene/archivierte Google Sheet ID '{forbidden_id}' ({label}) referenziert! Die einzige erlaubte Wahrheit ist '{CANONICAL_SPREADSHEET_ID}'.")
 
 
+# ---------------------------------------------------------------------------
+# Check 5-7: Asset-Hashes, neutraler Anhangsname, URLs im Mail-Code
+# ---------------------------------------------------------------------------
+import hashlib
+import re
+
+NEUTRAL_ATTACHMENT_NAME = "HSB-HEXAGON-Industrieboeden-Flyer.pdf"
+_ASSET_ROW_RE = re.compile(r"\|\s*`(apps/sales-os/assets/canonical/[^`]+)`\s*\|\s*`([0-9a-f]{64})`\s*\|")
+_ATTACHMENT_NAME_RE = re.compile(
+    r"""(?:attachment_name|attachmentName|ATTACHMENT_NAME|flyer_filename)\s*[:=]\s*['"]([^'"]+\.pdf)['"]""")
+_SITE_URL_RE = re.compile(r"https?://(?:www\.)?hsb-boden\.de(/[^\s\"'<>)\\{}]*)?")
+MAIL_CODE_DIRS = ("apps/sales-os/engine", "apps/sales-os/apps_script")
+
+
+def check_asset_hashes(repo_root):
+    """Jeder Master in PROJECT_TRUTH.md muss existieren und exakt den hinterlegten Hash haben."""
+    errors = []
+    truth = (repo_root / "PROJECT_TRUTH.md").read_text(encoding="utf-8")
+    rows = _ASSET_ROW_RE.findall(truth)
+    if not rows:
+        errors.append("PROJECT_TRUTH.md: Abschnitt 'Kanonische Assets' mit Datei/SHA-256 fehlt.")
+    for rel, expected in rows:
+        path = repo_root / rel
+        if not path.is_file():
+            errors.append(f"[{rel}] Kanonischer Master fehlt.")
+            continue
+        actual = hashlib.sha256(path.read_bytes()).hexdigest()
+        if actual != expected:
+            errors.append(f"[{rel}] SHA-256 {actual} weicht von PROJECT_TRUTH.md ({expected}) ab.")
+    return errors
+
+
+def check_attachment_names(repo_root):
+    """Beim Empfänger darf nie ein Personenname im PDF-Anhang stehen."""
+    errors = []
+    for base in MAIL_CODE_DIRS:
+        for path in sorted((repo_root / base).rglob("*")):
+            if path.suffix not in (".py", ".gs", ".js") or "__pycache__" in path.parts:
+                continue
+            for line_no, line in enumerate(path.read_text(encoding="utf-8", errors="ignore").splitlines(), 1):
+                for name in _ATTACHMENT_NAME_RE.findall(line):
+                    if name != NEUTRAL_ATTACHMENT_NAME:
+                        errors.append(f"[{path.relative_to(repo_root)}:{line_no}] Anhangsname '{name}' ist nicht "
+                                      f"neutral; erlaubt ist nur '{NEUTRAL_ATTACHMENT_NAME}'.")
+    return errors
+
+
+def _redirect_sources(website):
+    sources = set()
+    redirects = website / "public" / "_redirects"
+    if redirects.is_file():
+        for line in redirects.read_text(encoding="utf-8").splitlines():
+            parts = line.split()
+            if len(parts) >= 2 and parts[0].startswith("/"):
+                sources.add(parts[0])
+    return sources
+
+
+def site_path_exists(repo_root, path):
+    """Statische Auflösung gegen public/, _redirects, Astro-Seiten und Pages-Functions."""
+    website = repo_root / "apps" / "website"
+    path = (path or "/").split("?", 1)[0].split("#", 1)[0]
+    if path in ("", "/"):
+        return True
+    stripped = path.rstrip("/")
+    if (website / "public" / stripped.lstrip("/")).is_file():
+        return True
+    for source in _redirect_sources(website):
+        if source.endswith("*") and path.startswith(source[:-1]):
+            return True
+        if source.rstrip("/") == stripped:
+            return True
+    segments = [s for s in stripped.split("/") if s]
+    pages = website / "src" / "pages"
+    if (pages.joinpath(*segments) / "index.astro").is_file() or pages.joinpath(*segments[:-1], segments[-1] + ".astro").is_file():
+        return True
+    parent = pages.joinpath(*segments[:-1])
+    if (parent / "[slug].astro").is_file():
+        data = website / "src" / "data"
+        needle = re.compile(r"""slug\s*:\s*['"]""" + re.escape(segments[-1]) + r"""['"]""")
+        if any(needle.search(f.read_text(encoding="utf-8", errors="ignore")) for f in data.rglob("*.ts")):
+            return True
+    functions = website / "functions"
+    fparent = functions.joinpath(*segments[:-1]) if len(segments) > 1 else functions / segments[0]
+    if len(segments) == 1 and path.endswith("/") and any((functions / segments[0]).glob("[[]*[]].ts")):
+        return True
+    if len(segments) > 1 and any(fparent.glob("[[]*[]].ts")):
+        return True
+    return False
+
+
+def check_mail_urls(repo_root):
+    """Jede hsb-boden.de-Adresse im Mail-Code muss von der Website bedient werden (statisch geprüft)."""
+    errors = []
+    for base in MAIL_CODE_DIRS:
+        for path in sorted((repo_root / base).rglob("*")):
+            if path.suffix not in (".py", ".gs", ".js") or "__pycache__" in path.parts:
+                continue
+            for line_no, line in enumerate(path.read_text(encoding="utf-8", errors="ignore").splitlines(), 1):
+                for m in _SITE_URL_RE.finditer(line):
+                    url_path = (m.group(1) or "/").rstrip(".,;:")
+                    if not site_path_exists(repo_root, url_path):
+                        errors.append(f"[{path.relative_to(repo_root)}:{line_no}] {m.group(0)} wird von der "
+                                      "Website nicht bedient (keine Datei, Seite, Function oder Weiterleitung).")
+    return errors
+
+
+def check_mail_urls_live(repo_root, timeout=15):
+    """Optional (--live): jede gefundene Adresse per HTTP prüfen, Weiterleitungen folgen."""
+    import urllib.request
+    errors, seen = [], set()
+    for base in MAIL_CODE_DIRS:
+        for path in sorted((repo_root / base).rglob("*")):
+            if path.suffix not in (".py", ".gs", ".js") or "__pycache__" in path.parts:
+                continue
+            for m in _SITE_URL_RE.finditer(path.read_text(encoding="utf-8", errors="ignore")):
+                url = m.group(0).rstrip(".,;:").split("?", 1)[0]
+                if url in seen or url.rstrip("/").endswith("/r"):
+                    continue
+                seen.add(url)
+                try:
+                    req = urllib.request.Request(url, method="GET", headers={"User-Agent": "HSB-SSOT-Verifier/1.0"})
+                    with urllib.request.urlopen(req, timeout=timeout) as resp:
+                        if resp.status >= 400:
+                            errors.append(f"{url} -> HTTP {resp.status}")
+                except Exception as exc:
+                    errors.append(f"{url} -> {type(exc).__name__}: {exc}")
+    return errors
+
+
 def main():
     print("=== HSB MONOREPO SSOT VERIFIER ===")
     print(f"Repo Root: {REPO_ROOT}")
@@ -103,6 +233,12 @@ def main():
         for f in files:
             check_file_content(Path(root) / f)
 
+    ERRORS.extend(check_asset_hashes(REPO_ROOT))
+    ERRORS.extend(check_attachment_names(REPO_ROOT))
+    ERRORS.extend(check_mail_urls(REPO_ROOT))
+    if "--live" in sys.argv:
+        ERRORS.extend(check_mail_urls_live(REPO_ROOT))
+
     if ERRORS:
         print(f"\n❌ {len(ERRORS)} SSOT-Verletzungen gefunden:\n")
         for err in ERRORS:
@@ -110,7 +246,7 @@ def main():
         print("\nBitte korrigieren gemäß PROJECT_TRUTH.md vor Commit/Abschluss.\n")
         sys.exit(1)
 
-    print("✅ Alle SSOT-Prüfungen bestanden: Jordie Post, Monorepo, CRM SSOT-Sheet & Invarianten 100% konform.")
+    print("✅ Alle SSOT-Prüfungen bestanden: Jordie Post, Monorepo, CRM SSOT-Sheet, Asset-Hashes, Anhangsname, Mail-URLs & Invarianten konform.")
     sys.exit(0)
 
 if __name__ == "__main__":

@@ -1,9 +1,9 @@
 {
   "project": "HSB / HEXAFLOOR",
-  "last_updated": "2026-09-19T16:40:00+0200",
+  "last_updated": "2026-11-04",
   "active_model": "Claude Code (Opus 5)",
   "active_phase": "website-b2b-hardening",
-  "active_task": "B2B-Website-Auftrag: Schritte 1-4 als bereits gemergt verifiziert (8e44b67); site-weite Copy-Bereinigung (kostenlos/unverbindlich/Festpreis/Quadratmeterpreis) + Test-Erweiterung auf Branch feat/b2b-copy-purge; Gate gruen; PR/Merge = Owner-Gate.",
+  "active_task": "Reparatur-zuerst-Vorlagen, MIME-Fix, Duplikat-Bereinigung und SSOT-Checks (PR #465). Offen: Merge + Production-Deploy, danach Audit, dedupe-drafts und upgrade-drafts auf dem Mac.",
   "account_migration_2026_07_02": {
     "github_new_repo": "https://github.com/HSBHexagon/hsb-boden",
     "github_old_repo_access": "HSBHexagon ist Admin-Collaborator im Alt-Repo cherinojoel-lang/hsb-boden (Ownership-Transfer pending, nicht blockierend)",
@@ -124,7 +124,7 @@
     "docs/launch/PRE_DNS_GO_LIVE_MAX_CHECKLIST.md"
   ],
   "push_done": false,
-  "deploy_done": "not_run",
+  "deploy_done": false,
   "historical_deploy_evidence": [
     "Production-Run 29404977846 fuer bf0a257 war erfolgreich; dieser Truth-Pass fuehrt keinen Deploy aus."
   ],

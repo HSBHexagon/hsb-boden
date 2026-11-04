@@ -250,8 +250,12 @@ SEGMENT_CODES={'p':'produktion','a':'architekten'}
 
 
 def draft_segment(draft):
-    """Segment eines v2-Entwurfs aus seinem Klick-Link (?s=p / ?s=a); None, wenn nicht bestimmbar."""
+    """Segment eines v2-Entwurfs aus X-HSB-Template-ID, sonst aus dem Klick-Link (?s=p / ?s=a); None, wenn nicht bestimmbar."""
     from urllib.parse import urlsplit, parse_qs
+    # Reparatur-Entwürfe tragen keinen Klick-Token mehr; die Vorlagen-ID nennt das Segment.
+    m = re.match(r'v2-(produktion|architekten)-', str(draft.get('template_id') or ''))
+    if m:
+        return m.group(1)
     for url in draft.get('links') or []:
         parts=urlsplit(url)
         if parts.netloc.lower()=='www.hsb-boden.de' and parts.path.startswith('/r/'):

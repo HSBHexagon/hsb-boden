@@ -21,8 +21,23 @@ import re
 from urllib.parse import urlsplit, parse_qs, unquote
 from urllib.request import Request
 from hsb_core import check_eligibility, normalize_owner, sanitize_company_name
+from lead_quality import has_relevant_planning_project, segment_for
 
 SENDERS = {'JOEL': 'j-cherino@hsb-boden.com', 'JORDI': 'j-post@hsb-boden.com'}
+OUTDATED_PLANNER_COPY = 'OUTDATED_PLANNER_COPY'
+# Reparatur-Erstkontakt ohne aktuelle Fassung (X-HSB-Copy-Rev) gilt als ersetzbar.
+OUTDATED_REPAIR_COPY = 'OUTDATED_REPAIR_COPY'
+_OLD_PLANNER_LINES = {
+    'v2-architekten-s1': 'Gefälle, Rinnenanschlüsse und Fugen lassen sich besonders gut in der Ausführungsplanung',
+    'v2-architekten-reparatur-s1': 'Nicht jeder Bestandsboden muss komplett neu verlegt werden',
+}
+
+
+def contacted_firm_domains(contacted):
+    """Firmendomains bereits angeschriebener Empfänger. Freemail und eigene Domains sperren keine Dritten."""
+    from hsb_core import FREEMAIL_DOMAINS
+    own = {'hsb-boden.de', 'hsb-boden.com'}
+    return {a.rpartition('@')[2] for a in contacted if '@' in a} - set(FREEMAIL_DOMAINS) - own - {''}
 
 
 def queue_block_reasons(lead):
@@ -89,13 +104,26 @@ def assess_message(raw, owner, leads):
         issues.append('MESSAGE_ID_INVALID')
     template_id = str(msg.get('X-HSB-Template-ID') or '').strip()
     is_v2 = template_id.startswith('v2-')
+    is_repair = '-reparatur-' in template_id
+    from canonical_template_factory import REPAIR_URL, REPARATUR_COPY_REV
+    current_repair_s1 = (is_repair and template_id.endswith('-s1')
+                         and str(msg.get('X-HSB-Copy-Rev') or '').strip() == REPARATUR_COPY_REV)
+    if is_repair and template_id.endswith('-s1') and not current_repair_s1:
+        issues.append(OUTDATED_REPAIR_COPY)
+    if template_id.startswith('v2-architekten-') and (
+            segment_for(lead) != 'architekten' or not has_relevant_planning_project(lead)):
+        issues.append('PLANNING_PROJECT_UNVERIFIED')
+    old_planner_line = _OLD_PLANNER_LINES.get(template_id)
+    if old_planner_line and old_planner_line in ' '.join(body.split()):
+        issues.append(OUTDATED_PLANNER_COPY)
     company = str(lead.get('Firma') or lead.get('Company') or '').strip()
     contact = str(lead.get('Ansprechpartner') or lead.get('Contact') or '').strip()
     if not company or sanitize_company_name(company, recipients[0] if recipients else '') == 'Ihr Unternehmen':
         issues.append('COMPANY_UNVERIFIED')
     if is_v2:
         # Folgemails antworten im Thread: das Re:/AW:-Praefix zaehlt nicht zur 50-Zeichen-Grenze.
-        if not subject or len(re.sub(r'^(?:re|aw):\s*', '', subject, flags=re.I)) > 50:
+        # Reparatur-Betreffzeilen sind feste Owner-Vorgaben (bis 65 Zeichen).
+        if not subject or len(re.sub(r'^(?:re|aw):\s*', '', subject, flags=re.I)) > (65 if is_repair else 50):
             issues.append('SUBJECT_TOO_LONG')
     elif not subject or (company and company.casefold() not in subject.casefold()):
         issues.append('SUBJECT_NOT_COMPANY_SPECIFIC')
@@ -103,7 +131,8 @@ def assess_message(raw, owner, leads):
     if is_v2:
         from canonical_template_factory import short_company
         body_names.append(short_company(company))
-    if not (any(n and n.casefold() in body.casefold() for n in body_names) or (len(contact) > 3 and contact.casefold() in body.casefold())):
+    # Reparatur-Fassung nennt bewusst keine CRM-Firmen-/Titeldaten im Fließtext.
+    if not is_repair and not (any(n and n.casefold() in body.casefold() for n in body_names) or (len(contact) > 3 and contact.casefold() in body.casefold())):
         issues.append('BODY_NOT_COMPANY_OR_CONTACT_SPECIFIC')
     if re.search(r'\{\{|\[FIRMA\]|\[NAME\]|undefined|Sehr geehrte/r', body, re.I):
         issues.append('UNRESOLVED_PLACEHOLDER')
@@ -128,7 +157,11 @@ def assess_message(raw, owner, leads):
                     return False
                 return parts.netloc.lower() == 'www.hsb-boden.de' and (
                     parts.path.rstrip('/') == '/flyer' or re.fullmatch(r'/r/[A-Za-z0-9_\-.~]+', parts.path))
-            if len(links) > 1 or not all(_v2_link_ok(u) for u in links):
+            if current_repair_s1:
+                # Genau der lesbare Reparatur-Link, kein Klick-Token im Sichttext.
+                if links != [REPAIR_URL]:
+                    issues.append('V2_LINK_INVALID')
+            elif len(links) > 1 or not all(_v2_link_ok(u) for u in links):
                 issues.append('V2_LINK_INVALID')
         elif links:
             issues.append('V2_LINK_INVALID')
@@ -409,6 +442,7 @@ def run_audit(output, reuse_snapshot=False):
             record['internal_test']=bool(record['recipients']) and all(a in INTERNAL_RECIPIENTS for a in record['recipients'])
             draft_records.append(dict(item, **record))
     contacted.update(str(l.get('E-Mail') or '').strip().lower() for l in leads if str(l.get('Send_Status') or '').lower() in {'sent', 'gesendet'} or l.get('Send_Datum'))
+    contacted_domains = contacted_firm_domains(contacted)
     link_cache = {}
     for draft in draft_records:
         draft['issues'].extend(link_health(draft.get('links', draft.get('flyer_links', [])), link_cache))
@@ -427,6 +461,7 @@ def run_audit(output, reuse_snapshot=False):
         for a in d['recipients']:
             if counts[a] > 1: d['issues'].append('DUPLICATE_DRAFT_RECIPIENT')
             if a in contacted: d['issues'].append('ALREADY_CONTACTED')
+            elif a.rpartition('@')[2] in contacted_domains: d['issues'].append('ALREADY_CONTACTED_DOMAIN')
             if a in inbound_blocked: d['issues'].append('INBOUND_REQUIRES_REVIEW')
         if mids[d['message_id']] > 1: d['issues'].append('DUPLICATE_MESSAGE_ID')
         if lead_ids[d['lead_id']] != 1: d['issues'].append('CRM_LEAD_ID_AMBIGUOUS')
@@ -438,6 +473,7 @@ def run_audit(output, reuse_snapshot=False):
         lid = str(l.get('Lead-ID') or ''); em = str(l.get('E-Mail') or '').strip().lower()
         ds = bylead[lid]; reasons = queue_block_reasons(l)
         if em in contacted: reasons.append('ALREADY_CONTACTED')
+        elif em.rpartition('@')[2] in contacted_domains: reasons.append('ALREADY_CONTACTED_DOMAIN')
         if em in inbound_blocked: reasons.append('INBOUND_REQUIRES_REVIEW')
         if emails[em] != 1 or lead_ids[lid] != 1: reasons.append('CRM_DUPLICATE')
         if not ds: reasons.append('NO_DRAFT')

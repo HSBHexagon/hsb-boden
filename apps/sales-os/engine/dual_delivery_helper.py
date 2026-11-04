@@ -2,7 +2,12 @@
 """
 Dual-Delivery & Enterprise SEG Anti-Quarantine Helper for HSB Sales OS.
 Classifies recipient domain mail gateways (Proofpoint, Mimecast, Defender ATP)
-and manages dual-delivery options (241 KB PDF attachment vs. trusted CDN link).
+
+Owner-Entscheidung 2026-11-04: Akquise-Entwuerfe tragen KEINEN Anhang und KEINEN
+Flyer-Download-Link mehr (Anti-Spam). Der einzige Link im Mailtext fuehrt auf die
+Reparatur-Ersteinschaetzung (siehe canonical_template_factory.REPAIR_URL).
+Die frueher hier hinterlegte Adresse unter /flyer/ mit *_FINAL.pdf existierte nie
+(HTTP 404). Die Master-PDFs bleiben nur als lokale Assets erhalten.
 """
 import subprocess
 import re
@@ -18,14 +23,12 @@ CANONICAL_FLYERS = {
         "filename": "HSB-Flyer-Joel-Cherino_FINAL.pdf",
         "attachment_name": "HSB-HEXAGON-Industrieboeden-Flyer.pdf",
         "local_path": str(CANONICAL_DIR / "HSB-Flyer-Joel-Cherino_FINAL.pdf"),
-        "cdn_url": "https://www.hsb-boden.de/flyer/HSB-Flyer-Joel-Cherino_FINAL.pdf",
         "size_kb": 241
     },
     "JORDI": {
         "filename": "HSB-Flyer-Jordie-Post_FINAL.pdf",
         "attachment_name": "HSB-HEXAGON-Industrieboeden-Flyer.pdf",
         "local_path": str(CANONICAL_DIR / "HSB-Flyer-Jordie-Post_FINAL.pdf"),
-        "cdn_url": "https://www.hsb-boden.de/flyer/HSB-Flyer-Jordie-Post_FINAL.pdf",
         "size_kb": 241
     }
 }
@@ -90,7 +93,7 @@ def classify_recipient_seg(email_or_domain: str) -> Dict[str, Any]:
 
 def get_flyer_delivery_config(owner: str, recipient_email: str) -> Dict[str, Any]:
     """
-    Returns the optimal flyer strategy (Attachment + CDN Link vs Attachment only)
+    Returns the flyer delivery config (no attachment, no flyer link)
     based on the recipient's email gateway.
     """
     norm_owner = owner.strip().upper()
@@ -100,15 +103,15 @@ def get_flyer_delivery_config(owner: str, recipient_email: str) -> Dict[str, Any
     flyer_meta = CANONICAL_FLYERS[norm_owner]
     seg_info = classify_recipient_seg(recipient_email)
 
-    # Both: Always provide 241 KB attachment + CDN Fallback in footer for maximum deliverability
+    # Weder Anhang noch Flyer-Link (Owner-Entscheidung 2026-11-04, siehe Modul-Docstring).
     return {
         "owner": norm_owner,
         "flyer_filename": flyer_meta.get("attachment_name", "HSB-HEXAGON-Industrieboeden-Flyer.pdf"),
         "flyer_local_path": flyer_meta["local_path"],
-        "flyer_cdn_url": flyer_meta["cdn_url"],
+        "flyer_cdn_url": None,
         "flyer_size_kb": flyer_meta["size_kb"],
-        "attach_physical_pdf": True,
-        "include_cdn_link": True,
+        "attach_physical_pdf": False,
+        "include_cdn_link": False,
         "seg_classification": seg_info
     }
 

@@ -1,7 +1,7 @@
 name: Sales OS safety and inbound
 on:
   pull_request:
-    paths: ['apps/sales-os/**', '.github/workflows/sales-os-safety.yml']
+    paths: ['apps/sales-os/**', '.github/workflows/sales-os-safety.yml', 'apps/website/scripts/verify_ssot.py', 'PROJECT_TRUTH.md', 'apps/website/public/_redirects']
   push:
     branches: ['fix/sales-os-completion-20261026']
   workflow_dispatch:

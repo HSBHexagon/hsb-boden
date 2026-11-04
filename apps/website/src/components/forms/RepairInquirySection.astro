@@ -1,0 +1,36 @@
+---
+import LeadForm from "./LeadForm.astro";
+import { site } from "../../data/site";
+import { toTelephoneHref } from "../../lib/phone";
+
+const subject = encodeURIComponent("Ersteinschätzung einer Schadstelle am Industrieboden");
+const body = encodeURIComponent("Guten Tag,\n\nbitte schätzen Sie folgende Schadstelle ein.\n\nBetrieb und Standort: \nBetroffener Bereich: \nVerfügbares Sperrfenster, falls bekannt: \n\nFreundliche Grüße\n");
+const emailHref = `mailto:${site.email}?subject=${subject}&body=${body}`;
+---
+
+<section id="reparaturanfrage" class="section scroll-mt-24 border-t border-hsb-line bg-hsb-mist" aria-labelledby="repair-inquiry-title">
+  <div class="container grid gap-8 lg:grid-cols-2 lg:items-start">
+    <div>
+      <p class="eyebrow">Technische Ersteinschätzung</p>
+      <h2 id="repair-inquiry-title" class="h2 mt-3">Lässt sich die Schadstelle gezielt reparieren?</h2>
+      <p class="lead mt-4">Beschreiben Sie kurz die Stelle und nennen Sie den Standort. Ein Foto und ein mögliches Sperrfenster helfen uns, den nächsten Prüfschritt einzugrenzen.</p>
+      <div class="mt-6 flex flex-wrap gap-3">
+        <a class="button-primary" href={emailHref} data-repair-contact="email">Foto per E-Mail senden</a>
+        <a class="button-secondary-dark" href={toTelephoneHref(site.phone)} data-repair-contact="phone">{site.phone}</a>
+      </div>
+      <p class="mt-3 text-sm text-hsb-steel">Der Foto-Link öffnet Ihr E-Mail-Programm. Hängen Sie das Bild dort an.</p>
+    </div>
+    {site.hasLeadEndpoint && <LeadForm repairRequest />}
+  </div>
+</section>
+
+<script>
+  import { trackEvent, TrackingEvent } from "../../lib/tracking";
+
+  document.querySelectorAll<HTMLAnchorElement>("[data-repair-contact]").forEach((link) => {
+    link.addEventListener("click", () => {
+      const event = link.dataset.repairContact === "email" ? TrackingEvent.EmailClick : TrackingEvent.PhoneClick;
+      trackEvent(event, { placement: "repair_inquiry" });
+    });
+  });
+</script>

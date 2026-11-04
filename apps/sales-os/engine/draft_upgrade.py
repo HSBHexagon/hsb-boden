@@ -76,10 +76,10 @@ def _find(imap, mid):
     return data[0].split() if data and data[0] else []
 
 
-def _existing_replacement(imap, rec, lead, owner, variant, assess_message):
+def _existing_replacement(imap, rec, lead, owner, template, assess_message):
     """(Message-ID, Rohdaten) eines gültigen Ersatzentwurfs dieses Leads im Entwurfsordner, sonst None.
 
-    Nur die aktuelle Fassung an genau diesen Empfänger zählt; mehrdeutige Treffer halten an.
+    Nur der exakte Erstkontakt (template) an genau diesen Empfänger zählt; Folgekontakte nie, mehrdeutige Treffer halten an.
     """
     typ, data = imap.uid('search', None, 'HEADER', 'X-HSB-Lead-ID', '"' + str(lead['Lead-ID']) + '"')
     if typ != 'OK':
@@ -91,8 +91,7 @@ def _existing_replacement(imap, rec, lead, owner, variant, assess_message):
             continue
         raw = _raw(imap, uid)
         msg = BytesParser(policy=policy.default).parsebytes(raw)
-        expected = '-reparatur-' if variant == 'reparatur' else 'v2-'
-        current = (expected in str(msg.get('X-HSB-Template-ID') or '')
+        current = (str(msg.get('X-HSB-Template-ID') or '').strip() == template
                    and parseaddr(str(msg.get('To') or ''))[1].strip().lower() == str(lead.get('E-Mail') or '').strip().lower()
                    and str(msg.get('X-HSB-Lead-ID') or '').strip() == str(lead['Lead-ID'])
                    and not assess_message(raw, owner, [lead])['issues'])
@@ -274,7 +273,7 @@ def upgrade_drafts(owner, limit=5, cohort='pilot', apply=False, journal_path=Non
                         if row is None:
                             # Das Journal liegt je Lauf auf dem Runner und ist beim Neustart leer: Ein schon angenommener
                             # Ersatzentwurf wird live erkannt und übernommen, statt einen zweiten anzulegen.
-                            adopted = _existing_replacement(imap, rec, lead, owner, variant, assess_message)
+                            adopted = _existing_replacement(imap, rec, lead, owner, target_template(segment_for(lead)), assess_message)
                         if adopted:
                             mid, raw = adopted
                             result['replacements_adopted'] = result.get('replacements_adopted', 0) + 1

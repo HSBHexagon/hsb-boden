@@ -370,13 +370,14 @@ def test_connection_reset_mid_draft_reconnects_and_finishes_once(tmp_path, monke
     assert calls.count('APPEND') == 1 and len(boxes['Drafts']) == 1
 
 
-def _replacement(lead, mid='<neu@hsb-boden.com>', to=None, template='v2-produktion-reparatur-s1'):
+def _replacement(lead, mid='<neu@hsb-boden.com>', to=None, step=1):
     from canonical_template_factory import render_email_v2
     from com_mailbox_manager import ComMailboxClient as C
     client = object.__new__(C)
     client.cfg = {'email': 'j-cherino@hsb-boden.com', 'display_name': 'Joel Cherino Diaz', 'drafts_folder': 'Drafts'}
-    r = render_email_v2(lead, 'JOEL', variant='reparatur')
-    raw, _ = client.build_draft_message(to or r['to_email'], r['subject'], body_text=r['body_text'], template_id=template,
+    thread = {'message_id': '<erst@hsb-boden.com>', 'subject': 'Erstkontakt'} if step > 1 else None
+    r = render_email_v2(lead, 'JOEL', step=step, thread=thread, variant='reparatur')
+    raw, _ = client.build_draft_message(to or r['to_email'], r['subject'], body_text=r['body_text'], template_id=r['template_id'],
                                         lead_id=lead['Lead-ID'], custom_message_id=mid, copy_rev=r.get('copy_rev'))
     return raw.replace(b'\r\n', b'\n').replace(b'\n', b'\r\n')
 
@@ -411,6 +412,17 @@ def test_replacement_for_other_recipient_is_not_adopted(tmp_path, monkeypatch):
     kwargs, boxes, calls, writes, old = setup_case(tmp_path, monkeypatch)
     lead = kwargs['leads'][0]
     boxes['Drafts']['2'] = _replacement(lead, to='fremd@firma.de')
+    imap = kwargs['client']._get_imap()
+    monkeypatch.setattr(imap, 'uid', _header_search(imap, boxes))
+    result = upgrade_drafts('JOEL', apply=True, variant='reparatur', **kwargs)
+    assert result.get('replacements_adopted', 0) == 0 and result['appended'] == 1
+
+
+def test_rendered_followup_is_not_adopted_as_first_contact(tmp_path, monkeypatch):
+    # Codex-Review #526: Ein echter Folgekontakt besteht assess_message, ersetzt aber nie den Erstkontakt.
+    kwargs, boxes, calls, writes, old = setup_case(tmp_path, monkeypatch)
+    lead = kwargs['leads'][0]
+    boxes['Drafts']['2'] = _replacement(lead, step=2)
     imap = kwargs['client']._get_imap()
     monkeypatch.setattr(imap, 'uid', _header_search(imap, boxes))
     result = upgrade_drafts('JOEL', apply=True, variant='reparatur', **kwargs)

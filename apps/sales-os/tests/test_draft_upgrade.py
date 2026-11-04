@@ -60,7 +60,7 @@ def setup_case(tmp_path,monkeypatch):
     monkeypatch.setattr('crm_bindings.ensure_bindings',lambda *a,**k:{'created':len(k.get('only') or ())})
     monkeypatch.setattr('crm_bindings.remove_bindings',lambda *a,**k:0)
     from contextlib import nullcontext
-    monkeypatch.setattr('outbound_safety.mailbox_dispatch_lock',lambda c:nullcontext())
+    monkeypatch.setattr('outbound_safety.mailbox_dispatch_lock',lambda c,**k:nullcontext())
     kwargs=dict(lock_client=client,records=[record],leads=[lead],client=client,svc=svc,mx_check=lambda _:True,journal_path=tmp_path/'upgrade.db')
     return kwargs, boxes, calls, writes, old
 
@@ -133,7 +133,7 @@ def test_busy_shared_dispatch_lock_blocks_before_append(tmp_path,monkeypatch):
     from contextlib import contextmanager
     kwargs,boxes,calls,writes,old=setup_case(tmp_path,monkeypatch)
     @contextmanager
-    def busy(client):
+    def busy(client, **k):
         raise RuntimeError('DISPATCH_LOCK_EXISTS')
         yield
     monkeypatch.setattr('outbound_safety.mailbox_dispatch_lock',busy)
@@ -431,3 +431,38 @@ def test_binding_cleanup_runs_even_if_creation_fails(tmp_path, monkeypatch):
     with pytest.raises(RuntimeError, match='verify read failed'):
         upgrade_drafts('JOEL', apply=True, variant='reparatur', **kwargs)
     assert removed == [{kwargs['leads'][0]['Lead-ID']}] and boxes['Drafts'] == {'1': old}
+
+
+class _LockServer:
+    def __init__(self, logout_fails=False):
+        self.folders, self.logout_fails, self.sessions = set(), logout_fails, 0
+    def session(self):
+        server = self; server.sessions += 1
+        class S:
+            def create(self, f):
+                if f in server.folders: return 'NO', []
+                server.folders.add(f); return 'OK', []
+            def delete(self, f): server.folders.discard(f); return 'OK', []
+            def logout(self):
+                if server.logout_fails: raise ConnectionResetError('reset by peer')
+        return S()
+
+
+@pytest.mark.parametrize('release_on_error,kept', [(False, True), (True, False)])
+def test_lock_kept_only_for_send_errors(release_on_error, kept):
+    # Lauf 04.11.2026: IMAP-Reset nach der Tranche liess die Sperre stehen und blockierte jeden Folgelauf.
+    from outbound_safety import mailbox_dispatch_lock, LOCK_FOLDER
+    server = _LockServer(logout_fails=True)
+    client = SimpleNamespace(_get_imap=server.session)
+    with pytest.raises(RuntimeError, match='boom'):
+        with mailbox_dispatch_lock(client, release_on_error=release_on_error):
+            raise RuntimeError('boom')
+    assert (LOCK_FOLDER in server.folders) is kept
+
+
+def test_lock_released_even_if_logout_resets():
+    from outbound_safety import mailbox_dispatch_lock, LOCK_FOLDER
+    server = _LockServer(logout_fails=True)
+    with mailbox_dispatch_lock(SimpleNamespace(_get_imap=server.session)):
+        pass
+    assert LOCK_FOLDER not in server.folders

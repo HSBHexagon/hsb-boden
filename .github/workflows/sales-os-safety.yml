@@ -11,6 +11,10 @@ on:
         type: choice
         options: [audit, inbound-preview, inbound-sync, prepare-drafts-preview, prepare-drafts, send-preview, send]
         default: audit
+      force_unlock:
+        description: "Nur prepare-drafts: hängende Sperre sofort lösen (nur wenn kein Versand auf SENDING steht)"
+        type: boolean
+        default: false
       count:
         description: "Nur für send/send-preview: Anzahl je Postfach (1-35)"
         type: number
@@ -92,6 +96,7 @@ jobs:
           # Vor dem 240-Minuten-Abbruch sauber enden (Abschluss-Audit inklusive); der nächste Lauf macht weiter.
           HSB_RUN_BUDGET_MIN: '190'
           HSB_RELEASE_STALE_LOCK: 'yes'
+          HSB_STALE_LOCK_MIN_AGE_MIN: ${{ inputs.force_unlock && '0' || '270' }}
           MODE: ${{ inputs.mode }}
         run: |
           if [ "$MODE" = "prepare-drafts" ]; then bash apps/sales-os/bin/postfach-lauf.sh --apply

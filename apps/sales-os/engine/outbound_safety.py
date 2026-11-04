@@ -74,7 +74,10 @@ class SendJournal:
 
 
 @contextmanager
-def mailbox_dispatch_lock(client):
+def mailbox_dispatch_lock(client, release_on_error=False):
+    """Geräteübergreifende Sperre. Beim Versand bleibt sie nach einem Fehler stehen (SMTP-Zustand unklar).
+    Entwurfs-Umstellung und Dubletten-Archiv senden nichts und setzen über Journal/Audit wieder auf:
+    sie geben die Sperre auch bei Fehlern frei (release_on_error=True)."""
     imap = client._get_imap()
     acquired = False
     completed = False
@@ -87,14 +90,25 @@ def mailbox_dispatch_lock(client):
         completed = True
     finally:
         # A failure retains the lock; automatic stale-lock removal is unsafe.
-        if acquired and completed:
+        if acquired and (completed or release_on_error):
+            if not completed:
+                # Verbindung kann der Grund des Fehlers sein: für die Freigabe neu anmelden.
+                try:
+                    imap.logout()
+                except Exception:  # noqa: BLE001
+                    pass
+                imap = client._get_imap()
             typ, _ = imap.delete(LOCK_FOLDER)
             if typ != 'OK':
                 raise RuntimeError('DISPATCH_LOCK_RELEASE_UNVERIFIED')
-        imap.logout()
+        try:
+            imap.logout()
+        except Exception:  # noqa: BLE001 - Abmelden ist kein Datenvorgang
+            pass
 
 
-STALE_LOCK_MIN_AGE_MIN = 270          # länger als jeder GitHub-Job (240 min) und jeder Mac-Versand
+# Länger als jeder GitHub-Job (240 min) und jeder Mac-Versand. Owner-Sofortfreigabe: HSB_STALE_LOCK_MIN_AGE_MIN=0.
+STALE_LOCK_MIN_AGE_MIN = int(os.environ.get('HSB_STALE_LOCK_MIN_AGE_MIN', '270'))
 STALE_LOCK_EPOCH_MIN = 1_600_000_000   # plausibler Unix-Zeitstempel (Sept. 2020)
 
 

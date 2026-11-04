@@ -178,7 +178,7 @@ def upgrade_drafts(owner, limit=5, cohort='pilot', apply=False, journal_path=Non
         from com_mailbox_manager import ComMailboxClient
         lock_client = ComMailboxClient('JOEL')
     # Derselbe JOEL-Lock wie im Versand; schützt beide Postfächer und alle Geräte.
-    with mailbox_dispatch_lock(lock_client):
+    with mailbox_dispatch_lock(lock_client, release_on_error=True):
         journal_path = Path(journal_path)
         journal_path.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
         db = sqlite3.connect(journal_path, isolation_level=None)
@@ -195,8 +195,8 @@ def upgrade_drafts(owner, limit=5, cohort='pilot', apply=False, journal_path=Non
             try:
                 # Auch ein Fehler mitten im Anlegen/Verifizieren räumt die angeforderten Bindungen wieder ab.
                 crm_bindings.ensure_bindings(svc, CANONICAL_SPREADSHEET_ID, apply=True, only=created_bindings)
-                upgrade_with_imap = client._get_imap()
-                with upgrade_with_imap as imap:
+                imap = client._get_imap()
+                try:
                     # Ein frischer CRM-Stand je Tranche (höchstens 100 Entwürfe) statt je Entwurf: Google erlaubt nur
                     # 60 Lesezugriffe pro Minute. Die Umstellung sendet nichts; der Versand prüft jede Sperre erneut live.
                     current_rows = svc.spreadsheets().values().get(spreadsheetId=CANONICAL_SPREADSHEET_ID,
@@ -313,6 +313,11 @@ def upgrade_drafts(owner, limit=5, cohort='pilot', apply=False, journal_path=Non
                             binding=binding, headers=current_rows[0])
                         result['crm_updated'] += 1
                         db.execute("UPDATE upgrades SET state='DONE' WHERE key=?", (key,))
+                finally:
+                    try:
+                        imap.logout()
+                    except Exception:  # noqa: BLE001 - Server trennt nach langer Tranche; Daten sind geschrieben
+                        pass
             finally:
                 # Nur selbst angelegte Bindungen entfernen; vorher vorhandene bleiben.
                 crm_bindings.remove_bindings(svc, CANONICAL_SPREADSHEET_ID, created_bindings)

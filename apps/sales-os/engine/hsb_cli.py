@@ -543,7 +543,7 @@ def cmd_dedupe_drafts(args):
     if args.apply:
         from outbound_safety import mailbox_dispatch_lock
         clients = {o: ComMailboxClient(o) for o in ('JOEL','JORDI')}
-        with mailbox_dispatch_lock(clients['JOEL']):
+        with mailbox_dispatch_lock(clients['JOEL'], release_on_error=True):
             summary['result'] = apply_dedupe(plan, clients, Path(args.journal))
     print(json.dumps(summary,ensure_ascii=False,default=dict))
 

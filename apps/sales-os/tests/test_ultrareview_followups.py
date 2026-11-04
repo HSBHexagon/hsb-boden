@@ -100,7 +100,7 @@ def test_owner_at_cap_skips_remaining_items_without_io(tmp_path, monkeypatch):
                        'sha256': hashlib.sha256(msg.as_bytes()).hexdigest()})
     client = SimpleNamespace(_get_imap=lambda: (_ for _ in ()).throw(AssertionError('kein IMAP nach Limit')), cfg={})
     monkeypatch.setattr(mail, 'ComMailboxClient', lambda o: client)
-    monkeypatch.setattr(out, 'mailbox_dispatch_lock', lambda c: nullcontext())
+    monkeypatch.setattr(out, 'mailbox_dispatch_lock', lambda c, **k: nullcontext())
     monkeypatch.setattr(inbound, 'sync_inbounds', lambda **k: None)
 
     def audit(path):

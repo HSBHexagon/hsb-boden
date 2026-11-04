@@ -9,7 +9,7 @@ on:
       mode:
         description: Bounded operation; customer sending is always disabled
         type: choice
-        options: [audit, inbound-preview, inbound-sync]
+        options: [audit, draft-preview, inbound-preview, inbound-sync]
         default: audit
   schedule:
     - cron: '17 * * * *'
@@ -62,4 +62,100 @@ jobs:
       - name: Full read-only reconciliation
         if: github.event_name == 'push' || inputs.mode == 'audit'
         run: python -u apps/sales-os/engine/sales_reconciliation.py --output "$RUNNER_TEMP/hsb-reconciliation"
+      - name: Existing .com draft inventory and text sample
+        if: github.event_name == 'workflow_dispatch' && inputs.mode == 'draft-preview'
+        env:
+          PYTHONPATH: apps/sales-os/engine
+        run: |
+          python -u - <<'PY'
+          from collections import Counter, defaultdict
+          from concurrent.futures import ThreadPoolExecutor
+          from email import policy
+          from email.parser import BytesParser
+          import json
+          import re
+          from com_mailbox_manager import ComMailboxClient
+          from draft_upgrade import _raw, _select
+          from hsb_core import normalize_owner
+          from outbound_safety import INTERNAL_RECIPIENTS
+          from sales_reconciliation import SENDERS, addresses, assess_message
+          from sync_to_google_sheet import get_sheets_service, SPREADSHEET_ID
+
+          rows = get_sheets_service().spreadsheets().values().get(
+              spreadsheetId=SPREADSHEET_ID, range='ALL_LEADS!A1:BU6425').execute()['values']
+          leads = defaultdict(list)
+          for row in rows[1:]:
+              lead = dict(zip(rows[0], row))
+              leads[str(lead.get('E-Mail') or '').strip().lower()].append(lead)
+          lead_ids = Counter(lead.get('Lead-ID') for group in leads.values() for lead in group)
+
+          def read(owner):
+              client = ComMailboxClient(owner)
+              folder = client.cfg['drafts_folder']
+              result, matched, mids, candidates = Counter(), Counter(), Counter(), []
+              templates, sample_issues = Counter(), Counter()
+              with client._get_imap() as imap:
+                  validity = _select(imap, folder)
+                  def uids():
+                      status, data = imap.uid('SEARCH', None, 'ALL')
+                      if status != 'OK':
+                          raise RuntimeError('DRAFT_SEARCH_FAILED')
+                      return data[0].split() if data and data[0] else []
+                  initial = uids()
+                  result['folder_entries'] = len(initial)
+                  result['uid_move_supported'] = int(b'MOVE' in imap.capabilities or 'MOVE' in imap.capabilities)
+                  for start in range(0, len(initial), 100):
+                      expected = set(initial[start:start + 100])
+                      status, data = imap.uid('FETCH', b','.join(sorted(expected)),
+                          '(UID BODY.PEEK[HEADER.FIELDS (FROM TO CC BCC REPLY-TO MESSAGE-ID X-HSB-LEAD-ID X-HSB-TEMPLATE-ID)])')
+                      if status != 'OK':
+                          raise RuntimeError('DRAFT_HEADER_FETCH_FAILED')
+                      for part in data:
+                          if not isinstance(part, tuple):
+                              continue
+                          uid = re.search(rb'\bUID (\d+)', part[0]).group(1)
+                          expected.remove(uid)
+                          msg = BytesParser(policy=policy.default).parsebytes(part[1])
+                          recipients = addresses(msg.get('To'))
+                          if recipients and all(addr in INTERNAL_RECIPIENTS for addr in recipients):
+                              result['internal_tests'] += 1
+                              continue
+                          if len(recipients) != 1 or msg.get('Cc') or msg.get('Bcc'):
+                              result['unmatched_headers'] += 1
+                              continue
+                          group = leads.get(recipients[0], [])
+                          lid = str(group[0].get('Lead-ID') or '') if len(group) == 1 else ''
+                          mid = str(msg.get('Message-ID') or '')
+                          if mid:
+                              mids[mid] += 1
+                          if (not lid or lead_ids[lid] != 1 or not mid
+                                  or normalize_owner(group[0].get('Verantwortlicher')) != owner
+                                  or addresses(msg.get('From')) != [SENDERS[owner]]
+                                  or str(msg.get('X-HSB-Lead-ID') or lid) != lid):
+                              result['unmatched_headers'] += 1
+                              continue
+                          matched[lid] += 1
+                          result['crm_matched_entries'] += 1
+                          tid = str(msg.get('X-HSB-Template-ID') or '')
+                          if re.fullmatch(r'v2-(architekten|produktion)-(?:reparatur-)?s[1-3]', tid):
+                              templates[tid] += 1
+                          if tid in ('v2-architekten-s1', 'v2-architekten-reparatur-s1'):
+                              candidates.append((uid, recipients[0]))
+                      if expected:
+                          raise RuntimeError('DRAFT_HEADERS_INCOMPLETE')
+                  for uid, recipient in sorted(candidates, key=lambda pair: int(pair[0]), reverse=True)[:30]:
+                      report = assess_message(_raw(imap, uid.decode()), owner, leads[recipient])
+                      sample_issues.update(report['issues'])
+                      result['full_mime_sample'] += 1
+                  if _select(imap, folder, validity) != validity or uids() != initial:
+                      raise RuntimeError('DRAFT_FOLDER_CHANGED_DURING_SCAN')
+              result['unique_crm_customer_drafts'] = sum(n == 1 for n in matched.values())
+              result['duplicate_crm_leads'] = sum(n > 1 for n in matched.values())
+              result['duplicate_message_ids'] = sum(n > 1 for n in mids.values())
+              return dict(result, templates=templates, sample_issues=sample_issues)
+
+          with ThreadPoolExecutor(max_workers=2) as pool:
+              result = dict(zip(SENDERS, pool.map(read, SENDERS)))
+          print(json.dumps({'drafts_only': result, 'customer_emails_sent': 0}, ensure_ascii=False))
+          PY
       # Raw MIME, customer lists, queue and credentials are never uploaded.

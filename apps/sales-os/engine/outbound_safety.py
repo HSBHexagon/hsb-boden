@@ -94,6 +94,36 @@ def mailbox_dispatch_lock(client):
         imap.logout()
 
 
+def release_stale_lock(svc, client, spreadsheet_id, apply=False):
+    """Hängengebliebene Versandsperre nach einem abgebrochenen Lauf lösen – nur ohne unklaren Versand.
+
+    Ein Versand schreibt Send_Status=SENDING vor SMTP und erst nach Sent-Readback 'sent'. Steht irgendwo noch
+    SENDING, ist ein Versand unklar: dann bleibt die Sperre und es braucht einen manuellen Abgleich. Abgebrochene
+    Entwurfs-Umstellungen heilen sich über Audit und Dubletten-Archiv selbst.
+    """
+    rows = svc.spreadsheets().values().get(spreadsheetId=spreadsheet_id, range='ALL_LEADS!A1:BU6425').execute().get('values', [])
+    if not rows or 'Send_Status' not in rows[0]:
+        raise RuntimeError('CRM_HEADER_UNREADABLE')
+    col = rows[0].index('Send_Status')
+    sending = sum(1 for r in rows[1:] if len(r) > col and str(r[col]).strip().upper() == 'SENDING')
+    if sending:
+        raise RuntimeError(f'STALE_LOCK_KEPT_SEND_UNCERTAIN:{sending}')
+    imap = client._get_imap()
+    try:
+        typ, _ = imap.select(LOCK_FOLDER, readonly=True)
+        if typ != 'OK':
+            return {'lock': 'NONE', 'released': False}
+        imap.close()
+        if not apply:
+            return {'lock': 'PRESENT', 'released': False}
+        typ, _ = imap.delete(LOCK_FOLDER)
+        if typ != 'OK':
+            raise RuntimeError('DISPATCH_LOCK_RELEASE_UNVERIFIED')
+        return {'lock': 'PRESENT', 'released': True}
+    finally:
+        imap.logout()
+
+
 def col_name(index):
     out = ''
     while index:
@@ -372,6 +402,18 @@ def dispatch_verified(count_per_owner=25, owners=('JOEL','JORDI'), dry_run=True,
         return {'status':'COMPLETED','sent_counts':sent_counts}
 
 
+_SHEET_IDS = {}
+
+
+def _all_leads_sheet_ids(svc, spreadsheet_id):
+    """sheetId von ALL_LEADS je Dienst und Tabelle einmal lesen; sie ändert sich nur beim Neuanlegen des Tabs."""
+    key = (id(svc), spreadsheet_id)
+    if key not in _SHEET_IDS:
+        sheets = svc.spreadsheets().get(spreadsheetId=spreadsheet_id, fields='sheets.properties').execute().get('sheets', [])
+        _SHEET_IDS[key] = [s['properties']['sheetId'] for s in sheets if s['properties']['title'] == 'ALL_LEADS']
+    return _SHEET_IDS[key]
+
+
 def require_stable_crm_binding(svc, spreadsheet_id, lead_id):
     """Vor Produktiv-Apply muss ein Sortier-Canary die stabilen Zeilenbindungen bestätigen."""
     if os.environ.get('HSB_CRM_BINDINGS_VERIFIED') != 'yes':
@@ -382,18 +424,20 @@ def require_stable_crm_binding(svc, spreadsheet_id, lead_id):
     entries=found.get('matchedDeveloperMetadata',[])
     if len(entries)!=1:raise RuntimeError('CRM_STABLE_LEAD_BINDING_REQUIRED')
     meta=entries[0]['developerMetadata']
-    sheets=svc.spreadsheets().get(spreadsheetId=spreadsheet_id,fields='sheets.properties').execute().get('sheets',[])
-    ids=[s['properties']['sheetId'] for s in sheets if s['properties']['title']=='ALL_LEADS']
+    ids=_all_leads_sheet_ids(svc,spreadsheet_id)
     if len(ids)!=1 or meta.get('location',{}).get('dimensionRange',{}).get('sheetId')!=ids[0]:
         raise RuntimeError('CRM_BINDING_WRONG_SHEET')
     return {'developerMetadataLookup':{'metadataId':meta['metadataId']}}
 
 
-def crm_write_lead_readback(svc, spreadsheet_id, lead_id, expected):
-    """Schreibt über eine geprüfte Zeilenbindung; niemals per zwischengespeicherter Zeilennummer."""
-    binding=require_stable_crm_binding(svc,spreadsheet_id,lead_id)
+def crm_write_lead_readback(svc, spreadsheet_id, lead_id, expected, *, binding=None, headers=None):
+    """Schreibt über eine geprüfte Zeilenbindung; niemals per zwischengespeicherter Zeilennummer.
+
+    binding/headers dürfen aus einer unmittelbar vorher geprüften Bindung bzw. dem CRM-Stand derselben Tranche
+    stammen; die Identität der Zeile wird vor und nach dem Schreiben trotzdem live zurückgelesen."""
+    binding=binding or require_stable_crm_binding(svc,spreadsheet_id,lead_id)
     api=svc.spreadsheets().values()
-    headers=api.get(spreadsheetId=spreadsheet_id,range='ALL_LEADS!A1:BU1').execute()['values'][0]
+    headers=headers or api.get(spreadsheetId=spreadsheet_id,range='ALL_LEADS!A1:BU1').execute()['values'][0]
     def bound_row():
         values=api.batchGetByDataFilter(spreadsheetId=spreadsheet_id,
             body={'dataFilters':[binding],'majorDimension':'ROWS'}).execute().get('valueRanges',[])

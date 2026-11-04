@@ -55,7 +55,7 @@ def setup_case(tmp_path,monkeypatch):
     def write(svc,sheet,headers,row,values): writes.append(values);lead.update(values)
     monkeypatch.setattr('outbound_safety.crm_write_readback',write)
     monkeypatch.setattr('outbound_safety.require_stable_crm_binding',lambda *a:{'developerMetadataLookup':{'metadataId':17}})
-    monkeypatch.setattr('outbound_safety.crm_write_lead_readback',lambda svc,sheet,lead_id,values:write(svc,sheet,headers,2,values))
+    monkeypatch.setattr('outbound_safety.crm_write_lead_readback',lambda svc,sheet,lead_id,values,**k:write(svc,sheet,headers,2,values))
     from contextlib import nullcontext
     monkeypatch.setattr('outbound_safety.mailbox_dispatch_lock',lambda c:nullcontext())
     kwargs=dict(lock_client=client,records=[record],leads=[lead],client=client,svc=svc,mx_check=lambda _:True,journal_path=tmp_path/'upgrade.db')
@@ -264,8 +264,8 @@ def test_upgrade_replaces_obsolete_planner_copy_only_once(tmp_path, monkeypatch,
     if interrupted:
         from outbound_safety import crm_write_lead_readback
 
-        def lose_crm_response(*args):
-            crm_write_lead_readback(*args)
+        def lose_crm_response(*args, **kwargs):
+            crm_write_lead_readback(*args, **kwargs)
             raise TimeoutError('CRM response lost after write')
 
         with monkeypatch.context() as patch:
@@ -303,3 +303,59 @@ def test_reparatur_upgrade_writes_current_copy(tmp_path, monkeypatch):
     assert [p.get_content_type() for p in new.walk()] == ['multipart/alternative', 'text/plain', 'text/html']
     assert REPAIR_URL in new.get_body(('plain',)).get_content()
     assert not any(p.get_content_disposition() == 'attachment' for p in new.walk())
+
+
+def test_prechecked_binding_and_headers_skip_lookups_but_keep_identity_readback(monkeypatch):
+    # Google-Quote: mit übergebener Bindung/Kopfzeile keine Metadatensuche und kein Header-Read, Rücklesen bleibt.
+    from outbound_safety import crm_write_lead_readback
+    monkeypatch.setattr('outbound_safety.require_stable_crm_binding', lambda *a: pytest.fail('Bindung doppelt gesucht'))
+    binding = {'developerMetadataLookup': {'metadataId': 17}}; current = ['OTHER', 'old']; reads = []
+    class Values:
+        def get(self, **kw): pytest.fail('Header doppelt gelesen')
+        def batchGetByDataFilter(self, **kw):
+            reads.append(1); return SimpleNamespace(execute=lambda: {'valueRanges': [{'valueRange': {'values': [list(current)]}}]})
+        def batchUpdateByDataFilter(self, **kw): pytest.fail('falsche Lead-Bindung darf nichts schreiben')
+    svc = SimpleNamespace(spreadsheets=lambda: SimpleNamespace(values=lambda: Values()))
+    with pytest.raises(RuntimeError, match='CRM_IDENTITY_BINDING_MISMATCH'):
+        crm_write_lead_readback(svc, 'sheet', 'L1', {'Draft_ID': 'new'}, binding=binding, headers=['Lead-ID', 'Draft_ID'])
+    assert reads == [1]
+
+
+def test_sheet_id_is_read_once_per_service(monkeypatch):
+    import outbound_safety
+    monkeypatch.setattr(outbound_safety, '_SHEET_IDS', {})
+    calls = []
+    def get(**kw):
+        calls.append(1)
+        return SimpleNamespace(execute=lambda: {'sheets': [{'properties': {'title': 'ALL_LEADS', 'sheetId': 5}}]})
+    svc = SimpleNamespace(spreadsheets=lambda: SimpleNamespace(get=get))
+    assert outbound_safety._all_leads_sheet_ids(svc, 's') == [5] == outbound_safety._all_leads_sheet_ids(svc, 's')
+    assert calls == [1]
+
+
+class _LockImap:
+    def __init__(self, exists): self.exists, self.deleted = exists, False
+    def select(self, folder, readonly=True): return ('OK', [b'0']) if self.exists else ('NO', [])
+    def close(self): pass
+    def delete(self, folder): self.deleted = True; return 'OK', []
+    def logout(self): pass
+
+
+def _lock_svc(statuses):
+    rows = [['Lead-ID', 'Send_Status']] + [[f'L{i}', s] for i, s in enumerate(statuses)]
+    values = SimpleNamespace(get=lambda **kw: SimpleNamespace(execute=lambda: {'values': rows}))
+    return SimpleNamespace(spreadsheets=lambda: SimpleNamespace(values=lambda: values))
+
+
+def test_stale_lock_released_only_without_uncertain_send():
+    from outbound_safety import release_stale_lock
+    imap = _LockImap(True)
+    assert release_stale_lock(_lock_svc(['sent', '']), SimpleNamespace(_get_imap=lambda: imap), 's', apply=True) == \
+        {'lock': 'PRESENT', 'released': True} and imap.deleted
+    kept = _LockImap(True)
+    with pytest.raises(RuntimeError, match='STALE_LOCK_KEPT_SEND_UNCERTAIN:1'):
+        release_stale_lock(_lock_svc(['SENDING', 'sent']), SimpleNamespace(_get_imap=lambda: kept), 's', apply=True)
+    assert not kept.deleted
+    dry = _LockImap(True)
+    assert release_stale_lock(_lock_svc(['']), SimpleNamespace(_get_imap=lambda: dry), 's')['released'] is False and not dry.deleted
+    assert release_stale_lock(_lock_svc(['']), SimpleNamespace(_get_imap=lambda: _LockImap(False)), 's', apply=True)['lock'] == 'NONE'

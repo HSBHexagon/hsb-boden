@@ -89,6 +89,9 @@ jobs:
       - name: Entwürfe vorbereiten (${{ inputs.mode }})
         env:
           HSB_RUN_DIR: ${{ runner.temp }}
+          # Vor dem 240-Minuten-Abbruch sauber enden (Abschluss-Audit inklusive); der nächste Lauf macht weiter.
+          HSB_RUN_BUDGET_MIN: '190'
+          HSB_RELEASE_STALE_LOCK: 'yes'
           MODE: ${{ inputs.mode }}
         run: |
           if [ "$MODE" = "prepare-drafts" ]; then bash apps/sales-os/bin/postfach-lauf.sh --apply

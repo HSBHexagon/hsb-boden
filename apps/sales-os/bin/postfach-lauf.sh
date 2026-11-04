@@ -35,6 +35,12 @@ for line in sys.stdin:
 run() { echo "== $*" | tee -a "$LOG"; python3 -u "$@" >>"$LOG" 2>&1 || { echo "FEHLER in: $* (Details: $LOG)"; tail -5 "$LOG" | grep -iv "@" ; exit 1; }; tail -1 "$LOG" | counts; }
 audit() { run sales_reconciliation.py --output "$1"; python3 -c 'import json,sys; print(json.dumps(json.load(open(sys.argv[1])),ensure_ascii=False,default=str))' "$1/summary.json"; }
 
+START_TS=$(date +%s); BUDGET_MIN="${HSB_RUN_BUDGET_MIN:-0}"
+over_budget() { [[ "$BUDGET_MIN" -gt 0 ]] && (( $(date +%s) - START_TS > BUDGET_MIN * 60 )); }
+# Nach einem hart abgebrochenen Lauf bleibt die Versandsperre stehen; ohne unklaren Versand (SENDING) lösen.
+if [[ -n "$APPLY" && "${HSB_RELEASE_STALE_LOCK:-}" == "yes" ]]; then
+  run hsb_cli.py release-stale-lock --apply
+fi
 audit "$BASE/audit-1"
 run hsb_cli.py dedupe-drafts --audit-dir "$BASE/audit-1" $APPLY
 audit "$BASE/audit-2"
@@ -45,6 +51,7 @@ for OWNER in JOEL JORDI; do
   fi
   # Tranchen à 100, bis nichts mehr ausgewählt wird; jede Tranche schreibt Journal und CRM-Readback.
   for i in $(seq 1 100); do
+    if over_budget; then echo "[$OWNER] Zeitbudget erreicht, Rest im nächsten Lauf" | tee -a "$LOG"; break; fi
     run hsb_cli.py upgrade-drafts --owner "$OWNER" --variant reparatur --cohort all --limit 100 \
            --audit-dir "$BASE/audit-2" --apply
     SEL="$(tail -1 "$LOG" | python3 -c 'import json,sys; print(json.loads(sys.stdin.read()).get("selected",0))')"

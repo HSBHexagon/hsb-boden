@@ -187,9 +187,11 @@ def upgrade_drafts(owner, limit=5, cohort='pilot', apply=False, journal_path=Non
         db.execute('CREATE TABLE IF NOT EXISTS upgrades(key TEXT PRIMARY KEY, mid TEXT, raw BLOB, state TEXT, old_raw BLOB)')
         try:
             with client._get_imap() as imap:
+                # Ein frischer CRM-Stand je Tranche (höchstens 100 Entwürfe) statt je Entwurf: Google erlaubt nur
+                # 60 Lesezugriffe pro Minute. Die Umstellung sendet nichts; der Versand prüft jede Sperre erneut live.
+                current_rows = svc.spreadsheets().values().get(spreadsheetId=CANONICAL_SPREADSHEET_ID,
+                    range='ALL_LEADS!A1:BU6425').execute().get('values', [])
                 for rec, lead in selected:
-                    current_rows = svc.spreadsheets().values().get(spreadsheetId=CANONICAL_SPREADSHEET_ID,
-                        range='ALL_LEADS!A1:BU6425').execute().get('values', [])
                     current_matches = [(idx, dict(zip(current_rows[0], r))) for idx, r in enumerate(current_rows[1:], 2)
                         if r and r[0] == lead['Lead-ID']]
                     if len(current_matches) != 1:
@@ -205,7 +207,7 @@ def upgrade_drafts(owner, limit=5, cohort='pilot', apply=False, journal_path=Non
                             or (segment == 'architekten' and not has_relevant_planning_project(current))):
                         raise RuntimeError('LIVE_PROJECT_FIT_CHANGED')
                     # Vor APPEND/MOVE die stabile CRM-Bindung prüfen, nicht erst nach dem Archivieren.
-                    require_stable_crm_binding(svc,CANONICAL_SPREADSHEET_ID,lead['Lead-ID'])
+                    binding = require_stable_crm_binding(svc,CANONICAL_SPREADSHEET_ID,lead['Lead-ID'])
                     key = '|'.join(str(rec[k]) for k in ('owner', 'uidvalidity', 'uid', 'sha256'))
                     row = db.execute('SELECT mid,raw,state,old_raw FROM upgrades WHERE key=?', (key,)).fetchone()
                     if row and row[2] == 'DONE':
@@ -288,11 +290,10 @@ def upgrade_drafts(owner, limit=5, cohort='pilot', apply=False, journal_path=Non
                     _select(imap, rec['folder'], rec['uidvalidity'])
                     if _find(imap, original_mid):
                         raise RuntimeError('ORIGINAL_STILL_IN_DRAFTS')
-                    # Spaltenreihenfolge immer vom aktuellen CRM-Header, nicht aus einem veränderten dict.
-                    headers = svc.spreadsheets().values().get(spreadsheetId=CANONICAL_SPREADSHEET_ID,
-                        range='ALL_LEADS!A1:BU1').execute()['values'][0]
+                    # Spaltenreihenfolge vom CRM-Header dieser Tranche; Bindung aus der Prüfung vor APPEND.
                     crm_write_lead_readback(svc, CANONICAL_SPREADSHEET_ID, lead['Lead-ID'],
-                        {'Draft_ID': mid, 'Email_Template_ID': rendered_id(raw), 'Drafted_At': datetime.now(timezone.utc).isoformat()})
+                        {'Draft_ID': mid, 'Email_Template_ID': rendered_id(raw), 'Drafted_At': datetime.now(timezone.utc).isoformat()},
+                        binding=binding, headers=current_rows[0])
                     result['crm_updated'] += 1
                     db.execute("UPDATE upgrades SET state='DONE' WHERE key=?", (key,))
         finally:

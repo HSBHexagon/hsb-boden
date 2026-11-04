@@ -657,6 +657,9 @@ def main():
     p_dedupe.add_argument("--journal", default=str(Path.home()/".local/state/hsb-sales-os/dedupe.sqlite3"))
     p_dedupe.add_argument("--apply", action="store_true")
 
+    p_lock = subparsers.add_parser("release-stale-lock", help="Versandsperre nach Abbruch lösen, nur ohne unklaren Versand (SENDING)")
+    p_lock.add_argument("--apply", action="store_true")
+
     p_upgrade = subparsers.add_parser("upgrade-drafts", help="Entwürfe anhand eines Audits erneuern; Standard Dry-Run")
     p_upgrade.add_argument("--owner", choices=["JOEL","JORDI"], required=True)
     p_upgrade.add_argument("--limit", type=int, default=5)
@@ -671,6 +674,12 @@ def main():
         cmd_sequence_preview(args)
     elif args.command == "upgrade-drafts":
         cmd_upgrade_drafts(args)
+    elif args.command == "release-stale-lock":
+        from outbound_safety import release_stale_lock
+        from com_mailbox_manager import ComMailboxClient
+        from hsb_config import CANONICAL_SPREADSHEET_ID
+        print(json.dumps(release_stale_lock(get_sheets_service(), ComMailboxClient("JOEL"), CANONICAL_SPREADSHEET_ID,
+                                            apply=args.apply)))
     elif args.command == "dedupe-drafts":
         cmd_dedupe_drafts(args)
     elif args.command == "status":

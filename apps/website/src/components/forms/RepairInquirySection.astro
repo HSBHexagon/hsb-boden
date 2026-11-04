@@ -14,6 +14,8 @@ const emailHref = `mailto:${site.email}?subject=${subject}&body=${body}`;
       <p class="eyebrow">Technische Ersteinschätzung</p>
       <h2 id="repair-inquiry-title" class="h2 mt-3">Lässt sich die Schadstelle gezielt reparieren?</h2>
       <p class="lead mt-4">Beschreiben Sie kurz die Stelle und nennen Sie den Standort. Ein Foto und ein mögliches Sperrfenster helfen uns, den nächsten Prüfschritt einzugrenzen.</p>
+      <p class="mt-4 font-semibold text-hsb-ink" data-repair-promise>Ersteinschätzung innerhalb eines Arbeitstags, kostenfrei.</p>
+      <p class="mt-2 text-hsb-steel">Sie haben eine E-Mail von uns erhalten? Senden Sie das Foto einfach als Antwort auf diese E-Mail.</p>
       <div class="mt-6 flex flex-wrap gap-3">
         <a class="button-primary" href={emailHref} data-repair-contact="email">Foto per E-Mail senden</a>
         <a class="button-secondary-dark" href={toTelephoneHref(site.phone)} data-repair-contact="phone">{site.phone}</a>

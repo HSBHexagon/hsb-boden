@@ -1,0 +1,85 @@
+---
+import BaseLayout from "../../../layouts/BaseLayout.astro";
+import PageHero from "../../../components/sections/PageHero.astro";
+import LeadFormSection from "../../../components/forms/LeadFormSection.astro";
+import { buildBreadcrumbJsonLd } from "../../../lib/schema";
+
+export const prerender = true;
+
+const path = "/wissen/fugen-forensik/thermoschock-schaeden/";
+const title = "Thermoschock & Schubspannungsrisse beheben | HSB";
+const description = "Thermoschock-Schäden an Industrieböden: Warum Heißwasser (CIP 85–95 °C) auf kaltem Untergrund Standardbeschichtungen ablöst und welche Systeme dauerhaft standhalten.";
+---
+
+<BaseLayout
+  title={title}
+  description={description}
+  path={path}
+  jsonLd={[
+    buildBreadcrumbJsonLd([
+      { name: "Start", path: "/" },
+      { name: "Wissen", path: "/wissen/" },
+      { name: "Fugen-Forensik", path: "/wissen/fugen-forensik/" },
+      { name: "Thermoschock-Schäden", path },
+    ]),
+  ]}
+>
+  <PageHero
+    eyebrow="Fugen-Forensik · Fall 05"
+    title="Thermoschock: Wenn heißes Reinigungswasser Beschichtungen abplatzen lässt"
+    text="In Brauereien, Molkereien und Großküchen trifft kochendes Wasser oder heißer Dampf aus CIP-Reinigungsanlagen binnen Sekunden auf den Hallenboden. Herkömmliche Epoxidharze halten diesen extremen Temperaturgradienten nicht stand. Wir erklären die physikalischen Ursachen und zeigen beständige Alternativen."
+  />
+
+  <section class="section border-b border-hsb-line bg-white">
+    <div class="container max-w-4xl">
+      <div class="prose max-w-none text-hsb-steel">
+        <h2 class="text-2xl font-black text-hsb-black">Das Schadensbild: Schollenartige Enthaftung</h2>
+        <p>
+          Kurz nach der Inbetriebnahme oder nach Umstellung der Reinigungsprozesse auf Heißwasser (> 80 °C) bilden sich Blasen und netzartige Risse in der Bodenoberfläche. Schließlich löst sich die Beschichtung großflächig schollenartig vom Betonuntergrund ab – oft mitsamt der oberen Betonschlämme.
+        </p>
+
+        <div class="my-8 rounded border-l-4 border-hsb-red bg-hsb-mist p-6 text-hsb-black">
+          <h3 class="text-lg font-bold">Die forensische Ursache: Thermischer Längenausdehnungskoeffizient & Glasübergang</h3>
+          <p class="mt-2 text-sm leading-6 text-hsb-steel">
+            Standard-Epoxidharzbeschichtungen besitzen eine Glasübergangstemperatur (Tg) von meist nur 50 bis 60 °C. Wird diese durch 85 °C heißes Wasser überschritten, wird das Harz weich und verliert seine mechanische Festigkeit. Gleichzeitig dehnt sich das Harz rund fünfmal stärker aus als der kalte Beton darunter (&Delta;L-Diskrepanz). Die resultierenden Scherspannungen in der Klebefuge übersteigen die Zugfestigkeit des Betons – die Beschichtung reißt ab.
+          </p>
+        </div>
+
+        <h2 class="text-2xl font-black text-hsb-black">Betriebliche Konsequenzen</h2>
+        <ul class="space-y-3">
+          <li><strong>Sofortiger Produktionsausfall:</strong> Abgelöste Schollen blockieren Bodenabläufe und gefährden die Betriebssicherheit.</li>
+          <li><strong>Rutschgefahr:</strong> Glatt abgelöste Teilflächen werden in Kombination mit Wasser und Fetten zur akuten Sturzgefahr.</li>
+          <li><strong>Betonzerstörung:</strong> Ungeschützter Rohbeton wird durch Heißwasser und säurehaltige CIP-Laugen direkt angegriffen.</li>
+        </ul>
+
+        <h2 class="mt-10 text-2xl font-black text-hsb-black">Die zwei thermodynamisch stabilen Systeme</h2>
+        <p>
+          Gegen Thermoschock gibt es nur zwei dauerhaft erprobte Baustoffklassen:
+        </p>
+        <div class="grid gap-6 sm:grid-cols-2 not-prose my-6">
+          <div class="rounded border border-hsb-line p-5 bg-white">
+            <span class="text-xs font-black uppercase text-hsb-red tracking-wider block">System A</span>
+            <h4 class="text-lg font-bold text-hsb-black mt-1">Keramischer Rüttelboden nach AGI S 40</h4>
+            <p class="text-xs text-hsb-steel mt-2 leading-relaxed">
+              Industrieklinker mit einer Dicke von 15 bis 18 mm. Keramik besitzt einen dem Beton sehr ähnlichen Ausdehnungskoeffizienten und widersteht bei geeigneter Verfugung Temperaturen bis 120 °C (laut Herstellerdatenblatt des Reaktionsharzmörtels). Vollflächige Rüttelverdichtung garantiert hohlraumfreie Einbettung.
+            </p>
+          </div>
+          <div class="rounded border border-hsb-line p-5 bg-white">
+            <span class="text-xs font-black uppercase text-hsb-red tracking-wider block">System B</span>
+            <h4 class="text-lg font-bold text-hsb-black mt-1">Hochtemperatur-PU-Beton (9 mm)</h4>
+            <p class="text-xs text-hsb-steel mt-2 leading-relaxed">
+              Polyurethan-Zement-Hybridbelag. In einer Schichtdicke von 9 mm dauerhaft dampfstrahlfest bis 120 °C (laut Herstellerangabe). Elastisches Verhalten gleicht Temperaturspitzen schadlos aus. Fugenloser Einbau möglich.
+            </p>
+          </div>
+        </div>
+
+        <div class="mt-10 flex flex-wrap items-center gap-4 border-t border-hsb-line pt-8">
+          <a class="button-primary" href="/beanspruchungs-check/">Systemvergleich im Beanspruchungs-Check</a>
+          <a class="button-secondary" href="/wissen/fugen-forensik/">Zur Forensik-Übersicht</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <LeadFormSection />
+</BaseLayout>

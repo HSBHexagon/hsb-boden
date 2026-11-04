@@ -6,6 +6,8 @@ export enum TrackingEvent {
   LeadFormSubmit = "lead_form_submit",
   PhoneClick = "phone_click",
   EmailClick = "email_click",
+  TelClick = "tel_click",
+  MailClick = "mail_click",
   CtaClick = "cta_click",
   ReferenceFilterUse = "reference_filter_use",
   ReferenceMapOpen = "reference_map_open",
@@ -15,6 +17,12 @@ export enum TrackingEvent {
   ReferenceInteraction = "reference_interaction",
   NormInteraction = "norm_interaction",
   B2BConversion = "b2b_conversion",
+  FormStart = "form_start",
+  FormStep1Done = "form_step1_done",
+  FormSubmit = "form_submit",
+  CheckComplete = "check_complete",
+  DownloadCheckliste = "download_checkliste",
+  DownloadZertifikat = "download_zertifikat",
 }
 
 export type AnalyticsValue = string | number | boolean;
@@ -64,6 +72,10 @@ const PARAMETER_VALIDATORS: Record<string, (value: AnalyticsValue) => boolean> =
   action: (value) => typeof value === "string" && (REFERENCE_ACTIONS.has(value) || NORM_ACTIONS.has(value)),
   norm: (value) => typeof value === "string" && NORM_SET.has(value),
   conversion_type: (value) => typeof value === "string" && CONVERSION_TYPES.has(value),
+  file_name: isToken,
+  download_type: isToken,
+  asset_id: isToken,
+  step_name: isToken,
 };
 
 function hasAnalyticsConsent(): boolean {

@@ -309,6 +309,76 @@ export function getAllPublicPages() {
         "Datenschutzinformation der HSB Hexagon Säurebau GmbH nach DSGVO: Verarbeitung personenbezogener Daten, Rechtsgrundlagen, Speicherdauer, Löschung und Ihre Betroffenenrechte.",
       canonicalPath: "/datenschutz/",
     },
+    {
+      h1: "Ausschreibungstexte & technische Spezifikationen für Industrieböden",
+      seoTitle: "Planerportal & LV-Texte Industrieboden | HSB",
+      description:
+        "Ausschreibungstexte (LV) für Architekten und Planer: Rüttelkeramik nach AGI S 40, PU-Beton 9 mm und WHG § 62 Dichtflächen mit 1-Klick-Kopierfunktion.",
+      canonicalPath: "/planer/",
+    },
+    {
+      h1: "Fugen-Forensik: Typische Schadensbilder an Industrieböden verstehen",
+      seoTitle: "Fugen-Forensik & Schadensanalyse Industrieboden | HSB",
+      description:
+        "Schadensbilder bei Industrieböden technisch aufklären: Ausgewaschene Fugen, hohle Fliesen, Rinnenabrisse und Thermoschock – Ursachen und Sanierung.",
+      canonicalPath: "/wissen/fugen-forensik/",
+    },
+    {
+      h1: "Ausgewaschene Fugen: Wenn Reinigungschemie den Boden zersetzt",
+      seoTitle: "Ausgewaschene Fugen im Industrieboden sanieren | HSB",
+      description:
+        "Ursachen und Sanierung ausgewaschener Fugen in Lebensmittelbetrieben: Wie Milchsäure, Fette und CIP-Reiniger zementäre Fugen zerstören und wie Reaktionsharzfugen dauerhaft schützen.",
+      canonicalPath: "/wissen/fugen-forensik/fuge-ausgewaschen/",
+    },
+    {
+      h1: "Hohl liegende Fliesen & Plattenbruch unter Flurförderzeugen",
+      seoTitle: "Hohle Fliesen & Kantenbrüche sanieren | HSB",
+      description:
+        "Hohl liegende Fliesen und Plattenbrüche im Produktionsbereich: Ursachen durch fehlende Vollbettung, Schubspannungen und Sanierung mit dem Rüttelverfahren nach AGI S 40.",
+      canonicalPath: "/wissen/fugen-forensik/fliesen-hohl/",
+    },
+    {
+      h1: "Gerissene Rinnenkanten: Die kritische Schnittstelle zwischen Stahl und Estrich",
+      seoTitle: "Gerissene Rinnenkanten & Anschlüsse sanieren | HSB",
+      description:
+        "Ursachen und Sanierung von Rissen an Entwässerungsrinnen in der Lebensmittelproduktion: Warum Edelstahl und Beton ohne elastische Hybridfuge reißen und wie HSB dauerhafte Rinnenanschlüsse baut.",
+      canonicalPath: "/wissen/fugen-forensik/rinnenkante-gerissen/",
+    },
+    {
+      h1: "Undichte Hohlkehlen: Die unterschätzte Gefahr am Wandanschluss",
+      seoTitle: "Schadensbild: Undichte Hohlkehlen & Wandanschlüsse | HSB",
+      description:
+        "Undichte Hohlkehlen und Sockelbereiche in der Lebensmittelindustrie: Wie Feuchtigkeit hinter Sockelfliesen kriecht, Keimnester bildet und wie entkoppelte Hohlkehlensysteme dicht halten.",
+      canonicalPath: "/wissen/fugen-forensik/hohlkehle-undicht/",
+    },
+    {
+      h1: "Thermoschock: Wenn heißes Reinigungswasser Beschichtungen abplatzen lässt",
+      seoTitle: "Thermoschock & Schubspannungsrisse beheben | HSB",
+      description:
+        "Thermoschock-Schäden an Industrieböden: Warum Heißwasser (CIP 85–95 °C) auf kaltem Untergrund Standardbeschichtungen ablöst und welche Systeme dauerhaft standhalten.",
+      canonicalPath: "/wissen/fugen-forensik/thermoschock-schaeden/",
+    },
+    {
+      h1: "Rüttelkeramik nach AGI S 40: Der Industriestandard für Säureschutz und Schwerlast",
+      seoTitle: "Rüttelkeramik AGI S 40: Säureschutz-Rüttelbelag | HSB",
+      description:
+        "Leitfaden zu AGI S 40 Rüttelbelägen: Maschinelle Vollbettung, Druckfestigkeit laut Herstellerdatenblatt und Säureschutz für Lebensmittel- und Chemiebetriebe.",
+      canonicalPath: "/wissen/ruettelkeramik-agi-s-40/",
+    },
+    {
+      h1: "Muster-Abnahmeprotokoll: Was ein belastbares Gutachten ausmacht",
+      seoTitle: "Muster-Abnahmeprotokoll & IFS-Checkliste Boden | HSB",
+      description:
+        "Muster-Abnahmeprotokoll für Industrieböden: Prüfung nach DIN 18202, Gefälle, Haftzug, Rinnenanschlüsse und IFS/BRC-Audit-Checkliste zum Download.",
+      canonicalPath: "/wissen/muster-abnahmeprotokoll/",
+    },
+    {
+      h1: "Sanierungsfenster-Rechner: Bauabschnitte und Stillstandszeiten planen",
+      seoTitle: "Sanierungsfenster-Rechner | HSB Hexagon",
+      description:
+        "Sanierungsfenster für Industrieböden berechnen: Hallenfläche, Schichtbetrieb und Aushärtezeiten indikativ auf Bauabschnitte planen.",
+      canonicalPath: "/rechner/sanierungsfenster/",
+    },
     ...services.map((service) => ({
       h1: service.h1,
       seoTitle: service.seoTitle,

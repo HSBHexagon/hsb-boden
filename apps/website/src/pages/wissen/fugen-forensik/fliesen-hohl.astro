@@ -1,0 +1,75 @@
+---
+import BaseLayout from "../../../layouts/BaseLayout.astro";
+import PageHero from "../../../components/sections/PageHero.astro";
+import LeadFormSection from "../../../components/forms/LeadFormSection.astro";
+import { buildBreadcrumbJsonLd } from "../../../lib/schema";
+
+export const prerender = true;
+
+const path = "/wissen/fugen-forensik/fliesen-hohl/";
+const title = "Hohle Fliesen & Kantenbrüche sanieren | HSB";
+const description = "Hohl liegende Fliesen und Plattenbrüche im Produktionsbereich: Ursachen durch fehlende Vollbettung, Schubspannungen und Sanierung mit dem Rüttelverfahren nach AGI S 40.";
+---
+
+<BaseLayout
+  title={title}
+  description={description}
+  path={path}
+  jsonLd={[
+    buildBreadcrumbJsonLd([
+      { name: "Start", path: "/" },
+      { name: "Wissen", path: "/wissen/" },
+      { name: "Fugen-Forensik", path: "/wissen/fugen-forensik/" },
+      { name: "Fliesen hohl", path },
+    ]),
+  ]}
+>
+  <PageHero
+    eyebrow="Fugen-Forensik · Fall 02"
+    title="Hohl liegende Fliesen & Plattenbruch unter Flurförderzeugen"
+    text="Ein hohler Klang beim Begehen, Rissmuster über mehrere Platten hinweg und wegplatzende Kanten beim Befahren mit Gabelstaplern: Hohlstellen sind die Vorstufe zum Totalverlust des Bodens. Wir zeigen, warum konventionelle Verlegung versagt und wie Rüttelkeramik dauerhaft trägt."
+  />
+
+  <section class="section border-b border-hsb-line bg-white">
+    <div class="container max-w-4xl">
+      <div class="prose max-w-none text-hsb-steel">
+        <h2 class="text-2xl font-black text-hsb-black">Symptome: Wie sich Hohlstellen ankündigen</h2>
+        <p>
+          Hohlstellen entwickeln sich schleichend. Oft beginnen sie mit feinen Rissen entlang der Fugen oder einem auffällig hohlen Geräusch, wenn Flurförderzeuge über bestimmte Hallenbereiche fahren. Sobald die harte, punktuelle Last von Vulkollan- oder Polyamid-Rädern (teilweise über 2 bis 3 Tonnen Achslast) auf eine nicht vollflächig unterfütterte Fliese trifft, bricht die keramische Platte unweigerlich durch.
+        </p>
+
+        <div class="my-8 rounded border-l-4 border-hsb-red bg-hsb-mist p-6 text-hsb-black">
+          <h3 class="text-lg font-bold">Die forensische Ursache: Hohlräume durch Dünnbett-Kammverlegung</h3>
+          <p class="mt-2 text-sm leading-6 text-hsb-steel">
+            Im gewöhnlichen Hochbau werden Fliesen im Dünnbettverfahren mit einer Zahnkelle verlegt. Im Industriebau ist dies fatal: Es entstehen zwingend Luftstege unter den Fliesen (oft nur 60–75 % Bettungsgrad). Bei thermischer Ausdehnung oder dynamischer Radlast brechen die Hohlräume ein. Hinzu kommen unzureichende Vorbereitung des Untergrunds (keine Kugelstrahlbehandlung) oder ungeeignete Haftbrücken.
+          </p>
+        </div>
+
+        <h2 class="text-2xl font-black text-hsb-black">Sicherheits- und Hygienerisiken im Werk</h2>
+        <ul class="space-y-3">
+          <li><strong>Gefahr für Flurförderzeuge:</strong> Plötzliche Absätze und Plattenausbrüche beschädigen empfindliche Rollen, Achsen und Lastaufnahmemittel von Hochhubwagen.</li>
+          <li><strong>Erhöhtes Unfallrisiko:</strong> Stolperfallen für Mitarbeitende und unruhiger Lauf von Transportwägen, der zum Kippen von Transportgut führen kann.</li>
+          <li><strong>Massive Schmutzansammlung:</strong> Unter hohl liegenden Fliesen entsteht ein Schmutzwasserspeicher, der bei jedem Überfahren pumpend Flüssigkeit an die Oberfläche drückt.</li>
+        </ul>
+
+        <h2 class="mt-10 text-2xl font-black text-hsb-black">Die dauerhafte Lösung: Maschinelles Rüttelverfahren (AGI S 40)</h2>
+        <p>
+          Um Hohlräume physikalisch auszuschließen, setzt HSB auf das Rüttelverfahren nach AGI S 40:
+        </p>
+        <ol class="space-y-4">
+          <li><strong>1. Untergrundvorbereitung:</strong> Kugelstrahlen des Rohbetons bis zur Freilegung des tragenden Zuschlagkorns (Abreißfestigkeit > 1,5 N/mm²).</li>
+          <li><strong>2. Frisches Verlegebett:</strong> Einbau eines hochfesten Mörtelbetts (Druckfestigkeit > 40 N/mm²).</li>
+          <li><strong>3. Maschinelle Rüttelverdichtung:</strong> Schwere Flächenrüttler verdichten die Platten mit definierter Frequenz in das Mörtelbett ein. Der Mörtel steigt in den Fugen auf – <strong>100 % hohlraumfreie Einbettung</strong> ohne Lufteinschlüsse.</li>
+          <li><strong>4. Hohe Druckfestigkeit:</strong> Druckfestigkeit laut Herstellerdatenblatt, bei vollflächiger Bettung sicher befahrbar mit Flurförderzeugen und harten Lastrollen.</li>
+        </ol>
+
+        <div class="mt-10 flex flex-wrap items-center gap-4 border-t border-hsb-line pt-8">
+          <a class="button-primary" href="/wissen/ruettelkeramik-agi-s-40/">Mehr zu Rüttelkeramik nach AGI S 40</a>
+          <a class="button-secondary" href="/wissen/fugen-forensik/">Zurück zur Forensik-Übersicht</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <LeadFormSection />
+</BaseLayout>

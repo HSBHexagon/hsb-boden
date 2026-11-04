@@ -68,7 +68,17 @@ describe("B2B-Positionierung der Metadaten", () => {
   });
 
   it("hält neue statische Titles unter 60 und Descriptions unter 160 Zeichen", () => {
-    const targets = ["/", "/leistungen/", "/kontakt/", "/beanspruchungs-check/"];
+    const targets = [
+      "/",
+      "/leistungen/",
+      "/kontakt/",
+      "/beanspruchungs-check/",
+      "/planer/",
+      "/wissen/fugen-forensik/",
+      "/wissen/ruettelkeramik-agi-s-40/",
+      "/wissen/muster-abnahmeprotokoll/",
+      "/rechner/sanierungsfenster/",
+    ];
     for (const page of getAllPublicPages().filter((item) => targets.includes(item.canonicalPath))) {
       expect(page.seoTitle.length, page.canonicalPath).toBeLessThanOrEqual(60);
       expect(page.description.length, page.canonicalPath).toBeLessThanOrEqual(160);

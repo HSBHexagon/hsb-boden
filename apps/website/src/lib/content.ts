@@ -362,7 +362,7 @@ export function getAllPublicPages() {
       h1: "Rüttelkeramik nach AGI S 40: Der Industriestandard für Säureschutz und Schwerlast",
       seoTitle: "Rüttelkeramik AGI S 40: Säureschutz-Rüttelbelag | HSB",
       description:
-        "Leitfaden zu AGI S 40 Rüttelbelägen: Maschinelle Vollbettung, Punktlastfestigkeit bis 60 N/mm² und Säureschutz für Lebensmittel- und Chemiebetriebe.",
+        "Leitfaden zu AGI S 40 Rüttelbelägen: Maschinelle Vollbettung, Druckfestigkeit laut Herstellerdatenblatt und Säureschutz für Lebensmittel- und Chemiebetriebe.",
       canonicalPath: "/wissen/ruettelkeramik-agi-s-40/",
     },
     {

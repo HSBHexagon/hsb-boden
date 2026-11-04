@@ -282,3 +282,24 @@ def test_upgrade_replaces_obsolete_planner_copy_only_once(tmp_path, monkeypatch,
     kwargs['records'] = [dict(new, uid='2', uidvalidity='7', folder='Drafts')]
     assert run_upgrade()['selected'] == 0
     assert calls.count('APPEND') == calls.count('MOVE') == 1
+
+
+@pytest.mark.parametrize('issue', ['ALREADY_CONTACTED', 'ALREADY_CONTACTED_DOMAIN', 'DUPLICATE_DRAFT_RECIPIENT',
+                                   'INBOUND_REQUIRES_REVIEW'])
+def test_contacted_or_duplicate_drafts_are_never_upgraded(tmp_path, monkeypatch, issue):
+    kwargs, boxes, calls, writes, old = setup_case(tmp_path, monkeypatch)
+    kwargs['records'][0]['issues'] = [issue]
+    result = upgrade_drafts('JOEL', apply=True, variant='reparatur', **kwargs)
+    assert result['selected'] == 0 and calls == writes == [] and boxes['Drafts'] == {'1': old}
+
+
+def test_reparatur_upgrade_writes_current_copy(tmp_path, monkeypatch):
+    kwargs, boxes, calls, writes, old = setup_case(tmp_path, monkeypatch)
+    result = upgrade_drafts('JOEL', apply=True, variant='reparatur', **kwargs)
+    assert result['appended'] == result['archived'] == 1
+    new = BytesParser(policy=policy.default).parsebytes(boxes['Drafts']['2'])
+    from canonical_template_factory import REPAIR_URL, REPARATUR_COPY_REV
+    assert new['X-HSB-Copy-Rev'] == REPARATUR_COPY_REV
+    assert [p.get_content_type() for p in new.walk()] == ['multipart/alternative', 'text/plain', 'text/html']
+    assert REPAIR_URL in new.get_body(('plain',)).get_content()
+    assert not any(p.get_content_disposition() == 'attachment' for p in new.walk())

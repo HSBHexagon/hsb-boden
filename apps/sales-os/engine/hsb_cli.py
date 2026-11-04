@@ -525,6 +525,28 @@ def cmd_upgrade_drafts(args):
     print(json.dumps(result,ensure_ascii=False,default=dict))
 
 
+def cmd_dedupe_drafts(args):
+    """Doppelte Entwürfe je Empfänger ins Archiv verschieben; ohne --apply nur der Plan."""
+    from draft_dedupe import apply_dedupe, plan_dedupe
+    from com_mailbox_manager import ComMailboxClient
+    audit = Path(args.audit_dir)
+    if args.apply and time.time()-(audit/'drafts.json').stat().st_mtime > 86400:
+        raise RuntimeError('AUDIT_SNAPSHOT_STALE')
+    records = json.loads((audit/'drafts.json').read_text())
+    original = json.loads((audit/'crm-original.json').read_text())['valueRanges'][0]['values']
+    leads = [dict(zip(original[0],r), _row=i) for i,r in enumerate(original[1:],2)]
+    plan = plan_dedupe(records, leads)
+    summary = {k: plan[k] for k in ('groups_with_duplicates','archive_count','archive_by_owner','reasons')}
+    summary.update(protected_groups=len(plan['protected_groups']), ambiguous_groups=len(plan['ambiguous_groups']),
+                   dry_run=not args.apply, customer_emails_sent=0)
+    if args.apply:
+        from outbound_safety import mailbox_dispatch_lock
+        clients = {o: ComMailboxClient(o) for o in ('JOEL','JORDI')}
+        with mailbox_dispatch_lock(clients['JOEL']):
+            summary['result'] = apply_dedupe(plan, clients, Path(args.journal))
+    print(json.dumps(summary,ensure_ascii=False,default=dict))
+
+
 def main():
     parser = argparse.ArgumentParser(description="HSB Sales OS - Unified Operator CLI")
     subparsers = parser.add_subparsers(dest="command", required=True)
@@ -627,6 +649,11 @@ def main():
 
     p_sequence = subparsers.add_parser("sequence-preview", help="Fällige v2-Nachfasskontakte zählen (kein Versand)")
     p_sequence.add_argument("--journal", default=str(Path.home()/".local/state/hsb-sales-os/outbound.sqlite3"))
+    p_dedupe = subparsers.add_parser("dedupe-drafts", help="Doppelte Entwürfe je Empfänger archivieren; Standard Dry-Run")
+    p_dedupe.add_argument("--audit-dir", required=True)
+    p_dedupe.add_argument("--journal", default=str(Path.home()/".local/state/hsb-sales-os/dedupe.sqlite3"))
+    p_dedupe.add_argument("--apply", action="store_true")
+
     p_upgrade = subparsers.add_parser("upgrade-drafts", help="Entwürfe anhand eines Audits erneuern; Standard Dry-Run")
     p_upgrade.add_argument("--owner", choices=["JOEL","JORDI"], required=True)
     p_upgrade.add_argument("--limit", type=int, default=5)
@@ -641,6 +668,8 @@ def main():
         cmd_sequence_preview(args)
     elif args.command == "upgrade-drafts":
         cmd_upgrade_drafts(args)
+    elif args.command == "dedupe-drafts":
+        cmd_dedupe_drafts(args)
     elif args.command == "status":
         cmd_status(args)
     elif args.command == "purge-de":

@@ -33,6 +33,13 @@ _OLD_PLANNER_LINES = {
 }
 
 
+def contacted_firm_domains(contacted):
+    """Firmendomains bereits angeschriebener Empfänger. Freemail und eigene Domains sperren keine Dritten."""
+    from hsb_core import FREEMAIL_DOMAINS
+    own = {'hsb-boden.de', 'hsb-boden.com'}
+    return {a.rpartition('@')[2] for a in contacted if '@' in a} - set(FREEMAIL_DOMAINS) - own - {''}
+
+
 def queue_block_reasons(lead):
     """Sperrgründe für die Versand-Warteschlange: Eignung plus zurückgestellt (CRM-Tier Z).
     Tier Z muss vor select_queue raus, sonst belegt er Tagesplätze, die das Live-Gate dann leer überspringt."""
@@ -435,6 +442,7 @@ def run_audit(output, reuse_snapshot=False):
             record['internal_test']=bool(record['recipients']) and all(a in INTERNAL_RECIPIENTS for a in record['recipients'])
             draft_records.append(dict(item, **record))
     contacted.update(str(l.get('E-Mail') or '').strip().lower() for l in leads if str(l.get('Send_Status') or '').lower() in {'sent', 'gesendet'} or l.get('Send_Datum'))
+    contacted_domains = contacted_firm_domains(contacted)
     link_cache = {}
     for draft in draft_records:
         draft['issues'].extend(link_health(draft.get('links', draft.get('flyer_links', [])), link_cache))
@@ -453,6 +461,7 @@ def run_audit(output, reuse_snapshot=False):
         for a in d['recipients']:
             if counts[a] > 1: d['issues'].append('DUPLICATE_DRAFT_RECIPIENT')
             if a in contacted: d['issues'].append('ALREADY_CONTACTED')
+            elif a.rpartition('@')[2] in contacted_domains: d['issues'].append('ALREADY_CONTACTED_DOMAIN')
             if a in inbound_blocked: d['issues'].append('INBOUND_REQUIRES_REVIEW')
         if mids[d['message_id']] > 1: d['issues'].append('DUPLICATE_MESSAGE_ID')
         if lead_ids[d['lead_id']] != 1: d['issues'].append('CRM_LEAD_ID_AMBIGUOUS')
@@ -464,6 +473,7 @@ def run_audit(output, reuse_snapshot=False):
         lid = str(l.get('Lead-ID') or ''); em = str(l.get('E-Mail') or '').strip().lower()
         ds = bylead[lid]; reasons = queue_block_reasons(l)
         if em in contacted: reasons.append('ALREADY_CONTACTED')
+        elif em.rpartition('@')[2] in contacted_domains: reasons.append('ALREADY_CONTACTED_DOMAIN')
         if em in inbound_blocked: reasons.append('INBOUND_REQUIRES_REVIEW')
         if emails[em] != 1 or lead_ids[lid] != 1: reasons.append('CRM_DUPLICATE')
         if not ds: reasons.append('NO_DRAFT')

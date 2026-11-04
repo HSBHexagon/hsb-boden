@@ -6,6 +6,7 @@ from types import SimpleNamespace
 import pytest
 from com_mailbox_manager import ComMailboxClient
 from draft_upgrade import upgrade_drafts, modified_utf7, mailbox_arg
+from sales_reconciliation import assess_message
 from test_outbound_safety_gate import _crm_lead
 
 
@@ -13,7 +14,7 @@ def setup_case(tmp_path,monkeypatch):
     monkeypatch.setenv('HSB_CRM_BINDINGS_VERIFIED','yes')
     lead=_crm_lead(**{'Lead-ID':'HSB-20261001-0001','Verantwortlicher':'Joel Cherino Diaz',
                      'Branche':'Getraenkeindustrie','Draft_ID':'<old@hsb-boden.com>',
-                     'Email_Template_ID':'v1','Drafted_At':'','Tier':'','_row':2})
+                     'Email_Template_ID':'v1','Drafted_At':'','Tier':'','Projektart':'','_row':2})
     m=EmailMessage();m['From']='j-cherino@hsb-boden.com';m['To']=lead['E-Mail'];m['Subject']='Alt';m['Message-ID']='<old@hsb-boden.com>';m.set_content('Original')
     old=m.as_bytes()
     record={'owner':'JOEL','lead_id':lead['Lead-ID'],'folder':'Drafts','uid':'1','uidvalidity':'7','sha256':hashlib.sha256(old).hexdigest(),'issues':[]}
@@ -226,3 +227,58 @@ def test_upgrade_reparatur_already_done_skipped(tmp_path, monkeypatch):
     assert result['selected'] == 0
     assert result['skipped_reasons']['ALREADY_V2'] == 1
     assert calls == writes == []
+
+
+@pytest.mark.parametrize('project,interrupted', [
+    ('Umbau einer Lebensmittelproduktion', False),
+    ('Umbau einer Lebensmittelproduktion', True),
+    ('', False),
+])
+def test_upgrade_replaces_obsolete_planner_copy_only_once(tmp_path, monkeypatch, project, interrupted):
+    kwargs, boxes, calls, writes, _ = setup_case(tmp_path, monkeypatch)
+    lead = kwargs['leads'][0]
+    lead.update({'Branche': 'Architekturbüro', 'Projektart': project,
+                 'Email_Template_ID': 'v2-architekten-reparatur-s1'})
+    msg = EmailMessage()
+    msg['From'] = 'j-cherino@hsb-boden.com'
+    msg['To'] = lead['E-Mail']
+    msg['Subject'] = 'Industrieböden im Bestand'
+    msg['Message-ID'] = lead['Draft_ID']
+    msg['X-HSB-Template-ID'] = lead['Email_Template_ID']
+    msg.set_content(f"Für {lead['Firma']}: Nicht jeder Bestandsboden muss komplett neu verlegt werden.\nAbmelden")
+    old = msg.as_bytes()
+    boxes['Drafts']['1'] = old
+    kwargs['records'][0].update(assess_message(old, 'JOEL', [lead]))
+    kwargs['leads'] = [dict(lead)]
+
+    assert 'OUTDATED_PLANNER_COPY' in kwargs['records'][0]['issues']
+    def run_upgrade():
+        return upgrade_drafts('JOEL', apply=True, cohort='all', variant='reparatur', **kwargs)
+
+    if not project:
+        assert 'PLANNING_PROJECT_UNVERIFIED' in kwargs['records'][0]['issues']
+        assert run_upgrade()['selected'] == 0
+        assert boxes['Drafts'] == {'1': old} and calls == writes == []
+        assert not kwargs['journal_path'].exists()
+        return
+    if interrupted:
+        from outbound_safety import crm_write_lead_readback
+
+        def lose_crm_response(*args):
+            crm_write_lead_readback(*args)
+            raise TimeoutError('CRM response lost after write')
+
+        with monkeypatch.context() as patch:
+            patch.setattr('outbound_safety.crm_write_lead_readback', lose_crm_response)
+            with pytest.raises(TimeoutError, match='CRM response lost'):
+                run_upgrade()
+
+    result = run_upgrade()
+    assert result['archived'] == result['crm_updated'] == 1
+    assert result['appended'] == (0 if interrupted else 1)
+    assert boxes[mailbox_arg('Entwürfe-Archiv-v1')]['8'] == old
+    new = assess_message(boxes['Drafts']['2'], 'JOEL', [lead])
+    assert new['issues'] == []
+    kwargs['records'] = [dict(new, uid='2', uidvalidity='7', folder='Drafts')]
+    assert run_upgrade()['selected'] == 0
+    assert calls.count('APPEND') == calls.count('MOVE') == 1

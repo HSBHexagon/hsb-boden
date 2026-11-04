@@ -174,14 +174,12 @@ _SUBJECTS_V2 = {
 
 _BODIES_V2 = {
     ("architekten", 1): (
-        "mein Name ist {sender} von der HSB Hexagon Säurebau GmbH. Wir planen, bauen und sanieren "
-        "säurebeständige Industrieböden.\n\n"
-        "Falls {bei} gerade Industrie-, Gewerbe- oder Lebensmittelprojekte in Planung sind: "
-        "Gefälle, Rinnenanschlüsse und Fugen lassen sich besonders gut in der Ausführungsplanung "
-        "aufeinander abstimmen. Wichtig sind dabei das tatsächliche Belastungsprofil und die spätere "
-        "Reinigung. Gern besprechen wir mit Ihnen, welche Punkte bei einem konkreten Projekt bereits "
-        "in der Ausschreibung berücksichtigt werden sollten.\n\n"
-        "Ist das für eines Ihrer aktuellen Projekte interessant?{link}"
+        "wenn {planungsteam} für einen Bauherrn einen Produktions- oder Lebensmittelstandort plant, "
+        "können wir Sie bei der technischen Vorprüfung des Bodenaufbaus unterstützen.\n\n"
+        "Ich bin {sender} von HSB Hexagon Säurebau. Für die Ausschreibung gehen wir mit Ihnen "
+        "durch, wie Gefälle, Rinnenanschlüsse und Fugen auf die spätere Nutzung und Reinigung "
+        "abgestimmt werden können. So lassen sich Schnittstellen früh in der Ausführungsplanung klären.\n\n"
+        "Möchten Sie einen aktuellen Planstand mit uns durchgehen?{link}"
     ),
     ("architekten", 2): (
         "kurz zu meiner Nachricht von vor ein paar Tagen: Falls {bei} eine Ausschreibung für "
@@ -227,20 +225,18 @@ _BODIES_V2 = {
 }
 
 _SUBJECTS_REPARATUR = {
-    "architekten": ("Industrieböden im Bestand", "Industrieböden im Bestand"),
+    "architekten": ("Bodenaufbau für Ihre Umbauplanung", "Bodenaufbau für Ihre Umbauplanung"),
     "produktion": ("Reparatur statt Neuverlegung", "Reparatur statt Neuverlegung"),
 }
 
 _BODIES_REPARATUR = {
     ("architekten", 1): (
-        "mein Name ist {sender} von der HSB Hexagon Säurebau GmbH. Wir planen, bauen und sanieren "
-        "säurebeständige Industrieböden.\n\n"
-        "Falls {bei} Umbauten oder Sanierungen für Produktions- oder Lebensmittelbetriebe anstehen: "
-        "Nicht jeder Bestandsboden muss komplett neu verlegt werden. Ob eine gezielte Reparatur und Instandsetzung "
-        "von Fugen, Rinnen- und Wandanschlüssen reicht, hängt vom Schadensbild, vom Restzustand des Systems "
-        "und vom Verhältnis von Reparatur- zu Sanierungskosten ab. Diese Punkte bewerten wir gern mit Ihnen, bevor die "
-        "Ausschreibung steht.\n\n"
-        "Ist das für ein aktuelles Vorhaben in Ihrem Büro interessant?{link}"
+        "wenn {planungsteam} für einen Bauherrn den Umbau eines Produktions- oder Lebensmittelstandorts "
+        "plant, helfen wir bei der Frage, welche Bodenflächen im Bestand erhalten werden können.\n\n"
+        "Ich bin {sender} von HSB Hexagon Säurebau. Vor der Ausschreibung prüfen wir mit Ihnen, "
+        "ob eine gezielte Reparatur an Fugen, Rinnen oder Wandanschlüssen möglich ist "
+        "und wo eine weitergehende Sanierung sinnvoll ist.\n\n"
+        "Möchten Sie Fotos oder einen Planstand mit uns durchgehen?{link}"
     ),
     ("architekten", 2): (
         "kurz zu meiner Nachricht von vor ein paar Tagen: Beim Bauen im Bestand entscheidet oft das Detail "
@@ -361,6 +357,7 @@ def render_email_v2(
             firma = ""
     firma_kurz = short_company(firma) if firma else ""
     bei = f"bei {firma_kurz}" if firma_kurz else "bei Ihnen"
+    planungsteam = f"Ihr Team bei {firma_kurz}" if firma_kurz else "Ihr Planungsteam"
 
     segment = segment_for(lead)
     template_id = f"v2-{segment}-reparatur-s{step}" if variant == "reparatur" else f"v2-{segment}-s{step}"
@@ -370,7 +367,9 @@ def render_email_v2(
         url = click_url or FLYER_LANDING_URL.format(segment=segment)
         link = f"\n\nEine Übersicht finden Sie hier:\n{url}"
     bodies = _BODIES_REPARATUR if variant == "reparatur" else _BODIES_V2
-    body = bodies[(segment, step)].format(sender=meta["sender_name"], bei=bei, link=link)
+    body = bodies[(segment, step)].format(
+        sender=meta["sender_name"], bei=bei, planungsteam=planungsteam, link=link,
+    )
 
     phone = meta["sender_phone"]
     phone_label = "Mobil" if phone.replace(" ", "").startswith("01") else "Telefon"

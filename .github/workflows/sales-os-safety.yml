@@ -7,10 +7,14 @@ on:
   workflow_dispatch:
     inputs:
       mode:
-        description: Bounded operation; customer sending is always disabled
+        description: "Bounded operation. prepare-drafts* bereitet Entwürfe vor (kein Versand); send* versendet nur auf ausdrückliche Auswahl"
         type: choice
-        options: [audit, inbound-preview, inbound-sync]
+        options: [audit, inbound-preview, inbound-sync, prepare-drafts-preview, prepare-drafts, send-preview, send]
         default: audit
+      count:
+        description: "Nur für send/send-preview: Anzahl je Postfach (1-35)"
+        type: number
+        default: 10
   schedule:
     - cron: '17 * * * *'
 permissions:
@@ -31,7 +35,7 @@ jobs:
       - run: python -m pytest apps/sales-os/tests/ -q
       - run: python scripts/verify_ssot.py
   live-readonly-and-inbound:
-    if: github.event_name != 'pull_request'
+    if: github.event_name != 'pull_request' && !startsWith(inputs.mode, 'prepare-drafts') && !startsWith(inputs.mode, 'send')
     needs: tests
     runs-on: ubuntu-latest
     timeout-minutes: 20
@@ -63,3 +67,57 @@ jobs:
         if: github.event_name == 'push' || inputs.mode == 'audit'
         run: python -u apps/sales-os/engine/sales_reconciliation.py --output "$RUNNER_TEMP/hsb-reconciliation"
       # Raw MIME, customer lists, queue and credentials are never uploaded.
+
+  # Entwürfe versandfertig machen: Audit, Dubletten-Archiv, Audit, Reparatur-Erneuerung, Abschluss-Audit.
+  # Kein Kundenversand. Im Log stehen nur Zahlen; Rohdaten bleiben im Runner-Temp und werden nicht hochgeladen.
+  prepare-drafts:
+    if: github.event_name == 'workflow_dispatch' && startsWith(inputs.mode, 'prepare-drafts')
+    needs: tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 240
+    env:
+      HSB_GOOGLE_AUTHORIZED_USER_JSON: ${{ secrets.HSB_SALES_GOOGLE_AUTH }}
+      HSB_MAILBOX_CONFIG_JSON: ${{ secrets.HSB_SALES_MAILBOXES_JSON }}
+      HSB_CUSTOMER_SEND_ENABLED: 'no'
+      HSB_INTERNAL_TEST_SEND_ENABLED: 'no'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: '3.14'
+      - run: pip install -r apps/sales-os/requirements.txt
+      - name: Entwürfe vorbereiten (${{ inputs.mode }})
+        env:
+          HSB_RUN_DIR: ${{ runner.temp }}
+          MODE: ${{ inputs.mode }}
+        run: |
+          if [ "$MODE" = "prepare-drafts" ]; then bash apps/sales-os/bin/postfach-lauf.sh --apply
+          else bash apps/sales-os/bin/postfach-lauf.sh; fi
+
+  # Versand einer Tranche, nur per manueller Auswahl von send/send-preview. Doppelversand ist ausgeschlossen:
+  # CRM bekommt SENDING vor SMTP, ein Abbruch lässt die IMAP-Sperre stehen und blockiert jeden Folgelauf.
+  customer-send:
+    if: github.event_name == 'workflow_dispatch' && startsWith(inputs.mode, 'send')
+    needs: tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 240
+    environment: customer-send
+    env:
+      HSB_GOOGLE_AUTHORIZED_USER_JSON: ${{ secrets.HSB_SALES_GOOGLE_AUTH }}
+      HSB_MAILBOX_CONFIG_JSON: ${{ secrets.HSB_SALES_MAILBOXES_JSON }}
+      HSB_INTERNAL_TEST_SEND_ENABLED: 'no'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: '3.14'
+      - run: pip install -r apps/sales-os/requirements.txt
+      - name: Tranche ${{ inputs.mode }} (${{ inputs.count }} je Postfach)
+        env:
+          HSB_SALES_STATE_DIR: ${{ runner.temp }}/hsb-state
+          HSB_COM_ONLY_INBOUND: 'yes'
+          MODE: ${{ inputs.mode }}
+          COUNT: ${{ inputs.count }}
+        run: |
+          if [ "$MODE" = "send" ]; then bash apps/sales-os/bin/versand-tranche.sh "$COUNT" --apply
+          else bash apps/sales-os/bin/versand-tranche.sh "$COUNT"; fi

@@ -14,6 +14,8 @@ REPO="$(cd "$(dirname "$0")/../../.." && pwd)"
 export HSB_CRM_BINDINGS_VERIFIED=yes
 if [[ -n "$APPLY" ]]; then export HSB_CUSTOMER_SEND_ENABLED=yes; else export HSB_CUSTOMER_SEND_ENABLED=no; fi
 cd "$REPO/apps/sales-os/engine"
+# Ohne Azure-Zugang (GitHub Actions) nur .com-Antworten abgleichen; .de-Antwortende sind bereits gesperrt.
+INBOUND=""; [[ "${HSB_COM_ONLY_INBOUND:-}" == "yes" ]] && INBOUND="--com-only-inbound"
 for OWNER in JOEL JORDI; do
-  python3 hsb_cli.py send-batch --owner "$OWNER" --count "$COUNT" --variant reparatur $APPLY
+  python3 -u hsb_cli.py send-batch --owner "$OWNER" --count "$COUNT" --variant reparatur $INBOUND $APPLY
 done

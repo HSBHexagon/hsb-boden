@@ -288,7 +288,9 @@ def select_queue(queue, drafts, owners, count_per_owner, segments=None, variant=
     return selected, used
 
 
-def dispatch_verified(count_per_owner=25, owners=('JOEL','JORDI'), dry_run=True, cap=35, jitter_min=45, jitter_max=90, segments=None, variant=None):
+def dispatch_verified(count_per_owner=25, owners=('JOEL','JORDI'), dry_run=True, cap=35, jitter_min=45, jitter_max=90, segments=None, variant=None, include_de_inbound=True):
+    """include_de_inbound=False nur für Läufe ohne Azure-Zugang (GitHub Actions): .de-Antwortende sind über
+    .de-Forensik und CRM-Versandstatus bereits gesperrt; neue .com-Antworten werden weiterhin synchronisiert."""
     from com_mailbox_manager import ComMailboxClient
     from sync_to_google_sheet import get_sheets_service, SPREADSHEET_ID
     from sales_reconciliation import run_audit, assess_message, has_unreviewed_legacy_variant
@@ -307,7 +309,7 @@ def dispatch_verified(count_per_owner=25, owners=('JOEL','JORDI'), dry_run=True,
     with (preview_lock() if dry_run else mailbox_dispatch_lock(clients['JOEL'])):
         if not dry_run:
             from closed_loop_crm import sync_inbounds
-            sync_inbounds(apply=True,include_de=True)
+            sync_inbounds(apply=True,include_de=include_de_inbound)
         output=state/'reconciliation'
         run_audit(output)
         queue=json.loads((output/'queue.json').read_text())

@@ -488,3 +488,21 @@ def test_connection_reset_mid_draft_reconnects_and_finishes_once(tmp_path, monke
     result = upgrade_drafts('JOEL', apply=True, variant='reparatur', **kwargs)
     assert result['imap_reconnects'] == 1 and result['appended'] == result['crm_updated'] == 1
     assert calls.count('APPEND') == 1 and len(boxes['Drafts']) == 1
+
+
+def test_lock_release_uses_fresh_connection_after_idle_reset():
+    # 04.11.2026: Sperr-Verbindung nach 12 min Tranche vom Server getrennt -> Reset beim DELETE.
+    from outbound_safety import mailbox_dispatch_lock, LOCK_FOLDER
+    folders, sessions = set(), []
+    def session():
+        n = len(sessions)
+        class S:
+            def create(self, f): folders.add(f); return 'OK', []
+            def delete(self, f):
+                if n == 0: raise ConnectionResetError(104, 'Connection reset by peer')
+                folders.discard(f); return 'OK', []
+            def logout(self): pass
+        sessions.append(n); return S()
+    with mailbox_dispatch_lock(SimpleNamespace(_get_imap=session)):
+        pass
+    assert LOCK_FOLDER not in folders and len(sessions) == 2

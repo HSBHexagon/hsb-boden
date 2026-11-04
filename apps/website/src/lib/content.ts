@@ -372,6 +372,13 @@ export function getAllPublicPages() {
         "Muster-Abnahmeprotokoll für Industrieböden: Prüfung nach DIN 18202, Gefälle, Haftzug, Rinnenanschlüsse und IFS/BRC-Audit-Checkliste zum Download.",
       canonicalPath: "/wissen/muster-abnahmeprotokoll/",
     },
+    {
+      h1: "Sanierungsfenster-Rechner: Bauabschnitte und Stillstandszeiten planen",
+      seoTitle: "Sanierungsfenster-Rechner | HSB Hexagon",
+      description:
+        "Sanierungsfenster für Industrieböden berechnen: Hallenfläche, Schichtbetrieb und Aushärtezeiten indikativ auf Bauabschnitte planen.",
+      canonicalPath: "/rechner/sanierungsfenster/",
+    },
     ...services.map((service) => ({
       h1: service.h1,
       seoTitle: service.seoTitle,

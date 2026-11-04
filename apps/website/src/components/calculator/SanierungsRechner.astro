@@ -1,0 +1,226 @@
+---
+interface Props {
+  auditAnchor?: string;
+}
+
+const { auditAnchor = "/kontakt/" } = Astro.props;
+---
+
+<div class="surface rounded border border-hsb-line p-6 lg:p-10" data-sanierungs-rechner>
+  <div class="border-b border-hsb-line pb-6">
+    <span class="inline-block rounded bg-hsb-mist px-2.5 py-1 text-xs font-black uppercase tracking-[0.12em] text-hsb-black">
+      Interaktives Planungswerkzeug
+    </span>
+    <h3 class="mt-3 text-2xl font-black text-hsb-black">Sanierungsfenster- & Bauabschnitts-Rechner</h3>
+    <p class="mt-2 text-sm leading-6 text-hsb-steel">
+      Ermitteln Sie indikativ, in wie vielen Bauabschnitten Ihre Produktionsfläche saniert werden kann, um Stillstandszeiten auf ein Minimum zu reduzieren.
+    </p>
+  </div>
+
+  <div class="mt-8 grid gap-8 lg:grid-cols-[1.1fr_0.9fr]">
+    <!-- Eingabebereich -->
+    <div class="space-y-6">
+      <!-- 1. Flächengröße -->
+      <div>
+        <div class="flex items-center justify-between">
+          <label for="rechner-flaeche" class="text-sm font-bold text-hsb-black">
+            1. Zu sanierende Fläche (in m²)
+          </label>
+          <span id="flaeche-display" class="rounded bg-hsb-mist px-3 py-1 font-mono text-base font-black text-hsb-black">
+            250 m²
+          </span>
+        </div>
+        <input
+          type="range"
+          id="rechner-flaeche"
+          min="30"
+          max="2500"
+          step="10"
+          value="250"
+          class="mt-3 w-full accent-hsb-red cursor-pointer"
+        />
+        <div class="mt-1 flex justify-between text-[11px] text-hsb-steel">
+          <span>30 m² (Detailbereich)</span>
+          <span>1.000 m²</span>
+          <span>2.500 m² (Großhalle)</span>
+        </div>
+      </div>
+
+      <!-- 2. Zeitfenster & Schichtmodell -->
+      <div>
+        <label for="rechner-zeitfenster" class="text-sm font-bold text-hsb-black block">
+          2. Verfügbares Zeitfenster / Betriebsmodell
+        </label>
+        <select
+          id="rechner-zeitfenster"
+          class="mt-2 w-full rounded border border-hsb-line px-3 py-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-hsb-red bg-white"
+        >
+          <option value="wochenende-60h" selected>Wochenend-Stillstand (Freitag 18:00 – Montag 06:00 = 60 h)</option>
+          <option value="betriebsurlaub">Geplanter Stillstand / Werksferien (7 bis 14 Tage)</option>
+          <option value="laufender-betrieb">Laufender 3-Schicht-Betrieb (Rollierende Teilflächensanierung)</option>
+        </select>
+        <p class="mt-1.5 text-xs text-hsb-steel">
+          Wochenendfenster erfordern schnell aushärtende Schichtaufbauten zur Freigabe am Montagmorgen.
+        </p>
+      </div>
+
+      <!-- 3. Angestrebtes Bodensystem -->
+      <div>
+        <label for="rechner-system" class="text-sm font-bold text-hsb-black block">
+          3. Vorgesehenes Bodensystem
+        </label>
+        <select
+          id="rechner-system"
+          class="mt-2 w-full rounded border border-hsb-line px-3 py-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-hsb-red bg-white"
+        >
+          <option value="pu-beton" selected>Hochtemperatur-PU-Beton (9 mm, fugenlos, schnell aushärtend)</option>
+          <option value="ruettelkeramik">Keramischer Rüttelboden nach AGI S 40 (Säurebau & Schwerlast)</option>
+          <option value="schnellreparatur">Schnellreparatur-Mörtel (Lokale Fugen- & Schadstellensanierung)</option>
+        </select>
+        <p class="mt-1.5 text-xs text-hsb-steel">
+          Kennwerte und Mindestaushärtezeiten richten sich nach den Herstellerdatenblättern der Reaktionsharze.
+        </p>
+      </div>
+    </div>
+
+    <!-- Ergebnisbereich -->
+    <div class="rounded border-2 border-hsb-black bg-hsb-mist/40 p-6 flex flex-col justify-between">
+      <div>
+        <span class="text-xs font-black uppercase tracking-widest text-hsb-red">Indikative Machbarkeit</span>
+        <h4 class="mt-1 text-xl font-black text-hsb-black">Kalkulierte Bauabschnitte</h4>
+
+        <div class="mt-6 space-y-4">
+          <div class="rounded border border-hsb-line bg-white p-4">
+            <span class="text-xs text-hsb-steel block">Erforderliche Bauabschnitte</span>
+            <span id="result-abschnitte" class="text-3xl font-black text-hsb-black">2 Abschnitte</span>
+            <span id="result-flaeche-pro-abschnitt" class="text-xs text-hsb-steel block mt-0.5">à ca. 125 m²</span>
+          </div>
+
+          <div class="rounded border border-hsb-line bg-white p-4">
+            <span class="text-xs text-hsb-steel block">Empfohlene Aushärtezeit vor Wiederinbetriebnahme</span>
+            <span id="result-aushaertung" class="text-lg font-bold text-hsb-black">ca. 24 bis 36 Stunden</span>
+            <span class="text-[11px] text-hsb-steel block mt-0.5">laut Herstellerdatenblatt bei 18–20 °C Untergrund</span>
+          </div>
+
+          <div class="rounded border border-hsb-line bg-white p-4">
+            <span class="text-xs text-hsb-steel block">Verfahrensempfehlung Stillstand</span>
+            <p id="result-empfehlung" class="text-xs leading-relaxed text-hsb-steel mt-1">
+              Sanierung in zwei aufeinanderfolgenden Wochenend-Schichten möglich. Der Produktionsbetrieb unter der Woche bleibt vollumfänglich aufrechterhalten.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="mt-6 pt-4 border-t border-hsb-line">
+        <p class="text-[11px] leading-relaxed text-hsb-steel italic">
+          Hinweis: Indikative Richtwerte zur ersten Orientierung. Verbindliche Abschnittsgrößen und Taktungen erfordern eine bauseitige Prüfung von Untergrundbeschaffenheit, Raumtemperatur und Lüftung.
+        </p>
+        <div class="mt-4">
+          <a
+            id="rechner-audit-btn"
+            href={auditAnchor}
+            class="button-primary w-full text-center block text-sm"
+          >
+            Berechnung ins Vor-Ort-Audit übernehmen
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  function initSanierungsRechner() {
+    const flaecheInput = document.getElementById("rechner-flaeche") as HTMLInputElement | null;
+    const flaecheDisplay = document.getElementById("flaeche-display");
+    const zeitfensterSelect = document.getElementById("rechner-zeitfenster") as HTMLSelectElement | null;
+    const systemSelect = document.getElementById("rechner-system") as HTMLSelectElement | null;
+
+    const resultAbschnitte = document.getElementById("result-abschnitte");
+    const resultFlaeche = document.getElementById("result-flaeche-pro-abschnitt");
+    const resultAushaertung = document.getElementById("result-aushaertung");
+    const resultEmpfehlung = document.getElementById("result-empfehlung");
+    const auditBtn = document.getElementById("rechner-audit-btn") as HTMLAnchorElement | null;
+
+    if (!flaecheInput || !flaecheDisplay || !zeitfensterSelect || !systemSelect) return;
+
+    function calculate() {
+      const flaeche = parseInt(flaecheInput?.value || "250", 10);
+      const zeitfenster = zeitfensterSelect?.value || "wochenende-60h";
+      const system = systemSelect?.value || "pu-beton";
+
+      if (flaecheDisplay) flaecheDisplay.textContent = `${flaeche} m²`;
+
+      // Indikative maximale Flächenleistung je Schichtfenster
+      let maxPerSection = 150;
+      let aushaertungsText = "ca. 24 bis 36 Stunden";
+      let empfehlungsText = "";
+
+      if (system === "pu-beton") {
+        aushaertungsText = "ca. 24 bis 36 Stunden (laut Herstellerdatenblatt)";
+        if (zeitfenster === "wochenende-60h") {
+          maxPerSection = 160; // 60h-Fenster: 1 Tag Einbau + 1,5 Tage Aushärtung
+          empfehlungsText = "Sanierung am Wochenende: Einbau Freitagabend/Samstag, Aushärtung Sonntag, uneingeschränkte Wiederbefahrung am Montagmorgen.";
+        } else if (zeitfenster === "betriebsurlaub") {
+          maxPerSection = 450;
+          empfehlungsText = "Großflächiger Einbau während der Betriebsferien. Hohe Tagesleistung durch zusammenhängende Arbeitsabschnitte.";
+        } else {
+          maxPerSection = 100;
+          empfehlungsText = "Rollierende Sanierung unter mobilem Staubschutz-Vorhang. Angrenzende Produktionslinien bleiben aktiv.";
+        }
+      } else if (system === "ruettelkeramik") {
+        aushaertungsText = "ca. 36 bis 48 Stunden (laut Herstellerdatenblatt)";
+        if (zeitfenster === "wochenende-60h") {
+          maxPerSection = 110; // Maschinelles Einrütteln + Reaktionsharzfuge
+          empfehlungsText = "Maschinelles Rüttelverfahren: Abschnittsweise Verlegung am Wochenende mit schneller Epoxidharz-Verfugung für planbaren Produktionsstart.";
+        } else if (zeitfenster === "betriebsurlaub") {
+          maxPerSection = 300;
+          empfehlungsText = "Ideal für Komplettsanierungen im Säureschutzbau während geplanter Stillstandszeiten.";
+        } else {
+          maxPerSection = 80;
+          empfehlungsText = "Abschnittsweises Fräsen und Rüttelverlegung mit strikter Staubkapselung.";
+        }
+      } else {
+        // Schnellreparatur
+        aushaertungsText = "ca. 4 bis 8 Stunden (laut Herstellerdatenblatt)";
+        maxPerSection = 50;
+        empfehlungsText = "Punktuelle Schnellinstandsetzung schadhafter Fugen, Rinnenkanten oder Hohlstellen ohne Beeinträchtigung des Hauptbetriebs.";
+      }
+
+      const numSections = Math.max(1, Math.ceil(flaeche / maxPerSection));
+      const flaecheProAbschnitt = Math.round(flaeche / numSections);
+
+      if (resultAbschnitte) {
+        resultAbschnitte.textContent = numSections === 1 ? "1 Abschnitt" : `${numSections} Abschnitte`;
+      }
+      if (resultFlaeche) {
+        resultFlaeche.textContent = numSections === 1 ? "Gesamtfläche in einem Durchgang" : `à ca. ${flaecheProAbschnitt} m²`;
+      }
+      if (resultAushaertung) {
+        resultAushaertung.textContent = aushaertungsText;
+      }
+      if (resultEmpfehlung) {
+        resultEmpfehlung.textContent = empfehlungsText;
+      }
+
+      if (auditBtn) {
+        const urlParams = new URLSearchParams({
+          areaSize: String(flaeche),
+          system: system,
+          timeWindow: zeitfenster,
+          sections: String(numSections),
+        });
+        auditBtn.href = `/kontakt/?${urlParams.toString()}#kontaktformular`;
+      }
+    }
+
+    flaecheInput.addEventListener("input", calculate);
+    zeitfensterSelect.addEventListener("change", calculate);
+    systemSelect.addEventListener("change", calculate);
+    calculate();
+  }
+
+  // Initialisierung bei DOMContentLoaded & Astro Page Swap
+  initSanierungsRechner();
+  document.addEventListener("astro:page-load", initSanierungsRechner);
+</script>

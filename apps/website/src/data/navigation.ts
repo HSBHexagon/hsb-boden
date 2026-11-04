@@ -23,6 +23,7 @@ export const footerGroups = [
       { label: "Sanierung", href: "/leistungen/bodensanierung-laufender-betrieb/" },
       { label: "Reparatur & Instandsetzung", href: "/leistungen/boden-reparatur-instandsetzung/" },
       { label: "Beanspruchungs-Check", href: "/beanspruchungs-check/" },
+      { label: "Sanierungsfenster-Rechner", href: "/rechner/sanierungsfenster/" },
       { label: "Planer & LV-Texte", href: "/planer/" },
     ],
   },

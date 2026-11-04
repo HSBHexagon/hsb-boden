@@ -77,6 +77,7 @@ describe("B2B-Positionierung der Metadaten", () => {
       "/wissen/fugen-forensik/",
       "/wissen/ruettelkeramik-agi-s-40/",
       "/wissen/muster-abnahmeprotokoll/",
+      "/rechner/sanierungsfenster/",
     ];
     for (const page of getAllPublicPages().filter((item) => targets.includes(item.canonicalPath))) {
       expect(page.seoTitle.length, page.canonicalPath).toBeLessThanOrEqual(60);

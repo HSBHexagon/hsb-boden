@@ -92,7 +92,7 @@ const skipLabel = ui[lang].skip;
       // Sekundäre Konversions- und Interaktions-Ereignisse erfassen
       document.addEventListener("click", (event) => {
         const target = (event.target as HTMLElement | null)?.closest("a, button");
-        if (!target) return;
+        if (!target || target.hasAttribute("data-repair-contact")) return;
         const href = target.getAttribute("href") || "";
         const downloadType = target.getAttribute("data-download");
 

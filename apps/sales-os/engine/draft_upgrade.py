@@ -247,6 +247,7 @@ def upgrade_drafts(owner, limit=5, cohort='pilot', apply=False, journal_path=Non
                             rendered = render_email_v2(lead, owner, click_url=click_url(lead['Lead-ID'], segment_for(lead), os.environ.get('HSB_CLICK_SECRET')), variant=variant)
                             mid = make_msgid(domain='hsb-boden.com')
                             raw, _ = client.build_draft_message(rendered['to_email'], rendered['subject'], body_text=rendered['body_text'],
+                                    body_html=rendered.get('body_html', ''),
                                     template_id=rendered['template_id'], lead_id=lead['Lead-ID'], custom_message_id=mid,
                                     copy_rev=rendered.get('copy_rev'))
                             # imaplib.append normalisiert CRLF; Readback und Journal speichern dieselben Bytes.

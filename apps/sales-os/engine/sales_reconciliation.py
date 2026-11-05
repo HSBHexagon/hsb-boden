@@ -28,6 +28,7 @@ SENDERS = {'JOEL': 'j-cherino@hsb-boden.com', 'JORDI': 'j-post@hsb-boden.com'}
 OUTDATED_PLANNER_COPY = 'OUTDATED_PLANNER_COPY'
 # Reparatur-Erstkontakt ohne aktuelle Fassung (X-HSB-Copy-Rev) gilt als ersetzbar.
 OUTDATED_REPAIR_COPY = 'OUTDATED_REPAIR_COPY'
+SIGNATURE_LOGO_URL = 'https://www.hsb-boden.de/brand/hsb-boden-logo.png'
 _OLD_PLANNER_LINES = {
     'v2-architekten-s1': 'Gefälle, Rinnenanschlüsse und Fugen lassen sich besonders gut in der Ausführungsplanung',
     'v2-architekten-reparatur-s1': 'Nicht jeder Bestandsboden muss komplett neu verlegt werden',
@@ -77,7 +78,9 @@ def assess_message(raw, owner, leads):
         if part.defects:
             issues.append('MIME_DEFECT')
     body = html.unescape('\n'.join(str(b) for b in bodies))
-    links = list(dict.fromkeys(re.findall(r'https?://[^\s<>"\x27]+', body)))
+    # Das Signatur-Logo ist ein Bild, kein Klick-Link.
+    links = [u for u in dict.fromkeys(re.findall(r'https?://[^\s<>"\x27]+', body))
+             if u not in (SIGNATURE_LOGO_URL, 'https://www.hsb-boden.de')]
     mid = str(msg.get('Message-ID') or '').strip()
     subject = str(msg.get('Subject') or '')
     if len(recipients) != 1 or msg.get('Cc') or msg.get('Bcc'):

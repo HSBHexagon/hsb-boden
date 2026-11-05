@@ -44,6 +44,9 @@ fi
 audit "$BASE/audit-1"
 run hsb_cli.py dedupe-drafts --audit-dir "$BASE/audit-1" $APPLY
 audit "$BASE/audit-2"
+# Nur die Gestaltung veraltet: in place mit gleicher Message-ID, ohne CRM-Schreiben, beide Postfächer parallel.
+run hsb_cli.py refresh-signature --audit-dir "$BASE/audit-2" $APPLY
+[[ -n "$APPLY" ]] && audit "$BASE/audit-2"
 for OWNER in JOEL JORDI; do
   if [[ -z "$APPLY" ]]; then
     run hsb_cli.py upgrade-drafts --owner "$OWNER" --variant reparatur --cohort all --limit 10000 --audit-dir "$BASE/audit-2"

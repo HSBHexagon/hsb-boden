@@ -526,6 +526,19 @@ def cmd_upgrade_drafts(args):
     print(json.dumps(result,ensure_ascii=False,default=dict))
 
 
+def cmd_refresh_signature(args):
+    """Veraltete Reparatur-Erstkontakte in place erneuern (gleiche Message-ID, kein CRM-Schreiben)."""
+    from signature_refresh import refresh_signatures
+    audit = Path(args.audit_dir)
+    if args.apply and time.time()-(audit/'drafts.json').stat().st_mtime > 86400:
+        raise RuntimeError('AUDIT_SNAPSHOT_STALE')
+    records = json.loads((audit/'drafts.json').read_text())
+    original = json.loads((audit/'crm-original.json').read_text())['valueRanges'][0]['values']
+    leads = [dict(zip(original[0],r), _row=i) for i,r in enumerate(original[1:],2)]
+    owners = [args.owner] if args.owner else ['JOEL','JORDI']
+    print(json.dumps(refresh_signatures(owners, records, leads, apply=args.apply), ensure_ascii=False, default=dict))
+
+
 def cmd_dedupe_drafts(args):
     """Doppelte Entwürfe je Empfänger ins Archiv verschieben; ohne --apply nur der Plan."""
     from draft_dedupe import apply_dedupe, plan_dedupe
@@ -660,6 +673,11 @@ def main():
     p_lock = subparsers.add_parser("release-stale-lock", help="Versandsperre nach Abbruch lösen, nur ohne unklaren Versand (SENDING)")
     p_lock.add_argument("--apply", action="store_true")
 
+    p_refresh = subparsers.add_parser("refresh-signature", help="Veraltete Reparatur-Entwürfe in place erneuern; Standard Dry-Run")
+    p_refresh.add_argument("--owner", choices=["JOEL","JORDI"])
+    p_refresh.add_argument("--audit-dir", required=True)
+    p_refresh.add_argument("--apply", action="store_true")
+
     p_upgrade = subparsers.add_parser("upgrade-drafts", help="Entwürfe anhand eines Audits erneuern; Standard Dry-Run")
     p_upgrade.add_argument("--owner", choices=["JOEL","JORDI"], required=True)
     p_upgrade.add_argument("--limit", type=int, default=5)
@@ -674,6 +692,8 @@ def main():
         cmd_sequence_preview(args)
     elif args.command == "upgrade-drafts":
         cmd_upgrade_drafts(args)
+    elif args.command == "refresh-signature":
+        cmd_refresh_signature(args)
     elif args.command == "release-stale-lock":
         from outbound_safety import release_stale_lock
         from com_mailbox_manager import ComMailboxClient

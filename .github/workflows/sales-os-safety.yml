@@ -21,8 +21,6 @@ on:
         default: 0
   schedule:
     - cron: '17 * * * *'
-    # Einmaliger Start der Kette nach Lauf 41919946078 (04.11.2026); danach kann diese Zeile entfallen.
-    - cron: '55 1 5 11 *'
 permissions:
   contents: read
 # Sperre nur auf den Live-Jobs: PR-Tests warten sonst stundenlang hinter einem Lauf und werden vom nächsten Start ersetzt.
@@ -56,21 +54,10 @@ jobs:
         run: |
           n="$(gh run list --workflow sales-os-safety.yml --event workflow_dispatch --limit 20 --json status --jq '[.[]|select(.status!="completed")]|length')"
           if [ "$n" -gt 0 ]; then echo "busy=yes" >> "$GITHUB_OUTPUT"; else echo "busy=no" >> "$GITHUB_OUTPUT"; fi
-  chain-start:
-    if: github.event.schedule == '55 1 5 11 *'
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    permissions:
-      actions: write
-    steps:
-      - env:
-          GH_TOKEN: ${{ github.token }}
-          GH_REPO: ${{ github.repository }}
-        run: gh workflow run sales-os-safety.yml --ref main -f mode=prepare-drafts -f chain=1
   live-readonly-and-inbound:
     if: >-
       !cancelled() && needs.tests.result == 'success' && github.event_name != 'pull_request' &&
-      github.event.schedule != '55 1 5 11 *' && needs.runtime-gate.outputs.busy != 'yes' &&
+      needs.runtime-gate.outputs.busy != 'yes' &&
       inputs.mode != 'inventory' &&
       !startsWith(inputs.mode, 'prepare-drafts') && !startsWith(inputs.mode, 'send')
     needs: [tests, runtime-gate]
@@ -106,6 +93,10 @@ jobs:
       - name: Full read-only reconciliation
         if: github.event_name == 'push' || inputs.mode == 'audit'
         run: python -u apps/sales-os/engine/sales_reconciliation.py --output "$RUNNER_TEMP/hsb-reconciliation"
+      # Nur der ausdrücklich gestartete Audit endet rot, solange nicht jeder Entwurf bestanden hat; Log enthält nur Zahlen.
+      - name: Verify every draft against a fresh render
+        if: inputs.mode == 'audit'
+        run: python -u apps/sales-os/engine/draft_verify.py --audit-dir "$RUNNER_TEMP/hsb-reconciliation"
       # Raw MIME, customer lists, queue and credentials are never uploaded.
 
   # Strictly read-only: do not wait for the long writer being diagnosed.

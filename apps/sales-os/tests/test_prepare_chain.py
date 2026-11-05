@@ -77,7 +77,7 @@ def test_tranche_without_progress_ends_this_mailbox_but_not_the_other(tmp_path):
 
 def test_chain_is_bounded_and_can_only_prepare():
     assert 'inputs.chain < 8' in WORKFLOW
-    assert WORKFLOW.count('gh workflow run') == 2
+    assert WORKFLOW.count('gh workflow run') == 1
     for line in WORKFLOW.splitlines():
         if 'gh workflow run' in line:
             assert '-f mode=prepare-drafts ' in line and '--ref main' in line

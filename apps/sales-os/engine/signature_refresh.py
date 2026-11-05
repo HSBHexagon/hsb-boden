@@ -110,13 +110,21 @@ def refresh_one(imap, client, owner, rec, lead, assess_message):
             return 'TEMPLATE_CHANGED'
         if assess_message(new_raw, owner, [lead])['issues']:
             raise RuntimeError('REPLACEMENT_REVALIDATION_FAILED')
-        typ, _ = imap.append(rec['folder'], r'(\Draft)', imaplib.Time2Internaldate(time.time()), new_raw)
+        try:
+            typ, _ = imap.append(rec['folder'], r'(\Draft)', imaplib.Time2Internaldate(time.time()), new_raw)
+        except (imaplib.IMAP4.abort, OSError) as exc:
+            # The server may have accepted the literal even when its response was lost.
+            # Do not enter the reconnect loop with permission to APPEND again.
+            raise RuntimeError('UNCERTAIN_APPEND_REQUIRES_RECONCILIATION') from exc
         if typ != 'OK':
             raise RuntimeError('REPLACEMENT_APPEND_FAILED')
         found = [m.decode() for m in _find(imap, mid) if m.decode() != orig_uid]
         if len(found) != 1 or _raw(imap, found[0]) != new_raw:
             raise RuntimeError('REPLACEMENT_READBACK_MISMATCH')
-    typ, _ = imap.uid('move', orig_uid, mailbox_arg(ARCHIVE))
+    try:
+        typ, _ = imap.uid('move', orig_uid, mailbox_arg(ARCHIVE))
+    except (imaplib.IMAP4.abort, OSError) as exc:
+        raise RuntimeError('UNCERTAIN_MOVE_REQUIRES_RECONCILIATION') from exc
     if typ != 'OK':
         raise RuntimeError('ORIGINAL_MOVE_FAILED')
     return 'RECOVERED' if recovered else 'REFRESHED'

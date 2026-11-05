@@ -71,12 +71,11 @@ jobs:
     if: >-
       !cancelled() && needs.tests.result == 'success' && github.event_name != 'pull_request' &&
       github.event.schedule != '55 1 5 11 *' && needs.runtime-gate.outputs.busy != 'yes' &&
+      inputs.mode != 'inventory' &&
       !startsWith(inputs.mode, 'prepare-drafts') && !startsWith(inputs.mode, 'send')
     needs: [tests, runtime-gate]
     concurrency:
-      # Inventory is strictly read-only and detects snapshot drift itself.
-      # It must not wait for hours behind the writer it is diagnosing.
-      group: ${{ inputs.mode == 'inventory' && 'hsb-sales-os-inventory' || 'hsb-sales-os-runtime' }}
+      group: hsb-sales-os-runtime
       cancel-in-progress: false
     runs-on: ubuntu-latest
     timeout-minutes: 20
@@ -107,10 +106,30 @@ jobs:
       - name: Full read-only reconciliation
         if: github.event_name == 'push' || inputs.mode == 'audit'
         run: python -u apps/sales-os/engine/sales_reconciliation.py --output "$RUNNER_TEMP/hsb-reconciliation"
-      - name: Read-only draft ownership and distribution inventory
-        if: inputs.mode == 'inventory'
-        run: python -u apps/sales-os/engine/mailbox_inventory.py --output "$RUNNER_TEMP/hsb-inventory"
       # Raw MIME, customer lists, queue and credentials are never uploaded.
+
+  # Strictly read-only: do not wait for the long writer being diagnosed.
+  inventory:
+    if: github.event_name == 'workflow_dispatch' && inputs.mode == 'inventory'
+    needs: tests
+    concurrency:
+      group: hsb-sales-os-inventory
+      cancel-in-progress: false
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      HSB_GOOGLE_AUTHORIZED_USER_JSON: ${{ secrets.HSB_SALES_GOOGLE_AUTH }}
+      HSB_MAILBOX_CONFIG_JSON: ${{ secrets.HSB_SALES_MAILBOXES_JSON }}
+      HSB_CUSTOMER_SEND_ENABLED: 'no'
+      HSB_INTERNAL_TEST_SEND_ENABLED: 'no'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: '3.14'
+      - run: pip install -r apps/sales-os/requirements.txt
+      - name: Read-only draft ownership and distribution inventory
+        run: python -u apps/sales-os/engine/mailbox_inventory.py --output "$RUNNER_TEMP/hsb-inventory"
 
   # Entwürfe versandfertig machen: Audit, Dubletten-Archiv, Audit, Reparatur-Erneuerung, Abschluss-Audit.
   # Kein Kundenversand. Im Log stehen nur Zahlen; Rohdaten bleiben im Runner-Temp und werden nicht hochgeladen.

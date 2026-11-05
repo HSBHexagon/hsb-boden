@@ -10,6 +10,7 @@ from canonical_template_factory import REPARATUR_COPY_REV
 from com_mailbox_manager import ComMailboxClient
 from hsb_core import normalize_owner
 from sales_reconciliation import assess_message
+from signature_refresh import select_candidates
 from sync_to_google_sheet import get_sheets_service, SPREADSHEET_ID
 
 def search(imap, *query):
@@ -68,6 +69,37 @@ def inspect_owner(owner, by_id):
                     break
             if counts['ready'] >= 50:
                 break
+        old_records = []
+        old_issues = Counter()
+        old_checked = 0
+        current_set = set(current)
+        old_ids = [uid for uid in total if uid not in current_set]
+        for start in range(0, len(old_ids), 20):
+            status, data = imap.uid('fetch', b','.join(old_ids[start:start+20]), '(UID BODY.PEEK[])')
+            if status != 'OK':
+                raise RuntimeError('PROBE_OLD_FETCH_FAILED')
+            for item in data or []:
+                if not isinstance(item, tuple):
+                    continue
+                uid_match = re.search(rb'UID (\d+)', item[0])
+                if not uid_match:
+                    continue
+                message = BytesParser(policy=policy.default).parsebytes(item[1])
+                matches = by_id.get(str(message.get('X-HSB-Lead-ID') or '').strip(), [])
+                old_checked += 1
+                if len(matches) != 1:
+                    old_issues['CRM_NOT_UNIQUE'] += 1
+                    continue
+                record = assess_message(item[1], owner, [matches[0]])
+                for issue in record['issues']:
+                    old_issues[issue if re.fullmatch(r'[A-Z][A-Z0-9_]{0,80}', issue) else 'OTHER_ISSUE'] += 1
+                record.update(uid=uid_match[1].decode(), folder=client.cfg['drafts_folder'], internal_test=False)
+                old_records.append(record)
+        all_leads = [lead for group in by_id.values() for lead in group]
+        fast, skipped = select_candidates(owner, old_records, all_leads)
+        counts.update(old_checked=old_checked, remaining_fast_candidates=len(fast))
+        counts['remaining_issue_counts'] = dict(old_issues)
+        counts['remaining_fast_skip_reasons'] = dict(skipped)
         return dict(counts, total_observed=len(total), current_revision_observed=len(current),
                     revision=REPARATUR_COPY_REV, checked_at=datetime.now(timezone.utc).isoformat(),
                     verification='BODY_AND_CRM_SAMPLE_ONLY', full_inventory_stability='NOT_CLAIMED')

@@ -109,7 +109,9 @@ def assess_message(raw, owner, leads):
     template_id = str(msg.get('X-HSB-Template-ID') or '').strip()
     is_v2 = template_id.startswith('v2-')
     is_repair = '-reparatur-' in template_id
-    from canonical_template_factory import REPAIR_URL, REPARATUR_COPY_REV
+    from canonical_template_factory import LEGAL_LINKS, REPAIR_URL, REPARATUR_COPY_REV
+    # Impressum und Datenschutz gehören zur Fußzeile und zählen nicht als Inhalts-Link.
+    content_links = [u for u in links if u not in LEGAL_LINKS]
     current_repair_s1 = (is_repair and template_id.endswith('-s1')
                          and str(msg.get('X-HSB-Copy-Rev') or '').strip() == REPARATUR_COPY_REV)
     if is_repair and template_id.endswith('-s1') and not current_repair_s1:
@@ -163,14 +165,14 @@ def assess_message(raw, owner, leads):
                     parts.path.rstrip('/') == '/flyer' or re.fullmatch(r'/r/[A-Za-z0-9_\-.~]+', parts.path))
             if current_repair_s1:
                 # Genau der lesbare Reparatur-Link, kein Klick-Token im Sichttext.
-                if links != [REPAIR_URL]:
+                if content_links != [REPAIR_URL]:
                     issues.append('V2_LINK_INVALID')
-            elif is_repair and links == [REPAIR_URL]:
+            elif is_repair and content_links == [REPAIR_URL]:
                 # Ältere Fassung mit demselben gültigen Link: nur OUTDATED_REPAIR_COPY, kein Linkfehler.
                 pass
-            elif len(links) > 1 or not all(_v2_link_ok(u) for u in links):
+            elif len(content_links) > 1 or not all(_v2_link_ok(u) for u in content_links):
                 issues.append('V2_LINK_INVALID')
-        elif links:
+        elif content_links:
             issues.append('V2_LINK_INVALID')
         if not re.search(r'Abmelden', body):
             issues.append('V2_OPTOUT_LINE_MISSING')

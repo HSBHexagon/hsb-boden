@@ -13,7 +13,6 @@ from email.parser import BytesParser
 from email.utils import formatdate
 import hashlib
 import imaplib
-from urllib.parse import quote
 import re
 import json
 import os
@@ -408,8 +407,8 @@ def add_list_unsubscribe(msg, owner, lead_id):
     ursprünglichen Lead zu, auch wenn ein anderes Postfach der Firma antwortet."""
     for name in ('List-Unsubscribe','List-Unsubscribe-Post'):
         del msg[name]
-    body=quote(f'HSB-ABMELDUNG: {lead_id}')
-    msg['List-Unsubscribe']=f'<mailto:{SENDER_BY_OWNER[owner]}?subject=Abmelden&body={body}>'
+    from canonical_template_factory import optout_mailto
+    msg['List-Unsubscribe']=f'<{optout_mailto(SENDER_BY_OWNER[owner],lead_id)}>'
     return msg
 
 

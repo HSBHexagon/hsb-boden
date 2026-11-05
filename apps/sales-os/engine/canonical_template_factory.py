@@ -1,6 +1,7 @@
 import html as _html
 import os
 import re
+from urllib.parse import quote
 from pathlib import Path
 from typing import Dict, Any, Literal, Optional
 
@@ -230,7 +231,7 @@ _BODIES_V2 = {
 # Reparatur-Ersteinschätzung, kein Anhang. COPY_REV markiert diese Fassung im Entwurf,
 # damit ältere Reparatur-Entwürfe als veraltet erkannt und ersetzt werden.
 REPAIR_URL = "https://www.hsb-boden.de/reparatur/"
-REPARATUR_COPY_REV = "2026-11-05"
+REPARATUR_COPY_REV = "2026-11-05b"
 
 _SUBJECTS_REPARATUR = {
     "architekten": "Industrieböden im Bestand – Einschätzung vor der Ausschreibung",
@@ -355,6 +356,15 @@ _PFLICHTANGABEN_V2 = (
 
 
 _HTML_FONT = "font-family:Arial,Helvetica,sans-serif;"
+IMPRESSUM_URL = "https://www.hsb-boden.de/impressum/"
+DATENSCHUTZ_URL = "https://www.hsb-boden.de/datenschutz/"
+LEGAL_LINKS = frozenset({IMPRESSUM_URL, DATENSCHUTZ_URL})
+
+
+def optout_mailto(mailbox: str, lead_id: str) -> str:
+    """Abmelde-Antwort: Betreff erkennt der Eingangs-Klassifikator, das Token ordnet sie dem Lead zu,
+    auch wenn ein Kollege aus derselben Firma antwortet. Gemeinsam für Mail-Link und List-Unsubscribe."""
+    return f"mailto:{mailbox}?subject=Abmelden&body={quote(f'HSB-ABMELDUNG: {lead_id}')}"
 
 
 def _html_paragraph(text: str) -> str:
@@ -374,7 +384,7 @@ def _html_paragraph(text: str) -> str:
     return '<p style="margin:0 0 14px 0;">' + "<br>\n".join(out) + "</p>"
 
 
-def _html_v2(greeting: str, body: str, meta: Dict[str, str], mailbox: str, phone_label: str) -> str:
+def _html_v2(greeting: str, body: str, meta: Dict[str, str], mailbox: str, phone_label: str, lead_id: str) -> str:
     """HTML-Teil mit der kanonischen HSB-Signatur (Logo 102x75, Pflichtangaben klein und grau).
 
     Der Textteil bleibt die gleichlautende reine Fassung; das Logo ist das einzige Bild, kein Anhang.
@@ -398,11 +408,18 @@ def _html_v2(greeting: str, body: str, meta: Dict[str, str], mailbox: str, phone
         f'<a href="mailto:{mailbox}" style="color:#1d4ed8;text-decoration:none;">{mailbox}</a>'
         f'</td></tr></table>'
     )
+    # Abmelden öffnet eine Antwort ans eigene Postfach: kein weiterer Web-Link, sichtbarer Wortlaut wie im Textteil.
+    optout = _html.escape(OPTOUT_LINE_V2).replace(
+        "‚Abmelden‘", f'<a href="{_html.escape(optout_mailto(mailbox, lead_id), quote=True)}" style="color:#4b5563;text-decoration:underline;">‚Abmelden‘</a>')
+    legal_link = '<a href="{}" style="color:#6b7280;text-decoration:underline;">{}</a>'
+    # Die letzte Zeile nennt im Textteil beide Adressen; im HTML sind es zwei echte Links.
+    legal_lines = [_html.escape(l) for l in _PFLICHTANGABEN_V2.split("\n")[:-1]]
+    legal_lines.append(f'{legal_link.format(IMPRESSUM_URL, "Impressum")} · {legal_link.format(DATENSCHUTZ_URL, "Datenschutz")}')
     footer = (
-        f'<p style="margin:22px 0 0 0;{_HTML_FONT}font-size:12px;color:#4b5563;">{_html.escape(OPTOUT_LINE_V2)}</p>'
+        f'<p style="margin:22px 0 0 0;{_HTML_FONT}font-size:12px;color:#4b5563;">{optout}</p>'
         f'<p style="margin:10px 0 0 0;padding-top:10px;border-top:1px solid #e5e7eb;{_HTML_FONT}'
         f'font-size:11px;line-height:1.45;color:#6b7280;">'
-        + "<br>".join(_html.escape(l) for l in _PFLICHTANGABEN_V2.split("\n"))
+        + "<br>".join(legal_lines)
         + "</p>"
     )
     return ('<!DOCTYPE html>\n<html><head><meta charset="utf-8"></head>\n'
@@ -504,7 +521,7 @@ def render_email_v2(
         f"{anrede_v2(lead)}\n\n{body}\n\n{signature}\n\n{OPTOUT_LINE_V2}\n\n{_PFLICHTANGABEN_V2}\n"
     )
 
-    body_html = _html_v2(anrede_v2(lead), body, meta, _SENDER_COM[norm_owner], phone_label)
+    body_html = _html_v2(anrede_v2(lead), body, meta, _SENDER_COM[norm_owner], phone_label, lead_id)
 
     if step == 1:
         subject = _subject_v2(segment, firma_kurz, variant=variant)

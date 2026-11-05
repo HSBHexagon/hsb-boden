@@ -32,7 +32,7 @@ for line in sys.stdin:
     except ValueError: continue
     if isinstance(d,dict):
         d.pop("selected_lead_ids",None); print(json.dumps(d,ensure_ascii=False,default=str))'; }
-run() { echo "== $*" | tee -a "$LOG"; python3 -u "$@" >>"$LOG" 2>&1 || { echo "FEHLER in: $* (Details: $LOG)"; tail -5 "$LOG" | grep -iv "@" ; exit 1; }; tail -1 "$LOG" | counts; }
+run() { echo "== $*" | tee -a "$LOG"; python3 -u "$@" >>"$LOG" 2>&1 || { echo "FEHLER in: $* (Details: $LOG)"; { tail -5 "$LOG" | grep -ivE '@|HSB-' || true; }; exit 1; }; tail -1 "$LOG" | counts; }
 audit() { run sales_reconciliation.py --output "$1"; python3 -c 'import json,sys; print(json.dumps(json.load(open(sys.argv[1])),ensure_ascii=False,default=str))' "$1/summary.json"; }
 
 START_TS=$(date +%s); BUDGET_MIN="${HSB_RUN_BUDGET_MIN:-0}"; MORE=no; RENEWED=0
@@ -44,9 +44,13 @@ fi
 audit "$BASE/audit-1"
 run hsb_cli.py dedupe-drafts --audit-dir "$BASE/audit-1" $APPLY
 audit "$BASE/audit-2"
-# Nur die Gestaltung veraltet: in place mit gleicher Message-ID, ohne CRM-Schreiben, beide Postfächer parallel.
+run hsb_cli.py verify-audit --audit-dir "$BASE/audit-2" --allow-not-ready
+# Nur die Gestaltung veraltet oder Tiefenmangel: in place mit gleicher Message-ID, beide Postfächer parallel.
 run hsb_cli.py refresh-signature --audit-dir "$BASE/audit-2" $APPLY
-[[ -n "$APPLY" ]] && audit "$BASE/audit-2"
+if [[ -n "$APPLY" ]]; then
+  audit "$BASE/audit-2"
+  run hsb_cli.py verify-audit --audit-dir "$BASE/audit-2" --allow-not-ready
+fi
 for OWNER in JOEL JORDI; do
   if [[ -z "$APPLY" ]]; then
     run hsb_cli.py upgrade-drafts --owner "$OWNER" --variant reparatur --cohort all --limit 100 --audit-dir "$BASE/audit-2"
@@ -65,7 +69,15 @@ for OWNER in JOEL JORDI; do
     echo "[$OWNER] Tranche $i: $DONE erneuert" | tee -a "$LOG"
   done
 done
+if [[ "$MORE" != "yes" ]]; then
+  run hsb_cli.py fill-missing-drafts --audit-dir "$BASE/audit-2" $APPLY
+  if [[ -n "$APPLY" ]]; then
+    FILLED=$(tail -1 "$LOG" | python3 -c 'import json,sys; d=json.loads(sys.stdin.read()); print(sum(v.get("created",0)+v.get("recovered",0) for v in d.get("per_owner",{}).values()))')
+    RENEWED=$((RENEWED + FILLED))
+  fi
+fi
 audit "$BASE/audit-3"
+run hsb_cli.py verify-audit --audit-dir "$BASE/audit-3" --allow-not-ready
 echo "Fertig. Erneuert: $RENEWED. Protokoll und Audits: $BASE  (Kundenversand: 0)" | tee -a "$LOG"
 # Für die Lauf-Kette: nur bei erschöpftem Zeitbudget und echtem Fortschritt folgt ein weiterer Lauf.
 if [[ -n "${GITHUB_OUTPUT:-}" ]]; then

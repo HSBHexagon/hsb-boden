@@ -508,6 +508,41 @@ def cmd_sequence_preview(args):
     print(json.dumps({'due_by_step':counts,'customer_emails_sent':0}))
 
 
+def _load_deep_defects(audit: Path) -> frozenset[str]:
+    path = audit / 'deep_defects.json'
+    return frozenset(json.loads(path.read_text(encoding='utf-8'))) if path.is_file() else frozenset()
+
+
+def cmd_verify_audit(args):
+    """Tiefenprüfung eines vorhandenen Audits; schreibt deep_defects.json und druckt nur Zählungen."""
+    import draft_verify as dv
+    try:
+        result = dv.verify_audit_dir(Path(args.audit_dir))
+    except dv.IncompleteSnapshot as exc:
+        print(json.dumps({'verdict': 'INCOMPLETE', 'reason': str(exc), 'customer_emails_sent': 0}))
+        sys.exit(dv.EXIT_INCOMPLETE)
+    print(json.dumps(result, ensure_ascii=False, sort_keys=True))
+    if result['verdict'] != 'PERFECT' and not args.allow_not_ready:
+        sys.exit(dv.EXIT_NOT_READY)
+
+
+def cmd_fill_missing_drafts(args):
+    """Fehlende Reparatur-Entwürfe für sendefähige NO_DRAFT-Leads eines Audits anlegen und im CRM binden."""
+    from new_drafts import fill_missing_drafts
+    from hsb_config import CANONICAL_SPREADSHEET_ID
+    audit = Path(args.audit_dir)
+    if args.apply and time.time()-(audit/'drafts.json').stat().st_mtime > 86400:
+        raise RuntimeError('AUDIT_SNAPSHOT_STALE')
+    drafts = json.loads((audit/'drafts.json').read_text())
+    balances = json.loads((audit/'leads.json').read_text())
+    original = json.loads((audit/'crm-original.json').read_text())['valueRanges'][0]['values']
+    leads = [dict(zip(original[0], r), _row=i) for i, r in enumerate(original[1:], 2)]
+    owners = [args.owner] if args.owner else ['JOEL', 'JORDI']
+    print(json.dumps(fill_missing_drafts(owners, balances, drafts, leads, apply=args.apply,
+        svc=get_sheets_service() if args.apply else None, spreadsheet_id=CANONICAL_SPREADSHEET_ID,
+        headers=original[0]), ensure_ascii=False, default=dict))
+
+
 def cmd_upgrade_drafts(args):
     """Verwendet einen vorhandenen Audit-Snapshot; Apply liest das CRM zusätzlich live zurück."""
     from draft_upgrade import upgrade_drafts
@@ -522,7 +557,8 @@ def cmd_upgrade_drafts(args):
     result = upgrade_drafts(args.owner,args.limit,args.cohort,args.apply,
         journal_path=Path(args.journal),variant=getattr(args,'variant','standard'),records=records,leads=leads,
         client=ComMailboxClient(args.owner) if args.apply else None,
-        svc=get_sheets_service() if args.apply else None)
+        svc=get_sheets_service() if args.apply else None,
+        deep_defects=_load_deep_defects(audit))
     print(json.dumps(result,ensure_ascii=False,default=dict))
 
 
@@ -539,7 +575,7 @@ def cmd_refresh_signature(args):
     from hsb_config import CANONICAL_SPREADSHEET_ID
     print(json.dumps(refresh_signatures(owners, records, leads, apply=args.apply,
         svc=get_sheets_service() if args.apply else None, spreadsheet_id=CANONICAL_SPREADSHEET_ID,
-        headers=original[0]), ensure_ascii=False, default=dict))
+        headers=original[0], deep_defects=_load_deep_defects(audit)), ensure_ascii=False, default=dict))
 
 
 def cmd_dedupe_drafts(args):
@@ -681,6 +717,15 @@ def main():
     p_refresh.add_argument("--audit-dir", required=True)
     p_refresh.add_argument("--apply", action="store_true")
 
+    p_verify = subparsers.add_parser("verify-audit", help="Tiefenprüfung eines Audits gegen frisches Rendering")
+    p_verify.add_argument("--audit-dir", required=True)
+    p_verify.add_argument("--allow-not-ready", action="store_true")
+
+    p_fill = subparsers.add_parser("fill-missing-drafts", help="Fehlende Reparatur-Entwürfe aus einem Audit anlegen und im CRM binden")
+    p_fill.add_argument("--owner", choices=["JOEL","JORDI"])
+    p_fill.add_argument("--audit-dir", required=True)
+    p_fill.add_argument("--apply", action="store_true")
+
     p_upgrade = subparsers.add_parser("upgrade-drafts", help="Entwürfe anhand eines Audits erneuern; Standard Dry-Run")
     p_upgrade.add_argument("--owner", choices=["JOEL","JORDI"], required=True)
     p_upgrade.add_argument("--limit", type=int, default=5)
@@ -693,6 +738,10 @@ def main():
 
     if args.command == "sequence-preview":
         cmd_sequence_preview(args)
+    elif args.command == "verify-audit":
+        cmd_verify_audit(args)
+    elif args.command == "fill-missing-drafts":
+        cmd_fill_missing_drafts(args)
     elif args.command == "upgrade-drafts":
         cmd_upgrade_drafts(args)
     elif args.command == "refresh-signature":

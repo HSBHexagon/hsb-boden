@@ -175,3 +175,263 @@ def _create(owner, limit, apply, leads, client, secret, mx_check):
         result['created'] = sum(1 for r in results if r.get('ok'))
         result['failed'] = sum(1 for r in results if not r.get('ok'))
     return result
+
+
+def write_crm_draft_bindings(svc, spreadsheet_id, headers, updates, chunk=100):
+    """Schreibt Draft_ID, Email_Template_ID (und optional Drafted_At) blockweise mit Zeilenidentität und Readback.
+    chunk=100 hält die batchGet-URL sicher unter Googles 16-KB-GFE-Limit.
+    updates: [(row, lead_id, draft_id, template_id, drafted_at)]."""
+    if not updates:
+        return 0
+    from signature_refresh import _col_letter
+    col_draft = _col_letter(headers.index('Draft_ID'))
+    col_tmpl = _col_letter(headers.index('Email_Template_ID'))
+    col_at = _col_letter(headers.index('Drafted_At')) if 'Drafted_At' in headers else None
+    api = svc.spreadsheets().values()
+
+    def read_check(rows):
+        ranges = ([f'ALL_LEADS!A{r}' for r in rows]
+                  + [f'ALL_LEADS!{col_draft}{r}' for r in rows]
+                  + [f'ALL_LEADS!{col_tmpl}{r}' for r in rows])
+        got = api.batchGet(spreadsheetId=spreadsheet_id, ranges=ranges).execute().get('valueRanges', [])
+        vals = [((g.get('values') or [['']])[0] or [''])[0] for g in got]
+        n = len(rows)
+        return vals[:n], vals[n:2 * n], vals[2 * n:3 * n]
+
+    written = 0
+    for i in range(0, len(updates), chunk):
+        part = updates[i:i + chunk]
+        rows = [r for r, *_ in part]
+        ids, _, _ = read_check(rows)
+        if ids != [lid for _, lid, *_ in part]:
+            raise RuntimeError('CRM_ROW_IDENTITY_CHANGED')
+        data = []
+        for r, _, mid, tmpl, stamped in part:
+            data.append({'range': f'ALL_LEADS!{col_draft}{r}', 'values': [[mid]]})
+            data.append({'range': f'ALL_LEADS!{col_tmpl}{r}', 'values': [[tmpl]]})
+            if col_at:
+                data.append({'range': f'ALL_LEADS!{col_at}{r}', 'values': [[stamped]]})
+        api.batchUpdate(spreadsheetId=spreadsheet_id, body={'valueInputOption': 'RAW', 'data': data}).execute()
+        ids, drafts_back, tmpls_back = read_check(rows)
+        if (ids != [lid for _, lid, *_ in part]
+                or drafts_back != [mid for _, _, mid, *_ in part]
+                or tmpls_back != [tmpl for _, _, _, tmpl, _ in part]):
+            raise RuntimeError('CRM_READBACK_MISMATCH')
+        written += len(part)
+    return written
+
+
+def _recover_unlinked_v2_draft(imap, folder, lead, owner, target_template, assess_message, deep_check):
+    """Findet einen bereits im Postfach liegenden gültigen Reparatur-Erstkontakt dieses Leads ohne neuen APPEND."""
+    from draft_upgrade import _raw, _select
+    from email import policy
+    from email.parser import BytesParser
+    _select(imap, folder, readonly=True)
+    typ, data = imap.uid('SEARCH', None, 'HEADER', 'X-HSB-Lead-ID', f'"{lead["Lead-ID"]}"')
+    if typ != 'OK' or not data or not data[0]:
+        return None
+    uids = [u.decode() for u in data[0].split()]
+    if len(uids) != 1:
+        return None
+    raw = _raw(imap, uids[0])
+    msg = BytesParser(policy=policy.default).parsebytes(raw)
+    mid = str(msg.get('Message-ID') or '').strip()
+    if not mid:
+        return None
+    if set(assess_message(raw, owner, [lead])['issues']) - {'COMPANY_UNVERIFIED'}:
+        return None
+    if deep_check(raw, dict(lead, Draft_ID=mid, Email_Template_ID=target_template), owner):
+        return None
+    return mid
+
+
+def fill_missing_drafts(owners, balances, drafts, leads, apply=False, *, make_client=None, lock_client=None,
+                        assess_message=None, svc=None, spreadsheet_id=None, headers=None, connections=3):
+    """Erzeugt Reparatur-Erstkontakte für alle sendefähigen Leads ohne Entwurf (balances mit Grund ['NO_DRAFT'])
+    und bindet Draft_ID sowie Email_Template_ID im CRM. Versendet niemals."""
+    from collections import Counter
+    from concurrent.futures import ThreadPoolExecutor
+    from datetime import datetime, timezone
+    from email.utils import make_msgid
+    import imaplib
+    import threading
+    import time
+    from draft_upgrade import _find, _raw, _select
+    import draft_verify as dv
+    from sales_reconciliation import queue_block_reasons
+    from signature_refresh import _crlf
+
+    if assess_message is None:
+        from sales_reconciliation import assess_message
+    if make_client is None:
+        from com_mailbox_manager import ComMailboxClient
+        make_client = ComMailboxClient
+
+    byid = {}
+    for row in leads:
+        byid.setdefault(str(row.get('Lead-ID') or ''), []).append(row)
+    draft_lids = {str(d.get('lead_id') or '') for d in drafts}
+    draft_emails = {str(a).strip().lower() for d in drafts for a in (d.get('recipients') or [])}
+
+    plan = {}
+    result = {'dry_run': not apply, 'customer_emails_sent': 0, 'crm_writes': 0, 'per_owner': {}}
+    for raw_owner in owners:
+        owner = normalize_owner(raw_owner)
+        skipped = Counter()
+        chosen = []
+        for bal in balances:
+            if normalize_owner(bal.get('owner')) != owner or bal.get('reasons') != ['NO_DRAFT']:
+                continue
+            lid = str(bal.get('lead_id') or '').strip()
+            matches = byid.get(lid, [])
+            if len(matches) != 1:
+                skipped['AMBIGUOUS_LEAD'] += 1
+                continue
+            lead = dict(matches[0])
+            email = str(lead.get('E-Mail') or '').strip().lower()
+            if lid in draft_lids or email in draft_emails:
+                skipped['ALREADY_IN_AUDIT_DRAFTS'] += 1
+                continue
+            if normalize_owner(lead.get('Verantwortlicher')) != owner or queue_block_reasons(lead):
+                skipped['INELIGIBLE'] += 1
+                continue
+            if segment_for(lead) == 'architekten' and not lead_quality.planner_outreach_allowed(lead):
+                skipped['PLANNING_PROJECT_UNVERIFIED'] += 1
+                continue
+            chosen.append(lead)
+        plan[owner] = chosen
+        result['per_owner'][owner] = {'selected': len(chosen), 'created': 0, 'recovered': 0, 'skipped': dict(skipped)}
+
+    if not apply or not any(plan.values()):
+        return result
+    if svc is None or spreadsheet_id is None or not headers:
+        raise ValueError('CRM_SERVICE_REQUIRED_FOR_DRAFT_BINDING')
+    if 'Draft_ID' not in headers or 'Email_Template_ID' not in headers:
+        raise ValueError('CRM_DRAFT_COLUMNS_MISSING')
+    if any(not l.get('_row') for chosen in plan.values() for l in chosen):
+        raise ValueError('CRM_ROW_MISSING')
+
+    from outbound_safety import mailbox_dispatch_lock
+    if lock_client is None:
+        lock_client = make_client('JOEL')
+
+    done_updates = []
+    lock = threading.Lock()
+    with mailbox_dispatch_lock(lock_client, release_on_error=True):
+        live_rows = svc.spreadsheets().values().get(
+            spreadsheetId=spreadsheet_id, range='ALL_LEADS!A1:BU6425').execute().get('values', [])
+        if not live_rows:
+            raise RuntimeError('CRM_LIVE_EMPTY')
+        live_headers = live_rows[0]
+
+        work = {}
+        for owner, chosen in plan.items():
+            if not chosen:
+                continue
+            stats = Counter(result['per_owner'][owner]['skipped'])
+            live_checked = []
+            for lead in chosen:
+                row_idx = lead['_row']
+                raw_row = live_rows[row_idx - 1] if 1 < row_idx <= len(live_rows) else []
+                live_lead = dict(zip(live_headers, raw_row), _row=row_idx)
+                if str(live_lead.get('Lead-ID') or '') != str(lead['Lead-ID']):
+                    raise RuntimeError('CRM_ROW_IDENTITY_CHANGED')
+                if (normalize_owner(live_lead.get('Verantwortlicher')) != owner
+                        or str(live_lead.get('E-Mail') or '').strip().lower() != str(lead.get('E-Mail') or '').strip().lower()
+                        or queue_block_reasons(live_lead)):
+                    stats['LIVE_BLOCKED'] += 1
+                    continue
+                live_checked.append(live_lead)
+
+            client0 = make_client(owner)
+            folder = client0.cfg['drafts_folder']
+            with client0._get_imap() as imap:
+                validity = _select(imap, folder, readonly=True)
+                existing_ids = existing_v2_lead_ids(imap, folder)
+                existing_rcpts = existing_draft_recipients(imap, folder)
+                to_append = []
+                for lead in live_checked:
+                    lid = str(lead['Lead-ID']).strip()
+                    email = str(lead['E-Mail']).strip().lower()
+                    target_tmpl = f"v2-{segment_for(lead)}-reparatur-s1"
+                    if lid in existing_ids or email in existing_rcpts:
+                        recovered_mid = _recover_unlinked_v2_draft(
+                            imap, folder, lead, owner, target_tmpl, assess_message, dv.deep_check)
+                        if recovered_mid:
+                            result['per_owner'][owner]['recovered'] += 1
+                            done_updates.append((lead['_row'], lid, recovered_mid, target_tmpl,
+                                                 datetime.now(timezone.utc).isoformat()))
+                        else:
+                            stats['ALREADY_HAS_DRAFT'] += 1
+                    else:
+                        to_append.append(lead)
+            result['per_owner'][owner]['skipped'] = dict(stats)
+            if to_append:
+                work[owner] = (folder, validity, to_append)
+
+        def append_batch(owner, folder, validity, batch):
+            client = make_client(owner)
+            imap = None
+            try:
+                for lead in batch:
+                    lid = str(lead['Lead-ID']).strip()
+                    mail = render_email_v2(lead, owner, step=1, variant='reparatur')
+                    mid = make_msgid(domain='hsb-boden.com')
+                    raw, _ = client.build_draft_message(
+                        mail['to_email'], mail['subject'], body_text=mail['body_text'],
+                        body_html=mail['body_html'], template_id=mail['template_id'],
+                        lead_id=lid, custom_message_id=mid, copy_rev=mail['copy_rev'])
+                    raw = _crlf(raw)
+                    if set(assess_message(raw, owner, [lead])['issues']) - {'COMPANY_UNVERIFIED'}:
+                        raise RuntimeError('NEW_DRAFT_REVALIDATION_FAILED')
+                    if dv.deep_check(raw, dict(lead, Draft_ID=mid, Email_Template_ID=mail['template_id']), owner):
+                        raise RuntimeError('NEW_DRAFT_DEEP_CHECK_FAILED')
+                    for attempt in range(3):
+                        try:
+                            if imap is None:
+                                imap = client._get_imap()
+                                _select(imap, folder, validity, readonly=False)
+                            break
+                        except (imaplib.IMAP4.abort, OSError):
+                            imap = None
+                            if attempt == 2:
+                                raise
+                    try:
+                        typ, _ = imap.append(folder, r'(\Draft)', imaplib.Time2Internaldate(time.time()), raw)
+                    except (imaplib.IMAP4.abort, OSError) as exc:
+                        raise RuntimeError('UNCERTAIN_APPEND_REQUIRES_RECONCILIATION') from exc
+                    if typ != 'OK':
+                        raise RuntimeError('NEW_DRAFT_APPEND_FAILED')
+                    found = [m.decode() for m in _find(imap, mid)]
+                    if len(found) != 1 or _raw(imap, found[0]) != raw:
+                        raise RuntimeError('NEW_DRAFT_READBACK_MISMATCH')
+                    with lock:
+                        result['per_owner'][owner]['created'] += 1
+                        done_updates.append((lead['_row'], lid, mid, mail['template_id'],
+                                             datetime.now(timezone.utc).isoformat()))
+            finally:
+                if imap is not None:
+                    try:
+                        imap.logout()
+                    except (imaplib.IMAP4.error, OSError):
+                        pass
+
+        errors = []
+        if work:
+            n_conn = max(1, connections)
+            jobs = []
+            with ThreadPoolExecutor(max_workers=n_conn * len(work)) as pool:
+                for owner, (folder, validity, items) in work.items():
+                    for i in range(n_conn):
+                        part = items[i::n_conn]
+                        if part:
+                            jobs.append(pool.submit(append_batch, owner, folder, validity, part))
+                errors = [j.exception() for j in jobs if j.exception()]
+
+        # Auch nach einem Fehler: jeden bereits per APPEND bestätigten Entwurf im CRM binden.
+        if done_updates:
+            done_updates.sort(key=lambda u: u[0])
+            result['crm_writes'] = write_crm_draft_bindings(svc, spreadsheet_id, live_headers, done_updates)
+        if errors:
+            raise RuntimeError(f'FILL_MISSING_DRAFTS_FAILED: {errors[0]}')
+    return result

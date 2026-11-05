@@ -95,3 +95,10 @@ def test_cron_cannot_replace_a_waiting_prepare_run():
     # Je Gruppe wartet nur ein Job; ein stündlicher Cron würde den wartenden Folgelauf abbrechen.
     assert "needs.runtime-gate.outputs.busy != 'yes'" in WORKFLOW
     assert '--event workflow_dispatch' in WORKFLOW
+
+
+def test_postfach_lauf_runs_verifier_and_fills_missing_drafts(tmp_path):
+    out, _ = lauf(tmp_path, {'JOEL': {'selected': 0}, 'JORDI': {'selected': 0}})
+    assert out.index('verify-audit --audit-dir') < out.index('refresh-signature --audit-dir')
+    assert out.index('upgrade-drafts --owner JORDI') < out.index('fill-missing-drafts --audit-dir')
+    assert out.index('fill-missing-drafts --audit-dir') < out.rindex('verify-audit --audit-dir')

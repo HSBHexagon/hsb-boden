@@ -479,3 +479,95 @@ def test_owner_decision_upgrades_planner_without_project(tmp_path, monkeypatch):
     result = upgrade_drafts('JOEL', apply=True, variant='reparatur', **kwargs)
     assert result['crm_updated'] == 1 and 'PLANNING_PROJECT_UNVERIFIED' not in result['skipped_reasons']
     assert writes[-1]['Email_Template_ID'].startswith('v2-architekten-reparatur-')
+
+
+def test_outdated_planner_copy_with_divergent_crm_binding_is_upgraded(tmp_path, monkeypatch):
+    kwargs, boxes, calls, writes, _ = setup_case(tmp_path, monkeypatch)
+    lead = kwargs['leads'][0]
+    lead.update({'Branche': 'Architekturbüro', 'Projektart': 'Wohnbau',
+                 'Email_Template_ID': 'v2-architekten-reparatur-s1',
+                 'Draft_ID': '<anderer-entwurf@hsb-boden.com>'})
+    msg = EmailMessage()
+    msg['From'] = 'j-cherino@hsb-boden.com'
+    msg['To'] = lead['E-Mail']
+    msg['Subject'] = 'Industrieböden im Bestand'
+    msg['Message-ID'] = '<alt-im-postfach@hsb-boden.com>'
+    msg['X-HSB-Template-ID'] = 'v2-architekten-reparatur-s1'
+    msg['X-HSB-Lead-ID'] = lead['Lead-ID']
+    msg.set_content('Nicht jeder Bestandsboden muss komplett neu verlegt werden.\nAbmelden')
+    old = msg.as_bytes()
+    boxes['Drafts']['1'] = old
+    kwargs['records'][0].update(assess_message(old, 'JOEL', [lead]))
+    kwargs['leads'] = [dict(lead)]
+    result = upgrade_drafts('JOEL', apply=True, cohort='all', variant='reparatur', **kwargs)
+    assert result['appended'] == result['archived'] == result['crm_updated'] == 1
+    assert writes[-1]['Draft_ID'] != '<anderer-entwurf@hsb-boden.com>'
+
+
+def test_deep_defect_with_divergent_crm_binding_is_upgraded(tmp_path, monkeypatch):
+    kwargs, boxes, calls, writes, old = setup_case(tmp_path, monkeypatch)
+    lead = kwargs['leads'][0]
+    lead.update({'Email_Template_ID': 'v2-produktion-reparatur-s1', 'Draft_ID': '<fremd@hsb-boden.com>'})
+    rec = kwargs['records'][0]
+    rec['issues'] = []
+    key = f"{rec['owner']}|{rec['uidvalidity']}|{rec['uid']}|{rec['sha256']}"
+    result = upgrade_drafts('JOEL', apply=True, cohort='all', variant='reparatur',
+                            deep_defects=frozenset({key}), **kwargs)
+    assert result['appended'] == result['archived'] == result['crm_updated'] == 1
+
+
+def _resaved_outlook_raw(lead, body_override=None):
+    from canonical_template_factory import render_email_v2
+    rendered = render_email_v2(lead, 'JOEL', step=1, variant='reparatur')
+    msg = EmailMessage()
+    msg['From'] = 'Joel Cherino Diaz <j-cherino@hsb-boden.com>'
+    msg['To'] = lead['E-Mail']
+    msg['Subject'] = rendered['subject']
+    msg['Message-ID'] = '<outlook-resaved@hsb-boden.com>'
+    html_body = body_override if body_override is not None else rendered['body_html']
+    msg.set_content(rendered['body_text'])
+    msg.add_alternative(html_body, subtype='html')
+    return msg.as_bytes()
+
+
+def test_resaved_same_text_is_rebuilt(tmp_path, monkeypatch):
+    kwargs, boxes, calls, writes, _ = setup_case(tmp_path, monkeypatch)
+    lead = kwargs['leads'][0]
+    lead.update({'Email_Template_ID': 'v2-produktion-reparatur-s1', 'Draft_ID': '<vor-outlook@hsb-boden.com>'})
+    old = _resaved_outlook_raw(lead)
+    boxes['Drafts']['1'] = old
+    kwargs['records'][0].update({'sha256': hashlib.sha256(old).hexdigest(), 'issues': ['LEAD_ID_INFERRED_ONLY'],
+                                 'message_id': '<outlook-resaved@hsb-boden.com>'})
+    result = upgrade_drafts('JOEL', apply=True, cohort='all', variant='reparatur', **kwargs)
+    assert result['appended'] == result['archived'] == result['crm_updated'] == 1
+    new_msg = BytesParser(policy=policy.default).parsebytes(boxes['Drafts']['2'])
+    assert new_msg['X-HSB-Lead-ID'] == lead['Lead-ID']
+    assert writes[-1]['Draft_ID'] == new_msg['Message-ID']
+
+
+def test_resaved_with_changed_text_is_held(tmp_path, monkeypatch):
+    from canonical_template_factory import render_email_v2
+    kwargs, boxes, calls, writes, _ = setup_case(tmp_path, monkeypatch)
+    lead = kwargs['leads'][0]
+    lead.update({'Email_Template_ID': 'v2-produktion-reparatur-s1', 'Draft_ID': '<vor-outlook@hsb-boden.com>'})
+    edited_html = render_email_v2(lead, 'JOEL', step=1, variant='reparatur')['body_html'].replace(
+        'Schadstelle', 'Persönliche Notiz für Herrn Beispiel', 1)
+    old = _resaved_outlook_raw(lead, body_override=edited_html)
+    boxes['Drafts']['1'] = old
+    kwargs['records'][0].update({'sha256': hashlib.sha256(old).hexdigest(), 'issues': ['LEAD_ID_INFERRED_ONLY'],
+                                 'message_id': '<outlook-resaved@hsb-boden.com>'})
+    result = upgrade_drafts('JOEL', apply=True, cohort='all', variant='reparatur', **kwargs)
+    assert result['skipped_reasons']['HUMAN_EDITED'] == 1
+    assert result['appended'] == 0 and 'APPEND' not in calls and writes == []
+    assert boxes['Drafts'] == {'1': old}
+
+
+def test_resaved_with_two_drafts_is_skipped(tmp_path, monkeypatch):
+    kwargs, boxes, calls, writes, _ = setup_case(tmp_path, monkeypatch)
+    lead = kwargs['leads'][0]
+    old = _resaved_outlook_raw(lead)
+    boxes['Drafts']['1'] = old
+    kwargs['records'][0].update({'sha256': hashlib.sha256(old).hexdigest(), 'issues': ['LEAD_ID_INFERRED_ONLY']})
+    kwargs['records'].append(dict(kwargs['records'][0], uid='9'))
+    result = upgrade_drafts('JOEL', apply=False, cohort='all', variant='reparatur', **kwargs)
+    assert result['selected'] == 0 and result['skipped_reasons']['AMBIGUOUS_LEAD_OR_DRAFT'] == 2

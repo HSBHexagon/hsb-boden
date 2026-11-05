@@ -80,7 +80,7 @@ def assess_message(raw, owner, leads):
     body = html.unescape('\n'.join(str(b) for b in bodies))
     # Das Signatur-Logo ist ein Bild, kein Klick-Link.
     links = [u for u in dict.fromkeys(re.findall(r'https?://[^\s<>"\x27]+', body))
-             if u not in (SIGNATURE_LOGO_URL, 'https://www.hsb-boden.de')]
+             if u != SIGNATURE_LOGO_URL]
     mid = str(msg.get('Message-ID') or '').strip()
     subject = str(msg.get('Subject') or '')
     if len(recipients) != 1 or msg.get('Cc') or msg.get('Bcc'):

@@ -386,9 +386,9 @@ def _html_v2(greeting: str, body: str, meta: Dict[str, str], mailbox: str, phone
         f'<table role="presentation" cellpadding="0" cellspacing="0" border="0" '
         f'style="margin:14px 0 0 0;border-collapse:collapse;"><tr>'
         f'<td style="padding:0 14px 0 0;vertical-align:top;">'
-        f'<a href="https://www.hsb-boden.de" style="text-decoration:none;">'
+        # Logo nur als Bild, ohne Link: der Reparatur-Link bleibt der einzige Klick-Link.
         f'<img src="{LOGO_URL}" alt="HSB Hexagon Säurebau GmbH" width="102" height="75" '
-        f'style="display:block;border:0;outline:none;width:102px;height:75px;-ms-interpolation-mode:bicubic;"></a></td>'
+        f'style="display:block;border:0;outline:none;width:102px;height:75px;-ms-interpolation-mode:bicubic;"></td>'
         f'<td style="padding:0 0 0 14px;border-left:2px solid #c8102e;vertical-align:top;{_HTML_FONT}'
         f'font-size:13px;line-height:1.5;color:#1f2937;">'
         f'<strong style="font-size:14px;color:#111827;">{_html.escape(meta["sender_name"])}</strong><br>'

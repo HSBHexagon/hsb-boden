@@ -293,6 +293,8 @@ def test_v2_html_part_carries_canonical_signature_with_logo():
     assert "Registergericht: Amtsgericht Coesfeld, HRB 21481" in html_part
     assert "font-size:11px" in html_part  # Pflichtangaben klein
     assert LOGO_URL not in r["body_text"]  # Textteil bleibt reiner Text
+    import re as _re
+    assert _re.findall(r'href="(https?://[^"]+)"', html_part) == [REPAIR_URL]  # einziger Web-Link
 
 
 def test_v2_logo_is_not_counted_as_link():
@@ -311,3 +313,8 @@ def test_v2_logo_is_not_counted_as_link():
     result = assess_message(raw, "JORDI", [lead])
     assert result["issues"] == []
     assert result["links"] == ["https://www.hsb-boden.de/reparatur/"]
+
+
+def test_new_drafts_items_carry_html_signature():
+    import inspect, new_drafts
+    assert "'body_html': mail['body_html']" in inspect.getsource(new_drafts)

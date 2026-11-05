@@ -21,7 +21,7 @@ from pathlib import Path
 import re
 import sys
 
-from canonical_template_factory import LOGO_URL, REPAIR_URL, REPARATUR_COPY_REV, render_email_v2
+from canonical_template_factory import LEGAL_LINKS, LOGO_URL, REPAIR_URL, REPARATUR_COPY_REV, render_email_v2
 from hsb_core import normalize_owner
 from sales_reconciliation import SENDERS, queue_block_reasons
 
@@ -121,8 +121,8 @@ def deep_check(raw: bytes, lead: dict, owner: str) -> list[str]:
         codes.append('LOGO_MISSING')
     bodies = html.unescape('\n'.join(p for p in (plain, markup) if p))
     links = {u for u in re.findall(r'https?://[^\s<>"\x27]+', bodies) if u != LOGO_URL}
-    if links != {REPAIR_URL}:
-        codes.append('LINK_NOT_SINGLE')
+    if links != {REPAIR_URL, *LEGAL_LINKS}:
+        codes.append('LINKS_UNEXPECTED')
     if str(msg.get('X-HSB-Copy-Rev') or '').strip() != REPARATUR_COPY_REV:
         codes.append('REV_WRONG')
     if str(msg.get('X-HSB-Template-ID') or '').strip() != fresh['template_id']:

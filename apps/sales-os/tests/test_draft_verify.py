@@ -93,8 +93,8 @@ def test_missing_logo_is_flagged():
 def test_second_link_is_flagged():
     row = lead()
     html = render_email_v2(row, 'JORDI', step=1, variant='reparatur')['body_html'].replace(
-        '</body>', '<a href="https://www.hsb-boden.de/impressum/">I</a></body>')
-    assert 'LINK_NOT_SINGLE' in dv.deep_check(raw_for(row, body_html=html), row, 'JORDI')
+        '</body>', '<a href="https://www.hsb-boden.de/kontakt/">K</a></body>')
+    assert 'LINKS_UNEXPECTED' in dv.deep_check(raw_for(row, body_html=html), row, 'JORDI')
 
 
 def test_old_revision_is_flagged():

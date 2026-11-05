@@ -38,6 +38,20 @@ def test_classify_optout_widerspruch():
     res = classify_inbound_message(sender="gs@schmidt.de", subject=subj, body=body)
     assert res.category == "OPTOUT"
 
+def test_classify_optout_aw_reply_body_only_abmelden():
+    subj = "AW: Industrieböden im Bestand – Einschätzung vor der Ausschreibung"
+    body = (
+        "Abmelden\n\n"
+        "-----Original Message-----\n"
+        "Von: Joel Cherino Diaz <j-cherino@hsb-boden.com>\n"
+        "Gesendet: Donnerstag, 5. November 2026\n"
+        "Betreff: Industrieböden im Bestand\n\n"
+        "Antworten Sie kurz mit ‚Abmelden‘..."
+    )
+    res = classify_inbound_message(sender="einkauf@musterkunde.de", subject=subj, body=body)
+    assert res.category == "OPTOUT"
+    assert res.confidence >= 0.90
+
 def test_classify_hot_lead():
     subj = "Re: Industrieböden für Brauerei Weber"
     body = "Guten Tag Herr Post, das Thema passt gerade gut. Wann können Sie bei uns vorbeikommen?"

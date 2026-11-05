@@ -146,7 +146,7 @@ def test_changed_original_is_left_alone(setup):
 @pytest.mark.parametrize('change,reason', [
     ({'issues': ['OUTDATED_REPAIR_COPY', 'WRONG_OWNER']}, 'OTHER_ISSUES'),
     ({'message_id': '<anders@hsb-boden.com>'}, 'CRM_BINDING_DIFFERS'),
-    ({'template_id': 'v2-produktion-reparatur-s2'}, 'NOT_REPAIR_FIRST_CONTACT'),
+    ({'template_id': 'v2-produktion-reparatur-s2'}, 'NOT_FIRST_CONTACT'),
     ({'issues': []}, None),
 ])
 def test_only_exactly_bound_outdated_first_contacts(setup, change, reason):
@@ -193,3 +193,85 @@ def test_outdated_repair_draft_with_repair_link_has_no_link_issue(monkeypatch):
     issues = sales_reconciliation.assess_message(raw, 'JORDI', [lead])['issues']
     assert 'OUTDATED_REPAIR_COPY' in issues
     assert 'V2_LINK_INVALID' not in issues
+
+
+
+class FakeSheets:
+    """Minimal values()-API über ein Dict {(col, row): value}."""
+    def __init__(self, cells):
+        self.cells = cells
+        self.calls = []
+
+    def spreadsheets(self):
+        return self
+
+    def values(self):
+        return self
+
+    def batchGet(self, spreadsheetId, ranges):
+        self.calls.append('get')
+        out = []
+        for r in ranges:
+            ref = r.split('!')[1]
+            col = ''.join(c for c in ref if c.isalpha()); row = int(''.join(c for c in ref if c.isdigit()))
+            v = self.cells.get((col, row))
+            out.append({'values': [[v]]} if v is not None else {})
+        return type('R', (), {'execute': lambda _s: {'valueRanges': out}})()
+
+    def batchUpdate(self, spreadsheetId, body):
+        self.calls.append('update')
+        for d in body['data']:
+            ref = d['range'].split('!')[1]
+            col = ''.join(c for c in ref if c.isalpha()); row = int(''.join(c for c in ref if c.isdigit()))
+            self.cells[(col, row)] = d['values'][0][0]
+        return type('R', (), {'execute': lambda _s: {}})()
+
+
+HEADERS = ['Lead-ID'] + [f'c{i}' for i in range(30)] + ['Email_Template_ID']  # Vorlage in Spalte AF
+
+
+def test_old_planner_template_is_switched_in_place_and_crm_updated(setup):
+    store, rec = setup
+    planner = dict(LEAD, Branche='Architekturbüro', Email_Template_ID='v2-architekten-s1', _row=7)
+    rec.update(template_id='v2-architekten-s1', issues=['OUTDATED_PLANNER_COPY'])
+    sheets = FakeSheets({('A', 7): planner['Lead-ID'], ('AF', 7): 'v2-architekten-s1'})
+    result = sr.refresh_signatures(['JORDI'], [rec], [planner], apply=True,
+                                   make_client=lambda o: FakeClient(o, store),
+                                   assess_message=lambda raw, owner, leads: {'issues': []}, connections=1,
+                                   svc=sheets, spreadsheet_id='x', headers=HEADERS)
+    assert result['per_owner']['JORDI']['outcomes'] == {'REFRESHED': 1}
+    [new] = store['Drafts'].values()
+    msg = BytesParser(policy=policy.default).parsebytes(new)
+    assert msg['Message-ID'] == LEAD['Draft_ID']
+    assert msg['X-HSB-Template-ID'] == 'v2-architekten-reparatur-s1'
+    assert sheets.cells[('AF', 7)] == 'v2-architekten-reparatur-s1'
+    assert result['crm_writes'] == 1 and sheets.calls == ['get', 'update', 'get']
+
+
+def test_current_draft_with_stale_crm_template_is_crm_only(setup):
+    store, rec = setup
+    lead = dict(LEAD, Email_Template_ID='EMAIL_TEMPLATE_JORDI_PRIMARY', _row=9)
+    rec.update(issues=[])
+    chosen, _ = sr.select_candidates('JORDI', [rec], [lead])
+    assert [m for _, _, m in chosen] == [False]
+    sheets = FakeSheets({('A', 9): lead['Lead-ID'], ('AF', 9): 'EMAIL_TEMPLATE_JORDI_PRIMARY'})
+    before = dict(store['Drafts'])
+    result = sr.refresh_signatures(['JORDI'], [rec], [lead], apply=True,
+                                   make_client=lambda o: FakeClient(o, store),
+                                   assess_message=lambda raw, owner, leads: {'issues': []},
+                                   svc=sheets, spreadsheet_id='x', headers=HEADERS)
+    assert store['Drafts'] == before
+    assert sheets.cells[('AF', 9)] == 'v2-produktion-reparatur-s1' and result['crm_writes'] == 1
+
+
+def test_crm_write_stops_when_row_identity_changed():
+    sheets = FakeSheets({('A', 5): 'HSB-ANDERER', ('AF', 5): 'alt'})
+    with pytest.raises(RuntimeError, match='CRM_ROW_IDENTITY_CHANGED'):
+        sr.write_crm_templates(sheets, 'x', HEADERS, [(5, 'HSB-20261105-1', 'v2-produktion-reparatur-s1')])
+    assert sheets.cells[('AF', 5)] == 'alt'
+
+
+def test_crm_binding_by_other_draft_is_skipped(setup):
+    store, rec = setup
+    chosen, skipped = sr.select_candidates('JORDI', [rec], [dict(LEAD, Draft_ID='<andere@hsb-boden.com>')])
+    assert not chosen and skipped['CRM_BINDING_DIFFERS'] == 1

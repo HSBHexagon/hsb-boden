@@ -74,7 +74,9 @@ jobs:
       !startsWith(inputs.mode, 'prepare-drafts') && !startsWith(inputs.mode, 'send')
     needs: [tests, runtime-gate]
     concurrency:
-      group: hsb-sales-os-runtime
+      # Inventory is strictly read-only and detects snapshot drift itself.
+      # It must not wait for hours behind the writer it is diagnosing.
+      group: ${{ inputs.mode == 'inventory' && 'hsb-sales-os-inventory' || 'hsb-sales-os-runtime' }}
       cancel-in-progress: false
     runs-on: ubuntu-latest
     timeout-minutes: 20

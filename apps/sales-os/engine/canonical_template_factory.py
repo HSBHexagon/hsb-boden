@@ -76,9 +76,9 @@ def anrede_fuer_lead(lead: Dict[str, Any]) -> str:
 
 
 def render_canonical_email(lead: Dict[str, Any], owner: str = "JOEL", domain: str = "de") -> Dict[str, Any]:
-    norm_owner = owner.strip().upper() if owner else "JOEL"
+    norm_owner = owner.strip().upper() if isinstance(owner, str) else ""
     if norm_owner not in CANONICAL_FLYERS:
-        norm_owner = "JOEL"
+        raise ValueError("INVALID_OWNER")
     owner_meta = CANONICAL_FLYERS[norm_owner]
     if domain.lower() == "com":
         sender_email = "j-cherino@hsb-boden.com" if norm_owner == "JOEL" else "j-post@hsb-boden.com"
@@ -449,9 +449,9 @@ def render_email_v2(
         raise ValueError(f"Unknown variant: {variant!r}")
     if step not in (1, 2, 3):
         raise ValueError(f"step must be 1, 2 or 3, got {step!r}")
-    norm_owner = owner.strip().upper() if owner else "JOEL"
+    norm_owner = owner.strip().upper() if isinstance(owner, str) else ""
     if norm_owner not in CANONICAL_FLYERS:
-        norm_owner = "JOEL"
+        raise ValueError("INVALID_OWNER")
     meta = CANONICAL_FLYERS[norm_owner]
 
     to_addr = str(lead.get("Email") or lead.get("E-Mail") or "").strip()

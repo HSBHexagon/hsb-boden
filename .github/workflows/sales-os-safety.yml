@@ -128,8 +128,8 @@ jobs:
         with:
           python-version: '3.14'
       - run: pip install -r apps/sales-os/requirements.txt
-      - name: Read-only draft ownership and distribution inventory
-        run: python -u apps/sales-os/engine/mailbox_inventory.py --output "$RUNNER_TEMP/hsb-inventory"
+      - name: Read-only body and CRM readiness sample
+        run: python -u apps/sales-os/engine/readiness_probe.py
 
   # Entwürfe versandfertig machen: Audit, Dubletten-Archiv, Audit, Reparatur-Erneuerung, Abschluss-Audit.
   # Kein Kundenversand. Im Log stehen nur Zahlen; Rohdaten bleiben im Runner-Temp und werden nicht hochgeladen.

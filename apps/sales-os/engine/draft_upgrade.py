@@ -10,7 +10,7 @@ from collections import Counter
 from datetime import datetime, timezone
 from email import policy
 from email.parser import BytesParser
-from email.utils import make_msgid
+from email.utils import make_msgid, parseaddr
 import base64
 import hashlib
 import imaplib
@@ -74,6 +74,32 @@ def _find(imap, mid):
     if typ != 'OK':
         raise RuntimeError('MESSAGE_SEARCH_FAILED')
     return data[0].split() if data and data[0] else []
+
+
+def _existing_replacement(imap, rec, lead, owner, template, assess_message):
+    """(Message-ID, Rohdaten) eines gültigen Ersatzentwurfs dieses Leads im Entwurfsordner, sonst None.
+
+    Nur der exakte Erstkontakt (template) an genau diesen Empfänger zählt; Folgekontakte nie, mehrdeutige Treffer halten an.
+    """
+    typ, data = imap.uid('search', None, 'HEADER', 'X-HSB-Lead-ID', '"' + str(lead['Lead-ID']) + '"')
+    if typ != 'OK':
+        raise RuntimeError('MESSAGE_SEARCH_FAILED')
+    found = []
+    for uid in (data[0].split() if data and data[0] else []):
+        uid = uid.decode()
+        if uid == str(rec['uid']):
+            continue
+        raw = _raw(imap, uid)
+        msg = BytesParser(policy=policy.default).parsebytes(raw)
+        current = (str(msg.get('X-HSB-Template-ID') or '').strip() == template
+                   and parseaddr(str(msg.get('To') or ''))[1].strip().lower() == str(lead.get('E-Mail') or '').strip().lower()
+                   and str(msg.get('X-HSB-Lead-ID') or '').strip() == str(lead['Lead-ID'])
+                   and not assess_message(raw, owner, [lead])['issues'])
+        if current:
+            found.append((str(msg['Message-ID']), raw))
+    if len(found) > 1:
+        raise RuntimeError('REPLACEMENT_NOT_UNIQUE')
+    return found[0] if found else None
 
 
 def upgrade_drafts(owner, limit=5, cohort='pilot', apply=False, journal_path=None, variant='standard', *,
@@ -243,6 +269,16 @@ def upgrade_drafts(owner, limit=5, cohort='pilot', apply=False, journal_path=Non
                         if hashlib.sha256(old).hexdigest() != rec['sha256']:
                             result['skipped_reasons']['CHANGED_V1_HASH'] += 1
                             return
+                        adopted = None
+                        if row is None:
+                            # Das Journal liegt je Lauf auf dem Runner und ist beim Neustart leer: Ein schon angenommener
+                            # Ersatzentwurf wird live erkannt und übernommen, statt einen zweiten anzulegen.
+                            adopted = _existing_replacement(imap, rec, lead, owner, target_template(segment_for(lead)), assess_message)
+                        if adopted:
+                            mid, raw = adopted
+                            result['replacements_adopted'] = result.get('replacements_adopted', 0) + 1
+                            db.execute('INSERT INTO upgrades VALUES(?,?,?,?,?)', (key, mid, raw, 'PREPARED', old))
+                            row = (mid, raw, 'PREPARED', old)
                         if row is None:
                             rendered = render_email_v2(lead, owner, click_url=click_url(lead['Lead-ID'], segment_for(lead), os.environ.get('HSB_CLICK_SECRET')), variant=variant)
                             mid = make_msgid(domain='hsb-boden.com')

@@ -35,7 +35,7 @@ for line in sys.stdin:
 run() { echo "== $*" | tee -a "$LOG"; python3 -u "$@" >>"$LOG" 2>&1 || { echo "FEHLER in: $* (Details: $LOG)"; tail -5 "$LOG" | grep -iv "@" ; exit 1; }; tail -1 "$LOG" | counts; }
 audit() { run sales_reconciliation.py --output "$1"; python3 -c 'import json,sys; print(json.dumps(json.load(open(sys.argv[1])),ensure_ascii=False,default=str))' "$1/summary.json"; }
 
-START_TS=$(date +%s); BUDGET_MIN="${HSB_RUN_BUDGET_MIN:-0}"
+START_TS=$(date +%s); BUDGET_MIN="${HSB_RUN_BUDGET_MIN:-0}"; MORE=no; RENEWED=0
 over_budget() { [[ "$BUDGET_MIN" -gt 0 ]] && (( $(date +%s) - START_TS > BUDGET_MIN * 60 )); }
 # Nach einem hart abgebrochenen Lauf bleibt die Versandsperre stehen; ohne unklaren Versand (SENDING) lösen.
 if [[ -n "$APPLY" && "${HSB_RELEASE_STALE_LOCK:-}" == "yes" ]]; then
@@ -51,13 +51,20 @@ for OWNER in JOEL JORDI; do
   fi
   # Tranchen à 100, bis nichts mehr ausgewählt wird; jede Tranche schreibt Journal und CRM-Readback.
   for i in $(seq 1 100); do
-    if over_budget; then echo "[$OWNER] Zeitbudget erreicht, Rest im nächsten Lauf" | tee -a "$LOG"; break; fi
+    if over_budget; then echo "[$OWNER] Zeitbudget erreicht, Rest im nächsten Lauf" | tee -a "$LOG"; MORE=yes; break; fi
     run hsb_cli.py upgrade-drafts --owner "$OWNER" --variant reparatur --cohort all --limit 100 \
            --audit-dir "$BASE/audit-2" --apply
-    SEL="$(tail -1 "$LOG" | python3 -c 'import json,sys; print(json.loads(sys.stdin.read()).get("selected",0))')"
-    echo "[$OWNER] Tranche $i: $SEL erneuert" | tee -a "$LOG"
-    [[ "$SEL" == "0" ]] && break
+    read -r SEL DONE < <(tail -1 "$LOG" | python3 -c 'import json,sys; d=json.loads(sys.stdin.read()); print(d.get("selected",0), d.get("crm_updated",0))')
+    [[ "$SEL" == "0" ]] && { echo "[$OWNER] Tranche $i: 0 erneuert" | tee -a "$LOG"; break; }
+    # Stop-on-drift: Dieselben Leads kämen sonst bis zum Budgetende wieder; das andere Postfach ginge leer aus.
+    [[ "$DONE" == "0" ]] && { echo "[$OWNER] Tranche $i: kein Fortschritt bei $SEL Auswahl, Postfach endet hier" | tee -a "$LOG"; break; }
+    RENEWED=$((RENEWED + DONE))
+    echo "[$OWNER] Tranche $i: $DONE erneuert" | tee -a "$LOG"
   done
 done
 audit "$BASE/audit-3"
-echo "Fertig. Protokoll und Audits: $BASE  (Kundenversand: 0)" | tee -a "$LOG"
+echo "Fertig. Erneuert: $RENEWED. Protokoll und Audits: $BASE  (Kundenversand: 0)" | tee -a "$LOG"
+# Für die Lauf-Kette: nur bei erschöpftem Zeitbudget und echtem Fortschritt folgt ein weiterer Lauf.
+if [[ -n "${GITHUB_OUTPUT:-}" ]]; then
+  [[ "$MORE" == "yes" && "$RENEWED" -gt 0 ]] && echo "more=yes" >> "$GITHUB_OUTPUT" || echo "more=no" >> "$GITHUB_OUTPUT"
+fi

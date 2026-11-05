@@ -1,0 +1,143 @@
+---
+import BaseLayout from "../../../layouts/BaseLayout.astro";
+import PageHero from "../../../components/sections/PageHero.astro";
+import LeadFormSection from "../../../components/forms/LeadFormSection.astro";
+import { buildBreadcrumbJsonLd } from "../../../lib/schema";
+
+export const prerender = true;
+
+const path = "/wissen/fugen-forensik/";
+const title = "Fugen-Forensik & Schadensanalyse Industrieboden | HSB";
+const description = "Schadensbilder bei Industrieböden technisch aufklären: Ausgewaschene Fugen, hohle Fliesen, Rinnenabrisse und Thermoschock – Ursachen und Sanierung.";
+
+const cases = [
+  {
+    slug: "fuge-ausgewaschen",
+    title: "Fuge ausgewaschen & porös",
+    symptom: "Vertiefte Fugenflanken, krümelnder Fugenmörtel, stehendes Schmutzwasser in Fugenvertiefungen.",
+    cause: "Angriff durch Milchsäure, Fruchtsäuren oder zu aggressive alkalische Reiniger bei ungeeignetem Fugenmaterial (Zement- statt Reaktionsharzfuge).",
+    risk: "Hygieneverstoß beim IFS/BRC-Audit, Bakterienherde, Unterwanderung des Fliesenbetts.",
+    solution: "Mechanisches Ausfräsen der Fugen und Neuverfugung mit säurebeständigem Epoxid- oder Vinylesterharz.",
+    badge: "Chemie & Reinigung",
+  },
+  {
+    slug: "fliesen-hohl",
+    title: "Fliesen hohl liegend & Plattenbruch",
+    symptom: "Hohl klingende Bodenfliesen beim Begehen, Rissbildung bei Staplerüberfahrt, absplitternde Kanten.",
+    cause: "Mangelhafte Haftbrücke, unvollständige Einbettung (Hohlräume im Mörtelbett) oder Schubspannungen durch Thermoschock.",
+    risk: "Totalverlust des Belags, Unfallgefahr für Flurförderzeuge, unkontrollierter Flüssigkeitseintritt in den Unterbeton.",
+    solution: "Schadstellenrückbau und vibrationsverdichtete Neuverlegung im Rüttelverfahren nach AGI S 40 mit 100 % Vollbettung.",
+    badge: "Mechanik & Verlegung",
+  },
+  {
+    slug: "rinnenkante-gerissen",
+    title: "Rinnenkante abgerissen & Flankenriss",
+    symptom: "Längsriss direkt entlang der Edelstahl-Entwässerungsrinne, abplatzende Fliesenränder, Wassereintritt.",
+    cause: "Unterschiedliche Ausdehnungskoeffizienten zwischen Edelstahl und Beton ohne elastische Dehnungsfuge oder mangelhafte Rinnenhinterfüllung.",
+    risk: "Lochfraß und Unterspülung des Estrichs rund um die Einläufe, Einsturzgefahr von Rinnenelementen.",
+    solution: "Einbau von formstabilen Edelstahlrinnen mit Verankerungspratzen, kraftschlüssiger Verguss mit Epoxidharzmörtel und dauerelastische Hybridfuge.",
+    badge: "Entwässerung & Dehnung",
+  },
+  {
+    slug: "hohlkehle-undicht",
+    title: "Hohlkehle undicht & Wandanschluss offen",
+    symptom: "Feuchtigkeit und Schimmelbildung an Wandanschlüssen, abgelöste Sockelfliesen, modriger Geruch.",
+    cause: "Starre Verbindung zwischen schwimmendem Estrich und aufgehender Wand, thermische Dehnung oder fehlende Hohlkehlendichtung.",
+    risk: "Feuchteschäden im Mauerwerk, schwerer Hygiene-Mangel bei Auditoren, Kontaminationsgefahr im Randbereich.",
+    solution: "Entkoppelte Hohlkehlenprofile aus Polymerbeton oder Rüttelkeramik mit dauerhafter 2-Komponenten-Abdichtung.",
+    badge: "Hygiene & Wandanschluss",
+  },
+  {
+    slug: "thermoschock-schaeden",
+    title: "Thermoschock & Schubspannungsrisse",
+    symptom: "Schollenartige Ablösung von Beschichtungen, netzartige Risse, großflächige Enthaftung.",
+    cause: "Plötzliche Einwirkung von Heißwasser (85–95 °C bei CIP-Reinigung) auf gekühlte Bodenflächen (z. B. 4–8 °C Kühlraum).",
+    risk: "Schlagartiger Ausfall der Dichtigkeit, Rutschunfälle, sofortiger Produktionsstillstand.",
+    solution: "Umstellung auf thermisch beständige Rüttelkeramik oder Hochtemperatur-Polyurethanbeton (PU-Beton, 9 mm, bis 120 °C laut Herstellerangabe).",
+    badge: "Temperatur & Heißwasser",
+  },
+];
+---
+
+<BaseLayout
+  title={title}
+  description={description}
+  path={path}
+  jsonLd={[buildBreadcrumbJsonLd([{ name: "Start", path: "/" }, { name: "Wissen", path: "/wissen/" }, { name: "Fugen-Forensik", path }])]}
+>
+  <PageHero
+    eyebrow="Schadensanalyse & Praxiswissen"
+    title="Fugen-Forensik: Typische Schadensbilder an Industrieböden verstehen"
+    text="Böden in Lebensmittel-, Chemie- und Produktionsbetrieben versagen selten zufällig. Meist ist es eine unheilvolle Kombination aus chemischem Angriff, thermischem Schock und mechanischer Scherlast. Hier lernen Sie die 5 häufigsten Fehlerbilder kennen – und wie Sie diese dauerhaft sanieren."
+  />
+
+  <section class="section border-b border-hsb-line bg-white">
+    <div class="container">
+      <div class="mb-12 max-w-3xl">
+        <p class="eyebrow">Diagnose vor Sanierung</p>
+        <h2 class="h2">Warum Einzelflicken selten dauerhaft halten</h2>
+        <p class="lead mt-4 text-hsb-steel">
+          Wenn Fugen ausgewaschen sind oder Fliesen hohl klingen, wird oft schnell etwas Spachtelmasse aufgetragen. Nach wenigen Wochen bricht die Stelle erneut auf. Dauerhafte Sanierung verlangt die forensische Klärung: Welche Säure greift an? Welche Temperatur wirkt ein? Wo liegt die Dehnungsfuge?
+        </p>
+      </div>
+
+      <div class="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
+        {cases.map((c) => (
+          <article class="surface flex flex-col justify-between border-t-4 border-t-hsb-red p-6 lg:p-8">
+            <div>
+              <span class="inline-block rounded bg-hsb-mist px-2.5 py-1 text-xs font-black uppercase tracking-[0.12em] text-hsb-black">
+                {c.badge}
+              </span>
+              <h3 class="mt-4 text-xl font-black text-hsb-black">{c.title}</h3>
+              <div class="mt-4 space-y-3 text-sm">
+                <div>
+                  <strong class="text-xs uppercase tracking-wider text-hsb-black block">Schadensbild:</strong>
+                  <p class="text-hsb-steel leading-relaxed mt-0.5">{c.symptom}</p>
+                </div>
+                <div>
+                  <strong class="text-xs uppercase tracking-wider text-hsb-black block">Ursache:</strong>
+                  <p class="text-hsb-steel leading-relaxed mt-0.5">{c.cause}</p>
+                </div>
+                <div>
+                  <strong class="text-xs uppercase tracking-wider text-hsb-red block">Betriebliches Risiko:</strong>
+                  <p class="text-hsb-steel leading-relaxed mt-0.5">{c.risk}</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="mt-8 border-t border-hsb-line pt-5">
+              <a class="button-primary text-xs w-full text-center" href={`/wissen/fugen-forensik/${c.slug}/`}>
+                Schadensfall & Sanierung analysieren →
+              </a>
+            </div>
+          </article>
+        ))}
+
+        <!-- Spezial-Kachel: Vor-Ort-Audit -->
+        <article class="surface flex flex-col justify-between border-t-4 border-t-hsb-black bg-hsb-mist p-6 lg:p-8">
+          <div>
+            <span class="inline-block rounded bg-hsb-black px-2.5 py-1 text-xs font-black uppercase tracking-[0.12em] text-white">
+              Audit & Soforthilfe
+            </span>
+            <h3 class="mt-4 text-xl font-black text-hsb-black">Eigenes Schadensbild nicht sicher zuordenbar?</h3>
+            <p class="mt-4 text-sm leading-6 text-hsb-steel">
+              Unsere Ingenieure und Anwendungstechniker begutachten Ihre Bodenfläche direkt in der Produktionshalle. Wir prüfen Fugenflanken, Untergrundfeuchte, Haftzugwerte und Gefälle.
+            </p>
+            <ul class="mt-5 space-y-2 text-xs text-hsb-steel">
+              <li class="flex items-center gap-2">✓ Messung von Hohlstellen und Rissverläufen</li>
+              <li class="flex items-center gap-2">✓ Klärung von Sanierungsfenstern am Wochenende</li>
+              <li class="flex items-center gap-2">✓ Fundierte ingenieurtechnische Ersteinschätzung</li>
+            </ul>
+          </div>
+          <div class="mt-8 border-t border-hsb-line pt-5">
+            <a class="button-primary w-full text-center text-xs" href="/kontakt/">
+              Vor-Ort-Begehung anfragen
+            </a>
+          </div>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <LeadFormSection />
+</BaseLayout>

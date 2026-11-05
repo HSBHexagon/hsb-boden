@@ -536,7 +536,10 @@ def cmd_refresh_signature(args):
     original = json.loads((audit/'crm-original.json').read_text())['valueRanges'][0]['values']
     leads = [dict(zip(original[0],r), _row=i) for i,r in enumerate(original[1:],2)]
     owners = [args.owner] if args.owner else ['JOEL','JORDI']
-    print(json.dumps(refresh_signatures(owners, records, leads, apply=args.apply), ensure_ascii=False, default=dict))
+    from hsb_config import CANONICAL_SPREADSHEET_ID
+    print(json.dumps(refresh_signatures(owners, records, leads, apply=args.apply,
+        svc=get_sheets_service() if args.apply else None, spreadsheet_id=CANONICAL_SPREADSHEET_ID,
+        headers=original[0]), ensure_ascii=False, default=dict))
 
 
 def cmd_dedupe_drafts(args):

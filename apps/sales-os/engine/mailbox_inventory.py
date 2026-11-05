@@ -5,7 +5,7 @@ records stay in the runtime; only aggregate counts are printed in Actions.
 """
 from collections import Counter, defaultdict
 from concurrent.futures import ThreadPoolExecutor
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 from email import policy
 from email.parser import BytesParser
 import json
@@ -32,7 +32,23 @@ def _uids(imap):
     typ, data = imap.uid('SEARCH', None, 'ALL')
     if typ != 'OK':
         raise RuntimeError('INVENTORY_SEARCH_FAILED')
-    return data[0].split() if data and data[0] else []
+    if len(data or []) != 1 or not isinstance(data[0], bytes):
+        raise RuntimeError('INVENTORY_SEARCH_INCOMPLETE')
+    uids = data[0].split()
+    if any(not uid.isdigit() for uid in uids) or len(set(uids)) != len(uids):
+        raise RuntimeError('INVENTORY_SEARCH_INCOMPLETE')
+    return uids
+
+
+def _revision_bucket(value):
+    if not value:
+        return '(missing)'
+    try:
+        if re.fullmatch(r'\d{4}-\d{2}-\d{2}', value) and date.fromisoformat(value):
+            return value
+    except ValueError:
+        pass
+    return '(unrecognized)'
 
 
 def scan_headers(owner, client):
@@ -113,7 +129,7 @@ def summarize(leads, mailboxes):
             counts['wrong_from'] += draft['senders'] != [SENDERS[owner]]
             counts['duplicate_recipients'] += recipient_counts[draft['recipients'][0]] > 1
             counts['segments'][segment_for(lead)] += 1
-            counts['copy_revisions'][draft['copy_rev'] or '(missing)'] += 1
+            counts['copy_revisions'][_revision_bucket(draft['copy_rev'])] += 1
         report['owners'][owner] = counts
     return report
 

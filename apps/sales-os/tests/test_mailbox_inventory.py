@@ -91,3 +91,23 @@ def test_distribution_detects_wrong_mailbox_without_publishing_customer_addresse
     assert result['owners']['JOEL']['segments'] == {'produktion': 1}
     assert 'person@example.org' not in str(result)
     assert result['customer_emails_sent'] == 0
+
+
+def test_missing_search_payload_does_not_become_empty_mailbox():
+    from mailbox_inventory import scan_headers
+    client = Client()
+    original = client.imap.uid
+    client.imap.uid = lambda command, *args: ('OK', [None]) if command.upper() == 'SEARCH' else original(command, *args)
+    with pytest.raises(RuntimeError, match='INVENTORY_SEARCH_INCOMPLETE'):
+        scan_headers('JOEL', client)
+
+
+def test_untrusted_copy_revision_never_appears_in_public_summary():
+    from mailbox_inventory import scan_headers, summarize
+    leads = [{'Lead-ID': 'HSB-20260101-1', 'E-Mail': 'person@example.org',
+              'Verantwortlicher': 'JOEL', 'Branche': 'Lebensmittelproduktion'}]
+    boxes = {'JOEL': scan_headers('JOEL', Client()), 'JORDI': {'drafts': [], 'sent': [], 'inbox': []}}
+    boxes['JOEL']['drafts'][0]['copy_rev'] = 'private-customer@example.org'
+    result = summarize(leads, boxes)
+    assert result['owners']['JOEL']['copy_revisions'] == {'(unrecognized)': 1}
+    assert 'private-customer@example.org' not in str(result)

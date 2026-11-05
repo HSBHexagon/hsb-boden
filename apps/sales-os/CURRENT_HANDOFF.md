@@ -158,4 +158,4 @@ master_mailbox_orchestrator.py --owner JOEL --batches 10 [--apply]
 - audit-3 von Lauf 268: JOEL sendable 2.784/2.830, JORDI 1.924/1.955. Kundenversand: 0.
 - Lauf 268: refresh-signature (Schnellweg) ohne Auswahl, weil die 673 JORDI-Reste im CRM an andere Draft_IDs gebunden waren; der langsame Weg hat 674 Entwürfe in 7 Tranchen neu aufgebaut und das CRM nachgezogen.
 - send-preview 5 (Lauf 269): je Postfach 5 ausgewählt, 0 gesendet.
-- Nächster Schritt nur auf Betreiberkommando: mode `send`, count 5–10 zum Start (Warm-up), DKIM im KAS aktivieren, rechtliche Prüfung § 7 UWG beachten.
+- Nächster Schritt nur auf Betreiberkommando: mode `send`, count 5–10 zum Start (Warm-up), DKIM im KAS aktivieren. § 7 UWG ist vom Betreiber geklärt.

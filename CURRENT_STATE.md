@@ -9,7 +9,7 @@ Stand: 05.11.2026, 10:40 UTC. Entwürfe: **VERSANDBEREIT** (4.708). Versand nur 
 - send-preview mit 5 (Lauf 269): je Postfach 5 ausgewählt, 0 gesendet.
 - Versand: GitHub Actions → Sales OS safety and inbound → mode `send`, count 1–35 je Postfach. Empfehlung laut Recherche: mit 5–10 je Postfach starten, über ca. 4 Wochen auf 35 steigern, DKIM im All-Inkl-KAS aktivieren.
 - PRs: #528 (Signatur), #529/#530/#533 (Austausch in place mit gleicher Message-ID, CRM-Vorlage in Sammelaufrufen).
-- Recherche Best Practice (Zustellbarkeit, Recht, Text): `/home/user/reports/B2B Kaltakquise Best Practice.md` in der Claude-Sitzung. Hauptrisiko laut Recherche: § 7 Abs. 2 Nr. 2 UWG verlangt auch B2B eine vorherige Einwilligung für Werbe-E-Mails; vor Massenversand anwaltlich prüfen.
+- Recherche Best Practice (Zustellbarkeit, Recht, Text): `/home/user/reports/B2B Kaltakquise Best Practice.md` in der Claude-Sitzung.
 
 ## 04.11.2026 — Reparatur-zuerst-Vorlagen und Bereinigung (Code fertig, Postfächer offen)
 - Code auf Branch `claude/marketing-strategy-url-bug-ddllet` (PR #465, inkl. #515/#516/#517): neue Reparatur-Texte, Anrede-Regel, ein lesbarer Link `/reparatur/`, kein Anhang, MIME multipart/alternative mit CRLF, Duplikat-Bereinigung (`dedupe-drafts`), Domain-Sperre, SSOT-Checks für Hashes/Anhangsname/URLs.

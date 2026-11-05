@@ -165,6 +165,9 @@ def assess_message(raw, owner, leads):
                 # Genau der lesbare Reparatur-Link, kein Klick-Token im Sichttext.
                 if links != [REPAIR_URL]:
                     issues.append('V2_LINK_INVALID')
+            elif is_repair and links == [REPAIR_URL]:
+                # Ältere Fassung mit demselben gültigen Link: nur OUTDATED_REPAIR_COPY, kein Linkfehler.
+                pass
             elif len(links) > 1 or not all(_v2_link_ok(u) for u in links):
                 issues.append('V2_LINK_INVALID')
         elif links:

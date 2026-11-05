@@ -171,3 +171,25 @@ def test_ineligible_lead_is_skipped(setup):
     store, rec = setup
     chosen, skipped = sr.select_candidates('JORDI', [rec], [dict(LEAD, Versandfreigabe='no')])
     assert not chosen and skipped['INELIGIBLE'] == 1
+
+
+def test_outdated_planner_copy_is_refreshed_too(setup):
+    store, rec = setup
+    rec['issues'] = ['OUTDATED_PLANNER_COPY', 'OUTDATED_REPAIR_COPY']
+    chosen, _ = sr.select_candidates('JORDI', [rec], [dict(LEAD)])
+    assert len(chosen) == 1
+
+
+def test_outdated_repair_draft_with_repair_link_has_no_link_issue(monkeypatch):
+    import canonical_template_factory as ctf
+    import sales_reconciliation
+    from canonical_template_factory import render_email_v2
+    lead = dict(LEAD)
+    r = render_email_v2(lead, 'JORDI', step=1, variant='reparatur')
+    client = FakeClient('JORDI', {})
+    raw, _ = client.build_draft_message(r['to_email'], r['subject'], body_text=r['body_text'], body_html=r['body_html'],
+                                        template_id=r['template_id'], lead_id=lead['Lead-ID'],
+                                        custom_message_id=lead['Draft_ID'], copy_rev='2026-11-04')
+    issues = sales_reconciliation.assess_message(raw, 'JORDI', [lead])['issues']
+    assert 'OUTDATED_REPAIR_COPY' in issues
+    assert 'V2_LINK_INVALID' not in issues

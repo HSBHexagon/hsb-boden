@@ -236,7 +236,7 @@ class ComMailboxClient:
                 msg['References'] = references
             plain = body_text.replace('\r\n', '\n').replace('\r', '\n')
             msg.set_content(plain, charset='utf-8', cte='quoted-printable')
-            msg.add_alternative(plaintext_to_html(plain), subtype='html', charset='utf-8', cte='quoted-printable')
+            msg.add_alternative(body_html or plaintext_to_html(plain), subtype='html', charset='utf-8', cte='quoted-printable')
             return msg.as_bytes(policy=email_policy.SMTP), msg_id
         ids = set(re.findall(r'HSB-\d{8}-\d+',unquote(body_html)))
         if len(ids)==1:

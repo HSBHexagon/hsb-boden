@@ -1,3 +1,4 @@
+import html as _html
 import os
 import re
 from pathlib import Path
@@ -229,7 +230,7 @@ _BODIES_V2 = {
 # Reparatur-Ersteinschätzung, kein Anhang. COPY_REV markiert diese Fassung im Entwurf,
 # damit ältere Reparatur-Entwürfe als veraltet erkannt und ersetzt werden.
 REPAIR_URL = "https://www.hsb-boden.de/reparatur/"
-REPARATUR_COPY_REV = "2026-11-04"
+REPARATUR_COPY_REV = "2026-11-05"
 
 _SUBJECTS_REPARATUR = {
     "architekten": "Industrieböden im Bestand – Einschätzung vor der Ausschreibung",
@@ -352,6 +353,63 @@ _PFLICHTANGABEN_V2 = (
 )
 
 
+
+_HTML_FONT = "font-family:Arial,Helvetica,sans-serif;"
+
+
+def _html_paragraph(text: str) -> str:
+    """Absatz aus dem Textteil; die Reparatur-URL wird zum Link mit dem Linktext davor."""
+    lines = text.split("\n")
+    if len(lines) == 2 and lines[1].strip() == REPAIR_URL:
+        label = _html.escape(lines[0].rstrip(":"))
+        return (f'<p style="margin:0 0 14px 0;"><a href="{REPAIR_URL}" '
+                f'style="color:#1d4ed8;font-weight:bold;text-decoration:underline;">{label} &rarr;</a></p>')
+    out = []
+    for line in lines:
+        esc = _html.escape(line)
+        if line.strip().startswith("http"):
+            url = _html.escape(line.strip(), quote=True)
+            esc = f'<a href="{url}" style="color:#1d4ed8;">{url}</a>'
+        out.append(esc)
+    return '<p style="margin:0 0 14px 0;">' + "<br>\n".join(out) + "</p>"
+
+
+def _html_v2(greeting: str, body: str, meta: Dict[str, str], mailbox: str, phone_label: str) -> str:
+    """HTML-Teil mit der kanonischen HSB-Signatur (Logo 102x75, Pflichtangaben klein und grau).
+
+    Der Textteil bleibt die gleichlautende reine Fassung; das Logo ist das einzige Bild, kein Anhang.
+    """
+    paras = [p for p in re.split(r"\n\s*\n", f"{greeting}\n\n{body}".strip()) if p.strip()]
+    content = "\n".join(_html_paragraph(p) for p in paras)
+    sig = (
+        f'<p style="margin:18px 0 0 0;">Mit freundlichen Grüßen</p>'
+        f'<table role="presentation" cellpadding="0" cellspacing="0" border="0" '
+        f'style="margin:14px 0 0 0;border-collapse:collapse;"><tr>'
+        f'<td style="padding:0 14px 0 0;vertical-align:top;">'
+        # Logo nur als Bild, ohne Link: der Reparatur-Link bleibt der einzige Klick-Link.
+        f'<img src="{LOGO_URL}" alt="HSB Hexagon Säurebau GmbH" width="102" height="75" '
+        f'style="display:block;border:0;outline:none;width:102px;height:75px;-ms-interpolation-mode:bicubic;"></td>'
+        f'<td style="padding:0 0 0 14px;border-left:2px solid #c8102e;vertical-align:top;{_HTML_FONT}'
+        f'font-size:13px;line-height:1.5;color:#1f2937;">'
+        f'<strong style="font-size:14px;color:#111827;">{_html.escape(meta["sender_name"])}</strong><br>'
+        f'<span style="color:#4b5563;">{_html.escape(meta["sender_role"])}</span><br>'
+        f'HSB Hexagon Säurebau GmbH<br>'
+        f'{phone_label}: {_html.escape(meta["sender_phone"])}<br>'
+        f'<a href="mailto:{mailbox}" style="color:#1d4ed8;text-decoration:none;">{mailbox}</a>'
+        f'</td></tr></table>'
+    )
+    footer = (
+        f'<p style="margin:22px 0 0 0;{_HTML_FONT}font-size:12px;color:#4b5563;">{_html.escape(OPTOUT_LINE_V2)}</p>'
+        f'<p style="margin:10px 0 0 0;padding-top:10px;border-top:1px solid #e5e7eb;{_HTML_FONT}'
+        f'font-size:11px;line-height:1.45;color:#6b7280;">'
+        + "<br>".join(_html.escape(l) for l in _PFLICHTANGABEN_V2.split("\n"))
+        + "</p>"
+    )
+    return ('<!DOCTYPE html>\n<html><head><meta charset="utf-8"></head>\n'
+            f'<body style="margin:0;{_HTML_FONT}font-size:14px;line-height:1.55;color:#1f2937;">\n'
+            f'<div style="max-width:640px;">{content}{sig}{footer}</div>\n</body></html>\n')
+
+
 def short_company(name: Any) -> str:
     """Kurzname fuer Betreffzeilen: Zusaetze nach dem Komma und Rechtsform entfernt, hoechstens 40 Zeichen."""
     text = re.sub(r"\s+", " ", str(name or "")).strip()
@@ -446,6 +504,8 @@ def render_email_v2(
         f"{anrede_v2(lead)}\n\n{body}\n\n{signature}\n\n{OPTOUT_LINE_V2}\n\n{_PFLICHTANGABEN_V2}\n"
     )
 
+    body_html = _html_v2(anrede_v2(lead), body, meta, _SENDER_COM[norm_owner], phone_label)
+
     if step == 1:
         subject = _subject_v2(segment, firma_kurz, variant=variant)
         in_reply_to = references = None
@@ -457,6 +517,7 @@ def render_email_v2(
     return {
         "subject": subject,
         "body_text": body_text,
+        "body_html": body_html,
         "to_email": to_addr,
         "lead_id": lead_id,
         "segment": segment,

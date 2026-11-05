@@ -279,3 +279,42 @@ def test_greeting_keeps_name_suffix_with_surname():
     from canonical_template_factory import anrede_fuer_lead as a
     assert a({'Ansprechpartner': 'Herr Peter Wacker jun.'}) == 'Sehr geehrter Herr Wacker jun.,'
     assert a({'Ansprechpartner': 'Herr Hans Meier sen.'}) == 'Sehr geehrter Herr Meier sen.,'
+
+
+def test_v2_html_part_carries_canonical_signature_with_logo():
+    from canonical_template_factory import render_email_v2, LOGO_URL, REPAIR_URL
+    lead = {"Lead_ID": "HSB-20260101-9", "Email": "a.b@beispiel.de", "Firma": "Beispiel GmbH",
+            "Branche": "Lebensmittelproduktion", "Anrede": "Frau", "Nachname": "Beispiel"}
+    r = render_email_v2(lead, owner="JORDI", step=1, variant="reparatur")
+    html_part = r["body_html"]
+    assert f'src="{LOGO_URL}"' in html_part and 'width="102" height="75"' in html_part
+    assert "<strong" in html_part and "Jordie Post" in html_part
+    assert f'href="{REPAIR_URL}"' in html_part
+    assert "Registergericht: Amtsgericht Coesfeld, HRB 21481" in html_part
+    assert "font-size:11px" in html_part  # Pflichtangaben klein
+    assert LOGO_URL not in r["body_text"]  # Textteil bleibt reiner Text
+    import re as _re
+    assert _re.findall(r'href="(https?://[^"]+)"', html_part) == [REPAIR_URL]  # einziger Web-Link
+
+
+def test_v2_logo_is_not_counted_as_link():
+    from canonical_template_factory import render_email_v2
+    from com_mailbox_manager import ComMailboxClient
+    from sales_reconciliation import assess_message
+    lead = {"Lead_ID": "HSB-20260101-9", "Lead-ID": "HSB-20260101-9", "Email": "a.b@beispiel.de",
+            "E-Mail": "a.b@beispiel.de", "Firma": "Beispiel GmbH", "Branche": "Lebensmittelproduktion",
+            "Anrede": "Frau", "Nachname": "Beispiel", "Verantwortlicher": "JORDI"}
+    r = render_email_v2(lead, owner="JORDI", step=1, variant="reparatur")
+    client = ComMailboxClient.__new__(ComMailboxClient)
+    client.cfg = {"display_name": "Jordie Post", "email": "j-post@hsb-boden.com"}
+    raw, _ = client.build_draft_message(r["to_email"], r["subject"], body_text=r["body_text"],
+                                        body_html=r["body_html"], template_id=r["template_id"],
+                                        lead_id=lead["Lead_ID"], copy_rev=r["copy_rev"])
+    result = assess_message(raw, "JORDI", [lead])
+    assert result["issues"] == []
+    assert result["links"] == ["https://www.hsb-boden.de/reparatur/"]
+
+
+def test_new_drafts_items_carry_html_signature():
+    import inspect, new_drafts
+    assert "'body_html': mail['body_html']" in inspect.getsource(new_drafts)

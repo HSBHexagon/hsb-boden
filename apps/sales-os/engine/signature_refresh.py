@@ -21,7 +21,10 @@ import threading
 import time
 
 from draft_upgrade import ARCHIVE, _find, _raw, _select, mailbox_arg
-from sales_reconciliation import OUTDATED_REPAIR_COPY
+from sales_reconciliation import OUTDATED_PLANNER_COPY, OUTDATED_REPAIR_COPY
+
+# Nur veraltete Fassungen derselben Vorlage: gleicher Lead, gleiche Vorlage, neuer Text bzw. neue Gestaltung.
+REFRESHABLE = {OUTDATED_REPAIR_COPY, OUTDATED_PLANNER_COPY}
 
 CONNECTIONS_PER_MAILBOX = 3
 IMAP_RETRIES = 3
@@ -47,11 +50,11 @@ def select_candidates(owner, records, leads, planner_outreach_allowed=None, chec
         if rec.get('owner') != owner or rec.get('internal_test'):
             continue
         issues = set(rec.get('issues') or [])
-        if OUTDATED_REPAIR_COPY not in issues:
+        if not issues & REFRESHABLE:
             continue
         matches = byid.get(str(rec.get('lead_id') or ''), [])
         tmpl = str(rec.get('template_id') or '')
-        if issues != {OUTDATED_REPAIR_COPY}:
+        if issues - REFRESHABLE:
             skipped['OTHER_ISSUES'] += 1
         elif len(matches) != 1 or mids[rec.get('message_id')] != 1:
             skipped['AMBIGUOUS_LEAD_OR_DRAFT'] += 1

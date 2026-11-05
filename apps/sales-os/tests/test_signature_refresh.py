@@ -171,3 +171,10 @@ def test_ineligible_lead_is_skipped(setup):
     store, rec = setup
     chosen, skipped = sr.select_candidates('JORDI', [rec], [dict(LEAD, Versandfreigabe='no')])
     assert not chosen and skipped['INELIGIBLE'] == 1
+
+
+def test_outdated_planner_copy_is_refreshed_too(setup):
+    store, rec = setup
+    rec['issues'] = ['OUTDATED_PLANNER_COPY', 'OUTDATED_REPAIR_COPY']
+    chosen, _ = sr.select_candidates('JORDI', [rec], [dict(LEAD)])
+    assert len(chosen) == 1

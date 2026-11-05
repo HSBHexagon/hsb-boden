@@ -50,17 +50,11 @@ def strip_quoted_reply(body: str) -> str:
     """
     clean_body = FOOTER_CLEAN_RE.sub("", body)
     lines = []
-    quote_starters = [
-        "-----original message-----",
-        "-----ursprüngliche nachricht-----",
-        "von: ",
-        "from: ",
-        "am ",
-        "on "
-    ]
     for line in clean_body.splitlines():
         l_low = line.strip().lower()
-        if any(l_low.startswith(q) for q in quote_starters) and ("gesendet:" in l_low or "sent:" in l_low or "schrieb:" in l_low or "wrote:" in l_low or "@" in l_low):
+        if l_low.startswith(("-----original message-----", "-----ursprüngliche nachricht-----", "--- original message ---")):
+            break
+        if any(l_low.startswith(q) for q in ["von: ", "from: ", "am ", "on "]) and ("gesendet:" in l_low or "sent:" in l_low or "schrieb:" in l_low or "wrote:" in l_low or "@" in l_low):
             break
         if line.startswith(">"):
             continue
@@ -133,7 +127,9 @@ def classify_inbound_message(sender: str, subject: str, body: str, reference_dat
 
     # 3. Echter Opt-out / Widerspruch des Kunden (hat Vorrang vor zufälligen Begriffen)
     explicit_subject = re.fullmatch(r"(?:re:\s*|aw:\s*)*(?:abmelden|abmeldung|unsubscribe|stop)\s*[.!]?", subj_clean.strip(), re.I)
-    if explicit_subject or OPTOUT_RE.search(full_new_text):
+    # Antworttext besteht (nach Bereinigung der Zitate) nur aus dem Opt-Out-Wort, wie im Mailtext vorgeschlagen:
+    body_only_optout = bool(re.fullmatch(r"(?:bitte\s+)?(?:abmelden|abmeldung|unsubscribe|stop)(?:\s+bitte)?[.!]?", new_reply_text.strip(), re.I))
+    if explicit_subject or body_only_optout or OPTOUT_RE.search(full_new_text):
         return InboundClassificationResult(category="OPTOUT", confidence=0.90, reason="Widerspruch / Opt-out Signal")
 
     # 4. Hot Lead / Termin-Interesse

@@ -9,7 +9,7 @@ on:
       mode:
         description: "Bounded operation. prepare-drafts* bereitet Entwürfe vor (kein Versand); send* versendet nur auf ausdrückliche Auswahl"
         type: choice
-        options: [audit, inbound-preview, inbound-sync, prepare-drafts-preview, prepare-drafts, send-preview, send]
+        options: [audit, inventory, inbound-preview, inbound-sync, prepare-drafts-preview, prepare-drafts, send-preview, send]
         default: audit
       count:
         description: "Nur für send/send-preview: Anzahl je Postfach (1-35)"
@@ -105,6 +105,9 @@ jobs:
       - name: Full read-only reconciliation
         if: github.event_name == 'push' || inputs.mode == 'audit'
         run: python -u apps/sales-os/engine/sales_reconciliation.py --output "$RUNNER_TEMP/hsb-reconciliation"
+      - name: Read-only draft ownership and distribution inventory
+        if: inputs.mode == 'inventory'
+        run: python -u apps/sales-os/engine/mailbox_inventory.py --output "$RUNNER_TEMP/hsb-inventory"
       # Raw MIME, customer lists, queue and credentials are never uploaded.
 
   # Entwürfe versandfertig machen: Audit, Dubletten-Archiv, Audit, Reparatur-Erneuerung, Abschluss-Audit.

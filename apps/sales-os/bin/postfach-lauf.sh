@@ -49,7 +49,7 @@ run hsb_cli.py refresh-signature --audit-dir "$BASE/audit-2" $APPLY
 [[ -n "$APPLY" ]] && audit "$BASE/audit-2"
 for OWNER in JOEL JORDI; do
   if [[ -z "$APPLY" ]]; then
-    run hsb_cli.py upgrade-drafts --owner "$OWNER" --variant reparatur --cohort all --limit 10000 --audit-dir "$BASE/audit-2"
+    run hsb_cli.py upgrade-drafts --owner "$OWNER" --variant reparatur --cohort all --limit 100 --audit-dir "$BASE/audit-2"
     continue
   fi
   # Tranchen à 100, bis nichts mehr ausgewählt wird; jede Tranche schreibt Journal und CRM-Readback.

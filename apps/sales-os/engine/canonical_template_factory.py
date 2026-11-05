@@ -1,6 +1,7 @@
 import html as _html
 import os
 import re
+from urllib.parse import quote
 from pathlib import Path
 from typing import Dict, Any, Literal, Optional
 
@@ -360,6 +361,12 @@ DATENSCHUTZ_URL = "https://www.hsb-boden.de/datenschutz/"
 LEGAL_LINKS = frozenset({IMPRESSUM_URL, DATENSCHUTZ_URL})
 
 
+def optout_mailto(mailbox: str, lead_id: str) -> str:
+    """Abmelde-Antwort: Betreff erkennt der Eingangs-Klassifikator, das Token ordnet sie dem Lead zu,
+    auch wenn ein Kollege aus derselben Firma antwortet. Gemeinsam für Mail-Link und List-Unsubscribe."""
+    return f"mailto:{mailbox}?subject=Abmelden&body={quote(f'HSB-ABMELDUNG: {lead_id}')}"
+
+
 def _html_paragraph(text: str) -> str:
     """Absatz aus dem Textteil; die Reparatur-URL wird zum Link mit dem Linktext davor."""
     lines = text.split("\n")
@@ -377,7 +384,7 @@ def _html_paragraph(text: str) -> str:
     return '<p style="margin:0 0 14px 0;">' + "<br>\n".join(out) + "</p>"
 
 
-def _html_v2(greeting: str, body: str, meta: Dict[str, str], mailbox: str, phone_label: str) -> str:
+def _html_v2(greeting: str, body: str, meta: Dict[str, str], mailbox: str, phone_label: str, lead_id: str) -> str:
     """HTML-Teil mit der kanonischen HSB-Signatur (Logo 102x75, Pflichtangaben klein und grau).
 
     Der Textteil bleibt die gleichlautende reine Fassung; das Logo ist das einzige Bild, kein Anhang.
@@ -403,7 +410,7 @@ def _html_v2(greeting: str, body: str, meta: Dict[str, str], mailbox: str, phone
     )
     # Abmelden öffnet eine Antwort ans eigene Postfach: kein weiterer Web-Link, sichtbarer Wortlaut wie im Textteil.
     optout = _html.escape(OPTOUT_LINE_V2).replace(
-        "‚Abmelden‘", f'<a href="mailto:{mailbox}?subject=Abmelden" style="color:#4b5563;text-decoration:underline;">‚Abmelden‘</a>')
+        "‚Abmelden‘", f'<a href="{_html.escape(optout_mailto(mailbox, lead_id), quote=True)}" style="color:#4b5563;text-decoration:underline;">‚Abmelden‘</a>')
     legal_link = '<a href="{}" style="color:#6b7280;text-decoration:underline;">{}</a>'
     # Die letzte Zeile nennt im Textteil beide Adressen; im HTML sind es zwei echte Links.
     legal_lines = [_html.escape(l) for l in _PFLICHTANGABEN_V2.split("\n")[:-1]]
@@ -514,7 +521,7 @@ def render_email_v2(
         f"{anrede_v2(lead)}\n\n{body}\n\n{signature}\n\n{OPTOUT_LINE_V2}\n\n{_PFLICHTANGABEN_V2}\n"
     )
 
-    body_html = _html_v2(anrede_v2(lead), body, meta, _SENDER_COM[norm_owner], phone_label)
+    body_html = _html_v2(anrede_v2(lead), body, meta, _SENDER_COM[norm_owner], phone_label, lead_id)
 
     if step == 1:
         subject = _subject_v2(segment, firma_kurz, variant=variant)

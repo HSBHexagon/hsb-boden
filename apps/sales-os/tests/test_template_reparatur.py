@@ -177,7 +177,8 @@ def test_footer_links_are_clickable_in_html():
 def test_optout_word_opens_a_reply_to_the_senders_own_mailbox():
     for owner, mailbox in (('JOEL', 'j-cherino@hsb-boden.com'), ('JORDI', 'j-post@hsb-boden.com')):
         mail, links = _html_links(owner)
-        assert (f'mailto:{mailbox}?subject=Abmelden', '‚Abmelden‘') in links
+        target = f'mailto:{mailbox}?subject=Abmelden&amp;body=HSB-ABMELDUNG%3A%20HSB-20261105-9'
+        assert (target, '‚Abmelden‘') in links
         assert 'Antworten Sie kurz mit ‚Abmelden‘' in mail['body_text']
         assert 'https://www.hsb-boden.de/abmelden' not in mail['body_html']
 
@@ -214,3 +215,17 @@ def test_legal_links_do_not_fail_the_audit_rule():
     html = mail['body_html'].replace('</body>', '<a href="https://www.hsb-boden.de/kontakt/">K</a></body>')
     msg.get_body(('html',)).set_content(html, subtype='html')
     assert 'V2_LINK_INVALID' in assess_message(msg.as_bytes(), 'JOEL', [lead])['issues']
+
+
+def test_optout_link_carries_the_same_token_as_list_unsubscribe():
+    import html
+    import re
+    from email.message import EmailMessage
+    from urllib.parse import parse_qs, unquote, urlsplit
+    from outbound_safety import UNSUBSCRIBE_TOKEN_RE, add_list_unsubscribe
+    mail, links = _html_links()
+    href = html.unescape(next(u for u, t in links if t == '‚Abmelden‘'))
+    assert add_list_unsubscribe(EmailMessage(), 'JOEL', 'HSB-20261105-9')['List-Unsubscribe'] == f'<{href}>'
+    body = parse_qs(urlsplit(href).query)['body'][0]
+    assert UNSUBSCRIBE_TOKEN_RE.findall(body) == ['HSB-20261105-9']
+    assert '@musterwerk' not in unquote(href) and not re.search('https?://', href)

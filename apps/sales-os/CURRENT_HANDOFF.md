@@ -153,3 +153,9 @@ master_mailbox_orchestrator.py --owner JOEL --batches 10 [--apply]
 - Ursache der Abbrüche nach je 100 Entwürfen: Die Sperr-Verbindung blieb ungenutzt offen, All-Inkl trennte sie nach etwa 12 Minuten, das Lösen der Sperre schlug fehl. Behoben: Die Sperre nutzt je Schritt eine frische Verbindung.
 - Codex-Review zu #524 umgesetzt: Inhaber-Kennung statt `force_unlock`; ein Neustart übernimmt vorhandene Ersatzentwürfe live, statt einen zweiten anzulegen.
 - CRM-Stand vor dem Neustart: 204 Entwürfe umgestellt. Kundenversand: 0.
+
+### Stand 05.11.2026, 10:40 UTC: Entwürfe fertig, versandbereit
+- audit-3 von Lauf 268: JOEL sendable 2.784/2.830, JORDI 1.924/1.955. Kundenversand: 0.
+- Lauf 268: refresh-signature (Schnellweg) ohne Auswahl, weil die 673 JORDI-Reste im CRM an andere Draft_IDs gebunden waren; der langsame Weg hat 674 Entwürfe in 7 Tranchen neu aufgebaut und das CRM nachgezogen.
+- send-preview 5 (Lauf 269): je Postfach 5 ausgewählt, 0 gesendet.
+- Nächster Schritt nur auf Betreiberkommando: mode `send`, count 5–10 zum Start (Warm-up), DKIM im KAS aktivieren. § 7 UWG ist vom Betreiber geklärt.

@@ -88,7 +88,7 @@ def test_pr_tests_do_not_wait_behind_live_runs():
     rest = WORKFLOW.split('\n  tests:\n')[1]
     tests_job = rest.split('\n  runtime-gate:\n')[0]
     assert 'concurrency' not in tests_job
-    assert WORKFLOW.count('group: hsb-sales-os-runtime') == 3
+    assert WORKFLOW.count('group: hsb-sales-os-runtime') == 4
 
 
 def test_cron_cannot_replace_a_waiting_prepare_run():

@@ -9,8 +9,12 @@ on:
       mode:
         description: "Bounded operation. prepare-drafts* bereitet Entwürfe vor (kein Versand); send* versendet nur auf ausdrückliche Auswahl"
         type: choice
-        options: [audit, inventory, inbound-preview, inbound-sync, prepare-drafts-preview, prepare-drafts, send-preview, send]
+        options: [audit, inventory, inbound-preview, inbound-sync, prepare-drafts-preview, prepare-drafts, send-preview, send, archive-purge-preview, archive-purge]
         default: audit
+      confirm:
+        description: "Nur für archive-purge: exakt ARCHIV-LEEREN eintippen"
+        type: string
+        default: ''
       count:
         description: "Nur für send/send-preview: Anzahl je Postfach (1-35)"
         type: number
@@ -58,7 +62,7 @@ jobs:
     if: >-
       !cancelled() && needs.tests.result == 'success' && github.event_name != 'pull_request' &&
       needs.runtime-gate.outputs.busy != 'yes' &&
-      inputs.mode != 'inventory' &&
+      inputs.mode != 'inventory' && !startsWith(inputs.mode, 'archive-purge') &&
       !startsWith(inputs.mode, 'prepare-drafts') && !startsWith(inputs.mode, 'send')
     needs: [tests, runtime-gate]
     concurrency:
@@ -121,6 +125,43 @@ jobs:
       - run: pip install -r apps/sales-os/requirements.txt
       - name: Read-only draft ownership and distribution inventory
         run: python -u apps/sales-os/engine/mailbox_inventory.py --output "$RUNNER_TEMP/hsb-inventory"
+
+  # Entwürfe-Archiv-v1 in den Server-Papierkorb leeren (Owner-Entscheidung 06.11.2026). Vorschau zählt nur.
+  # Anwenden nur auf main mit getippter Bestätigung; Log enthält nur Zahlen und Ordnernamen.
+  archive-purge:
+    if: github.event_name == 'workflow_dispatch' && startsWith(inputs.mode, 'archive-purge')
+    needs: tests
+    concurrency:
+      group: hsb-sales-os-runtime
+      cancel-in-progress: false
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      HSB_MAILBOX_CONFIG_JSON: ${{ secrets.HSB_SALES_MAILBOXES_JSON }}
+      HSB_CUSTOMER_SEND_ENABLED: 'no'
+      HSB_INTERNAL_TEST_SEND_ENABLED: 'no'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: '3.14'
+      - run: pip install -r apps/sales-os/requirements.txt
+      - name: Archiv leeren (${{ inputs.mode }})
+        env:
+          MODE: ${{ inputs.mode }}
+          CONFIRM: ${{ inputs.confirm }}
+        run: |
+          if [ "$MODE" = "archive-purge-preview" ]; then
+            python -u apps/sales-os/engine/hsb_cli.py archive-purge
+            exit 0
+          fi
+          if [ "$CONFIRM" != "ARCHIV-LEEREN" ] || [ "$GITHUB_REF" != "refs/heads/main" ]; then
+            echo "archive-purge verlangt confirm=ARCHIV-LEEREN und main" >&2
+            exit 1
+          fi
+          python -u apps/sales-os/engine/hsb_cli.py archive-purge --apply
 
   # Entwürfe versandfertig machen: Audit, Dubletten-Archiv, Audit, Reparatur-Erneuerung, Abschluss-Audit.
   # Kein Kundenversand. Im Log stehen nur Zahlen; Rohdaten bleiben im Runner-Temp und werden nicht hochgeladen.

@@ -6,7 +6,7 @@ from send_governance import daily_budget, pause_reason, enforce_send_health
 
 def health():
     return {'seen_inbound_ids':[],'sample_sent':100,'hard_bounces':2,'policy_bounces':0,'deferrals_today':0,'spam_reports':0,'seed_dkim_pass':True,
-            'checked_at':datetime.now(timezone.utc).isoformat(),'first_send_date':date.today().isoformat()}
+            'checked_at':datetime.now(timezone.utc).isoformat(),'first_send_date':datetime.now(timezone.utc).date().isoformat()}
 
 
 def test_budget_10_20_30_cap_35():

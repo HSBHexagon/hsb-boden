@@ -25,6 +25,7 @@ from sales_reconciliation import OUTDATED_PLANNER_COPY, OUTDATED_REPAIR_COPY
 
 # Nur veraltete Fassungen derselben Vorlage: gleicher Lead, gleiche Vorlage, neuer Text bzw. neue Gestaltung.
 REFRESHABLE = {OUTDATED_REPAIR_COPY, OUTDATED_PLANNER_COPY}
+DEEP_DEFECT_CAP = 50
 
 CONNECTIONS_PER_MAILBOX = 3
 IMAP_RETRIES = 3
@@ -34,16 +35,22 @@ def _crlf(raw):
     return raw.replace(b'\r\n', b'\n').replace(b'\r', b'\n').replace(b'\n', b'\r\n')
 
 
-def select_candidates(owner, records, leads, planner_outreach_allowed=None, check_eligibility=None):
+def select_candidates(owner, records, leads, planner_outreach_allowed=None, check_eligibility=None, *,
+                      deep_defects=frozenset(), allow_mass_refresh=False):
     """Erstkontakte, die das CRM über Draft_ID exakt bindet und die in place auf die aktuelle Reparatur-Fassung
-    gebracht werden können: veraltete Reparatur-Fassung, veralteter Planer-Text oder die ältere Vorlage
-    v2-<segment>-s1 desselben Segments. Ein bereits aktueller Entwurf mit veralteter Vorlage im CRM wird nur im
-    CRM nachgezogen (mailbox=False). Rückgabe: [(rec, lead, mailbox)], Überspringgründe."""
+    gebracht werden können: veraltete Reparatur-Fassung, veralteter Planer-Text, die ältere Vorlage
+    v2-<segment>-s1 desselben Segments oder ein vom Tiefenprüfer gemeldeter Mangel (gedeckelt auf 50 je Postfach).
+    Ein bereits aktueller Entwurf mit veralteter Vorlage im CRM wird nur im CRM nachgezogen (mailbox=False).
+    Rückgabe: [(rec, lead, mailbox)], Überspringgründe."""
     if planner_outreach_allowed is None:
         from lead_quality import planner_outreach_allowed
     if check_eligibility is None:
         from hsb_core import check_eligibility
     from lead_quality import segment_for
+    deep_defects = frozenset(deep_defects or ())
+    owner_deep = {k for k in deep_defects if k.startswith(f'{owner}|')}
+    if len(owner_deep) > DEEP_DEFECT_CAP and not allow_mass_refresh:
+        raise RuntimeError('DEEP_DEFECT_CAP_EXCEEDED')
     byid = {}
     for lead in leads:
         byid.setdefault(str(lead.get('Lead-ID') or ''), []).append(lead)
@@ -53,9 +60,11 @@ def select_candidates(owner, records, leads, planner_outreach_allowed=None, chec
         if rec.get('owner') != owner or rec.get('internal_test'):
             continue
         issues = set(rec.get('issues') or [])
+        rec_key = '|'.join(str(rec.get(k, '')) for k in ('owner', 'uidvalidity', 'uid', 'sha256'))
+        is_deep = rec_key in deep_defects
         matches = byid.get(str(rec.get('lead_id') or ''), [])
         tmpl = str(rec.get('template_id') or '')
-        if not issues & REFRESHABLE:
+        if not (issues & REFRESHABLE) and not is_deep:
             # Nur CRM nachziehen: Entwurf aktuell und fehlerfrei, CRM nennt noch die alte Vorlage.
             if (not issues and len(matches) == 1 and mids[rec.get('message_id')] == 1
                     and tmpl.startswith('v2-') and tmpl.endswith('-reparatur-s1')
@@ -77,7 +86,7 @@ def select_candidates(owner, records, leads, planner_outreach_allowed=None, chec
             skipped['CRM_BINDING_DIFFERS'] += 1
         elif segment_for(matches[0]) == 'architekten' and not planner_outreach_allowed(matches[0]):
             skipped['PLANNING_PROJECT_UNVERIFIED'] += 1
-        elif not check_eligibility(matches[0]).eligible:
+        elif str(matches[0].get('Tier') or '').strip().upper() == 'Z' or not check_eligibility(matches[0]).eligible:
             skipped['INELIGIBLE'] += 1
         else:
             chosen.append((rec, dict(matches[0]), True))
@@ -93,9 +102,9 @@ def _col_letter(index):
     return letters
 
 
-def write_crm_templates(svc, spreadsheet_id, headers, updates, chunk=400):
+def write_crm_templates(svc, spreadsheet_id, headers, updates, chunk=100):
     """Setzt Email_Template_ID für bereits erneuerte Entwürfe. Je Block: Zeilenidentität live lesen, schreiben,
-    zurücklesen. Drei Aufrufe je 400 Zeilen statt drei je Lead. updates: [(row, lead_id, template)]."""
+    zurücklesen. chunk=100 hält die batchGet-URL sicher unter Googles 16-KB-Limit. updates: [(row, lead_id, template)]."""
     if not updates:
         return 0
     col = _col_letter(headers.index('Email_Template_ID'))
@@ -209,7 +218,7 @@ def _worker(make_client, owner, folder, validity, batch, assess_message, result,
 
 def refresh_signatures(owners, records, leads, apply=False, *, make_client=None, lock_client=None,
                        assess_message=None, connections=CONNECTIONS_PER_MAILBOX, svc=None, spreadsheet_id=None,
-                       headers=None):
+                       headers=None, deep_defects=frozenset(), allow_mass_refresh=False):
     from lead_quality import segment_for
     if assess_message is None:
         from sales_reconciliation import assess_message
@@ -219,7 +228,8 @@ def refresh_signatures(owners, records, leads, apply=False, *, make_client=None,
     result = {'dry_run': not apply, 'customer_emails_sent': 0, 'crm_writes': 0, 'per_owner': {}}
     plan, crm_only = {}, {}
     for owner in owners:
-        chosen, skipped = select_candidates(owner, records, leads)
+        chosen, skipped = select_candidates(owner, records, leads, deep_defects=deep_defects,
+                                            allow_mass_refresh=allow_mass_refresh)
         plan[owner] = [(r, l) for r, l, mailbox in chosen if mailbox]
         crm_only[owner] = [l for _, l, mailbox in chosen if not mailbox]
         result['per_owner'][owner] = {'selected': len(plan[owner]), 'crm_only': len(crm_only[owner]),

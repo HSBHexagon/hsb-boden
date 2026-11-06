@@ -24,10 +24,11 @@ from sales_reconciliation import OUTDATED_PLANNER_COPY, OUTDATED_REPAIR_COPY
 
 IMAP_RETRIES = 3
 ARCHIVE = 'Entwürfe-Archiv-v1'
+DEEP_DEFECT_CAP = 50
 REPAIRABLE = {'BODY_NOT_COMPANY_OR_CONTACT_SPECIFIC', 'SUBJECT_NOT_COMPANY_SPECIFIC',
               'UNRESOLVED_PLACEHOLDER', 'FLYER_LINK_MISSING', 'PERSONAL_OPTOUT_LINK_MISSING',
-              'HISTORICAL_VARIANT_REQUIRES_REVIEW', 'PLAIN_TEXT_MISSING', OUTDATED_PLANNER_COPY,
-              OUTDATED_REPAIR_COPY}
+              'HISTORICAL_VARIANT_REQUIRES_REVIEW', 'PLAIN_TEXT_MISSING', 'LEAD_ID_INFERRED_ONLY',
+              OUTDATED_PLANNER_COPY, OUTDATED_REPAIR_COPY}
 
 
 def modified_utf7(value):
@@ -103,7 +104,8 @@ def _existing_replacement(imap, rec, lead, owner, template, assess_message):
 
 
 def upgrade_drafts(owner, limit=5, cohort='pilot', apply=False, journal_path=None, variant='standard', *,
-                   records=None, leads=None, client=None, svc=None, mx_check=None, signals=None, lock_client=None):
+                   records=None, leads=None, client=None, svc=None, mx_check=None, signals=None, lock_client=None,
+                   deep_defects=frozenset(), allow_mass_refresh=False):
     """Nur erste v2-Nachricht; Folgekontakte brauchen später das verifizierte Sequenzjournal."""
     from canonical_template_factory import render_email_v2
     from click_sync import click_url
@@ -118,6 +120,10 @@ def upgrade_drafts(owner, limit=5, cohort='pilot', apply=False, journal_path=Non
         raise ValueError('INVALID_UPGRADE_SELECTION')
     if records is None or leads is None:
         raise ValueError('FRESH_AUDIT_AND_CRM_REQUIRED')
+    deep_defects = frozenset(deep_defects or ())
+    owner_deep = {k for k in deep_defects if k.startswith(f'{owner}|')}
+    if len(owner_deep) > DEEP_DEFECT_CAP and not allow_mass_refresh:
+        raise RuntimeError('DEEP_DEFECT_CAP_EXCEEDED')
     result = {'selected': 0, 'appended': 0, 'archived': 0, 'crm_updated': 0,
               'skipped_reasons': Counter(), 'customer_emails_sent': 0, 'dry_run': not apply}
     byid = {}
@@ -164,12 +170,18 @@ def upgrade_drafts(owner, limit=5, cohort='pilot', apply=False, journal_path=Non
             if segment == 'architekten' and not planner_outreach_allowed(lead):
                 result['skipped_reasons']['PLANNING_PROJECT_UNVERIFIED'] += 1
                 continue
-            # Veraltete Fassung derselben Vorlage: nur ersetzen, wenn CRM genau diesen Entwurf bindet.
-            obsolete = (tmpl == record.get('template_id') == target_template(segment)
-                        and lead.get('Draft_ID') == record.get('message_id')
-                        and bool(outdated & set(record.get('issues', []))))
+            # Veraltete Fassung, Tiefenmangel oder unverändert neu gespeicherter Entwurf (1:1 Lead/Entwurf ist oben geprüft).
+            is_resaved = 'LEAD_ID_INFERRED_ONLY' in record.get('issues', [])
+            if is_resaved and record.get('path') and Path(record['path']).is_file():
+                from draft_verify import _text_unchanged
+                if not _text_unchanged(Path(record['path']).read_bytes(), lead, owner):
+                    result['skipped_reasons']['HUMAN_EDITED'] += 1
+                    continue
+            needs_repair = (bool(outdated & set(record.get('issues', [])))
+                            or record_key in deep_defects
+                            or is_resaved)
             already_v2 = '-reparatur-' in tmpl if variant == 'reparatur' else tmpl.startswith('v2-')
-            if already_v2 and not obsolete:
+            if already_v2 and not needs_repair:
                 result['skipped_reasons']['ALREADY_V2'] += 1
                 continue
             if str(lead.get('Tier') or '').strip().upper()=='Z':
@@ -180,7 +192,7 @@ def upgrade_drafts(owner, limit=5, cohort='pilot', apply=False, journal_path=Non
                 continue
             lead['Deliverability_Flags'] = deliverability_flags(lead, cache, set(), mx_check=mx_check)
             _, tier, _ = fit_score(lead, (signals or {}).get(lead.get('Lead-ID')))
-            if tier == 'Z' or not check_eligibility(lead).eligible:
+            if (cohort == 'pilot' and tier == 'Z') or not check_eligibility(lead).eligible:
                 reason = 'INELIGIBLE_OR_TIER_Z'
         if reason:
             result['skipped_reasons'][reason] += 1
@@ -256,7 +268,7 @@ def upgrade_drafts(owner, limit=5, cohort='pilot', apply=False, journal_path=Non
                         row = db.execute('SELECT mid,raw,state,old_raw FROM upgrades WHERE key=?', (key,)).fetchone()
                         if row and row[2] == 'DONE':
                             return
-                        if outdated & set(rec.get('issues', [])):
+                        if (outdated & set(rec.get('issues', []))) or key in deep_defects or 'LEAD_ID_INFERRED_ONLY' in rec.get('issues', []):
                             live_binding = (current.get('Draft_ID'), current.get('Email_Template_ID'))
                             original_binding = (lead.get('Draft_ID'), lead.get('Email_Template_ID'))
                             resumed = (row and row[2] == 'ARCHIVED'
@@ -269,6 +281,11 @@ def upgrade_drafts(owner, limit=5, cohort='pilot', apply=False, journal_path=Non
                         if hashlib.sha256(old).hexdigest() != rec['sha256']:
                             result['skipped_reasons']['CHANGED_V1_HASH'] += 1
                             return
+                        if 'LEAD_ID_INFERRED_ONLY' in rec.get('issues', []) and row is None:
+                            from draft_verify import _text_unchanged
+                            if not _text_unchanged(old, lead, owner):
+                                result['skipped_reasons']['HUMAN_EDITED'] += 1
+                                return
                         adopted = None
                         if row is None:
                             # Das Journal liegt je Lauf auf dem Runner und ist beim Neustart leer: Ein schon angenommener

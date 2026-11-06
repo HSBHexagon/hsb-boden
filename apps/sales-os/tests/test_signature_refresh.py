@@ -275,3 +275,40 @@ def test_crm_binding_by_other_draft_is_skipped(setup):
     store, rec = setup
     chosen, skipped = sr.select_candidates('JORDI', [rec], [dict(LEAD, Draft_ID='<andere@hsb-boden.com>')])
     assert not chosen and skipped['CRM_BINDING_DIFFERS'] == 1
+
+
+def test_deep_defect_is_refreshed(setup):
+    store, rec = setup
+    rec['issues'] = []
+    key = f"{rec['owner']}|{rec['uidvalidity']}|{rec['uid']}|{rec['sha256']}"
+    result = sr.refresh_signatures(['JORDI'], [rec], [dict(LEAD)], apply=True,
+                                   make_client=lambda o: FakeClient(o, store),
+                                   assess_message=lambda raw, owner, leads: {'issues': []}, connections=1,
+                                   deep_defects=frozenset({key}))
+    assert result['per_owner']['JORDI']['outcomes'] == {'REFRESHED': 1}
+    [new] = store['Drafts'].values()
+    msg = BytesParser(policy=policy.default).parsebytes(new)
+    assert msg['Message-ID'] == LEAD['Draft_ID']
+    assert msg['X-HSB-Copy-Rev'] == REPARATUR_COPY_REV
+
+
+def test_deep_defect_cap_stops(setup):
+    store, rec = setup
+    rec['issues'] = []
+    before = {k: dict(v) for k, v in store.items()}
+    many = frozenset(f'JORDI|7|{i}|{"a" * 64}' for i in range(51))
+    with pytest.raises(RuntimeError, match='DEEP_DEFECT_CAP_EXCEEDED'):
+        sr.refresh_signatures(['JORDI'], [rec], [dict(LEAD)], apply=True,
+                              make_client=lambda o: FakeClient(o, store),
+                              assess_message=lambda raw, owner, leads: {'issues': []},
+                              deep_defects=many)
+    assert store == before
+
+
+def test_blocked_lead_is_not_refreshed(setup):
+    store, rec = setup
+    rec['issues'] = []
+    key = f"{rec['owner']}|{rec['uidvalidity']}|{rec['uid']}|{rec['sha256']}"
+    chosen, skipped = sr.select_candidates('JORDI', [rec], [dict(LEAD, Versandfreigabe='no')],
+                                           deep_defects=frozenset({key}))
+    assert not chosen and skipped['INELIGIBLE'] == 1

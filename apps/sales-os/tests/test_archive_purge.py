@@ -212,6 +212,17 @@ def test_nonfinal_moves_only_not_ok_drafts_of_crm_leads(tmp_path, monkeypatch):
     assert '2' not in imap.boxes['Drafts'] and {'1', '3', '4'} <= set(imap.boxes['Drafts'])
 
 
+def test_nonfinal_keeps_draft_without_lead_id_despite_blank_crm_row(tmp_path, monkeypatch):
+    _audit(tmp_path, [('2', '', {})] + [(str(u), 'L1', {}) for u in range(5, 25)], leads=('L1', '', ' '))
+    verdicts = {str(u): ('OK', '') for u in range(5, 25)}
+    verdicts['2'] = ('DEFECT', 'CRM_RECIPIENT_MISSING')
+    _classify_by_uid(monkeypatch, verdicts)
+    imap = FakeImap(_draft_boxes(tmp_path, verdicts))
+    result = purge_nonfinal(tmp_path, ['JOEL'], {'JOEL': Client(imap)}, apply=True)['per_owner']['JOEL']
+    assert result['selected'] == 0 and result['moved'] == 0 and result['kept_not_crm'] == 1
+    assert '2' in imap.boxes['Drafts']
+
+
 def test_nonfinal_preview_moves_nothing(tmp_path, monkeypatch):
     _audit(tmp_path, [('2', 'L2', {})] + [(str(u), 'L1', {}) for u in range(5, 25)])
     verdicts = {str(u): ('OK', '') for u in range(5, 25)}

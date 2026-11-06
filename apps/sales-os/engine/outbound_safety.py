@@ -504,7 +504,9 @@ def dispatch_verified(count_per_owner=25, owners=('JOEL','JORDI'), dry_run=True,
                 effective_cap=min(cap,enforce_domain_health(state, datetime.now(ZoneInfo('Europe/Berlin')).date(), MailboxHealthStore(clients['JOEL'])))
                 lead['Deliverability_Flags']=deliverability_flags(lead,{},set())
                 verdict=check_eligibility(lead)
-                if not verdict.eligible: raise RuntimeError('LIVE_GATE_BLOCKED:'+','.join(verdict.reasons))
+                # Ein einzelner gesperrter oder nicht zustellbarer Lead stoppt die Tranche nicht; gesendet wird er nie.
+                if not verdict.eligible:
+                    print(f"SKIP {item['lead_id']}: {','.join(r.split('(')[0].strip() for r in verdict.reasons)}"); continue
                 if normalize_owner(lead['Verantwortlicher'])!=item['owner'] or lead['E-Mail'].strip().lower()!=item['email']:
                     raise RuntimeError('LIVE_IDENTITY_CHANGED')
                 today=datetime.now(ZoneInfo('Europe/Berlin')).date()

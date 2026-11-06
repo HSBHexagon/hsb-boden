@@ -154,8 +154,10 @@ jobs:
           MODE: ${{ inputs.mode }}
           CONFIRM: ${{ inputs.confirm }}
         run: |
+          AUDIT="$RUNNER_TEMP/hsb-reconciliation"
           if [ "$MODE" = "archive-purge-preview" ]; then
-            python -u apps/sales-os/engine/hsb_cli.py archive-purge
+            python -u apps/sales-os/engine/sales_reconciliation.py --output "$AUDIT"
+            python -u apps/sales-os/engine/hsb_cli.py archive-purge --audit-dir "$AUDIT"
             exit 0
           fi
           if [ "$CONFIRM" != "ARCHIV-LEEREN" ] || [ "$GITHUB_REF" != "refs/heads/main" ]; then
@@ -164,7 +166,8 @@ jobs:
           fi
           # Sperre eines beendeten Laufs lösen; bei unklarem Versand (SENDING) endet der Job, bevor etwas bewegt wird.
           python -u apps/sales-os/engine/hsb_cli.py release-stale-lock --apply
-          python -u apps/sales-os/engine/hsb_cli.py archive-purge --apply
+          python -u apps/sales-os/engine/sales_reconciliation.py --output "$AUDIT"
+          python -u apps/sales-os/engine/hsb_cli.py archive-purge --audit-dir "$AUDIT" --apply
 
   # Entwürfe versandfertig machen: Audit, Dubletten-Archiv, Audit, Reparatur-Erneuerung, Abschluss-Audit.
   # Kein Kundenversand. Im Log stehen nur Zahlen; Rohdaten bleiben im Runner-Temp und werden nicht hochgeladen.

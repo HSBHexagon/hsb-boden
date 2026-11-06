@@ -1,10 +1,12 @@
 """Archiv leeren: nur 'Entwürfe-Archiv-v1', nur in den Papierkorb, nie STORE oder EXPUNGE."""
 from email.message import EmailMessage
+import hashlib
+import json
 import re
 
 import pytest
 
-from archive_purge import find_trash, purge_archive
+from archive_purge import find_trash, purge_archive, purge_nonfinal
 from draft_upgrade import ARCHIVE, mailbox_arg
 
 ARCH = mailbox_arg(ARCHIVE)
@@ -171,6 +173,76 @@ def test_counts_foreign_senders_and_missing_lead_ids_without_recipient_data(caps
     res = result['per_owner']['JORDI']
     assert res['foreign_sender'] == 1 and res['without_lead_id'] == 1
     assert 'geheim@kunde.de' not in str(result) and '<a@h>' not in str(result)
+
+
+def _audit(tmp_path, records, leads=('L1', 'L2', 'L3')):
+    rows = [['Lead-ID']] + [[lead] for lead in leads]
+    (tmp_path / 'crm-original.json').write_text(json.dumps({'valueRanges': [{'values': rows}]}))
+    out = []
+    for i, (uid, lead, extra) in enumerate(records):
+        path = tmp_path / f'{uid}.eml'
+        raw = _raw(f'<m{uid}@h>', f'x{i}@firma.de', lead=lead)
+        path.write_bytes(raw)
+        out.append({'owner': 'JOEL', 'uid': uid, 'uidvalidity': '7', 'folder': 'Drafts', 'lead_id': lead, 'path': str(path),
+                    'sha256': hashlib.sha256(raw).hexdigest(), 'issues': [], **extra})
+    (tmp_path / 'drafts.json').write_text(json.dumps(out))
+    return {r['uid']: r for r in out}
+
+
+def _classify_by_uid(monkeypatch, verdicts):
+    import draft_verify
+    monkeypatch.setattr(draft_verify, 'classify', lambda rec, lead, raw: verdicts[rec['uid']])
+
+
+def _draft_boxes(tmp_path, uids):
+    return {'Drafts': {u: (tmp_path / f'{u}.eml').read_bytes() for u in uids}, 'Papierkorb': {}}
+
+
+def test_nonfinal_moves_only_not_ok_drafts_of_crm_leads(tmp_path, monkeypatch):
+    _audit(tmp_path, [('1', 'L1', {}), ('2', 'L2', {}), ('3', 'FREMD', {}), ('4', 'L3', {'internal_test': True})]
+           + [(str(u), 'L1', {}) for u in range(5, 25)])
+    verdicts = {str(u): ('OK', '') for u in range(5, 25)}
+    verdicts.update({'1': ('OK', ''), '2': ('HELD', 'ALREADY_CONTACTED'), '3': ('DEFECT', 'CRM_RECIPIENT_MISSING'),
+                     '4': ('HELD', 'INTERNAL_TEST')})
+    _classify_by_uid(monkeypatch, verdicts)
+    imap = FakeImap(_draft_boxes(tmp_path, verdicts))
+    result = purge_nonfinal(tmp_path, ['JOEL'], {'JOEL': Client(imap)}, apply=True)['per_owner']['JOEL']
+    assert result['moved'] == 1 and result['selected'] == 1 and result['final'] == 21 and result['kept_not_crm'] == 2
+    assert result['reasons'] == {'ALREADY_CONTACTED': 1}
+    assert '2' not in imap.boxes['Drafts'] and {'1', '3', '4'} <= set(imap.boxes['Drafts'])
+
+
+def test_nonfinal_preview_moves_nothing(tmp_path, monkeypatch):
+    _audit(tmp_path, [('2', 'L2', {})] + [(str(u), 'L1', {}) for u in range(5, 25)])
+    verdicts = {str(u): ('OK', '') for u in range(5, 25)}
+    verdicts['2'] = ('DEFECT', 'SUBJECT_DIFFERS')
+    _classify_by_uid(monkeypatch, verdicts)
+    imap = FakeImap(_draft_boxes(tmp_path, verdicts))
+    assert purge_nonfinal(tmp_path, ['JOEL'], {'JOEL': Client(imap)})['per_owner']['JOEL']['selected'] == 1
+    assert imap.calls == []
+
+
+def test_nonfinal_skips_draft_changed_since_audit(tmp_path, monkeypatch):
+    _audit(tmp_path, [('2', 'L2', {})] + [(str(u), 'L1', {}) for u in range(5, 25)])
+    verdicts = {str(u): ('OK', '') for u in range(5, 25)}
+    verdicts['2'] = ('HELD', 'INELIGIBLE')
+    _classify_by_uid(monkeypatch, verdicts)
+    boxes = _draft_boxes(tmp_path, verdicts)
+    boxes['Drafts']['2'] = b'Subject: anders\r\n\r\nneu'
+    imap = FakeImap(boxes)
+    result = purge_nonfinal(tmp_path, ['JOEL'], {'JOEL': Client(imap)}, apply=True)['per_owner']['JOEL']
+    assert result['moved'] == 0 and result['changed_since_audit'] == 1 and '2' in imap.boxes['Drafts']
+
+
+def test_nonfinal_refuses_implausibly_large_plan(tmp_path, monkeypatch):
+    _audit(tmp_path, [(str(u), 'L1', {}) for u in range(1, 11)])
+    verdicts = {str(u): ('DEFECT', 'HTML_DIFFERS') for u in range(1, 11)}
+    verdicts['1'] = ('OK', '')
+    _classify_by_uid(monkeypatch, verdicts)
+    imap = FakeImap(_draft_boxes(tmp_path, verdicts))
+    with pytest.raises(RuntimeError, match='NONFINAL_PLAN_TOO_LARGE'):
+        purge_nonfinal(tmp_path, ['JOEL'], {'JOEL': Client(imap)}, apply=True)
+    assert 'MOVE' not in imap.calls
 
 
 def test_module_contains_no_delete_commands():

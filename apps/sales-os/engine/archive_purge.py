@@ -1,13 +1,17 @@
-"""'Entwürfe-Archiv-v1' leeren (Owner-Entscheidung 06.11.2026). Ohne --apply ausschließlich lesend.
+"""'Entwürfe-Archiv-v1' und nicht endgültige Entwürfe leeren (Owner-Entscheidung 06.11.2026). Ohne --apply nur lesend.
 
 Gelöscht heißt hier wie in graph_aufraeumen.py: per UID MOVE in den Server-Papierkorb des jeweiligen Postfachs.
-Es gibt kein STORE, DELETE oder EXPUNGE; endgültig weg ist erst, was der Papierkorb selbst leert. Der Ordnername
-ist fest, Entwürfe, Gesendet und Eingang werden nur gelesen. Ausgegeben werden nur Zahlen und Ordnernamen.
+Es gibt kein STORE, DELETE oder EXPUNGE; endgültig weg ist erst, was der Papierkorb selbst leert. Der Archivname
+ist fest. Aus dem Entwurfsordner geht nur, was die Tiefenprüfung nicht als OK einstuft und einem CRM-Lead gehört;
+Gesendet und Eingang werden nie berührt. Ausgegeben werden nur Zahlen, Codes und Ordnernamen.
 """
 from __future__ import annotations
 
+from collections import Counter
 from email import policy
 from email.parser import BytesParser
+import hashlib
+from pathlib import Path
 import re
 
 from draft_upgrade import ARCHIVE, mailbox_arg, modified_utf7
@@ -19,6 +23,8 @@ FETCH_CHUNK = 500
 MOVE_CHUNK = 200
 # Nur falls der Server keinen \Trash-Marker liefert; Treffer müssen eindeutig sein.
 TRASH_NAMES = {'trash', 'papierkorb', 'deleted', 'deleted items', 'deleted messages', 'gel&apy-schte elemente'}
+# Schutz gegen einen Fehlalarm der Prüfung: Mehr als dieser Anteil je Postfach wird nicht bewegt.
+MAX_NONFINAL_SHARE = 0.10
 _LIST_LINE = re.compile(r'^\((?P<flags>[^)]*)\) (?:"[^"]*"|NIL) (?P<name>.+)$')
 
 
@@ -171,3 +177,68 @@ def purge_owner(owner, client, apply):
 def purge_archive(owners, clients, apply=False):
     return {'dry_run': not apply, 'customer_emails_sent': 0, 'crm_writes': 0,
             'per_owner': {owner: purge_owner(owner, clients[owner], apply) for owner in owners}}
+
+
+def nonfinal_plan(audit_dir):
+    """Teilt das Audit in endgültig, zu löschen und unberührt (Testmails und Entwürfe ohne CRM-Lead)."""
+    from draft_verify import _load_json, _load_leads, _read_raw, classify
+    audit_dir = Path(audit_dir)
+    drafts = _load_json(audit_dir / 'drafts.json', 'DRAFTS_UNREADABLE')
+    leads = _load_leads(audit_dir)
+    plan = {}
+    for record in drafts:
+        entry = plan.setdefault(record['owner'], {'final': 0, 'kept_not_crm': 0, 'reasons': Counter(), 'records': []})
+        lead = leads.get(str(record.get('lead_id') or ''))
+        bucket, reason = classify(record, lead, _read_raw(record))
+        if bucket == 'OK':
+            entry['final'] += 1
+        elif not lead or record.get('internal_test'):
+            entry['kept_not_crm'] += 1
+        else:
+            entry['reasons'][reason] += 1
+            entry['records'].append(record)
+    return plan
+
+
+def _move_nonfinal(imap, cfg, records):
+    trash_name = find_trash(imap, cfg)
+    trash = _quoted(trash_name)
+    before = _count(imap, trash)
+    moved = changed = 0
+    for folder in sorted({r['folder'] for r in records}):
+        if not _select(imap, folder, readonly=False):
+            raise RuntimeError('DRAFTS_FOLDER_UNAVAILABLE')
+        validity = _validity(imap)
+        for record in (r for r in records if r['folder'] == folder):
+            if str(record['uidvalidity']) != validity:
+                raise RuntimeError('DRAFT_UIDVALIDITY_CHANGED')
+            typ, data = imap.uid('FETCH', str(record['uid']), '(BODY.PEEK[])')
+            parts = [x[1] for x in data or [] if isinstance(x, tuple)] if typ == 'OK' else []
+            # Seit dem Audit geändert oder schon weg: nicht anfassen.
+            if len(parts) != 1 or hashlib.sha256(parts[0]).hexdigest() != record['sha256']:
+                changed += 1
+                continue
+            if imap.uid('MOVE', str(record['uid']), trash)[0] != 'OK':
+                raise RuntimeError('DRAFT_MOVE_FAILED')
+            moved += 1
+    after = _count(imap, trash)
+    if after - before < moved:
+        raise RuntimeError('TRASH_READBACK_MISMATCH')
+    return {'trash_folder': trash_name, 'moved': moved, 'changed_since_audit': changed}
+
+
+def purge_nonfinal(audit_dir, owners, clients, apply=False):
+    plan = nonfinal_plan(audit_dir)
+    result = {}
+    for owner in owners:
+        entry = plan.get(owner) or {'final': 0, 'kept_not_crm': 0, 'reasons': Counter(), 'records': []}
+        selected, scanned = len(entry['records']), entry['final'] + entry['kept_not_crm'] + len(entry['records'])
+        if selected > scanned * MAX_NONFINAL_SHARE:
+            raise RuntimeError('NONFINAL_PLAN_TOO_LARGE')
+        report = {'final': entry['final'], 'selected': selected, 'reasons': dict(entry['reasons']),
+                  'kept_not_crm': entry['kept_not_crm'], 'moved': 0, 'changed_since_audit': 0}
+        if apply and selected:
+            with clients[owner]._get_imap() as imap:
+                report.update(_move_nonfinal(imap, clients[owner].cfg, entry['records']))
+        result[owner] = report
+    return {'dry_run': not apply, 'customer_emails_sent': 0, 'crm_writes': 0, 'per_owner': result}

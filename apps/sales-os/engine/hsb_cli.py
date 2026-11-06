@@ -579,17 +579,19 @@ def cmd_refresh_signature(args):
 
 
 def cmd_archive_purge(args):
-    """Entwürfe-Archiv-v1 in den Server-Papierkorb leeren; ohne --apply nur Zahlen."""
-    from archive_purge import purge_archive
+    """Archiv und nicht endgültige Entwürfe in den Server-Papierkorb leeren; ohne --apply nur Zahlen."""
+    from archive_purge import purge_archive, purge_nonfinal
     from com_mailbox_manager import ComMailboxClient
     owners = ('JOEL', 'JORDI')
     clients = {o: ComMailboxClient(o) for o in owners}
     if args.apply:
         from outbound_safety import mailbox_dispatch_lock
         with mailbox_dispatch_lock(clients['JOEL'], release_on_error=True):
-            result = purge_archive(owners, clients, apply=True)
+            result = {'archive': purge_archive(owners, clients, apply=True),
+                      'nonfinal': purge_nonfinal(args.audit_dir, owners, clients, apply=True)}
     else:
-        result = purge_archive(owners, clients, apply=False)
+        result = {'archive': purge_archive(owners, clients, apply=False),
+                  'nonfinal': purge_nonfinal(args.audit_dir, owners, clients, apply=False)}
     print(json.dumps(result, ensure_ascii=False))
 
 
@@ -724,7 +726,8 @@ def main():
     p_dedupe.add_argument("--journal", default=str(Path.home()/".local/state/hsb-sales-os/dedupe.sqlite3"))
     p_dedupe.add_argument("--apply", action="store_true")
 
-    p_purge_arch = subparsers.add_parser("archive-purge", help="Entwürfe-Archiv-v1 in den Papierkorb leeren; Standard Dry-Run")
+    p_purge_arch = subparsers.add_parser("archive-purge", help="Archiv und nicht endgültige Entwürfe in den Papierkorb leeren; Standard Dry-Run")
+    p_purge_arch.add_argument("--audit-dir", required=True)
     p_purge_arch.add_argument("--apply", action="store_true")
 
     p_lock = subparsers.add_parser("release-stale-lock", help="Versandsperre nach Abbruch lösen, nur ohne unklaren Versand (SENDING)")

@@ -1,5 +1,7 @@
 # HSB .COM Rapid Draft Engine Implementation Plan
 
+> **Aktualisierung vom 04.11.2026:** Der [aktuelle Ausführungsplan](../../ai_state/loops/2026-11-04-prepare-drafts-kette.md) übernimmt die gemeinsame IMAP-Verbindung und den gebündelten CRM-Abgleich. Antigravity führt die Umstellung bevorzugt lokal über Desktop Commander aus. Für bestehende Entwürfe gelten dort die aktuellen Reparaturvorgaben, die Pilotprüfung, die Archivierung und der Wiederanlauf. Die folgenden Schritte dokumentieren die ursprüngliche Neuanlage.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Ultraschnelle und fehlertolerante Erstellung von Akquise-Entwürfen direkt im .com-Postfach (KASServer IMAP) mit kanonischem Flyer, §35a-Signatur und atomarem Google Sheet Writeback.

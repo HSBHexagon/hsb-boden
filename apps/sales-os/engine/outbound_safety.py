@@ -10,7 +10,7 @@ from datetime import datetime, timezone
 from email import policy
 from email.message import EmailMessage
 from email.parser import BytesParser
-from email.utils import formatdate
+from email.utils import formatdate, parsedate_to_datetime
 import hashlib
 import imaplib
 import re
@@ -374,6 +374,27 @@ def complete_delivery(client, journal, svc, spreadsheet_id, headers, row, item, 
         journal.transition(em,'VERIFIED')
 
 
+_GERMAN_MONTHS = {name: i for i, name in enumerate(('januar', 'februar', 'märz', 'april', 'mai', 'juni', 'juli', 'august',
+                                                    'september', 'oktober', 'november', 'dezember'), 1)}
+_GERMAN_STAMP = re.compile(r'^\w+, (\d{1,2})\. (\w+) (\d{4}) um (\d{2}):(\d{2}):(\d{2})$')
+
+
+def _parse_send_stamp(stamp):
+    """ISO, Mail-Datum oder deutsches Langformat aus Altbeständen; alles andere stoppt die Tageszählung."""
+    try:
+        return datetime.fromisoformat(stamp.replace('Z', '+00:00'))
+    except ValueError:
+        pass
+    german = _GERMAN_STAMP.match(stamp)
+    month = _GERMAN_MONTHS.get(german[2].lower()) if german else None
+    if month:
+        return datetime(int(german[3]), month, int(german[1]), int(german[4]), int(german[5]), int(german[6]))
+    try:
+        return parsedate_to_datetime(stamp)
+    except (TypeError, ValueError):
+        raise RuntimeError('CRM_SEND_DATE_INVALID') from None
+
+
 def count_owner_attempts_today(leads, owner, today):
     senders={'JOEL':'j-cherino@hsb-boden.com','JORDI':'j-post@hsb-boden.com'}
     known=set(senders.values())|{'j-cherino@hsb-boden.de','j-post@hsb-boden.de'}
@@ -381,8 +402,7 @@ def count_owner_attempts_today(leads, owner, today):
     for other in leads:
         stamp=str(other.get('Last_Send_Attempt_At') or other.get('Send_Datum') or '').strip()
         if not stamp:continue
-        try:dt=datetime.fromisoformat(stamp.replace('Z','+00:00'))
-        except ValueError:raise RuntimeError('CRM_SEND_DATE_INVALID')
+        dt=_parse_send_stamp(stamp)
         if dt.tzinfo is None:
             # Old date-only records cannot affect a much later Berlin day.
             if (today-dt.date()).days>1:continue

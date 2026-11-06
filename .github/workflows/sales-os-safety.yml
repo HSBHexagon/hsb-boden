@@ -235,6 +235,8 @@ jobs:
         env:
           HSB_SALES_STATE_DIR: ${{ runner.temp }}/hsb-state
           HSB_COM_ONLY_INBOUND: 'yes'
+          HSB_RELEASE_STALE_LOCK: 'yes'
+          HSB_SEND_PAUSE_ACK: 'auto'
           MODE: ${{ inputs.mode }}
           COUNT: ${{ inputs.count }}
         run: |

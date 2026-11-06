@@ -307,3 +307,12 @@ def test_dispatch_passes_inbound_scope_to_sync(tmp_path, monkeypatch, flag, expe
     with pytest.raises(RuntimeError, match='AUDIT_REACHED'):
         out_mod.dispatch_verified(1, owners=('JOEL',), dry_run=False, include_de_inbound=flag)
     assert seen == [{'apply': True, 'include_de': expected}]
+
+
+def test_daily_cap_and_budget_supports_100_when_configured(monkeypatch):
+    from send_governance import daily_budget
+    import outbound_safety as out_mod
+    monkeypatch.setenv('HSB_DAILY_CAP', '1000')
+    monkeypatch.setenv('HSB_MAX_BUDGET', '1000')
+    assert daily_budget('2026-10-01', '2026-11-06') == 1000
+    assert out_mod.DAILY_CAP >= 100

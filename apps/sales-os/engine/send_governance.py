@@ -9,12 +9,13 @@ Erzwingt:
 from __future__ import annotations
 
 import datetime
+import os
 import random
 from typing import Dict, Optional, Tuple
 
 MIN_JITTER_SECONDS: int = 45
 MAX_JITTER_SECONDS: int = 180
-DAILY_CAP_PER_MAILBOX: int = 35
+DAILY_CAP_PER_MAILBOX: int = int(os.environ.get('HSB_DAILY_CAP', 35))
 
 REAL_EXTERNAL_PROSPECT_SEND_COUNT: int = 0
 
@@ -94,7 +95,9 @@ def daily_budget(first_send_date, today):
     age = (as_date(today) - as_date(first_send_date)).days
     if age < 0:
         raise ValueError('RAMP_START_IN_FUTURE')
-    return min(DAILY_CAP_PER_MAILBOX, 10 if age < 7 else 20 if age < 14 else 30)
+    cap = int(os.environ.get('HSB_DAILY_CAP', DAILY_CAP_PER_MAILBOX))
+    max_limit = int(os.environ.get('HSB_MAX_BUDGET', 30))
+    return min(cap, 10 if age < 7 else 20 if age < 14 else max_limit)
 
 
 def pause_reason(stats):

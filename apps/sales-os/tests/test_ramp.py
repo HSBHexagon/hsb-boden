@@ -316,3 +316,72 @@ def test_daily_cap_and_budget_supports_100_when_configured(monkeypatch):
     monkeypatch.setenv('HSB_MAX_BUDGET', '1000')
     assert daily_budget('2026-10-01', '2026-11-06') == 1000
     assert out_mod.DAILY_CAP >= 100
+
+
+def test_blocked_lead_is_skipped_and_tranche_continues(tmp_path, monkeypatch, capsys):
+    """Ein Lead ohne zustellbare Domain wird nie gesendet und stoppt die übrigen nicht."""
+    from contextlib import nullcontext
+    from email.message import EmailMessage
+    import hashlib
+    from types import SimpleNamespace
+    import outbound_safety as out
+    import sales_reconciliation as recon
+    import sync_to_google_sheet as sheets
+    import com_mailbox_manager as mail
+    import closed_loop_crm as inbound
+    import send_governance as guard
+    from test_outbound_safety_gate import _crm_lead
+    leads = [_crm_lead(**{'Lead-ID': f'L{i}', 'Verantwortlicher': 'Joel Cherino Diaz', 'E-Mail': f'test{i}@firma.invalid'}) for i in (1, 2)]
+    headers = list(leads[0])
+    raws = {}
+    queue = []
+    drafts = []
+    for i, lead in enumerate(leads, 1):
+        msg = EmailMessage()
+        msg['To'] = lead['E-Mail']
+        msg['From'] = 'j-cherino@hsb-boden.com'
+        msg['Subject'] = 'x'
+        msg['Message-ID'] = f'<{i}@hsb-boden.com>'
+        msg.set_content('Test')
+        raws[str(i)] = msg.as_bytes()
+        queue.append({'lead_id': lead['Lead-ID'], 'owner': 'JOEL', 'email': lead['E-Mail']})
+        drafts.append({'lead_id': lead['Lead-ID'], 'sendable': True, 'folder': 'Drafts', 'uidvalidity': '7', 'uid': str(i),
+                       'sha256': hashlib.sha256(raws[str(i)]).hexdigest()})
+
+    class IMAP:
+        def __enter__(self): return self
+        def __exit__(self, *a): pass
+        def select(self, *a, **k): return 'OK', []
+        def response(self, *a): return None, [b'7']
+        def uid(self, cmd, uid, *a): return 'OK', [(b'h', raws[uid])]
+
+    client = SimpleNamespace(_get_imap=lambda: IMAP(), cfg={})
+    monkeypatch.setattr(mail, 'ComMailboxClient', lambda o: client)
+    monkeypatch.setattr(out, 'mailbox_dispatch_lock', lambda c, **k: nullcontext())
+    monkeypatch.setattr(inbound, 'sync_inbounds', lambda **k: None)
+
+    def audit(path):
+        path.mkdir(parents=True)
+        (path / 'queue.json').write_text(json.dumps(queue))
+        (path / 'drafts.json').write_text(json.dumps(drafts))
+    monkeypatch.setattr(recon, 'run_audit', audit)
+    monkeypatch.setattr(recon, 'assess_message', lambda *a: {'issues': []})
+    monkeypatch.setattr(recon, 'has_unreviewed_legacy_variant', lambda *a: False)
+    values = SimpleNamespace(get=lambda **k: SimpleNamespace(
+        execute=lambda: {'values': [headers] + [[l.get(h, '') for h in headers] for l in leads]}))
+    monkeypatch.setattr(sheets, 'get_sheets_service', lambda: SimpleNamespace(spreadsheets=lambda: SimpleNamespace(values=lambda: values)))
+    monkeypatch.setattr('lead_quality.deliverability_flags', lambda lead, *a: ['NO_MX'] if lead['Lead-ID'] == 'L1' else [])
+    monkeypatch.setattr(guard, 'enforce_domain_health', lambda *a: 10)
+    deliveries = []
+    monkeypatch.setattr(out, 'complete_delivery', lambda *a: deliveries.append(a))
+    monkeypatch.setattr(out.time, 'sleep', lambda *a: None)
+    monkeypatch.setenv('HSB_CUSTOMER_SEND_ENABLED', 'yes')
+    monkeypatch.setenv('HSB_SALES_STATE_DIR', str(tmp_path))
+
+    result = out.dispatch_verified(2, owners=('JOEL',), dry_run=False)
+
+    assert result['sent_counts']['JOEL'] == 1 and len(deliveries) == 1
+    assert deliveries[0][6]['lead_id'] == 'L2'
+    printed = capsys.readouterr().out
+    assert 'SKIP L1: Deliverability=NO_MX' in printed and 'firma.invalid' not in printed
+

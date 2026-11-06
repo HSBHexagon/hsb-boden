@@ -193,7 +193,10 @@ def _load_leads(audit_dir: Path) -> dict[str, dict]:
     leads = {}
     for row in rows[1:]:
         lead = dict(zip(rows[0], row))
-        leads.setdefault(str(lead.get('Lead-ID') or ''), lead)
+        lead_id = str(lead.get('Lead-ID') or '').strip()
+        # Eine Zeile ohne ID darf keinen Entwurf ohne ID zum CRM-Entwurf machen.
+        if lead_id:
+            leads.setdefault(lead_id, lead)
     return leads
 
 

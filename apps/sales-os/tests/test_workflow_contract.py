@@ -28,7 +28,8 @@ def test_archive_purge_applies_only_on_main_with_typed_confirmation():
     assert 'github.event_name == \'workflow_dispatch\' && startsWith(inputs.mode, \'archive-purge\')' in job
     assert 'group: hsb-sales-os-runtime' in job
     assert '[ "$CONFIRM" != "ARCHIV-LEEREN" ]' in job and '[ "$GITHUB_REF" != "refs/heads/main" ]' in job
-    assert job.count('--apply') == 1
+    assert job.count('--apply') == 2 and job.count('"$AUDIT" --apply') == 1
+    assert job.index('release-stale-lock --apply') < job.index('"$AUDIT" --apply')
     assert "HSB_CUSTOMER_SEND_ENABLED: 'no'" in job
 
 

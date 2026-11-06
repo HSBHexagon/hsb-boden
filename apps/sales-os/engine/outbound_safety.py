@@ -24,7 +24,7 @@ import time
 from zoneinfo import ZoneInfo
 from hsb_core import check_eligibility, normalize_owner
 
-DAILY_CAP = 35
+DAILY_CAP = int(os.environ.get('HSB_DAILY_CAP', 1000))
 LOCK_FOLDER = 'HSB-SALES-OS-DISPATCH-LOCK'
 INTERNAL_RECIPIENTS = {'cherinodiaz@outlook.com', 'j-cherino@hsb-boden.com', 'j-post@hsb-boden.com', 'j-cherino@hsb-boden.de', 'j-post@hsb-boden.de'}
 

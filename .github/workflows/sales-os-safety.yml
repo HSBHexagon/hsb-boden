@@ -12,7 +12,7 @@ on:
         options: [audit, inventory, inbound-preview, inbound-sync, prepare-drafts-preview, prepare-drafts, send-preview, send]
         default: audit
       count:
-        description: "Nur für send/send-preview: Anzahl je Postfach (1-35)"
+        description: "Nur für send/send-preview: Anzahl je Postfach (1-100)"
         type: number
         default: 10
       chain:

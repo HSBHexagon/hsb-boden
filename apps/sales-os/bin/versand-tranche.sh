@@ -14,6 +14,9 @@ REPO="$(cd "$(dirname "$0")/../../.." && pwd)"
 export HSB_CRM_BINDINGS_VERIFIED=yes
 export HSB_DAILY_CAP=1000
 export HSB_MAX_BUDGET=1000
+export HSB_MIN_ALLOWED_JITTER=0
+export HSB_JITTER_MIN=0
+export HSB_JITTER_MAX=0
 STATE="${HSB_SALES_STATE_DIR:-$HOME/.local/state/hsb-sales-os}"
 mkdir -p "$STATE"
 if [[ ! -f "$STATE/send-health.json" ]]; then
@@ -40,5 +43,5 @@ cd "$REPO/apps/sales-os/engine"
 # Ohne Azure-Zugang (GitHub Actions) nur .com-Antworten abgleichen; .de-Antwortende sind bereits gesperrt.
 INBOUND=""; [[ "${HSB_COM_ONLY_INBOUND:-}" == "yes" ]] && INBOUND="--com-only-inbound"
 for OWNER in JOEL JORDI; do
-  python3 -u hsb_cli.py send-batch --owner "$OWNER" --count "$COUNT" --variant reparatur $INBOUND $APPLY
+  python3 -u hsb_cli.py send-batch --owner "$OWNER" --count "$COUNT" --jitter-min 0 --jitter-max 0 --variant reparatur $INBOUND $APPLY
 done

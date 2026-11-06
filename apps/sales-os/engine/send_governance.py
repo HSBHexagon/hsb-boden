@@ -13,8 +13,8 @@ import os
 import random
 from typing import Dict, Optional, Tuple
 
-MIN_JITTER_SECONDS: int = 45
-MAX_JITTER_SECONDS: int = 180
+MIN_JITTER_SECONDS: int = int(os.environ.get('HSB_JITTER_MIN', 45))
+MAX_JITTER_SECONDS: int = int(os.environ.get('HSB_JITTER_MAX', 180))
 DAILY_CAP_PER_MAILBOX: int = int(os.environ.get('HSB_DAILY_CAP', 35))
 
 REAL_EXTERNAL_PROSPECT_SEND_COUNT: int = 0

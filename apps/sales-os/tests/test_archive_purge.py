@@ -145,6 +145,20 @@ def test_name_fallback_only_when_no_special_use_flag():
     assert find_trash(FakeImap({}, listing=listing), {'drafts_folder': 'Drafts'}) == 'INBOX.Trash'
 
 
+@pytest.mark.parametrize('name', ['Entw&APw-rfe', 'Gesendet', 'INBOX'])
+def test_quoted_config_folders_are_never_trash(name):
+    cfg = {'drafts_folder': '"Entw&APw-rfe"', 'sent_folder': '"Gesendet"', 'inbox_folder': '"INBOX"'}
+    listing = [('(\\Trash) "." "' + name + '"').encode()]
+    with pytest.raises(RuntimeError, match='TRASH_NOT_FOUND'):
+        find_trash(FakeImap({}, listing=listing), cfg)
+
+
+def test_nested_folder_is_no_trash_by_name():
+    listing = [b'(\\HasNoChildren) "." "Kunden.Mueller.Trash"']
+    with pytest.raises(RuntimeError, match='TRASH_NOT_FOUND'):
+        find_trash(FakeImap({}, listing=listing), {'drafts_folder': 'Drafts'})
+
+
 def test_lost_mail_fails_readback():
     imap = FakeImap(_boxes({'1': _raw('<a@h>')}), move_drops=True)
     with pytest.raises(RuntimeError, match='TRASH_READBACK_MISMATCH'):

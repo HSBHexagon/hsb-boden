@@ -22,8 +22,10 @@ TRASH_NAMES = {'trash', 'papierkorb', 'deleted', 'deleted items', 'deleted messa
 _LIST_LINE = re.compile(r'^\((?P<flags>[^)]*)\) (?:"[^"]*"|NIL) (?P<name>.+)$')
 
 
-def _leaf(name):
-    return re.split(r'[./]', name)[-1].lower()
+def _is_trash_name(name):
+    """Nur oberste Ebene oder INBOX.<Name>; ein Unterordner 'Kunden.Mueller.Trash' ist kein Papierkorb."""
+    parts = re.split(r'[./]', name.lower())
+    return parts[-1] in TRASH_NAMES and (len(parts) == 1 or (len(parts) == 2 and parts[0] == 'inbox'))
 
 
 def find_trash(imap, cfg):
@@ -32,7 +34,8 @@ def find_trash(imap, cfg):
     if typ != 'OK':
         raise RuntimeError('TRASH_LIST_FAILED')
     forbidden = {modified_utf7(ARCHIVE).lower()}
-    forbidden |= {str(cfg.get(k) or '').lower() for k in ('drafts_folder', 'sent_folder', 'inbox_folder')}
+    # Die Konfiguration führt Ordner in Anführungszeichen, LIST-Namen sind hier schon ohne.
+    forbidden |= {str(cfg.get(k) or '').strip().strip('"').lower() for k in ('drafts_folder', 'sent_folder', 'inbox_folder')}
     flagged, named = [], []
     for line in lines or []:
         if not isinstance(line, bytes):
@@ -45,7 +48,7 @@ def find_trash(imap, cfg):
             continue
         if '\\trash' in match['flags'].lower():
             flagged.append(name)
-        elif _leaf(name) in TRASH_NAMES:
+        elif _is_trash_name(name):
             named.append(name)
     hits = flagged or named
     if not hits:

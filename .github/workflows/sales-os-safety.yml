@@ -15,6 +15,10 @@ on:
         description: "Nur für archive-purge: exakt ARCHIV-LEEREN eintippen"
         type: string
         default: ''
+      health_ack:
+        description: "Nur für send nach behobener Versandpause: ID der geprüften Pause"
+        type: string
+        default: ''
       count:
         description: "Nur für send/send-preview: Anzahl je Postfach (1-100)"
         type: number
@@ -219,7 +223,7 @@ jobs:
   # Versand einer Tranche, nur per manueller Auswahl von send/send-preview. Doppelversand ist ausgeschlossen:
   # CRM bekommt SENDING vor SMTP, ein Abbruch lässt die IMAP-Sperre stehen und blockiert jeden Folgelauf.
   customer-send:
-    if: github.event_name == 'workflow_dispatch' && startsWith(inputs.mode, 'send')
+    if: github.event_name == 'workflow_dispatch' && (inputs.mode == 'send-preview' || (inputs.mode == 'send' && github.ref == 'refs/heads/main'))
     needs: tests
     concurrency:
       group: hsb-sales-os-runtime
@@ -242,7 +246,8 @@ jobs:
           HSB_SALES_STATE_DIR: ${{ runner.temp }}/hsb-state
           HSB_COM_ONLY_INBOUND: 'yes'
           HSB_RELEASE_STALE_LOCK: 'yes'
-          HSB_SEND_PAUSE_ACK: 'auto'
+          HSB_SEND_PAUSE_ACK: ${{ inputs.health_ack }}
+          HSB_VERIFIED_SEND_HEALTH_JSON: ${{ secrets.HSB_SALES_SEND_HEALTH_JSON }}
           MODE: ${{ inputs.mode }}
           COUNT: ${{ inputs.count }}
         run: |

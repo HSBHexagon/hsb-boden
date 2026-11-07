@@ -15,6 +15,13 @@ import sys
 import subprocess
 from pathlib import Path
 
+if sys.platform == "win32":
+    try:
+        sys.stdout.reconfigure(encoding="utf-8")
+        sys.stderr.reconfigure(encoding="utf-8")
+    except Exception:
+        pass
+
 def get_repo_root() -> Path:
     try:
         toplevel = subprocess.check_output(

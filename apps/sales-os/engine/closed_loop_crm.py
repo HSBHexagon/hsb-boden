@@ -121,7 +121,34 @@ def sync_inbounds(apply=False, include_de=True):
             # Replies on already suppressed records must not erase their status.
             if str(lead.get('Reply_Status') or '').lower() not in {'opt_out','bounced'}:
                 change['Reply_Status']=compute_lead_update(row,lead.get('Lead-ID'),cls)['reply_status']
-            if blocked:
+
+            rescued = False
+            rescue_target = None
+            if cls.category == 'BOUNCE':
+                target_email = cls.extracted_email or str(lead.get('E-Mail') or '')
+                try:
+                    from bounce_rescue_agent import BounceRescueAgent
+                    rescuer = BounceRescueAgent(timeout=5)
+                    rescue_res = rescuer.rescue_lead(lead, failed_email=target_email)
+                    if rescue_res.status == 'SUCCESS' and rescue_res.rescued_email:
+                        rescued = True
+                        rescue_target = rescue_res.rescued_email
+                except Exception as exc:
+                    logger.warning("Bounce rescue exception for %s: %s", target_email, exc)
+
+            if rescued:
+                change['E-Mail'] = rescue_target
+                change['Bounce_Status'] = 'rescued'
+                change['Suppressed'] = 'no'
+                change['Versandfreigabe'] = 'yes'
+                change['Reply_Status'] = 'bounce_rescued'
+                if 'Pipeline' in headers:
+                    change['Pipeline'] = 'Freigegeben'
+                if 'Notizen' in headers:
+                    old_notes = str(lead.get('Notizen') or '')
+                    note = f"Bounce gerettet ({target_email} -> {rescue_target})"
+                    change['Notizen'] = (old_notes + '; ' + note).strip('; ')
+            elif blocked:
                 change['Versandfreigabe'] = 'no'
                 if permanently_suppressed:
                     change['Suppressed'] = 'yes'
@@ -134,16 +161,19 @@ def sync_inbounds(apply=False, include_de=True):
                         change['Bounce_Status'] = 'hard_bounce' if outcome == 'hard_bounce' else 'bounce_review'
                         if 'Last_Error' in headers:
                             change['Last_Error'] = outcome
+                    if 'Pipeline' in headers:
+                        change['Pipeline'] = 'Bounce'
             if str(lead.get('Reply_Status') or '').lower() not in {'opt_out','bounced'}:
                 actions=reply_actions(cls.category, msg.body, return_date=cls.recontact_date)
                 # Bestehende Sheets können noch das alte Schema haben.
                 change.update({k:v for k,v in actions.items() if k in headers})
             if apply:
                 crm_write_readback(svc,SPREADSHEET_ID,headers,row,change)
+            event_reason = cls.reason + (f" [RESCUED -> {rescue_target}]" if rescued else "")
             pending.append([event_id, msg.date or datetime.now(timezone.utc).isoformat(),
                 msg.source+':'+msg.owner,msg.sender,msg.subject,msg.message_id,
-                lead.get('Lead-ID',''),cls.category,'yes' if blocked else 'no',
-                'PROCESSED' if apply else 'PENDING',cls.reason,'','MATCHED'])
+                lead.get('Lead-ID',''),cls.category,'no' if rescued else ('yes' if blocked else 'no'),
+                'PROCESSED' if apply else 'PENDING',event_reason,'','MATCHED'])
             lead.update(change)
         seen_ids.add(eid);seen_mids.add(msg.message_id)
     if apply and pending:
@@ -208,3 +238,198 @@ def sync_sent_messages(apply=False):
             if actual.get('Lead-ID')!=e['lead_id'] or any(actual.get(k)!=v for k,v in e['updates'].items()):
                 raise RuntimeError('SENT_CRM_READBACK_MISMATCH')
     return {'sent_headers_scanned':len(messages),'missing_sent_status':len(evidence),'applied':apply,'verified_rows':len(evidence) if apply else 0,'customer_emails_sent':0}
+
+
+def rescue_crm_bounces(apply=False, limit=50, svc=None):
+    """
+    Durchsucht bestehende Bounces im CRM und versucht, alternative Adressen via Impressum zu retten.
+    """
+    from bounce_rescue_agent import BounceRescueAgent
+    from sync_to_google_sheet import get_sheets_service, SPREADSHEET_ID
+    from outbound_safety import col_name
+    svc = svc or get_sheets_service()
+    res = svc.spreadsheets().values().get(spreadsheetId=SPREADSHEET_ID, range="ALL_LEADS!A1:BU6425").execute()
+    rows = res.get("values", [])
+    if not rows:
+        return {"scanned_bounces": 0, "rescued_count": 0, "failed_count": 0, "rescued": [], "applied": apply}
+    headers = rows[0]
+    leads = [dict(zip(headers, r), _row=i) for i, r in enumerate(rows[1:], start=2)]
+
+    rescuer = BounceRescueAgent(timeout=5)
+    rescued_leads = []
+    failed_leads = []
+
+    for lead in leads:
+        bounce_st = str(lead.get('Bounce_Status') or '').strip().lower()
+        reply_st = str(lead.get('Reply_Status') or '').strip().lower()
+        if bounce_st == 'rescued' or reply_st == 'bounce_rescued':
+            continue
+        if bounce_st not in ('hard_bounce', 'bounce_review', 'soft_bounce', 'hard') and reply_st != 'bounced':
+            continue
+
+        target_email = str(lead.get('E-Mail') or lead.get('Email') or '').strip().lower()
+        if not target_email or '@' not in target_email:
+            continue
+
+        rescue_res = rescuer.rescue_lead(lead, failed_email=target_email)
+        if rescue_res.status == 'SUCCESS' and rescue_res.rescued_email:
+            change = {
+                'E-Mail': rescue_res.rescued_email,
+                'Bounce_Status': 'rescued',
+                'Suppressed': 'no',
+                'Versandfreigabe': 'yes',
+                'Reply_Status': 'bounce_rescued',
+            }
+            if 'Pipeline' in headers:
+                change['Pipeline'] = 'Freigegeben'
+            if 'Notizen' in headers:
+                old_notes = str(lead.get('Notizen') or '')
+                note = f"Bounce gerettet ({target_email} -> {rescue_res.rescued_email})"
+                change['Notizen'] = (old_notes + '; ' + note).strip('; ')
+            rescued_leads.append({
+                'lead_id': lead.get('Lead-ID') or lead.get('Lead_ID'),
+                'row': lead['_row'],
+                'original_email': target_email,
+                'rescued_email': rescue_res.rescued_email,
+                'source': rescue_res.source_url,
+                'updates': {k: v for k, v in change.items() if k in headers}
+            })
+            if limit and len(rescued_leads) >= limit:
+                break
+        else:
+            failed_leads.append({
+                'lead_id': lead.get('Lead-ID') or lead.get('Lead_ID'),
+                'email': target_email,
+                'reason': rescue_res.notes
+            })
+
+    if apply and rescued_leads:
+        data = [{'range': f"ALL_LEADS!{col_name(headers.index(k)+1)}{item['row']}", 'values': [[v]]}
+                for item in rescued_leads for k, v in item['updates'].items()]
+        svc.spreadsheets().values().batchUpdate(
+            spreadsheetId=SPREADSHEET_ID,
+            body={'valueInputOption': 'RAW', 'data': data}
+        ).execute()
+        back = svc.spreadsheets().values().get(spreadsheetId=SPREADSHEET_ID, range="ALL_LEADS!A1:BU6425").execute()['values']
+        for item in rescued_leads:
+            actual = dict(zip(back[0], back[item['row'] - 1]))
+            for k, v in item['updates'].items():
+                if actual.get(k) != v:
+                    raise RuntimeError(f"BOUNCE_RESCUE_READBACK_MISMATCH in row {item['row']} col {k}")
+
+    return {
+        "scanned_bounces": len(rescued_leads) + len(failed_leads),
+        "rescued_count": len(rescued_leads),
+        "failed_count": len(failed_leads),
+        "rescued": [{'lead_id': item['lead_id'], 'from': item['original_email'], 'to': item['rescued_email'], 'source': item['source']} for item in rescued_leads],
+        "applied": apply
+    }
+
+
+def approve_verified_drafts(apply=False, limit=0, owner=None, audit_dir=None, svc=None):
+    """
+    Gleicht vorhandene All-Inkl Entwürfe mit dem CRM ab.
+    Für Leads mit passendem kanonischen Entwurf:
+    - Spalte BE (Pipeline) = "Freigegeben"
+    - Spalte Z (Versandfreigabe) = "yes"
+    """
+    from pathlib import Path
+    import json
+    from sync_to_google_sheet import get_sheets_service, SPREADSHEET_ID
+    from outbound_safety import col_name
+    from sales_reconciliation import addresses, normalize_owner
+
+    svc = svc or get_sheets_service()
+    res = svc.spreadsheets().values().get(spreadsheetId=SPREADSHEET_ID, range="ALL_LEADS!A1:BU6425").execute()
+    rows = res.get("values", [])
+    if not rows:
+        return {"drafts_scanned": 0, "eligible_leads": 0, "applied": apply, "sample": []}
+    headers = rows[0]
+    leads = [dict(zip(headers, r), _row=i) for i, r in enumerate(rows[1:], start=2)]
+
+    leads_by_email = {}
+    for l in leads:
+        em = str(l.get('E-Mail') or l.get('Email') or '').strip().lower()
+        if em and '@' in em:
+            leads_by_email[em] = l
+
+    draft_recipients = set()
+    if audit_dir and (Path(audit_dir) / 'drafts.json').exists():
+        draft_records = json.loads((Path(audit_dir) / 'drafts.json').read_text())
+        for d in draft_records:
+            if d.get('technical_ready', False) and not d.get('internal_test', False):
+                for r in d.get('recipients', []):
+                    draft_recipients.add(r.strip().lower())
+    else:
+        from com_mailbox_manager import ComMailboxClient
+        owners = [normalize_owner(owner)] if owner else ['JOEL', 'JORDI']
+        for o in owners:
+            client = ComMailboxClient(o)
+            drafts = client.list_drafts(limit=0)
+            for d in drafts:
+                for r in addresses(d.get('to')):
+                    draft_recipients.add(r.strip().lower())
+
+    approved_leads = []
+    for em in sorted(draft_recipients):
+        lead = leads_by_email.get(em)
+        if not lead:
+            continue
+        if owner and normalize_owner(lead.get('Verantwortlicher')) != normalize_owner(owner):
+            continue
+        optout = str(lead.get('Opt_Out') or lead.get('Opt-out-Status') or '').strip().lower()
+        suppressed = str(lead.get('Suppressed') or '').strip().lower()
+        bounce_st = str(lead.get('Bounce_Status') or '').strip().lower()
+        send_st = str(lead.get('Send_Status') or '').strip().lower()
+        if optout in ('yes', 'ja', 'true') or suppressed in ('yes', 'ja', 'true'):
+            continue
+        if bounce_st in ('hard_bounce', 'hard', 'hardbounce'):
+            continue
+        if send_st in ('sent', 'gesendet') or lead.get('Send_Datum'):
+            continue
+
+        current_freigabe = str(lead.get('Versandfreigabe') or '').strip().lower()
+        current_pipe = str(lead.get('Pipeline') or '').strip()
+
+        if current_freigabe in ('yes', 'ja', 'true') and current_pipe == 'Freigegeben':
+            continue
+
+        updates = {}
+        if 'Versandfreigabe' in headers:
+            updates['Versandfreigabe'] = 'yes'
+        if 'Pipeline' in headers:
+            updates['Pipeline'] = 'Freigegeben'
+
+        approved_leads.append({
+            'lead_id': lead.get('Lead-ID') or lead.get('Lead_ID'),
+            'row': lead['_row'],
+            'email': em,
+            'owner': normalize_owner(lead.get('Verantwortlicher')),
+            'updates': updates
+        })
+        if limit and len(approved_leads) >= limit:
+            break
+
+    if apply and approved_leads:
+        data = [{'range': f"ALL_LEADS!{col_name(headers.index(k)+1)}{item['row']}", 'values': [[v]]}
+                for item in approved_leads for k, v in item['updates'].items()]
+        chunk_size = 500
+        for i in range(0, len(data), chunk_size):
+            svc.spreadsheets().values().batchUpdate(
+                spreadsheetId=SPREADSHEET_ID,
+                body={'valueInputOption': 'RAW', 'data': data[i:i+chunk_size]}
+            ).execute()
+        back = svc.spreadsheets().values().get(spreadsheetId=SPREADSHEET_ID, range="ALL_LEADS!A1:BU6425").execute()['values']
+        for item in approved_leads[:20]:
+            actual = dict(zip(back[0], back[item['row'] - 1]))
+            for k, v in item['updates'].items():
+                if actual.get(k) != v:
+                    raise RuntimeError(f"APPROVE_DRAFTS_READBACK_MISMATCH in row {item['row']} col {k}")
+
+    return {
+        "drafts_scanned": len(draft_recipients),
+        "eligible_leads": len(approved_leads),
+        "applied": apply,
+        "sample": [{'row': x['row'], 'lead_id': x['lead_id'], 'email': x['email']} for x in approved_leads[:10]]
+    }
+

@@ -48,9 +48,11 @@ class VacationFollowupResult:
     status: str  # SCHEDULED, FALLBACK_DEFAULT
 
 
-def calculate_next_business_day(date_iso: Optional[str], default_days: int = 14) -> str:
-    """Berechnet den nächsten Werktag (Mo-Fr) nach dem Rückkehrdatum."""
-    today = datetime.date.today()
+def calculate_next_business_day(
+    date_iso: Optional[str], default_days: int = 14, reference_date: Optional[datetime.date] = None
+) -> str:
+    """Berechnet einen Werktag relativ zu einem optionalen, fest definierten Referenzdatum."""
+    today = reference_date if reference_date is not None else datetime.date.today()
     if date_iso:
         try:
             d = datetime.date.fromisoformat(date_iso)
@@ -134,7 +136,7 @@ class SmartVacationAgent:
         reference_date: Optional[datetime.date] = None
     ) -> VacationFollowupResult:
         ret_date = extract_return_date(reply_body, reference_date=reference_date)
-        followup_date = calculate_next_business_day(ret_date)
+        followup_date = calculate_next_business_day(ret_date, reference_date=reference_date)
 
         email_data = build_vacation_followup_email(owner, lead, return_date=ret_date)
         status = "SCHEDULED" if ret_date else "FALLBACK_DEFAULT"

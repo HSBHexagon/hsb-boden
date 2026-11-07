@@ -1,10 +1,22 @@
-"""Lauf-Kette: Folgelauf nur bei erschöpftem Zeitbudget und echtem Fortschritt; PR-Tests warten nicht auf Live-Läufe."""
 import json
 import os
 import shutil
 import stat
 import subprocess
+import sys
 from pathlib import Path
+
+import pytest
+
+def _can_run_bash():
+    if sys.platform == 'win32':
+        return False
+    return shutil.which('bash') is not None
+
+requires_bash = pytest.mark.skipif(
+    not _can_run_bash(),
+    reason="postfach-lauf.sh requires native POSIX bash environment (Linux/macOS)"
+)
 
 REPO = Path(__file__).resolve().parents[3]
 WORKFLOW = (REPO / '.github/workflows/sales-os-safety.yml').read_text(encoding='utf-8')
@@ -53,22 +65,26 @@ def lauf(tmp_path, tranche, budget='0', fresh=2):
     return done.stdout, output.read_text()
 
 
+@requires_bash
 def test_budget_reached_with_progress_asks_for_next_run(tmp_path):
     out, github_output = lauf(tmp_path, {'JOEL': {'selected': 100, 'crm_updated': 100}, 'JORDI': {'selected': 100, 'crm_updated': 100}}, budget='1')
     assert 'more=yes' in github_output and 'Zeitbudget erreicht' in out
 
 
+@requires_bash
 def test_everything_done_ends_the_chain(tmp_path):
     _, github_output = lauf(tmp_path, {'JOEL': {'selected': 0}, 'JORDI': {'selected': 0}})
     assert 'more=no' in github_output
 
 
+@requires_bash
 def test_budget_reached_without_progress_stops_the_chain(tmp_path):
     # Stop-on-drift: Ein Lauf, der nichts erneuert hat, startet keinen Nachfolger.
     _, github_output = lauf(tmp_path, {'JOEL': {'selected': 0}, 'JORDI': {'selected': 0}}, budget='1', fresh=1)
     assert 'more=no' in github_output
 
 
+@requires_bash
 def test_tranche_without_progress_ends_this_mailbox_but_not_the_other(tmp_path):
     out, github_output = lauf(tmp_path, {'JOEL': {'selected': 100, 'crm_updated': 0}, 'JORDI': {'selected': 0}})
     assert 'more=no' in github_output
@@ -98,6 +114,7 @@ def test_cron_cannot_replace_a_waiting_prepare_run():
     assert '--event workflow_dispatch' in WORKFLOW
 
 
+@requires_bash
 def test_postfach_lauf_runs_verifier_and_fills_missing_drafts(tmp_path):
     out, _ = lauf(tmp_path, {'JOEL': {'selected': 0}, 'JORDI': {'selected': 0}})
     assert out.index('verify-audit --audit-dir') < out.index('refresh-signature --audit-dir')

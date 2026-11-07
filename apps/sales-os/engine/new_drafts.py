@@ -4,7 +4,15 @@ Kein Austausch alter Entwürfe, keine Zeilenbindungen. Der Versand (`dispatch_ve
 Entwurf vor dem Senden erneut gegen das CRM. Auswahl: nur sendefähige Leads des Owners (nie CRM-Tier Z) ohne
 vorhandenen Entwurf, Produktion vor Architekten (80/20), innerhalb des Segments Tier A → B → C.
 """
-import fcntl
+try:
+    import fcntl
+except ImportError:
+    fcntl = None
+try:
+    import msvcrt
+except ImportError:
+    msvcrt = None
+
 import os
 import subprocess
 from contextlib import contextmanager
@@ -129,12 +137,36 @@ def owner_lock(owner, state_dir=None):
     """Exklusive Sperre je Postfach über Bestandsprüfung und APPEND (parallele Läufe warten nicht, sie brechen ab)."""
     base = Path(state_dir or os.environ.get('HSB_SALES_STATE_DIR', str(Path.home() / '.local/state/hsb-sales-os')))
     base.mkdir(parents=True, exist_ok=True)
-    with open(base / f'create-v2-{normalize_owner(owner)}.lock', 'w') as fh:
-        try:
-            fcntl.flock(fh, fcntl.LOCK_EX | fcntl.LOCK_NB)
-        except BlockingIOError:
-            raise RuntimeError('CREATE_V2_ALREADY_RUNNING')
-        yield
+    lock_path = base / f'create-v2-{normalize_owner(owner)}.lock'
+    with open(lock_path, 'a+') as fh:
+        if fcntl:
+            try:
+                fcntl.flock(fh, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            except BlockingIOError:
+                raise RuntimeError('CREATE_V2_ALREADY_RUNNING')
+            try:
+                yield
+            finally:
+                try:
+                    fcntl.flock(fh, fcntl.LOCK_UN)
+                except Exception:
+                    pass
+        elif msvcrt:
+            fh.seek(0)
+            try:
+                msvcrt.locking(fh.fileno(), msvcrt.LK_NBLCK, 1)
+            except (OSError, PermissionError):
+                raise RuntimeError('CREATE_V2_ALREADY_RUNNING')
+            try:
+                yield
+            finally:
+                try:
+                    fh.seek(0)
+                    msvcrt.locking(fh.fileno(), msvcrt.LK_UNLCK, 1)
+                except Exception:
+                    pass
+        else:
+            yield
 
 
 def create_v2_drafts(owner, limit, apply=False, *, leads, client, secret=None, mx_check=None, state_dir=None,

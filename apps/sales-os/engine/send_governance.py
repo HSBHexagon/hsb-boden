@@ -3,25 +3,29 @@ HSB Sales OS - Send Governance & EOP Anti-Spam Queue Guardrails (G11).
 
 Erzwingt:
 1. Natuerlichen stochastischen Jitter: 45 bis 180 Sekunden zwischen E-Mails.
-2. Physikalisches Tageslimit: Maximal 35 Mails/Tag pro Postfach.
+2. Tageslimit pro Postfach: standardmäßig 35, konfigurierbar bis 100.
 3. Fail-closed Schutz: Blockiert strikt bei Cap-Erreichung.
 """
 from __future__ import annotations
 
 import datetime
+import json
 import os
+from pathlib import Path
 import random
+from tempfile import NamedTemporaryFile
 from typing import Dict, Optional, Tuple
 
 MIN_JITTER_SECONDS: int = int(os.environ.get('HSB_JITTER_MIN', 45))
 MAX_JITTER_SECONDS: int = int(os.environ.get('HSB_JITTER_MAX', 180))
-DAILY_CAP_PER_MAILBOX: int = int(os.environ.get('HSB_DAILY_CAP', 35))
+MAX_DAILY_CAP_PER_MAILBOX = 100
+DAILY_CAP_PER_MAILBOX: int = min(MAX_DAILY_CAP_PER_MAILBOX, int(os.environ.get('HSB_DAILY_CAP', 35)))
 
 REAL_EXTERNAL_PROSPECT_SEND_COUNT: int = 0
 
 
 class DailyCapReachedError(RuntimeError):
-    """Physikalisches Tageslimit pro Postfach erreicht (max. 35 Mails/Tag)."""
+    """Konfiguriertes Tageslimit pro Postfach erreicht."""
 
 
 class SendGovernanceQueue:
@@ -95,9 +99,65 @@ def daily_budget(first_send_date, today):
     age = (as_date(today) - as_date(first_send_date)).days
     if age < 0:
         raise ValueError('RAMP_START_IN_FUTURE')
-    cap = int(os.environ.get('HSB_DAILY_CAP', DAILY_CAP_PER_MAILBOX))
+    cap = min(MAX_DAILY_CAP_PER_MAILBOX, int(os.environ.get('HSB_DAILY_CAP', DAILY_CAP_PER_MAILBOX)))
     max_limit = int(os.environ.get('HSB_MAX_BUDGET', 30))
-    return min(cap, 10 if age < 7 else 20 if age < 14 else max_limit)
+    if min(cap, max_limit) < 1:
+        raise ValueError('INVALID_DAILY_BUDGET')
+    return min(cap, max_limit, 10 if age < 7 else 20 if age < 14 else MAX_DAILY_CAP_PER_MAILBOX)
+
+
+def _parse_send_health(raw):
+    """Load dated observations and require a received control message from each sender."""
+    try:
+        health = json.loads(raw)
+        stamp = datetime.datetime.fromisoformat(health['checked_at'].replace('Z', '+00:00'))
+        age = (datetime.datetime.now(datetime.timezone.utc) - stamp).total_seconds()
+        if not 0 <= age <= 86400:
+            raise ValueError('stale')
+        baseline = health['seen_inbound_ids']
+        if not isinstance(baseline, list) or any(not isinstance(mid, str) or not mid.strip() for mid in baseline):
+            raise ValueError('invalid cursor')
+    except (AttributeError, KeyError, TypeError, ValueError):
+        raise RuntimeError('SEND_HEALTH_MISSING_OR_STALE') from None
+    proofs = health.get('seed_reports')
+    if not isinstance(proofs, dict) or set(proofs) != {'JOEL', 'JORDI'}:
+        raise RuntimeError('SEND_HEALTH_SEED_EVIDENCE_REQUIRED')
+    ids = set()
+    for owner, sender in {'JOEL': 'j-cherino@hsb-boden.com', 'JORDI': 'j-post@hsb-boden.com'}.items():
+        proof = proofs[owner]
+        if not isinstance(proof, dict):
+            raise RuntimeError('SEND_HEALTH_SEED_EVIDENCE_INVALID')
+        mid = proof.get('message_id')
+        if (not isinstance(mid, str) or not mid.startswith('<') or not mid.endswith('>')
+                or '@' not in mid or mid in ids or proof.get('sender') != sender):
+            raise RuntimeError('SEND_HEALTH_SEED_EVIDENCE_INVALID')
+        if (any(proof.get(check) != 'pass' for check in ('spf', 'dkim', 'dmarc'))
+                or proof.get('dkim_domain') != 'hsb-boden.com'):
+            raise RuntimeError('SEND_HEALTH_SEED_AUTH_NOT_PASS')
+        ids.add(mid)
+    return health
+
+
+def prepare_send_health(state_dir):
+    """Import explicitly supplied evidence on a new runner. Never create a baseline from defaults."""
+    path = Path(state_dir) / 'send-health.json'
+    supplied = os.environ.get('HSB_VERIFIED_SEND_HEALTH_JSON')
+    if not supplied:
+        try:
+            supplied = path.read_bytes()
+        except OSError:
+            raise RuntimeError('SEND_HEALTH_EVIDENCE_REQUIRED') from None
+        _parse_send_health(supplied)
+        return
+    _parse_send_health(supplied)
+    with NamedTemporaryFile(mode='w', encoding='utf-8', dir=path.parent, delete=False) as tmp:
+        temporary = Path(tmp.name)
+        try:
+            tmp.write(supplied)
+            tmp.close()
+            temporary.replace(path)
+        finally:
+            temporary.unlink(missing_ok=True)
 
 
 def pause_reason(stats):
@@ -106,7 +166,8 @@ def pause_reason(stats):
     if not isinstance(stats, dict) or any(k not in stats for k in required):
         return 'HEALTH_EVIDENCE_MISSING'
     counts = [stats[k] for k in required[:-1]]
-    if any(type(x) is not int or x < 0 for x in counts):
+    review = stats.get('review_bounces', 0)
+    if any(type(x) is not int or x < 0 for x in [*counts, review]):
         return 'HEALTH_EVIDENCE_INVALID'
     sent, hard, policy, deferrals, spam = counts
     if sent > 100 or hard > sent:
@@ -117,6 +178,8 @@ def pause_reason(stats):
         return 'SPAM_REPORT'
     if policy:
         return 'POLICY_BOUNCE'
+    if review:
+        return 'BOUNCE_REVIEW_REQUIRED'
     if deferrals >= 3:
         return 'DEFERRALS'
     if (sent >= 100 and hard / sent > .02) or (sent < 100 and hard >= 3):
@@ -127,19 +190,12 @@ def pause_reason(stats):
 def enforce_send_health(state_dir, today=None, observed=None):
     """Frischer, atomarer Read je Mail; Pause bleibt bis zum problemspezifischen ACK bestehen."""
     import hashlib
-    import json
-    import os
-    from pathlib import Path
     from datetime import timezone
     now = datetime.datetime.now(timezone.utc)
     path = Path(state_dir) / 'send-health.json'
     try:
         raw = path.read_bytes()
-        health = json.loads(raw)
-        stamp = datetime.datetime.fromisoformat(health['checked_at'].replace('Z', '+00:00'))
-        age = (now - stamp).total_seconds()
-        if age < 0 or age > 86400:
-            raise ValueError('stale')
+        health = _parse_send_health(raw)
         budget = daily_budget(health['first_send_date'], today or now.date())
     except (OSError, KeyError, TypeError, ValueError):
         raise RuntimeError('SEND_HEALTH_MISSING_OR_STALE') from None
@@ -153,7 +209,7 @@ def enforce_send_health(state_dir, today=None, observed=None):
     if pause_path.exists():
         pause = json.loads(pause_path.read_text())
         ack = os.environ.get('HSB_SEND_PAUSE_ACK', '')
-        if ack not in ('auto', 'yes') and ack != pause.get('ack_id'):
+        if not ack or ack != pause.get('ack_id'):
             raise RuntimeError('DOMAIN_PAUSED_ACK_REQUIRED')
     return budget
 
@@ -218,7 +274,7 @@ def enforce_domain_health(state_dir, today, shared, collector=None):
     from pathlib import Path
     remote=shared.read()
     ack = os.environ.get('HSB_SEND_PAUSE_ACK', '')
-    if remote and remote['state']=='paused' and ack not in ('auto', 'yes') and ack != remote.get('ack_id'):
+    if remote and remote['state']=='paused' and (not ack or ack != remote.get('ack_id')):
         raise RuntimeError('DOMAIN_PAUSED_SERVER_ACK_REQUIRED')
     try:
         observed=observed_health(state_dir,collector)
@@ -244,18 +300,15 @@ def observed_health(state_dir, collector=None):
     import re
     from pathlib import Path
     from inbound_classifier import classify_inbound_message
-    from lead_quality import classify_dsn
+    from lead_quality import delivery_bounce_status
     try:
-        stats=json.loads((Path(state_dir)/'send-health.json').read_text())
-        baseline=stats['seen_inbound_ids']
-        if not isinstance(baseline,list) or any(not isinstance(x,str) for x in baseline):
-            raise ValueError('invalid cursor')
+        stats=_parse_send_health((Path(state_dir)/'send-health.json').read_bytes())
     except (OSError,ValueError,KeyError,TypeError):
         raise RuntimeError('SEND_HEALTH_CURSOR_MISSING') from None
     if collector is None:
         from dual_domain_collector import collect_all_inbounds
         collector=collect_all_inbounds
-    seen=set(baseline)
+    seen=set(stats['seen_inbound_ids'])
     # Der Collector muss SELECT, UID SEARCH und jeden UID FETCH erfolgreich belegen.
     for msg in collector(limit_per_mailbox=0,include_de=False):
         if not msg.message_id:raise RuntimeError('HEALTH_INBOUND_ID_MISSING')
@@ -263,10 +316,10 @@ def observed_health(state_dir, collector=None):
         seen.add(msg.message_id)
         cls=classify_inbound_message(msg.sender,msg.subject,msg.body)
         if cls.category=='BOUNCE':
-            kind=classify_dsn(msg.body)
-            key={'hard':'hard_bounces','soft':'deferrals_today','policy':'policy_bounces'}.get(kind)
-            if key:stats[key]=stats.get(key,0)+1
-            else:stats['policy_bounces']=stats.get('policy_bounces',0)+1
+            outcome = delivery_bounce_status(msg.body, cls.extracted_email)
+            key = {'hard_bounce': 'hard_bounces', 'deferred': 'deferrals_today',
+                   'policy_block': 'policy_bounces'}.get(outcome, 'review_bounces')
+            stats[key] = stats.get(key, 0) + 1
         if re.search(r'feedback[- ]type:\s*abuse|feedback report|spam complaint',msg.subject+'\n'+msg.body,re.I):
             stats['spam_reports']=stats.get('spam_reports',0)+1
     return stats

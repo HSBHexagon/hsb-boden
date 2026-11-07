@@ -9,7 +9,20 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "engine"))
 import hsb_cli
 import lead_quality
 from hsb_core import check_eligibility
-from lead_quality import classify_dsn, deliverability_flags, summarize_bounces
+from lead_quality import classify_dsn, delivery_bounce_status, deliverability_flags, summarize_bounces
+
+
+def test_delivery_outcome_uses_action_and_the_matching_recipient():
+    report = (
+        'Final-Recipient: rfc822; first@example.test\nAction: failed\nStatus: 5.1.1\n\n'
+        'Final-Recipient: rfc822; second@example.test\nAction: delayed\nStatus: 4.2.0\n'
+    )
+    assert delivery_bounce_status(report, 'first@example.test') == 'hard_bounce'
+    assert delivery_bounce_status(report, 'second@example.test') == 'deferred'
+    assert delivery_bounce_status(report.replace('Action: delayed', 'Action: failed'), 'second@example.test') == 'failed_temporary'
+    assert delivery_bounce_status(report, 'other@example.test') == 'bounce_review'
+    assert delivery_bounce_status('Action: failed\nStatus: 5.7.51') == 'policy_block'
+    assert delivery_bounce_status('Action: failed\nStatus: 5.0.0') == 'bounce_review'
 
 
 def _lead(email="info@firma-a.de", **extra):

@@ -88,7 +88,8 @@ def test_pr_tests_do_not_wait_behind_live_runs():
     rest = WORKFLOW.split('\n  tests:\n')[1]
     tests_job = rest.split('\n  runtime-gate:\n')[0]
     assert 'concurrency' not in tests_job
-    assert WORKFLOW.count('group: hsb-sales-os-runtime') == 4
+    assert WORKFLOW.count('group: hsb-sales-os-runtime') == 5
+    assert WORKFLOW.count('queue: max') == 5
 
 
 def test_cron_cannot_replace_a_waiting_prepare_run():
@@ -102,3 +103,18 @@ def test_postfach_lauf_runs_verifier_and_fills_missing_drafts(tmp_path):
     assert out.index('verify-audit --audit-dir') < out.index('refresh-signature --audit-dir')
     assert out.index('upgrade-drafts --owner JORDI') < out.index('fill-missing-drafts --audit-dir')
     assert out.index('fill-missing-drafts --audit-dir') < out.rindex('verify-audit --audit-dir')
+
+def test_fill_missing_cloud_repair_is_manual_serial_and_never_sends():
+    job = WORKFLOW.split('\\n  fill-missing:\\n', 1)[1].split('\\n  # Entwürfe-Archiv-v1', 1)[0]
+    assert "github.event_name == 'workflow_dispatch'" in job
+    assert "github.ref == 'refs/heads/main'" in job
+    assert 'needs: tests' in job
+    assert "HSB_CUSTOMER_SEND_ENABLED: 'no'" in job
+    assert "HSB_INTERNAL_TEST_SEND_ENABLED: 'no'" in job
+    assert 'group: hsb-sales-os-runtime' in job
+    assert 'queue: max' in job
+    assert 'cancel-in-progress: false' in job
+    assert "if [ \"$MODE\" = 'fill-missing' ]; then" in job
+    assert 'fill-missing-drafts --audit-dir "$BEFORE" --apply' in job
+    assert 'draft_verify.py --audit-dir "$AFTER"' in job
+    assert "MAIN_ONLY_DRAFT_MUTATION" in job

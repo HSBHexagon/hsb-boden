@@ -14,7 +14,7 @@ def compute_lead_update(row_idx: int, lead_id: str, cls_res: InboundClassificati
 
     if cat == "BOUNCE":
         reply_status = "bounced"
-        pipeline_val = "Bounced / Ungültig"
+        pipeline_val = "Zustellmeldung / Prüfung"
     elif cat == "OPTOUT":
         optout_val = "YES"
         reply_status = "opt_out"
@@ -60,6 +60,7 @@ def sync_inbounds(apply=False, include_de=True):
     from inbound_classifier import classify_inbound_message
     from sequence import reply_actions
     from hsb_core import FREEMAIL_DOMAINS
+    from lead_quality import delivery_bounce_status
     from outbound_safety import crm_write_readback, UNSUBSCRIBE_TOKEN_RE
     from sales_reconciliation import addresses
     from sync_to_google_sheet import get_sheets_service, SPREADSHEET_ID
@@ -100,10 +101,12 @@ def sync_inbounds(apply=False, include_de=True):
         for row,lead in matched_rows: unique_rows.setdefault(row,lead)
         for row,lead in unique_rows.items():
             blocked=cls.category in {'OPTOUT','BOUNCE'}
+            outcome = delivery_bounce_status(msg.body, cls.extracted_email) if cls.category == 'BOUNCE' else None
+            permanently_suppressed = cls.category == 'OPTOUT' or outcome == 'hard_bounce'
             # A corrected classifier must repair an old neutral event, without
             # replaying an already complete suppression or sending anything.
             negative_upgrade = blocked and (
-                str(lead.get('Suppressed') or '').lower() != 'yes'
+                (permanently_suppressed and str(lead.get('Suppressed') or '').lower() != 'yes')
                 or str(lead.get('Versandfreigabe') or '').lower() != 'no'
                 or (cls.category == 'OPTOUT' and str(lead.get('Opt-out-Status') or '').lower() != 'yes')
                 or (cls.category == 'BOUNCE' and not lead.get('Bounce_Status')))
@@ -112,15 +115,25 @@ def sync_inbounds(apply=False, include_de=True):
                 continue
             event_id = eid if not already_seen else eid + '-RECLASSIFIED-' + cls.category
             matched+=1;categories[cls.category]=categories.get(cls.category,0)+1
-            change={'Last_Reply_At':msg.date or datetime.now(timezone.utc).isoformat()}
+            change={}
+            if cls.category != 'BOUNCE':
+                change['Last_Reply_At']=msg.date or datetime.now(timezone.utc).isoformat()
             # Replies on already suppressed records must not erase their status.
             if str(lead.get('Reply_Status') or '').lower() not in {'opt_out','bounced'}:
                 change['Reply_Status']=compute_lead_update(row,lead.get('Lead-ID'),cls)['reply_status']
             if blocked:
-                change.update({'Suppressed':'yes','Versandfreigabe':'no',
-                    'Suppression_Reason':'INBOUND_'+cls.category})
+                change['Versandfreigabe'] = 'no'
+                if permanently_suppressed:
+                    change['Suppressed'] = 'yes'
+                if cls.category == 'OPTOUT' or not lead.get('Suppression_Reason'):
+                    change['Suppression_Reason'] = 'INBOUND_' + cls.category
                 if cls.category=='OPTOUT':change['Opt-out-Status']='yes'
-                if cls.category=='BOUNCE':change['Bounce_Status']='hard_bounce' if re.search(r'\b5\.\d\.\d|\b55\d\b|user unknown',msg.body,re.I) else 'bounce_review'
+                if cls.category=='BOUNCE':
+                    previous = str(lead.get('Bounce_Status') or '').strip().lower()
+                    if previous not in {'hard_bounce', 'hard', 'hardbounce'} or outcome == 'hard_bounce':
+                        change['Bounce_Status'] = 'hard_bounce' if outcome == 'hard_bounce' else 'bounce_review'
+                        if 'Last_Error' in headers:
+                            change['Last_Error'] = outcome
             if str(lead.get('Reply_Status') or '').lower() not in {'opt_out','bounced'}:
                 actions=reply_actions(cls.category, msg.body, return_date=cls.recontact_date)
                 # Bestehende Sheets können noch das alte Schema haben.

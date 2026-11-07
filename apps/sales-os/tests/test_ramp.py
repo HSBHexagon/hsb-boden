@@ -6,6 +6,9 @@ from send_governance import daily_budget, pause_reason, enforce_send_health
 
 def health():
     return {'seen_inbound_ids':[],'sample_sent':100,'hard_bounces':2,'policy_bounces':0,'deferrals_today':0,'spam_reports':0,'seed_dkim_pass':True,
+            'seed_reports':{owner:{'message_id':f'<{owner}@example.test>', 'spf':'pass', 'dkim':'pass', 'dmarc':'pass',
+                                   'dkim_domain':'hsb-boden.com', 'sender':sender} for owner,sender in
+                            (('JOEL','j-cherino@hsb-boden.com'),('JORDI','j-post@hsb-boden.com'))},
             'checked_at':datetime.now(timezone.utc).isoformat(),'first_send_date':datetime.now(timezone.utc).date().isoformat()}
 
 
@@ -37,6 +40,29 @@ def test_stale_stats_and_missing_stats_block(tmp_path):
     h=health();h['checked_at']='2020-01-01T00:00:00+00:00'
     (tmp_path/'send-health.json').write_text(json.dumps(h))
     with pytest.raises(RuntimeError): enforce_send_health(tmp_path)
+
+
+def test_runner_rejects_legacy_bootstrap_and_requires_both_senders(tmp_path, monkeypatch):
+    from send_governance import prepare_send_health
+    path = tmp_path / 'send-health.json'
+    monkeypatch.delenv('HSB_VERIFIED_SEND_HEALTH_JSON', raising=False)
+    with pytest.raises(RuntimeError, match='SEND_HEALTH_EVIDENCE_REQUIRED'):
+        prepare_send_health(tmp_path)
+    legacy = health()
+    legacy.pop('seed_reports')
+    path.write_text(json.dumps(legacy))
+    with pytest.raises(RuntimeError, match='SEND_HEALTH_SEED_EVIDENCE_REQUIRED'):
+        prepare_send_health(tmp_path)
+    evidence = health()
+    evidence['seed_reports']['JORDI']['dmarc'] = 'fail'
+    monkeypatch.setenv('HSB_VERIFIED_SEND_HEALTH_JSON', json.dumps(evidence))
+    with pytest.raises(RuntimeError, match='SEND_HEALTH_SEED_AUTH_NOT_PASS'):
+        prepare_send_health(tmp_path)
+    assert json.loads(path.read_text()) == legacy
+    evidence['seed_reports']['JORDI']['dmarc'] = 'pass'
+    monkeypatch.setenv('HSB_VERIFIED_SEND_HEALTH_JSON', json.dumps(evidence))
+    prepare_send_health(tmp_path)
+    assert enforce_send_health(tmp_path) == 10
 
 
 def test_health_guard_runs_before_each_delivery(tmp_path,monkeypatch):
@@ -107,6 +133,10 @@ def test_pause_propagates_to_second_device(tmp_path,monkeypatch):
     (b/'send-health.json').write_text(json.dumps(health()))
     with pytest.raises(RuntimeError):enforce_domain_health(a,date.today(),shared,collector=lambda **k:[])
     with pytest.raises(RuntimeError,match='SERVER_ACK_REQUIRED'):enforce_domain_health(b,date.today(),shared,collector=lambda **k:[])
+    for invalid_ack in ('auto', 'yes'):
+        monkeypatch.setenv('HSB_SEND_PAUSE_ACK',invalid_ack)
+        with pytest.raises(RuntimeError,match='SERVER_ACK_REQUIRED'):
+            enforce_domain_health(b,date.today(),shared,collector=lambda **k:[])
     monkeypatch.setenv('HSB_SEND_PAUSE_ACK',shared.event['ack_id'])
     assert enforce_domain_health(b,date.today(),shared,collector=lambda **k:[])==10
     assert shared.event['state']=='ack'
@@ -138,6 +168,18 @@ def test_delayed_bounce_with_old_date_is_not_ignored(tmp_path):
         date='Mon, 1 Jan 2024 10:00:00 +0000',subject='Undeliverable',body='Status: 5.7.1')
     observed=observed_health(tmp_path,collector=lambda **k:[bounce])
     assert pause_reason(observed)=='POLICY_BOUNCE'
+
+
+def test_final_temporary_error_requires_review_instead_of_counting_as_pending(tmp_path):
+    from types import SimpleNamespace
+    from send_governance import observed_health
+
+    (tmp_path/'send-health.json').write_text(json.dumps(health()))
+    bounce = SimpleNamespace(message_id='<final@example.test>', sender='mailer-daemon@example.test',
+                             subject='Undeliverable', body='Action: failed\nStatus: 4.2.0')
+    observed = observed_health(tmp_path, collector=lambda **_: [bounce])
+    assert observed['deferrals_today'] == 0
+    assert pause_reason(observed) == 'BOUNCE_REVIEW_REQUIRED'
 
 
 def test_second_run_same_day_respects_cap(tmp_path, monkeypatch):
@@ -314,8 +356,8 @@ def test_daily_cap_and_budget_supports_100_when_configured(monkeypatch):
     import outbound_safety as out_mod
     monkeypatch.setenv('HSB_DAILY_CAP', '1000')
     monkeypatch.setenv('HSB_MAX_BUDGET', '1000')
-    assert daily_budget('2026-10-01', '2026-11-06') == 1000
-    assert out_mod.DAILY_CAP >= 100
+    assert daily_budget('2026-10-01', '2026-11-06') == 100
+    assert out_mod.DAILY_CAP == 100
 
 
 def test_blocked_lead_is_skipped_and_tranche_continues(tmp_path, monkeypatch, capsys):

@@ -23,6 +23,8 @@ _NOREPLY_RE = re.compile(r"^(no[-_.]?reply|do[-_.]?not[-_.]?reply|mailer-daemon|
 
 # Statuscode aus dem DSN, nie aus dem gesamten Text (IPs/Hostnamen/Versionen wuerden matchen).
 _STATUS_RE = re.compile(r"^Status:\s*([245]\.\d{1,3}\.\d{1,3})\b", re.I | re.M)
+_ACTION_RE = re.compile(r"^Action:[ \t]*(failed|delayed|delivered|relayed|expanded)\b", re.I | re.M)
+_RECIPIENT_RE = re.compile(r"^(?:Final|Original)-Recipient:[ \t]*[^;\r\n]+;[ \t]*<?([^\s>]+)", re.I | re.M)
 _DIAG_RE = re.compile(r"^Diagnostic-Code:[^\n]*(?:\n[ \t]+[^\n]*)*", re.I | re.M)
 _SMTP_LINE_RE = re.compile(r"^[ \t>]*([45]\d\d)[ -][ \t]*(?:([245]\.\d{1,3}\.\d{1,3})\b)?[^\n]*", re.M)
 _ENH_RE = re.compile(r"(?<![\d.])([245]\.\d{1,3}\.\d{1,3})(?![\d.])")
@@ -76,6 +78,33 @@ def classify_dsn(text: str) -> DsnClass:
     if _HARD_WORDS_RE.search(text):
         return "hard"
     return "unknown"
+
+
+def delivery_bounce_status(text: str, recipient: str | None = None) -> str:
+    """Classify an outcome for the matched recipient, retaining the DSN action."""
+    text = text or ''
+    blocks = [block for block in re.split(r'\r?\n[ \t]*\r?\n', text) if _RECIPIENT_RE.search(block)]
+    if blocks:
+        matches = [block for block in blocks if not recipient or recipient.lower() in {
+            address.lower() for address in _RECIPIENT_RE.findall(block)
+        }]
+        if len(matches) != 1:
+            return 'bounce_review'
+        text = matches[0]
+    actions = {match.lower() for match in _ACTION_RE.findall(text)}
+    if len(actions) > 1 or actions - {'failed', 'delayed'}:
+        return 'bounce_review'
+    if actions == {'delayed'}:
+        return 'deferred'
+    _, enhanced, _ = _extract_dsn_code(text)
+    kind = classify_dsn(text)
+    if kind == 'policy':
+        return 'policy_block'
+    if enhanced == '5.1.1':
+        return 'hard_bounce'
+    if kind == 'soft' and actions == {'failed'}:
+        return 'failed_temporary'
+    return 'bounce_review'
 
 
 def _split_email(email: str) -> tuple[str, str]:

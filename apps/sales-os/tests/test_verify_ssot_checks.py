@@ -6,7 +6,10 @@ from pathlib import Path
 import pytest
 
 REPO = Path(__file__).resolve().parents[3]
-_spec = importlib.util.spec_from_file_location('verify_ssot', REPO / 'scripts' / 'verify_ssot.py')
+_script_path = REPO / 'scripts' / 'verify_ssot.py'
+if not _script_path.exists():
+    _script_path = REPO / 'apps' / 'website' / 'scripts' / 'verify_ssot.py'
+_spec = importlib.util.spec_from_file_location('verify_ssot', _script_path)
 verify_ssot = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(verify_ssot)
 

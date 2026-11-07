@@ -207,11 +207,6 @@ def process_optouts(
                         "range": f"ALL_LEADS!AT{row_num}",
                         "values": [["yes"]]
                     })
-                    # Spalte BE: Pipeline = Abgemeldet
-                    sheet_updates.append({
-                        "range": f"ALL_LEADS!BE{row_num}",
-                        "values": [["Abgemeldet"]]
-                    })
 
                 event_id = f"INBOUND-OPTOUT-{lead_id}"
                 if event_id not in existing_event_ids:
@@ -298,7 +293,6 @@ def suppress_lead_direct(
         updates.append({"range": f"ALL_LEADS!Z{row_num}", "values": [["no"]]})
         updates.append({"range": f"ALL_LEADS!AR{row_num}", "values": [["opt_out"]]})
         updates.append({"range": f"ALL_LEADS!AT{row_num}", "values": [["yes"]]})
-        updates.append({"range": f"ALL_LEADS!BE{row_num}", "values": [["Abgemeldet"]]})
 
     event_id = f"INBOUND-WEB-OPTOUT-{resolved_id}"
     event_row = None

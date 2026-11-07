@@ -264,11 +264,6 @@ def process_bounces(
                             "range": f"ALL_LEADS!BD{row_num}",
                             "values": [[b["reason"]]]
                         })
-                        # Spalte BE: Pipeline = Bounce
-                        sheet_updates.append({
-                            "range": f"ALL_LEADS!BE{row_num}",
-                            "values": [["Bounce"]]
-                        })
 
 
                     # Event logging

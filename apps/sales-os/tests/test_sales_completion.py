@@ -199,3 +199,20 @@ def test_optout_link_with_lid_is_personal():
     assert 'PERSONAL_OPTOUT_LINK_MISSING' in other['issues']
     legacy = assess_message(_v1_message('https://www.hsb-boden.de/abmelden?email=buyer%40example.org'), 'JOEL', leads)
     assert 'PERSONAL_OPTOUT_LINK_MISSING' not in legacy['issues']
+
+
+def test_daily_count_reads_historical_crm_date_formats():
+    from outbound_safety import count_owner_attempts_today
+    from datetime import date
+    sender={'Sender_Account':'j-cherino@hsb-boden.com'}
+    old=[{'Send_Datum':'Samstag, 12. September 2026 um 09:48:46',**sender},
+         {'Send_Datum':'Sat, 12 Sep 2026 09:48:46 +0000',**sender}]
+    assert count_owner_attempts_today(old,'JOEL',date(2026,11,6))==0
+    today=[{'Send_Datum':'Fri, 06 Nov 2026 09:48:46 +0000',**sender}]
+    assert count_owner_attempts_today(today,'JOEL',date(2026,11,6))==1
+    # Das deutsche Format hat keine Zeitzone: nahe am heutigen Tag bleibt der Wert unklar und stoppt.
+    near=[{'Send_Datum':'Freitag, 6. November 2026 um 09:48:46',**sender}]
+    with pytest.raises(RuntimeError,match='CRM_SEND_TIMEZONE_UNKNOWN'):
+        count_owner_attempts_today(near,'JOEL',date(2026,11,6))
+    with pytest.raises(RuntimeError,match='CRM_SEND_DATE_INVALID'):
+        count_owner_attempts_today([{'Send_Datum':'irgendwann',**sender}],'JOEL',date(2026,11,6))

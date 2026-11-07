@@ -105,7 +105,7 @@ def test_postfach_lauf_runs_verifier_and_fills_missing_drafts(tmp_path):
     assert out.index('fill-missing-drafts --audit-dir') < out.rindex('verify-audit --audit-dir')
 
 def test_fill_missing_cloud_repair_is_manual_serial_and_never_sends():
-    job = WORKFLOW.split('\\n  fill-missing:\\n', 1)[1].split('\\n  # Entwürfe-Archiv-v1', 1)[0]
+    job = WORKFLOW.split('\n  fill-missing:\n', 1)[1].split('\n  # Entwürfe-Archiv-v1', 1)[0]
     assert "github.event_name == 'workflow_dispatch'" in job
     assert "github.ref == 'refs/heads/main'" in job
     assert 'needs: tests' in job

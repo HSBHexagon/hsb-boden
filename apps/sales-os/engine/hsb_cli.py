@@ -595,6 +595,18 @@ def cmd_archive_purge(args):
     print(json.dumps(result, ensure_ascii=False))
 
 
+def cmd_rescue_bounces(args, svc=None):
+    from closed_loop_crm import rescue_crm_bounces
+    result = rescue_crm_bounces(apply=args.apply, limit=args.limit, svc=svc)
+    print(json.dumps(result, ensure_ascii=False, indent=2))
+
+
+def cmd_approve_verified_drafts(args, svc=None):
+    from closed_loop_crm import approve_verified_drafts
+    result = approve_verified_drafts(apply=args.apply, limit=args.limit, owner=args.owner, audit_dir=args.audit_dir, svc=svc)
+    print(json.dumps(result, ensure_ascii=False, indent=2))
+
+
 def cmd_dedupe_drafts(args):
     """Doppelte Entwürfe je Empfänger ins Archiv verschieben; ohne --apply nur der Plan."""
     from draft_dedupe import apply_dedupe, plan_dedupe
@@ -755,10 +767,24 @@ def main():
     p_upgrade.add_argument("--audit-dir", required=True)
     p_upgrade.add_argument("--journal", default=str(Path.home()/".local/state/hsb-sales-os/upgrade.sqlite3"))
     p_upgrade.add_argument("--apply", action="store_true")
+
+    p_rescue = subparsers.add_parser("rescue-bounces", help="Bestehende CRM-Bounces via Website/Impressum retten")
+    p_rescue.add_argument("--limit", type=int, default=50, help="Maximal zu rettende Leads (0 = alle)")
+    p_rescue.add_argument("--apply", action="store_true", help="Gerettete Leads ins CRM schreiben")
+
+    p_appr = subparsers.add_parser("approve-verified-drafts", help="Geprüfte All-Inkl Entwürfe im CRM freigeben (Spalte BE Freigegeben, Spalte Z yes)")
+    p_appr.add_argument("--owner", choices=["JOEL", "JORDI"], default=None, help="Nur Entwürfe dieses Owners freigeben")
+    p_appr.add_argument("--limit", type=int, default=0, help="Maximal freizugebende Leads (0 = alle)")
+    p_appr.add_argument("--audit-dir", help="Optionaler Pfad zum Audit-Verzeichnis mit drafts.json")
+    p_appr.add_argument("--apply", action="store_true", help="Freigaben ins Google Sheet schreiben")
     args = parser.parse_args()
 
     if args.command == "sequence-preview":
         cmd_sequence_preview(args)
+    elif args.command == "rescue-bounces":
+        cmd_rescue_bounces(args)
+    elif args.command == "approve-verified-drafts":
+        cmd_approve_verified_drafts(args)
     elif args.command == "verify-audit":
         cmd_verify_audit(args)
     elif args.command == "fill-missing-drafts":

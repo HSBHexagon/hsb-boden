@@ -155,6 +155,13 @@ describe("updateSessionAttribution / loadAttribution", () => {
     expect(() => updateSessionAttribution(null, current)).not.toThrow();
   });
 
+  it("returns undefined when loadAttribution encounters a JSON parse error on invalid JSON", () => {
+    const invalidJsonStorage = {
+      getItem: (key: string) => (key === ATTRIBUTION_STORAGE_KEY ? "{invalid-json-payload" : null),
+    };
+    expect(loadAttribution(invalidJsonStorage)).toBeUndefined();
+  });
+
   it("ignores corrupted stored payloads", () => {
     storage.setItem(ATTRIBUTION_STORAGE_KEY, "{not json");
     expect(loadAttribution(storage)).toBeUndefined();

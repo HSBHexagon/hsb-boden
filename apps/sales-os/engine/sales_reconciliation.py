@@ -218,8 +218,9 @@ def scan_mailbox(owner, output):
             uids = data[0].split() if data and data[0] else []
             target = output / owner / kind
             target.mkdir(parents=True, exist_ok=True, mode=0o700)
-            for start in range(0, len(uids), 20):
-                chunk = uids[start:start+20]
+            missing = [u for u in uids if not (target / f'{uidvalidity}-{u.decode()}.eml').exists()]
+            for start in range(0, len(missing), 20):
+                chunk = missing[start:start+20]
                 # BODY.PEEK[] does not set Seen. SELECT is read-only too.
                 typ, fetched = imap.uid('fetch', b','.join(chunk), '(UID BODY.PEEK[])')
                 if typ != 'OK':
@@ -235,11 +236,17 @@ def scan_mailbox(owner, output):
                     raw = item[1]
                     path = target / f'{uidvalidity}-{uid}.eml'
                     path.write_bytes(raw); path.chmod(0o600)
-                    result[{'inbox': 'inbound'}.get(kind, kind)].append({'uid': uid, 'uidvalidity': uidvalidity, 'folder': folder, 'path': str(path), 'sha256': hashlib.sha256(raw).hexdigest()})
                 if got != {u.decode() for u in chunk}:
                     raise RuntimeError('IMAP_FETCH_INCOMPLETE')
                 if start % 200 == 0:
-                    print(f'SCAN {owner} {kind}: {min(start+20,len(uids))}/{len(uids)}', flush=True)
+                    print(f'SCAN {owner} {kind}: fetched {min(start+20,len(missing))}/{len(missing)} (total {len(uids)})', flush=True)
+            for u in uids:
+                uid = u.decode()
+                path = target / f'{uidvalidity}-{uid}.eml'
+                if not path.exists():
+                    raise RuntimeError('CACHED_EML_MISSING')
+                raw = path.read_bytes()
+                result[{'inbox': 'inbound'}.get(kind, kind)].append({'uid': uid, 'uidvalidity': uidvalidity, 'folder': folder, 'path': str(path), 'sha256': hashlib.sha256(raw).hexdigest()})
             # Confirm no concurrent mailbox changes invalidate this snapshot.
             typ, final = imap.uid('search', None, 'ALL')
             if typ != 'OK' or final[0].split() != uids:

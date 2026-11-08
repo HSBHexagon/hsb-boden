@@ -507,15 +507,18 @@ def dispatch_verified(count_per_owner=25, owners=('JOEL','JORDI'), dry_run=True,
         svc=get_sheets_service(); journal=SendJournal(state/'outbound.sqlite3')
         sent_counts={o:0 for o in owners}
         capped=set()  # Owner am Tageslimit: restliche Einträge ohne Sheet-/IMAP-Abfragen überspringen.
+        # CRM-Snapshot einmal je Tranche laden; Einzelbindungen verifizieren jede Zeile live beim Schreiben.
+        rows=svc.spreadsheets().values().get(spreadsheetId=SPREADSHEET_ID,range='ALL_LEADS!A1:BU6425').execute().get('values', [])
+        headers=rows[0] if rows else []
+        leads_list=[dict(zip(headers,r)) for r in rows[1:] if r]
+        leads_by_id={l.get('Lead-ID'): (i, l) for i, l in enumerate(leads_list, 2)}
         try:
             for item in selected:
                 if item['owner'] in capped:
                     continue
-                # Re-read all permission/suppression columns immediately before reservation.
-                rows=svc.spreadsheets().values().get(spreadsheetId=SPREADSHEET_ID,range='ALL_LEADS!A1:BU6425').execute()['values']
-                headers=rows[0]; matches=[(i,dict(zip(headers,r))) for i,r in enumerate(rows[1:],2) if r and r[0]==item['lead_id']]
-                if len(matches)!=1: raise RuntimeError('LEAD_CHANGED_OR_AMBIGUOUS')
-                row,lead=matches[0]
+                match=leads_by_id.get(item['lead_id'])
+                if not match: raise RuntimeError('LEAD_CHANGED_OR_AMBIGUOUS')
+                row,lead=match
                 # Zurückgestellt (CRM-Tier Z) ist kein Fehler, sondern "nie senden": überspringen, Lauf läuft weiter.
                 if str(lead.get('Tier') or '').strip().upper()=='Z':
                     print(f"SKIP {item['lead_id']}: TIER_Z"); continue
@@ -531,7 +534,7 @@ def dispatch_verified(count_per_owner=25, owners=('JOEL','JORDI'), dry_run=True,
                 if normalize_owner(lead['Verantwortlicher'])!=item['owner'] or lead['E-Mail'].strip().lower()!=item['email']:
                     raise RuntimeError('LIVE_IDENTITY_CHANGED')
                 today=datetime.now(ZoneInfo('Europe/Berlin')).date()
-                used_today=count_owner_attempts_today([dict(zip(headers,r)) for r in rows[1:]],item['owner'],today)
+                used_today=count_owner_attempts_today(leads_list,item['owner'],today)
                 day_str=today.isoformat()
                 journal_today=journal.db.execute('SELECT count(*) FROM attempts WHERE owner=? AND day=?',(item['owner'],day_str)).fetchone()[0]
                 if used_today>=effective_cap or journal_today>=effective_cap:
@@ -560,6 +563,9 @@ def dispatch_verified(count_per_owner=25, owners=('JOEL','JORDI'), dry_run=True,
                     lock.assert_held()
                 complete_delivery(client,journal,svc,SPREADSHEET_ID,headers,row,item,raw,mid,effective_cap)
                 sent_counts[item['owner']]+=1
+                lead['Send_Status']='sent'
+                lead['Send_Datum']=datetime.now(timezone.utc).isoformat()
+                lead['Sender_Account']=getattr(client, 'cfg', {}).get('email') or ('j-cherino@hsb-boden.com' if item['owner']=='JOEL' else 'j-post@hsb-boden.com')
                 if item is not selected[-1]: time.sleep(random.uniform(jitter_min,jitter_max))
         finally: journal.close()
         return {'status':'COMPLETED','sent_counts':sent_counts}

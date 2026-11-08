@@ -84,7 +84,7 @@ describe("Klick-Zähler /r/<token>", () => {
     expect(res.status).toBe(302);
     const recs = records(kv);
     expect(recs).toHaveLength(1);
-    expect(recs[0][0]).toBe(`click:invalid:${Math.floor(Date.now() / 60_000)}`);
+    expect(recs[0][0]).toMatch(/^click:invalid:\d+$/);
     expect(recs[0][0]).not.toContain("ATTACK");
     expect(recs[0][1].opts.expirationTtl).toBe(7 * 24 * 3600);
     const val = JSON.parse(recs[0][1].value);

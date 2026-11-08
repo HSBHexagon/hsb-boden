@@ -64,7 +64,7 @@ CONNECTIONS = {
 }
 
 BOUNCE_SUBJ_RE = re.compile(
-    r"(unzustellbar|undeliverable|failure|failed|delivery status notification)",
+    r"(unzustellbar|undeliverable|undelivered|failure|failed|delivery status notification)",
     re.IGNORECASE,
 )
 AUTO_REPLY_SUBJ_RE = re.compile(

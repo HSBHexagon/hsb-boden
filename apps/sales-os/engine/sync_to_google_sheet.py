@@ -8,9 +8,14 @@ import json
 import re
 import os
 from pathlib import Path
-from google.oauth2.credentials import Credentials
-from googleapiclient.discovery import build
-from googleapiclient.errors import HttpError
+try:
+    from google.oauth2.credentials import Credentials
+    from googleapiclient.discovery import build
+    from googleapiclient.errors import HttpError
+except ImportError:
+    Credentials = None
+    build = None
+    HttpError = Exception
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 

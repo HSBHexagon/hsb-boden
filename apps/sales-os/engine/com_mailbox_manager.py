@@ -582,6 +582,41 @@ class ComMailboxClient:
                 imap.expunge()
         return deleted
 
+    def ensure_folder(self, folder_name: str) -> bool:
+        """Stellt sicher, dass ein IMAP-Ordner existiert (z. B. 'Unzustellbar')."""
+        folder_clean = folder_name.strip('"')
+        try:
+            with self._get_imap() as imap:
+                typ, folders = imap.list()
+                existing = [f.decode(errors='ignore').split(' "/" ')[-1].strip(' "') for f in (folders or [])]
+                if folder_clean in existing:
+                    return True
+                typ, res = imap.create(f'"{folder_clean}"')
+                return typ == "OK"
+        except Exception as e:
+            logger.warning(f"[{self.owner}] Fehler beim Anlegen des Ordners {folder_clean}: {e}")
+            return False
+
+    def move_message_by_uid(self, uid: str, source_folder: str = "INBOX", target_folder: str = "Unzustellbar") -> bool:
+        """Verschiebt eine Nachricht per UID atomar in einen Zielordner."""
+        clean_target = target_folder.strip('"')
+        if not self.ensure_folder(clean_target):
+            return False
+        try:
+            with self._get_imap() as imap:
+                res, _ = imap.select(source_folder, readonly=False)
+                if res != 'OK':
+                    return False
+                typ, _ = imap.uid("COPY", str(uid), f'"{clean_target}"')
+                if typ != "OK":
+                    return False
+                imap.uid("STORE", str(uid), "+FLAGS", r'(\Deleted)')
+                imap.expunge()
+                return True
+        except Exception as e:
+            logger.warning(f"[{self.owner}] Fehler beim Verschieben von UID {uid} nach {clean_target}: {e}")
+            return False
+
 
 def print_status():
     print('=' * 80)

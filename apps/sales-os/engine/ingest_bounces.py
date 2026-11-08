@@ -151,7 +151,9 @@ def scan_mailbox_for_bounces(
 
 def scan_com_mailbox_for_bounces(
     owner_name: str,
-    limit: int = 100
+    limit: int = 100,
+    move_bounces: bool = False,
+    target_folder: str = "Unzustellbar"
 ) -> List[Dict[str, Any]]:
     """Scans All-Inkl .com IMAP inbox for bounces/NDRs using ComMailboxClient."""
     found_bounces = []
@@ -165,8 +167,9 @@ def scan_com_mailbox_for_bounces(
             body = m.get("body") or ""
             is_bounce, reason, failed_recips = parse_rfc3464_dsn(subj, body)
             if is_bounce:
+                msg_id = m.get("id")
                 found_bounces.append({
-                    "msg_id": m.get("id"),
+                    "msg_id": msg_id,
                     "internet_message_id": m.get("internet_message_id") or "",
                     "date_str": m.get("date_str") or "",
                     "sender": m.get("from") or "",
@@ -175,6 +178,10 @@ def scan_com_mailbox_for_bounces(
                     "failed_recipients": failed_recips,
                     "source_folder": "INBOX",
                 })
+                if move_bounces and msg_id:
+                    moved = client.move_message_by_uid(str(msg_id), source_folder="INBOX", target_folder=target_folder)
+                    if moved:
+                        logger.info(f"[{owner_name}] Bounce-Nachricht UID {msg_id} nach '{target_folder}' verschoben.")
         logger.info(f"[{owner_name} .com IMAP] {len(msgs)} Nachrichten gescannt -> {len(found_bounces)} Bounce-Nachrichten erkannt.")
     except Exception as e:
         logger.warning(f"[{owner_name} .com IMAP] Fehler beim Abruf: {e}")
@@ -209,7 +216,7 @@ def process_bounces(
 
         bounces = []
         # 1. All-Inkl .com IMAP Inbox Scan
-        bounces.extend(scan_com_mailbox_for_bounces(o, limit=limit))
+        bounces.extend(scan_com_mailbox_for_bounces(o, limit=limit, move_bounces=not dry_run))
 
         # 2. Cloud M365 Scan (falls Token verfuegbar)
         if token and conf:

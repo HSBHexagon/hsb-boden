@@ -32,7 +32,7 @@ INBOUND=""; [[ "${HSB_COM_ONLY_INBOUND:-}" == "yes" ]] && INBOUND="--com-only-in
 TOTAL_SENT=0
 for OWNER in JOEL JORDI; do
   OUT=$(python3 -u hsb_cli.py send-batch --owner "$OWNER" --count "$COUNT" --jitter-min 0 --jitter-max 0 --variant reparatur $INBOUND $APPLY | tee /dev/stderr)
-  SENT=$(python3 -c "import json, sys; out = sys.stdin.read(); start, end = out.find('{'), out.rfind('}'); data = json.loads(out[start:end+1]) if start != -1 and end != -1 else {}; print(sum(data.get('sent_counts', {}).values()))" <<< "$OUT" 2>/dev/null || echo "0")
+  SENT=$(python3 -c "import json, sys; lines = [l.strip() for l in sys.stdin.read().splitlines()]; parsed = [json.loads(l) for l in lines if l.startswith('{') and l.endswith('}') and 'sent_counts' in l]; print(sum(parsed[-1].get('sent_counts', {}).values()) if parsed else 0)" <<< "$OUT" 2>/dev/null || echo "0")
   TOTAL_SENT=$((TOTAL_SENT + ${SENT:-0}))
 done
 echo "Tranche beendet: $TOTAL_SENT E-Mails versendet."

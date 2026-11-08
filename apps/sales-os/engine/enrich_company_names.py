@@ -123,20 +123,33 @@ class EnrichmentResult:
 
 
 def check_domain_mx(domain: str) -> bool:
-    """Prüft per nativem DNS-Befehl, ob die Domäne valide Mail-Server besitzt."""
+    """Prüft per nativem DNS-Befehl (host/nslookup), ob die Domäne valide Mail-Server besitzt."""
     if not domain:
         return False
     try:
-        res = subprocess.run(["host", "-t", "mx", domain], capture_output=True, text=True, timeout=4)
-        out = res.stdout.lower()
-        if "mail is handled by" in out:
-            # Null-MX (RFC 7505) bedeutet ausdrücklich: keine E-Mails annehmen.
-            return not bool(re.search(r"mail is handled by 0 \.\s*$", out, re.M))
-        if "has no mx record" in out or "not found" in out or "nxdomain" in out:
-            return False
-        # Fallback A-Record
-        res_a = subprocess.run(["host", "-t", "a", domain], capture_output=True, text=True, timeout=4)
-        return "has address" in res_a.stdout.lower()
+        if os.name == "nt":
+            res = subprocess.run(["nslookup", "-type=mx", domain], capture_output=True, text=True, timeout=4)
+            out = res.stdout.lower()
+            if "mail exchanger" in out:
+                # Null-MX (RFC 7505) prüfen: mail exchanger = 0 . oder ähnlich
+                return not bool(re.search(r"mail exchanger\s*=\s*0\s*\.", out))
+            if "nicht gefunden" in out or "non-existent" in out or "server failure" in out:
+                return False
+            # Fallback A-Record
+            res_a = subprocess.run(["nslookup", "-type=a", domain], capture_output=True, text=True, timeout=4)
+            out_a = res_a.stdout.lower()
+            return "name:" in out_a and "address:" in out_a.split("name:", 1)[-1]
+        else:
+            res = subprocess.run(["host", "-t", "mx", domain], capture_output=True, text=True, timeout=4)
+            out = res.stdout.lower()
+            if "mail is handled by" in out:
+                # Null-MX (RFC 7505) bedeutet ausdrücklich: keine E-Mails annehmen.
+                return not bool(re.search(r"mail is handled by 0 \.\s*$", out, re.M))
+            if "has no mx record" in out or "not found" in out or "nxdomain" in out:
+                return False
+            # Fallback A-Record
+            res_a = subprocess.run(["host", "-t", "a", domain], capture_output=True, text=True, timeout=4)
+            return "has address" in res_a.stdout.lower()
     except Exception:
         # DNS-Ausfall ist kein Nachweis einer zustellbaren Domain.
         return False

@@ -309,11 +309,26 @@ def observed_health(state_dir, collector=None):
         from dual_domain_collector import collect_all_inbounds
         collector=collect_all_inbounds
     seen=set(stats['seen_inbound_ids'])
+    recon_inbound = Path(state_dir) / 'reconciliation' / 'inbound.json'
+    if recon_inbound.exists():
+        try:
+            for rec in json.loads(recon_inbound.read_text()):
+                mid = rec.get('message_id')
+                if mid and mid.strip():
+                    seen.add(mid.strip())
+                sha = rec.get('sha256')
+                owner = rec.get('owner')
+                if sha and owner:
+                    seen.add(f'COM_IMAP:{owner}:SHA256:{sha}')
+        except Exception:
+            pass
     # Der Collector muss SELECT, UID SEARCH und jeden UID FETCH erfolgreich belegen.
     for msg in collector(limit_per_mailbox=0,include_de=False):
         if not msg.message_id:raise RuntimeError('HEALTH_INBOUND_ID_MISSING')
-        if msg.message_id in seen:continue
+        mid_clean = msg.message_id.strip()
+        if msg.message_id in seen or mid_clean in seen:continue
         seen.add(msg.message_id)
+        seen.add(mid_clean)
         cls=classify_inbound_message(msg.sender,msg.subject,msg.body)
         if cls.category=='BOUNCE':
             outcome = delivery_bounce_status(msg.body, cls.extracted_email)

@@ -795,10 +795,23 @@ def main():
         cmd_refresh_signature(args)
     elif args.command == "release-stale-lock":
         from outbound_safety import release_stale_lock
+        from send_governance import MailboxHealthStore
         from com_mailbox_manager import ComMailboxClient
         from hsb_config import CANONICAL_SPREADSHEET_ID
-        print(json.dumps(release_stale_lock(get_sheets_service(), ComMailboxClient("JOEL"), CANONICAL_SPREADSHEET_ID,
-                                            apply=args.apply)))
+        client = ComMailboxClient("JOEL")
+        res = release_stale_lock(get_sheets_service(), client, CANONICAL_SPREADSHEET_ID, apply=args.apply)
+        try:
+            store = MailboxHealthStore(client)
+            remote = store.read()
+            if remote and remote.get('state') == 'paused':
+                if args.apply:
+                    store.append(dict(remote, state='ack'))
+                    res['health_pause'] = {'state': 'ack', 'ack_id': remote.get('ack_id'), 'reason': remote.get('reason'), 'released': True}
+                else:
+                    res['health_pause'] = {'state': 'paused', 'ack_id': remote.get('ack_id'), 'reason': remote.get('reason'), 'released': False}
+        except Exception as e:
+            res['health_pause_error'] = str(e)
+        print(json.dumps(res, ensure_ascii=False))
     elif args.command == "dedupe-drafts":
         cmd_dedupe_drafts(args)
     elif args.command == "archive-purge":

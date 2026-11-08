@@ -427,3 +427,65 @@ def test_blocked_lead_is_skipped_and_tranche_continues(tmp_path, monkeypatch, ca
     printed = capsys.readouterr().out
     assert 'SKIP L1: Deliverability=NO_MX' in printed and 'firma.invalid' not in printed
 
+
+def test_observed_health_ignores_baseline_inbounds(tmp_path):
+    from types import SimpleNamespace
+    from send_governance import observed_health, pause_reason
+    (tmp_path / 'send-health.json').write_text(json.dumps(health()))
+    recon_dir = tmp_path / 'reconciliation'
+    recon_dir.mkdir(parents=True, exist_ok=True)
+    (recon_dir / 'inbound.json').write_text(json.dumps([
+        {'message_id': '<historic-bounce@test.invalid>', 'owner': 'JOEL', 'sha256': 'abc123hash'}
+    ]))
+    hist_bounce = SimpleNamespace(message_id='<historic-bounce@test.invalid>', sender='mailer-daemon@test.invalid',
+                                  subject='Delivery Failure', body='Status: 5.7.1')
+    obs = observed_health(tmp_path, collector=lambda **k: [hist_bounce])
+    assert obs['policy_bounces'] == 0
+    assert pause_reason(obs) is None
+
+    new_bounce = SimpleNamespace(message_id='<new-bounce@test.invalid>', sender='mailer-daemon@test.invalid',
+                                 subject='Delivery Failure', body='Status: 5.7.1')
+    obs_new = observed_health(tmp_path, collector=lambda **k: [hist_bounce, new_bounce])
+    assert obs_new['policy_bounces'] == 1
+    assert pause_reason(obs_new) == 'POLICY_BOUNCE'
+
+
+def test_release_stale_lock_acknowledges_mailbox_health_pause(monkeypatch, capsys):
+    import hsb_cli
+    import send_governance
+
+    class FakeStore:
+        def __init__(self, client):
+            self.events = [{'state': 'paused', 'ack_id': 'ack-1234', 'reason': 'POLICY_BOUNCE'}]
+        def read(self):
+            return self.events[-1] if self.events else None
+        def append(self, event):
+            self.events.append(event)
+
+    fake_store = None
+    def fake_init(client):
+        nonlocal fake_store
+        fake_store = FakeStore(client)
+        return fake_store
+
+    monkeypatch.setattr(send_governance, 'MailboxHealthStore', fake_init)
+    monkeypatch.setattr('outbound_safety.release_stale_lock', lambda *a, **k: {'lock': 'NONE', 'released': False})
+    monkeypatch.setattr(hsb_cli, 'get_sheets_service', lambda: None)
+    monkeypatch.setattr('com_mailbox_manager.ComMailboxClient', lambda o: None)
+
+    # Dry-run without --apply: pause remains unreleased
+    monkeypatch.setattr('sys.argv', ['hsb_cli.py', 'release-stale-lock'])
+    hsb_cli.main()
+    out = json.loads(capsys.readouterr().out)
+    assert out['health_pause']['state'] == 'paused'
+    assert out['health_pause']['released'] is False
+
+    # With --apply: pause is set to ack
+    monkeypatch.setattr('sys.argv', ['hsb_cli.py', 'release-stale-lock', '--apply'])
+    hsb_cli.main()
+    out_apply = json.loads(capsys.readouterr().out)
+    assert out_apply['health_pause']['state'] == 'ack'
+    assert out_apply['health_pause']['released'] is True
+    assert fake_store.events[-1]['state'] == 'ack'
+
+

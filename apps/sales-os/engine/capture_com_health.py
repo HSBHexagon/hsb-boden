@@ -38,7 +38,12 @@ def extracted_records(client, folder, full=False):
         for uid in uids:
             typ, entries = imap.uid('fetch',uid,'(INTERNALDATE BODY.PEEK[])' if full else
                                     '(INTERNALDATE BODY.PEEK[HEADER.FIELDS (DATE FROM TO SUBJECT MESSAGE-ID)])')
-            chunks = [(meta, raw) for meta, raw in entries or [] if isinstance(meta, bytes) and isinstance(raw, bytes)] if typ == 'OK' else []
+            chunks = [
+                (entry[0], entry[1])
+                for entry in (entries or []) if isinstance(entry, tuple)
+                and len(entry) == 2
+                and isinstance(entry[0], bytes) and isinstance(entry[1], bytes)
+            ] if typ == 'OK' else []
             if len(chunks) != 1:
                 raise RuntimeError('MAILBOX_UID_FETCH_INCOMPLETE')
             meta, raw = chunks[0]
@@ -71,7 +76,9 @@ def check_snapshot():
         client=ComMailboxClient(owner)
         inbound=client.fetch_inbound_messages(limit=0)
         for item in inbound:
-            mid=item.get('id')
+            # Use the same priority as collect_all_inbounds(), otherwise every
+            # historical message with Message-ID looks newly received on send.
+            mid=item.get('internet_message_id') or item.get('id')
             if not isinstance(mid,str) or not mid.strip():
                 raise RuntimeError('INBOUND_CURSOR_MISSING')
             seen.add(mid.strip())

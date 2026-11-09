@@ -9,7 +9,7 @@ on:
       mode:
         description: "Bounded operation. prepare-drafts* bereitet Entwürfe vor (kein Versand); send* versendet nur auf ausdrückliche Auswahl"
         type: choice
-        options: [audit, inventory, inbound-preview, inbound-sync, fill-missing-preview, fill-missing, prepare-drafts-preview, prepare-drafts, health-seed, send-preview, send, archive-purge-preview, archive-purge]
+        options: [audit, inventory, inbound-preview, inbound-sync, fill-missing-preview, fill-missing, prepare-drafts-preview, prepare-drafts, health-seed, health-audit, send-preview, send, archive-purge-preview, archive-purge]
         default: audit
       confirm:
         description: "Nur für archive-purge: exakt ARCHIV-LEEREN eintippen"
@@ -17,6 +17,10 @@ on:
         default: ''
       health_ack:
         description: "Nur für send nach behobener Versandpause: ID der geprüften Pause"
+        type: string
+        default: ''
+      health_recipient_pub:
+        description: "Nur health-audit: RSA-Public-Key im DER/Base64-Format; keine Geheimnisse"
         type: string
         default: ''
       count:
@@ -344,3 +348,31 @@ jobs:
               exit 1
             fi
           done
+
+  health-audit:
+    # Read-only IMAP evidence: encrypted artifact, no customer send and no raw message data in logs.
+    if: github.event_name == 'workflow_dispatch' && inputs.mode == 'health-audit' && github.ref == 'refs/heads/main'
+    needs: tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    env:
+      HSB_MAILBOX_CONFIG_JSON: ${{ secrets.HSB_SALES_MAILBOXES_JSON }}
+      HSB_HEALTH_RECEIVER_PUBLIC_KEY: ${{ inputs.health_recipient_pub }}
+      HSB_CUSTOMER_SEND_ENABLED: 'no'
+      HSB_INTERNAL_TEST_SEND_ENABLED: 'no'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: '3.14'
+      - run: pip install -r apps/sales-os/requirements.txt
+      - name: Gather and encrypt real com mailbox snapshots
+        run: python apps/sales-os/engine/capture_com_health.py "$RUNNER_TEMP/hsb-com-health.enc.json"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: hsb-com-health-encrypted
+          path: ${{ runner.temp }}/hsb-com-health.enc.json
+          retention-days: 1
+          if-no-files-found: error

@@ -24,13 +24,13 @@ UTC = dt.timezone.utc
 NOW = dt.datetime.now(UTC)
 START = NOW - dt.timedelta(hours=24)
 
-def extracted_records(client, folder, full=False):
+def extracted_records(client, folder, full=False, history=False):
     with client._get_imap() as imap:
         typ, _ = imap.select(folder, readonly=True)
         if typ != 'OK':
             raise RuntimeError('MAILBOX_FOLDER_UNREADABLE')
-        criterion = 'ALL' if full else 'SINCE'
-        query = [criterion] if full else [criterion, (START-dt.timedelta(days=1)).strftime('%d-%b-%Y')]
+        criterion = 'ALL' if full or history else 'SINCE'
+        query = [criterion] if full or history else [criterion, (START-dt.timedelta(days=1)).strftime('%d-%b-%Y')]
         typ, found = imap.uid('search', None, *query)
         if typ != 'OK' or not found:
             raise RuntimeError('MAILBOX_UID_SEARCH_UNAVAILABLE')
@@ -98,33 +98,21 @@ def check_snapshot():
                 counts[kind]+=1
             if re.search(r'feedback[- ]type:\s*abuse|feedback report|spam complaint',subject+'\n'+body,re.I):
                 counts['spam_reports']+=1
-        # Determine historical sending start from genuine IMAP Sent, not a guessed ramp date.
+        # Read the server's authoritative INTERNALDATE, never an untrusted MIME Date header.
         historic=[]
-        for sent in client.fetch_sent_messages(limit=0):
-            recipients=[a.lower() for _,a in getaddresses([str(sent.get('to',''))]) if a]
-            external=[a for a in recipients if a != 'cherinojoel@gmail.com'
-                      and not a.endswith('@hsb-boden.com') and not a.endswith('@hsb-boden.de')]
-            if not external:
-                continue
-            try:
-                stamp=parsedate_to_datetime(sent['date_str'])
-                if stamp.tzinfo is None:
-                    raise ValueError('missing timezone')
-                stamp=stamp.astimezone(UTC)
-            except (KeyError,ValueError,TypeError,OverflowError):
-                raise RuntimeError('CONFIRMED_SENT_DATE_UNUSABLE_'+owner) from None
-            if stamp <= NOW:
-                historic.append(stamp)
-        if not historic:
-            raise RuntimeError('NO_CONFIRMED_EXTERNAL_SENT_FOR_'+owner)
-        earliest=min(historic)
         sample=0
-        for stored, msg in extracted_records(client,client.cfg['sent_folder'],full=False):
+        for stored, msg in extracted_records(client,client.cfg['sent_folder'],history=True):
             recipients=[a.lower() for _,a in getaddresses([str(msg.get('To',''))]) if a]
             external=[a for a in recipients if a != 'cherinojoel@gmail.com'
                       and not a.endswith('@hsb-boden.com') and not a.endswith('@hsb-boden.de')]
-            if external and START <= stored <= NOW:
+            if not external or stored > NOW:
+                continue
+            historic.append(stored)
+            if START <= stored <= NOW:
                 sample+=1
+        if not historic:
+            raise RuntimeError('NO_CONFIRMED_EXTERNAL_SENT_FOR_'+owner)
+        earliest=min(historic)
         pilot_dates.append(earliest.date().isoformat())
         latest_sent.append(sample)
         proof[owner]={'inbound_total':len(inbound),'inbound_24h':recent_in,

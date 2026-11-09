@@ -9,7 +9,7 @@ on:
       mode:
         description: "Bounded operation. prepare-drafts* bereitet Entwürfe vor (kein Versand); send* versendet nur auf ausdrückliche Auswahl"
         type: choice
-        options: [audit, inventory, inbound-preview, inbound-sync, fill-missing-preview, fill-missing, prepare-drafts-preview, prepare-drafts, send-preview, send, archive-purge-preview, archive-purge]
+        options: [audit, inventory, inbound-preview, inbound-sync, fill-missing-preview, fill-missing, prepare-drafts-preview, prepare-drafts, health-seed, send-preview, send, archive-purge-preview, archive-purge]
         default: audit
       confirm:
         description: "Nur für archive-purge: exakt ARCHIV-LEEREN eintippen"
@@ -298,3 +298,49 @@ jobs:
         run: |
           if [ "$MODE" = "send" ]; then bash apps/sales-os/bin/versand-tranche.sh "$COUNT" --apply
           else bash apps/sales-os/bin/versand-tranche.sh "$COUNT"; fi
+
+  internal-seed-health:
+    # Controlled sender-authentication check. No prospect recipients, no CRM edits.
+    if: github.event_name == 'workflow_dispatch' && inputs.mode == 'health-seed' && github.ref == 'refs/heads/main'
+    needs: tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    env:
+      HSB_MAILBOX_CONFIG_JSON: ${{ secrets.HSB_SALES_MAILBOXES_JSON }}
+      HSB_SEED_RECIPIENT: ${{ secrets.HSB_SALES_SEED_RECIPIENT }}
+      HSB_CUSTOMER_SEND_ENABLED: 'no'
+      HSB_INTERNAL_TEST_SEND_ENABLED: 'yes'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: '3.14'
+      - run: pip install -r apps/sales-os/requirements.txt
+      - name: Configure verified owner-controlled seed mailbox
+        run: |
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+          recipient = os.environ.get('HSB_SEED_RECIPIENT', '').strip().lower()
+          if not recipient.endswith('@gmail.com') or len(recipient) > 254:
+              raise RuntimeError('OWNED_GMAIL_SEED_NOT_CONFIGURED')
+          if not os.environ.get('HSB_MAILBOX_CONFIG_JSON'):
+              raise RuntimeError('COM_MAILBOX_CONFIG_NOT_CONFIGURED')
+          path = Path(os.environ['RUNNER_TEMP']) / 'hsb-seed-inboxes.json'
+          path.write_text(json.dumps([{'provider': 'gmail', 'address': recipient}]))
+          path.chmod(0o600)
+          PY
+      - name: Send internal control messages via both real com SMTP accounts
+        run: |
+          set -euo pipefail
+          SEEDS="$RUNNER_TEMP/hsb-seed-inboxes.json"
+          for OWNER in JOEL JORDI; do
+            if python -u apps/sales-os/engine/hsb_cli.py seed-send --owner "$OWNER" --seed-file "$SEEDS" > "$RUNNER_TEMP/seed-$OWNER.log" 2>&1; then
+              echo "$OWNER: seed SMTP command succeeded; recipient authentication still requires independent Gmail readback"
+            else
+              echo "$OWNER: seed SMTP command failed; no customer mail has been attempted" >&2
+              exit 1
+            fi
+          done

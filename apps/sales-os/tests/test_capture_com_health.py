@@ -73,7 +73,15 @@ def test_cursor_prefers_public_message_id_as_reconciliation_does(monkeypatch):
         def fetch_sent_messages(self, limit=0):
             return [{"to": "outside@example.test", "date_str": "Mon, 09 Nov 2026 10:00:00 +0000"}]
 
+    import datetime as dt
+    from email import message_from_string
+
     monkeypatch.setattr(audit, "ComMailboxClient", Client)
-    monkeypatch.setattr(audit, "extracted_records", lambda *args, **kw: iter(()))
+    historical = message_from_string("To: outside@example.test\nDate: invalid\n\n")
+    def read_records(_client, _folder, **kwargs):
+        if kwargs.get("history"):
+            return iter([(audit.NOW - dt.timedelta(days=25), historical)])
+        return iter(())
+    monkeypatch.setattr(audit, "extracted_records", read_records)
     report = audit.check_snapshot()
     assert report["seen_inbound_ids"] == ["<incoming@example.test>"]

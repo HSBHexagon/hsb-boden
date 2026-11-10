@@ -117,10 +117,20 @@ export async function handleRepairPhoto(
     return json(503, { ok: false, error: "not_configured" }, origin);
   }
 
-  const declared = Number(request.headers.get("Content-Length") ?? "0");
+  // Browser senden FormData immer mit Content-Length. Ohne diese Angabe (z. B. chunked) ließe sich
+  // die Größenprüfung umgehen, bevor request.formData() den ganzen Körper einliest.
+  const lengthHeader = request.headers.get("Content-Length");
+  const declared = lengthHeader === null ? Number.NaN : Number(lengthHeader);
+  if (!Number.isInteger(declared) || declared < 0) return json(411, { ok: false, error: "length_required" }, origin);
   if (declared > MAX_BODY_BYTES) return json(413, { ok: false, error: "too_large" }, origin);
   if (!(request.headers.get("Content-Type") ?? "").toLowerCase().startsWith("multipart/form-data")) {
     return json(415, { ok: false, error: "content_type" }, origin);
+  }
+
+  // Rate-Limit vor dem Einlesen des Körpers, damit Missbrauch keine Parse-Arbeit erzeugt.
+  const ip = request.headers.get("CF-Connecting-IP") ?? "unknown";
+  if (await isRateLimited(env.RATE_LIMIT_KV, `repair-photo:ip:${ip}`, now.getTime())) {
+    return json(429, { ok: false, error: "rate_limited" }, origin);
   }
 
   let form: FormData;
@@ -160,11 +170,6 @@ export async function handleRepairPhoto(
     const kind = sniffImage(data);
     if (!kind) return json(422, { ok: false, error: "validation", fields: ["photos_type"] }, origin);
     attachments.push({ filename: `schadstelle-${index + 1}.${kind.extension}`, contentType: kind.contentType, data });
-  }
-
-  const ip = request.headers.get("CF-Connecting-IP") ?? "unknown";
-  if (await isRateLimited(env.RATE_LIMIT_KV, `repair-photo:ip:${ip}`, now.getTime())) {
-    return json(429, { ok: false, error: "rate_limited" }, origin);
   }
 
   const from = env.SMTP_FROM || env.SMTP_USER;

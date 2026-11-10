@@ -155,14 +155,23 @@ function form(fields: Record<string, string> = {}, photos: Uint8Array[] = [JPEG]
   return fd;
 }
 
-function request(fd: FormData, origin = "https://www.hsb-boden.de") {
-  return new Request("https://www.hsb-boden.de/api/repair-photo", { method: "POST", body: fd, headers: { Origin: origin, "CF-Connecting-IP": "203.0.113.7" } });
+/** Wie ein Browser: fertiger multipart-Körper mit Content-Length. */
+async function request(fd: FormData, origin = "https://www.hsb-boden.de", withLength = true) {
+  const encoded = new Response(fd);
+  const body = new Uint8Array(await encoded.arrayBuffer());
+  const headers: Record<string, string> = {
+    Origin: origin,
+    "CF-Connecting-IP": "203.0.113.7",
+    "Content-Type": encoded.headers.get("Content-Type") ?? "",
+  };
+  if (withLength) headers["Content-Length"] = String(body.length);
+  return new Request("https://www.hsb-boden.de/api/repair-photo", { method: "POST", body, headers });
 }
 
 describe("POST /api/repair-photo", () => {
   it("schickt Angaben und Foto als Anhang an info@hsb-boden.de", async () => {
     const smtp = fakeSmtp();
-    const res = await handleRepairPhoto(request(form()), env(), smtp.connect);
+    const res = await handleRepairPhoto(await request(form()), env(), smtp.connect);
     expect(res.status).toBe(200);
     expect(await res.json()).toEqual({ ok: true });
     expect(smtp.received).toContain("RCPT TO:<info@hsb-boden.de>");
@@ -173,18 +182,25 @@ describe("POST /api/repair-photo", () => {
 
   it("lehnt fremde Herkunft ab, ohne zu senden", async () => {
     const smtp = fakeSmtp();
-    const res = await handleRepairPhoto(request(form(), "https://evil.example"), env(), smtp.connect);
+    const res = await handleRepairPhoto(await request(form(), "https://evil.example"), env(), smtp.connect);
     expect(res.status).toBe(403);
     expect(smtp.received).toHaveLength(0);
   });
 
+  it("verlangt Content-Length, damit die Größengrenze nicht umgangen werden kann", async () => {
+    const smtp = fakeSmtp();
+    const res = await handleRepairPhoto(await request(form(), undefined, false), env(), smtp.connect);
+    expect(res.status).toBe(411);
+    expect(smtp.received).toHaveLength(0);
+  });
+
   it("meldet 503, solange die SMTP-Zugangsdaten fehlen", async () => {
-    const res = await handleRepairPhoto(request(form()), env({ SMTP_PASS: undefined }), fakeSmtp().connect);
+    const res = await handleRepairPhoto(await request(form()), env({ SMTP_PASS: undefined }), fakeSmtp().connect);
     expect(res.status).toBe(503);
   });
 
   it("verlangt Einwilligung, gültige E-Mail und mindestens ein Foto", async () => {
-    const res = await handleRepairPhoto(request(form({ privacyConsent: "", email: "kein-mail" }, [])), env(), fakeSmtp().connect);
+    const res = await handleRepairPhoto(await request(form({ privacyConsent: "", email: "kein-mail" }, [])), env(), fakeSmtp().connect);
     expect(res.status).toBe(422);
     const body = (await res.json()) as { fields: string[] };
     expect(body.fields).toEqual(expect.arrayContaining(["privacyConsent", "email", "photos"]));
@@ -192,14 +208,14 @@ describe("POST /api/repair-photo", () => {
 
   it("lehnt Nicht-Bilder und mehr als drei Fotos ab", async () => {
     const svg = new TextEncoder().encode("<svg/>");
-    expect((await handleRepairPhoto(request(form({}, [svg])), env(), fakeSmtp().connect)).status).toBe(422);
+    expect((await handleRepairPhoto(await request(form({}, [svg])), env(), fakeSmtp().connect)).status).toBe(422);
     const tooMany = Array.from({ length: MAX_PHOTOS + 1 }, () => JPEG);
-    expect((await handleRepairPhoto(request(form({}, tooMany)), env(), fakeSmtp().connect)).status).toBe(422);
+    expect((await handleRepairPhoto(await request(form({}, tooMany)), env(), fakeSmtp().connect)).status).toBe(422);
   });
 
   it("verwirft Bot-Einsendungen über das Honeypot-Feld still", async () => {
     const smtp = fakeSmtp();
-    const res = await handleRepairPhoto(request(form({ website: "http://spam" })), env(), smtp.connect);
+    const res = await handleRepairPhoto(await request(form({ website: "http://spam" })), env(), smtp.connect);
     expect(res.status).toBe(200);
     expect(smtp.received).toHaveLength(0);
   });
@@ -207,13 +223,13 @@ describe("POST /api/repair-photo", () => {
   it("begrenzt auf fünf Einsendungen je IP in zehn Minuten", async () => {
     const shared = env();
     for (let i = 0; i < 5; i++) {
-      expect((await handleRepairPhoto(request(form()), shared, fakeSmtp().connect)).status).toBe(200);
+      expect((await handleRepairPhoto(await request(form()), shared, fakeSmtp().connect)).status).toBe(200);
     }
-    expect((await handleRepairPhoto(request(form()), shared, fakeSmtp().connect)).status).toBe(429);
+    expect((await handleRepairPhoto(await request(form()), shared, fakeSmtp().connect)).status).toBe(429);
   });
 
   it("meldet 502, wenn der Mailserver ablehnt", async () => {
-    const res = await handleRepairPhoto(request(form()), env(), fakeSmtp({ rcpt: "550 5.1.1 User unknown" }).connect);
+    const res = await handleRepairPhoto(await request(form()), env(), fakeSmtp({ rcpt: "550 5.1.1 User unknown" }).connect);
     expect(res.status).toBe(502);
   });
 });

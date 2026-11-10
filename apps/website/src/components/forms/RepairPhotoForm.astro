@@ -79,7 +79,8 @@ const inputClass =
 </div>
 
 <script>
-  import { trackEvent, TrackingEvent } from "../../lib/tracking";
+  import { trackEvent, trackEventAndWait, TrackingEvent } from "../../lib/tracking";
+  import { trackAfterConfirmedLead } from "../../lib/confirmedLeadTracking";
 
   const MAX_PHOTOS = 3;
   const MAX_EDGE = 1600;
@@ -102,16 +103,40 @@ const inputClass =
     errorBox.classList.toggle("hidden", !message);
   }
 
+  type Drawable = { source: CanvasImageSource; width: number; height: number; release(): void };
+
+  /** Dekodiert das Foto: zuerst mit EXIF-Ausrichtung, dann ohne Optionen (ältere Safari-Versionen), zuletzt über <img>. */
+  async function decode(file: File): Promise<Drawable> {
+    for (const options of [{ imageOrientation: "from-image" } as ImageBitmapOptions, undefined]) {
+      try {
+        const bitmap = await createImageBitmap(file, options);
+        return { source: bitmap, width: bitmap.width, height: bitmap.height, release: () => bitmap.close() };
+      } catch {
+        // Nächsten Weg versuchen.
+      }
+    }
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.src = url;
+    try {
+      await img.decode();
+    } catch (error) {
+      URL.revokeObjectURL(url);
+      throw error;
+    }
+    return { source: img, width: img.naturalWidth, height: img.naturalHeight, release: () => URL.revokeObjectURL(url) };
+  }
+
   /** Verkleinert auf max. 1600 px und speichert als JPEG neu; dabei gehen EXIF-/GPS-Daten verloren. */
   async function shrink(file: File): Promise<Blob> {
     try {
-      const bitmap = await createImageBitmap(file, { imageOrientation: "from-image" });
-      const scale = Math.min(1, MAX_EDGE / Math.max(bitmap.width, bitmap.height));
+      const image = await decode(file);
+      const scale = Math.min(1, MAX_EDGE / Math.max(image.width, image.height));
       const canvas = document.createElement("canvas");
-      canvas.width = Math.round(bitmap.width * scale);
-      canvas.height = Math.round(bitmap.height * scale);
-      canvas.getContext("2d")?.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
-      bitmap.close();
+      canvas.width = Math.round(image.width * scale);
+      canvas.height = Math.round(image.height * scale);
+      canvas.getContext("2d")?.drawImage(image.source, 0, 0, canvas.width, canvas.height);
+      image.release();
       const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/jpeg", 0.82));
       if (blob) return blob;
     } catch {
@@ -216,7 +241,7 @@ const inputClass =
     try {
       const res = await fetch("/api/repair-photo", { method: "POST", body: data, headers: { Accept: "application/json" } });
       if (!res.ok) throw new Error(String(res.status));
-      trackEvent(TrackingEvent.LeadFormSubmit, { placement: "repair_photo" });
+      await trackAfterConfirmedLead(() => trackEventAndWait(TrackingEvent.LeadFormSubmit, { placement: "repair_photo" }));
       photos.forEach((photo) => URL.revokeObjectURL(photo.url));
       form.classList.add("hidden");
       success?.classList.remove("hidden");

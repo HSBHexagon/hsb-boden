@@ -16,7 +16,7 @@ const emailHref = `mailto:${site.email}?subject=${subject}&body=${body}`;
       <h2 id="repair-inquiry-title" class="h2 mt-3">Lässt sich die Schadstelle gezielt reparieren?</h2>
       <p class="lead mt-4">Beschreiben Sie kurz die Stelle und nennen Sie den Standort. Ein Foto und ein mögliches Sperrfenster helfen uns, den nächsten Prüfschritt einzugrenzen.</p>
       <p class="mt-4 font-semibold text-hsb-ink" data-repair-promise>Ersteinschätzung innerhalb eines Arbeitstags, kostenfrei.</p>
-      <p class="mt-2 text-hsb-steel">{site.hasRepairPhotoUpload ? "Laden Sie das Foto direkt hier hoch – oder antworten Sie mit dem Bild auf unsere E-Mail." : "Sie haben eine E-Mail von uns erhalten? Senden Sie das Foto einfach als Antwort auf diese E-Mail."}</p>
+      <p class="mt-2 text-hsb-steel">{site.hasRepairPhotoUpload ? "Laden Sie das Foto direkt hier hoch. Kein Foto zur Hand? Fordern Sie im Formular einen Rückruf oder einen Termin vor Ort an – oder antworten Sie einfach auf unsere E-Mail." : "Sie haben eine E-Mail von uns erhalten? Senden Sie das Foto einfach als Antwort auf diese E-Mail."}</p>
       <div class="mt-6 flex flex-wrap gap-3">
         <a class={site.hasRepairPhotoUpload ? "button-secondary-dark" : "button-primary"} href={emailHref} data-repair-contact="email">{site.hasRepairPhotoUpload ? "Per E-Mail senden" : "Foto per E-Mail senden"}</a>
         <a class="button-secondary-dark" href={toTelephoneHref(site.phone)} data-repair-contact="phone">{site.phone}</a>

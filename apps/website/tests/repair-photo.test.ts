@@ -1,7 +1,7 @@
 // @vitest-environment node
 import { describe, expect, it } from "vitest";
 import { buildMime, dotStuff, headerSafe, sendMail, type SmtpSocket } from "../functions/lib/smtp";
-import { handleRepairPhoto, MAX_PHOTOS, sniffImage, type RepairPhotoEnv } from "../functions/lib/repair-photo-handler";
+import { buildConfirmationText, handleRepairPhoto, MAX_PHOTOS, sniffImage, type RepairPhotoEnv } from "../functions/lib/repair-photo-handler";
 
 const JPEG = new Uint8Array([0xff, 0xd8, 0xff, 0xe0, 0x00, 0x10, 0x4a, 0x46, 0x49, 0x46, 0x00, 0x01]);
 const PNG = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0, 0, 0, 0]);
@@ -143,6 +143,7 @@ function env(overrides: Partial<RepairPhotoEnv> = {}): RepairPhotoEnv {
     SMTP_HOST: "w0221a9f.kasserver.com",
     SMTP_USER: "j-post@hsb-boden.com",
     SMTP_PASS: "geheim",
+    REPAIR_CONFIRMATION: "off",
     ...overrides,
   };
 }
@@ -173,7 +174,7 @@ describe("POST /api/repair-photo", () => {
     const smtp = fakeSmtp();
     const res = await handleRepairPhoto(await request(form()), env(), smtp.connect);
     expect(res.status).toBe(200);
-    expect(await res.json()).toEqual({ ok: true });
+    expect(await res.json()).toEqual({ ok: true, confirmation: false });
     expect(smtp.received).toContain("RCPT TO:<info@hsb-boden.de>");
     const body = smtp.received.find((l) => l.startsWith("DATA-BODY:"))!;
     expect(body).toContain("Content-Type: image/jpeg");
@@ -226,6 +227,75 @@ describe("POST /api/repair-photo", () => {
       expect((await handleRepairPhoto(await request(form()), shared, fakeSmtp().connect)).status).toBe(200);
     }
     expect((await handleRepairPhoto(await request(form()), shared, fakeSmtp().connect)).status).toBe(429);
+  });
+
+  it("Rückruf ohne Foto: verlangt Telefon, schickt Zeitfenster und kein Anhang", async () => {
+    const missing = await handleRepairPhoto(await request(form({ intent: "callback" }, [])), env(), fakeSmtp().connect);
+    expect(missing.status).toBe(422);
+    expect(((await missing.json()) as { fields: string[] }).fields).toEqual(["phone"]);
+
+    const smtp = fakeSmtp();
+    const res = await handleRepairPhoto(
+      await request(form({ intent: "callback", phone: "+49 231 123456", callbackWindow: "vormittags" }, [])),
+      env(),
+      smtp.connect,
+    );
+    expect(res.status).toBe(200);
+    const body = smtp.received.find((l) => l.startsWith("DATA-BODY:"))!;
+    const decoded = atob(body.split("base64\r\n\r\n")[1].split("\r\n--")[0].replace(/\r\n/g, ""));
+    const text = new TextDecoder().decode(Uint8Array.from(decoded, (c) => c.charCodeAt(0)));
+    expect(text).toContain("RÜCKRUF");
+    expect(text).toContain("vormittags (8–12 Uhr)");
+    expect(text).toContain("Fotos:        keine");
+    expect(body).not.toContain("Content-Disposition: attachment");
+  });
+
+  it("Vor-Ort-Termin verlangt einen Standort, Fotos bleiben optional", async () => {
+    const missing = await handleRepairPhoto(await request(form({ intent: "visit" }, [])), env(), fakeSmtp().connect);
+    expect(((await missing.json()) as { fields: string[] }).fields).toEqual(["location"]);
+    const ok = await handleRepairPhoto(await request(form({ intent: "visit", location: "44137 Dortmund" }, [JPEG])), env(), fakeSmtp().connect);
+    expect(ok.status).toBe(200);
+  });
+
+  it("unbekannter Weg fällt auf Foto zurück und verlangt dann ein Bild", async () => {
+    const res = await handleRepairPhoto(await request(form({ intent: "hack", callbackWindow: "toString" }, [])), env(), fakeSmtp().connect);
+    expect(((await res.json()) as { fields: string[] }).fields).toEqual(["photos"]);
+  });
+
+  it("schickt dem Absender eine Bestätigung ohne seine Eingaben und wartet per waitUntil", async () => {
+    const sessions: ReturnType<typeof fakeSmtp>[] = [];
+    const connect = () => {
+      const s = fakeSmtp();
+      sessions.push(s);
+      return s.socket;
+    };
+    const pending: Promise<unknown>[] = [];
+    const res = await handleRepairPhoto(
+      await request(form({ company: "Spam <a href=x>klick</a>" })),
+      env({ REPAIR_CONFIRMATION: undefined }),
+      connect,
+      new Date(),
+      (p) => pending.push(p),
+    );
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({ ok: true, confirmation: true });
+    expect(pending).toHaveLength(1);
+    await Promise.all(pending);
+    expect(sessions).toHaveLength(2);
+    expect(sessions[1].received).toContain("RCPT TO:<erika@example.com>");
+    const confirmation = sessions[1].received.find((l) => l.startsWith("DATA-BODY:"))!;
+    expect(confirmation).toContain("Reply-To: <info@hsb-boden.de>");
+    expect(confirmation).not.toContain("Spam");
+    expect(buildConfirmationText("callback")).toContain("nachreichen");
+  });
+
+  it("eine fehlgeschlagene Bestätigung kippt die zugestellte Anfrage nicht", async () => {
+    let call = 0;
+    const res = await handleRepairPhoto(await request(form()), env({ REPAIR_CONFIRMATION: undefined }), () =>
+      (call++ === 0 ? fakeSmtp() : fakeSmtp({ rcpt: "550 5.1.1 User unknown" })).socket,
+    );
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({ ok: true, confirmation: false });
   });
 
   it("meldet 502, wenn der Mailserver ablehnt", async () => {

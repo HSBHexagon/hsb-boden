@@ -17,7 +17,7 @@ interface Context {
 }
 
 export const REPAIR_TARGET =
-  "/leistungen/boden-reparatur-instandsetzung/?utm_source=email&utm_medium=outreach&utm_campaign=reparatur-2026-11";
+  "/leistungen/boden-reparatur-instandsetzung/?utm_source=email&utm_medium=outreach&utm_campaign=reparatur-2026-11#reparaturanfrage";
 
 // Rechenzentren und Mail-Security-Scanner, die Links vorab abrufen (wie /r/[token]).
 const DATACENTER_ASNS = new Set([8075, 8068, 15169, 396982, 16509, 14618, 13335, 30238, 26211, 52129]);

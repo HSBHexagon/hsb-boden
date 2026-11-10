@@ -6,10 +6,16 @@ import { handleRepairPhoto, type RepairPhotoEnv } from "../lib/repair-photo-hand
 interface Context {
   request: Request;
   env: RepairPhotoEnv;
+  waitUntil?: (promise: Promise<unknown>) => void;
 }
 
 export async function onRequestPost(context: Context): Promise<Response> {
-  return handleRepairPhoto(context.request, context.env, (hostname, port) =>
-    connect({ hostname, port }, { secureTransport: "on", allowHalfOpen: false }),
+  return handleRepairPhoto(
+    context.request,
+    context.env,
+    (hostname, port) => connect({ hostname, port }, { secureTransport: "on", allowHalfOpen: false }),
+    new Date(),
+    // Die Eingangsbestätigung läuft nach der Antwort weiter, damit der Besucher nicht auf zwei SMTP-Sitzungen wartet.
+    context.waitUntil?.bind(context),
   );
 }

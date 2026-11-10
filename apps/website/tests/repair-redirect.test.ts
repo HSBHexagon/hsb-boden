@@ -27,6 +27,8 @@ describe("/reparatur/", () => {
     expect(res.status).toBe(302);
     expect(res.headers.get("Location")).toBe(REPAIR_TARGET);
     expect(REPAIR_TARGET).toContain("utm_campaign=reparatur-2026-11");
+    // Mail-Empfänger landen direkt beim Formular, nicht im allgemeinen Seiteneinstieg.
+    expect(REPAIR_TARGET.endsWith("#reparaturanfrage")).toBe(true);
     expect(kv.keys).toHaveLength(1);
     expect(kv.keys[0]).toMatch(/^agg:reparatur:\d{4}-\d{2}-\d{2}:human:\d+-[a-z0-9]+$/);
   });

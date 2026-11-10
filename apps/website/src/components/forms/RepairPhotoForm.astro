@@ -1,12 +1,37 @@
 ---
 import { site } from "../../data/site";
+import { toTelephoneHref } from "../../lib/phone";
 
 const inputClass =
   "rounded border border-hsb-line px-3 py-3 font-normal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-hsb-red aria-[invalid=true]:border-hsb-red";
+
+// Drei Wege zur Ersteinschätzung. Wer gerade kein Foto hat, soll nicht abspringen, sondern einen Rückruf
+// oder einen Termin vor Ort anfragen können (gleicher Endpunkt, gleiche Mail an info@).
+const intents = [
+  { value: "photo", title: "Foto senden", hint: "Schnellste Einschätzung" },
+  { value: "callback", title: "Rückruf", hint: "Kein Foto zur Hand" },
+  { value: "visit", title: "Termin vor Ort", hint: "Wir sehen es uns an" },
+];
+const phoneHref = toTelephoneHref(site.phone);
 ---
 
 <div class="surface p-5" id="repair-photo">
-  <form id="repair-photo-form" class="grid gap-4" novalidate>
+  <form id="repair-photo-form" class="grid gap-5" novalidate>
+    <fieldset>
+      <legend class="text-sm font-black text-hsb-ink">Wie möchten Sie vorgehen?</legend>
+      <div class="mt-3 grid gap-2 sm:grid-cols-3">
+        {intents.map((intent) => (
+          <label class="flex min-h-12 cursor-pointer items-start gap-3 rounded-lg border border-hsb-line bg-white px-3 py-3 transition-colors focus-within:ring-2 focus-within:ring-hsb-red/40 has-[:checked]:border-hsb-red has-[:checked]:bg-hsb-red/5">
+            <input type="radio" name="intent" value={intent.value} checked={intent.value === "photo"} class="mt-1 accent-hsb-red" />
+            <span>
+              <span class="block text-sm font-black text-hsb-ink">{intent.title}</span>
+              <span class="block text-xs text-hsb-steel">{intent.hint}</span>
+            </span>
+          </label>
+        ))}
+      </div>
+    </fieldset>
+
     <div>
       <label
         id="repair-photo-drop"
@@ -17,7 +42,8 @@ const inputClass =
           <path stroke-linecap="round" stroke-linejoin="round" d="M3 8.5A2.5 2.5 0 0 1 5.5 6h1.6l1.2-1.8A1.5 1.5 0 0 1 9.55 3.5h4.9a1.5 1.5 0 0 1 1.25.7L16.9 6h1.6A2.5 2.5 0 0 1 21 8.5v9a2.5 2.5 0 0 1-2.5 2.5h-13A2.5 2.5 0 0 1 3 17.5v-9Z" />
           <circle cx="12" cy="12.5" r="3.5" />
         </svg>
-        <span class="text-base font-black text-hsb-ink">Foto der Schadstelle aufnehmen oder auswählen</span>
+        <span class="text-base font-black text-hsb-ink" data-intent-only="photo">Foto der Schadstelle aufnehmen oder auswählen</span>
+        <span class="text-base font-black text-hsb-ink" data-intent-only="callback visit" hidden>Fotos hinzufügen <span class="font-normal text-hsb-steel">(optional)</span></span>
         <span class="text-sm text-hsb-steel">Bis zu 3 Bilder. Am Handy öffnet sich die Kamera, am Rechner können Sie Bilder hierher ziehen.</span>
         <input id="repair-photo-input" type="file" accept="image/*" multiple class="sr-only" aria-describedby="repair-photo-hint" />
       </label>
@@ -25,6 +51,12 @@ const inputClass =
         Bilder werden vor dem Senden verkleinert, Standortdaten aus dem Foto werden dabei entfernt.
       </p>
       <ul id="repair-photo-previews" class="mt-3 grid grid-cols-3 gap-3 empty:hidden" aria-label="Ausgewählte Fotos"></ul>
+      <div id="repair-photo-alt" data-intent-only="photo" class="mt-3 scroll-mt-28 flex flex-wrap items-center gap-x-3 gap-y-2 rounded border border-transparent px-0 py-0 text-sm text-hsb-steel transition-colors data-[emphasis=true]:border-hsb-red/40 data-[emphasis=true]:bg-hsb-red/5 data-[emphasis=true]:px-3 data-[emphasis=true]:py-3">
+        <span class="font-semibold text-hsb-ink">Gerade kein Foto zur Hand?</span>
+        <button type="button" data-switch-intent="callback" class="min-h-11 font-bold text-hsb-red underline underline-offset-4">Rückruf anfordern</button>
+        <span aria-hidden="true" class="hidden sm:inline">·</span>
+        <button type="button" data-switch-intent="visit" class="min-h-11 font-bold text-hsb-red underline underline-offset-4">Termin vor Ort anfragen</button>
+      </div>
     </div>
 
     <div class="grid gap-4 sm:grid-cols-2">
@@ -41,14 +73,38 @@ const inputClass =
         <input required type="email" maxlength={160} name="email" autocomplete="email" class={inputClass} />
       </label>
       <label class="grid gap-2 text-sm font-bold">
-        <span>Telefon <span class="font-normal text-hsb-steel">(optional)</span></span>
-        <input type="tel" maxlength={40} name="phone" autocomplete="tel" class={inputClass} />
+        <span>
+          Telefon
+          <span class="text-hsb-red" aria-hidden="true" data-intent-only="callback" hidden>*</span>
+          <span class="font-normal text-hsb-steel" data-intent-only="photo visit">{" "}(optional)</span>
+        </span>
+        <input type="tel" maxlength={40} name="phone" autocomplete="tel" pattern="[+()0-9\s/\-]{6,40}" class={inputClass} />
+      </label>
+    </div>
+
+    <label class="grid gap-2 text-sm font-bold" data-intent-only="callback" hidden>
+      <span>Wann erreichen wir Sie am besten?</span>
+      <select name="callbackWindow" class={inputClass}>
+        <option value="egal">Jederzeit</option>
+        <option value="vormittags">Vormittags (8–12 Uhr)</option>
+        <option value="nachmittags">Nachmittags (12–16 Uhr)</option>
+      </select>
+    </label>
+
+    <div class="grid gap-4 sm:grid-cols-2" data-intent-only="visit" hidden>
+      <label class="grid gap-2 text-sm font-bold">
+        <span>Standort (PLZ oder Ort) <span class="text-hsb-red" aria-hidden="true">*</span></span>
+        <input required minlength={2} maxlength={120} name="location" autocomplete="address-level2" class={inputClass} />
+      </label>
+      <label class="grid gap-2 text-sm font-bold">
+        <span>Mögliches Sperrfenster <span class="font-normal text-hsb-steel">(optional)</span></span>
+        <input maxlength={120} name="blackout" placeholder="z. B. Wochenende, Betriebsruhe KW 52" class={inputClass} />
       </label>
     </div>
 
     <label class="grid gap-2 text-sm font-bold">
       <span>Was ist zu sehen? <span class="font-normal text-hsb-steel">(optional)</span></span>
-      <textarea maxlength={2000} name="message" rows={3} placeholder="Beispiel: Fuge an einer Rinne ausgebrochen, Halle 2, Sperrfenster am Wochenende." class={inputClass}></textarea>
+      <textarea maxlength={2000} name="message" rows={3} placeholder="Beispiel: Fuge an einer Rinne ausgebrochen, Halle 2, ca. 2 m²." class={inputClass}></textarea>
     </label>
 
     <div class="hidden" aria-hidden="true">
@@ -58,7 +114,7 @@ const inputClass =
     <label class="flex items-start gap-3 text-sm leading-6 text-hsb-steel">
       <input required type="checkbox" name="privacyConsent" class="mt-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-hsb-red" />
       <span>
-        Ich bin einverstanden, dass HSB meine Angaben und Fotos zur Bearbeitung der Anfrage verarbeitet
+        Ich bin einverstanden, dass HSB meine Angaben und gegebenenfalls Fotos zur Bearbeitung der Anfrage verarbeitet
         (<a class="text-hsb-red underline" href="/datenschutz/#reparaturfoto">Datenschutz</a>).
       </span>
     </label>
@@ -66,15 +122,45 @@ const inputClass =
     <p id="repair-photo-error" role="alert" aria-live="assertive" class="hidden rounded border border-hsb-red/40 bg-hsb-red/5 px-3 py-2 text-sm text-hsb-red"></p>
 
     <button id="repair-photo-submit" type="submit" class="button-primary disabled:cursor-not-allowed disabled:opacity-60">
-      Foto senden und einschätzen lassen
+      <span data-intent-only="photo">Foto senden und einschätzen lassen</span>
+      <span data-intent-only="callback" hidden>Rückruf anfordern</span>
+      <span data-intent-only="visit" hidden>Termin vor Ort anfragen</span>
     </button>
-    <p class="text-xs text-hsb-steel">Ersteinschätzung innerhalb eines Arbeitstags, kostenfrei.</p>
+    <p class="text-xs text-hsb-steel">
+      <span data-intent-only="photo">Ersteinschätzung innerhalb eines Arbeitstags, kostenfrei.</span>
+      <span data-intent-only="callback" hidden>Wir rufen innerhalb eines Arbeitstags zurück.</span>
+      <span data-intent-only="visit" hidden>Terminvorschlag innerhalb eines Arbeitstags.</span>
+      {" "}Sie erhalten eine Eingangsbestätigung per E-Mail.
+    </p>
   </form>
 
-  <div id="repair-photo-success" class="hidden" role="status" aria-live="polite" tabindex="-1">
+  <div id="repair-photo-success" class="hidden scroll-mt-28" role="status" aria-live="polite" tabindex="-1">
     <p class="eyebrow">Angekommen</p>
-    <p class="h2 mt-3">Danke, Ihr Foto liegt bei uns.</p>
-    <p class="lead mt-4">Wir melden uns innerhalb eines Arbeitstags mit einer ersten Einschätzung. Bei Rückfragen erreichen Sie uns unter {site.phone}.</p>
+    <p class="h2 mt-3" data-success-for="photo">Danke, Ihr Foto liegt bei uns.</p>
+    <p class="h2 mt-3" data-success-for="callback" hidden>Danke, wir rufen Sie zurück.</p>
+    <p class="h2 mt-3" data-success-for="visit" hidden>Danke, Ihre Terminanfrage ist da.</p>
+    <p class="mt-6 text-sm font-black uppercase tracking-wide text-hsb-ink">So geht es weiter</p>
+    <ol class="mt-3 grid gap-3 text-base leading-7 text-hsb-steel" data-success-for="photo">
+      <li><strong class="text-hsb-ink">1.</strong> Wir sehen uns Ihr Foto und Ihre Angaben an.</li>
+      <li><strong class="text-hsb-ink">2.</strong> Innerhalb eines Arbeitstags erhalten Sie eine erste, kostenfreie Einschätzung per E-Mail oder Telefon.</li>
+      <li><strong class="text-hsb-ink">3.</strong> Falls nötig, schlagen wir einen Termin vor Ort vor.</li>
+    </ol>
+    <ol class="mt-3 grid gap-3 text-base leading-7 text-hsb-steel" data-success-for="callback" hidden>
+      <li><strong class="text-hsb-ink">1.</strong> Wir rufen Sie innerhalb eines Arbeitstags im gewünschten Zeitfenster an.</li>
+      <li><strong class="text-hsb-ink">2.</strong> Im Gespräch klären wir Schadensbild, betroffene Fläche und mögliche Sperrzeiten.</li>
+      <li><strong class="text-hsb-ink">3.</strong> Fotos können Sie jederzeit nachreichen: einfach auf die Eingangsbestätigung antworten.</li>
+    </ol>
+    <ol class="mt-3 grid gap-3 text-base leading-7 text-hsb-steel" data-success-for="visit" hidden>
+      <li><strong class="text-hsb-ink">1.</strong> Wir melden uns innerhalb eines Arbeitstags mit einem Terminvorschlag.</li>
+      <li><strong class="text-hsb-ink">2.</strong> Vor Ort prüfen wir die Schadstelle und den Untergrund.</li>
+      <li><strong class="text-hsb-ink">3.</strong> Danach erhalten Sie unsere Empfehlung: gezielte Reparatur oder größere Instandsetzung.</li>
+    </ol>
+    <p class="mt-5 hidden text-sm text-hsb-steel" id="repair-photo-confirmation">
+      Eine Eingangsbestätigung ist unterwegs an <strong class="text-hsb-ink" id="repair-photo-confirmation-email"></strong>. Bitte prüfen Sie gegebenenfalls auch den Spam-Ordner.
+    </p>
+    <div class="mt-6 flex flex-wrap items-center gap-3">
+      <a class="button-secondary-dark repair-phone-cta" href={phoneHref} data-repair-success-phone>Lieber gleich sprechen: <span class="whitespace-nowrap">{site.phone}</span></a>
+    </div>
   </div>
 </div>
 
@@ -96,6 +182,51 @@ const inputClass =
   const success = document.getElementById("repair-photo-success");
 
   const photos: { blob: Blob; url: string }[] = [];
+  const alt = document.getElementById("repair-photo-alt");
+  const phoneInput = form?.elements.namedItem("phone") as HTMLInputElement | null;
+  const locationInput = form?.elements.namedItem("location") as HTMLInputElement | null;
+
+  type Intent = "photo" | "callback" | "visit";
+  const INTENTS: Intent[] = ["photo", "callback", "visit"];
+
+  function currentIntent(): Intent {
+    const value = (form?.querySelector<HTMLInputElement>('input[name="intent"]:checked')?.value ?? "photo") as Intent;
+    return INTENTS.includes(value) ? value : "photo";
+  }
+
+  /** Zeigt nur die Teile des gewählten Wegs; Felder versteckter Teile werden deaktiviert (nicht geprüft, nicht gesendet). */
+  function applyIntent(intent: Intent) {
+    form?.querySelectorAll<HTMLElement>("[data-intent-only]").forEach((el) => {
+      const visible = (el.dataset.intentOnly ?? "").split(" ").includes(intent);
+      el.hidden = !visible;
+      el.querySelectorAll("input, select").forEach((field) => {
+        if (field instanceof HTMLInputElement || field instanceof HTMLSelectElement) field.disabled = !visible;
+      });
+    });
+    if (phoneInput) phoneInput.required = intent === "callback";
+    if (alt) delete alt.dataset.emphasis;
+  }
+
+  function selectIntent(intent: Intent, focusField = false) {
+    const radio = form?.querySelector<HTMLInputElement>(`input[name="intent"][value="${intent}"]`);
+    if (radio) radio.checked = true;
+    applyIntent(intent);
+    showError("");
+    clearInvalid();
+    if (focusField) (intent === "callback" ? phoneInput : intent === "visit" ? locationInput : input)?.focus();
+  }
+
+  form?.querySelectorAll<HTMLInputElement>('input[name="intent"]').forEach((radio) => {
+    radio.addEventListener("change", () => selectIntent(currentIntent()));
+  });
+  form?.querySelectorAll<HTMLButtonElement>("[data-switch-intent]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const intent = button.dataset.switchIntent as Intent;
+      trackEvent(TrackingEvent.CtaClick, { placement: "repair_no_photo", target: intent });
+      selectIntent(intent, true);
+    });
+  });
+  applyIntent(currentIntent());
 
   function showError(message: string) {
     if (!errorBox) return;
@@ -111,6 +242,8 @@ const inputClass =
     photos: "mindestens ein Foto",
     photos_count: "höchstens drei Fotos",
     photos_type: "Fotos als JPEG, PNG oder WebP",
+    phone: "Telefonnummer für den Rückruf",
+    location: "Standort (PLZ oder Ort)",
   };
 
   function clearInvalid() {
@@ -225,6 +358,9 @@ const inputClass =
         const blob = await shrink(file);
         photos.push({ blob, url: URL.createObjectURL(blob) });
         trackEvent(TrackingEvent.FileUploadAdd, { placement: "repair_photo" });
+        input?.removeAttribute("aria-invalid");
+        input?.setAttribute("aria-describedby", "repair-photo-hint");
+        if (alt) delete alt.dataset.emphasis;
       } catch {
         showError("Dieses Bildformat können wir nicht verarbeiten. Bitte ein JPG- oder PNG-Foto wählen.");
       }
@@ -250,7 +386,7 @@ const inputClass =
 
   const MESSAGES: Record<number, string> = {
     413: "Die Fotos sind zu groß. Bitte weniger oder kleinere Bilder wählen.",
-    422: "Bitte prüfen Sie Ihre Angaben: Firma, Name, gültige E-Mail, mindestens ein Foto und die Einwilligung.",
+    422: "Bitte prüfen Sie Ihre Angaben und die Einwilligung.",
     429: "Zu viele Anfragen in kurzer Zeit. Bitte versuchen Sie es in ein paar Minuten erneut.",
   };
   const FALLBACK = "Senden hat nicht geklappt. Schicken Sie das Foto bitte per E-Mail an info@hsb-boden.de oder rufen Sie uns an.";
@@ -258,9 +394,20 @@ const inputClass =
   form?.addEventListener("submit", async (event) => {
     event.preventDefault();
     if (!form || !submit) return;
-    if (photos.length === 0) {
-      showError("Bitte fügen Sie mindestens ein Foto der Schadstelle hinzu.");
-      input?.focus();
+    const intent = currentIntent();
+    if (intent === "photo" && photos.length === 0) {
+      // Kein Abbruch ohne Ausweg: Rückruf und Termin werden direkt neben dem Upload hervorgehoben.
+      showError("Bitte fügen Sie ein Foto hinzu – oder fordern Sie stattdessen einen Rückruf oder Termin vor Ort an.");
+      input?.setAttribute("aria-invalid", "true");
+      input?.setAttribute("aria-describedby", "repair-photo-error repair-photo-hint");
+      if (alt) {
+        // Den Ausweg dorthin bringen, wo der Nutzer gerade schaut (am Handy liegt er sonst außer Sicht).
+        alt.dataset.emphasis = "true";
+        alt.scrollIntoView({ block: "center", behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
+        alt.querySelector<HTMLButtonElement>("[data-switch-intent]")?.focus({ preventScroll: true });
+      } else {
+        input?.focus();
+      }
       return;
     }
     if (!form.reportValidity()) return;
@@ -274,7 +421,7 @@ const inputClass =
     data.set("page", window.location.pathname);
 
     submit.disabled = true;
-    const label = submit.textContent;
+    const label = submit.innerHTML;
     submit.textContent = "Wird gesendet …";
     showError("");
     clearInvalid();
@@ -285,19 +432,45 @@ const inputClass =
         const body = (await res.json().catch(() => ({}))) as { fields?: unknown };
         markInvalid(Array.isArray(body.fields) ? body.fields.filter((f): f is string => typeof f === "string") : []);
         submit.disabled = false;
-        submit.textContent = label;
+        submit.innerHTML = label;
         return;
       }
       if (!res.ok) throw new Error(String(res.status));
-      await trackAfterConfirmedLead(() => trackEventAndWait(TrackingEvent.LeadFormSubmit, { placement: "repair_photo" }));
+      const result = (await res.json().catch(() => ({}))) as { confirmation?: unknown };
+      await trackAfterConfirmedLead(() =>
+        trackEventAndWait(TrackingEvent.LeadFormSubmit, { placement: "repair_photo", repair_intent: intent, photo_count: photos.length }),
+      );
       photos.forEach((photo) => URL.revokeObjectURL(photo.url));
+      success?.querySelectorAll<HTMLElement>("[data-success-for]").forEach((el) => {
+        el.hidden = el.dataset.successFor !== intent;
+      });
+      const confirmation = document.getElementById("repair-photo-confirmation");
+      const confirmationEmail = document.getElementById("repair-photo-confirmation-email");
+      if (result.confirmation === true && confirmation && confirmationEmail) {
+        confirmationEmail.textContent = String(data.get("email") ?? "");
+        confirmation.classList.remove("hidden");
+      }
       form.classList.add("hidden");
       success?.classList.remove("hidden");
-      success?.focus();
+      success?.scrollIntoView({ block: "start", behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
+      success?.focus({ preventScroll: true });
     } catch (err) {
       showError(MESSAGES[Number((err as Error).message)] ?? FALLBACK);
       submit.disabled = false;
-      submit.textContent = label;
+      submit.innerHTML = label;
     }
   });
 </script>
+
+<style>
+  /* Die globale Button-Klasse verbietet Umbrüche; am Handy würde der lange Text die Seite verbreitern. */
+  .repair-phone-cta {
+    max-width: 100%;
+    flex-wrap: wrap;
+    column-gap: 0.35em;
+    row-gap: 0;
+    padding-block: 0.75rem;
+    text-align: center;
+    white-space: normal;
+  }
+</style>

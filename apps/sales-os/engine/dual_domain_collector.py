@@ -21,6 +21,7 @@ class UnifiedInboundMessage:
     sender: str
     subject: str
     body: str
+    uid: Optional[str] = None
 
 def deduplicate_inbounds(messages: List[UnifiedInboundMessage]) -> List[UnifiedInboundMessage]:
     seen: Set[str] = set()
@@ -50,7 +51,8 @@ def collect_all_inbounds(owners: Optional[List[str]] = None, limit_per_mailbox: 
                     date=it.get("date_str", ""),
                     sender=it.get("from", ""),
                     subject=it.get("subject", ""),
-                    body=it.get("body", "")
+                    body=it.get("body", ""),
+                    uid=it.get("uid"),
                 ))
         except Exception as e:
             raise RuntimeError(f"COM_INBOUND_UNAVAILABLE: {o}") from e

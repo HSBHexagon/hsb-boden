@@ -77,6 +77,8 @@ def test_cursor_prefers_public_message_id_as_reconciliation_does(monkeypatch):
     from email import message_from_string
 
     monkeypatch.setattr(audit, "ComMailboxClient", Client)
+    from send_governance import MailboxHealthStore
+    monkeypatch.setattr(MailboxHealthStore, "read", lambda self: {'state':'paused','reason':'POLICY_BOUNCE','ack_id':'test-only'})
     historical = message_from_string("To: outside@example.test\nDate: invalid\n\n")
     def read_records(_client, _folder, **kwargs):
         if kwargs.get("history"):
@@ -85,3 +87,36 @@ def test_cursor_prefers_public_message_id_as_reconciliation_does(monkeypatch):
     monkeypatch.setattr(audit, "extracted_records", read_records)
     report = audit.check_snapshot()
     assert report["seen_inbound_ids"] == ["<incoming@example.test>"]
+
+
+def test_policy_bounce_diagnostic_reports_structured_smtp_codes_without_address():
+    from email import policy
+    from email.parser import BytesParser
+    from datetime import datetime, timezone
+    import capture_com_health as audit
+    raw = (
+        b'MIME-Version: 1.0\r\n'
+        b'Content-Type: multipart/report; report-type=delivery-status; boundary="boundary"\r\n'
+        b'\r\n--boundary\r\n'
+        b'Content-Type: text/plain\r\n\r\n'
+        b'Rejected: address test-recipient@customer.example\r\n'
+        b'--boundary\r\n'
+        b'Content-Type: message/delivery-status\r\n\r\n'
+        b'Final-Recipient: rfc822; test-recipient@customer.example\r\n'
+        b'Action: failed\r\n'
+        b'Status: 5.7.1\r\n'
+        b'Diagnostic-Code: smtp; 550 5.7.1 recipient policy rejected test-recipient@customer.example\r\n'
+        b'Remote-MTA: dns; mx.customer.example\r\n\r\n'
+        b'--boundary--\r\n'
+    )
+    msg = BytesParser(policy=policy.default).parsebytes(raw)
+    result = audit.policy_bounce_diagnostic(
+        msg, audit.msg_body(msg), 'JOEL',
+        datetime(2026, 11, 9, 19, 6, tzinfo=timezone.utc), 'policy_block'
+    )
+    assert result['classification'] == 'policy_block'
+    assert result['dsn_blocks']
+    assert any(block.get('status') == '5.7.1' for block in result['dsn_blocks'])
+    assert '550' in repr(result['dsn_blocks'])
+    assert 'test-recipient@customer.example' not in repr(result)
+    assert '[EMAIL]' in repr(result)

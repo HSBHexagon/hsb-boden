@@ -295,7 +295,7 @@ jobs:
           HSB_SALES_STATE_DIR: ${{ runner.temp }}/hsb-state
           HSB_COM_ONLY_INBOUND: 'yes'
           HSB_RELEASE_STALE_LOCK: 'yes'
-          HSB_SEND_PAUSE_ACK: ${{ inputs.health_ack }}
+          HSB_SEND_PAUSE_ACK: ${{ secrets.HSB_SALES_SEND_PAUSE_ACK || inputs.health_ack }}
           HSB_VERIFIED_SEND_HEALTH_JSON: ${{ secrets.HSB_SALES_SEND_HEALTH_JSON }}
           MODE: ${{ inputs.mode }}
           COUNT: ${{ inputs.count }}

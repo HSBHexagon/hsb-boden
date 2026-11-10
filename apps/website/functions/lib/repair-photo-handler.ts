@@ -78,6 +78,35 @@ function text(form: FormData, name: string, max: number): string {
   return typeof value === "string" ? value.trim().slice(0, max) : "";
 }
 
+type ConfirmationState = "ok" | "recipient" | "daily" | "off";
+
+const CONFIRMATION_NOTES: Record<ConfirmationState, string> = {
+  ok: "Eine automatische Eingangsbestätigung an den Absender wurde angestoßen.",
+  recipient: "Keine automatische Eingangsbestätigung: an diese Adresse ging in den letzten 24 Stunden bereits eine.",
+  daily: "Keine automatische Eingangsbestätigung: Tagesobergrenze erreicht.",
+  off: "",
+};
+
+/** Schutz vor Missbrauch der Bestätigung als Mail-Bombe: höchstens eine pro Empfänger und Tag, dazu eine Tagesobergrenze. */
+const CONFIRMATION_LIMIT = { perRecipientSeconds: 24 * 60 * 60, dailyMax: 50 };
+
+async function sha256Hex(value: string): Promise<string> {
+  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(value));
+  return [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+/** Reserviert eine Eingangsbestätigung. Im KV steht nur ein Hash der Adresse, nie die Adresse selbst. */
+async function reserveConfirmation(kv: KVNamespace, email: string, now: Date): Promise<Exclude<ConfirmationState, "off">> {
+  const recipientKey = `repair-photo:confirm:to:${await sha256Hex(email.toLowerCase())}`;
+  if (await kv.get(recipientKey)) return "recipient";
+  const dayKey = `repair-photo:confirm:day:${now.toISOString().slice(0, 10)}`;
+  const sent = Number((await kv.get(dayKey)) ?? 0);
+  if (sent >= CONFIRMATION_LIMIT.dailyMax) return "daily";
+  await kv.put(recipientKey, "1", { expirationTtl: CONFIRMATION_LIMIT.perRecipientSeconds });
+  await kv.put(dayKey, String(sent + 1), { expirationTtl: 2 * 24 * 60 * 60 });
+  return "ok";
+}
+
 async function isRateLimited(kv: KVNamespace, key: string, now: number): Promise<boolean> {
   const raw = await kv.get(key, "json");
   const hits = ((raw as number[] | null) ?? []).filter((t) => now - t < IP_LIMIT.windowMs);
@@ -117,7 +146,7 @@ const INTENT_TITLES: Record<RepairIntent, { headline: string; subject: string; p
   },
 };
 
-export function buildMailText(inquiry: RepairPhotoInquiry, photoCount: number, receivedAt: Date): string {
+export function buildMailText(inquiry: RepairPhotoInquiry, photoCount: number, receivedAt: Date, confirmationNote = ""): string {
   const title = INTENT_TITLES[inquiry.intent];
   return [
     title.headline,
@@ -138,7 +167,7 @@ export function buildMailText(inquiry: RepairPhotoInquiry, photoCount: number, r
     inquiry.message || "keine Beschreibung",
     "",
     title.promise,
-    "Der Absender hat eine automatische Eingangsbestätigung erhalten.",
+    ...(confirmationNote ? [confirmationNote] : []),
     "Antworten Sie direkt auf diese Mail, um den Absender zu erreichen.",
   ].join("\n");
 }
@@ -272,13 +301,16 @@ export async function handleRepairPhoto(
     pass: env.SMTP_PASS,
     heloName: from.split("@")[1] ?? "hsb-boden.com",
   };
+  // Vor der internen Mail entscheiden, damit dort ehrlich steht, ob der Absender eine Bestätigung bekommt.
+  const confirmationState: ConfirmationState =
+    env.REPAIR_CONFIRMATION === "off" ? "off" : await reserveConfirmation(env.RATE_LIMIT_KV, inquiry.email, now);
   try {
     await sendMail(connect, smtp, {
       from: { email: from, name: "HSB Website" },
       to,
       replyTo: inquiry.email,
       subject: `${INTENT_TITLES[inquiry.intent].subject}: ${inquiry.company}`,
-      text: buildMailText(inquiry, attachments.length, now),
+      text: buildMailText(inquiry, attachments.length, now, CONFIRMATION_NOTES[confirmationState]),
       attachments,
     });
   } catch (err) {
@@ -287,7 +319,7 @@ export async function handleRepairPhoto(
   }
 
   // Die Anfrage ist zugestellt; die Bestätigung an den Absender ist Zusatz und darf den Erfolg nicht kippen.
-  const confirmation = env.REPAIR_CONFIRMATION === "off"
+  const confirmation = confirmationState !== "ok"
     ? false
     : sendMail(connect, smtp, {
         from: { email: from, name: "HSB Hexagon Säurebau" },

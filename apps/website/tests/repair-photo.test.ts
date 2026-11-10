@@ -298,6 +298,45 @@ describe("POST /api/repair-photo", () => {
     expect(await res.json()).toEqual({ ok: true, confirmation: false });
   });
 
+  it("schickt höchstens eine Bestätigung pro Adresse und Tag und vermerkt das in der internen Mail", async () => {
+    const shared = env({ REPAIR_CONFIRMATION: undefined });
+    const internal: string[] = [];
+    const recipients: string[] = [];
+    const sessionsOf: ReturnType<typeof fakeSmtp>[] = [];
+    const connect = () => {
+      const s = fakeSmtp();
+      sessionsOf.push(s);
+      return s.socket;
+    };
+    const textOf = (body: string) => {
+      const decoded = atob(body.split("base64\r\n\r\n")[1].split("\r\n--")[0].replace(/\r\n/g, ""));
+      return new TextDecoder().decode(Uint8Array.from(decoded, (c) => c.charCodeAt(0)));
+    };
+    const first = await handleRepairPhoto(await request(form()), shared, connect);
+    expect(await first.json()).toEqual({ ok: true, confirmation: true });
+    const second = await handleRepairPhoto(await request(form({ email: "ERIKA@example.com" })), shared, connect);
+    expect(await second.json()).toEqual({ ok: true, confirmation: false });
+    for (const s of sessionsOf) {
+      recipients.push(...s.received.filter((l) => l.startsWith("RCPT TO:")));
+      internal.push(s.received.find((l) => l.startsWith("DATA-BODY:")) ?? "");
+    }
+    // Erste Anfrage: interne Mail + Bestätigung, zweite Anfrage: nur interne Mail.
+    expect(recipients.filter((r) => r.includes("example.com"))).toHaveLength(1);
+    expect(textOf(internal[0])).toContain("Eingangsbestätigung an den Absender wurde angestoßen");
+    expect(textOf(internal[2])).toContain("in den letzten 24 Stunden bereits eine");
+    const kv = (shared.RATE_LIMIT_KV as unknown as { store: Map<string, string> }).store;
+    expect([...kv.keys()].some((k) => k.includes("erika"))).toBe(false);
+  });
+
+  it("stoppt Bestätigungen an der Tagesobergrenze", async () => {
+    const shared = env({ REPAIR_CONFIRMATION: undefined });
+    const kv = (shared.RATE_LIMIT_KV as unknown as { store: Map<string, string> }).store;
+    const now = new Date("2026-11-10T10:00:00Z");
+    kv.set("repair-photo:confirm:day:2026-11-10", "50");
+    const res = await handleRepairPhoto(await request(form()), shared, fakeSmtp().connect, now);
+    expect(await res.json()).toEqual({ ok: true, confirmation: false });
+  });
+
   it("meldet 502, wenn der Mailserver ablehnt", async () => {
     const res = await handleRepairPhoto(await request(form()), env(), fakeSmtp({ rcpt: "550 5.1.1 User unknown" }).connect);
     expect(res.status).toBe(502);

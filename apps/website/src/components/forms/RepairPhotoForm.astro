@@ -78,7 +78,7 @@ const phoneHref = toTelephoneHref(site.phone);
           <span class="text-hsb-red" aria-hidden="true" data-intent-only="callback" hidden>*</span>
           <span class="font-normal text-hsb-steel" data-intent-only="photo visit">{" "}(optional)</span>
         </span>
-        <input type="tel" maxlength={40} name="phone" autocomplete="tel" pattern="[+()0-9\s/\-]{6,40}" class={inputClass} />
+        <input type="tel" maxlength={40} name="phone" autocomplete="tel" pattern="[+0-9\s\/\-\(\)]{6,40}" class={inputClass} />
       </label>
     </div>
 
@@ -148,7 +148,7 @@ const phoneHref = toTelephoneHref(site.phone);
     <ol class="mt-3 grid gap-3 text-base leading-7 text-hsb-steel" data-success-for="callback" hidden>
       <li><strong class="text-hsb-ink">1.</strong> Wir rufen Sie innerhalb eines Arbeitstags im gewünschten Zeitfenster an.</li>
       <li><strong class="text-hsb-ink">2.</strong> Im Gespräch klären wir Schadensbild, betroffene Fläche und mögliche Sperrzeiten.</li>
-      <li><strong class="text-hsb-ink">3.</strong> Fotos können Sie jederzeit nachreichen: einfach auf die Eingangsbestätigung antworten.</li>
+      <li><strong class="text-hsb-ink">3.</strong> Fotos können Sie jederzeit nachreichen: per E-Mail an info@hsb-boden.de oder als Antwort auf unsere E-Mail.</li>
     </ol>
     <ol class="mt-3 grid gap-3 text-base leading-7 text-hsb-steel" data-success-for="visit" hidden>
       <li><strong class="text-hsb-ink">1.</strong> Wir melden uns innerhalb eines Arbeitstags mit einem Terminvorschlag.</li>

@@ -179,3 +179,16 @@ def test_recipient_specific_remote_relay_denial_is_hard_bounce_not_sender_policy
         dsn.replace("Remote-MTA: dns; mx1.agenturserver.de\n", ""),
         "rejected@example.test"
     ) == "policy_block"
+
+
+def test_previously_reported_as_unknown_is_hard_bounce():
+    dsn = (
+        "Reporting-MTA: dns; dd43534.kasserver.com\n\n"
+        "Original-Recipient: rfc822; unknown@example.test\n\n"
+        "Final-Recipient: rfc822; unknown@example.test\n"
+        "Action: failed\n"
+        "Status: 5.7.1\n"
+        "Diagnostic-Code: smtp; 554 5.7.1 Message cannot be sent. One or more recipients were previously reported as unknown.\n"
+    )
+    assert delivery_bounce_status(dsn, "unknown@example.test") == "hard_bounce"
+    assert delivery_bounce_status(dsn, None) == "hard_bounce"

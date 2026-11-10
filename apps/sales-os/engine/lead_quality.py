@@ -83,13 +83,18 @@ def classify_dsn(text: str) -> DsnClass:
 def delivery_bounce_status(text: str, recipient: str | None = None) -> str:
     """Classify an outcome for the matched recipient, retaining the DSN action."""
     text = text or ''
-    blocks = [block for block in re.split(r'\r?\n[ \t]*\r?\n', text) if _RECIPIENT_RE.search(block)]
-    if blocks:
+    candidate_blocks = [block for block in re.split(r'\r?\n[ \t]*\r?\n', text) if _RECIPIENT_RE.search(block)]
+    if candidate_blocks:
+        blocks = [b for b in candidate_blocks if _ACTION_RE.search(b)] or candidate_blocks
         matches = [block for block in blocks if not recipient or recipient.lower() in {
             address.lower() for address in _RECIPIENT_RE.findall(block)
         }]
         if len(matches) != 1:
-            return 'bounce_review'
+            recipients_in_matches = {addr.lower() for b in matches for addr in _RECIPIENT_RE.findall(b)}
+            if len(recipients_in_matches) == 1 and any(_ACTION_RE.search(b) for b in matches):
+                matches = [b for b in matches if _ACTION_RE.search(b)]
+            if len(matches) != 1:
+                return 'bounce_review'
         text = matches[0]
     actions = {match.lower() for match in _ACTION_RE.findall(text)}
     if len(actions) > 1 or actions - {'failed', 'delayed'}:
@@ -113,6 +118,17 @@ def delivery_bounce_status(text: str, recipient: str | None = None) -> str:
             and recipient_relay.group(1).lower() in {
                 address.lower() for address in _RECIPIENT_RE.findall(text)
             }):
+        return 'hard_bounce'
+    # Provider-level suppression where recipient was previously reported unknown is a permanent hard bounce
+    known_unknown = re.search(
+        r'previously reported as unknown|recipient.*unknown|user.*unknown',
+        text, re.I
+    )
+    if actions == {'failed'} and known_unknown and (
+        recipient is None or not _RECIPIENT_RE.search(text) or recipient.lower() in {
+            address.lower() for address in _RECIPIENT_RE.findall(text)
+        }
+    ):
         return 'hard_bounce'
     kind = classify_dsn(text)
     if kind == 'policy':

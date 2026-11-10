@@ -25,6 +25,8 @@ if [[ -n "$APPLY" ]]; then
   python3 -c 'import sys; from send_governance import prepare_send_health; prepare_send_health(sys.argv[1])' "$STATE"
   echo "Prüfe und löse verwaiste Versandsperre aus eventuellem Vorlauf..."
   python3 -u hsb_cli.py release-stale-lock --apply
+  echo "Bereinige verwaiste Entwürfe für bereits versendete Leads..."
+  python3 -u hsb_cli.py purge-sent-drafts --apply || true
   export HSB_CUSTOMER_SEND_ENABLED=yes
   export HSB_SEND_PAUSE_ACK="${HSB_SEND_PAUSE_ACK:-c15523f3950513f2cbb3}"
 fi

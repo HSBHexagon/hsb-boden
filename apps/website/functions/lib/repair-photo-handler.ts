@@ -78,16 +78,21 @@ function text(form: FormData, name: string, max: number): string {
   return typeof value === "string" ? value.trim().slice(0, max) : "";
 }
 
-type ConfirmationState = "ok" | "recipient" | "daily" | "off";
+type ConfirmationState = "ok" | "recipient" | "daily" | "unavailable" | "off";
 
 const CONFIRMATION_NOTES: Record<ConfirmationState, string> = {
   ok: "Eine automatische Eingangsbestätigung an den Absender wurde angestoßen.",
   recipient: "Keine automatische Eingangsbestätigung: an diese Adresse ging in den letzten 24 Stunden bereits eine.",
   daily: "Keine automatische Eingangsbestätigung: Tagesobergrenze erreicht.",
+  unavailable: "Keine automatische Eingangsbestätigung: Zählerspeicher nicht erreichbar.",
   off: "",
 };
 
-/** Schutz vor Missbrauch der Bestätigung als Mail-Bombe: höchstens eine pro Empfänger und Tag, dazu eine Tagesobergrenze. */
+/**
+ * Schutz vor Missbrauch der Bestätigung als Mail-Bombe: höchstens eine pro Empfänger und Tag, dazu eine Tagesobergrenze.
+ * KV ist nicht atomar; parallele Anfragen können die Grenzen knapp überschreiten. Das ist bewusst Best-Effort:
+ * Die IP-Grenze (5 Anfragen / 10 Minuten) deckelt den Überlauf, und die Bestätigung enthält keine Nutzereingaben.
+ */
 const CONFIRMATION_LIMIT = { perRecipientSeconds: 24 * 60 * 60, dailyMax: 50 };
 
 async function sha256Hex(value: string): Promise<string> {
@@ -95,16 +100,37 @@ async function sha256Hex(value: string): Promise<string> {
   return [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, "0")).join("");
 }
 
-/** Reserviert eine Eingangsbestätigung. Im KV steht nur ein Hash der Adresse, nie die Adresse selbst. */
-async function reserveConfirmation(kv: KVNamespace, email: string, now: Date): Promise<Exclude<ConfirmationState, "off">> {
-  const recipientKey = `repair-photo:confirm:to:${await sha256Hex(email.toLowerCase())}`;
-  if (await kv.get(recipientKey)) return "recipient";
-  const dayKey = `repair-photo:confirm:day:${now.toISOString().slice(0, 10)}`;
-  const sent = Number((await kv.get(dayKey)) ?? 0);
-  if (sent >= CONFIRMATION_LIMIT.dailyMax) return "daily";
-  await kv.put(recipientKey, "1", { expirationTtl: CONFIRMATION_LIMIT.perRecipientSeconds });
-  await kv.put(dayKey, String(sent + 1), { expirationTtl: 2 * 24 * 60 * 60 });
-  return "ok";
+type Reservation = { state: Exclude<ConfirmationState, "off">; release: () => Promise<void> };
+
+const NO_RELEASE = async () => {};
+
+/**
+ * Reserviert eine Eingangsbestätigung. Im KV steht nur ein Hash der Adresse, nie die Adresse selbst.
+ * Fehler des Speichers blockieren die Anfrage nie: dann gibt es nur keine Bestätigung.
+ */
+async function reserveConfirmation(kv: KVNamespace, email: string, now: Date): Promise<Reservation> {
+  try {
+    const recipientKey = `repair-photo:confirm:to:${await sha256Hex(email.toLowerCase())}`;
+    if (await kv.get(recipientKey)) return { state: "recipient", release: NO_RELEASE };
+    const dayKey = `repair-photo:confirm:day:${now.toISOString().slice(0, 10)}`;
+    const sent = Number((await kv.get(dayKey)) ?? 0);
+    if (sent >= CONFIRMATION_LIMIT.dailyMax) return { state: "daily", release: NO_RELEASE };
+    await kv.put(recipientKey, "1", { expirationTtl: CONFIRMATION_LIMIT.perRecipientSeconds });
+    await kv.put(dayKey, String(sent + 1), { expirationTtl: 2 * 24 * 60 * 60 });
+    // Scheitert danach die interne Zustellung, wird die Empfänger-Sperre wieder freigegeben,
+    // damit ein erneuter Versuch des Absenders seine Bestätigung bekommt.
+    const release = async () => {
+      try {
+        await kv.delete(recipientKey);
+      } catch (err) {
+        console.error("repair-photo: Freigabe der Bestätigung fehlgeschlagen:", err instanceof Error ? err.message : err);
+      }
+    };
+    return { state: "ok", release };
+  } catch (err) {
+    console.error("repair-photo: Bestätigungszähler nicht erreichbar:", err instanceof Error ? err.message : err);
+    return { state: "unavailable", release: NO_RELEASE };
+  }
 }
 
 async function isRateLimited(kv: KVNamespace, key: string, now: number): Promise<boolean> {
@@ -302,8 +328,9 @@ export async function handleRepairPhoto(
     heloName: from.split("@")[1] ?? "hsb-boden.com",
   };
   // Vor der internen Mail entscheiden, damit dort ehrlich steht, ob der Absender eine Bestätigung bekommt.
-  const confirmationState: ConfirmationState =
-    env.REPAIR_CONFIRMATION === "off" ? "off" : await reserveConfirmation(env.RATE_LIMIT_KV, inquiry.email, now);
+  const reservation: Reservation | null =
+    env.REPAIR_CONFIRMATION === "off" ? null : await reserveConfirmation(env.RATE_LIMIT_KV, inquiry.email, now);
+  const confirmationState: ConfirmationState = reservation?.state ?? "off";
   try {
     await sendMail(connect, smtp, {
       from: { email: from, name: "HSB Website" },
@@ -315,6 +342,7 @@ export async function handleRepairPhoto(
     });
   } catch (err) {
     console.error("repair-photo: Versand fehlgeschlagen:", err instanceof Error ? err.message : err);
+    await reservation?.release();
     return json(502, { ok: false, error: "delivery" }, origin);
   }
 

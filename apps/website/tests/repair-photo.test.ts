@@ -135,6 +135,9 @@ class FakeKV {
   async put(key: string, value: string) {
     this.store.set(key, value);
   }
+  async delete(key: string) {
+    this.store.delete(key);
+  }
 }
 
 function env(overrides: Partial<RepairPhotoEnv> = {}): RepairPhotoEnv {
@@ -321,7 +324,7 @@ describe("POST /api/repair-photo", () => {
       internal.push(s.received.find((l) => l.startsWith("DATA-BODY:")) ?? "");
     }
     // Erste Anfrage: interne Mail + Bestätigung, zweite Anfrage: nur interne Mail.
-    expect(recipients.filter((r) => r.includes("example.com"))).toHaveLength(1);
+    expect(recipients.filter((r) => r.toLowerCase() === "rcpt to:<erika@example.com>")).toHaveLength(1);
     expect(textOf(internal[0])).toContain("Eingangsbestätigung an den Absender wurde angestoßen");
     expect(textOf(internal[2])).toContain("in den letzten 24 Stunden bereits eine");
     const kv = (shared.RATE_LIMIT_KV as unknown as { store: Map<string, string> }).store;
@@ -335,6 +338,29 @@ describe("POST /api/repair-photo", () => {
     kv.set("repair-photo:confirm:day:2026-11-10", "50");
     const res = await handleRepairPhoto(await request(form()), shared, fakeSmtp().connect, now);
     expect(await res.json()).toEqual({ ok: true, confirmation: false });
+  });
+
+  it("liefert die Anfrage auch dann, wenn der Bestätigungszähler ausfällt", async () => {
+    const shared = env({ REPAIR_CONFIRMATION: undefined });
+    const kv = shared.RATE_LIMIT_KV as unknown as { get: (k: string) => Promise<unknown> };
+    const originalGet = kv.get.bind(kv);
+    kv.get = async (k: string) => {
+      if (k.startsWith("repair-photo:confirm:")) throw new Error("KV down");
+      return originalGet(k);
+    };
+    const res = await handleRepairPhoto(await request(form()), shared, fakeSmtp().connect);
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({ ok: true, confirmation: false });
+  });
+
+  it("gibt die Empfänger-Sperre frei, wenn die interne Zustellung scheitert", async () => {
+    const shared = env({ REPAIR_CONFIRMATION: undefined });
+    const store = (shared.RATE_LIMIT_KV as unknown as { store: Map<string, string> }).store;
+    const failed = await handleRepairPhoto(await request(form()), shared, fakeSmtp({ rcpt: "451 4.3.0 try later" }).connect);
+    expect(failed.status).toBe(502);
+    expect([...store.keys()].some((k) => k.startsWith("repair-photo:confirm:to:"))).toBe(false);
+    const retry = await handleRepairPhoto(await request(form()), shared, () => fakeSmtp().socket);
+    expect(await retry.json()).toEqual({ ok: true, confirmation: true });
   });
 
   it("meldet 502, wenn der Mailserver ablehnt", async () => {

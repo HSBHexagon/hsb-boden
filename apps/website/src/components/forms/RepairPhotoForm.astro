@@ -2,7 +2,7 @@
 import { site } from "../../data/site";
 
 const inputClass =
-  "rounded border border-hsb-line px-3 py-3 font-normal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-hsb-red";
+  "rounded border border-hsb-line px-3 py-3 font-normal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-hsb-red aria-[invalid=true]:border-hsb-red";
 ---
 
 <div class="surface p-5" id="repair-photo">
@@ -102,6 +102,46 @@ const inputClass =
     errorBox.textContent = message;
     errorBox.classList.toggle("hidden", !message);
   }
+
+  const FIELD_LABELS: Record<string, string> = {
+    company: "Firma",
+    name: "Ihr Name",
+    email: "gültige E-Mail",
+    privacyConsent: "Einwilligung",
+    photos: "mindestens ein Foto",
+    photos_count: "höchstens drei Fotos",
+    photos_type: "Fotos als JPEG, PNG oder WebP",
+  };
+
+  function clearInvalid() {
+    form?.querySelectorAll("[aria-invalid]").forEach((el) => {
+      el.removeAttribute("aria-invalid");
+      el.removeAttribute("aria-describedby");
+    });
+    input?.setAttribute("aria-describedby", "repair-photo-hint");
+  }
+
+  /** Markiert die vom Server abgelehnten Felder, verweist sie auf die Fehlermeldung und fokussiert das erste. */
+  function markInvalid(fields: string[]) {
+    clearInvalid();
+    let first: HTMLElement | null = null;
+    for (const field of fields) {
+      const el = field.startsWith("photos") ? input : (form?.elements.namedItem(field) as HTMLElement | null);
+      if (!el) continue;
+      el.setAttribute("aria-invalid", "true");
+      el.setAttribute("aria-describedby", field.startsWith("photos") ? "repair-photo-error repair-photo-hint" : "repair-photo-error");
+      first ??= el;
+    }
+    const labels = fields.map((f) => FIELD_LABELS[f]).filter(Boolean);
+    showError(labels.length ? `Bitte prüfen: ${labels.join(", ")}.` : MESSAGES[422]);
+    first?.focus();
+  }
+
+  // Sobald jemand ein markiertes Feld korrigiert, verschwindet die Markierung an diesem Feld.
+  form?.addEventListener("input", (event) => {
+    const target = event.target as HTMLElement | null;
+    if (target?.getAttribute("aria-invalid") === "true") target.removeAttribute("aria-invalid");
+  });
 
   type Drawable = { source: CanvasImageSource; width: number; height: number; release(): void };
 
@@ -220,7 +260,7 @@ const inputClass =
     if (!form || !submit) return;
     if (photos.length === 0) {
       showError("Bitte fügen Sie mindestens ein Foto der Schadstelle hinzu.");
-      drop?.focus();
+      input?.focus();
       return;
     }
     if (!form.reportValidity()) return;
@@ -237,9 +277,17 @@ const inputClass =
     const label = submit.textContent;
     submit.textContent = "Wird gesendet …";
     showError("");
+    clearInvalid();
 
     try {
       const res = await fetch("/api/repair-photo", { method: "POST", body: data, headers: { Accept: "application/json" } });
+      if (res.status === 422) {
+        const body = (await res.json().catch(() => ({}))) as { fields?: unknown };
+        markInvalid(Array.isArray(body.fields) ? body.fields.filter((f): f is string => typeof f === "string") : []);
+        submit.disabled = false;
+        submit.textContent = label;
+        return;
+      }
       if (!res.ok) throw new Error(String(res.status));
       await trackAfterConfirmedLead(() => trackEventAndWait(TrackingEvent.LeadFormSubmit, { placement: "repair_photo" }));
       photos.forEach((photo) => URL.revokeObjectURL(photo.url));

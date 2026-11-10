@@ -45,6 +45,7 @@ jobs:
       - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
         with:
           python-version: '3.14'
+      - run: sudo apt-get update && sudo apt-get install -y bind9-host dnsutils || true
       - run: pip install -r apps/sales-os/requirements.txt
       - run: python -m pytest apps/sales-os/tests/ -q
       - run: python scripts/verify_ssot.py
@@ -89,6 +90,7 @@ jobs:
       - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
         with:
           python-version: '3.14'
+      - run: sudo apt-get update && sudo apt-get install -y bind9-host dnsutils || true
       - run: pip install -r apps/sales-os/requirements.txt
       - name: Verify configured authentication without exposing secrets
         run: |
@@ -131,6 +133,7 @@ jobs:
       - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
         with:
           python-version: '3.14'
+      - run: sudo apt-get update && sudo apt-get install -y bind9-host dnsutils || true
       - run: pip install -r apps/sales-os/requirements.txt
       - name: Read-only draft ownership and distribution inventory
         run: python -u apps/sales-os/engine/mailbox_inventory.py --output "$RUNNER_TEMP/hsb-inventory"
@@ -157,6 +160,7 @@ jobs:
       - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
         with:
           python-version: '3.14'
+      - run: sudo apt-get update && sudo apt-get install -y bind9-host dnsutils || true
       - run: pip install -r apps/sales-os/requirements.txt
       - name: Bounded missing-draft reconciliation (${{ inputs.mode }})
         env:
@@ -199,6 +203,7 @@ jobs:
       - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
         with:
           python-version: '3.14'
+      - run: sudo apt-get update && sudo apt-get install -y bind9-host dnsutils || true
       - run: pip install -r apps/sales-os/requirements.txt
       - name: Archiv leeren (${{ inputs.mode }})
         env:
@@ -246,6 +251,7 @@ jobs:
       - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
         with:
           python-version: '3.14'
+      - run: sudo apt-get update && sudo apt-get install -y bind9-host dnsutils || true
       - run: pip install -r apps/sales-os/requirements.txt
       - name: Entwürfe vorbereiten (${{ inputs.mode }})
         id: lauf
@@ -289,6 +295,7 @@ jobs:
       - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
         with:
           python-version: '3.14'
+      - run: sudo apt-get update && sudo apt-get install -y bind9-host dnsutils || true
       - run: pip install -r apps/sales-os/requirements.txt
       - name: Tranche ${{ inputs.mode }} (${{ inputs.count }} je Postfach)
         env:
@@ -321,6 +328,7 @@ jobs:
       - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
         with:
           python-version: '3.14'
+      - run: sudo apt-get update && sudo apt-get install -y bind9-host dnsutils || true
       - run: pip install -r apps/sales-os/requirements.txt
       - name: Configure verified owner-controlled seed mailbox
         run: |
@@ -367,6 +375,7 @@ jobs:
       - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
         with:
           python-version: '3.14'
+      - run: sudo apt-get update && sudo apt-get install -y bind9-host dnsutils || true
       - run: pip install -r apps/sales-os/requirements.txt && pip install cryptography==50.0.2
       - name: Gather and encrypt real com mailbox snapshots
         run: python apps/sales-os/engine/capture_com_health.py "$RUNNER_TEMP/hsb-com-health.enc.json"

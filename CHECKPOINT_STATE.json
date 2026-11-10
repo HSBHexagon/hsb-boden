@@ -1,9 +1,9 @@
 {
   "project": "HSB / HEXAFLOOR",
-  "last_updated": "2026-11-04",
-  "active_model": "Claude Code (Opus 5)",
-  "active_phase": "website-b2b-hardening",
-  "active_task": "Reparatur-zuerst-Vorlagen, MIME-Fix, Duplikat-Bereinigung und SSOT-Checks (PR #465). Offen: Merge + Production-Deploy, danach Audit, dedupe-drafts und upgrade-drafts auf dem Mac.",
+  "last_updated": "2026-11-10",
+  "active_model": "Antigravity AGY (Gemini 4 Argon High, oma-director)",
+  "active_phase": "sales-os-production-ready",
+  "active_task": "P0 Health Secret erneuert, PR #572 gemergt, Live-Versand 10.11.2026 aktiv, GO erteilt",
   "account_migration_2026_07_02": {
     "github_new_repo": "https://github.com/HSBHexagon/hsb-boden",
     "github_old_repo_access": "HSBHexagon ist Admin-Collaborator im Alt-Repo cherinojoel-lang/hsb-boden (Ownership-Transfer pending, nicht blockierend)",
@@ -317,5 +317,23 @@
     "deploy_done": "not_run (clasp push offen)",
     "live_verification_2026_09_19": "Migration idempotent 807|0|0|0|0; 7 BE2-Regeln; DASHBOARD 27 Zeilen; HEUTE/POSTEINGANG 0 Fehlerzellen; Spalte M vorhanden; Report 08_System/reports/validation/2026-09-18-hsb-crm-cockpit.md"
   },
-  "pull_request": "https://github.com/HSBHexagon/hsb-boden/pull/383"
+  "pull_request": "https://github.com/HSBHexagon/hsb-boden/pull/383",
+  "current_truth_2026_11_10": {
+    "status": "GO / PRODUKTIONSREIF",
+    "audit_time": "2026-11-10 17:00 UTC",
+    "git_main_sha": "ce26a6f",
+    "pr_572_merged": true,
+    "ssot_crm_sheet_id": "1W-NjwEq0UhDo2TaeS-2qp_qit4YFMz6k-IqKHlPpHmg",
+    "crm_total_leads": 6424,
+    "crm_sent_count": 1593,
+    "crm_drafted_count": 4824,
+    "send_health_secret_updated": "2026-11-10T16:43:59Z",
+    "send_health_status": "PASS (0 bounces, 0 deferrals, 0 spam, 125 cursor IDs)",
+    "actions_run_completed": "42829194956 (79 sent)",
+    "actions_run_active": "42849477751 (in progress)",
+    "daily_cap_per_mailbox": 250,
+    "ssot_verified": true,
+    "pytest_passed": 762,
+    "pytest_skipped": 1
+  }
 }

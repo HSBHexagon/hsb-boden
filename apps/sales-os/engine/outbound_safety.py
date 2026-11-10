@@ -339,11 +339,27 @@ def complete_delivery(client, journal, svc, spreadsheet_id, headers, row, item, 
     em=item['email']
     if os.environ.get('HSB_CRM_BINDINGS_VERIFIED')!='yes':
         raise RuntimeError('CRM_STABLE_BINDING_CANARY_REQUIRED')
-    assert_row_lead(svc,spreadsheet_id,row,item['lead_id'])
-    prepare_lead_binding(svc,spreadsheet_id,item['lead_id'])
+
+    def _call(action):
+        nonlocal svc
+        for attempt in range(3):
+            try:
+                return action(svc)
+            except (BrokenPipeError, ConnectionResetError, TimeoutError, OSError):
+                if attempt == 2:
+                    raise
+                time.sleep(1.5 * (attempt + 1))
+                try:
+                    from sync_to_google_sheet import get_sheets_service
+                    svc = get_sheets_service()
+                except Exception:
+                    pass
+
+    _call(lambda s: assert_row_lead(s, spreadsheet_id, row, item['lead_id']))
+    _call(lambda s: prepare_lead_binding(s, spreadsheet_id, item['lead_id']))
     journal.reserve(item['owner'],item['lead_id'],em,mid,cap)
     now=datetime.now(timezone.utc).isoformat()
-    _send_write(svc,spreadsheet_id,headers,row,item['lead_id'],{'Send_Status':'SENDING','Last_Send_Attempt_At':now,'Outbound_ID':mid,'Sender_Account':client.cfg['email']})
+    _call(lambda s: _send_write(s,spreadsheet_id,headers,row,item['lead_id'],{'Send_Status':'SENDING','Last_Send_Attempt_At':now,'Outbound_ID':mid,'Sender_Account':client.cfg['email']}))
     journal.transition(em,'SMTP_UNKNOWN')
     try:
         client.deliver_verified_bytes(raw,em,journal=journal)
@@ -358,8 +374,8 @@ def complete_delivery(client, journal, svc, spreadsheet_id, headers, row, item, 
                 'Versandfreigabe': 'no',
                 'Last_Send_Attempt_At': now
             }
-            _send_write(svc, spreadsheet_id, headers, row, item['lead_id'], fail_fields)
-            _release_binding(svc, spreadsheet_id, item['lead_id'])
+            _call(lambda s: _send_write(s, spreadsheet_id, headers, row, item['lead_id'], fail_fields))
+            _call(lambda s: _release_binding(s, spreadsheet_id, item['lead_id']))
             journal.db.execute('DELETE FROM attempts WHERE email=?', (em.lower(),))
             print(f"HARD_BOUNCE {item['lead_id']} ({em}): Provider reported recipient unknown (554 5.7.1)")
             return False
@@ -373,8 +389,8 @@ def complete_delivery(client, journal, svc, spreadsheet_id, headers, row, item, 
             'Versandfreigabe': 'no',
             'Last_Send_Attempt_At': now
         }
-        _send_write(svc, spreadsheet_id, headers, row, item['lead_id'], fail_fields)
-        _release_binding(svc, spreadsheet_id, item['lead_id'])
+        _call(lambda s: _send_write(s, spreadsheet_id, headers, row, item['lead_id'], fail_fields))
+        _call(lambda s: _release_binding(s, spreadsheet_id, item['lead_id']))
         journal.db.execute('DELETE FROM attempts WHERE email=?', (em.lower(),))
         print(f"HARD_BOUNCE {item['lead_id']} ({em}): Recipient refused ({exc})")
         return False
@@ -391,8 +407,8 @@ def complete_delivery(client, journal, svc, spreadsheet_id, headers, row, item, 
         seg=parts[1] if len(parts)>=2 and parts[1] in ('produktion','architekten') else item.get('segment')
         if seg and 'Segment' in headers:
             final_fields['Segment']=seg
-    _send_write(svc,spreadsheet_id,headers,row,item['lead_id'],final_fields)
-    _release_binding(svc,spreadsheet_id,item['lead_id'])
+    _call(lambda s: _send_write(s,spreadsheet_id,headers,row,item['lead_id'],final_fields))
+    _call(lambda s: _release_binding(s,spreadsheet_id,item['lead_id']))
     if tmpl.endswith('-s1'):
         # Sequenzbeleg und finaler Versandzustand teilen sich dieselbe SQLite-Transaktion.
         journal.db.execute('BEGIN IMMEDIATE')
@@ -546,10 +562,18 @@ def dispatch_verified(count_per_owner=25, owners=('JOEL','JORDI'), dry_run=True,
         headers=rows[0] if rows else []
         leads_list=[dict(zip(headers,r)) for r in rows[1:] if r]
         leads_by_id={l.get('Lead-ID'): (i, l) for i, l in enumerate(leads_list, 2)}
+        last_svc_refresh=time.monotonic()
         try:
             for item in selected:
                 if item['owner'] in capped:
                     continue
+                if time.monotonic()-last_svc_refresh > 1800:
+                    try:
+                        from sync_to_google_sheet import get_sheets_service
+                        svc=get_sheets_service()
+                        last_svc_refresh=time.monotonic()
+                    except Exception as exc:
+                        print(f"WARNUNG: Prophylaktischer Sheets-Service-Refresh: {exc}")
                 match=leads_by_id.get(item['lead_id'])
                 if not match: raise RuntimeError('LEAD_CHANGED_OR_AMBIGUOUS')
                 row,lead=match

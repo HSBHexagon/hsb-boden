@@ -231,3 +231,61 @@ def test_smtp_554_unknown_recipient_handled_as_hard_bounce(tmp_path, monkeypatch
     assert written_map["ALL_LEADS!D3"] == "yes"
     assert written_map["ALL_LEADS!E3"] == "PROVIDER_KNOWN_UNKNOWN"
     assert written_map["ALL_LEADS!F3"] == "no"
+
+
+def test_complete_delivery_broken_pipe_retried(tmp_path, monkeypatch):
+    """Prüft, dass BrokenPipeError (z. B. bei OAuth-Token-Refresh) abgefangen und mit frischem Service wiederholt wird."""
+    monkeypatch.setenv("HSB_CRM_BINDINGS_VERIFIED", "yes")
+    monkeypatch.setattr("outbound_safety.sent_copy_readback", lambda *a: "123")
+
+    db_path = tmp_path / "journal.sqlite"
+    journal = SendJournal(str(db_path))
+
+    client = FakeClient()
+    svc_healthy = FakeSheetsService()
+    svc_healthy.written["ALL_LEADS!A4:A4"] = [["HSB-TEST-RETRY"]]
+
+    class FlakySheetsService:
+        attempts = 0
+        def spreadsheets(self):
+            self.attempts += 1
+            if self.attempts == 1:
+                raise BrokenPipeError(32, "Broken pipe")
+            return svc_healthy.spreadsheets()
+
+    monkeypatch.setattr("sync_to_google_sheet.get_sheets_service", lambda: svc_healthy)
+
+    headers = [
+        "Lead-ID",
+        "Send_Status",
+        "Last_Send_Attempt_At",
+        "Outbound_ID",
+        "Sender_Account",
+        "Send_Datum",
+        "Batch_Status",
+        "Internet_Message_ID",
+    ]
+    msg = EmailMessage()
+    msg["To"] = "test@retry.invalid"
+    msg["From"] = "j-cherino@hsb-boden.com"
+    msg["Message-ID"] = "<test-retry@hsb-boden.com>"
+    msg.set_content("Text...")
+    raw = msg.as_bytes()
+
+    item = {"owner": "JOEL", "lead_id": "HSB-TEST-RETRY", "email": "test@retry.invalid"}
+
+    flaky_svc = FlakySheetsService()
+    complete_delivery(
+        client=client,
+        journal=journal,
+        svc=flaky_svc,
+        spreadsheet_id="fake_sheet",
+        headers=headers,
+        row=4,
+        item=item,
+        raw=raw,
+        mid="<test-retry@hsb-boden.com>",
+        cap=10,
+    )
+    assert flaky_svc.attempts >= 1
+    assert journal.db.execute("SELECT count(*) FROM attempts").fetchone()[0] == 1

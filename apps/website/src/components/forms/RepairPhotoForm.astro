@@ -1,0 +1,230 @@
+---
+import { site } from "../../data/site";
+
+const inputClass =
+  "rounded border border-hsb-line px-3 py-3 font-normal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-hsb-red";
+---
+
+<div class="surface p-5" id="repair-photo">
+  <form id="repair-photo-form" class="grid gap-4" novalidate>
+    <div>
+      <label
+        id="repair-photo-drop"
+        for="repair-photo-input"
+        class="group flex cursor-pointer flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-hsb-line bg-white px-4 py-8 text-center transition hover:border-hsb-red focus-within:border-hsb-red focus-within:ring-2 focus-within:ring-hsb-red/40 data-[drag=true]:border-hsb-red data-[drag=true]:bg-hsb-red/5"
+      >
+        <svg class="h-10 w-10 text-hsb-red" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M3 8.5A2.5 2.5 0 0 1 5.5 6h1.6l1.2-1.8A1.5 1.5 0 0 1 9.55 3.5h4.9a1.5 1.5 0 0 1 1.25.7L16.9 6h1.6A2.5 2.5 0 0 1 21 8.5v9a2.5 2.5 0 0 1-2.5 2.5h-13A2.5 2.5 0 0 1 3 17.5v-9Z" />
+          <circle cx="12" cy="12.5" r="3.5" />
+        </svg>
+        <span class="text-base font-black text-hsb-ink">Foto der Schadstelle aufnehmen oder auswählen</span>
+        <span class="text-sm text-hsb-steel">Bis zu 3 Bilder. Am Handy öffnet sich die Kamera, am Rechner können Sie Bilder hierher ziehen.</span>
+        <input id="repair-photo-input" type="file" accept="image/*" multiple class="sr-only" aria-describedby="repair-photo-hint" />
+      </label>
+      <p id="repair-photo-hint" class="mt-2 text-xs text-hsb-steel">
+        Bilder werden vor dem Senden verkleinert, Standortdaten aus dem Foto werden dabei entfernt.
+      </p>
+      <ul id="repair-photo-previews" class="mt-3 grid grid-cols-3 gap-3 empty:hidden" aria-label="Ausgewählte Fotos"></ul>
+    </div>
+
+    <div class="grid gap-4 sm:grid-cols-2">
+      <label class="grid gap-2 text-sm font-bold">
+        <span>Firma <span class="text-hsb-red" aria-hidden="true">*</span></span>
+        <input required minlength={2} maxlength={120} name="company" autocomplete="organization" class={inputClass} />
+      </label>
+      <label class="grid gap-2 text-sm font-bold">
+        <span>Ihr Name <span class="text-hsb-red" aria-hidden="true">*</span></span>
+        <input required minlength={2} maxlength={80} name="name" autocomplete="name" class={inputClass} />
+      </label>
+      <label class="grid gap-2 text-sm font-bold">
+        <span>E-Mail <span class="text-hsb-red" aria-hidden="true">*</span></span>
+        <input required type="email" maxlength={160} name="email" autocomplete="email" class={inputClass} />
+      </label>
+      <label class="grid gap-2 text-sm font-bold">
+        <span>Telefon <span class="font-normal text-hsb-steel">(optional)</span></span>
+        <input type="tel" maxlength={40} name="phone" autocomplete="tel" class={inputClass} />
+      </label>
+    </div>
+
+    <label class="grid gap-2 text-sm font-bold">
+      <span>Was ist zu sehen? <span class="font-normal text-hsb-steel">(optional)</span></span>
+      <textarea maxlength={2000} name="message" rows={3} placeholder="Beispiel: Fuge an einer Rinne ausgebrochen, Halle 2, Sperrfenster am Wochenende." class={inputClass}></textarea>
+    </label>
+
+    <div class="hidden" aria-hidden="true">
+      <label>Website <input type="text" name="website" tabindex="-1" autocomplete="off" /></label>
+    </div>
+
+    <label class="flex items-start gap-3 text-sm leading-6 text-hsb-steel">
+      <input required type="checkbox" name="privacyConsent" class="mt-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-hsb-red" />
+      <span>
+        Ich bin einverstanden, dass HSB meine Angaben und Fotos zur Bearbeitung der Anfrage verarbeitet
+        (<a class="text-hsb-red underline" href="/datenschutz/#reparaturfoto">Datenschutz</a>).
+      </span>
+    </label>
+
+    <p id="repair-photo-error" role="alert" aria-live="assertive" class="hidden rounded border border-hsb-red/40 bg-hsb-red/5 px-3 py-2 text-sm text-hsb-red"></p>
+
+    <button id="repair-photo-submit" type="submit" class="button-primary disabled:cursor-not-allowed disabled:opacity-60">
+      Foto senden und einschätzen lassen
+    </button>
+    <p class="text-xs text-hsb-steel">Ersteinschätzung innerhalb eines Arbeitstags, kostenfrei.</p>
+  </form>
+
+  <div id="repair-photo-success" class="hidden" role="status" aria-live="polite" tabindex="-1">
+    <p class="eyebrow">Angekommen</p>
+    <p class="h2 mt-3">Danke, Ihr Foto liegt bei uns.</p>
+    <p class="lead mt-4">Wir melden uns innerhalb eines Arbeitstags mit einer ersten Einschätzung. Bei Rückfragen erreichen Sie uns unter {site.phone}.</p>
+  </div>
+</div>
+
+<script>
+  import { trackEvent, TrackingEvent } from "../../lib/tracking";
+
+  const MAX_PHOTOS = 3;
+  const MAX_EDGE = 1600;
+  const MAX_UPLOAD_BYTES = 4 * 1024 * 1024;
+  const PASSTHROUGH_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
+
+  const form = document.getElementById("repair-photo-form") as HTMLFormElement | null;
+  const input = document.getElementById("repair-photo-input") as HTMLInputElement | null;
+  const drop = document.getElementById("repair-photo-drop");
+  const previews = document.getElementById("repair-photo-previews");
+  const errorBox = document.getElementById("repair-photo-error");
+  const submit = document.getElementById("repair-photo-submit") as HTMLButtonElement | null;
+  const success = document.getElementById("repair-photo-success");
+
+  const photos: { blob: Blob; url: string }[] = [];
+
+  function showError(message: string) {
+    if (!errorBox) return;
+    errorBox.textContent = message;
+    errorBox.classList.toggle("hidden", !message);
+  }
+
+  /** Verkleinert auf max. 1600 px und speichert als JPEG neu; dabei gehen EXIF-/GPS-Daten verloren. */
+  async function shrink(file: File): Promise<Blob> {
+    try {
+      const bitmap = await createImageBitmap(file, { imageOrientation: "from-image" });
+      const scale = Math.min(1, MAX_EDGE / Math.max(bitmap.width, bitmap.height));
+      const canvas = document.createElement("canvas");
+      canvas.width = Math.round(bitmap.width * scale);
+      canvas.height = Math.round(bitmap.height * scale);
+      canvas.getContext("2d")?.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+      bitmap.close();
+      const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/jpeg", 0.82));
+      if (blob) return blob;
+    } catch {
+      // Format nicht dekodierbar (z. B. HEIC am Desktop): unten auf Original zurückfallen.
+    }
+    if (PASSTHROUGH_TYPES.has(file.type) && file.size <= MAX_UPLOAD_BYTES) return file;
+    throw new Error("unsupported");
+  }
+
+  function render() {
+    if (!previews) return;
+    previews.replaceChildren(
+      ...photos.map((photo, index) => {
+        const item = document.createElement("li");
+        item.className = "relative overflow-hidden rounded border border-hsb-line bg-white";
+        const img = document.createElement("img");
+        img.src = photo.url;
+        img.alt = `Foto ${index + 1}`;
+        img.className = "aspect-square w-full object-cover";
+        const remove = document.createElement("button");
+        remove.type = "button";
+        remove.textContent = "×";
+        remove.setAttribute("aria-label", `Foto ${index + 1} entfernen`);
+        remove.className =
+          "absolute right-1 top-1 flex h-8 w-8 items-center justify-center rounded-full bg-hsb-black/80 text-lg font-bold text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-hsb-red";
+        remove.addEventListener("click", () => {
+          URL.revokeObjectURL(photo.url);
+          photos.splice(index, 1);
+          render();
+        });
+        item.appendChild(img);
+        item.appendChild(remove);
+        return item;
+      }),
+    );
+  }
+
+  async function addFiles(files: FileList | File[]) {
+    showError("");
+    for (const file of Array.from(files)) {
+      if (photos.length >= MAX_PHOTOS) {
+        showError(`Maximal ${MAX_PHOTOS} Fotos. Entfernen Sie ein Bild, um ein anderes hinzuzufügen.`);
+        break;
+      }
+      try {
+        const blob = await shrink(file);
+        photos.push({ blob, url: URL.createObjectURL(blob) });
+        trackEvent(TrackingEvent.FileUploadAdd, { placement: "repair_photo" });
+      } catch {
+        showError("Dieses Bildformat können wir nicht verarbeiten. Bitte ein JPG- oder PNG-Foto wählen.");
+      }
+    }
+    render();
+  }
+
+  input?.addEventListener("change", async () => {
+    if (input.files?.length) await addFiles(input.files);
+    input.value = "";
+  });
+
+  drop?.addEventListener("dragover", (event) => {
+    event.preventDefault();
+    drop.dataset.drag = "true";
+  });
+  drop?.addEventListener("dragleave", () => delete drop.dataset.drag);
+  drop?.addEventListener("drop", async (event) => {
+    event.preventDefault();
+    delete drop.dataset.drag;
+    if (event.dataTransfer?.files.length) await addFiles(event.dataTransfer.files);
+  });
+
+  const MESSAGES: Record<number, string> = {
+    413: "Die Fotos sind zu groß. Bitte weniger oder kleinere Bilder wählen.",
+    422: "Bitte prüfen Sie Ihre Angaben: Firma, Name, gültige E-Mail, mindestens ein Foto und die Einwilligung.",
+    429: "Zu viele Anfragen in kurzer Zeit. Bitte versuchen Sie es in ein paar Minuten erneut.",
+  };
+  const FALLBACK = "Senden hat nicht geklappt. Schicken Sie das Foto bitte per E-Mail an info@hsb-boden.de oder rufen Sie uns an.";
+
+  form?.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    if (!form || !submit) return;
+    if (photos.length === 0) {
+      showError("Bitte fügen Sie mindestens ein Foto der Schadstelle hinzu.");
+      drop?.focus();
+      return;
+    }
+    if (!form.reportValidity()) return;
+
+    const data = new FormData(form);
+    photos.forEach((photo, index) => {
+      const type = photo.blob.type || "image/jpeg";
+      const extension = type === "image/png" ? "png" : type === "image/webp" ? "webp" : "jpg";
+      data.append("photos", new File([photo.blob], `foto-${index + 1}.${extension}`, { type }));
+    });
+    data.set("page", window.location.pathname);
+
+    submit.disabled = true;
+    const label = submit.textContent;
+    submit.textContent = "Wird gesendet …";
+    showError("");
+
+    try {
+      const res = await fetch("/api/repair-photo", { method: "POST", body: data, headers: { Accept: "application/json" } });
+      if (!res.ok) throw new Error(String(res.status));
+      trackEvent(TrackingEvent.LeadFormSubmit, { placement: "repair_photo" });
+      photos.forEach((photo) => URL.revokeObjectURL(photo.url));
+      form.classList.add("hidden");
+      success?.classList.remove("hidden");
+      success?.focus();
+    } catch (err) {
+      showError(MESSAGES[Number((err as Error).message)] ?? FALLBACK);
+      submit.disabled = false;
+      submit.textContent = label;
+    }
+  });
+</script>

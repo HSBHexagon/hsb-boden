@@ -16,4 +16,7 @@ export const site = {
   // Wird erst auf "true" gesetzt, wenn LEAD_WEBHOOK_CONFIG (oder während des
   // Cutovers der Legacy-Fallback LEAD_WEBHOOK_URL) serverseitig konfiguriert ist.
   hasLeadEndpoint: import.meta.env.PUBLIC_LEAD_FORM_ENABLED === "true",
+  // Foto der Schadstelle auf der Reparaturseite: /api/repair-photo verschickt die Bilder per SMTP
+  // an info@. Ohne SMTP-Secrets antwortet der Endpunkt 503 und das Formular verweist auf E-Mail/Telefon.
+  hasRepairPhotoUpload: import.meta.env.PUBLIC_REPAIR_PHOTO_ENABLED === "true",
 };

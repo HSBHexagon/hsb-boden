@@ -97,6 +97,23 @@ def delivery_bounce_status(text: str, recipient: str | None = None) -> str:
     if actions == {'delayed'}:
         return 'deferred'
     _, enhanced, _ = _extract_dsn_code(text)
+    # A receiving MX rejecting an address as an unauthorised relay is an
+    # individual permanent delivery failure, not evidence that the sending
+    # domain was rejected for spam/reputation. Limit this exception to an
+    # unambiguous, matching Final-Recipient and an explicit remote-MTA DSN.
+    recipient_relay = re.search(
+        r'^Diagnostic-Code:[ \t]*smtp;[ \t]*554[ \t]+5\.7\.1[ \t]+'
+        r'<([^>\r\n]+)>:[ \t]*Relay access denied[ \t]*$',
+        text, re.I | re.M
+    )
+    if (actions == {'failed'} and enhanced == '5.7.1'
+            and recipient_relay and _RECIPIENT_RE.search(text)
+            and re.search(r'^Remote-MTA:[ \t]*dns;', text, re.I | re.M)
+            and (recipient is None or recipient_relay.group(1).lower() == recipient.lower())
+            and recipient_relay.group(1).lower() in {
+                address.lower() for address in _RECIPIENT_RE.findall(text)
+            }):
+        return 'hard_bounce'
     kind = classify_dsn(text)
     if kind == 'policy':
         return 'policy_block'

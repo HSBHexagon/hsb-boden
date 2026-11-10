@@ -158,3 +158,24 @@ def test_null_mx_rejects_email(monkeypatch):
     from enrich_company_names import check_domain_mx
     monkeypatch.setattr('enrich_company_names.subprocess.run',lambda *a,**k:SimpleNamespace(stdout='firma.invalid mail is handled by 0 .\n'))
     assert check_domain_mx('firma.invalid') is False
+
+
+def test_recipient_specific_remote_relay_denial_is_hard_bounce_not_sender_policy():
+    dsn = (
+        "Reporting-MTA: dns; dd43534.kasserver.com\n\n"
+        "Final-Recipient: rfc822; rejected@example.test\n"
+        "Action: failed\n"
+        "Status: 5.7.1\n"
+        "Remote-MTA: dns; mx1.agenturserver.de\n"
+        "Diagnostic-Code: smtp; 554 5.7.1 <rejected@example.test>: Relay access denied\n"
+    )
+    assert delivery_bounce_status(dsn, "rejected@example.test") == "hard_bounce"
+    assert delivery_bounce_status(dsn, "different@example.test") == "bounce_review"
+    assert delivery_bounce_status(
+        dsn.replace("Relay access denied", "rejected as spam"),
+        "rejected@example.test"
+    ) == "policy_block"
+    assert delivery_bounce_status(
+        dsn.replace("Remote-MTA: dns; mx1.agenturserver.de\n", ""),
+        "rejected@example.test"
+    ) == "policy_block"

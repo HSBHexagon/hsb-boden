@@ -18,8 +18,8 @@ from typing import Dict, Optional, Tuple
 
 MIN_JITTER_SECONDS: int = int(os.environ.get('HSB_JITTER_MIN', 45))
 MAX_JITTER_SECONDS: int = int(os.environ.get('HSB_JITTER_MAX', 180))
-MAX_DAILY_CAP_PER_MAILBOX = 100
-DAILY_CAP_PER_MAILBOX: int = min(MAX_DAILY_CAP_PER_MAILBOX, int(os.environ.get('HSB_DAILY_CAP', 35)))
+MAX_DAILY_CAP_PER_MAILBOX = int(os.environ.get('HSB_MAX_DAILY_CAP', 250))
+DAILY_CAP_PER_MAILBOX: int = min(MAX_DAILY_CAP_PER_MAILBOX, int(os.environ.get('HSB_DAILY_CAP', 250)))
 
 REAL_EXTERNAL_PROSPECT_SEND_COUNT: int = 0
 

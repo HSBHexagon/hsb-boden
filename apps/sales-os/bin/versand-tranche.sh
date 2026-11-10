@@ -8,11 +8,11 @@
 # und Antworten werden vor jedem Versand frisch geprüft; jeder Versand wird im Journal und CRM zurückgelesen.
 set -euo pipefail
 COUNT="${1:?Anzahl je Postfach angeben, z. B. 10}"; APPLY=""; [[ "${2:-}" == "--apply" ]] && APPLY="--apply"
-(( COUNT >= 1 && COUNT <= 100 )) || { echo "Anzahl muss zwischen 1 und 100 liegen"; exit 2; }
+(( COUNT >= 1 && COUNT <= 250 )) || { echo "Anzahl muss zwischen 1 und 250 liegen"; exit 2; }
 REPO="$(cd "$(dirname "$0")/../../.." && pwd)"
 [[ -f "$HOME/.config/hsb-sales-os/env" ]] && set -a && . "$HOME/.config/hsb-sales-os/env" && set +a
 export HSB_CRM_BINDINGS_VERIFIED=yes
-export HSB_DAILY_CAP="${HSB_DAILY_CAP:-100}"
+export HSB_DAILY_CAP="${HSB_DAILY_CAP:-250}"
 export HSB_MAX_BUDGET="${HSB_MAX_BUDGET:-$HSB_DAILY_CAP}"
 export HSB_MIN_ALLOWED_JITTER=0
 export HSB_JITTER_MIN=0

@@ -169,3 +169,65 @@ def test_v1_message_without_header_leaves_fields_untouched(tmp_path, monkeypatch
     assert "ALL_LEADS!I3" not in written_map  # Email_Template_ID
     assert "ALL_LEADS!J3" not in written_map  # Segment
     assert written_map["ALL_LEADS!B3"] == "sent"
+
+
+def test_smtp_554_unknown_recipient_handled_as_hard_bounce(tmp_path, monkeypatch):
+    import smtplib
+    monkeypatch.setenv("HSB_CRM_BINDINGS_VERIFIED", "yes")
+
+    journal_path = tmp_path / "journal.db"
+    journal = SendJournal(str(journal_path))
+
+    headers = [
+        "Lead-ID",
+        "Send_Status",
+        "Bounce_Status",
+        "Suppressed",
+        "Suppression_Reason",
+        "Versandfreigabe",
+        "Last_Send_Attempt_At",
+        "Outbound_ID",
+        "Sender_Account",
+    ]
+    svc = FakeSheetsService()
+    svc.written["ALL_LEADS!A3:A3"] = [["HSB-TEST-003"]]
+
+    class RejectingClient:
+        cfg = {"email": "j-cherino@hsb-boden.com"}
+        def deliver_verified_bytes(self, raw, recipient, journal=None):
+            raise smtplib.SMTPDataError(554, b"5.7.1 Message cannot be sent. One or more recipients were previously reported as unknown.")
+
+    msg = EmailMessage()
+    msg["Message-ID"] = "<test-mid-554@hsb-boden.com>"
+    msg.set_content("Text...")
+    raw = msg.as_bytes()
+
+    item = {
+        "owner": "JOEL",
+        "lead_id": "HSB-TEST-003",
+        "email": "unknown@mbg-online.net",
+    }
+
+    res = complete_delivery(
+        client=RejectingClient(),
+        journal=journal,
+        svc=svc,
+        spreadsheet_id="fake_sheet",
+        headers=headers,
+        row=3,
+        item=item,
+        raw=raw,
+        mid="<test-mid-554@hsb-boden.com>",
+        cap=10,
+    )
+
+    assert res is False
+    # Check that it did not leave unresolved attempt in journal
+    assert journal.db.execute("SELECT count(*) FROM attempts").fetchone()[0] == 0
+    final_payload = svc.call_history[-1]["data"]
+    written_map = {item["range"]: item["values"][0][0] for item in final_payload}
+    assert written_map["ALL_LEADS!B3"] == "failed"
+    assert written_map["ALL_LEADS!C3"] == "hard_bounce"
+    assert written_map["ALL_LEADS!D3"] == "yes"
+    assert written_map["ALL_LEADS!E3"] == "PROVIDER_KNOWN_UNKNOWN"
+    assert written_map["ALL_LEADS!F3"] == "no"

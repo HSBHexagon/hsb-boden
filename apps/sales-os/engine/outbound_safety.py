@@ -14,6 +14,7 @@ from email.utils import formatdate, parsedate_to_datetime
 import hashlib
 import imaplib
 import re
+import smtplib
 import json
 import os
 from pathlib import Path
@@ -344,7 +345,39 @@ def complete_delivery(client, journal, svc, spreadsheet_id, headers, row, item, 
     now=datetime.now(timezone.utc).isoformat()
     _send_write(svc,spreadsheet_id,headers,row,item['lead_id'],{'Send_Status':'SENDING','Last_Send_Attempt_At':now,'Outbound_ID':mid,'Sender_Account':client.cfg['email']})
     journal.transition(em,'SMTP_UNKNOWN')
-    client.deliver_verified_bytes(raw,em,journal=journal)
+    try:
+        client.deliver_verified_bytes(raw,em,journal=journal)
+    except smtplib.SMTPDataError as exc:
+        err_msg = (exc.smtp_error or b'').lower()
+        if exc.smtp_code == 554 and (b'previously reported as unknown' in err_msg or b'relay access denied' in err_msg):
+            fail_fields = {
+                'Send_Status': 'failed',
+                'Bounce_Status': 'hard_bounce',
+                'Suppressed': 'yes',
+                'Suppression_Reason': 'PROVIDER_KNOWN_UNKNOWN',
+                'Versandfreigabe': 'no',
+                'Last_Send_Attempt_At': now
+            }
+            _send_write(svc, spreadsheet_id, headers, row, item['lead_id'], fail_fields)
+            _release_binding(svc, spreadsheet_id, item['lead_id'])
+            journal.db.execute('DELETE FROM attempts WHERE email=?', (em.lower(),))
+            print(f"HARD_BOUNCE {item['lead_id']} ({em}): Provider reported recipient unknown (554 5.7.1)")
+            return False
+        raise
+    except smtplib.SMTPRecipientsRefused as exc:
+        fail_fields = {
+            'Send_Status': 'failed',
+            'Bounce_Status': 'hard_bounce',
+            'Suppressed': 'yes',
+            'Suppression_Reason': 'RECIPIENT_REFUSED',
+            'Versandfreigabe': 'no',
+            'Last_Send_Attempt_At': now
+        }
+        _send_write(svc, spreadsheet_id, headers, row, item['lead_id'], fail_fields)
+        _release_binding(svc, spreadsheet_id, item['lead_id'])
+        journal.db.execute('DELETE FROM attempts WHERE email=?', (em.lower(),))
+        print(f"HARD_BOUNCE {item['lead_id']} ({em}): Recipient refused ({exc})")
+        return False
     journal.transition(em,'SMTP_ACCEPTED')
     sent_copy_readback(client,mid,raw,em)
     journal.transition(em,'SENT_COPY_VERIFIED')
@@ -373,6 +406,7 @@ def complete_delivery(client, journal, svc, spreadsheet_id, headers, row, item, 
             raise
     else:
         journal.transition(em,'VERIFIED')
+    return True
 
 
 _GERMAN_MONTHS = {name: i for i, name in enumerate(('januar', 'februar', 'märz', 'april', 'mai', 'juni', 'juli', 'august',
@@ -561,12 +595,15 @@ def dispatch_verified(count_per_owner=25, owners=('JOEL','JORDI'), dry_run=True,
                 # Fencing: wurde die Sperre inzwischen fremd gelöst, nichts mehr senden.
                 if lock:
                     lock.assert_held()
-                complete_delivery(client,journal,svc,SPREADSHEET_ID,headers,row,item,raw,mid,effective_cap)
-                sent_counts[item['owner']]+=1
-                lead['Send_Status']='sent'
-                lead['Send_Datum']=datetime.now(timezone.utc).isoformat()
-                lead['Sender_Account']=getattr(client, 'cfg', {}).get('email') or ('j-cherino@hsb-boden.com' if item['owner']=='JOEL' else 'j-post@hsb-boden.com')
-                if item is not selected[-1]: time.sleep(random.uniform(jitter_min,jitter_max))
+                delivered = complete_delivery(client,journal,svc,SPREADSHEET_ID,headers,row,item,raw,mid,effective_cap)
+                if delivered is not False:
+                    sent_counts[item['owner']]+=1
+                    lead['Send_Status']='sent'
+                    lead['Send_Datum']=datetime.now(timezone.utc).isoformat()
+                    lead['Sender_Account']=getattr(client, 'cfg', {}).get('email') or ('j-cherino@hsb-boden.com' if item['owner']=='JOEL' else 'j-post@hsb-boden.com')
+                    if item is not selected[-1]: time.sleep(random.uniform(jitter_min,jitter_max))
+                else:
+                    lead['Send_Status']='failed'
         finally: journal.close()
         return {'status':'COMPLETED','sent_counts':sent_counts}
 

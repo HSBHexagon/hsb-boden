@@ -66,12 +66,40 @@ def msg_body(msg):
                 raise RuntimeError('MAILBOX_BODY_DECODE_FAILED')
     return '\n'.join(out)
 
+def policy_bounce_diagnostic(msg, body, owner, stored, outcome):
+    """Keep only bounded, email-redacted DSN evidence inside the encrypted artifact."""
+    def scrub(value):
+        return re.sub(r'[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}', '[EMAIL]', str(value))[:2800]
+
+    dsn_blocks = []
+    for part in msg.walk():
+        if part.get_content_type() != 'message/delivery-status':
+            continue
+        for block in part.get_payload() if isinstance(part.get_payload(), list) else []:
+            if not hasattr(block, 'get'):
+                continue
+            entry = {}
+            for key in ('Action', 'Status', 'Diagnostic-Code', 'Remote-MTA',
+                        'Reporting-MTA', 'Final-Recipient', 'Original-Recipient'):
+                value = block.get(key)
+                if value:
+                    entry[key.lower().replace('-', '_')] = scrub(value)[:900]
+            if entry:
+                dsn_blocks.append(entry)
+    return {
+        'owner': owner, 'imap_internaldate': stored.isoformat(),
+        'classification': outcome,
+        'dsn_blocks': dsn_blocks[:6],
+        'sanitized_body_excerpt': scrub(body),
+    }
+
 def check_snapshot():
     seen=set()
     counts=Counter()
     latest_sent=[]
     pilot_dates=[]
     proof={}
+    bounce_diagnostics=[]
     for owner in ('JOEL','JORDI'):
         client=ComMailboxClient(owner)
         inbound=client.fetch_inbound_messages(limit=0)
@@ -96,6 +124,8 @@ def check_snapshot():
                 kind={'hard_bounce':'hard_bounces','deferred':'deferrals_today',
                       'policy_block':'policy_bounces'}.get(outcome,'review_bounces')
                 counts[kind]+=1
+                if len(bounce_diagnostics) < 12:
+                    bounce_diagnostics.append(policy_bounce_diagnostic(msg,body,owner,stored,outcome))
             if re.search(r'feedback[- ]type:\s*abuse|feedback report|spam complaint',subject+'\n'+body,re.I):
                 counts['spam_reports']+=1
         # Read the server's authoritative INTERNALDATE, never an untrusted MIME Date header.
@@ -119,11 +149,15 @@ def check_snapshot():
                       'sent_24h':sample,'first_external_sent':earliest.isoformat()}
     if sum(latest_sent) > 100:
         raise RuntimeError('HEALTH_SAMPLE_OVER_100_REQUIRES_SCOPE')
+    from send_governance import MailboxHealthStore
+    shared_pause=MailboxHealthStore(ComMailboxClient('JOEL')).read()
     output={'checked_at':NOW.isoformat(),'first_send_date':max(pilot_dates),
             'seen_inbound_ids':sorted(seen),'sample_sent':sum(latest_sent),
             'hard_bounces':counts['hard_bounces'],'policy_bounces':counts['policy_bounces'],
             'deferrals_today':counts['deferrals_today'],'spam_reports':counts['spam_reports'],
             'review_bounces':counts['review_bounces'],
+            'bounce_diagnostics':bounce_diagnostics,
+            'shared_pause':shared_pause,
             'seed_dkim_pass':False,'mailboxes':proof,
             'measurement_scope':'last 24h, genuine IMAP INTERNALDATE; all Inbox UIDs and sent folder scanned'}
     return output

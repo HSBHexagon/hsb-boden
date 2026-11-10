@@ -563,8 +563,6 @@ def dispatch_verified(count_per_owner=25, owners=('JOEL','JORDI'), dry_run=True,
         leads_list=[dict(zip(headers,r)) for r in rows[1:] if r]
         leads_by_id={l.get('Lead-ID'): (i, l) for i, l in enumerate(leads_list, 2)}
         last_svc_refresh=time.monotonic()
-        last_health_check = 0.0
-        effective_cap = cap
         try:
             for item in selected:
                 if item['owner'] in capped:
@@ -584,10 +582,8 @@ def dispatch_verified(count_per_owner=25, owners=('JOEL','JORDI'), dry_run=True,
                     print(f"SKIP {item['lead_id']}: TIER_Z"); continue
                 from send_governance import enforce_domain_health, MailboxHealthStore
                 from lead_quality import deliverability_flags
-                # Domainweite Gesundheit periodisch (alle 120s) prüfen, statt vor jeder einzelnen Mail das gesamte Postfach neu zu scannen
-                if time.monotonic() - last_health_check > 120.0:
-                    effective_cap=min(cap,enforce_domain_health(state, datetime.now(ZoneInfo('Europe/Berlin')).date(), MailboxHealthStore(clients['JOEL'])))
-                    last_health_check = time.monotonic()
+                # Domainweite Gesundheit und Hygiene unmittelbar vor jeder Reservierung.
+                effective_cap=min(cap,enforce_domain_health(state, datetime.now(ZoneInfo('Europe/Berlin')).date(), MailboxHealthStore(clients['JOEL'])))
                 lead['Deliverability_Flags']=deliverability_flags(lead,{},set())
                 verdict=check_eligibility(lead)
                 # Ein einzelner gesperrter oder nicht zustellbarer Lead stoppt die Tranche nicht; gesendet wird er nie.

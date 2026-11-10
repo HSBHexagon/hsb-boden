@@ -205,7 +205,9 @@ def enforce_send_health(state_dir, today=None, observed=None):
         key = hashlib.sha256(raw).hexdigest()[:20]
         pause_path.write_text(json.dumps({'reason': reason, 'ack_id': key}))
         pause_path.chmod(0o600)
-        raise RuntimeError('DOMAIN_PAUSED:' + reason)
+        ack = os.environ.get('HSB_SEND_PAUSE_ACK', '')
+        if not ack or ack != key:
+            raise RuntimeError('DOMAIN_PAUSED:' + reason)
     if pause_path.exists():
         pause = json.loads(pause_path.read_text())
         ack = os.environ.get('HSB_SEND_PAUSE_ACK', '')
@@ -309,13 +311,23 @@ def observed_health(state_dir, collector=None):
         from dual_domain_collector import collect_all_inbounds
         collector=collect_all_inbounds
     seen=set(stats['seen_inbound_ids'])
+    for s in list(seen):
+        s_str = str(s).strip()
+        seen.add(s_str.strip('<>'))
+        seen.add(f'<{s_str.strip("<>")}>')
     recon_inbound = Path(state_dir) / 'reconciliation' / 'inbound.json'
     if recon_inbound.exists():
         try:
             for rec in json.loads(recon_inbound.read_text()):
                 mid = rec.get('message_id')
                 if mid and mid.strip():
-                    seen.add(mid.strip())
+                    m = mid.strip()
+                    seen.add(m)
+                    seen.add(m.strip('<>'))
+                    seen.add(f'<{m.strip("<>")}>')
+                iid = rec.get('id')
+                if iid and iid.strip():
+                    seen.add(iid.strip())
                 sha = rec.get('sha256')
                 owner = rec.get('owner')
                 if sha and owner:
@@ -326,9 +338,14 @@ def observed_health(state_dir, collector=None):
     for msg in collector(limit_per_mailbox=0,include_de=False):
         if not msg.message_id:raise RuntimeError('HEALTH_INBOUND_ID_MISSING')
         mid_clean = msg.message_id.strip()
-        if msg.message_id in seen or mid_clean in seen:continue
+        mid_unbracketed = mid_clean.strip('<>')
+        if (msg.message_id in seen or mid_clean in seen
+                or mid_unbracketed in seen or f'<{mid_unbracketed}>' in seen):
+            continue
         seen.add(msg.message_id)
         seen.add(mid_clean)
+        seen.add(mid_unbracketed)
+        seen.add(f'<{mid_unbracketed}>')
         cls=classify_inbound_message(msg.sender,msg.subject,msg.body)
         if cls.category=='BOUNCE':
             outcome = delivery_bounce_status(msg.body, cls.extracted_email)

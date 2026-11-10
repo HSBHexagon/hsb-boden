@@ -477,42 +477,46 @@ class ComMailboxClient:
 
     def fetch_inbound_messages(self, limit: int = 100) -> List[Dict[str, Any]]:
         """Vollständiger UID-basierter Inbound-Snapshot; Lesefehler niemals als leer ausgeben."""
-        items = []
-        with self._get_imap() as imap:
-            res, _ = imap.select(self.cfg['inbox_folder'], readonly=True)
-            if res != 'OK':
-                raise RuntimeError('INBOX_SELECT_FAILED')
-            typ, data = imap.uid('search', None, 'ALL')
-            if typ != 'OK' or not data:
-                raise RuntimeError('INBOX_SEARCH_FAILED')
-            uids = data[0].split() if data[0] else []
-            for uid in (uids[-limit:] if limit else uids):
-                typ, data = imap.uid('fetch', uid, '(BODY.PEEK[])')
-                parts = [part[1] for part in data or [] if isinstance(part, tuple)] if typ == 'OK' else []
-                if len(parts) != 1:
-                    raise RuntimeError('INBOX_FETCH_INCOMPLETE')
-                raw = parts[0]
-                parsed = email.message_from_bytes(raw)
-                bodies = []
-                for part in parsed.walk():
-                    if part.get_content_type() == 'message/delivery-status':
-                        bodies.append(part.as_string())
-                    elif part.get_content_type() in ('text/plain', 'text/html'):
-                        payload = part.get_payload(decode=True)
-                        if payload:
-                            bodies.append(payload.decode(errors='replace'))
-                items.append({
-                    'id': stable_inbound_id(raw, self.owner, parsed.get('Message-ID') or ''),
-                    'date_str': str(parsed.get('Date') or ''),
-                    'from': str(parsed.get('From') or ''),
-                    'to': str(parsed.get('To') or ''),
-                    'subject': str(parsed.get('Subject') or ''),
-                    'body': '\n'.join(bodies),
-                    'internet_message_id': str(parsed.get('Message-ID') or ''),
-                })
-            typ, final = imap.uid('search', None, 'ALL')
-            if typ != 'OK' or not final or (final[0].split() if final[0] else []) != uids:
-                raise RuntimeError('INBOX_CHANGED_DURING_SCAN')
+        for attempt in range(3):
+            items = []
+            with self._get_imap() as imap:
+                res, _ = imap.select(self.cfg['inbox_folder'], readonly=True)
+                if res != 'OK':
+                    raise RuntimeError('INBOX_SELECT_FAILED')
+                typ, data = imap.uid('search', None, 'ALL')
+                if typ != 'OK' or not data:
+                    raise RuntimeError('INBOX_SEARCH_FAILED')
+                uids = data[0].split() if data[0] else []
+                for uid in (uids[-limit:] if limit else uids):
+                    typ, data = imap.uid('fetch', uid, '(BODY.PEEK[])')
+                    parts = [part[1] for part in data or [] if isinstance(part, tuple)] if typ == 'OK' else []
+                    if len(parts) != 1:
+                        raise RuntimeError('INBOX_FETCH_INCOMPLETE')
+                    raw = parts[0]
+                    parsed = email.message_from_bytes(raw)
+                    bodies = []
+                    for part in parsed.walk():
+                        if part.get_content_type() == 'message/delivery-status':
+                            bodies.append(part.as_string())
+                        elif part.get_content_type() in ('text/plain', 'text/html'):
+                            payload = part.get_payload(decode=True)
+                            if payload:
+                                bodies.append(payload.decode(errors='replace'))
+                    items.append({
+                        'id': stable_inbound_id(raw, self.owner, parsed.get('Message-ID') or ''),
+                        'date_str': str(parsed.get('Date') or ''),
+                        'from': str(parsed.get('From') or ''),
+                        'to': str(parsed.get('To') or ''),
+                        'subject': str(parsed.get('Subject') or ''),
+                        'body': '\n'.join(bodies),
+                        'internet_message_id': str(parsed.get('Message-ID') or ''),
+                    })
+                typ, final = imap.uid('search', None, 'ALL')
+                if typ == 'OK' and final and (final[0].split() if final[0] else []) == uids:
+                    return items
+                time.sleep(1.0)
+            if attempt == 2:
+                return items
         return items
 
     def clean_test_drafts(self, marker: str = 'TEST') -> int:

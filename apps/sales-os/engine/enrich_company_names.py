@@ -123,9 +123,10 @@ class EnrichmentResult:
 
 
 def check_domain_mx(domain: str) -> bool:
-    """Prüft per nativem DNS-Befehl (host/nslookup), ob die Domäne valide Mail-Server besitzt."""
+    """Prüft per nativem DNS-Befehl (host/nslookup) oder Fallback, ob die Domäne valide Mail-Server besitzt."""
     if not domain:
         return False
+    domain = domain.strip().lower()
     try:
         if os.name == "nt":
             res = subprocess.run(["nslookup", "-type=mx", domain], capture_output=True, text=True, timeout=4)
@@ -150,8 +151,43 @@ def check_domain_mx(domain: str) -> bool:
             # Fallback A-Record
             res_a = subprocess.run(["host", "-t", "a", domain], capture_output=True, text=True, timeout=4)
             return "has address" in res_a.stdout.lower()
+    except (FileNotFoundError, OSError):
+        # host oder nslookup nicht auf dem System vorhanden: Fallback auf dnspython / socket
+        pass
     except Exception:
         # DNS-Ausfall ist kein Nachweis einer zustellbaren Domain.
+        return False
+
+    # 1. Fallback dnspython (wenn installiert)
+    try:
+        import dns.resolver
+        try:
+            answers = dns.resolver.resolve(domain, "MX", lifetime=4.0)
+            for rdata in answers:
+                exchanger = str(rdata.exchange).rstrip(".")
+                pref = int(rdata.preference)
+                if pref == 0 and (not exchanger or exchanger == "."):
+                    return False
+                if exchanger:
+                    return True
+        except (dns.resolver.NoAnswer, dns.resolver.NXDOMAIN):
+            pass
+        except Exception:
+            pass
+        try:
+            answers = dns.resolver.resolve(domain, "A", lifetime=4.0)
+            return len(answers) > 0
+        except Exception:
+            pass
+    except ImportError:
+        pass
+
+    # 2. Fallback Standard-Library socket
+    try:
+        import socket
+        socket.getaddrinfo(domain, None, socket.AF_UNSPEC, socket.SOCK_STREAM)
+        return True
+    except Exception:
         return False
 
 

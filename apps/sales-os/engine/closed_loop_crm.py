@@ -169,6 +169,12 @@ def sync_inbounds(apply=False, include_de=True):
                 change.update({k:v for k,v in actions.items() if k in headers})
             if apply:
                 crm_write_readback(svc,SPREADSHEET_ID,headers,row,change)
+                if cls.category == "BOUNCE" and msg.source == "COM_IMAP" and getattr(msg, "uid", None):
+                    try:
+                        from com_mailbox_manager import ComMailboxClient
+                        ComMailboxClient(msg.owner).move_message_by_uid(str(msg.uid), source_folder="INBOX", target_folder="Unzustellbar")
+                    except Exception as exc:
+                        logger.warning("Bounce-Verschieben nach Unzustellbar fehlgeschlagen fuer UID %s: %s", msg.uid, exc)
             event_reason = cls.reason + (f" [RESCUED -> {rescue_target}]" if rescued else "")
             pending.append([event_id, msg.date or datetime.now(timezone.utc).isoformat(),
                 msg.source+':'+msg.owner,msg.sender,msg.subject,msg.message_id,

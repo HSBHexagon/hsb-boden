@@ -607,6 +607,15 @@ def cmd_approve_verified_drafts(args, svc=None):
     print(json.dumps(result, ensure_ascii=False, indent=2))
 
 
+def cmd_ingest_bounces(args):
+    """Liest Bounces ein, sperrt sie im CRM und verschiebt sie in den Ordner 'Unzustellbar'."""
+    from ingest_bounces import process_bounces
+    dry_run = not args.apply
+    should_move = args.move or (not dry_run)
+    updated = process_bounces(args.owner, dry_run=dry_run, limit=args.limit, move_bounces=should_move)
+    print(json.dumps({"updated": updated, "dry_run": dry_run, "moved": should_move}, ensure_ascii=False, indent=2))
+
+
 def cmd_purge_sent_drafts(args, svc=None):
     """Löscht verwaiste Entwürfe im IMAP-Entwurfsordner für Leads, die im CRM bereits als 'sent' markiert sind."""
     from sync_to_google_sheet import get_sheets_service
@@ -824,10 +833,18 @@ def main():
     p_purge_sent = subparsers.add_parser("purge-sent-drafts", help="Verwaiste Entwürfe für bereits versendete Leads löschen (Standard Dry-Run)")
     p_purge_sent.add_argument("--owner", choices=["JOEL", "JORDI"], default=None, help="Nur bestimmter Owner")
     p_purge_sent.add_argument("--apply", action="store_true", help="Tatsächlich aus IMAP-Entwurfsordner löschen")
+
+    p_ingest = subparsers.add_parser("ingest-bounces", help="Bounces einlesen, im CRM sperren und in Ordner 'Unzustellbar' verschieben")
+    p_ingest.add_argument("--owner", choices=["JOEL", "JORDI", "ALL"], default="ALL", help="Postfach-Eigentuemer")
+    p_ingest.add_argument("--apply", action="store_true", help="Live-Sync ins CRM ausfuehren")
+    p_ingest.add_argument("--move", action="store_true", help="Bounces in IMAP-Ordner 'Unzustellbar' verschieben")
+    p_ingest.add_argument("--limit", type=int, default=100, help="Maximale Nachrichten pro Ordner")
     args = parser.parse_args()
 
     if args.command == "sequence-preview":
         cmd_sequence_preview(args)
+    elif args.command == "ingest-bounces":
+        cmd_ingest_bounces(args)
     elif args.command == "purge-sent-drafts":
         cmd_purge_sent_drafts(args)
     elif args.command == "rescue-bounces":

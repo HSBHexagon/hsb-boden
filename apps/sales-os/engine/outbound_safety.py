@@ -2,7 +2,7 @@
 
 An IMAP CREATE lock serializes writers across devices. A crash leaves the
 empty lock folder in place deliberately; reconciliation is required to unlock.
-CRM SENDING readback precedes SMTP. Original drafts are never deleted.
+CRM SENDING readback precedes SMTP. Sent drafts are cleaned up from IMAP drafts folder after verified delivery.
 """
 from __future__ import annotations
 from contextlib import contextmanager
@@ -525,6 +525,26 @@ def select_queue(queue, drafts, owners, count_per_owner, segments=None, variant=
     return selected, used
 
 
+def cleanup_sent_draft(client, folder, uid):
+    """Löscht den gesendeten Entwurf aus dem IMAP-Entwurfsordner nach verifizierter Zustellung.
+    Verhindert, dass Mail-Clients wie Outlook den gesendeten Thread als [Entwurf] markieren."""
+    if not client or not folder or not uid:
+        return
+    try:
+        if hasattr(client, 'delete_draft_by_uid'):
+            client.delete_draft_by_uid(uid, folder)
+        elif hasattr(client, '_get_imap'):
+            with client._get_imap() as imap:
+                typ, _ = imap.select(folder)
+                if typ == 'OK':
+                    if hasattr(imap, 'uid'):
+                        imap.uid('store', str(uid), '+FLAGS', r'(\Deleted)')
+                    if hasattr(imap, 'expunge'):
+                        imap.expunge()
+    except Exception as exc:
+        print(f"WARN: cleanup_sent_draft({folder}, {uid}) ignoriert: {exc}")
+
+
 def dispatch_verified(count_per_owner=25, owners=('JOEL','JORDI'), dry_run=True, cap=35, jitter_min=45, jitter_max=90, segments=None, variant=None, include_de_inbound=True):
     """include_de_inbound=False nur für Läufe ohne Azure-Zugang (GitHub Actions): .de-Antwortende sind über
     .de-Forensik und CRM-Versandstatus bereits gesperrt; neue .com-Antworten werden weiterhin synchronisiert."""
@@ -625,6 +645,7 @@ def dispatch_verified(count_per_owner=25, owners=('JOEL','JORDI'), dry_run=True,
                     lead['Send_Status']='sent'
                     lead['Send_Datum']=datetime.now(timezone.utc).isoformat()
                     lead['Sender_Account']=getattr(client, 'cfg', {}).get('email') or ('j-cherino@hsb-boden.com' if item['owner']=='JOEL' else 'j-post@hsb-boden.com')
+                    cleanup_sent_draft(client, d.get('folder'), d.get('uid'))
                     if item is not selected[-1]: time.sleep(random.uniform(jitter_min,jitter_max))
                 else:
                     lead['Send_Status']='failed'

@@ -21,6 +21,7 @@ from email.utils import formatdate, make_msgid
 import html
 import hashlib
 import imaplib
+import logging
 import os
 from pathlib import Path
 import re
@@ -36,6 +37,8 @@ if str(ENGINE_DIR) not in sys.path:
     sys.path.insert(0, str(ENGINE_DIR))
 
 from hsb_config import get_com_mailbox_config
+
+logger = logging.getLogger(__name__)
 
 
 def html_to_plaintext(source):
@@ -586,6 +589,22 @@ class ComMailboxClient:
                 imap.expunge()
         return deleted
 
+    def delete_draft_by_uid(self, uid: str, folder: str = None) -> bool:
+        """Loescht einen Entwurf anhand seiner UID nach erfolgreichem Versand."""
+        target_folder = folder or self.cfg.get('drafts_folder', 'INBOX.Drafts')
+        try:
+            with self._get_imap() as imap:
+                res, _ = imap.select(target_folder)
+                if res != 'OK':
+                    return False
+                imap.uid('store', str(uid), '+FLAGS', r'(\Deleted)')
+                if hasattr(imap, 'expunge'):
+                    imap.expunge()
+            return True
+        except Exception as exc:
+            logger.warning(f"[{self.owner}] delete_draft_by_uid({uid}) in {target_folder} fehlgeschlagen: {exc}")
+            return False
+
     def ensure_folder(self, folder_name: str) -> bool:
         """Stellt sicher, dass ein IMAP-Ordner existiert (z. B. 'Unzustellbar')."""
         folder_clean = folder_name.strip('"')
@@ -636,6 +655,9 @@ def print_status():
         smtp_status = 'OK' if conn['smtp'] else 'FAIL'
         print(f'{owner:<10} | {conn["email"]:26} | {imap_status:<6} | {smtp_status:<6} | {counts["drafts"]:>8} | {counts["sent"]:>6} | {counts["inbox"]:>6}')
     print('=' * 80)
+
+
+ComMailboxManager = ComMailboxClient
 
 
 if __name__ == '__main__':

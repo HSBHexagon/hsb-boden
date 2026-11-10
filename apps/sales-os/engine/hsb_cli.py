@@ -607,6 +607,49 @@ def cmd_approve_verified_drafts(args, svc=None):
     print(json.dumps(result, ensure_ascii=False, indent=2))
 
 
+def cmd_purge_sent_drafts(args, svc=None):
+    """Löscht verwaiste Entwürfe im IMAP-Entwurfsordner für Leads, die im CRM bereits als 'sent' markiert sind."""
+    from sync_to_google_sheet import get_sheets_service
+    from com_mailbox_manager import ComMailboxClient
+    from email.utils import getaddresses
+    import email
+    if svc is None:
+        svc = get_sheets_service()
+    _, leads = _load_all_leads(svc)
+    sent_emails = {
+        l['E-Mail'].strip().lower() for l in leads
+        if l.get('Send_Status', '').lower() == 'sent' and l.get('E-Mail')
+    }
+    owners = [args.owner] if getattr(args, 'owner', None) else ['JOEL', 'JORDI']
+    report = {'total_sent_in_crm': len(sent_emails)}
+    for o in owners:
+        client = ComMailboxClient(o)
+        deleted_count = 0
+        try:
+            with client._get_imap() as imap:
+                res, _ = imap.select(client.cfg['drafts_folder'])
+                if res == 'OK':
+                    typ, data = imap.search(None, 'ALL')
+                    if data and data[0]:
+                        for num in data[0].split():
+                            typ, msg_data = imap.fetch(num, '(BODY.PEEK[HEADER.FIELDS (TO)])')
+                            raw = b''.join(p[1] for p in (msg_data or []) if isinstance(p, tuple))
+                            parsed = email.message_from_bytes(raw)
+                            recipients = {addr.strip().lower() for _, addr in getaddresses(parsed.get_all('To', []))}
+                            if recipients & sent_emails:
+                                if getattr(args, 'apply', False):
+                                    imap.store(num, '+FLAGS', r'\Deleted')
+                                deleted_count += 1
+                        if getattr(args, 'apply', False) and deleted_count > 0 and hasattr(imap, 'expunge'):
+                            imap.expunge()
+        except Exception as exc:
+            report[o] = {'error': str(exc)}
+            continue
+        report[o] = {'orphaned_sent_drafts': deleted_count, 'applied': bool(getattr(args, 'apply', False))}
+    print(json.dumps(report, ensure_ascii=False, indent=2))
+    return report
+
+
 def cmd_dedupe_drafts(args):
     """Doppelte Entwürfe je Empfänger ins Archiv verschieben; ohne --apply nur der Plan."""
     from draft_dedupe import apply_dedupe, plan_dedupe
@@ -777,10 +820,16 @@ def main():
     p_appr.add_argument("--limit", type=int, default=0, help="Maximal freizugebende Leads (0 = alle)")
     p_appr.add_argument("--audit-dir", help="Optionaler Pfad zum Audit-Verzeichnis mit drafts.json")
     p_appr.add_argument("--apply", action="store_true", help="Freigaben ins Google Sheet schreiben")
+
+    p_purge_sent = subparsers.add_parser("purge-sent-drafts", help="Verwaiste Entwürfe für bereits versendete Leads löschen (Standard Dry-Run)")
+    p_purge_sent.add_argument("--owner", choices=["JOEL", "JORDI"], default=None, help="Nur bestimmter Owner")
+    p_purge_sent.add_argument("--apply", action="store_true", help="Tatsächlich aus IMAP-Entwurfsordner löschen")
     args = parser.parse_args()
 
     if args.command == "sequence-preview":
         cmd_sequence_preview(args)
+    elif args.command == "purge-sent-drafts":
+        cmd_purge_sent_drafts(args)
     elif args.command == "rescue-bounces":
         cmd_rescue_bounces(args)
     elif args.command == "approve-verified-drafts":

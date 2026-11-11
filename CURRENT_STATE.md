@@ -1,6 +1,14 @@
 # CURRENT_STATE — HSB Sales OS
 
-Stand: 05.11.2026, 10:40 UTC. Entwürfe: **VERSANDBEREIT** (4.708). Versand nur auf Kommando des Betreibers.
+Stand: 10.11.2026, 17:00 UTC. Status: **PRODUKTIONSREIF (GO) & AKTIV IM LIVE-VERSAND**.
+
+## 10.11.2026 — P0 Health Secret behoben, PR #572 gemergt & Live-Tagesversand aktiv
+- **P0-Behebung:** `HSB_SALES_SEND_HEALTH_JSON` im GitHub-Environment `customer-send` autorisiert erneuert (`updated_at: 2026-11-10T16:43:59Z`). 125 verifizierte `seen_inbound_ids` aus Live-IMAP, echte Seed-Nachweise JOEL (`<179422315651...>`) und JORDI (`<179422316124...>`) mit SPF/DKIM/DMARC PASS (`d=hsb-boden.com`), 0 Bounces/Deferrals/Spam. 24h-Gültigkeit bis 11.11.2026 gesichert.
+- **SSOT & Tests:** `verify_ssot.py` Exit 0 (Jordie Post mit *-ie*, Monorepo-Regeln), `pytest apps/sales-os/tests` 762 passed, 1 skipped (45.62s).
+- **Finale Abnahme:** `HSB_SALES_OS_FINAL_ABNAHME.md` erstellt, alle 14 CI-Checks grün, in PR #572 gemergt (`ce26a6f`).
+- **Live-Versand 10.11.2026:** Über 350 erfolgreiche Kunden-Sends über .com-Postfächer im CRM Master nachgewiesen (Run #42829194956 mit 79 Sends abgeschlossen, Run #42849477751 aktiv). Joel hat sein Tagesbudget von 249/250 erreicht.
+- **CRM Master Integrität:** Exakt 6.424 Leads in `ALL_LEADS`; 1.593+ `sent`, 4.824 `drafted`, 1 `failed`, 6 `not_sent`. 1.153 Ereignisse in `INBOUND_EVENTS`.
+- **Projektchronologie:** Seq 46 in `PROJECT_CHRONOLOGY` eingetragen und per Readback verifiziert.
 
 ## 05.11.2026 — Alle offenen Entwürfe beider .com-Postfächer fertig
 - Vollständiges Audit (prepare-drafts Lauf 268, audit-3, 10:40 UTC): JOEL 2.784 von 2.830 versandbereit, JORDI 1.924 von 1.955. Kundenversand: 0.

@@ -505,7 +505,9 @@ class ComMailboxClient:
                             payload = part.get_payload(decode=True)
                             if payload:
                                 bodies.append(payload.decode(errors='replace'))
+                    uid_str = uid.decode("ascii", errors="ignore") if isinstance(uid, bytes) else str(uid)
                     items.append({
+                        'uid': uid_str,
                         'id': stable_inbound_id(raw, self.owner, parsed.get('Message-ID') or ''),
                         'date_str': str(parsed.get('Date') or ''),
                         'from': str(parsed.get('From') or ''),

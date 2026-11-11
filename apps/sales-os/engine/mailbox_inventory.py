@@ -18,7 +18,7 @@ from hsb_core import normalize_owner
 from lead_quality import segment_for
 from sales_reconciliation import SENDERS, addresses
 
-FIELDS = 'MESSAGE-ID FROM TO X-HSB-LEAD-ID X-HSB-TEMPLATE-ID X-HSB-COPY-REV'
+FIELDS = 'MESSAGE-ID FROM TO X-HSB-LEAD-ID X-HSB-TEMPLATE-ID X-HSB-COPY-REV X-UNSENT'
 
 
 def _validity(imap):
@@ -63,7 +63,7 @@ def scan_headers(owner, client):
             records = []
             for start in range(0, len(uids), 500):
                 chunk = uids[start:start + 500]
-                typ, data = imap.uid('FETCH', b','.join(chunk), f'(UID BODY.PEEK[HEADER.FIELDS ({FIELDS})])')
+                typ, data = imap.uid('FETCH', b','.join(chunk), f'(UID FLAGS BODY.PEEK[HEADER.FIELDS ({FIELDS})])')
                 if typ != 'OK':
                     raise RuntimeError('INVENTORY_FETCH_FAILED')
                 seen = set()
@@ -74,6 +74,10 @@ def scan_headers(owner, client):
                     if not match or match[1] in seen:
                         raise RuntimeError('INVENTORY_UID_AMBIGUOUS')
                     uid = match[1]
+                    flags_match = re.search(rb'\bFLAGS \(([^)]*)\)', item[0])
+                    if not flags_match:
+                        raise RuntimeError('INVENTORY_FLAGS_MISSING')
+                    draft_flag = b'\\Draft' in flags_match[1].split()
                     seen.add(uid)
                     msg = BytesParser(policy=policy.default).parsebytes(item[1])
                     records.append({
@@ -83,6 +87,8 @@ def scan_headers(owner, client):
                         'lead_id': str(msg.get('X-HSB-Lead-ID') or '').strip(),
                         'template_id': str(msg.get('X-HSB-Template-ID') or '').strip(),
                         'copy_rev': str(msg.get('X-HSB-Copy-Rev') or '').strip(),
+                        'draft_flag': draft_flag,
+                        'x_unsent': str(msg.get('X-Unsent') or '').strip() == '1',
                     })
                 if seen != set(chunk):
                     raise RuntimeError('INVENTORY_FETCH_INCOMPLETE')
@@ -116,6 +122,15 @@ def summarize(leads, mailboxes):
                   'crm_unique': 0, 'wrong_crm_owner': 0, 'wrong_from': 0,
                   'identity_ambiguous': 0, 'duplicate_recipients': 0,
                   'segments': Counter(), 'copy_revisions': Counter()}
+        # Exact Message-ID intersection diagnoses the Outlook draft badge without
+        # exposing recipients or changing server messages.
+        counts['sent_marked_draft_by_imap_flag'] = sum(bool(m.get('draft_flag')) for m in box['sent'])
+        counts['sent_marked_draft_by_unsent_header'] = sum(bool(m.get('x_unsent')) for m in box['sent'])
+        sent_ids = {item.get('message_id') for item in box['sent'] if item.get('message_id')}
+        counts['sent_message_still_in_drafts'] = sum(
+            bool(draft.get('message_id')) and draft['message_id'] in sent_ids
+            for draft in box['drafts']
+        )
         for draft in box['drafts']:
             candidates = by_id[draft['lead_id']] if draft['lead_id'] else (
                 by_email[draft['recipients'][0]] if len(draft['recipients']) == 1 else [])

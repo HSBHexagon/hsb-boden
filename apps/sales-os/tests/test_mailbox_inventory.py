@@ -42,7 +42,7 @@ class HeaderMailbox:
         msg['X-HSB-Lead-ID'] = 'HSB-20260101-1'
         msg['X-HSB-Template-ID'] = 'v2-produktion-reparatur-s1'
         msg['X-HSB-Copy-Rev'] = '2026-11-05'
-        return 'OK', [(b'1 (UID 1 BODY[HEADER.FIELDS] {100}', msg.as_bytes()), b')']
+        return 'OK', [(b'1 (UID 1 FLAGS (\\Seen) BODY[HEADER.FIELDS] {100}', msg.as_bytes()), b')']
 
 
 class Client:
@@ -63,6 +63,7 @@ def test_inventory_uses_headers_and_preserves_uid_identity():
         'message_id': '<one@example.org>', 'recipients': ['person@example.org'],
         'senders': ['j-cherino@hsb-boden.com'], 'lead_id': 'HSB-20260101-1',
         'template_id': 'v2-produktion-reparatur-s1', 'copy_rev': '2026-11-05',
+        'draft_flag': False, 'x_unsent': False,
     }
     assert len(result['sent']) == 1
 
@@ -111,3 +112,38 @@ def test_untrusted_copy_revision_never_appears_in_public_summary():
     result = summarize(leads, boxes)
     assert result['owners']['JOEL']['copy_revisions'] == {'(unrecognized)': 1}
     assert 'private-customer@example.org' not in str(result)
+
+
+def test_inventory_detects_sent_message_left_in_drafts():
+    from mailbox_inventory import summarize
+    lead = {'Lead-ID': 'L1', 'E-Mail': 'person@example.org', 'Verantwortlicher': 'JOEL'}
+    record = {'lead_id': 'L1', 'recipients': ['person@example.org'],
+              'senders': ['j-cherino@hsb-boden.com'], 'message_id': '<same@example.org>',
+              'template_id': 'v2-produktion-reparatur-s1', 'copy_rev': '2026-11-05'}
+    mailboxes = {'JOEL': {'drafts': [record], 'sent': [record], 'inbox': []},
+                 'JORDI': {'drafts': [], 'sent': [], 'inbox': []}}
+    summary = summarize([lead], mailboxes)
+    assert summary['owners']['JOEL']['sent_message_still_in_drafts'] == 1
+    assert summary['owners']['JORDI']['sent_message_still_in_drafts'] == 0
+    assert 'person@example.org' not in str(summary)
+
+
+def test_sent_folder_inventory_counts_server_draft_flags_and_unsent_headers():
+    from mailbox_inventory import summarize
+    record = {'message_id': '<sent@example.org>', 'recipients': ['person@example.org'],
+              'lead_id': 'L1', 'senders': ['j-cherino@hsb-boden.com'],
+              'draft_flag': True, 'x_unsent': True}
+    boxes = {'JOEL': {'drafts': [], 'sent': [record], 'inbox': []},
+             'JORDI': {'drafts': [], 'sent': [], 'inbox': []}}
+    counts = summarize([], boxes)['owners']
+    assert counts['JOEL']['sent_marked_draft_by_imap_flag'] == 1
+    assert counts['JOEL']['sent_marked_draft_by_unsent_header'] == 1
+    assert counts['JORDI']['sent_marked_draft_by_imap_flag'] == 0
+    assert counts['JORDI']['sent_marked_draft_by_unsent_header'] == 0
+
+
+def test_header_inventory_reads_sent_draft_flags_and_unsent_header():
+    from mailbox_inventory import scan_headers
+    result = scan_headers('JOEL', Client())
+    assert result['sent'][0]['draft_flag'] is False
+    assert result['sent'][0]['x_unsent'] is False

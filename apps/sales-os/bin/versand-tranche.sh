@@ -4,7 +4,7 @@
 #   bash apps/sales-os/bin/versand-tranche.sh 10           # Probelauf: zeigt, welche 10 je Postfach gingen
 #   bash apps/sales-os/bin/versand-tranche.sh 10 --apply   # sendet bis zu 10 je Postfach nach Health-Nachweis
 #
-# Obergrenze bis zu 100 je Postfach und Tag (outbound_safety.DAILY_CAP). Opt-outs, Bounces, bereits Kontaktierte
+# Tagesobergrenze je Postfach: HSB_DAILY_CAP (outbound_safety.DAILY_CAP). Opt-outs, Bounces, bereits Kontaktierte
 # und Antworten werden vor jedem Versand frisch geprüft; jeder Versand wird im Journal und CRM zurückgelesen.
 set -euo pipefail
 COUNT="${1:?Anzahl je Postfach angeben, z. B. 10}"; APPLY=""; [[ "${2:-}" == "--apply" ]] && APPLY="--apply"
@@ -33,9 +33,15 @@ fi
 # Ohne Azure-Zugang (GitHub Actions) nur .com-Antworten abgleichen; .de-Antwortende sind bereits gesperrt.
 INBOUND=""; [[ "${HSB_COM_ONLY_INBOUND:-}" == "yes" ]] && INBOUND="--com-only-inbound"
 TOTAL_SENT=0
+HALTED=""
 for OWNER in JOEL JORDI; do
-  OUT=$(python3 -u hsb_cli.py send-batch --owner "$OWNER" --count "$COUNT" --jitter-min 0 --jitter-max 0 --variant reparatur $INBOUND $APPLY | tee /dev/stderr)
-  SENT=$(python3 -c "import json, sys; lines = [l.strip() for l in sys.stdin.read().splitlines()]; parsed = [json.loads(l) for l in lines if l.startswith('{') and l.endswith('}') and 'sent_counts' in l]; print(sum(parsed[-1].get('sent_counts', {}).values()) if parsed else 0)" <<< "$OUT" 2>/dev/null || echo "0")
+  RC=0
+  OUT=$(python3 -u hsb_cli.py send-batch --owner "$OWNER" --count "$COUNT" --jitter-min 0 --jitter-max 0 --variant reparatur $INBOUND $APPLY | tee /dev/stderr) || RC=$?
+  # 3 = SMTP dieses Postfachs hat nachweislich nichts angenommen; der Vorgang ist zurückgerollt und die Sperre
+  # gelöst. Das andere Postfach läuft weiter. Jeder andere Fehler (unklarer Zustand) beendet den Lauf sofort.
+  if (( RC == 3 )); then HALTED="$HALTED $OWNER"
+  elif (( RC != 0 )); then exit "$RC"; fi
+  SENT=$(python3 tranche_result.py <<< "$OUT" 2>/dev/null || echo "0")
   TOTAL_SENT=$((TOTAL_SENT + ${SENT:-0}))
 done
 echo "Tranche beendet: $TOTAL_SENT E-Mails versendet."
@@ -46,4 +52,8 @@ if [[ -n "${GITHUB_OUTPUT:-}" ]]; then
   else
     echo "more=no" >> "$GITHUB_OUTPUT"
   fi
+fi
+if [[ -n "$HALTED" ]]; then
+  echo "Versand pausiert für:$HALTED (SMTP nicht angenommen, nichts offen). Ursache im Log unter NOT_ACCEPTED; später erneut starten." >&2
+  exit 3
 fi

@@ -91,6 +91,34 @@ def stable_inbound_id(raw, owner, rfc_message_id=''):
     return str(rfc_message_id).strip() or f'COM_IMAP:{owner}:SHA256:{hashlib.sha256(raw).hexdigest()}'
 
 
+# Kundenversand: Die Antwort auf das Ende von DATA darf dauern (Spamprüfung beim Provider). Ein zu kurzes
+# Zeitlimit erzeugt genau den unklaren Zustand, der jeden Folgeversand sperrt.
+SMTP_SEND_TIMEOUT_SECONDS = 120
+SMTP_CONNECT_ATTEMPTS = 3
+SMTP_CONNECT_BACKOFF_SECONDS = 5
+
+
+class SmtpNotAccepted(RuntimeError):
+    """Der Server hat die Nachricht nachweislich nicht angenommen.
+
+    stage: connect, login, mail, rcpt oder data (ausdrückliche Ablehnung). Die Meldung enthält bewusst
+    weder Empfänger noch Servertext; der Servertext steht für die Einordnung in `detail`."""
+
+    def __init__(self, stage, code=0, detail=b''):
+        self.stage = stage
+        self.code = int(code or 0)
+        self.detail = detail if isinstance(detail, bytes) else str(detail or '').encode('utf-8', 'replace')
+        super().__init__(f'SMTP_NOT_ACCEPTED:{stage}:{self.code or "-"}')
+
+    @property
+    def permanent(self):
+        return 500 <= self.code < 600
+
+    @property
+    def reason(self):
+        return f'{self.stage.upper()}_{self.code}' if self.code else f'{self.stage.upper()}_UNREACHABLE'
+
+
 class ComMailboxClient:
     """IMAP/SMTP Client fuer ein HSB .com Postfach."""
 
@@ -416,12 +444,59 @@ class ComMailboxClient:
         ).fetchone()
         if row != (self.owner, mid, 'SMTP_UNKNOWN'):
             raise PermissionError('No durable matching SMTP reservation')
-        with smtplib.SMTP_SSL(self.cfg['smtp_server'], self.cfg['smtp_port'],
-                context=self.ssl_context, timeout=self.timeout) as smtp:
-            smtp.login(self.cfg['username'], self.cfg['password'])
-            refused = smtp.sendmail(self.cfg['email'], [recipient], raw_bytes)
-            if refused:
-                raise RuntimeError('SMTP_RECIPIENT_REFUSED')
+        for attempt in range(1, SMTP_CONNECT_ATTEMPTS + 1):
+            try:
+                return self._smtp_transaction(raw_bytes, recipient)
+            except SmtpNotAccepted as exc:
+                # Nur ein reiner Verbindungsfehler wird wiederholt: dort hat der Server noch nichts gesehen.
+                # Anmelde- und Protokollablehnungen sind Antworten des Servers und werden nicht erneut versucht.
+                if exc.stage != 'connect' or attempt == SMTP_CONNECT_ATTEMPTS:
+                    raise
+                time.sleep(SMTP_CONNECT_BACKOFF_SECONDS * attempt)
+
+    def _smtp_transaction(self, raw_bytes, recipient):
+        """Eine SMTP-Transaktion mit Phasenprotokoll.
+
+        Bis einschließlich RCPT hat der Server den Inhalt nicht erhalten; lehnt er DATA ausdrücklich ab,
+        hat er ihn nicht angenommen. Beides meldet SmtpNotAccepted. Bricht die Verbindung dagegen nach
+        Beginn der Inhaltsübertragung ohne Antwort ab, bleibt die Annahme unklar und der ursprüngliche
+        Fehler wird unverändert weitergereicht (kein automatischer zweiter Versuch)."""
+        stage, reject = 'connect', None
+        try:
+            with smtplib.SMTP_SSL(self.cfg['smtp_server'], self.cfg['smtp_port'],
+                    context=self.ssl_context, timeout=SMTP_SEND_TIMEOUT_SECONDS) as smtp:
+                stage = 'login'
+                smtp.login(self.cfg['username'], self.cfg['password'])
+                stage = 'mail'
+                smtp.ehlo_or_helo_if_needed()
+                options = [f'size={len(raw_bytes)}'] if smtp.does_esmtp and smtp.has_extn('size') else []
+                code, reply = smtp.mail(self.cfg['email'], options)
+                if code != 250:
+                    reject = ('mail', code, reply)
+                else:
+                    stage = 'rcpt'
+                    code, reply = smtp.rcpt(recipient)
+                    if code not in (250, 251):
+                        reject = ('rcpt', code, reply)
+                    else:
+                        stage = 'data'
+                        code, reply = smtp.data(raw_bytes)
+                        if code != 250:
+                            reject = ('data', code, reply)
+                        else:
+                            stage = 'accepted'
+        except smtplib.SMTPDataError as exc:
+            # Der Server hat DATA nicht mit 354 eröffnet: kein Inhalt übertragen.
+            reject = reject or ('data', exc.smtp_code, exc.smtp_error)
+        except Exception as exc:  # noqa: BLE001 - Einordnung nach Phase, Unklares wird weitergereicht
+            if stage == 'accepted' or reject:
+                pass  # Fehler erst beim Abmelden (QUIT): das Ergebnis der Transaktion steht bereits fest.
+            elif stage in ('connect', 'login', 'mail', 'rcpt'):
+                reject = (stage, getattr(exc, 'smtp_code', 0), getattr(exc, 'smtp_error', b'') or type(exc).__name__)
+            else:
+                raise
+        if reject:
+            raise SmtpNotAccepted(*reject)
 
     def list_drafts(self, limit: int = 10) -> List[Dict[str, Any]]:
         """Liest die neuesten Entwuerfe aus dem Entwurfsordner."""

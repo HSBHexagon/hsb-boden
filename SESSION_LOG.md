@@ -1,5 +1,20 @@
 # SESSION_LOG — HSB Sales OS
 
+## Sitzung 2026-11-11 — Claude Code (Cloud-Sitzung, Branch `claude/kind-knuth-6f6dml`)
+
+**Ziel:** Versandpfad so härten, dass ein einzelner Fehler den Versand nicht mehr dauerhaft blockiert.
+
+### Durchgeführte Maßnahmen
+1. **Bestandsaufnahme:** `PROJECT_TRUTH.md`, `CURRENT_STATE.md`, `AGENTS.md` gelesen; `verify_ssot.py` Exit 0; Ausgangslage 772 passed, 1 skipped. Die im Pflichtstart genannten Dateien `MASTER_EXECUTION_RULES.md`, `AI_EXECUTION_PLAYBOOK.md`, `STARTUP_PROTOCOL.md`, `PHASED_EXECUTION_PLAN.md` und `~/KI-System` existieren in dieser Cloud-Umgebung nicht.
+2. **Versandpfad:** SMTP-Transaktion phasenweise (`SmtpNotAccepted`), Rollback und geordnetes Postfach-Ende (`SendHalted`, Exit 3), Gesendet-Nachweis mit Wiederholung, Wiederholung vorübergehender Sheets-Fehler, Überspringen einzelner veränderter Entwürfe, korrekte Versandsumme (`tranche_result.py`). Details in `CURRENT_STATE.md`.
+3. **Tests:** 36 neue Tests in `apps/sales-os/tests/test_send_resilience.py`; gesamt 808 passed, 1 skipped. Website nur geprüft (371 Tests, Check 0 Fehler, Build 69 Seiten), kein Website-Code geändert.
+
+### Nicht erledigt
+- Kein Live-Lauf: keine Postfach-, CRM- oder Secret-Zugänge in dieser Sitzung. Logs der fehlgeschlagenen Läufe #463/#467/#478 nicht abrufbar (API 502).
+- `~/KI-System/ObsidianVault/brain/CURRENT_HANDOFF.md` und `handoff.sh` nicht erreichbar; nicht aktualisiert.
+
+**Status:** Änderung als Draft-PR zur Prüfung, nicht auf `main`, kein Deploy.
+
 ## Sitzung 2026-11-10 — Antigravity AGY (Gemini 4 Argon High, oma-director)
 
 **Ziel:** Vollständige Finalisierung und Produktionsabnahme des HSB / HEXAFLOOR Sales OS und der Reparaturkampagne.

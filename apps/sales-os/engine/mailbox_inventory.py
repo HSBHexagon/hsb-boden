@@ -116,6 +116,13 @@ def summarize(leads, mailboxes):
                   'crm_unique': 0, 'wrong_crm_owner': 0, 'wrong_from': 0,
                   'identity_ambiguous': 0, 'duplicate_recipients': 0,
                   'segments': Counter(), 'copy_revisions': Counter()}
+        # Exact Message-ID intersection diagnoses the Outlook draft badge without
+        # exposing recipients or changing server messages.
+        sent_ids = {item.get('message_id') for item in box['sent'] if item.get('message_id')}
+        counts['sent_message_still_in_drafts'] = sum(
+            bool(draft.get('message_id')) and draft['message_id'] in sent_ids
+            for draft in box['drafts']
+        )
         for draft in box['drafts']:
             candidates = by_id[draft['lead_id']] if draft['lead_id'] else (
                 by_email[draft['recipients'][0]] if len(draft['recipients']) == 1 else [])

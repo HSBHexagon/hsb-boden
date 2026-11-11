@@ -553,13 +553,20 @@ class ComMailboxClient:
                         })
         return items
 
-    def fetch_inbound_messages(self, limit: int = 100) -> List[Dict[str, Any]]:
+    def fetch_inbound_messages(self, limit: int = 100, *, folder: str | None = None) -> List[Dict[str, Any]]:
         """Vollständiger UID-basierter Inbound-Snapshot; Lesefehler niemals als leer ausgeben."""
+        target_folder = folder or self.cfg['inbox_folder']
         for attempt in range(3):
             items = []
             with self._get_imap() as imap:
-                res, _ = imap.select(self.cfg['inbox_folder'], readonly=True)
+                res, _ = imap.select(target_folder, readonly=True)
                 if res != 'OK':
+                    if folder is not None:
+                        # A missing bounce folder is empty only if IMAP LIST proves it does not exist.
+                        listed, boxes = imap.list('', target_folder)
+                        if listed == 'OK' and not any(boxes or []):
+                            return []
+                        raise RuntimeError('BOUNCE_FOLDER_SELECT_FAILED')
                     raise RuntimeError('INBOX_SELECT_FAILED')
                 typ, data = imap.uid('search', None, 'ALL')
                 if typ != 'OK' or not data:

@@ -111,3 +111,17 @@ def test_untrusted_copy_revision_never_appears_in_public_summary():
     result = summarize(leads, boxes)
     assert result['owners']['JOEL']['copy_revisions'] == {'(unrecognized)': 1}
     assert 'private-customer@example.org' not in str(result)
+
+
+def test_inventory_detects_sent_message_left_in_drafts():
+    from mailbox_inventory import summarize
+    lead = {'Lead-ID': 'L1', 'E-Mail': 'person@example.org', 'Verantwortlicher': 'JOEL'}
+    record = {'lead_id': 'L1', 'recipients': ['person@example.org'],
+              'senders': ['j-cherino@hsb-boden.com'], 'message_id': '<same@example.org>',
+              'template_id': 'v2-produktion-reparatur-s1', 'copy_rev': '2026-11-05'}
+    mailboxes = {'JOEL': {'drafts': [record], 'sent': [record], 'inbox': []},
+                 'JORDI': {'drafts': [], 'sent': [], 'inbox': []}}
+    summary = summarize([lead], mailboxes)
+    assert summary['owners']['JOEL']['sent_message_still_in_drafts'] == 1
+    assert summary['owners']['JORDI']['sent_message_still_in_drafts'] == 0
+    assert 'person@example.org' not in str(summary)

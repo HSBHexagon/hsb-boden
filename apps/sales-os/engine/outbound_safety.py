@@ -572,7 +572,9 @@ def dispatch_verified(count_per_owner=25, owners=('JOEL','JORDI'), dry_run=True,
         run_audit(output)
         queue=json.loads((output/'queue.json').read_text())
         drafts=json.loads((output/'drafts.json').read_text())
-        selected,used=select_queue(queue,drafts,owners,count_per_owner,segments,variant)
+        # Do not spend send slots on DNS-blocked or otherwise ineligible leads.
+        # Live sends can inspect the full reconciled queue but still stop at count_per_owner actual deliveries.
+        selected,used=select_queue(queue,drafts,owners,count_per_owner if dry_run else len(queue),segments,variant)
         if dry_run: return {'status':'DRY_RUN_COMPLETED','selected':used,'sent_counts':{o:0 for o in owners},'customer_emails_sent':0}
         svc=get_sheets_service(); journal=SendJournal(state/'outbound.sqlite3')
         sent_counts={o:0 for o in owners}
@@ -585,6 +587,8 @@ def dispatch_verified(count_per_owner=25, owners=('JOEL','JORDI'), dry_run=True,
         last_svc_refresh=time.monotonic()
         try:
             for item in selected:
+                if sent_counts[item['owner']] >= count_per_owner:
+                    continue
                 if item['owner'] in capped:
                     continue
                 if time.monotonic()-last_svc_refresh > 1800:

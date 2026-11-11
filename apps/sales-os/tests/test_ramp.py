@@ -360,7 +360,8 @@ def test_daily_cap_and_budget_supports_100_when_configured(monkeypatch):
     assert out_mod.DAILY_CAP == 250
 
 
-def test_blocked_lead_is_skipped_and_tranche_continues(tmp_path, monkeypatch, capsys):
+@pytest.mark.parametrize("requested", [1, 2])
+def test_blocked_lead_is_skipped_and_tranche_continues(tmp_path, monkeypatch, capsys, requested):
     """Ein Lead ohne zustellbare Domain wird nie gesendet und stoppt die übrigen nicht."""
     from contextlib import nullcontext
     from email.message import EmailMessage
@@ -420,7 +421,7 @@ def test_blocked_lead_is_skipped_and_tranche_continues(tmp_path, monkeypatch, ca
     monkeypatch.setenv('HSB_CUSTOMER_SEND_ENABLED', 'yes')
     monkeypatch.setenv('HSB_SALES_STATE_DIR', str(tmp_path))
 
-    result = out.dispatch_verified(2, owners=('JOEL',), dry_run=False)
+    result = out.dispatch_verified(requested, owners=('JOEL',), dry_run=False)
 
     assert result['sent_counts']['JOEL'] == 1 and len(deliveries) == 1
     assert deliveries[0][6]['lead_id'] == 'L2'

@@ -1,7 +1,14 @@
 // @vitest-environment node
+import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { buildMime, dotStuff, headerSafe, sendMail, type SmtpSocket } from "../functions/lib/smtp";
 import { buildConfirmationText, handleRepairPhoto, MAX_PHOTOS, sniffImage, type RepairPhotoEnv } from "../functions/lib/repair-photo-handler";
+
+it("gibt bei fehlerhafter Bilddekodierung niemals das metadatenhaltige Original weiter", () => {
+  const source = readFileSync(new URL("../src/components/forms/RepairPhotoForm.astro", import.meta.url), "utf8");
+  expect(source).toContain('canvas.toBlob(resolve, "image/jpeg", 0.82)');
+  expect(source).not.toMatch(/\breturn\s+file\s*;/);
+});
 
 const JPEG = new Uint8Array([0xff, 0xd8, 0xff, 0xe0, 0x00, 0x10, 0x4a, 0x46, 0x49, 0x46, 0x00, 0x01]);
 const PNG = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0, 0, 0, 0]);

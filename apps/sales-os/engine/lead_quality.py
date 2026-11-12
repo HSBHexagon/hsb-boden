@@ -40,6 +40,8 @@ _PERM_RECIPIENT_FAILURE_RE = re.compile(
     r"host or domain name not found|does not accept mail\s*\(nullmx\)",
     re.I,
 )
+_RECIPIENT_HARD_ENHANCED = frozenset({"5.1.1", "5.1.2", "5.1.3", "5.1.6", "5.1.10"})
+_SENDER_STATUS_ENHANCED = frozenset({"5.1.7", "5.1.8"})
 
 
 def _extract_dsn_code(text: str) -> tuple[str | None, str | None, str]:
@@ -148,8 +150,12 @@ def delivery_bounce_status(text: str, recipient: str | None = None) -> str:
         return 'policy_block'
     if kind == 'soft' and actions == {'failed'}:
         return 'failed_temporary'
+    if enhanced == '5.1.1':
+        return 'hard_bounce'
+    if enhanced in _SENDER_STATUS_ENHANCED:
+        return 'bounce_review'
     if actions == {'failed'} and recipient_ok:
-        if enhanced and enhanced.startswith('5.1.'):
+        if enhanced in _RECIPIENT_HARD_ENHANCED:
             return 'hard_bounce'
         if diag and _PERM_RECIPIENT_FAILURE_RE.search(diag):
             return 'hard_bounce'

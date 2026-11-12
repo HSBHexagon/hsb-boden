@@ -271,3 +271,16 @@ def test_german_isp_explicit_nonexistent_mailbox_and_domain_dsns_are_hard_bounce
         "Final-Recipient: rfc822; a@example.com\nAction: failed\nStatus: 5.2.2\nDiagnostic-Code: smtp; 552 5.2.2 Mailbox unavailable: mailbox full",
         "a@example.com",
     ) == "failed_temporary"
+    # Plain-text 550 5.1.1 without Action header stays hard_bounce
+    assert delivery_bounce_status(
+        "Undelivered Mail\n550 5.1.1 <user@example.com>: Recipient address rejected"
+    ) == "hard_bounce"
+    # Sender-side 5.1.7 / 5.1.8 errors must not be misclassified as permanent recipient hard bounces
+    assert delivery_bounce_status(
+        "Final-Recipient: rfc822; a@example.com\nAction: failed\nStatus: 5.1.8\nDiagnostic-Code: smtp; 550 5.1.8 Sender address rejected: Domain not found",
+        "a@example.com",
+    ) == "bounce_review"
+    assert delivery_bounce_status(
+        "Final-Recipient: rfc822; a@example.com\nAction: failed\nStatus: 5.1.7\nDiagnostic-Code: smtp; 550 5.1.7 Sender address rejected",
+        "a@example.com",
+    ) == "bounce_review"

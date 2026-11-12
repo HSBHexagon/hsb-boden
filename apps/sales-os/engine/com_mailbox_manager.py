@@ -12,6 +12,7 @@ Funktionen:
 from __future__ import annotations
 
 import argparse
+from contextlib import contextmanager
 import email
 from email.header import Header
 from email.mime.application import MIMEApplication
@@ -85,6 +86,37 @@ def plaintext_to_html(text):
     return ('<!DOCTYPE html>\n<html><head><meta charset="utf-8"></head>\n'
             '<body style="font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.5;color:#1f2937;">\n'
             + '\n'.join(out) + '\n</body></html>\n')
+
+
+# Nur innerhalb von inbound_message_cache() gesetzt: {(Postfach, Ordner, UIDVALIDITY): {UID: Nachricht}}.
+_INBOUND_CACHE = None
+
+
+@contextmanager
+def inbound_message_cache():
+    """Innerhalb dieses Blocks lädt fetch_inbound_messages jede Nachricht nur einmal vom Server.
+
+    Die Versandgesundheit wird vor jeder einzelnen Mail geprüft und las dafür jedes Mal beide Posteingänge und
+    Bounce-Ordner vollständig neu. Eine Nachricht ist unter (Ordner, UIDVALIDITY, UID) unveränderlich; deshalb
+    genügt es, die Liste der UIDs weiterhin bei jedem Aufruf live zu lesen und nur neue Nachrichten nachzuladen.
+    Neue, verschobene und gelöschte Nachrichten wirken sich dadurch unverändert sofort aus."""
+    global _INBOUND_CACHE
+    previous = _INBOUND_CACHE
+    _INBOUND_CACHE = {} if previous is None else previous
+    try:
+        yield
+    finally:
+        _INBOUND_CACHE = previous
+
+
+def _selected_uidvalidity(imap):
+    """UIDVALIDITY des gerade ausgewählten Ordners; None, wenn der Server sie nicht eindeutig nennt (dann kein Cache)."""
+    try:
+        data = imap.response('UIDVALIDITY')[1]
+        value = data[0] if data else None
+        return value.decode('ascii') if isinstance(value, bytes) and value.isdigit() else None
+    except Exception:  # noqa: BLE001 - ohne belastbare UIDVALIDITY wird schlicht alles neu geladen
+        return None
 
 
 def stable_inbound_id(raw, owner, rfc_message_id=''):
@@ -572,7 +604,15 @@ class ComMailboxClient:
                 if typ != 'OK' or not data:
                     raise RuntimeError('INBOX_SEARCH_FAILED')
                 uids = data[0].split() if data[0] else []
+                known = None
+                if _INBOUND_CACHE is not None:
+                    validity = _selected_uidvalidity(imap)
+                    if validity:
+                        known = _INBOUND_CACHE.setdefault((self.owner, target_folder, validity), {})
                 for uid in (uids[-limit:] if limit else uids):
+                    if known is not None and uid in known:
+                        items.append(dict(known[uid]))
+                        continue
                     typ, data = imap.uid('fetch', uid, '(BODY.PEEK[])')
                     parts = [part[1] for part in data or [] if isinstance(part, tuple)] if typ == 'OK' else []
                     if len(parts) != 1:
@@ -588,7 +628,7 @@ class ComMailboxClient:
                             if payload:
                                 bodies.append(payload.decode(errors='replace'))
                     uid_str = uid.decode("ascii", errors="ignore") if isinstance(uid, bytes) else str(uid)
-                    items.append({
+                    item = {
                         'uid': uid_str,
                         'id': stable_inbound_id(raw, self.owner, parsed.get('Message-ID') or ''),
                         'date_str': str(parsed.get('Date') or ''),
@@ -597,7 +637,10 @@ class ComMailboxClient:
                         'subject': str(parsed.get('Subject') or ''),
                         'body': '\n'.join(bodies),
                         'internet_message_id': str(parsed.get('Message-ID') or ''),
-                    })
+                    }
+                    if known is not None:
+                        known[uid] = item
+                    items.append(dict(item))
                 typ, final = imap.uid('search', None, 'ALL')
                 if typ == 'OK' and final and (final[0].split() if final[0] else []) == uids:
                     return items

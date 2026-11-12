@@ -457,3 +457,115 @@ def test_tranche_script_and_workflow_offer_only_counts_the_engine_accepts():
     with pytest.raises(ValueError, match='INVALID_BATCH_LIMITS'):
         out.dispatch_verified(count_per_owner=MAX_DAILY_CAP_PER_MAILBOX + 1, owners=('JOEL',), dry_run=True,
                               cap=MAX_DAILY_CAP_PER_MAILBOX, jitter_min=0, jitter_max=0)
+
+
+# --------------------------------------------------------------------------- Gesundheitsprüfung je Mail: Durchsatz
+
+class CountingMailbox:
+    """IMAP-Attrappe je Postfach: zählt Abrufe und erlaubt neue Nachrichten zwischen zwei Prüfungen."""
+
+    def __init__(self):
+        self.folders = {'INBOX': {'validity': b'11', 'messages': {}}, 'Unzustellbar': {'validity': b'22', 'messages': {}}}
+        self.fetches = 0
+        self.searches = 0
+
+    def add(self, folder, uid, message_id, body='Guten Tag'):
+        msg = EmailMessage()
+        msg['From'] = 'mailer-daemon@provider.invalid'; msg['Subject'] = 'Undeliverable'; msg['Message-ID'] = message_id
+        msg.set_content(body)
+        self.folders[folder]['messages'][str(uid).encode()] = msg.as_bytes()
+
+    def session(self):
+        box = self
+        class IMAP:
+            def __enter__(self): return self
+            def __exit__(self, *a): pass
+            def select(self, folder, readonly=True):
+                self.folder = box.folders[folder]
+                return 'OK', []
+            def response(self, code): return code, [self.folder['validity']]
+            def uid(self, verb, *args):
+                if verb == 'search':
+                    box.searches += 1
+                    return 'OK', [b' '.join(sorted(self.folder['messages'], key=int))]
+                box.fetches += 1
+                return 'OK', [(b'h', self.folder['messages'][args[0]])]
+        return IMAP()
+
+
+def _mailbox_client(owner, box):
+    client = object.__new__(ComMailboxClient)  # echte Klasse, auch wenn der Test mail.ComMailboxClient ersetzt
+    client.owner, client.cfg = owner, {'inbox_folder': 'INBOX'}
+    client._get_imap = box.session
+    return client
+
+
+def test_repeated_health_scans_download_each_message_only_once():
+    box = CountingMailbox()
+    for uid in range(1, 41):
+        box.add('INBOX', uid, f'<in{uid}@x.invalid>')
+    for uid in range(1, 61):
+        box.add('Unzustellbar', uid, f'<ndr{uid}@x.invalid>')
+    client = _mailbox_client('JOEL', box)
+
+    def scan():
+        return client.fetch_inbound_messages(limit=0) + client.fetch_inbound_messages(limit=0, folder='Unzustellbar')
+
+    # Ohne Zwischenspeicher lädt jede Prüfung alles neu: so teuer war die Prüfung vor jeder einzelnen Mail.
+    scan(); scan()
+    assert box.fetches == 200
+    box.fetches = 0
+    with mail.inbound_message_cache():
+        first = scan()
+        for _ in range(99):
+            assert scan() == first
+        assert box.fetches == 100          # 100 Prüfungen, jede Nachricht genau einmal geladen
+        assert box.searches >= 100 * 2 * 2  # die Liste der Nachrichten wird weiterhin jedes Mal live gelesen
+    # Außerhalb des Blocks gilt wieder das alte Verhalten.
+    box.fetches = 0
+    scan()
+    assert box.fetches == 100
+
+
+def test_cached_scan_still_sees_new_removed_and_recreated_messages():
+    box = CountingMailbox()
+    box.add('INBOX', 1, '<a@x.invalid>'); box.add('INBOX', 2, '<b@x.invalid>')
+    client = _mailbox_client('JOEL', box)
+    ids = lambda: [m['internet_message_id'] for m in client.fetch_inbound_messages(limit=0)]
+    with mail.inbound_message_cache():
+        assert ids() == ['<a@x.invalid>', '<b@x.invalid>']
+        # Neuer Bounce zwischen zwei Mails: wird vor der nächsten Mail gesehen.
+        box.add('INBOX', 3, '<bounce@x.invalid>')
+        assert ids() == ['<a@x.invalid>', '<b@x.invalid>', '<bounce@x.invalid>'] and box.fetches == 3
+        # Verschobene Nachricht verschwindet aus dem Ergebnis, obwohl sie im Zwischenspeicher liegt.
+        del box.folders['INBOX']['messages'][b'1']
+        assert ids() == ['<b@x.invalid>', '<bounce@x.invalid>'] and box.fetches == 3
+        # Ordner neu angelegt (neue UIDVALIDITY): gleiche UID ist eine andere Nachricht und wird neu geladen.
+        box.folders['INBOX'] = {'validity': b'99', 'messages': {}}
+        box.add('INBOX', 2, '<anders@x.invalid>')
+        assert ids() == ['<anders@x.invalid>'] and box.fetches == 4
+        # Ein Aufrufer darf das Ergebnis verändern, ohne den Zwischenspeicher zu verfälschen.
+        client.fetch_inbound_messages(limit=0)[0]['body'] = 'manipuliert'
+        assert client.fetch_inbound_messages(limit=0)[0]['body'].strip() == 'Guten Tag'
+
+
+def test_health_check_before_each_mail_counts_a_bounce_that_arrives_mid_tranche(tmp_path, monkeypatch):
+    import send_governance as guard
+    boxes = {'JOEL': CountingMailbox(), 'JORDI': CountingMailbox()}
+    for owner, box in boxes.items():
+        for uid in range(1, 31):
+            box.add('Unzustellbar', uid, f'<alt{uid}-{owner}@x.invalid>', 'Final-Recipient: rfc822;alt@firma.invalid\n550 5.1.1 user unknown')
+    monkeypatch.setattr(mail, 'ComMailboxClient', lambda owner: _mailbox_client(owner, boxes[owner]))
+    baseline = [f'<alt{uid}-{owner}@x.invalid>' for owner in boxes for uid in range(1, 31)]
+    monkeypatch.setattr(guard, '_parse_send_health', lambda raw: {
+        'seen_inbound_ids': list(baseline), 'sample_sent': 50, 'hard_bounces': 0, 'policy_bounces': 0,
+        'deferrals_today': 0, 'spam_reports': 0, 'seed_dkim_pass': True})
+    (tmp_path / 'send-health.json').write_text('{}')
+    with mail.inbound_message_cache():
+        for _ in range(20):
+            assert guard.observed_health(tmp_path)['hard_bounces'] == 0
+        assert sum(box.fetches for box in boxes.values()) == 60
+        boxes['JORDI'].add('INBOX', 7, '<neu@x.invalid>', 'Final-Recipient: rfc822;neu@firma.invalid\n550 5.1.1 user unknown')
+        stats = guard.observed_health(tmp_path)
+        assert stats['hard_bounces'] + stats.get('review_bounces', 0) == 1
+        assert sum(box.fetches for box in boxes.values()) == 61

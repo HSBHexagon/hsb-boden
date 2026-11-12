@@ -626,7 +626,7 @@ def _read_audited_draft(client, draft):
 def dispatch_verified(count_per_owner=25, owners=('JOEL','JORDI'), dry_run=True, cap=35, jitter_min=45, jitter_max=90, segments=None, variant=None, include_de_inbound=True):
     """include_de_inbound=False nur für Läufe ohne Azure-Zugang (GitHub Actions): .de-Antwortende sind über
     .de-Forensik und CRM-Versandstatus bereits gesperrt; neue .com-Antworten werden weiterhin synchronisiert."""
-    from com_mailbox_manager import ComMailboxClient
+    from com_mailbox_manager import ComMailboxClient, inbound_message_cache
     from sync_to_google_sheet import get_sheets_service, SPREADSHEET_ID
     from sales_reconciliation import run_audit, assess_message, has_unreviewed_legacy_variant
     min_allowed_jitter = int(os.environ.get('HSB_MIN_ALLOWED_JITTER', 0))
@@ -642,7 +642,8 @@ def dispatch_verified(count_per_owner=25, owners=('JOEL','JORDI'), dry_run=True,
     clients={o:ComMailboxClient(o) for o in {'JOEL','JORDI'}}
     @contextmanager
     def preview_lock(): yield
-    with (preview_lock() if dry_run else mailbox_dispatch_lock(clients['JOEL'])) as lock:
+    # Die Gesundheitsprüfung vor jeder Mail lädt innerhalb der Tranche nur neue Eingangsnachrichten nach.
+    with inbound_message_cache(), (preview_lock() if dry_run else mailbox_dispatch_lock(clients['JOEL'])) as lock:
         if not dry_run:
             from closed_loop_crm import sync_inbounds
             sync_inbounds(apply=True,include_de=include_de_inbound)

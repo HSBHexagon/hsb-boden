@@ -626,8 +626,7 @@ def cmd_purge_sent_drafts(args, svc=None):
     """Löscht verwaiste Entwürfe im IMAP-Entwurfsordner für Leads, die im CRM bereits als 'sent' markiert sind."""
     from sync_to_google_sheet import get_sheets_service
     from com_mailbox_manager import ComMailboxClient
-    from email.utils import getaddresses
-    import email
+    from draft_purge import purge_owner_sent_drafts
     if svc is None:
         svc = get_sheets_service()
     _, leads = _load_all_leads(svc)
@@ -636,31 +635,22 @@ def cmd_purge_sent_drafts(args, svc=None):
         if l.get('Send_Status', '').lower() == 'sent' and l.get('E-Mail')
     }
     owners = [args.owner] if getattr(args, 'owner', None) else ['JOEL', 'JORDI']
+    apply = bool(getattr(args, 'apply', False))
     report = {'total_sent_in_crm': len(sent_emails)}
     for o in owners:
         client = ComMailboxClient(o)
-        deleted_count = 0
         try:
             with client._get_imap() as imap:
-                res, _ = imap.select(client.cfg['drafts_folder'])
-                if res == 'OK':
-                    typ, data = imap.search(None, 'ALL')
-                    if data and data[0]:
-                        for num in data[0].split():
-                            typ, msg_data = imap.fetch(num, '(BODY.PEEK[HEADER.FIELDS (TO)])')
-                            raw = b''.join(p[1] for p in (msg_data or []) if isinstance(p, tuple))
-                            parsed = email.message_from_bytes(raw)
-                            recipients = {addr.strip().lower() for _, addr in getaddresses(parsed.get_all('To', []))}
-                            if recipients & sent_emails:
-                                if getattr(args, 'apply', False):
-                                    imap.store(num, '+FLAGS', r'\Deleted')
-                                deleted_count += 1
-                        if getattr(args, 'apply', False) and deleted_count > 0 and hasattr(imap, 'expunge'):
-                            imap.expunge()
+                deleted_count = purge_owner_sent_drafts(
+                    imap,
+                    client.cfg['drafts_folder'],
+                    sent_emails,
+                    apply=apply,
+                )
         except Exception as exc:
             report[o] = {'error': str(exc)}
             continue
-        report[o] = {'orphaned_sent_drafts': deleted_count, 'applied': bool(getattr(args, 'apply', False))}
+        report[o] = {'orphaned_sent_drafts': deleted_count, 'applied': apply}
     print(json.dumps(report, ensure_ascii=False, indent=2))
     return report
 

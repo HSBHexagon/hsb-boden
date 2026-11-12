@@ -32,6 +32,14 @@ _SMTP_CODE_RE = re.compile(r"(?<![\d.])([45]\d\d)(?![\d.])")
 _POLICY_WORDS_RE = re.compile(r"spam|blocklist|blacklist|policy|blocked|rejected as", re.I)
 _SOFT_WORDS_RE = re.compile(r"mailbox full|over quota|try again|temporar", re.I)
 _HARD_WORDS_RE = re.compile(r"user unknown|no such user|unknown recipient|does not exist", re.I)
+_PERM_RECIPIENT_FAILURE_RE = re.compile(
+    r"mailbox unavailable|no such mailbox|no mailbox here|address invalid|unroutable address|"
+    r"recipient not found|mailbox is blocked|this address no longer accepts mail|"
+    r"#?5\.1\.0\s+address rejected|"
+    r"550\s+5\.4\.1\s+recipient address rejected:\s+access denied.*EXOSmtpErrors|"
+    r"host or domain name not found|does not accept mail\s*\(nullmx\)",
+    re.I,
+)
 
 
 def _extract_dsn_code(text: str) -> tuple[str | None, str | None, str]:
@@ -68,6 +76,10 @@ def classify_dsn(text: str) -> DsnClass:
             return "policy"
         if smtp == "554" and _POLICY_WORDS_RE.search(diag):
             return "policy"
+        if smtp == "550" and not (enh and enh.startswith("5.2.")) and re.search(
+            r"spam|blocklist|blacklist|policy|rejected as", diag, re.I
+        ):
+            return "policy"
         if (enh and (enh.startswith("4.") or enh == "5.2.2")) or (smtp and smtp.startswith("4")):
             return "soft"
         return "hard"
@@ -101,7 +113,12 @@ def delivery_bounce_status(text: str, recipient: str | None = None) -> str:
         return 'bounce_review'
     if actions == {'delayed'}:
         return 'deferred'
-    _, enhanced, _ = _extract_dsn_code(text)
+    _, enhanced, diag = _extract_dsn_code(text)
+    recipient_ok = (
+        recipient is None
+        or not _RECIPIENT_RE.search(text)
+        or recipient.lower() in {address.lower() for address in _RECIPIENT_RE.findall(text)}
+    )
     # A receiving MX rejecting an address as an unauthorised relay is an
     # individual permanent delivery failure, not evidence that the sending
     # domain was rejected for spam/reputation. Limit this exception to an
@@ -124,17 +141,16 @@ def delivery_bounce_status(text: str, recipient: str | None = None) -> str:
         r'previously reported as unknown|recipient.*unknown|user.*unknown',
         text, re.I
     )
-    if actions == {'failed'} and known_unknown and (
-        recipient is None or not _RECIPIENT_RE.search(text) or recipient.lower() in {
-            address.lower() for address in _RECIPIENT_RE.findall(text)
-        }
-    ):
+    if actions == {'failed'} and known_unknown and recipient_ok:
         return 'hard_bounce'
     kind = classify_dsn(text)
     if kind == 'policy':
         return 'policy_block'
-    if enhanced == '5.1.1':
-        return 'hard_bounce'
+    if actions == {'failed'} and recipient_ok:
+        if enhanced and enhanced.startswith('5.1.'):
+            return 'hard_bounce'
+        if diag and _PERM_RECIPIENT_FAILURE_RE.search(diag):
+            return 'hard_bounce'
     if kind == 'soft' and actions == {'failed'}:
         return 'failed_temporary'
     return 'bounce_review'

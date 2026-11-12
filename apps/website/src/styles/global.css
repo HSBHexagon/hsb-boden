@@ -33,8 +33,12 @@ body {
   font-feature-settings: "cv01", "cv02";
 }
 
-a {
-  color: inherit;
+/* In der Basisebene, damit Farb-Utilities (text-white, text-hsb-red …) auf Links greifen.
+   Ungeschichtet überstimmte diese Regel jede Utility-Klasse. */
+@layer base {
+  a {
+    color: inherit;
+  }
 }
 
 .container {

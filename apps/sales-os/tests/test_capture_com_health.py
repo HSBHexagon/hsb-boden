@@ -67,7 +67,9 @@ def test_cursor_prefers_public_message_id_as_reconciliation_does(monkeypatch):
         def __init__(self, owner):
             self.cfg = {"inbox_folder": "INBOX", "sent_folder": "Sent"}
 
-        def fetch_inbound_messages(self, limit=0):
+        def fetch_inbound_messages(self, limit=0, *, folder=None):
+            if folder == 'Unzustellbar':
+                return []
             return [{"id": "COM_IMAP:JOEL:SHA256:abcdef", "internet_message_id": "<incoming@example.test>"}]
 
         def fetch_sent_messages(self, limit=0):
@@ -120,3 +122,41 @@ def test_policy_bounce_diagnostic_reports_structured_smtp_codes_without_address(
     assert '550' in repr(result['dsn_blocks'])
     assert 'test-recipient@customer.example' not in repr(result)
     assert '[EMAIL]' in repr(result)
+
+
+def test_recent_bounce_in_both_folders_is_counted_once(monkeypatch):
+    import datetime as dt
+    from email import message_from_string, policy
+    import capture_com_health as audit
+    from send_governance import MailboxHealthStore
+
+    class Client:
+        def __init__(self, owner):
+            self.owner = owner
+            self.cfg = {"inbox_folder": "INBOX", "sent_folder": "Sent"}
+
+        def fetch_inbound_messages(self, limit=0, *, folder=None):
+            if self.owner == "JOEL" and folder == "Unzustellbar":
+                return [{"id": "<dsn@provider>", "internet_message_id": "<dsn@provider>"}]
+            return []
+
+    bounced = message_from_string(
+        "From: mailer-daemon@provider.test\nSubject: Undeliverable\n"
+        "Message-ID: <dsn@provider>\n\n"
+        "Final-Recipient: rfc822; kunde@example.org\n550 5.1.1 user unknown",
+        policy=policy.default,
+    )
+    sent = message_from_string("To: outside@example.test\n\n", policy=policy.default)
+    def read_records(client, folder, **kwargs):
+        if kwargs.get("history"):
+            return iter([(audit.NOW - dt.timedelta(days=25), sent)])
+        if client.owner == "JOEL" and folder in ("INBOX", "Unzustellbar"):
+            return iter([(audit.NOW - dt.timedelta(hours=1), bounced)])
+        return iter(())
+
+    monkeypatch.setattr(audit, "ComMailboxClient", Client)
+    monkeypatch.setattr(audit, "extracted_records", read_records)
+    monkeypatch.setattr(MailboxHealthStore, "read", lambda self: None)
+    report = audit.check_snapshot()
+    assert report["hard_bounces"] + report["review_bounces"] == 1
+    assert "<dsn@provider>" in report["seen_inbound_ids"]

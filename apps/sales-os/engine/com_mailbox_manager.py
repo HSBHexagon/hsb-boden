@@ -12,6 +12,7 @@ Funktionen:
 from __future__ import annotations
 
 import argparse
+from contextlib import contextmanager
 import email
 from email.header import Header
 from email.mime.application import MIMEApplication
@@ -87,8 +88,67 @@ def plaintext_to_html(text):
             + '\n'.join(out) + '\n</body></html>\n')
 
 
+# Nur innerhalb von inbound_message_cache() gesetzt: {(Postfach, Ordner, UIDVALIDITY): {UID: Nachricht}}.
+_INBOUND_CACHE = None
+
+
+@contextmanager
+def inbound_message_cache():
+    """Innerhalb dieses Blocks lädt fetch_inbound_messages jede Nachricht nur einmal vom Server.
+
+    Die Versandgesundheit wird vor jeder einzelnen Mail geprüft und las dafür jedes Mal beide Posteingänge und
+    Bounce-Ordner vollständig neu. Eine Nachricht ist unter (Ordner, UIDVALIDITY, UID) unveränderlich; deshalb
+    genügt es, die Liste der UIDs weiterhin bei jedem Aufruf live zu lesen und nur neue Nachrichten nachzuladen.
+    Neue, verschobene und gelöschte Nachrichten wirken sich dadurch unverändert sofort aus."""
+    global _INBOUND_CACHE
+    previous = _INBOUND_CACHE
+    _INBOUND_CACHE = {} if previous is None else previous
+    try:
+        yield
+    finally:
+        _INBOUND_CACHE = previous
+
+
+def _selected_uidvalidity(imap):
+    """UIDVALIDITY des gerade ausgewählten Ordners; None, wenn der Server sie nicht eindeutig nennt (dann kein Cache)."""
+    try:
+        data = imap.response('UIDVALIDITY')[1]
+        value = data[0] if data else None
+        return value.decode('ascii') if isinstance(value, bytes) and value.isdigit() else None
+    except Exception:  # noqa: BLE001 - ohne belastbare UIDVALIDITY wird schlicht alles neu geladen
+        return None
+
+
 def stable_inbound_id(raw, owner, rfc_message_id=''):
     return str(rfc_message_id).strip() or f'COM_IMAP:{owner}:SHA256:{hashlib.sha256(raw).hexdigest()}'
+
+
+# Kundenversand: Die Antwort auf das Ende von DATA darf dauern (Spamprüfung beim Provider). Ein zu kurzes
+# Zeitlimit erzeugt genau den unklaren Zustand, der jeden Folgeversand sperrt.
+SMTP_SEND_TIMEOUT_SECONDS = 120
+SMTP_CONNECT_ATTEMPTS = 3
+SMTP_CONNECT_BACKOFF_SECONDS = 5
+
+
+class SmtpNotAccepted(RuntimeError):
+    """Der Server hat die Nachricht nachweislich nicht angenommen.
+
+    stage: connect, login, mail, rcpt oder data (ausdrückliche Ablehnung). Die Meldung enthält bewusst
+    weder Empfänger noch Servertext; der Servertext steht für die Einordnung in `detail`."""
+
+    def __init__(self, stage, code=0, detail=b''):
+        self.stage = stage
+        self.code = int(code or 0)
+        self.detail = detail if isinstance(detail, bytes) else str(detail or '').encode('utf-8', 'replace')
+        super().__init__(f'SMTP_NOT_ACCEPTED:{stage}:{self.code or "-"}')
+
+    @property
+    def permanent(self):
+        return 500 <= self.code < 600
+
+    @property
+    def reason(self):
+        return f'{self.stage.upper()}_{self.code}' if self.code else f'{self.stage.upper()}_UNREACHABLE'
 
 
 class ComMailboxClient:
@@ -416,12 +476,59 @@ class ComMailboxClient:
         ).fetchone()
         if row != (self.owner, mid, 'SMTP_UNKNOWN'):
             raise PermissionError('No durable matching SMTP reservation')
-        with smtplib.SMTP_SSL(self.cfg['smtp_server'], self.cfg['smtp_port'],
-                context=self.ssl_context, timeout=self.timeout) as smtp:
-            smtp.login(self.cfg['username'], self.cfg['password'])
-            refused = smtp.sendmail(self.cfg['email'], [recipient], raw_bytes)
-            if refused:
-                raise RuntimeError('SMTP_RECIPIENT_REFUSED')
+        for attempt in range(1, SMTP_CONNECT_ATTEMPTS + 1):
+            try:
+                return self._smtp_transaction(raw_bytes, recipient)
+            except SmtpNotAccepted as exc:
+                # Nur ein reiner Verbindungsfehler wird wiederholt: dort hat der Server noch nichts gesehen.
+                # Anmelde- und Protokollablehnungen sind Antworten des Servers und werden nicht erneut versucht.
+                if exc.stage != 'connect' or attempt == SMTP_CONNECT_ATTEMPTS:
+                    raise
+                time.sleep(SMTP_CONNECT_BACKOFF_SECONDS * attempt)
+
+    def _smtp_transaction(self, raw_bytes, recipient):
+        """Eine SMTP-Transaktion mit Phasenprotokoll.
+
+        Bis einschließlich RCPT hat der Server den Inhalt nicht erhalten; lehnt er DATA ausdrücklich ab,
+        hat er ihn nicht angenommen. Beides meldet SmtpNotAccepted. Bricht die Verbindung dagegen nach
+        Beginn der Inhaltsübertragung ohne Antwort ab, bleibt die Annahme unklar und der ursprüngliche
+        Fehler wird unverändert weitergereicht (kein automatischer zweiter Versuch)."""
+        stage, reject = 'connect', None
+        try:
+            with smtplib.SMTP_SSL(self.cfg['smtp_server'], self.cfg['smtp_port'],
+                    context=self.ssl_context, timeout=SMTP_SEND_TIMEOUT_SECONDS) as smtp:
+                stage = 'login'
+                smtp.login(self.cfg['username'], self.cfg['password'])
+                stage = 'mail'
+                smtp.ehlo_or_helo_if_needed()
+                options = [f'size={len(raw_bytes)}'] if smtp.does_esmtp and smtp.has_extn('size') else []
+                code, reply = smtp.mail(self.cfg['email'], options)
+                if code != 250:
+                    reject = ('mail', code, reply)
+                else:
+                    stage = 'rcpt'
+                    code, reply = smtp.rcpt(recipient)
+                    if code not in (250, 251):
+                        reject = ('rcpt', code, reply)
+                    else:
+                        stage = 'data'
+                        code, reply = smtp.data(raw_bytes)
+                        if code != 250:
+                            reject = ('data', code, reply)
+                        else:
+                            stage = 'accepted'
+        except smtplib.SMTPDataError as exc:
+            # Der Server hat DATA nicht mit 354 eröffnet: kein Inhalt übertragen.
+            reject = reject or ('data', exc.smtp_code, exc.smtp_error)
+        except Exception as exc:  # noqa: BLE001 - Einordnung nach Phase, Unklares wird weitergereicht
+            if stage == 'accepted' or reject:
+                pass  # Fehler erst beim Abmelden (QUIT): das Ergebnis der Transaktion steht bereits fest.
+            elif stage in ('connect', 'login', 'mail', 'rcpt'):
+                reject = (stage, getattr(exc, 'smtp_code', 0), getattr(exc, 'smtp_error', b'') or type(exc).__name__)
+            else:
+                raise
+        if reject:
+            raise SmtpNotAccepted(*reject)
 
     def list_drafts(self, limit: int = 10) -> List[Dict[str, Any]]:
         """Liest die neuesten Entwuerfe aus dem Entwurfsordner."""
@@ -478,19 +585,34 @@ class ComMailboxClient:
                         })
         return items
 
-    def fetch_inbound_messages(self, limit: int = 100) -> List[Dict[str, Any]]:
+    def fetch_inbound_messages(self, limit: int = 100, *, folder: str | None = None) -> List[Dict[str, Any]]:
         """Vollständiger UID-basierter Inbound-Snapshot; Lesefehler niemals als leer ausgeben."""
+        target_folder = folder or self.cfg['inbox_folder']
         for attempt in range(3):
             items = []
             with self._get_imap() as imap:
-                res, _ = imap.select(self.cfg['inbox_folder'], readonly=True)
+                res, _ = imap.select(target_folder, readonly=True)
                 if res != 'OK':
+                    if folder is not None:
+                        # A missing bounce folder is empty only if IMAP LIST proves it does not exist.
+                        listed, boxes = imap.list('', target_folder)
+                        if listed == 'OK' and not any(boxes or []):
+                            return []
+                        raise RuntimeError('BOUNCE_FOLDER_SELECT_FAILED')
                     raise RuntimeError('INBOX_SELECT_FAILED')
                 typ, data = imap.uid('search', None, 'ALL')
                 if typ != 'OK' or not data:
                     raise RuntimeError('INBOX_SEARCH_FAILED')
                 uids = data[0].split() if data[0] else []
+                known = None
+                if _INBOUND_CACHE is not None:
+                    validity = _selected_uidvalidity(imap)
+                    if validity:
+                        known = _INBOUND_CACHE.setdefault((self.owner, target_folder, validity), {})
                 for uid in (uids[-limit:] if limit else uids):
+                    if known is not None and uid in known:
+                        items.append(dict(known[uid]))
+                        continue
                     typ, data = imap.uid('fetch', uid, '(BODY.PEEK[])')
                     parts = [part[1] for part in data or [] if isinstance(part, tuple)] if typ == 'OK' else []
                     if len(parts) != 1:
@@ -506,7 +628,7 @@ class ComMailboxClient:
                             if payload:
                                 bodies.append(payload.decode(errors='replace'))
                     uid_str = uid.decode("ascii", errors="ignore") if isinstance(uid, bytes) else str(uid)
-                    items.append({
+                    item = {
                         'uid': uid_str,
                         'id': stable_inbound_id(raw, self.owner, parsed.get('Message-ID') or ''),
                         'date_str': str(parsed.get('Date') or ''),
@@ -515,7 +637,10 @@ class ComMailboxClient:
                         'subject': str(parsed.get('Subject') or ''),
                         'body': '\n'.join(bodies),
                         'internet_message_id': str(parsed.get('Message-ID') or ''),
-                    })
+                    }
+                    if known is not None:
+                        known[uid] = item
+                    items.append(dict(item))
                 typ, final = imap.uid('search', None, 'ALL')
                 if typ == 'OK' and final and (final[0].split() if final[0] else []) == uids:
                     return items

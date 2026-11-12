@@ -33,7 +33,7 @@ def deduplicate_inbounds(messages: List[UnifiedInboundMessage]) -> List[UnifiedI
             result.append(msg)
     return result
 
-def collect_all_inbounds(owners: Optional[List[str]] = None, limit_per_mailbox: int = 0, include_de: bool = True) -> List[UnifiedInboundMessage]:
+def collect_all_inbounds(owners: Optional[List[str]] = None, limit_per_mailbox: int = 0, include_de: bool = True, *, include_bounce_folder: bool = False) -> List[UnifiedInboundMessage]:
     from com_mailbox_manager import ComMailboxClient
     target_owners = owners or ["JOEL", "JORDI"]
     all_msgs: List[UnifiedInboundMessage] = []
@@ -42,7 +42,10 @@ def collect_all_inbounds(owners: Optional[List[str]] = None, limit_per_mailbox: 
     for o in target_owners:
         try:
             client = ComMailboxClient(o)
-            raw_items = client.fetch_inbound_messages(limit=limit_per_mailbox)
+            raw_items = list(client.fetch_inbound_messages(limit=limit_per_mailbox))
+            if include_bounce_folder:
+                # Health must inspect the NDR archive as well as INBOX; normal inbound sync is unchanged.
+                raw_items.extend(client.fetch_inbound_messages(limit=limit_per_mailbox, folder='Unzustellbar'))
             for it in raw_items:
                 all_msgs.append(UnifiedInboundMessage(
                     source="COM_IMAP",

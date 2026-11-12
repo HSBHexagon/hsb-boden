@@ -1,9 +1,9 @@
 {
   "project": "HSB / HEXAFLOOR",
-  "last_updated": "2026-11-10",
-  "active_model": "Antigravity AGY (Gemini 4 Argon High, oma-director)",
+  "last_updated": "2026-11-12",
+  "active_model": "Claude Code (Cloud-Sitzung)",
   "active_phase": "sales-os-production-ready",
-  "active_task": "P0 Health Secret erneuert, PR #572 gemergt, Live-Versand 10.11.2026 aktiv, GO erteilt",
+  "active_task": "Versandpfad gehärtet (SmtpNotAccepted/SendHalted, Rollback statt Dauerblockade); Draft-PR auf Branch claude/kind-knuth-6f6dml, nicht auf main",
   "account_migration_2026_07_02": {
     "github_new_repo": "https://github.com/HSBHexagon/hsb-boden",
     "github_old_repo_access": "HSBHexagon ist Admin-Collaborator im Alt-Repo cherinojoel-lang/hsb-boden (Ownership-Transfer pending, nicht blockierend)",
@@ -335,5 +335,23 @@
     "ssot_verified": true,
     "pytest_passed": 762,
     "pytest_skipped": 1
+  },
+  "current_truth_2026_11_11": {
+    "branch": "claude/kind-knuth-6f6dml",
+    "merged_to_main": false,
+    "tests": "pytest apps/sales-os/tests: 815 passed, 1 skipped; verify_ssot.py Exit 0; Website 383 Tests, check 0 Fehler, build 69 Seiten",
+    "customer_emails_sent_in_session": 0,
+    "live_access_in_session": false,
+    "open_owner_points": [
+      "send-health Secret gilt nur 24 h",
+      "naechster Health-Nachweis muss archivierte Bounces aus Unzustellbar in seen_inbound_ids enthalten",
+      "erster Live-Lauf nach Merge mit kleiner Anzahl"
+    ],
+    "pull_request": "https://github.com/HSBHexagon/hsb-boden/pull/580",
+    "resolved_on_branch": [
+      "Tageslimit hart 100 (bd64210)",
+      "Gesundheitspruefung liest Unzustellbar (bd64210, 383be5a)",
+      "versand-tranche.sh und Workflow auf 1-100 begrenzt"
+    ]
   }
 }

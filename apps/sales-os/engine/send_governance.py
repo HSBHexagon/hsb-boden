@@ -3,7 +3,7 @@ HSB Sales OS - Send Governance & EOP Anti-Spam Queue Guardrails (G11).
 
 Erzwingt:
 1. Natuerlichen stochastischen Jitter: 45 bis 180 Sekunden zwischen E-Mails.
-2. Tageslimit pro Postfach: standardmäßig 35, konfigurierbar bis 100.
+2. Tageslimit pro Postfach: hart 100, konfigurierbar nur nach unten.
 3. Fail-closed Schutz: Blockiert strikt bei Cap-Erreichung.
 """
 from __future__ import annotations
@@ -18,8 +18,10 @@ from typing import Dict, Optional, Tuple
 
 MIN_JITTER_SECONDS: int = int(os.environ.get('HSB_JITTER_MIN', 45))
 MAX_JITTER_SECONDS: int = int(os.environ.get('HSB_JITTER_MAX', 180))
-MAX_DAILY_CAP_PER_MAILBOX = int(os.environ.get('HSB_MAX_DAILY_CAP', 250))
-DAILY_CAP_PER_MAILBOX: int = min(MAX_DAILY_CAP_PER_MAILBOX, int(os.environ.get('HSB_DAILY_CAP', 250)))
+# Verbindlicher Betreiberentscheid: höchstens 100 Kundenmails je Absender und Kalendertag.
+# Eine Laufzeitvariable darf diese Sicherheitsgrenze nur absenken, nicht erhöhen.
+MAX_DAILY_CAP_PER_MAILBOX = min(100, int(os.environ.get('HSB_MAX_DAILY_CAP', 100)))
+DAILY_CAP_PER_MAILBOX: int = min(MAX_DAILY_CAP_PER_MAILBOX, int(os.environ.get('HSB_DAILY_CAP', 100)))
 
 REAL_EXTERNAL_PROSPECT_SEND_COUNT: int = 0
 
@@ -100,6 +102,7 @@ def daily_budget(first_send_date, today):
     if age < 0:
         raise ValueError('RAMP_START_IN_FUTURE')
     cap = min(MAX_DAILY_CAP_PER_MAILBOX, int(os.environ.get('HSB_DAILY_CAP', DAILY_CAP_PER_MAILBOX)))
+    # Bestehenden konservativen Anlaufwert nicht stillschweigend erhöhen; 100 ist die harte Obergrenze.
     max_limit = int(os.environ.get('HSB_MAX_BUDGET', 30))
     if min(cap, max_limit) < 1:
         raise ValueError('INVALID_DAILY_BUDGET')
@@ -308,8 +311,10 @@ def observed_health(state_dir, collector=None):
     except (OSError,ValueError,KeyError,TypeError):
         raise RuntimeError('SEND_HEALTH_CURSOR_MISSING') from None
     if collector is None:
+        from functools import partial
         from dual_domain_collector import collect_all_inbounds
-        collector=collect_all_inbounds
+        # Include archived NDRs; the ordinary CRM collector still reads the Inbox only.
+        collector=partial(collect_all_inbounds, include_bounce_folder=True)
     seen=set(stats['seen_inbound_ids'])
     for s in list(seen):
         s_str = str(s).strip()

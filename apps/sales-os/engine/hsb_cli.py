@@ -205,6 +205,9 @@ def cmd_overhaul_all(args):
                 print(f"  Row {l.get('_row')}: {l.get('Lead_ID') or l.get('Lead-ID')} | {l.get('E-Mail') or l.get('Email')} | {l.get('Firma') or l.get('Company')}")
 
 
+SEND_HALTED_EXIT_CODE = 3
+
+
 def cmd_send_batch(args):
     from outbound_safety import dispatch_verified
     result = dispatch_verified(count_per_owner=args.count, owners=(args.owner,),
@@ -213,6 +216,9 @@ def cmd_send_batch(args):
         segments=set(args.segment) if args.segment else None, variant=args.variant,
         include_de_inbound=not args.com_only_inbound)
     print(json.dumps(result, ensure_ascii=False, indent=2))
+    if result.get('halted'):
+        # Geordnetes Ende ohne offenen Versuch: der Aufrufer darf mit dem nächsten Postfach fortfahren.
+        sys.exit(SEND_HALTED_EXIT_CODE)
 
 
 def cmd_test_mail(args):

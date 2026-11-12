@@ -3,7 +3,7 @@ HSB Sales OS - Send Governance & EOP Anti-Spam Queue Guardrails (G11).
 
 Erzwingt:
 1. Natuerlichen stochastischen Jitter: 45 bis 180 Sekunden zwischen E-Mails.
-2. Tageslimit pro Postfach: hart 100, konfigurierbar nur nach unten.
+2. Tageslimit pro Postfach: hart 250, konfigurierbar nur nach unten.
 3. Fail-closed Schutz: Blockiert strikt bei Cap-Erreichung.
 """
 from __future__ import annotations
@@ -18,10 +18,11 @@ from typing import Dict, Optional, Tuple
 
 MIN_JITTER_SECONDS: int = int(os.environ.get('HSB_JITTER_MIN', 45))
 MAX_JITTER_SECONDS: int = int(os.environ.get('HSB_JITTER_MAX', 180))
-# Verbindlicher Betreiberentscheid: höchstens 100 Kundenmails je Absender und Kalendertag.
+# Betreiberentscheid vom 12.11.2026: höchstens 250 Kundenmails je Absender und Kalendertag (zuvor 100).
 # Eine Laufzeitvariable darf diese Sicherheitsgrenze nur absenken, nicht erhöhen.
-MAX_DAILY_CAP_PER_MAILBOX = min(100, int(os.environ.get('HSB_MAX_DAILY_CAP', 100)))
-DAILY_CAP_PER_MAILBOX: int = min(MAX_DAILY_CAP_PER_MAILBOX, int(os.environ.get('HSB_DAILY_CAP', 100)))
+HARD_DAILY_CEILING = 250
+MAX_DAILY_CAP_PER_MAILBOX = min(HARD_DAILY_CEILING, int(os.environ.get('HSB_MAX_DAILY_CAP', HARD_DAILY_CEILING)))
+DAILY_CAP_PER_MAILBOX: int = min(MAX_DAILY_CAP_PER_MAILBOX, int(os.environ.get('HSB_DAILY_CAP', HARD_DAILY_CEILING)))
 
 REAL_EXTERNAL_PROSPECT_SEND_COUNT: int = 0
 
@@ -102,7 +103,7 @@ def daily_budget(first_send_date, today):
     if age < 0:
         raise ValueError('RAMP_START_IN_FUTURE')
     cap = min(MAX_DAILY_CAP_PER_MAILBOX, int(os.environ.get('HSB_DAILY_CAP', DAILY_CAP_PER_MAILBOX)))
-    # Bestehenden konservativen Anlaufwert nicht stillschweigend erhöhen; 100 ist die harte Obergrenze.
+    # Bestehenden konservativen Anlaufwert nicht stillschweigend erhöhen; HARD_DAILY_CEILING ist die harte Obergrenze.
     max_limit = int(os.environ.get('HSB_MAX_BUDGET', 30))
     if min(cap, max_limit) < 1:
         raise ValueError('INVALID_DAILY_BUDGET')

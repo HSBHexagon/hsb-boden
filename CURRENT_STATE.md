@@ -2,6 +2,11 @@
 
 Stand: 11.11.2026. Status: **PRODUKTIONSREIF (GO) & AKTIV IM LIVE-VERSAND**.
 
+## 12.11.2026 — Tagesobergrenze 250 je Postfach (Betreiberentscheid)
+- PR #580 ist auf `main` gemergt (`7665cd3`): Versand-Härtung, schnellerer Gesundheits-Scan, Website-Lesbarkeit.
+- Auf Anweisung des Betreibers vom 12.11.2026 liegt die harte Tagesobergrenze wieder bei 250 je Postfach (`send_governance.HARD_DAILY_CEILING`); Skript, Workflow, Tests und `PROJECT_TRUTH.md` sind angeglichen. Umgebungsvariablen können die Grenze nur senken.
+- Versandlauf #490 (`send`, 100 je Postfach) wurde am 12.11.2026 um 21:09 UTC noch mit der 100er-Grenze gestartet.
+
 ## 11.11.2026 — Versandpfad gehärtet (Branch `claude/kind-knuth-6f6dml`, noch nicht auf `main`)
 - **Ursache der Dauerblockaden:** Jeder SMTP-Fehler außer zwei Sonderfällen ließ `Send_Status=SENDING` und die Sperre stehen; danach scheiterte jeder Folgelauf an `STALE_LOCK_KEPT_SEND_UNCERTAIN`, bis die Zelle von Hand korrigiert wurde. Das galt auch für Fehler, bei denen der Server nachweislich nichts angenommen hatte (Verbindung, Anmeldung, Drosselung 4xx).
 - **Neu:** `com_mailbox_manager.deliver_verified_bytes` führt die SMTP-Transaktion phasenweise. Fehler bis einschließlich RCPT und ausdrückliche DATA-Ablehnungen melden `SmtpNotAccepted`; `outbound_safety.complete_delivery` rollt dann den CRM-Vorgang zurück (Vorzustand, kein Versuchsdatum, kein Tageszähler) und beendet nur dieses Postfach geordnet (`SendHalted`, CLI-Exit 3). `versand-tranche.sh` fährt mit dem zweiten Postfach fort und endet danach rot mit Klartext.

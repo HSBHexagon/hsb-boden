@@ -351,13 +351,13 @@ def test_dispatch_passes_inbound_scope_to_sync(tmp_path, monkeypatch, flag, expe
     assert seen == [{'apply': True, 'include_de': expected}]
 
 
-def test_daily_cap_and_budget_supports_100_when_configured(monkeypatch):
+def test_daily_cap_and_budget_supports_250_when_configured(monkeypatch):
     from send_governance import daily_budget
     import outbound_safety as out_mod
     monkeypatch.setenv('HSB_DAILY_CAP', '1000')
     monkeypatch.setenv('HSB_MAX_BUDGET', '1000')
-    assert daily_budget('2026-10-01', '2026-11-06') == 100
-    assert out_mod.DAILY_CAP == 100
+    assert daily_budget('2026-10-01', '2026-11-06') == 250
+    assert out_mod.DAILY_CAP == 250
 
 
 @pytest.mark.parametrize("requested", [1, 2])

@@ -1,5 +1,5 @@
 """
-Testet Send-Governance, Jitter-Verzoegerung (45-180s) und konfigurierbares Tages-Cap (Obergrenze 100 Mails/Tag) (Goal G11).
+Testet Send-Governance, Jitter-Verzoegerung (45-180s) und konfigurierbares Tages-Cap (Obergrenze 250 Mails/Tag) (Goal G11).
 """
 import datetime
 from pathlib import Path

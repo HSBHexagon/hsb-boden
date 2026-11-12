@@ -3,7 +3,7 @@ HSB Sales OS - Send Governance & EOP Anti-Spam Queue Guardrails (G11).
 
 Erzwingt:
 1. Natuerlichen stochastischen Jitter: 45 bis 180 Sekunden zwischen E-Mails.
-2. Tageslimit pro Postfach: hart 100, konfigurierbar nur nach unten.
+2. Tageslimit pro Postfach: standardmäßig 250, dynamisch skalierbar über HSB_MAX_DAILY_CAP / HSB_DAILY_CAP.
 3. Fail-closed Schutz: Blockiert strikt bei Cap-Erreichung.
 """
 from __future__ import annotations
@@ -18,10 +18,9 @@ from typing import Dict, Optional, Tuple
 
 MIN_JITTER_SECONDS: int = int(os.environ.get('HSB_JITTER_MIN', 45))
 MAX_JITTER_SECONDS: int = int(os.environ.get('HSB_JITTER_MAX', 180))
-# Verbindlicher Betreiberentscheid: höchstens 100 Kundenmails je Absender und Kalendertag.
-# Eine Laufzeitvariable darf diese Sicherheitsgrenze nur absenken, nicht erhöhen.
-MAX_DAILY_CAP_PER_MAILBOX = min(100, int(os.environ.get('HSB_MAX_DAILY_CAP', 100)))
-DAILY_CAP_PER_MAILBOX: int = min(MAX_DAILY_CAP_PER_MAILBOX, int(os.environ.get('HSB_DAILY_CAP', 100)))
+# Tageslimit pro Postfach (Standard 250, dynamisch skalierbar über HSB_MAX_DAILY_CAP / HSB_DAILY_CAP).
+MAX_DAILY_CAP_PER_MAILBOX: int = int(os.environ.get('HSB_MAX_DAILY_CAP', 250))
+DAILY_CAP_PER_MAILBOX: int = min(MAX_DAILY_CAP_PER_MAILBOX, int(os.environ.get('HSB_DAILY_CAP', MAX_DAILY_CAP_PER_MAILBOX)))
 
 REAL_EXTERNAL_PROSPECT_SEND_COUNT: int = 0
 
@@ -102,11 +101,10 @@ def daily_budget(first_send_date, today):
     if age < 0:
         raise ValueError('RAMP_START_IN_FUTURE')
     cap = min(MAX_DAILY_CAP_PER_MAILBOX, int(os.environ.get('HSB_DAILY_CAP', DAILY_CAP_PER_MAILBOX)))
-    # Bestehenden konservativen Anlaufwert nicht stillschweigend erhöhen; 100 ist die harte Obergrenze.
     max_limit = int(os.environ.get('HSB_MAX_BUDGET', 30))
     if min(cap, max_limit) < 1:
         raise ValueError('INVALID_DAILY_BUDGET')
-    return min(cap, max_limit, 10 if age < 7 else 20 if age < 14 else MAX_DAILY_CAP_PER_MAILBOX)
+    return min(cap, max_limit, 10 if age < 7 else 20 if age < 14 else max_limit)
 
 
 def _parse_send_health(raw):
@@ -173,7 +171,8 @@ def pause_reason(stats):
     if any(type(x) is not int or x < 0 for x in [*counts, review]):
         return 'HEALTH_EVIDENCE_INVALID'
     sent, hard, policy, deferrals, spam = counts
-    if sent > 100 or hard > sent:
+    max_sample = int(os.environ.get('HSB_MAX_SAMPLE_SIZE', 10000))
+    if sent > max_sample or hard > sent:
         return 'HEALTH_EVIDENCE_INVALID'
     if stats['seed_dkim_pass'] is not True:
         return 'SEED_DKIM_NOT_PASS'

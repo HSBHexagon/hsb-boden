@@ -192,3 +192,95 @@ def test_previously_reported_as_unknown_is_hard_bounce():
     )
     assert delivery_bounce_status(dsn, "unknown@example.test") == "hard_bounce"
     assert delivery_bounce_status(dsn, None) == "hard_bounce"
+
+
+def test_german_isp_explicit_nonexistent_mailbox_and_domain_dsns_are_hard_bounce():
+    ionos_dsn = (
+        "Final-Recipient: rfc822; contact@loma-online.com\n"
+        "Action: failed\n"
+        "Status: 5.0.0\n"
+        "Remote-MTA: dns; mx01.ionos.de\n"
+        "Diagnostic-Code: smtp; 550-Requested action not taken: mailbox unavailable 550\n"
+        "    For explanation visit https://postmaster.1und1.de/en/case?c=r1601\n"
+    )
+    strato_dsn = (
+        "Final-Recipient: rfc822; info@team.example\n"
+        "Action: failed\n"
+        "Status: 5.1.2\n"
+        "Diagnostic-Code: smtp; 550 5.1.2 No such mailbox [MSG0031]\n"
+    )
+    exchange_not_found = (
+        "Final-Recipient: rfc822; anfrage@m-s-arch.example\n"
+        "Action: failed\n"
+        "Status: 5.1.10\n"
+        "Diagnostic-Code: smtp;550 5.1.10 RESOLVER.ADR.RecipientNotFound; Recipient anfrage@m-s-arch.example not found\n"
+    )
+    exo_dbeb = (
+        "Final-Recipient: rfc822; info@refresco.example\n"
+        "Action: failed\n"
+        "Status: 5.4.1\n"
+        "Diagnostic-Code: smtp; 550 5.4.1 Recipient address rejected: Access denied. For more information see https://aka.ms/EXOSmtpErrors\n"
+    )
+    hosteurope_invalid = (
+        "Final-Recipient: rfc822; info@shop.example\n"
+        "Action: failed\n"
+        "Status: 5.0.0\n"
+        "Diagnostic-Code: smtp; 550 Address invalid (ID:550:1:1 (mi002.mc1.hosteurope.de))\n"
+    )
+    dead_domain = (
+        "Final-Recipient: rfc822; office@plan80.example\n"
+        "Action: failed\n"
+        "Status: 5.4.4\n"
+        "Diagnostic-Code: X-Postfix; Host or domain name not found. Name service error\n"
+    )
+    null_mx = (
+        "Final-Recipient: rfc822; info@lead-it.example\n"
+        "Action: failed\n"
+        "Status: 5.1.0\n"
+        "Diagnostic-Code: X-Postfix; Domain lead-it.example does not accept mail (nullMX)\n"
+    )
+
+    assert delivery_bounce_status(ionos_dsn, "contact@loma-online.com") == "hard_bounce"
+    assert delivery_bounce_status(strato_dsn, "info@team.example") == "hard_bounce"
+    assert delivery_bounce_status(exchange_not_found, "anfrage@m-s-arch.example") == "hard_bounce"
+    assert delivery_bounce_status(exo_dbeb, "info@refresco.example") == "hard_bounce"
+    assert delivery_bounce_status(hosteurope_invalid, "info@shop.example") == "hard_bounce"
+    assert delivery_bounce_status(dead_domain, "office@plan80.example") == "hard_bounce"
+    assert delivery_bounce_status(null_mx, "info@lead-it.example") == "hard_bounce"
+
+    # Negative guards: ambiguous 5.0.0, relaying denied without EXOSmtpErrors, and policy blocks stay protected
+    assert delivery_bounce_status("Action: failed\nStatus: 5.0.0") == "bounce_review"
+    assert delivery_bounce_status(
+        "Final-Recipient: rfc822; a@example.com\nAction: failed\nStatus: 5.0.0\nDiagnostic-Code: smtp; 550 relaying denied",
+        "a@example.com",
+    ) == "bounce_review"
+    assert delivery_bounce_status(
+        "Final-Recipient: rfc822; a@example.com\nAction: failed\nStatus: 5.4.1\nDiagnostic-Code: smtp; 550 5.4.1 Access denied",
+        "a@example.com",
+    ) == "bounce_review"
+    assert delivery_bounce_status(
+        "Final-Recipient: rfc822; a@example.com\nAction: failed\nStatus: 5.7.1\nDiagnostic-Code: smtp; 550 5.7.1 rejected as spam",
+        "a@example.com",
+    ) == "policy_block"
+    # Temporary soft-failure status codes take precedence over generic 'mailbox unavailable' wording
+    assert delivery_bounce_status(
+        "Final-Recipient: rfc822; a@example.com\nAction: failed\nStatus: 4.2.0\nDiagnostic-Code: smtp; 450 4.2.0 Mailbox unavailable, try again later",
+        "a@example.com",
+    ) == "failed_temporary"
+    assert delivery_bounce_status(
+        "Final-Recipient: rfc822; a@example.com\nAction: failed\nStatus: 5.2.2\nDiagnostic-Code: smtp; 552 5.2.2 Mailbox unavailable: mailbox full",
+        "a@example.com",
+    ) == "failed_temporary"
+    # Plain-text 550 5.1.1 without Action header stays hard_bounce
+    assert delivery_bounce_status(
+        "Undelivered Mail\n550 5.1.1 <user@example.com>: Recipient address rejected"
+    ) == "hard_bounce"
+    # Sender-side 5.1.7 / 5.1.8 errors must not be misclassified as permanent recipient hard bounces
+    assert delivery_bounce_status(
+        "Final-Recipient: rfc822; a@example.com\nAction: failed\nStatus: 5.1.8\nDiagnostic-Code: smtp; 550 5.1.8 Sender address rejected: Domain not found",
+        "a@example.com",
+    ) == "bounce_review"
+    assert delivery_bounce_status(
+        "Final-Recipient: rfc822; a@example.com\nAction: failed\nStatus: 5.1.7\nDiagnostic-Code: smtp; 550 5.1.7 Sender address rejected",
+        "a@example.com",
+    ) == "bounce_review"

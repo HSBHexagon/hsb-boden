@@ -21,6 +21,8 @@ MAX_JITTER_SECONDS: int = int(os.environ.get('HSB_JITTER_MAX', 180))
 # Betreiberentscheid vom 12.11.2026: höchstens 250 Kundenmails je Absender und Kalendertag (zuvor 100).
 # Eine Laufzeitvariable darf diese Sicherheitsgrenze nur absenken, nicht erhöhen.
 HARD_DAILY_CEILING = 250
+# Größte plausible Stichprobe der Gesundheitsmessung: zwei Postfächer, 24-Stunden-Fenster über zwei Kalendertage.
+MAX_HEALTH_SAMPLE = 4 * HARD_DAILY_CEILING
 MAX_DAILY_CAP_PER_MAILBOX = min(HARD_DAILY_CEILING, int(os.environ.get('HSB_MAX_DAILY_CAP', HARD_DAILY_CEILING)))
 DAILY_CAP_PER_MAILBOX: int = min(MAX_DAILY_CAP_PER_MAILBOX, int(os.environ.get('HSB_DAILY_CAP', HARD_DAILY_CEILING)))
 
@@ -174,7 +176,8 @@ def pause_reason(stats):
     if any(type(x) is not int or x < 0 for x in [*counts, review]):
         return 'HEALTH_EVIDENCE_INVALID'
     sent, hard, policy, deferrals, spam = counts
-    if sent > 100 or hard > sent:
+    # Die Stichprobe darf so groß sein, wie die Tagesobergrenze es zulässt; die Bounce-Quote unten gilt für jede Größe.
+    if sent > MAX_HEALTH_SAMPLE or hard > sent:
         return 'HEALTH_EVIDENCE_INVALID'
     if stats['seed_dkim_pass'] is not True:
         return 'SEED_DKIM_NOT_PASS'

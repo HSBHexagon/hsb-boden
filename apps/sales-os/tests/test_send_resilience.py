@@ -569,3 +569,16 @@ def test_health_check_before_each_mail_counts_a_bounce_that_arrives_mid_tranche(
         stats = guard.observed_health(tmp_path)
         assert stats['hard_bounces'] + stats.get('review_bounces', 0) == 1
         assert sum(box.fetches for box in boxes.values()) == 61
+
+
+def test_health_sample_may_be_as_large_as_the_daily_ceiling_allows():
+    # Mit 250 je Postfach liegen in 24 Stunden regelmäßig mehr als 100 Mails in der Stichprobe. Zuvor war jede
+    # Messung über 100 ungültig: am Tag nach einem großen Versand ließ sich kein Health-Nachweis mehr erzeugen.
+    from send_governance import HARD_DAILY_CEILING, MAX_HEALTH_SAMPLE, pause_reason
+    base = {'policy_bounces': 0, 'deferrals_today': 0, 'spam_reports': 0, 'seed_dkim_pass': True}
+    assert MAX_HEALTH_SAMPLE == 4 * HARD_DAILY_CEILING
+    assert pause_reason(dict(base, sample_sent=350, hard_bounces=3)) is None           # 0,9 %
+    assert pause_reason(dict(base, sample_sent=350, hard_bounces=8)) == 'HARD_BOUNCES'  # 2,3 %
+    assert pause_reason(dict(base, sample_sent=MAX_HEALTH_SAMPLE, hard_bounces=0)) is None
+    assert pause_reason(dict(base, sample_sent=MAX_HEALTH_SAMPLE + 1, hard_bounces=0)) == 'HEALTH_EVIDENCE_INVALID'
+    assert pause_reason(dict(base, sample_sent=60, hard_bounces=3)) == 'HARD_BOUNCES'   # kleine Stichprobe unverändert

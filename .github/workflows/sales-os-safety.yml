@@ -24,7 +24,7 @@ on:
         type: string
         default: ''
       count:
-        description: "Nur für send/send-preview: Anzahl je Postfach (1-100)"
+        description: "Nur für send/send-preview: Anzahl je Postfach (1-250)"
         type: number
         default: 10
       sent_label_limit:

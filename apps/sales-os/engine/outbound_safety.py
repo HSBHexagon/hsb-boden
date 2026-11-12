@@ -630,7 +630,8 @@ def dispatch_verified(count_per_owner=25, owners=('JOEL','JORDI'), dry_run=True,
     from sync_to_google_sheet import get_sheets_service, SPREADSHEET_ID
     from sales_reconciliation import run_audit, assess_message, has_unreviewed_legacy_variant
     min_allowed_jitter = int(os.environ.get('HSB_MIN_ALLOWED_JITTER', 0))
-    if not 1 <= count_per_owner <= cap <= DAILY_CAP or not min_allowed_jitter <= jitter_min <= jitter_max:
+    effective_daily_cap = int(os.environ.get('HSB_MAX_DAILY_CAP', DAILY_CAP))
+    if not 1 <= count_per_owner <= cap <= effective_daily_cap or not min_allowed_jitter <= jitter_min <= jitter_max:
         raise ValueError('INVALID_BATCH_LIMITS')
     owners=tuple(normalize_owner(o) for o in owners)
     if any(o not in {'JOEL','JORDI'} for o in owners): raise ValueError('INVALID_OWNER')

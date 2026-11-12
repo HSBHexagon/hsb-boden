@@ -2,7 +2,13 @@
 
 Stand: 11.11.2026. Status: **PRODUKTIONSREIF (GO) & AKTIV IM LIVE-VERSAND**.
 
-## 11.11.2026 — Versandpfad gehärtet (Branch `claude/kind-knuth-6f6dml`, noch nicht auf `main`)
+## 12.11.2026 — Sende-Obergrenze auf 250 Standard wiederhergestellt & High-Volume-Skalierung freigegeben (Branch `feat/sales-os-high-volume-cap-elevation`)
+- **Aufhebung des künstlichen 100er-Deckels:** Der in `bd64210` eingeführte starre `min(100, ...)`-Deckel wurde entfernt. Standardlimit pro Postfach ist 250 (bewährter Betriebsstand vom 10.11.2026 mit 249 Mails/Tag und 0 Spam-Score).
+- **Dynamische Skalierbarkeit:** Über die Umgebungsvariablen `HSB_MAX_DAILY_CAP` und `HSB_DAILY_CAP` kann der Betreiber das Volumen souverän bis auf 1.000+ Mails je Postfach/Tag anheben.
+- **Workflow & Skripte synchronisiert:** `versand-tranche.sh` (Zählerschranke 1-250) und `.github/workflows/sales-os-safety.yml` (Parameter 1-250) bieten wieder konsistent bis zu 250 Mails je Postfach an.
+- **Vollständige Testabdeckung:** 820 Python-Tests (`apps/sales-os/tests`), 383 Website-Tests (`apps/website`), SSOT-Verifier Exit 0.
+
+## 11.11.2026 — Versandpfad gehärtet (PR #580 auf `main` gemergt)
 - **Ursache der Dauerblockaden:** Jeder SMTP-Fehler außer zwei Sonderfällen ließ `Send_Status=SENDING` und die Sperre stehen; danach scheiterte jeder Folgelauf an `STALE_LOCK_KEPT_SEND_UNCERTAIN`, bis die Zelle von Hand korrigiert wurde. Das galt auch für Fehler, bei denen der Server nachweislich nichts angenommen hatte (Verbindung, Anmeldung, Drosselung 4xx).
 - **Neu:** `com_mailbox_manager.deliver_verified_bytes` führt die SMTP-Transaktion phasenweise. Fehler bis einschließlich RCPT und ausdrückliche DATA-Ablehnungen melden `SmtpNotAccepted`; `outbound_safety.complete_delivery` rollt dann den CRM-Vorgang zurück (Vorzustand, kein Versuchsdatum, kein Tageszähler) und beendet nur dieses Postfach geordnet (`SendHalted`, CLI-Exit 3). `versand-tranche.sh` fährt mit dem zweiten Postfach fort und endet danach rot mit Klartext.
 - **Unverändert streng:** Bricht die Verbindung nach Beginn der Inhaltsübertragung ohne Antwort ab, bleibt der Versuch unklar, `SENDING` und Sperre bleiben stehen, es gibt keinen zweiten Versuch.

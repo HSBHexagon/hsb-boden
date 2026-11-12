@@ -262,3 +262,12 @@ def test_german_isp_explicit_nonexistent_mailbox_and_domain_dsns_are_hard_bounce
         "Final-Recipient: rfc822; a@example.com\nAction: failed\nStatus: 5.7.1\nDiagnostic-Code: smtp; 550 5.7.1 rejected as spam",
         "a@example.com",
     ) == "policy_block"
+    # Temporary soft-failure status codes take precedence over generic 'mailbox unavailable' wording
+    assert delivery_bounce_status(
+        "Final-Recipient: rfc822; a@example.com\nAction: failed\nStatus: 4.2.0\nDiagnostic-Code: smtp; 450 4.2.0 Mailbox unavailable, try again later",
+        "a@example.com",
+    ) == "failed_temporary"
+    assert delivery_bounce_status(
+        "Final-Recipient: rfc822; a@example.com\nAction: failed\nStatus: 5.2.2\nDiagnostic-Code: smtp; 552 5.2.2 Mailbox unavailable: mailbox full",
+        "a@example.com",
+    ) == "failed_temporary"

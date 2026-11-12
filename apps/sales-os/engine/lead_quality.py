@@ -146,13 +146,13 @@ def delivery_bounce_status(text: str, recipient: str | None = None) -> str:
     kind = classify_dsn(text)
     if kind == 'policy':
         return 'policy_block'
+    if kind == 'soft' and actions == {'failed'}:
+        return 'failed_temporary'
     if actions == {'failed'} and recipient_ok:
         if enhanced and enhanced.startswith('5.1.'):
             return 'hard_bounce'
         if diag and _PERM_RECIPIENT_FAILURE_RE.search(diag):
             return 'hard_bounce'
-    if kind == 'soft' and actions == {'failed'}:
-        return 'failed_temporary'
     return 'bounce_review'
 
 

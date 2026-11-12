@@ -439,3 +439,21 @@ def test_tranche_script_continues_with_the_second_mailbox_after_a_halt():
     assert 'elif (( RC != 0 )); then exit "$RC"; fi' in script
     assert script.rindex('exit 3') > script.index('total_sent=$TOTAL_SENT')
     assert 'python3 tranche_result.py' in script
+
+
+def test_tranche_script_and_workflow_offer_only_counts_the_engine_accepts():
+    # Die Engine lehnt mehr als MAX_DAILY_CAP_PER_MAILBOX je Postfach mit INVALID_BATCH_LIMITS ab; Skript und
+    # Workflow dürfen deshalb keine höhere Anzahl anbieten oder als Tageslimit vorgeben.
+    import re
+    from pathlib import Path
+    from send_governance import MAX_DAILY_CAP_PER_MAILBOX
+    root = Path(__file__).resolve().parents[3]
+    script = (root / 'apps/sales-os/bin/versand-tranche.sh').read_text(encoding='utf-8')
+    workflow = (root / '.github/workflows/sales-os-safety.yml').read_text(encoding='utf-8')
+    assert MAX_DAILY_CAP_PER_MAILBOX == 100
+    assert int(re.search(r'COUNT <= (\d+)', script)[1]) == MAX_DAILY_CAP_PER_MAILBOX
+    assert int(re.search(r'HSB_DAILY_CAP:-(\d+)', script)[1]) == MAX_DAILY_CAP_PER_MAILBOX
+    assert f'Anzahl je Postfach (1-{MAX_DAILY_CAP_PER_MAILBOX})' in workflow
+    with pytest.raises(ValueError, match='INVALID_BATCH_LIMITS'):
+        out.dispatch_verified(count_per_owner=MAX_DAILY_CAP_PER_MAILBOX + 1, owners=('JOEL',), dry_run=True,
+                              cap=MAX_DAILY_CAP_PER_MAILBOX, jitter_min=0, jitter_max=0)

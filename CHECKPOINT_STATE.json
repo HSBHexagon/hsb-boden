@@ -1,6 +1,6 @@
 {
   "project": "HSB / HEXAFLOOR",
-  "last_updated": "2026-11-11",
+  "last_updated": "2026-11-12",
   "active_model": "Claude Code (Cloud-Sitzung)",
   "active_phase": "sales-os-production-ready",
   "active_task": "Versandpfad gehärtet (SmtpNotAccepted/SendHalted, Rollback statt Dauerblockade); Draft-PR auf Branch claude/kind-knuth-6f6dml, nicht auf main",
@@ -339,13 +339,19 @@
   "current_truth_2026_11_11": {
     "branch": "claude/kind-knuth-6f6dml",
     "merged_to_main": false,
-    "tests": "pytest apps/sales-os/tests: 808 passed, 1 skipped; verify_ssot.py Exit 0; Website 371 Tests, check 0 Fehler, build 69 Seiten",
+    "tests": "pytest apps/sales-os/tests: 815 passed, 1 skipped; verify_ssot.py Exit 0; Website 383 Tests, check 0 Fehler, build 69 Seiten",
     "customer_emails_sent_in_session": 0,
     "live_access_in_session": false,
     "open_owner_points": [
-      "PROJECT_TRUTH nennt 100/Tag, Code erlaubt 250 (#565)",
       "send-health Secret gilt nur 24 h",
-      "Bounces in Unzustellbar werden von der Gesundheitsprüfung nicht gezählt (#574)"
+      "naechster Health-Nachweis muss archivierte Bounces aus Unzustellbar in seen_inbound_ids enthalten",
+      "erster Live-Lauf nach Merge mit kleiner Anzahl"
+    ],
+    "pull_request": "https://github.com/HSBHexagon/hsb-boden/pull/580",
+    "resolved_on_branch": [
+      "Tageslimit hart 100 (bd64210)",
+      "Gesundheitspruefung liest Unzustellbar (bd64210, 383be5a)",
+      "versand-tranche.sh und Workflow auf 1-100 begrenzt"
     ]
   }
 }

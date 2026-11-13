@@ -220,7 +220,39 @@ def test_dispatch_verified_blocks_corporate_domain_duplicates_and_allows_invalid
 
     res = out.dispatch_verified(10, owners=("JOEL",), dry_run=False)
     assert deliveries == ["L1", "L5", "L6"]
-    assert res["skipped"]["CORPORATE_DOMAIN_ALREADY_CONTACTED"] == 2
+    assert res["skipped"]["CORPORATE_DOMAIN_ALREADY_CONTACTED"] == 1
+
+
+def test_select_queue_deduplicates_corporate_domains_only_after_owner_segment_variant_filters():
+    from outbound_safety import select_queue
+
+    queue = [
+        {"lead_id": "L1", "owner": "JOEL", "email": "alice@firma-a.de"},
+        {"lead_id": "L2", "owner": "JORDI", "email": "bob@firma-a.de"},
+        {"lead_id": "L3", "owner": "JORDI", "email": "carol@firma-a.de"},
+        {"lead_id": "L4", "owner": "JORDI", "email": "t1@firma.invalid"},
+        {"lead_id": "L5", "owner": "JORDI", "email": "t2@firma.invalid"},
+    ]
+    drafts = [
+        {"lead_id": "L1", "sendable": True, "template_id": "v2-architekten-1"},
+        {"lead_id": "L2", "sendable": True, "template_id": "v2-produktion-reparatur-1"},
+        {"lead_id": "L3", "sendable": True, "template_id": "v2-produktion-1"},
+        {"lead_id": "L4", "sendable": True, "template_id": "v2-produktion-reparatur-1"},
+        {"lead_id": "L5", "sendable": True, "template_id": "v2-produktion-reparatur-1"},
+    ]
+    # JORDI-only batch is NOT blocked by JOEL lead L1 on the same corporate domain.
+    sel_jordi, used_jordi = select_queue(queue, drafts, ("JORDI",), 5)
+    assert [x["lead_id"] for x in sel_jordi] == ["L2", "L4", "L5"]
+    assert used_jordi == {"JORDI": 3}
+
+    # Segment/variant filters run BEFORE domain dedupe, so L2 is still eligible if L1 didn't match.
+    sel_rep, _ = select_queue(queue, drafts, ("JOEL", "JORDI"), 5, segments={"produktion"}, variant="reparatur")
+    assert [x["lead_id"] for x in sel_rep] == ["L2", "L4", "L5"]
+
+    # Combined unrestricted dispatch deduplicates L1 vs L2/L3 while allowing .invalid pairs.
+    sel_all, used_all = select_queue(queue, drafts, ("JOEL", "JORDI"), 5)
+    assert [x["lead_id"] for x in sel_all] == ["L1", "L4", "L5"]
+    assert used_all == {"JOEL": 1, "JORDI": 2}
 
 
 def test_dedupe_queue_corporate_domains_marks_second_company_contact_unsendable():

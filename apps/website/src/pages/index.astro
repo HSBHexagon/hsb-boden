@@ -65,7 +65,7 @@ const proofCards = [
             Planung und Ausführung aus einer Hand – in Deutschland und europaweit. <span class="font-bold text-white/95">Sanierung im laufenden Betrieb:</span> in Bauabschnitten, an Wochenenden und in Schichtfenstern.
           </p>
           <div class="mt-8 flex flex-wrap items-center gap-4">
-            <a class="button-primary" href="#reparaturanfrage" data-open-repair-modal>Analyse vor Ort anfragen</a>
+            <a class="button-primary" href="#reparaturanfrage" data-open-repair-modal>Ersteinschätzung anfragen</a>
             <a class="button-secondary" href="/referenzen/">Referenzen ansehen</a>
           </div>
         </div>
@@ -119,12 +119,12 @@ const proofCards = [
             Jede Produktion belastet den Boden anders. Belag, Fuge, Gefälle, Entwässerung und chemischer Schutz werden deshalb als ein System geplant.
           </p>
         </div>
-        <a href="/branchen/" class="whitespace-nowrap text-sm font-bold text-hsb-red hover:underline">Alle Branchen →</a>
+        <a href="/branchen/" class="inline-flex min-h-11 items-center self-start whitespace-nowrap text-base font-bold text-hsb-red hover:underline sm:self-auto">Alle Branchen →</a>
       </div>
 
       <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {industryTiles.map((b) => (
-          <a href={b.href} class="group relative flex min-h-[176px] items-end overflow-hidden rounded-[4px] bg-hsb-black no-underline sm:min-h-[220px]">
+          <a href={b.href} class="group relative flex min-h-[176px] items-end overflow-hidden rounded-[4px] bg-hsb-black no-underline sm:min-h-[220px] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-hsb-red">
             <img
               src={b.image}
               srcset={projectSrcset(b.image)}
@@ -142,7 +142,7 @@ const proofCards = [
                 <span>{b.title}</span>
                 <span class="text-hsb-red-light transition-transform group-hover:translate-x-1" aria-hidden="true">→</span>
               </h3>
-              <p class="mt-1.5 text-sm leading-5 text-white/80">{b.desc}</p>
+              <p class="mt-1.5 text-[0.9375rem] leading-6 text-white/90">{b.desc}</p>
             </div>
           </a>
         ))}
@@ -174,10 +174,10 @@ const proofCards = [
           <ul class="grid gap-x-8 sm:grid-cols-2">
             {serviceLinks.map((s) => (
               <li class="border-b border-hsb-line">
-                <a href={s.href} class="group flex items-start justify-between gap-3 py-3.5 no-underline">
+                <a href={s.href} class="group flex items-start justify-between gap-3 py-3.5 no-underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-hsb-red">
                   <span>
-                    <span class="block text-[0.9375rem] font-bold text-hsb-black transition-colors group-hover:text-hsb-red">{s.title}</span>
-                    <span class="mt-0.5 block text-sm leading-5 text-hsb-steel">{s.desc}</span>
+                    <span class="block text-base font-bold text-hsb-black transition-colors group-hover:text-hsb-red">{s.title}</span>
+                    <span class="mt-0.5 block text-[0.9375rem] leading-6 text-hsb-steel">{s.desc}</span>
                   </span>
                   <span class="mt-0.5 text-hsb-steel transition-all group-hover:translate-x-1 group-hover:text-hsb-red" aria-hidden="true">→</span>
                 </a>
@@ -185,11 +185,11 @@ const proofCards = [
             ))}
           </ul>
           <div class="mt-5 flex flex-wrap items-center gap-3 text-sm font-bold text-hsb-steel">
-            <a href="/leistungen/" class="text-hsb-red hover:underline">Alle Leistungen →</a>
+            <a href="/leistungen/" class="inline-flex min-h-11 items-center text-hsb-red hover:underline">Alle Leistungen →</a>
             <span class="text-hsb-line" aria-hidden="true">|</span>
             <span>Für Planer:</span>
-            <a href="/beanspruchungs-check/" class="rounded border border-hsb-line bg-white px-2.5 py-1 text-hsb-black transition-colors hover:border-hsb-red hover:text-hsb-red">Beanspruchungs-Check</a>
-            <a href="/planer/" class="rounded border border-hsb-line bg-white px-2.5 py-1 text-hsb-black transition-colors hover:border-hsb-red hover:text-hsb-red">LV-Texte & Planerportal</a>
+            <a href="/beanspruchungs-check/" class="inline-flex min-h-11 items-center rounded border border-hsb-line bg-white px-3.5 text-hsb-black transition-colors hover:border-hsb-red hover:text-hsb-red">Beanspruchungs-Check</a>
+            <a href="/planer/" class="inline-flex min-h-11 items-center rounded border border-hsb-line bg-white px-3.5 text-hsb-black transition-colors hover:border-hsb-red hover:text-hsb-red">LV-Texte & Planerportal</a>
           </div>
         </div>
       </div>
@@ -230,9 +230,9 @@ const proofCards = [
               />
             </div>
             <div class="p-5">
-              <p class="text-[0.6875rem] font-black uppercase tracking-[0.16em] text-hsb-red">{c.tag}</p>
+              <p class="text-xs font-black uppercase tracking-[0.14em] text-hsb-red">{c.tag}</p>
               <h3 class="mt-1.5 text-lg font-black leading-tight text-hsb-black">{c.title}</h3>
-              <p class="mt-2 text-sm leading-6 text-hsb-steel">{c.text}</p>
+              <p class="mt-2 text-[0.9375rem] leading-6 text-hsb-steel">{c.text}</p>
             </div>
           </article>
         ))}
@@ -265,11 +265,11 @@ const proofCards = [
           <article class="flex flex-col justify-between rounded-[4px] border border-hsb-line bg-white p-5 shadow-sm">
             <div>
               <div class="mb-3 flex items-center gap-2">
-                <span class="font-mono text-[0.6875rem] font-black tracking-[0.2em] text-hsb-red">SCHRITT</span>
+                <span class="text-xs font-black uppercase tracking-[0.14em] text-hsb-red">Schritt</span>
                 <span class="text-2xl font-black text-hsb-black tabular-nums">{number}</span>
               </div>
               <h3 class="text-base font-bold text-hsb-black">{title}</h3>
-              <p class="mt-2 text-sm leading-6 text-hsb-steel">{text}</p>
+              <p class="mt-2 text-[0.9375rem] leading-6 text-hsb-steel">{text}</p>
             </div>
           </article>
         ))}
@@ -277,7 +277,7 @@ const proofCards = [
 
       <div class="mt-8 flex flex-wrap items-center gap-4">
         <a class="button-secondary-dark" href="/projektablauf/">Projektablauf im Detail</a>
-        <a class="button-primary" href="#reparaturanfrage" data-open-repair-modal>Projekt anfragen</a>
+        <a class="button-primary" href="#reparaturanfrage" data-open-repair-modal>Ersteinschätzung anfragen</a>
       </div>
     </div>
   </section>
@@ -305,7 +305,7 @@ const proofCards = [
             width="640"
             height="400"
           />
-          <figcaption class="border-t border-hsb-line bg-white px-4 py-2.5 text-xs font-bold text-hsb-steel">Halle in Ausführung: neuer Keramikbelag, Anschlüsse an Stützen und Tore.</figcaption>
+          <figcaption class="border-t border-hsb-line bg-white px-4 py-2.5 text-sm font-bold text-hsb-steel">Halle in Ausführung: neuer Keramikbelag, Anschlüsse an Stützen und Tore.</figcaption>
         </figure>
       </div>
 
@@ -317,8 +317,8 @@ const proofCards = [
           ["Qualifiziert & tarifgebunden", "Tarifgebunden über SOKA-BAU, Erste-Hilfe-geschult, sicherheitszertifiziert (VCA/SCC-bezogene Standards)."],
         ].map(([t, d]) => (
           <div class="bg-white p-5 lg:p-6">
-            <dt class="text-[0.72rem] font-black uppercase tracking-[0.16em] text-hsb-red">{t}</dt>
-            <dd class="mt-2 text-sm leading-6 text-hsb-steel">{d}</dd>
+            <dt class="text-base font-black text-hsb-black">{t}</dt>
+            <dd class="mt-1.5 text-[0.9375rem] leading-6 text-hsb-steel">{d}</dd>
           </div>
         ))}
       </dl>

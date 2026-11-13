@@ -9,6 +9,7 @@ Stand: 11.11.2026. Status: **PRODUKTIONSREIF (GO) & AKTIV IM LIVE-VERSAND**.
 - **Unsichtbare Buttons behoben:** Auf `/kontakt/` („Vorab: Technischen Beanspruchungs-Check durchführen“) und der 404-Seite („Projekt anfragen“) stand der weiße Sekundärbutton auf hellem Grund. Die Freigabeliste im Regressionstest führte beide fälschlich als „dunkler Seitenkopf“ und ist korrigiert. Laufzeit-Scan über alle 69 Seiten: kein heller Button auf hellem Grund mehr.
 - **Mobile Breite:** Buttons dürfen unter 640px umbrechen (vorher 459px Seitenbreite auf `/kontakt/`); lange URLs auf `/datenschutz/` brechen um (vorher 417px). Kein Overflow mehr auf 69 Seiten bei 375px.
 - **Überschriften:** Rechner-Seite ohne übersprungene Ebene (h3→h2, h4→h3).
+- **Header & Typografie:** Menüpunkte brechen nicht mehr um („Beanspruchungs-Check“ war zweizeilig); Header passt von 1024 bis 1920px in allen sechs Sprachen in den Container. Headline „Warum Industrieböden in der Produktion wirklich versagen“ ohne verwaistes „der“.
 - **Messung (Lighthouse mobil, Brotli wie Cloudflare, 7 Vorlagen):** Performance vorher 86–99, nachher 95–100; Barrierefreiheit überall 100. Tests 383/383, `check` 0 Fehler, Build und `deploy:dry-run` grün.
 
 ## 12.11.2026 — Sende-Obergrenze auf 250 Standard wiederhergestellt & High-Volume-Skalierung freigegeben (Branch `feat/sales-os-high-volume-cap-elevation`)

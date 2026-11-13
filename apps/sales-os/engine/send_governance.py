@@ -136,6 +136,7 @@ def _parse_send_health(raw):
                 or proof.get('dkim_domain') != 'hsb-boden.com'):
             raise RuntimeError('SEND_HEALTH_SEED_AUTH_NOT_PASS')
         ids.add(mid)
+    health.pop('_verified_live_delta', None)
     return health
 
 
@@ -171,8 +172,12 @@ def pause_reason(stats):
     if any(type(x) is not int or x < 0 for x in [*counts, review]):
         return 'HEALTH_EVIDENCE_INVALID'
     sent, hard, policy, deferrals, spam = counts
+    live_delta = stats.get('_verified_live_delta', 0)
+    if type(live_delta) is not int or live_delta < 0:
+        return 'HEALTH_EVIDENCE_INVALID'
+    snapshot_sent = sent - live_delta
     max_sample = int(os.environ.get('HSB_MAX_SAMPLE_SIZE', 10000))
-    if sent > max_sample or hard > sent:
+    if snapshot_sent < 0 or snapshot_sent > max_sample or hard > sent:
         return 'HEALTH_EVIDENCE_INVALID'
     if stats['seed_dkim_pass'] is not True:
         return 'SEED_DKIM_NOT_PASS'
@@ -338,12 +343,16 @@ def observed_health(state_dir, collector=None):
         stats = _parse_send_health(raw_health)
     except (OSError, ValueError, KeyError, TypeError):
         raise RuntimeError('SEND_HEALTH_CURSOR_MISSING') from None
+    stats.pop('_verified_live_delta', None)
     delta_path = Path(state_dir) / 'live-sample-delta.json'
     try:
         delta = json.loads(delta_path.read_text(encoding='utf-8'))
         extra = delta.get('sent_delta', 0)
-        if delta.get('health_sha') == health_sha and type(extra) is int and extra > 0:
-            stats['sample_sent'] = stats.get('sample_sent', 0) + extra
+        base_sent = stats.get('sample_sent')
+        if (delta.get('health_sha') == health_sha and type(extra) is int and extra > 0
+                and type(base_sent) is int and base_sent >= 0):
+            stats['sample_sent'] = base_sent + extra
+            stats['_verified_live_delta'] = extra
     except (OSError, ValueError, TypeError):
         pass
     if collector is None:

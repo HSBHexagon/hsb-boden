@@ -619,5 +619,42 @@ def test_dispatch_verified_records_live_sample_only_for_confirmed_deliveries(tmp
     assert guard.observed_health(tmp_path, collector=lambda **_: [])['sample_sent'] == 16
 
 
+def test_observed_health_allows_live_growth_beyond_snapshot_sample_cap(tmp_path):
+    from types import SimpleNamespace
+    from send_governance import observed_health, pause_reason, record_verified_send
+
+    h = health()
+    h['sample_sent'] = 10000
+    h['hard_bounces'] = 0
+    (tmp_path / 'send-health.json').write_text(json.dumps(h))
+
+    assert pause_reason(observed_health(tmp_path, collector=lambda **_: [])) is None
+
+    record_verified_send(tmp_path)
+    obs = observed_health(tmp_path, collector=lambda **_: [])
+    assert obs['sample_sent'] == 10001
+    assert pause_reason(obs) is None
+
+    # Bounce-rate check still uses total denominator (201 / 10001 = 2.0098% > 2%)
+    bounces_over_2pct = [
+        SimpleNamespace(
+            message_id=f'<cap{i}@example.test>',
+            sender='mailer-daemon@example.test',
+            subject='Undeliverable',
+            body='Action: failed\nStatus: 5.1.1',
+        )
+        for i in range(201)
+    ]
+    assert pause_reason(observed_health(tmp_path, collector=lambda **_: bounces_over_2pct)) == 'HARD_BOUNCES'
+
+    # Unverified raw snapshots > HSB_MAX_SAMPLE_SIZE must still fail closed even with forged delta keys
+    h_over = health()
+    h_over['sample_sent'] = 10001
+    h_over['_verified_live_delta'] = 1
+    (tmp_path / 'send-health.json').write_text(json.dumps(h_over))
+    assert pause_reason(observed_health(tmp_path, collector=lambda **_: [])) == 'HEALTH_EVIDENCE_INVALID'
+
+
+
 
 

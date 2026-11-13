@@ -1,7 +1,13 @@
 ---
 import { navigation } from "../../data/navigation";
 import { site } from "../../data/site";
+import { languages, type Lang } from "../../lib/i18n";
 
+interface Props {
+  lang?: Lang;
+}
+
+const { lang = "de" } = Astro.props;
 const phoneHref = site.phone.replace("(0)", "").replace(/[^\d+]/g, "");
 ---
 
@@ -61,18 +67,42 @@ const phoneHref = site.phone.replace("(0)", "").replace(/[^\d+]/g, "");
       />
     </a>
 
-    <!-- Rechter Cluster: Navigation und CTA bilden eine bewusste Gruppe,
-         damit der Header als Ganzes wirkt (Logo links, Aktionen rechts) und
-         die Navigation nicht isoliert in der Mitte schwebt. -->
-    <div class="flex items-center gap-4 xl:gap-5">
-      <nav class="nav-links hidden items-center gap-4 text-sm font-bold lg:flex xl:gap-[18px]" aria-label="Hauptnavigation">
+    <!-- Rechter Cluster: Navigation, Sprache und CTA bilden eine bewusste Gruppe -->
+    <div class="flex items-center gap-3 xl:gap-4">
+      <nav class="nav-links hidden items-center gap-3 text-xs font-bold lg:flex xl:gap-4 xl:text-sm" aria-label="Hauptnavigation">
         {navigation.filter(n => n.href !== "/kontakt/").map((item) => (
           <a class="whitespace-nowrap transition-colors" href={item.href}>{item.label}</a>
         ))}
       </nav>
 
+      <!-- Statischer, bedienbarer Sprachwähler mit echten crawlaren Links zu allen 6 Sprachen -->
+      <div class="relative group hidden lg:block" aria-label="Sprachauswahl">
+        <button
+          type="button"
+          class="flex items-center gap-1 rounded border border-white/20 bg-white/5 px-2 py-1 text-xs font-bold text-white transition-colors hover:border-white/40 focus:outline-none focus:ring-2 focus:ring-hsb-red"
+          aria-label="Sprache wählen"
+        >
+          <span class="uppercase">{lang}</span>
+          <svg class="size-3 text-white/60" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+            <path d="M2.5 4.5l3.5 3.5 3.5-3.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+          </svg>
+        </button>
+        <div class="pointer-events-none absolute right-0 top-full mt-1.5 hidden w-32 rounded border border-white/10 bg-[#161a20] p-1.5 shadow-2xl group-hover:pointer-events-auto group-hover:block group-focus-within:pointer-events-auto group-focus-within:block z-50">
+          {languages.map((item) => (
+            <a
+              href={item.href}
+              class={`flex items-center justify-between rounded px-2 py-1.5 text-xs font-medium transition-colors ${item.code === lang ? "bg-hsb-red text-white font-bold" : "text-white/80 hover:bg-white/10 hover:text-white"}`}
+              aria-current={item.code === lang ? "page" : undefined}
+            >
+              <span>{item.label}</span>
+              <span class="text-[10px] text-white/50">{item.title}</span>
+            </a>
+          ))}
+        </div>
+      </div>
+
       <a
-        class="hidden items-center gap-2 whitespace-nowrap text-sm font-bold text-white/72 transition-colors hover:text-white xl:flex"
+        class="hidden items-center gap-2 whitespace-nowrap text-sm font-bold text-white/72 transition-colors hover:text-white 2xl:flex"
         href={`tel:${phoneHref}`}
         aria-label={`HSB anrufen: ${site.phone}`}
       >
@@ -83,7 +113,7 @@ const phoneHref = site.phone.replace("(0)", "").replace(/[^\d+]/g, "");
       </a>
 
       <div class="hidden lg:block">
-        <a class="button-primary" href="/kontakt/">Ersteinschätzung</a>
+        <a class="button-primary text-xs xl:text-sm px-4 py-2.5 xl:px-5 xl:py-3" href="/kontakt/">Ersteinschätzung</a>
       </div>
 
       <button
@@ -129,6 +159,22 @@ const phoneHref = site.phone.replace("(0)", "").replace(/[^\d+]/g, "");
       </a>
       <div class="pt-4">
         <a class="button-primary w-full text-center" href="/kontakt/">Ersteinschätzung anfordern</a>
+      </div>
+
+      <!-- Sprachen im mobilen Menü -->
+      <div class="mt-5 border-t border-white/10 pt-4" aria-label="Sprachauswahl mobil">
+        <p class="mb-2.5 text-[11px] font-black uppercase tracking-wider text-white/50">Sprache / Language</p>
+        <div class="grid grid-cols-3 gap-2">
+          {languages.map((item) => (
+            <a
+              href={item.href}
+              class={`flex items-center justify-center rounded border px-2 py-2 text-xs font-bold transition-colors ${item.code === lang ? "border-hsb-red bg-hsb-red text-white" : "border-white/15 text-white/80 hover:border-white/30 hover:text-white"}`}
+              aria-current={item.code === lang ? "page" : undefined}
+            >
+              {item.label} · {item.title}
+            </a>
+          ))}
+        </div>
       </div>
     </div>
   </nav>

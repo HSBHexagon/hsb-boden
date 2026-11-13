@@ -13,10 +13,10 @@ export const site = {
   ctaTarget: "/kontakt/",
   // Lead-Zustellung läuft serverseitig über /api/lead (kein Secret im Bundle).
   // false = Online-Versand inaktiv -> Formular zeigt direkten Kontaktweg statt PII zu leaken.
-  // Wird erst auf "true" gesetzt, wenn LEAD_WEBHOOK_CONFIG (oder während des
-  // Cutovers der Legacy-Fallback LEAD_WEBHOOK_URL) serverseitig konfiguriert ist.
+  // Wird serverseitig über PUBLIC_LEAD_FORM_ENABLED="true" im Production-Deploy aktiviert,
+  // sobald LEAD_WEBHOOK_CONFIG / LEAD_WEBHOOK_URL und RATE_LIMIT_KV autorisiert sind.
   hasLeadEndpoint: import.meta.env.PUBLIC_LEAD_FORM_ENABLED === "true",
-  // Foto der Schadstelle auf der Reparaturseite: /api/repair-photo verschickt die Bilder per SMTP
-  // an info@. Ohne SMTP-Secrets antwortet der Endpunkt 503 und das Formular verweist auf E-Mail/Telefon.
+  // Foto der Schadstelle auf der Start-/Reparaturseite: /api/repair-photo verschickt Bilder
+  // per SMTP an info@hsb-boden.de (keine dauerhafte Ablage). Aktivierung über PUBLIC_REPAIR_PHOTO_ENABLED="true".
   hasRepairPhotoUpload: import.meta.env.PUBLIC_REPAIR_PHOTO_ENABLED === "true",
 };

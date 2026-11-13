@@ -5,31 +5,46 @@ interface Props {
   industryFilter?: string;
   eyebrow?: string;
   title?: string;
+  compact?: boolean;
 }
 
 const {
   industryFilter,
   eyebrow = "Vertrauen durch reale Umsetzung",
   title = "Referenzkunden (Auszug)",
+  compact = false,
 } = Astro.props;
 
 const logos = getLogoCloudEntries(industryFilter);
 ---
 
-<section class="section border-b border-hsb-line bg-white" data-logo-cloud data-industry-filter={industryFilter ?? ""}>
+<section
+  class:list={[
+    "border-b border-hsb-line bg-white",
+    compact ? "py-8 sm:py-10" : "section",
+  ]}
+  data-logo-cloud
+  data-industry-filter={industryFilter ?? ""}
+>
   <div class="container">
-    <div class="mb-10 text-center lg:mb-12">
+    <div class:list={["text-center", compact ? "mb-6" : "mb-10 lg:mb-12"]}>
       <p class="text-xs font-black uppercase tracking-[0.2em] text-hsb-red">{eyebrow}</p>
-      <h2 class="h2 mt-4">{title}</h2>
+      <h2 class:list={[compact ? "text-xl sm:text-2xl font-black mt-2 text-hsb-black" : "h2 mt-4"]}>{title}</h2>
     </div>
 
-    <div class="mx-auto grid max-w-6xl grid-cols-2 overflow-hidden rounded-[4px] border border-hsb-line bg-white sm:grid-cols-3">
+    <div
+      class:list={[
+        "mx-auto grid overflow-hidden rounded-[4px] border border-hsb-line bg-hsb-line",
+        compact ? "max-w-5xl grid-cols-2 sm:grid-cols-4" : "max-w-6xl grid-cols-2 sm:grid-cols-3",
+      ]}
+    >
       {logos.map((reference, index) => (
         <a
           href="/referenzen/"
           class:list={[
-            "group grid min-h-[148px] content-between justify-items-center gap-4 bg-white px-4 py-5 no-underline transition-colors hover:bg-[#fbfcfd] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-hsb-red",
-            logos.length % 3 === 1 && index === logos.length - 1 && "sm:col-start-2",
+            "group grid content-between justify-items-center gap-3 bg-white no-underline transition-colors hover:bg-[#fbfcfd] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-hsb-red",
+            compact ? "min-h-[110px] px-3 py-4" : "min-h-[148px] px-4 py-5",
+            !compact && logos.length % 3 === 1 && index === logos.length - 1 && "sm:col-start-2",
           ]}
           data-logo-entry
           data-client={reference.name}
@@ -37,23 +52,25 @@ const logos = getLogoCloudEntries(industryFilter);
           data-tracked={reference.systems.length > 0 ? "true" : "false"}
           aria-label={`${reference.name} – ${reference.proofTag} – ${reference.systems.length > 0 ? "Referenzen ansehen" : "Kundenstandorte ansehen"}`}
         >
-          <div class="grid h-14 w-full max-w-[150px] place-items-center grayscale opacity-75 contrast-125 transition-all group-hover:grayscale-0 group-hover:opacity-100">
+          <div class:list={["grid w-full place-items-center grayscale opacity-75 contrast-125 transition-all group-hover:grayscale-0 group-hover:opacity-100", compact ? "h-11 max-w-[130px]" : "h-14 max-w-[150px]"]}>
             <img
               src={reference.logo}
               alt={`${reference.name} Logo`}
-              class="max-h-11 w-full object-contain"
+              class:list={["w-full object-contain", compact ? "max-h-9" : "max-h-11"]}
               loading="lazy"
               width="150"
               height="56"
               decoding="async"
             />
           </div>
-          <div class="grid gap-1 text-center">
+          <div class="grid gap-0.5 text-center">
             <span class="text-[0.6875rem] font-black uppercase tracking-widest text-hsb-black transition-colors group-hover:text-hsb-red">
               {reference.name}
             </span>
-            <span class="text-[0.6875rem] font-bold uppercase tracking-[0.14em] text-hsb-steel">{reference.meta}</span>
-            <span class="mt-1 inline-block justify-self-center rounded-[2px] border border-hsb-line bg-hsb-mist px-2 py-1 text-[0.6875rem] font-black uppercase tracking-[0.12em] text-hsb-black">
+            {!compact && (
+              <span class="text-[0.6875rem] font-bold uppercase tracking-[0.14em] text-hsb-steel">{reference.meta}</span>
+            )}
+            <span class="mt-0.5 inline-block justify-self-center rounded-[2px] border border-hsb-line bg-hsb-mist px-2 py-0.5 text-[0.625rem] font-black uppercase tracking-[0.12em] text-hsb-black">
               {reference.proofTag}
             </span>
           </div>

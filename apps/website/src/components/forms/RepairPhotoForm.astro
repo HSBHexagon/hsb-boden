@@ -25,13 +25,13 @@ const phoneHref = toTelephoneHref(site.phone);
   <form id={`${idPrefix}-form`} class="grid gap-5" novalidate data-delivery-configured={String(site.hasRepairPhotoUpload)} data-repair-photo-form>
     <fieldset>
       <legend class="text-sm font-black text-hsb-ink">Wie möchten Sie vorgehen?</legend>
-      <div class="mt-3 grid gap-2 sm:grid-cols-3">
+      <div class="mt-3 grid grid-cols-3 gap-2">
         {intents.map((intent) => (
-          <label class="flex min-h-12 cursor-pointer items-start gap-3 rounded-lg border border-hsb-line bg-white px-3 py-3 transition-colors focus-within:ring-2 focus-within:ring-hsb-red/40 has-[:checked]:border-hsb-red has-[:checked]:bg-hsb-red/5">
+          <label class="flex min-h-12 cursor-pointer items-start gap-2 rounded border border-hsb-line bg-white px-2 py-3 sm:px-3 transition-colors focus-within:ring-2 focus-within:ring-hsb-red/40 has-[:checked]:border-hsb-red has-[:checked]:bg-hsb-red/5">
             <input type="radio" name="intent" value={intent.value} checked={intent.value === "photo"} class="mt-1 accent-hsb-red" />
             <span>
               <span class="block text-sm font-black text-hsb-ink">{intent.title}</span>
-              <span class="block text-xs text-hsb-steel">{intent.hint}</span>
+              <span class="hidden text-xs text-hsb-steel sm:block">{intent.hint}</span>
             </span>
           </label>
         ))}
@@ -43,7 +43,7 @@ const phoneHref = toTelephoneHref(site.phone);
         id={`${idPrefix}-drop`}
         for={`${idPrefix}-input`}
         data-drop-zone
-        class="group flex cursor-pointer flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-hsb-line bg-white px-4 py-8 text-center transition hover:border-hsb-red focus-within:border-hsb-red focus-within:ring-2 focus-within:ring-hsb-red/40 data-[drag=true]:border-hsb-red data-[drag=true]:bg-hsb-red/5"
+        class="group flex cursor-pointer flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-hsb-line bg-white px-4 py-5 text-center transition hover:border-hsb-red focus-within:border-hsb-red focus-within:ring-2 focus-within:ring-hsb-red/40 data-[drag=true]:border-hsb-red data-[drag=true]:bg-hsb-red/5"
       >
         <svg class="h-10 w-10 text-hsb-red" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
           <path stroke-linecap="round" stroke-linejoin="round" d="M3 8.5A2.5 2.5 0 0 1 5.5 6h1.6l1.2-1.8A1.5 1.5 0 0 1 9.55 3.5h4.9a1.5 1.5 0 0 1 1.25.7L16.9 6h1.6A2.5 2.5 0 0 1 21 8.5v9a2.5 2.5 0 0 1-2.5 2.5h-13A2.5 2.5 0 0 1 3 17.5v-9Z" />
@@ -51,7 +51,7 @@ const phoneHref = toTelephoneHref(site.phone);
         </svg>
         <span class="text-base font-black text-hsb-ink" data-intent-only="photo">Foto der Schadstelle aufnehmen oder auswählen</span>
         <span class="text-base font-black text-hsb-ink" data-intent-only="callback visit" hidden>Fotos hinzufügen <span class="font-normal text-hsb-steel">(optional)</span></span>
-        <span class="text-sm text-hsb-steel">Bis zu 3 Bilder. Am Handy öffnet sich die Kamera, am Rechner können Sie Bilder hierher ziehen.</span>
+        <span class="text-sm text-hsb-steel">Bis zu 3 Bilder aufnehmen, auswählen oder hierher ziehen.</span>
         <input id={`${idPrefix}-input`} data-file-input type="file" accept="image/*" multiple class="sr-only" aria-describedby={`${idPrefix}-hint`} />
       </label>
       <p id={`${idPrefix}-hint`} class="mt-2 text-xs text-hsb-steel">
@@ -172,12 +172,11 @@ const phoneHref = toTelephoneHref(site.phone);
 </div>
 
 <script>
+  import { shrink } from "../../lib/repairPhotoImage";
   import { trackEvent, trackEventAndWait, TrackingEvent } from "../../lib/tracking";
   import { trackAfterConfirmedLead } from "../../lib/confirmedLeadTracking";
 
   const MAX_PHOTOS = 3;
-  const MAX_EDGE = 1600;
-  const MAX_UPLOAD_BYTES = 4 * 1024 * 1024;
 
   type Intent = "photo" | "callback" | "visit";
   const INTENTS: Intent[] = ["photo", "callback", "visit"];
@@ -201,53 +200,6 @@ const phoneHref = toTelephoneHref(site.phone);
   };
   const FALLBACK = "Senden hat nicht geklappt. Schicken Sie das Foto bitte per E-Mail an info@hsb-boden.de oder rufen Sie uns an.";
 
-  type Drawable = { source: CanvasImageSource; width: number; height: number; release(): void };
-
-  /** Dekodiert das Foto: zuerst mit EXIF-Ausrichtung, dann ohne Optionen (ältere Safari-Versionen), zuletzt über <img>. */
-  async function decode(file: File): Promise<Drawable> {
-    for (const options of [{ imageOrientation: "from-image" } as ImageBitmapOptions, undefined]) {
-      try {
-        const bitmap = await createImageBitmap(file, options);
-        return { source: bitmap, width: bitmap.width, height: bitmap.height, release: () => bitmap.close() };
-      } catch {
-        // Nächsten Weg versuchen.
-      }
-    }
-    const url = URL.createObjectURL(file);
-    const img = new Image();
-    img.src = url;
-    try {
-      await img.decode();
-    } catch (error) {
-      URL.revokeObjectURL(url);
-      throw error;
-    }
-    return { source: img, width: img.naturalWidth, height: img.naturalHeight, release: () => URL.revokeObjectURL(url) };
-  }
-
-  /** Verkleinert auf max. 1600 px und speichert als JPEG neu; dabei gehen EXIF-/GPS-Daten verloren. */
-  async function shrink(file: File): Promise<Blob> {
-    try {
-      const image = await decode(file);
-      const scale = Math.min(1, MAX_EDGE / Math.max(image.width, image.height));
-      const canvas = document.createElement("canvas");
-      canvas.width = Math.round(image.width * scale);
-      canvas.height = Math.round(image.height * scale);
-      try {
-        const context = canvas.getContext("2d");
-        if (!context) throw new Error("canvas_unavailable");
-        context.drawImage(image.source, 0, 0, canvas.width, canvas.height);
-      } finally {
-        image.release();
-      }
-      const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/jpeg", 0.82));
-      if (blob && blob.size <= MAX_UPLOAD_BYTES) return blob;
-    } catch {
-      // Keine Originaldatei senden: dort könnten EXIF- und GPS-Metadaten enthalten sein.
-    }
-    throw new Error("unsupported");
-  }
-
   function initRepairPhotoForm(container: HTMLElement) {
     const form = container.querySelector<HTMLFormElement>("[data-repair-photo-form]");
     if (!form) return;
@@ -263,6 +215,9 @@ const phoneHref = toTelephoneHref(site.phone);
     const confirmationEmail = container.querySelector<HTMLElement>("[data-confirmation-email]");
 
     const photos: { blob: Blob; url: string }[] = [];
+    let processing = Promise.resolve();
+    let pendingBatches = 0;
+    let sending = false;
     const phoneInput = form.elements.namedItem("phone") as HTMLInputElement | null;
     const locationInput = form.elements.namedItem("location") as HTMLInputElement | null;
 
@@ -373,10 +328,10 @@ const phoneHref = toTelephoneHref(site.phone);
       );
     }
 
-    async function addFiles(files: FileList | File[]) {
+    async function processFiles(files: File[]) {
       showError("");
       const hintId = `${container.id}-hint`;
-      for (const file of Array.from(files)) {
+      for (const file of files) {
         if (photos.length >= MAX_PHOTOS) {
           showError(`Maximal ${MAX_PHOTOS} Fotos. Entfernen Sie ein Bild, um ein anderes hinzuzufügen.`);
           break;
@@ -395,8 +350,21 @@ const phoneHref = toTelephoneHref(site.phone);
       render();
     }
 
-    input?.addEventListener("change", async () => {
-      if (input.files?.length) await addFiles(input.files);
+    function addFiles(files: FileList | File[]) {
+      if (sending) return;
+      const batch = Array.from(files);
+      pendingBatches += 1;
+      if (submit) submit.disabled = true;
+      form?.setAttribute("aria-busy", "true");
+      processing = processing.then(() => processFiles(batch)).finally(() => {
+        pendingBatches -= 1;
+        if (submit) submit.disabled = sending || pendingBatches > 0;
+        form?.setAttribute("aria-busy", String(sending || pendingBatches > 0));
+      });
+    }
+
+    input?.addEventListener("change", () => {
+      if (input.files?.length) addFiles(input.files);
       input.value = "";
     });
 
@@ -405,15 +373,15 @@ const phoneHref = toTelephoneHref(site.phone);
       drop.dataset.drag = "true";
     });
     drop?.addEventListener("dragleave", () => delete drop.dataset.drag);
-    drop?.addEventListener("drop", async (event) => {
+    drop?.addEventListener("drop", (event) => {
       event.preventDefault();
       delete drop.dataset.drag;
-      if (event.dataTransfer?.files.length) await addFiles(event.dataTransfer.files);
+      if (event.dataTransfer?.files.length) addFiles(event.dataTransfer.files);
     });
 
     form.addEventListener("submit", async (event) => {
       event.preventDefault();
-      if (!form || !submit) return;
+      if (!form || !submit || pendingBatches > 0 || sending) return;
       const intent = currentIntent();
       if (intent === "photo" && photos.length === 0) {
         showError("Bitte fügen Sie ein Foto hinzu – oder fordern Sie stattdessen einen Rückruf oder Termin vor Ort an.");
@@ -440,6 +408,8 @@ const phoneHref = toTelephoneHref(site.phone);
       });
       data.set("page", window.location.pathname);
 
+      sending = true;
+      form.setAttribute("aria-busy", "true");
       submit.disabled = true;
       const label = submit.innerHTML;
       submit.textContent = "Wird gesendet …";
@@ -476,6 +446,9 @@ const phoneHref = toTelephoneHref(site.phone);
         showError(MESSAGES[Number((err as Error).message)] ?? FALLBACK);
         submit.disabled = false;
         submit.innerHTML = label;
+      } finally {
+        sending = false;
+        form.setAttribute("aria-busy", "false");
       }
     });
   }

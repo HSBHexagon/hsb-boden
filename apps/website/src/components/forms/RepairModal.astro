@@ -12,19 +12,18 @@ const enabled = site.hasRepairPhotoUpload;
 {enabled && (
 <dialog
   id="repair-modal"
-  class="fixed inset-0 z-50 m-auto max-h-[92vh] w-[95vw] max-w-2xl overflow-y-auto rounded-xl border border-hsb-line bg-white p-0 shadow-2xl backdrop:bg-hsb-black/75 backdrop:backdrop-blur-sm"
+  class="fixed inset-0 z-50 m-auto max-h-[92vh] w-[95vw] max-w-2xl overflow-y-auto rounded border border-hsb-line bg-white p-0 shadow-2xl backdrop:bg-hsb-black/75 backdrop:backdrop-blur-sm"
   aria-labelledby="repair-modal-title"
   aria-modal="true"
 >
   <div class="sticky top-0 z-10 flex items-center justify-between border-b border-hsb-line bg-white px-5 py-4 sm:px-6">
     <div>
-      <span class="inline-block rounded bg-hsb-red/10 px-2 py-0.5 text-xs font-black uppercase tracking-wide text-hsb-red">Ersteinschätzung</span>
       <h2 id="repair-modal-title" class="text-lg font-black text-hsb-ink sm:text-xl">Schadstelle einschätzen lassen</h2>
     </div>
     <button
       type="button"
       id="repair-modal-close"
-      class="flex h-10 w-10 items-center justify-center rounded-lg border border-hsb-line bg-hsb-mist text-hsb-steel hover:bg-hsb-line hover:text-hsb-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-hsb-red"
+      class="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-hsb-line bg-hsb-mist text-hsb-steel hover:bg-hsb-line hover:text-hsb-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-hsb-red"
       aria-label="Modal schließen"
     >
       <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -35,8 +34,8 @@ const enabled = site.hasRepairPhotoUpload;
   </div>
 
   <div class="p-5 sm:p-6">
-    <p class="mb-4 text-xs text-hsb-steel sm:text-sm">
-      Laden Sie Fotos der betroffenen Stelle hoch oder fordern Sie einen Rückruf an. Ersteinschätzung innerhalb eines Arbeitstags durch unser Fachteam.
+    <p class="mb-4 text-sm leading-6 text-hsb-steel">
+      Foto, Rückruf oder Vor-Ort-Termin. Sie erhalten innerhalb eines Arbeitstags eine kostenfreie Ersteinschätzung.
     </p>
     <RepairPhotoForm idPrefix="modal-repair-photo" />
     <div class="mt-4 flex items-center justify-between border-t border-hsb-line pt-3 text-xs text-hsb-steel">

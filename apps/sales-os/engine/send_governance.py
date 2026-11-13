@@ -298,17 +298,54 @@ def enforce_domain_health(state_dir, today, shared, collector=None):
     return budget
 
 
+def record_verified_send(state_dir):
+    """Zaehlt bestätigte Live-Zustellungen bezogen auf den aktuellen Health-Snapshot."""
+    import hashlib
+    health_path = Path(state_dir) / 'send-health.json'
+    try:
+        health_sha = hashlib.sha256(health_path.read_bytes()).hexdigest()[:20]
+    except OSError:
+        return
+    delta_path = Path(state_dir) / 'live-sample-delta.json'
+    count = 0
+    try:
+        prev = json.loads(delta_path.read_text(encoding='utf-8'))
+        if prev.get('health_sha') == health_sha and type(prev.get('sent_delta')) is int and prev['sent_delta'] > 0:
+            count = prev['sent_delta']
+    except (OSError, ValueError, TypeError):
+        count = 0
+    with NamedTemporaryFile(mode='w', encoding='utf-8', dir=delta_path.parent, delete=False) as tmp:
+        tmp_path = Path(tmp.name)
+        try:
+            tmp.write(json.dumps({'health_sha': health_sha, 'sent_delta': count + 1}))
+            tmp.close()
+            tmp_path.replace(delta_path)
+        finally:
+            tmp_path.unlink(missing_ok=True)
+
+
 def observed_health(state_dir, collector=None):
     """Neue Eingangsnachrichten nach erfassten IDs erkennen; Date-Header ist kein Eingangsnachweis."""
+    import hashlib
     import json
     import re
     from pathlib import Path
     from inbound_classifier import classify_inbound_message
     from lead_quality import delivery_bounce_status
     try:
-        stats=_parse_send_health((Path(state_dir)/'send-health.json').read_bytes())
-    except (OSError,ValueError,KeyError,TypeError):
+        raw_health = (Path(state_dir) / 'send-health.json').read_bytes()
+        health_sha = hashlib.sha256(raw_health).hexdigest()[:20]
+        stats = _parse_send_health(raw_health)
+    except (OSError, ValueError, KeyError, TypeError):
         raise RuntimeError('SEND_HEALTH_CURSOR_MISSING') from None
+    delta_path = Path(state_dir) / 'live-sample-delta.json'
+    try:
+        delta = json.loads(delta_path.read_text(encoding='utf-8'))
+        extra = delta.get('sent_delta', 0)
+        if delta.get('health_sha') == health_sha and type(extra) is int and extra > 0:
+            stats['sample_sent'] = stats.get('sample_sent', 0) + extra
+    except (OSError, ValueError, TypeError):
+        pass
     if collector is None:
         from functools import partial
         from dual_domain_collector import collect_all_inbounds

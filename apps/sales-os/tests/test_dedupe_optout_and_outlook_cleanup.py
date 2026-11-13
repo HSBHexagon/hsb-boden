@@ -299,3 +299,63 @@ def test_sent_header_repair_purge_verified_backups_requires_clean_sent_copy(tmp_
     assert res["verified_backups"] == 1 and res["purged_backups"] == 1
     assert imap_ok.folders[BACKUP] == {}
     assert (tmp_path / "arc2" / "manifest.json").is_file()
+
+
+def test_collect_sent_identities_and_purge_match_case_insensitively():
+    from draft_purge import collect_sent_identities, purge_owner_sent_drafts
+
+    class ReadonlyLegacyImap:
+        def __init__(self):
+            self.active = "INBOX"
+            self.deleted_uids = []
+            self.folders = {
+                "Gesendet": {
+                    b"10": _raw_msg("Other@Kunde.de", "<M307@HSB.LOCAL>", "HSB-307", unsent=False),
+                },
+                "Entwuerfe": {
+                    b"21": _raw_msg("alt@kunde.de", "<m307@hsb.local>", "hsb-999", unsent=True),
+                    b"22": _raw_msg("alt2@kunde.de", "<other@hsb.local>", "hsb-307", unsent=True),
+                    b"23": _raw_msg("keep@kunde.de", "<keep@hsb.local>", "hsb-888", unsent=True),
+                },
+            }
+
+        def select(self, folder):
+            self.active = folder
+            return ("OK", [b"1"])
+
+        def uid(self, op, *args):
+            bucket = self.folders[self.active]
+            if op == "search":
+                return ("OK", [b" ".join(bucket.keys())])
+            if op == "fetch":
+                uids = args[0].split(b",")
+                rows = [(b"1 (UID " + u + b")", bucket[u]) for u in uids]
+                return ("OK", rows)
+            if op == "store" and args[1] in {"+FLAGS", "+FLAGS.SILENT"}:
+                for u in args[0].split(b","):
+                    self.deleted_uids.append(u)
+                    bucket.pop(u, None)
+                return ("OK", None)
+            raise AssertionError(f"Unexpected uid op: {op} {args}")
+
+        def expunge(self):
+            return ("OK", None)
+
+    imap = ReadonlyLegacyImap()
+    emails, lids, mids = collect_sent_identities(imap, "Gesendet")
+    assert emails == {"other@kunde.de"}
+    assert lids == {"hsb-307"}
+    assert mids == {"<m307@hsb.local>"}
+
+    purged = purge_owner_sent_drafts(
+        imap,
+        "Entwuerfe",
+        {"OTHER@KUNDE.DE"},
+        sent_lead_ids={"HSB-307"},
+        sent_message_ids={"<M307@HSB.LOCAL>"},
+        apply=True,
+    )
+    assert purged == 2
+    assert set(imap.deleted_uids) == {b"21", b"22"}
+    assert list(imap.folders["Entwuerfe"].keys()) == [b"23"]
+

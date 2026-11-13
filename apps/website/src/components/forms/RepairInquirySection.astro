@@ -25,7 +25,14 @@ const phoneHref = toTelephoneHref(site.phone);
       <p class="mt-3 text-sm text-hsb-steel">Direkter Draht zu unserem Fachteam für Industrieböden und Säureschutz.</p>
     </div>
     <div class="order-1 lg:order-2">
-      {site.hasRepairPhotoUpload ? <RepairPhotoForm /> : site.hasLeadEndpoint && <LeadForm repairRequest />}
+      {site.hasRepairPhotoUpload ? (
+        <RepairPhotoForm />
+      ) : (
+        // Der Kampagnen- und Hero-Anker #repair-photo muss auch ohne Foto-Upload ein Ziel haben.
+        <div id="repair-photo" class="scroll-mt-24">
+          {site.hasLeadEndpoint && <LeadForm repairRequest />}
+        </div>
+      )}
     </div>
   </div>
 </section>

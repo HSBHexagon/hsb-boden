@@ -50,6 +50,8 @@ describe("RepairModal & Zero-Friction Lead Flow", () => {
     expect(source).toContain("order-1 lg:order-2");
     expect(source).toContain("order-2 lg:order-1");
     expect(source).toContain('id="reparaturanfrage"');
+    // Der Anker #repair-photo existiert auch im Fallback ohne Foto-Upload
+    expect(source).toContain('<div id="repair-photo" class="scroll-mt-24">');
   });
 
   it("unterstützt in RepairPhotoForm mehrfache Instanzen über idPrefix und Container-Scoping", () => {

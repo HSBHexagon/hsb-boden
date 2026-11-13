@@ -503,3 +503,158 @@ def test_release_stale_lock_acknowledges_mailbox_health_pause(monkeypatch, capsy
     assert fake_store.events[-1]['state'] == 'ack'
 
 
+def test_observed_health_counts_verified_live_sends_and_resets_on_new_snapshot(tmp_path):
+    from types import SimpleNamespace
+    from send_governance import observed_health, pause_reason, record_verified_send
+
+    h = health()
+    h['sample_sent'] = 15
+    h['hard_bounces'] = 0
+    (tmp_path / 'send-health.json').write_text(json.dumps(h))
+
+    # Three hard bounces out of 15 initial sends must still pause (> 2% / <100 sample)
+    bounces = [
+        SimpleNamespace(
+            message_id=f'<b{i}@example.test>',
+            sender='mailer-daemon@example.test',
+            subject='Undeliverable',
+            body='Action: failed\nStatus: 5.1.1',
+        )
+        for i in range(3)
+    ]
+    obs_small = observed_health(tmp_path, collector=lambda **_: bounces)
+    assert obs_small['sample_sent'] == 15
+    assert pause_reason(obs_small) == 'HARD_BOUNCES'
+
+    # After 145 verified live deliveries (sample_sent = 15 + 145 = 160), 3 hard bounces = 1.875% <= 2%
+    for _ in range(145):
+        record_verified_send(tmp_path)
+    obs_scaled = observed_health(tmp_path, collector=lambda **_: bounces)
+    assert obs_scaled['sample_sent'] == 160
+    assert pause_reason(obs_scaled) is None
+
+    # A 4th bounce (4 / 160 = 2.5% > 2%) must still pause fail-closed
+    four_bounces = bounces + [
+        SimpleNamespace(
+            message_id='<b3@example.test>',
+            sender='mailer-daemon@example.test',
+            subject='Undeliverable',
+            body='Action: failed\nStatus: 5.1.1',
+        )
+    ]
+    assert pause_reason(observed_health(tmp_path, collector=lambda **_: four_bounces)) == 'HARD_BOUNCES'
+
+    # Refreshing send-health.json invalidates previous live delta automatically
+    h2 = health()
+    h2['sample_sent'] = 20
+    h2['hard_bounces'] = 0
+    (tmp_path / 'send-health.json').write_text(json.dumps(h2))
+    obs_fresh = observed_health(tmp_path, collector=lambda **_: [])
+    assert obs_fresh['sample_sent'] == 20
+
+
+def test_dispatch_verified_records_live_sample_only_for_confirmed_deliveries(tmp_path, monkeypatch):
+    from contextlib import nullcontext
+    from email.message import EmailMessage
+    import hashlib
+    from types import SimpleNamespace
+    import outbound_safety as out
+    import sales_reconciliation as recon
+    import sync_to_google_sheet as sheets
+    import com_mailbox_manager as mail
+    import closed_loop_crm as inbound
+    import send_governance as guard
+    from test_outbound_safety_gate import _crm_lead
+
+    h = health()
+    h['sample_sent'] = 15
+    h['hard_bounces'] = 0
+    (tmp_path / 'send-health.json').write_text(json.dumps(h))
+
+    leads = [_crm_lead(**{'Lead-ID': f'L{i}', 'Verantwortlicher': 'Joel Cherino Diaz', 'E-Mail': f'test{i}@firma.invalid'}) for i in (1, 2)]
+    headers = list(leads[0])
+    raws, queue, drafts = {}, [], []
+    for i, lead in enumerate(leads, 1):
+        msg = EmailMessage()
+        msg['To'] = lead['E-Mail']
+        msg['From'] = 'j-cherino@hsb-boden.com'
+        msg['Subject'] = 'x'
+        msg['Message-ID'] = f'<{i}@hsb-boden.com>'
+        msg.set_content('Test')
+        raws[str(i)] = msg.as_bytes()
+        queue.append({'lead_id': lead['Lead-ID'], 'owner': 'JOEL', 'email': lead['E-Mail']})
+        drafts.append({'lead_id': lead['Lead-ID'], 'sendable': True, 'folder': 'Drafts', 'uidvalidity': '7', 'uid': str(i),
+                       'sha256': hashlib.sha256(raws[str(i)]).hexdigest()})
+
+    class IMAP:
+        def __enter__(self): return self
+        def __exit__(self, *a): pass
+        def select(self, *a, **k): return 'OK', []
+        def response(self, *a): return None, [b'7']
+        def uid(self, cmd, uid, *a): return 'OK', [(b'h', raws[uid])]
+
+    client = SimpleNamespace(_get_imap=lambda: IMAP(), cfg={})
+    monkeypatch.setattr(mail, 'ComMailboxClient', lambda o: client)
+    monkeypatch.setattr(out, 'mailbox_dispatch_lock', lambda c, **k: nullcontext())
+    monkeypatch.setattr(inbound, 'sync_inbounds', lambda **k: None)
+    def audit(path):
+        path.mkdir(parents=True)
+        (path / 'queue.json').write_text(json.dumps(queue))
+        (path / 'drafts.json').write_text(json.dumps(drafts))
+    monkeypatch.setattr(recon, 'run_audit', audit)
+    monkeypatch.setattr(recon, 'assess_message', lambda *a: {'issues': []})
+    monkeypatch.setattr(recon, 'has_unreviewed_legacy_variant', lambda *a: False)
+    values = SimpleNamespace(get=lambda **k: SimpleNamespace(
+        execute=lambda: {'values': [headers] + [[l.get(h, '') for h in headers] for l in leads]}))
+    monkeypatch.setattr(sheets, 'get_sheets_service', lambda: SimpleNamespace(spreadsheets=lambda: SimpleNamespace(values=lambda: values)))
+    monkeypatch.setattr('lead_quality.deliverability_flags', lambda *a: [])
+    monkeypatch.setattr(guard, 'enforce_domain_health', lambda *a: 10)
+    monkeypatch.setattr(out, 'complete_delivery', lambda *a: False if a[6]['lead_id'] == 'L1' else True)
+    monkeypatch.setattr(out.time, 'sleep', lambda *a: None)
+    monkeypatch.setenv('HSB_CUSTOMER_SEND_ENABLED', 'yes')
+    monkeypatch.setenv('HSB_SALES_STATE_DIR', str(tmp_path))
+
+    result = out.dispatch_verified(2, owners=('JOEL',), dry_run=False)
+    assert result['sent_counts']['JOEL'] == 1
+    assert guard.observed_health(tmp_path, collector=lambda **_: [])['sample_sent'] == 16
+
+
+def test_observed_health_allows_live_growth_beyond_snapshot_sample_cap(tmp_path):
+    from types import SimpleNamespace
+    from send_governance import observed_health, pause_reason, record_verified_send
+
+    h = health()
+    h['sample_sent'] = 10000
+    h['hard_bounces'] = 0
+    (tmp_path / 'send-health.json').write_text(json.dumps(h))
+
+    assert pause_reason(observed_health(tmp_path, collector=lambda **_: [])) is None
+
+    record_verified_send(tmp_path)
+    obs = observed_health(tmp_path, collector=lambda **_: [])
+    assert obs['sample_sent'] == 10001
+    assert pause_reason(obs) is None
+
+    # Bounce-rate check still uses total denominator (201 / 10001 = 2.0098% > 2%)
+    bounces_over_2pct = [
+        SimpleNamespace(
+            message_id=f'<cap{i}@example.test>',
+            sender='mailer-daemon@example.test',
+            subject='Undeliverable',
+            body='Action: failed\nStatus: 5.1.1',
+        )
+        for i in range(201)
+    ]
+    assert pause_reason(observed_health(tmp_path, collector=lambda **_: bounces_over_2pct)) == 'HARD_BOUNCES'
+
+    # Unverified raw snapshots > HSB_MAX_SAMPLE_SIZE must still fail closed even with forged delta keys
+    h_over = health()
+    h_over['sample_sent'] = 10001
+    h_over['_verified_live_delta'] = 1
+    (tmp_path / 'send-health.json').write_text(json.dumps(h_over))
+    assert pause_reason(observed_health(tmp_path, collector=lambda **_: [])) == 'HEALTH_EVIDENCE_INVALID'
+
+
+
+
+

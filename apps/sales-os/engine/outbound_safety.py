@@ -691,7 +691,7 @@ def dispatch_verified(count_per_owner=25, owners=('JOEL','JORDI'), dry_run=True,
                 # Zurückgestellt (CRM-Tier Z) ist kein Fehler, sondern "nie senden": überspringen, Lauf läuft weiter.
                 if str(lead.get('Tier') or '').strip().upper()=='Z':
                     print(f"SKIP {item['lead_id']}: TIER_Z"); continue
-                from send_governance import enforce_domain_health, MailboxHealthStore
+                from send_governance import enforce_domain_health, MailboxHealthStore, record_verified_send
                 from lead_quality import deliverability_flags
                 lead['Deliverability_Flags']=deliverability_flags(lead,mx_cache,set())
                 verdict=check_eligibility(lead)
@@ -742,6 +742,8 @@ def dispatch_verified(count_per_owner=25, owners=('JOEL','JORDI'), dry_run=True,
                 if delivered is not False:
                     sent_counts[item['owner']]+=1
                     lead['Send_Status']='sent'
+                    if not dry_run:
+                        record_verified_send(state)
                     lead['Send_Datum']=datetime.now(timezone.utc).isoformat()
                     lead['Sender_Account']=getattr(client, 'cfg', {}).get('email') or ('j-cherino@hsb-boden.com' if item['owner']=='JOEL' else 'j-post@hsb-boden.com')
                     cleanup_sent_draft(client, d.get('folder'), d.get('uid'))

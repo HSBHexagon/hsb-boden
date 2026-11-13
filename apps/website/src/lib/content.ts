@@ -255,7 +255,7 @@ export function getAllPublicPages() {
       h1: "Ein klarer Projektablauf für produktionskritische Bodenflächen",
       seoTitle: "Projektablauf für Industrieböden und Säureschutz | HSB",
       description:
-        "Vom Belastungsprofil bis zur Abnahme: So strukturiert HSB Analyse, Systemauslegung, Untergrundvorbereitung, Einbau und Dokumentation von Industriebodenprojekten.",
+        "Vom Belastungsprofil bis zur Abnahme: So strukturiert HSB Analyse, Systemauslegung, Untergrund, Einbau und Dokumentation von Industriebodenprojekten.",
       canonicalPath: "/projektablauf/",
     },
     {
@@ -306,7 +306,7 @@ export function getAllPublicPages() {
       h1: "Datenschutzinformation",
       seoTitle: "Datenschutz | HSB Hexagon Säurebau GmbH",
       description:
-        "Datenschutzinformation der HSB Hexagon Säurebau GmbH nach DSGVO: Verarbeitung personenbezogener Daten, Rechtsgrundlagen, Speicherdauer, Löschung und Ihre Betroffenenrechte.",
+        "Datenschutzinformation der HSB Hexagon Säurebau GmbH nach DSGVO: Verarbeitung, Rechtsgrundlagen, Speicherdauer, Löschung und Ihre Betroffenenrechte.",
       canonicalPath: "/datenschutz/",
     },
     {
@@ -327,21 +327,21 @@ export function getAllPublicPages() {
       h1: "Ausgewaschene Fugen: Wenn Reinigungschemie den Boden zersetzt",
       seoTitle: "Ausgewaschene Fugen im Industrieboden sanieren | HSB",
       description:
-        "Ursachen und Sanierung ausgewaschener Fugen in Lebensmittelbetrieben: Wie Milchsäure, Fette und CIP-Reiniger zementäre Fugen zerstören und wie Reaktionsharzfugen dauerhaft schützen.",
+        "Ausgewaschene Fugen im Lebensmittelbetrieb: Wie Milchsäure, Fette und CIP-Reiniger zementäre Fugen zerstören und wie Reaktionsharzfugen schützen.",
       canonicalPath: "/wissen/fugen-forensik/fuge-ausgewaschen/",
     },
     {
       h1: "Hohl liegende Fliesen & Plattenbruch unter Flurförderzeugen",
       seoTitle: "Hohle Fliesen & Kantenbrüche sanieren | HSB",
       description:
-        "Hohl liegende Fliesen und Plattenbrüche im Produktionsbereich: Ursachen durch fehlende Vollbettung, Schubspannungen und Sanierung mit dem Rüttelverfahren nach AGI S 40.",
+        "Hohl liegende Fliesen und Plattenbrüche: Ursachen durch fehlende Vollbettung und Schubspannungen, Sanierung im Rüttelverfahren nach AGI S 40.",
       canonicalPath: "/wissen/fugen-forensik/fliesen-hohl/",
     },
     {
       h1: "Gerissene Rinnenkanten: Die kritische Schnittstelle zwischen Stahl und Estrich",
       seoTitle: "Gerissene Rinnenkanten & Anschlüsse sanieren | HSB",
       description:
-        "Ursachen und Sanierung von Rissen an Entwässerungsrinnen in der Lebensmittelproduktion: Warum Edelstahl und Beton ohne elastische Hybridfuge reißen und wie HSB dauerhafte Rinnenanschlüsse baut.",
+        "Risse an Entwässerungsrinnen: Warum Edelstahl und Beton ohne elastische Hybridfuge reißen und wie HSB dauerhafte Rinnenanschlüsse baut.",
       canonicalPath: "/wissen/fugen-forensik/rinnenkante-gerissen/",
     },
     {
@@ -355,7 +355,7 @@ export function getAllPublicPages() {
       h1: "Thermoschock: Wenn heißes Reinigungswasser Beschichtungen abplatzen lässt",
       seoTitle: "Thermoschock & Schubspannungsrisse beheben | HSB",
       description:
-        "Thermoschock-Schäden an Industrieböden: Warum Heißwasser (CIP 85–95 °C) auf kaltem Untergrund Standardbeschichtungen ablöst und welche Systeme dauerhaft standhalten.",
+        "Thermoschock am Industrieboden: Warum Heißwasser (CIP über 80 °C) auf kaltem Untergrund Beschichtungen ablöst und welche Systeme standhalten.",
       canonicalPath: "/wissen/fugen-forensik/thermoschock-schaeden/",
     },
     {

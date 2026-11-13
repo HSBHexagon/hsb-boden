@@ -2,13 +2,13 @@
 import BaseLayout from "../../../layouts/BaseLayout.astro";
 import PageHero from "../../../components/sections/PageHero.astro";
 import LeadFormSection from "../../../components/forms/LeadFormSection.astro";
-import { buildBreadcrumbJsonLd } from "../../../lib/schema";
+import { buildArticleJsonLd, buildBreadcrumbJsonLd } from "../../../lib/schema";
 
 export const prerender = true;
 
 const path = "/wissen/fugen-forensik/thermoschock-schaeden/";
 const title = "Thermoschock & Schubspannungsrisse beheben | HSB";
-const description = "Thermoschock-Schäden an Industrieböden: Warum Heißwasser (CIP 85–95 °C) auf kaltem Untergrund Standardbeschichtungen ablöst und welche Systeme dauerhaft standhalten.";
+const description = "Thermoschock am Industrieboden: Warum Heißwasser (CIP über 80 °C) auf kaltem Untergrund Beschichtungen ablöst und welche Systeme standhalten.";
 ---
 
 <BaseLayout
@@ -16,6 +16,7 @@ const description = "Thermoschock-Schäden an Industrieböden: Warum Heißwasser
   description={description}
   path={path}
   jsonLd={[
+    buildArticleJsonLd({ headline: "Thermoschock: Wenn heißes Reinigungswasser Beschichtungen abplatzen lässt", description, path }),
     buildBreadcrumbJsonLd([
       { name: "Start", path: "/" },
       { name: "Wissen", path: "/wissen/" },

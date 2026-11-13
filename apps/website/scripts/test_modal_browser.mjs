@@ -5,17 +5,37 @@ import { chromium } from "playwright";
 
 const distDir = path.resolve("dist");
 
-const server = http.createServer((req, res) => {
-  let reqPath = decodeURIComponent(req.url.split("?")[0]);
-  if (reqPath.endsWith("/")) reqPath += "index.html";
-  let filePath = path.join(distDir, reqPath);
-  if (!fs.existsSync(filePath) && fs.existsSync(filePath + ".html")) {
-    filePath += ".html";
-  } else if (!fs.existsSync(filePath) && fs.existsSync(path.join(filePath, "index.html"))) {
-    filePath = path.join(filePath, "index.html");
-  }
+// Löst einen Anfragepfad innerhalb von dist/ auf. Alles, was nach dem
+// Normalisieren außerhalb liegt (z. B. "/../../etc/passwd"), wird verworfen.
+function resolveInDist(requestPath) {
+  const resolved = path.resolve(distDir, "." + path.posix.normalize("/" + requestPath));
+  if (resolved !== distDir && !resolved.startsWith(distDir + path.sep)) return null;
+  return resolved;
+}
 
-  if (fs.existsSync(filePath) && fs.statSync(filePath).isFile()) {
+function findFile(requestPath) {
+  const base = resolveInDist(requestPath);
+  if (!base) return null;
+  for (const candidate of [base, base + ".html", path.join(base, "index.html")]) {
+    if (!candidate.startsWith(distDir + path.sep)) continue;
+    if (fs.existsSync(candidate) && fs.statSync(candidate).isFile()) return candidate;
+  }
+  return null;
+}
+
+const server = http.createServer((req, res) => {
+  let reqPath;
+  try {
+    reqPath = decodeURIComponent(req.url.split("?")[0]);
+  } catch {
+    res.writeHead(400);
+    res.end("Bad Request");
+    return;
+  }
+  if (reqPath.endsWith("/")) reqPath += "index.html";
+  const filePath = findFile(reqPath);
+
+  if (filePath) {
     const ext = path.extname(filePath);
     const mimeTypes = {
       ".html": "text/html",

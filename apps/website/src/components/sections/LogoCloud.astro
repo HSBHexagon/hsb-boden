@@ -10,7 +10,7 @@ interface Props {
 
 const {
   industryFilter,
-  eyebrow = "Vertrauen durch reale Umsetzung",
+  eyebrow = "",
   title = "Referenzkunden (Auszug)",
   compact = false,
 } = Astro.props;
@@ -27,8 +27,8 @@ const logos = getLogoCloudEntries(industryFilter);
   data-industry-filter={industryFilter ?? ""}
 >
   <div class="container">
-    <div class:list={["text-center", compact ? "mb-6" : "mb-10 lg:mb-12"]}>
-      <p class="text-xs font-black uppercase tracking-[0.2em] text-hsb-red">{eyebrow}</p>
+    <div class:list={["text-center", compact ? "mb-5" : "mb-10 lg:mb-12"]}>
+      {eyebrow && <p class="text-xs font-bold text-hsb-red">{eyebrow}</p>}
       <h2 class:list={[compact ? "text-xl sm:text-2xl font-black mt-2 text-hsb-black" : "h2 mt-4"]}>{title}</h2>
     </div>
 
@@ -43,18 +43,17 @@ const logos = getLogoCloudEntries(industryFilter);
           href="/referenzen/"
           class:list={[
             "group grid content-between justify-items-center gap-3 bg-white no-underline transition-colors hover:bg-[#fbfcfd] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-hsb-red",
-            compact ? "min-h-[110px] basis-1/2 px-3 py-4 sm:basis-1/4" : "min-h-[148px] basis-1/2 px-4 py-5 sm:basis-1/3",
+            compact ? "min-h-[104px] basis-1/2 px-3 py-3 sm:basis-1/4 lg:basis-1/5" : "min-h-[148px] basis-1/2 px-4 py-5 sm:basis-1/3",
           ]}
           data-logo-entry
           data-client={reference.name}
           data-industry={reference.industry ?? ""}
           data-tracked={reference.systems.length > 0 ? "true" : "false"}
-          aria-label={`${reference.name} – ${reference.proofTag} – ${reference.systems.length > 0 ? "Referenzen ansehen" : "Kundenstandorte ansehen"}`}
         >
           <div class:list={["grid w-full place-items-center grayscale opacity-75 contrast-125 transition-all group-hover:grayscale-0 group-hover:opacity-100", compact ? "h-11 max-w-[130px]" : "h-14 max-w-[150px]"]}>
             <img
               src={reference.logo}
-              alt={`${reference.name} Logo`}
+              alt=""
               class:list={["w-full object-contain", compact ? "max-h-9" : "max-h-11"]}
               loading="lazy"
               width="150"
@@ -63,15 +62,13 @@ const logos = getLogoCloudEntries(industryFilter);
             />
           </div>
           <div class="grid gap-0.5 text-center">
-            <span class="text-xs font-black uppercase tracking-[0.08em] text-hsb-black transition-colors group-hover:text-hsb-red">
+            <span class="text-sm font-semibold leading-5 text-hsb-black transition-colors group-hover:text-hsb-red">
               {reference.name}
             </span>
             {!compact && (
               <span class="text-[0.6875rem] font-bold uppercase tracking-[0.14em] text-hsb-steel">{reference.meta}</span>
             )}
-            <span class="mt-0.5 inline-block justify-self-center rounded-[2px] border border-hsb-line bg-hsb-mist px-2 py-0.5 text-[0.6875rem] font-bold uppercase tracking-[0.08em] text-hsb-black">
-              {reference.proofTag}
-            </span>
+            {!compact && <span class="mt-0.5 text-sm leading-5 text-hsb-steel">{reference.proofTag}</span>}
           </div>
         </a>
       ))}

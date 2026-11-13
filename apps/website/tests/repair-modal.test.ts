@@ -60,6 +60,8 @@ describe("RepairModal & Zero-Friction Lead Flow", () => {
     expect(source).toContain("idPrefix");
     expect(source).toContain("data-repair-photo-container");
     expect(source).toContain("initRepairPhotoForm(container)");
-    expect(source).toContain('canvas.toBlob(resolve, "image/jpeg", 0.82)');
+    expect(source).toContain('import { shrink } from "../../lib/repairPhotoImage"');
+    const imageSource = readFileSync(join(root, "lib/repairPhotoImage.ts"), "utf8");
+    expect(imageSource).toContain('canvas.toBlob(resolve, "image/jpeg", 0.82)');
   });
 });

@@ -5,7 +5,7 @@ import { buildMime, dotStuff, headerSafe, sendMail, type SmtpSocket } from "../f
 import { buildConfirmationText, handleRepairPhoto, MAX_PHOTOS, sniffImage, type RepairPhotoEnv } from "../functions/lib/repair-photo-handler";
 
 it("gibt bei fehlerhafter Bilddekodierung niemals das metadatenhaltige Original weiter", () => {
-  const source = readFileSync(new URL("../src/components/forms/RepairPhotoForm.astro", import.meta.url), "utf8");
+  const source = readFileSync(new URL("../src/lib/repairPhotoImage.ts", import.meta.url), "utf8");
   expect(source).toContain('canvas.toBlob(resolve, "image/jpeg", 0.82)');
   expect(source).not.toMatch(/\breturn\s+file\s*;/);
 });

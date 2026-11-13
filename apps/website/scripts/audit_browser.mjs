@@ -1,45 +1,14 @@
-import http from "node:http";
 import fs from "node:fs";
 import path from "node:path";
+import { createStaticPreview } from "./static-preview.mjs";
 import { chromium } from "playwright";
 
-const distDir = path.resolve("dist");
-const screenshotDir = "/Users/joelcherinodiaz/.gemini/antigravity-cli/brain/ffd14163-7a4a-49a2-9755-62a44d2ce299/screenshots";
+const screenshotDir = path.resolve("node_modules/.cache/browser-audit");
 fs.mkdirSync(screenshotDir, { recursive: true });
 
-// Minimal static file server
-const server = http.createServer((req, res) => {
-  let reqPath = decodeURIComponent(req.url.split("?")[0]);
-  if (reqPath.endsWith("/")) reqPath += "index.html";
-  let filePath = path.join(distDir, reqPath);
-  if (!fs.existsSync(filePath) && fs.existsSync(filePath + ".html")) {
-    filePath += ".html";
-  } else if (!fs.existsSync(filePath) && fs.existsSync(path.join(filePath, "index.html"))) {
-    filePath = path.join(filePath, "index.html");
-  }
+const server = createStaticPreview();
 
-  if (fs.existsSync(filePath) && fs.statSync(filePath).isFile()) {
-    const ext = path.extname(filePath);
-    const mimeTypes = {
-      ".html": "text/html",
-      ".css": "text/css",
-      ".js": "application/javascript",
-      ".json": "application/json",
-      ".webp": "image/webp",
-      ".png": "image/png",
-      ".jpg": "image/jpeg",
-      ".svg": "image/svg+xml",
-      ".woff2": "font/woff2",
-    };
-    res.writeHead(200, { "Content-Type": mimeTypes[ext] || "application/octet-stream" });
-    fs.createReadStream(filePath).pipe(res);
-  } else {
-    res.writeHead(404);
-    res.end("Not Found");
-  }
-});
-
-await new Promise((resolve) => server.listen(4321, resolve));
+await new Promise((resolve) => server.listen(4321, "127.0.0.1", resolve));
 console.log("Static server running on http://localhost:4321");
 
 const browser = await chromium.launch({

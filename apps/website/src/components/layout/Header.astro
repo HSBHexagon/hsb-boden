@@ -68,34 +68,37 @@ const phoneHref = site.phone.replace("(0)", "").replace(/[^\d+]/g, "");
     </a>
 
     <!-- Rechter Cluster: Navigation, Sprache und CTA bilden eine bewusste Gruppe -->
-    <div class="flex items-center gap-3 xl:gap-4">
-      <nav class="nav-links hidden items-center gap-3 text-xs font-bold lg:flex xl:gap-4 xl:text-sm" aria-label="Hauptnavigation">
+    <div class="flex min-w-0 items-center gap-3 xl:gap-4">
+      <nav class="nav-links hidden min-w-0 flex-wrap items-center gap-x-3 gap-y-2 text-xs font-bold lg:flex xl:gap-4 xl:text-sm" aria-label="Hauptnavigation">
         {navigation.filter(n => n.href !== "/kontakt/").map((item) => (
           <a class="whitespace-nowrap transition-colors" href={item.href}>{item.label}</a>
         ))}
       </nav>
 
-      <!-- Statischer, bedienbarer Sprachwähler mit echten crawlaren Links zu allen 6 Sprachen -->
-      <div class="relative group hidden lg:block" aria-label="Sprachauswahl">
+      <!-- Bedienbarer Sprachwähler mit crawlbaren Links zu allen sechs Sprachen -->
+      <div class="relative hidden lg:block" data-language-picker>
         <button
           type="button"
-          class="flex items-center gap-1 rounded border border-white/20 bg-white/5 px-2 py-1 text-xs font-bold text-white transition-colors hover:border-white/40 focus:outline-none focus:ring-2 focus:ring-hsb-red"
-          aria-label="Sprache wählen"
+          class="flex min-h-11 items-center gap-1 rounded border border-white/20 bg-white/5 px-3 text-xs font-bold text-white transition-colors hover:border-white/40 focus:outline-none focus:ring-2 focus:ring-hsb-red"
+          id="language-toggle"
+          aria-label={`${lang.toUpperCase()} – Sprache wählen`}
+          aria-expanded="false"
+          aria-controls="language-menu"
         >
           <span class="uppercase">{lang}</span>
           <svg class="size-3 text-white/60" viewBox="0 0 12 12" fill="none" aria-hidden="true">
             <path d="M2.5 4.5l3.5 3.5 3.5-3.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
           </svg>
         </button>
-        <div class="pointer-events-none absolute right-0 top-full mt-1.5 hidden w-32 rounded border border-white/10 bg-[#161a20] p-1.5 shadow-2xl group-hover:pointer-events-auto group-hover:block group-focus-within:pointer-events-auto group-focus-within:block z-50">
+        <div id="language-menu" hidden class="absolute right-0 top-full mt-1.5 w-40 rounded border border-white/10 bg-[#161a20] p-1.5 shadow-2xl z-50">
           {languages.map((item) => (
             <a
               href={item.href}
-              class={`flex items-center justify-between rounded px-2 py-1.5 text-xs font-medium transition-colors ${item.code === lang ? "bg-hsb-red text-white font-bold" : "text-white/80 hover:bg-white/10 hover:text-white"}`}
+              class={`flex min-h-11 items-center justify-between rounded px-2 py-1.5 text-sm font-medium transition-colors ${item.code === lang ? "bg-hsb-red text-white font-bold" : "text-white/80 hover:bg-white/10 hover:text-white"}`}
               aria-current={item.code === lang ? "page" : undefined}
             >
               <span>{item.label}</span>
-              <span class="text-[10px] text-white/50">{item.title}</span>
+              <span class="text-xs text-white/75">{item.title}</span>
             </a>
           ))}
         </div>
@@ -118,7 +121,7 @@ const phoneHref = site.phone.replace("(0)", "").replace(/[^\d+]/g, "");
 
       <button
         id="mobile-menu-toggle"
-        class="flex size-10 items-center justify-center rounded border lg:hidden"
+        class="flex size-11 items-center justify-center rounded border lg:hidden"
         aria-label="Navigation öffnen"
         aria-expanded="false"
         aria-controls="mobile-menu"
@@ -137,7 +140,7 @@ const phoneHref = site.phone.replace("(0)", "").replace(/[^\d+]/g, "");
   <!-- Mobile menu -->
   <nav
     id="mobile-menu"
-    class="hidden border-t border-white/10 bg-hsb-black"
+    class="hidden max-h-[calc(100dvh-72px)] overflow-y-auto border-t border-white/10 bg-hsb-black"
     aria-label="Mobile Navigation"
   >
     <div class="container py-4">
@@ -206,6 +209,38 @@ const phoneHref = site.phone.replace("(0)", "").replace(/[^\d+]/g, "");
     observer.observe(sentinel);
   }
   syncHeaderState();
+
+  const languageToggle = document.getElementById("language-toggle");
+  const languageMenu = document.getElementById("language-menu");
+  const languagePicker = document.querySelector("[data-language-picker]");
+
+  function closeLanguages() {
+    if (languageMenu) languageMenu.hidden = true;
+    languageToggle?.setAttribute("aria-expanded", "false");
+  }
+
+  languageToggle?.addEventListener("click", () => {
+    if (!languageMenu) return;
+    languageMenu.hidden = !languageMenu.hidden;
+    languageToggle.setAttribute("aria-expanded", String(!languageMenu.hidden));
+  });
+  document.addEventListener("click", (event) => {
+    if (!languagePicker?.contains(event.target as Node)) closeLanguages();
+  });
+  languagePicker?.addEventListener("focusout", (event) => {
+    if (!languagePicker.contains((event as FocusEvent).relatedTarget as Node | null)) closeLanguages();
+  });
+  document.addEventListener("keydown", (event) => {
+    if (event.key !== "Escape") return;
+    if (languageMenu && !languageMenu.hidden) {
+      closeLanguages();
+      languageToggle?.focus();
+    }
+    if (toggle?.getAttribute("aria-expanded") === "true") {
+      toggle.click();
+      toggle.focus();
+    }
+  });
 
   toggle?.addEventListener("click", () => {
     const open = menu?.classList.toggle("hidden") === false;

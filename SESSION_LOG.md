@@ -47,3 +47,11 @@
    - `~/KI-System/ObsidianVault/brain/CURRENT_HANDOFF.md`
 
 **Status:** PRODUKTIONSREIF (GO) & AKTIV IM BETRIEB.
+
+
+## 13.11.2026 — Website-Darstellung & Performance (Claude Code)
+
+- Lighthouse-/axe-/Screenshot-Baseline auf lokalem Build (7 Vorlagen, 375/1440px), danach zentrale Fixes in Layout, Sektionen und `global.css`.
+- Behoben: Layout-Shift durch Sprach-Banner, Schrift-Shift, übergroße Logos/Projektfotos, unsichtbare Sekundärbuttons auf `/kontakt/` und 404, horizontales Scrollen auf `/kontakt/` und `/datenschutz/`, Überschriften-Reihenfolge im Rechner.
+- Werkzeuge: Firecrawl (Branding-Scan der Live-Seite), Exa (B2B-Homepage-Struktur; Ergebnis: keine Umstrukturierung nötig), Lighthouse 12, Playwright. Tavily nicht verfügbar (kein CLI/API-Key), „Stitch“ nicht installiert.
+- Versand unverändert blockiert: Health-Secret abgelaufen, Seed-Nachweis fehlt.

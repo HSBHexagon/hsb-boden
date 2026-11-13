@@ -2,6 +2,15 @@
 
 Stand: 11.11.2026. Status: **PRODUKTIONSREIF (GO) & AKTIV IM LIVE-VERSAND**.
 
+## 13.11.2026 — Website: Layout-Shift, Bildgewicht, unsichtbare Buttons (Branch `claude/kind-knuth-6f6dml`)
+
+- **Layout-Shift beseitigt:** Das Sprach-Banner (`LanguageSuggest.astro`) erschien per Skript im Seitenfluss und schob bei nicht-deutscher Browsersprache den gesamten Inhalt nach unten (CLS ≈ 0,10–0,12 auf jeder deutschen Seite). Es schwebt jetzt als Karte unter dem Header. Dazu Preload der Outfit-Schnitte 400/900 (`BaseLayout.astro`), wodurch auch der Schrift-Shift auf `/en/` (0,044) entfällt. Ergebnis: CLS 0 auf allen gemessenen Vorlagen.
+- **Bildgewicht:** Projektfotos haben 640px-Varianten (`*-640.webp`) mit `srcset` über `src/lib/responsiveImage.ts` (Branchen-/Leistungs-Detail, Referenzen, Startseiten-Bildstrecke). Header-Logo und Kundenlogo-PNGs auf ihre doppelte Anzeigegröße verkleinert (Header-Logo 44 → 4 KB, Glossnerbräu 91 → 3 KB). Kein Motiv, kein Logo und keine Aussage wurde ersetzt.
+- **Unsichtbare Buttons behoben:** Auf `/kontakt/` („Vorab: Technischen Beanspruchungs-Check durchführen“) und der 404-Seite („Projekt anfragen“) stand der weiße Sekundärbutton auf hellem Grund. Die Freigabeliste im Regressionstest führte beide fälschlich als „dunkler Seitenkopf“ und ist korrigiert. Laufzeit-Scan über alle 69 Seiten: kein heller Button auf hellem Grund mehr.
+- **Mobile Breite:** Buttons dürfen unter 640px umbrechen (vorher 459px Seitenbreite auf `/kontakt/`); lange URLs auf `/datenschutz/` brechen um (vorher 417px). Kein Overflow mehr auf 69 Seiten bei 375px.
+- **Überschriften:** Rechner-Seite ohne übersprungene Ebene (h3→h2, h4→h3).
+- **Messung (Lighthouse mobil, Brotli wie Cloudflare, 7 Vorlagen):** Performance vorher 86–99, nachher 95–100; Barrierefreiheit überall 100. Tests 383/383, `check` 0 Fehler, Build und `deploy:dry-run` grün.
+
 ## 12.11.2026 — Tagesobergrenze 250 je Postfach (Betreiberentscheid)
 - PR #580 ist auf `main` gemergt (`7665cd3`): Versand-Härtung, schnellerer Gesundheits-Scan, Website-Lesbarkeit.
 - Auf Anweisung des Betreibers vom 12.11.2026 liegt die harte Tagesobergrenze wieder bei 250 je Postfach (`send_governance.HARD_DAILY_CEILING`); Skript, Workflow, Tests und `PROJECT_TRUTH.md` sind angeglichen. Umgebungsvariablen können die Grenze nur senken.

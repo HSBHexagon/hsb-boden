@@ -1,9 +1,9 @@
 {
   "project": "HSB / HEXAFLOOR",
-  "last_updated": "2026-11-12",
+  "last_updated": "2026-11-13",
   "active_model": "Claude Code (Cloud-Sitzung)",
   "active_phase": "sales-os-production-ready",
-  "active_task": "Versandpfad gehärtet (SmtpNotAccepted/SendHalted, Rollback statt Dauerblockade); Draft-PR auf Branch claude/kind-knuth-6f6dml, nicht auf main",
+  "active_task": "Website: CLS/Bildgewicht/unsichtbare Buttons behoben (Branch claude/kind-knuth-6f6dml, PR #581); Versand wartet auf erneuertes Health-Secret",
   "account_migration_2026_07_02": {
     "github_new_repo": "https://github.com/HSBHexagon/hsb-boden",
     "github_old_repo_access": "HSBHexagon ist Admin-Collaborator im Alt-Repo cherinojoel-lang/hsb-boden (Ownership-Transfer pending, nicht blockierend)",

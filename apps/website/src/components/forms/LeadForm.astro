@@ -7,7 +7,7 @@ interface Props {
 }
 
 const { repairRequest = false } = Astro.props;
-// Online-Versand nur aktiv, wenn der serverseitige Lead-Endpoint konfiguriert ist.
+// Online-Versand aktiv, wenn der serverseitige Lead-Endpoint im Build freigegeben ist.
 const deliveryConfigured = site.hasLeadEndpoint;
 ---
 
@@ -16,12 +16,15 @@ const deliveryConfigured = site.hasLeadEndpoint;
     <div class="rounded border border-hsb-red/30 bg-hsb-red/5 p-4 text-sm leading-6 text-hsb-black">
       <p class="font-black">Direkter Draht ins Projektgeschäft</p>
       <p class="mt-1 text-hsb-steel">
-        Für eine schnelle Ersteinschätzung erreichen Sie HSB direkt:
+        Für die schnellste technische Ersteinschätzung erreichen Sie HSB direkt per Telefon oder E-Mail:
       </p>
       <p class="mt-2 font-bold">
         <a class="text-hsb-red hover:underline" href={`tel:${site.phone.replace("(0)", "").replace(/[^+\d]/g, "")}`}>{site.phone}</a>
         <span class="mx-2 text-hsb-line">·</span>
         <a class="text-hsb-red hover:underline" href={`mailto:${site.email}`}>{site.email}</a>
+      </p>
+      <p class="mt-2 text-xs text-hsb-steel">
+        Sie können das Formular auch ausfüllen – die Schaltfläche unten öffnet Ihre Angaben direkt vorbefüllt in Ihrem E-Mail-Programm.
       </p>
     </div>
   ) : null}
@@ -115,12 +118,11 @@ const deliveryConfigured = site.hasLeadEndpoint;
 
   <button
     id="form-submit"
-    class="button-primary disabled:cursor-not-allowed disabled:opacity-60"
+    class="button-primary"
     type="submit"
-    disabled={!deliveryConfigured}
   >
     {!deliveryConfigured
-      ? "Bitte direkt anrufen oder mailen"
+      ? "Anfrage per E-Mail zusammenstellen"
       : "Projektanfrage senden"}
   </button>
 </form>
@@ -135,6 +137,7 @@ const deliveryConfigured = site.hasLeadEndpoint;
     loadStressCheckHandoff,
     type LeadPrefill,
   } from "../../lib/stressCheckHandoff";
+  import { site } from "../../data/site";
 
   const form = document.getElementById("lead-form") as HTMLFormElement | null;
   const submitBtn = document.getElementById("form-submit") as HTMLButtonElement | null;
@@ -153,7 +156,7 @@ const deliveryConfigured = site.hasLeadEndpoint;
 
   async function onSubmit(event: SubmitEvent) {
     event.preventDefault();
-    if (!deliveryConfigured || !form || !submitBtn || !errorMsg) return;
+    if (!form || !submitBtn || !errorMsg) return;
 
     const fd = new FormData(form);
 
@@ -166,6 +169,31 @@ const deliveryConfigured = site.hasLeadEndpoint;
       document.getElementById("loads-fieldset")?.querySelector("input")?.focus();
       return;
     }
+
+    // Ehrlicher Mailto-Fallback, wenn Webhook-Endpunkt nicht aktiv/konfiguriert ist
+    if (!deliveryConfigured) {
+      const company = String(fd.get("company") || "Industrieboden");
+      const subject = encodeURIComponent(`Projektanfrage Industrieboden: ${company}`);
+      const bodyLines = [
+        "Guten Tag HSB-Team,",
+        "",
+        `Name: ${fd.get("firstName")} ${fd.get("lastName")}`,
+        `Firma: ${company}`,
+        `E-Mail: ${fd.get("email")}`,
+        `Telefon: ${fd.get("phone") || "k. A."}`,
+        `Branche: ${fd.get("industry")}`,
+        `Projektart: ${fd.get("projectType")}`,
+        `Fläche: ${fd.get("areaSize") || "k. A."} m²`,
+        `Laufender Betrieb: ${fd.get("liveOperation")}`,
+        `Belastungen: ${fd.getAll("loads").join(", ")}`,
+        "",
+        "Nachricht:",
+        String(fd.get("message") || ""),
+      ];
+      window.location.href = `mailto:${site.email}?subject=${subject}&body=${encodeURIComponent(bodyLines.join("\n"))}`;
+      return;
+    }
+
     // Session-Attribution (UTM/Referrer/Landingpage) anreichern; Fallback auf
     // Frisch-Erfassung, falls sessionStorage blockiert ist. Darf nie werfen.
     let attributionFields: Record<string, string> = {};

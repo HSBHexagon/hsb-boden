@@ -1,15 +1,8 @@
 ---
-import LeadFormSection from "../components/forms/LeadFormSection.astro";
-import ReferenceMapPreview from "../components/references/ReferenceMapPreview.astro";
-import CTASection from "../components/sections/CTASection.astro";
 import HomepageFAQSection from "../components/sections/HomepageFAQSection.astro";
-import IndustryGrid from "../components/sections/IndustryGrid.astro";
 import LogoCloud from "../components/sections/LogoCloud.astro";
-import ManufacturerProof from "../components/sections/ManufacturerProof.astro";
-import ProofMediaSection from "../components/sections/ProofMediaSection.astro";
-import SchmerzpunkteSection from "../components/sections/SchmerzpunkteSection.astro";
-import PersonaEntrySection from "../components/sections/PersonaEntrySection.astro";
-import ServiceGrid from "../components/sections/ServiceGrid.astro";
+import CTASection from "../components/sections/CTASection.astro";
+import RepairInquirySection from "../components/forms/RepairInquirySection.astro";
 import BaseLayout from "../layouts/BaseLayout.astro";
 import { site } from "../data/site";
 import { homeAlternates } from "../lib/i18n";
@@ -17,16 +10,22 @@ import { buildFaqJsonLd, buildLocalBusinessJsonLd, buildWebSiteJsonLd } from "..
 import { homepageFaqs } from "../data/homepageFaqs";
 ---
 
-<BaseLayout title={site.defaultTitle} description={site.defaultDescription} path="/" jsonLd={[buildWebSiteJsonLd(), buildLocalBusinessJsonLd(), buildFaqJsonLd(homepageFaqs)]} alternates={homeAlternates}>
+<BaseLayout
+  title={site.defaultTitle}
+  description={site.defaultDescription}
+  path="/"
+  jsonLd={[buildWebSiteJsonLd(), buildLocalBusinessJsonLd(), buildFaqJsonLd(homepageFaqs)]}
+  alternates={homeAlternates}
+>
 
-  <!-- HERO -->
+  <!-- BLOCK 1: HERO -->
   <section class="relative overflow-hidden border-b-4 border-hsb-red bg-hsb-black text-white">
-    <div class="container relative z-10 pb-0 pt-16 lg:pt-24">
-      <div class="grid gap-14 lg:grid-cols-[1.05fr_0.95fr] lg:items-stretch">
+    <div class="container relative z-10 pb-0 pt-14 lg:pt-20">
+      <div class="grid gap-12 lg:grid-cols-[1.05fr_0.95fr] lg:items-stretch">
 
-        <!-- Left: Copy -->
-        <div class="pb-16 lg:pb-24">
-          <p class="eyebrow-light mb-7 flex items-center gap-2.5">
+        <!-- Left: Copy & Core Message -->
+        <div class="pb-12 lg:pb-16">
+          <p class="eyebrow-light mb-6 flex items-center gap-2.5">
             <svg width="11" height="12.7" viewBox="0 0 26 30" fill="none" aria-hidden="true" class="shrink-0">
               <path d="M12.9904 0L25.9808 7.5V22.5L12.9904 30L0 22.5V7.5L12.9904 0Z" fill="#cb0000" />
             </svg>
@@ -35,41 +34,41 @@ import { homepageFaqs } from "../data/homepageFaqs";
           <h1 class="hero-h1 max-w-[18ch]">
             Spezialisierte Industrieböden für Lebensmittel-, Pharma- und <span class="text-hsb-red-light">Chemieproduktion</span>
           </h1>
-          <p class="mt-7 max-w-xl text-lg leading-8 text-white/62">
-            Technische Fachplanung und Ausführung in Deutschland und europaweit. <span class="font-bold text-white/90">Sanierung ohne Stillstand</span> durch optimierte Taktung und Wochenend-Montage.
+          <p class="mt-6 max-w-xl text-lg leading-8 text-white/70">
+            Technische Fachplanung und Ausführung in Deutschland und europaweit. <span class="font-bold text-white/95">Sanierung ohne Stillstand</span> durch optimierte Taktung und Wochenend-Montage.
           </p>
-          <div class="mt-10 flex flex-wrap items-center gap-4">
-            <a class="button-primary" href="/kontakt/">Analyse vor Ort anfragen</a>
+          <div class="mt-8 flex flex-wrap items-center gap-4">
+            <a class="button-primary" href="#reparaturanfrage">Analyse vor Ort anfragen</a>
             <a class="button-secondary" href="/referenzen/">Referenzen ansehen</a>
           </div>
         </div>
 
-        <!-- Right: Visual proof -->
-        <div class="grid self-stretch gap-5 pb-12 lg:grid-rows-[1fr_auto] lg:pb-24">
-          <div class="group relative min-h-[400px] overflow-hidden rounded-[4px] border border-white/10 bg-black lg:min-h-[580px]">
+        <!-- Right: Visual Proof & Key Segments -->
+        <div class="grid self-stretch gap-4 pb-10 lg:grid-rows-[1fr_auto] lg:pb-16">
+          <div class="group relative min-h-[340px] overflow-hidden rounded-[4px] border border-white/10 bg-black lg:min-h-[440px]">
             <img
               src="/media/hsb/current/industrieboden-baustelle.webp"
               srcset="/media/hsb/current/industrieboden-baustelle-640.webp 640w, /media/hsb/current/industrieboden-baustelle.webp 1024w"
               sizes="(min-width: 1024px) 50vw, 100vw"
               alt="Keramischer Industrieboden mit Entwässerungsrinne und Hexagon-Verlegung in Produktionshalle"
               class="absolute inset-0 h-full w-full object-cover object-center transition-transform duration-700 group-hover:scale-105"
-              style="opacity:0.75"
+              style="opacity:0.8"
               fetchpriority="high"
               loading="eager"
               decoding="async"
               width="1024"
               height="768"
             />
-            <div class="absolute inset-0 bg-gradient-to-t from-black via-black/45 to-transparent"></div>
-            <div class="relative z-10 flex h-full flex-col justify-end p-8 lg:p-12">
-              <div class="eyebrow-light mb-4 flex items-center gap-2">
+            <div class="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent"></div>
+            <div class="relative z-10 flex h-full flex-col justify-end p-6 lg:p-8">
+              <div class="eyebrow-light mb-2 flex items-center gap-2">
                 <span class="size-1 bg-hsb-red"></span>
                 <span>Referenz-Projekt</span>
               </div>
-              <h2 class="max-w-md text-2xl font-black leading-tight text-white lg:text-[2rem]">
+              <h2 class="max-w-md text-xl font-black leading-tight text-white lg:text-2xl">
                 Keramik, Entwässerung und Gefälle aus einem System.
               </h2>
-              <p class="mt-4 max-w-md text-sm leading-7 text-white/72">
+              <p class="mt-2 max-w-md text-xs leading-5 text-white/70">
                 Industrieböden für Lebensmittelbetriebe müssen Säurebelastung, Reinigungsdruck und Auditanforderungen dauerhaft bestehen.
               </p>
             </div>
@@ -78,12 +77,12 @@ import { homepageFaqs } from "../data/homepageFaqs";
             {[
               ["Lebensmittelproduktion", "Reinigbarkeit, Hygiene, Säureschutz"],
               ["Molkerei & Brauerei", "Milchsäure, Feuchtigkeit, Gefälle"],
-              ["Chemie & Pharma", "Chemikalienbeständigkeit, WHG"],
+              ["Chemie & Pharma", "Chemikalienbeständigkeit, WHG § 62"],
               ["Sanierung im Betrieb", "Bauabschnitte, kurze Sperrzeiten"],
             ].map(([title, sub], i) => (
-              <div class={`border-white/10 p-6 ${i < 2 ? "border-b sm:border-b-0 sm:border-r" : ""} ${i === 2 ? "sm:border-r" : ""} ${i === 3 ? "" : "border-b sm:border-b-0"}`}>
-                <p class="mb-1.5 text-[0.75rem] font-black uppercase tracking-[0.16em] text-hsb-red-light">{title}</p>
-                <p class="text-xs leading-5 text-white/62">{sub}</p>
+              <div class={`border-white/10 p-3.5 ${i < 2 ? "border-b sm:border-b-0 sm:border-r" : ""} ${i === 2 ? "sm:border-r" : ""} ${i === 3 ? "" : "border-b sm:border-b-0"}`}>
+                <p class="mb-1 text-[0.72rem] font-black uppercase tracking-[0.16em] text-hsb-red-light">{title}</p>
+                <p class="text-xs leading-4 text-white/60">{sub}</p>
               </div>
             ))}
           </div>
@@ -91,123 +90,267 @@ import { homepageFaqs } from "../data/homepageFaqs";
 
       </div>
     </div>
-
   </section>
 
-  <!-- LOGO CLOUD -->
-  <LogoCloud />
+  <!-- LOGO CLOUD: Kompakter Trust-Bar -->
+  <LogoCloud compact={true} />
 
-  <section class="border-b border-hsb-line bg-white">
-    <div class="container pt-12 pb-8 lg:pt-16 lg:pb-10">
-      <h2 class="h2 max-w-2xl">Planung und Ausführung aus einer Hand</h2>
-      <p class="lead mt-5 max-w-2xl">Von der Analyse vor Ort bis zur Abnahme bleibt alles in einer Hand: Keramik, Säureschutz, Abdichtung, Entwässerung und Sanierung werden als ein abgestimmtes Bodensystem geplant und ausgeführt – ohne Schnittstellenverlust zwischen Planung und Gewerk.</p>
-      <p class="mt-5 max-w-2xl leading-7 text-hsb-steel">Neben Neubau und Sanierung gehört auch die technische Instandsetzung von Schadstellen, Fugen, Anschlüssen und Teilbereichen im laufenden Betrieb zum Tagesgeschäft.</p>
-    </div>
-    <div class="container grid gap-0 divide-y divide-hsb-line pb-12 lg:grid-cols-3 lg:divide-x lg:divide-y-0 lg:pb-16">
-      {[
-        ["Analyse vor Ort", "Untergrund, Chemie und Betrieb werden technisch aufgenommen."],
-        ["System, nicht Produkt", "Belag, Fuge, Abdichtung und Entwässerung werden als Einheit geplant."],
-        ["Sanierung planbar", "Bauabschnitte und Stillstandsfenster werden von Anfang an eingeplant."],
-      ].map(([label, desc]) => (
-        <div class="py-6 lg:px-8">
-          <p class="text-[0.72rem] font-black uppercase tracking-[0.16em] text-hsb-red">{label}</p>
-          <p class="mt-2 max-w-sm text-sm leading-6 text-hsb-steel">{desc}</p>
-        </div>
-      ))}
-    </div>
-  </section>
-
-  <!-- SCHMERZPUNKTE -->
-  <SchmerzpunkteSection />
-
-  <!-- ZIELGRUPPEN / PERSONA EINSTIEGE -->
-  <PersonaEntrySection />
-
-  <!-- LEISTUNGEN -->
-  <ServiceGrid />
-
-  <!-- BRANCHEN -->
-  <IndustryGrid />
-
-  <!-- VISUELLE SUBSTANZ -->
-  <ProofMediaSection />
-
-  <!-- REFERENZEN PREVIEW -->
-  <ReferenceMapPreview />
-
-  <!-- PROJEKTABLAUF -->
-  <section class="section bg-[#f8f9fb]" id="projektablauf">
+  <!-- BLOCK 2: SYSTEME & BRANCHEN MATRIX -->
+  <section class="border-b border-hsb-line bg-white py-12 lg:py-16">
     <div class="container">
-      <div class="mb-14 max-w-2xl">
-        <p class="eyebrow mb-4">Planung & Realisierung</p>
-        <h2 class="h2">Von Belastungsprofil zu belastbarer Umsetzung</h2>
-        <p class="lead mt-5">Jede Entscheidung beginnt mit der Analyse des Ist-Zustands. Nicht mit dem Katalog.</p>
+      <div class="mb-10 max-w-3xl">
+        <p class="eyebrow mb-3">Systeme & Branchen</p>
+        <h2 class="h2">Industrieböden nach Belastungsprofil</h2>
+        <p class="lead mt-3">
+          Planung und Ausführung aus einer Hand: Belag, Fuge, Gefälle, Entwässerung und chemischer Schutz als integriertes System – exakt abgestimmt auf das jeweilige Produktions- und Auditprofil.
+        </p>
       </div>
 
-      <div class="grid gap-0 border-t border-hsb-line">
-        {[
-          ["01", "Analyse vor Ort", "Untergrund, Schadensbild, Säure- und Reinigungschemie, Nassbelastung, Gefälle, Rinnenführung und Produktionsablauf werden direkt in der Halle aufgenommen. Ohne dieses Belastungsprofil keine Systemempfehlung."],
-          ["02", "Systementscheidung", "Keramik, PU-Beton, Epoxidharz, WHG-Abdichtung und Entwässerung werden nach Säure-, Hygiene- und Lastprofil bewertet – Sechskant-Industriekeramik dort, wo Reinigbarkeit und Chemiebeständigkeit dauerhaft zählen."],
-          ["03", "Sanierungsfenster planen", "Bauabschnitte, Sperrzeiten, Aushärtung von keramischer Verlegung und Verfugung sowie die Wiederinbetriebnahme werden mit der Produktions- und Reinigungsplanung abgestimmt – inklusive Wochenend- und Schichtmontage."],
-          ["04", "Dokumentation und Abnahme", "Gefälle, Rinnenanschlüsse, Fugen und Detailpunkte werden dokumentiert: als Grundlage für Hygiene- und WHG-Nachweise, Wartung und spätere Sanierungsplanung."],
-        ].map(([number, title, text]) => (
-          <article class="group grid items-baseline gap-7 border-b border-hsb-line px-4 py-10 transition-colors duration-300 hover:bg-white lg:-mx-4 lg:grid-cols-[112px_1fr_1.5fr]">
-            <div class="flex items-center gap-4">
-              <span class="font-mono text-[0.6875rem] font-black tracking-[0.24em] text-hsb-red">STEP</span>
-              <span class="text-4xl font-black text-hsb-black tabular-nums">{number}</span>
+      <div class="grid gap-8 lg:grid-cols-2">
+        <!-- Spalte 1: 8 Kernleistungen & Bodensysteme -->
+        <div class="rounded-[4px] border border-hsb-line bg-[#fbfcfd] p-6 lg:p-7">
+          <div class="mb-5 flex items-center justify-between border-b border-hsb-line pb-3.5">
+            <div>
+              <p class="text-[0.6875rem] font-black uppercase tracking-[0.18em] text-hsb-red">Leistungsspektrum</p>
+              <h3 class="text-xl font-black text-hsb-black mt-1">Bodensysteme & Gewerke</h3>
             </div>
-            <h3 class="text-xl font-black leading-tight text-hsb-black transition-colors group-hover:text-hsb-red">{title}</h3>
-            <p class="max-w-xl text-[0.95rem] leading-7 text-hsb-steel">{text}</p>
+            <a href="/leistungen/" class="text-xs font-bold text-hsb-red hover:underline">Alle Leistungen →</a>
+          </div>
+
+          <div class="grid gap-2.5 sm:grid-cols-2">
+            {[
+              { title: "Industrieboden-Säureschutz", href: "/leistungen/industrieboden-saeureschutz/", desc: "Beständig gegen Säuren, Laugen & aggressives CIP" },
+              { title: "Keramische Industrieböden", href: "/leistungen/keramische-industrieboeden/", desc: "Hochbelastbare Rüttelkeramik & Sechskantfliesen" },
+              { title: "PU-Beton Industrieboden", href: "/leistungen/pu-beton-industrieboden/", desc: "Fugenlose Beläge bei extremer Thermoschockbelastung" },
+              { title: "Epoxidharz-Beschichtung", href: "/leistungen/epoxidharz-bodenbeschichtung/", desc: "Widerstandsfähige Versiegelungen für Lager & Montage" },
+              { title: "Entwässerungssysteme", href: "/leistungen/entwaesserung-industrieboden/", desc: "Edelstahlrinnen mit Flansch, Wannen & Gefälleausbildung" },
+              { title: "WHG-Abdichtung nach § 62", href: "/leistungen/whg-abdichtung-industrieboden/", desc: "Zulassungsgerechte AwSV/WHG Auffangräume & Fugen" },
+              { title: "Sanierung im laufenden Betrieb", href: "/leistungen/bodensanierung-laufender-betrieb/", desc: "Wochenend-Montage & getaktete Bauabschnitte" },
+              { title: "Reparatur & Instandsetzung", href: "/leistungen/boden-reparatur-instandsetzung/", desc: "Gezielte Reparatur von Fugen, Kanten & Schadstellen" },
+            ].map((s) => (
+              <a href={s.href} class="group rounded-[3px] border border-hsb-line bg-white p-3 no-underline transition hover:border-hsb-red hover:shadow-sm">
+                <p class="text-xs font-bold text-hsb-black group-hover:text-hsb-red transition-colors flex items-center justify-between">
+                  <span>{s.title}</span>
+                  <span class="text-hsb-steel group-hover:text-hsb-red transition-colors">→</span>
+                </p>
+                <p class="mt-1 text-[11px] text-hsb-steel leading-relaxed">{s.desc}</p>
+              </a>
+            ))}
+          </div>
+
+          <div class="mt-5 flex flex-wrap items-center gap-3 border-t border-hsb-line pt-3.5 text-xs font-bold text-hsb-steel">
+            <span>Tools für Planer:</span>
+            <a href="/beanspruchungs-check/" class="rounded bg-white px-2.5 py-1 border border-hsb-line text-hsb-black hover:border-hsb-red hover:text-hsb-red transition-colors">Beanspruchungs-Check</a>
+            <a href="/planer/" class="rounded bg-white px-2.5 py-1 border border-hsb-line text-hsb-black hover:border-hsb-red hover:text-hsb-red transition-colors">LV-Texte & Planerportal</a>
+          </div>
+        </div>
+
+        <!-- Spalte 2: 6 Branchen & Belastungsprofile -->
+        <div class="rounded-[4px] border border-hsb-line bg-[#fbfcfd] p-6 lg:p-7">
+          <div class="mb-5 flex items-center justify-between border-b border-hsb-line pb-3.5">
+            <div>
+              <p class="text-[0.6875rem] font-black uppercase tracking-[0.18em] text-hsb-red">Einsatzbereiche</p>
+              <h3 class="text-xl font-black text-hsb-black mt-1">Branchen & Produktionsanforderungen</h3>
+            </div>
+            <a href="/branchen/" class="text-xs font-bold text-hsb-red hover:underline">Alle Branchen →</a>
+          </div>
+
+          <div class="grid gap-2.5 sm:grid-cols-2">
+            {[
+              { title: "Lebensmittelindustrie", href: "/branchen/lebensmittelindustrie/", desc: "Hygienisch, porenfrei, hochdruckfest & auditkonform" },
+              { title: "Molkerei & Käserei", href: "/branchen/molkerei/", desc: "Dauerhafter Schutz vor Milchsäurekorrosion & Heißdampf" },
+              { title: "Brauerei & Getränke", href: "/branchen/brauerei-getraenkeindustrie/", desc: "Laugenbeständig, rutschfest R11–R13 & rollende Schwerlast" },
+              { title: "Chemieindustrie", href: "/branchen/chemieindustrie/", desc: "Zertifizierter Säureschutz, WHG-Dichtigkeit & Lösungsmittelfestigkeit" },
+              { title: "Pharmaindustrie", href: "/branchen/pharmaindustrie/", desc: "GMP-konforme Reinraumböden mit glatten Hohlkehlen" },
+              { title: "Großküchen & Backstuben", href: "/branchen/backwarenproduktion-grosskueche/", desc: "Fettsäurebeständig, temperaturbeständig & trittfest" },
+            ].map((b) => (
+              <a href={b.href} class="group rounded-[3px] border border-hsb-line bg-white p-3 no-underline transition hover:border-hsb-red hover:shadow-sm">
+                <p class="text-xs font-bold text-hsb-black group-hover:text-hsb-red transition-colors flex items-center justify-between">
+                  <span>{b.title}</span>
+                  <span class="text-hsb-steel group-hover:text-hsb-red transition-colors">→</span>
+                </p>
+                <p class="mt-1 text-[11px] text-hsb-steel leading-relaxed">{b.desc}</p>
+              </a>
+            ))}
+          </div>
+
+          <!-- Häufige Versagensursachen Callout -->
+          <div class="mt-5 border-t border-hsb-line pt-3.5">
+            <p class="text-xs font-bold text-hsb-ink mb-2">Häufige Schwachstellen aus Vor-Ort-Analysen:</p>
+            <div class="grid grid-cols-2 gap-2 text-[11px] text-hsb-steel">
+              <span class="flex items-center gap-1.5"><span class="size-1.5 bg-hsb-red rounded-full shrink-0"></span>Thermoschock bei Heißreinigung</span>
+              <span class="flex items-center gap-1.5"><span class="size-1.5 bg-hsb-red rounded-full shrink-0"></span>Säureangriff auf Zementfugen</span>
+              <span class="flex items-center gap-1.5"><span class="size-1.5 bg-hsb-red rounded-full shrink-0"></span>Stehendes Wasser (&lt; 1,5% Gefälle)</span>
+              <span class="flex items-center gap-1.5"><span class="size-1.5 bg-hsb-red rounded-full shrink-0"></span>Flanschabriss an Entwässerungsrinnen</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- BLOCK 3: VISUELLER NACHWEIS & REFERENZEN -->
+  <section class="border-b border-hsb-line bg-white py-12 lg:py-16">
+    <div class="container">
+      <div class="mb-10 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div class="max-w-2xl">
+          <p class="eyebrow mb-3 flex items-center gap-2">
+            <span class="size-1.5 bg-hsb-red"></span>
+            <span>Reale Ausführung & Belegte Qualität</span>
+          </p>
+          <h2 class="h2">Echte Industrieböden im laufenden Einsatz</h2>
+          <p class="lead mt-3">Keine Musterkataloge: Jedes Bild zeigt reale Produktionsflächen aus Lebensmittel-, Getränke- und Chemiewerken.</p>
+        </div>
+        <a class="button-secondary-dark whitespace-nowrap self-start sm:self-auto" href="/referenzen/">
+          Alle Referenzen & Karte ansehen →
+        </a>
+      </div>
+
+      <div class="grid gap-6 lg:grid-cols-3">
+        <article class="group overflow-hidden rounded-[4px] border border-hsb-line bg-hsb-black text-white">
+          <div class="aspect-[16/10] overflow-hidden">
+            <img
+              src="/media/hsb/projekte/keramik-halle-rinnen.webp"
+              alt="Neu verlegter keramischer Industrieboden mit Sechskantfliesen und Entwässerungsrinnen in Produktionshalle"
+              class="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
+              loading="lazy"
+              width="562"
+              height="351"
+              decoding="async"
+            />
+          </div>
+          <div class="p-5">
+            <p class="text-[0.6875rem] font-black uppercase tracking-[0.16em] text-hsb-red-light">Keramischer Industrieboden</p>
+            <h3 class="text-base font-bold text-white mt-1">Hygienische Rüttelkeramik</h3>
+            <p class="mt-2 text-xs leading-5 text-white/70">Sechskant-Industriekeramik mit Gefälle und nahtlos eingefassten Rinnenläufen für Molkereien und Lebensmittelbetriebe.</p>
+          </div>
+        </article>
+
+        <article class="group overflow-hidden rounded-[4px] border border-hsb-line bg-hsb-black text-white">
+          <div class="aspect-[16/10] overflow-hidden">
+            <img
+              src="/media/hsb/projekte/hexagon-rinne-detail.webp"
+              alt="Detailaufnahme einer Edelstahl-Entwässerungsrinne eingefasst in Sechskant-Keramikfliesen"
+              class="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
+              loading="lazy"
+              width="562"
+              height="351"
+              decoding="async"
+            />
+          </div>
+          <div class="p-5">
+            <p class="text-[0.6875rem] font-black uppercase tracking-[0.16em] text-hsb-red-light">Detail & Entwässerung</p>
+            <h3 class="text-base font-bold text-white mt-1">Dauerhafte Flanscheinbindung</h3>
+            <p class="mt-2 text-xs leading-5 text-white/70">Kritische Detailausbildung an Rinnenkanten und Dehnungsfugen – dauerhaft dicht und unterlaufsicher ausgeführt.</p>
+          </div>
+        </article>
+
+        <article class="group overflow-hidden rounded-[4px] border border-hsb-line bg-hsb-black text-white">
+          <div class="aspect-[16/10] overflow-hidden">
+            <img
+              src="/media/hsb/projekte/beschichtete-halle.webp"
+              alt="Frisch beschichteter, glänzender Industrieboden in einer Logistikhalle"
+              class="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
+              loading="lazy"
+              width="562"
+              height="351"
+              decoding="async"
+            />
+          </div>
+          <div class="p-5">
+            <p class="text-[0.6875rem] font-black uppercase tracking-[0.16em] text-hsb-red-light">Beschichtung & Sanierung</p>
+            <h3 class="text-base font-bold text-white mt-1">Fugenlose Schwerlastflächen</h3>
+            <p class="mt-2 text-xs leading-5 text-white/70">PU-Beton und Epoxidharz nach präzisem Belastungsprofil mit definierten Aushärtezeiten für kürzeste Stillstandsfenster.</p>
+          </div>
+        </article>
+      </div>
+
+      <!-- Hersteller-Qualität & Systempartner -->
+      <div class="mt-8 flex flex-wrap items-center justify-between gap-4 rounded-[4px] border border-hsb-line bg-[#fbfcfd] px-6 py-4 text-xs text-hsb-steel">
+        <span class="font-bold text-hsb-black">Geprüfte Systemkomponenten führender Hersteller:</span>
+        <span class="flex flex-wrap gap-4 font-semibold text-hsb-ink">
+          <span>Argelith (Sechskantkeramik)</span>
+          <span>·</span>
+          <span>Steuler / Keramchemie</span>
+          <span>·</span>
+          <span>Silikal (Reaktionsharze)</span>
+          <span>·</span>
+          <span>MC-Bauchemie</span>
+        </span>
+      </div>
+    </div>
+  </section>
+
+  <!-- BLOCK 4: PROJEKTABLAUF -->
+  <section class="border-b border-hsb-line bg-[#f8f9fb] py-12 lg:py-16" id="projektablauf">
+    <div class="container">
+      <div class="mb-10 max-w-2xl">
+        <p class="eyebrow mb-3">Planung & Realisierung</p>
+        <h2 class="h2">Von Belastungsprofil zu belastbarer Umsetzung</h2>
+        <p class="lead mt-3">Jede Entscheidung beginnt mit der Analyse des Ist-Zustands vor Ort. Nicht mit dem Katalog.</p>
+      </div>
+
+      <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {[
+          ["01", "Analyse vor Ort", "Untergrund, Schadensbild, Säure- und Reinigungschemie, Nassbelastung, Gefälle und Rinnenführung werden direkt in der Halle aufgenommen."],
+          ["02", "Systemauslegung", "Keramik, PU-Beton, Epoxidharz, WHG-Abdichtung und Entwässerung werden nach Säure-, Hygiene- und Lastprofil ingenieurseitig bewertet."],
+          ["03", "Sanierungsfenster planen", "Bauabschnitte, Sperrzeiten und Wiederinbetriebnahme werden mit der Produktionsplanung abgestimmt – inklusive Wochenend- und Schichtmontage."],
+          ["04", "Dokumentation & Abnahme", "Gefälle, Rinnenanschlüsse, Fugen und Detailpunkte werden dokumentiert: als Nachweis für Hygieneaudits und WHG-Behörden."],
+        ].map(([number, title, text]) => (
+          <article class="flex flex-col justify-between rounded-[4px] border border-hsb-line bg-white p-5 shadow-sm">
+            <div>
+              <div class="mb-3 flex items-center gap-2">
+                <span class="font-mono text-[0.6875rem] font-black tracking-[0.2em] text-hsb-red">SCHRITT</span>
+                <span class="text-2xl font-black text-hsb-black tabular-nums">{number}</span>
+              </div>
+              <h3 class="text-base font-bold text-hsb-black">{title}</h3>
+              <p class="mt-2 text-xs leading-relaxed text-hsb-steel">{text}</p>
+            </div>
           </article>
         ))}
       </div>
 
-      <div class="mt-10 flex flex-wrap items-center gap-4">
+      <div class="mt-8 flex flex-wrap items-center gap-4">
         <a class="button-secondary-dark" href="/projektablauf/">Projektablauf im Detail</a>
-        <a class="button-primary" href="/kontakt/">Projekt besprechen</a>
+        <a class="button-primary" href="#reparaturanfrage">Projekt anfragen</a>
       </div>
     </div>
   </section>
 
-  <!-- HERSTELLER -->
-  <ManufacturerProof />
-
-  <!-- ÜBER UNS / UNTERNEHMEN & TEAM -->
-  <section class="section border-b border-hsb-line bg-white" id="ueber-uns">
+  <!-- BLOCK 5: UNTERNEHMEN & TEAM -->
+  <section class="border-b border-hsb-line bg-white py-12 lg:py-16" id="ueber-uns">
     <div class="container">
-      <div class="mb-12 max-w-3xl">
-        <p class="eyebrow mb-4">Unternehmen & Team</p>
-        <h2 class="h2">Spezialisierter Fachbetrieb mit eigenem, eingespieltem Team</h2>
-        <p class="lead mt-6 text-hsb-steel">
-          HSB ist ein spezialisierter Fachbetrieb für Industrieböden, Säureschutz und keramische Bodensysteme in produktionskritischen Bereichen. Ausgeführt wird mit eigenem, festangestelltem Personal aus dem gleichen Betrieb – nicht über wechselnde Subunternehmer. Das Team ist eingespielt, branchenspezialisiert, mehrsprachig und in der Ausführung aufeinander abgestimmt.
-        </p>
-        <p class="mt-5 max-w-2xl leading-7 text-hsb-steel">
-          Mehrere Mitarbeitende bringen jahrzehntelange Erfahrung mit, einzelne Fachkräfte rund 30 Jahre Berufserfahrung in diesem speziellen Gewerk. Die Verlegung von Sechskant-Industriefliesen und vergleichbaren keramischen Systemen ist seit mehr als 40 Jahren bewährt; HSB ist in diesem spezialisierten Umfeld von Anfang an dabei und bringt die entsprechende Praxis in Sanierung, Reparatur, Neubau und Detailausbildung mit.
+      <div class="mb-10 max-w-3xl">
+        <p class="eyebrow mb-3">Unternehmen & Team</p>
+        <h2 class="h2">Spezialisierter Fachbetrieb mit eigenem, festangestelltem Team</h2>
+        <p class="lead mt-4 text-hsb-steel">
+          HSB ist ein spezialisierter Fachbetrieb für Industrieböden, Säureschutz und keramische Bodensysteme in produktionskritischen Bereichen. Ausgeführt wird mit eigenem, festangestelltem Personal aus dem Betrieb – ohne wechselnde Subunternehmer. Das Team ist eingespielt, branchenspezialisiert, mehrsprachig und in der Ausführung aufeinander abgestimmt.
         </p>
       </div>
+
       <dl class="grid gap-px overflow-hidden rounded-[4px] border border-hsb-line bg-hsb-line sm:grid-cols-2 lg:grid-cols-4">
         {[
-          ["Eigenes Fachpersonal", "Festangestelltes, eingespieltes Team – keine wechselnden Subunternehmer in der laufenden Ausführung."],
+          ["Eigenes Fachpersonal", "Festangestelltes, eingespieltes Team – keine wechselnden Subunternehmer in der Ausführung."],
           ["Jahrzehnte Erfahrung", "Mitarbeiter mit bis zu rund 30 Jahren Berufserfahrung; Sechskantfliesen-Technik seit über 40 Jahren bewährt."],
-          ["Mehrsprachig & spezialisiert", "National einsetzbar, branchenspezialisiert und in der Baustellenpraxis aufeinander abgestimmt."],
-          ["Qualifiziert & abgesichert", "Angeschlossen an SOKA-BAU, mit Erste-Hilfe-Schulung und VCA/SCC-bezogenen Sicherheitsstandards."],
+          ["Mehrsprachig & mobil", "Bundesweit und europaweit einsetzbar, branchenspezialisiert und in der Baustellenpraxis eingespielt."],
+          ["Qualifiziert & tarifgebunden", "Tarifgebunden über SOKA-BAU, Erste-Hilfe-geschult, sicherheitszertifiziert (VCA/SCC-bezogene Standards)."],
         ].map(([t, d]) => (
-          <div class="bg-white p-6 lg:p-7">
+          <div class="bg-white p-5 lg:p-6">
             <dt class="text-[0.72rem] font-black uppercase tracking-[0.16em] text-hsb-red">{t}</dt>
-            <dd class="mt-3 text-sm leading-6 text-hsb-steel">{d}</dd>
+            <dd class="mt-2 text-xs leading-5 text-hsb-steel">{d}</dd>
           </div>
         ))}
       </dl>
     </div>
   </section>
 
-  <!-- KONTAKTFORMULAR -->
-  <LeadFormSection />
+  <!-- BLOCK 6: CONVERSION-TERMINAL (Anker für #reparaturanfrage & #kontaktformular) -->
+  <div id="kontaktformular" class="scroll-mt-24" aria-hidden="true"></div>
+  <RepairInquirySection />
 
-  <!-- FAQ -->
+  <!-- BLOCK 7: FAQ & ABSCHLUSS -->
   <HomepageFAQSection />
 
-  <!-- FINAL CTA -->
   <CTASection />
 
 </BaseLayout>

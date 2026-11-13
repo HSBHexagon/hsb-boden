@@ -39,7 +39,7 @@ class InboxRotationPool:
         self._order: List[str] = []
         self._cursor: int = 0
 
-    def register_mailbox(self, email: str, daily_cap: int = 250, active: bool = True) -> None:
+    def register_mailbox(self, email: str, daily_cap: int = 500, active: bool = True) -> None:
         """Registriert ein Postfach im Rotations-Pool."""
         if email not in self._mailboxes:
             self._order.append(email)

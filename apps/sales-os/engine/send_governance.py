@@ -3,7 +3,7 @@ HSB Sales OS - Send Governance & EOP Anti-Spam Queue Guardrails (G11).
 
 Erzwingt:
 1. Natuerlichen stochastischen Jitter: 45 bis 180 Sekunden zwischen E-Mails.
-2. Tageslimit pro Postfach: standardmäßig 250, dynamisch skalierbar über HSB_MAX_DAILY_CAP / HSB_DAILY_CAP.
+2. Tageslimit pro Postfach: standardmäßig 500, dynamisch skalierbar über HSB_MAX_DAILY_CAP / HSB_DAILY_CAP.
 3. Fail-closed Schutz: Blockiert strikt bei Cap-Erreichung.
 """
 from __future__ import annotations
@@ -18,8 +18,8 @@ from typing import Dict, Optional, Tuple
 
 MIN_JITTER_SECONDS: int = int(os.environ.get('HSB_JITTER_MIN', 45))
 MAX_JITTER_SECONDS: int = int(os.environ.get('HSB_JITTER_MAX', 180))
-# Tageslimit pro Postfach (Standard 250, dynamisch skalierbar über HSB_MAX_DAILY_CAP / HSB_DAILY_CAP).
-MAX_DAILY_CAP_PER_MAILBOX: int = int(os.environ.get('HSB_MAX_DAILY_CAP', 250))
+# Tageslimit pro Postfach (Standard 500, dynamisch skalierbar über HSB_MAX_DAILY_CAP / HSB_DAILY_CAP).
+MAX_DAILY_CAP_PER_MAILBOX: int = int(os.environ.get('HSB_MAX_DAILY_CAP', 500))
 DAILY_CAP_PER_MAILBOX: int = min(MAX_DAILY_CAP_PER_MAILBOX, int(os.environ.get('HSB_DAILY_CAP', MAX_DAILY_CAP_PER_MAILBOX)))
 
 REAL_EXTERNAL_PROSPECT_SEND_COUNT: int = 0

@@ -450,7 +450,7 @@ def test_tranche_script_and_workflow_offer_only_counts_the_engine_accepts():
     root = Path(__file__).resolve().parents[3]
     script = (root / 'apps/sales-os/bin/versand-tranche.sh').read_text(encoding='utf-8')
     workflow = (root / '.github/workflows/sales-os-safety.yml').read_text(encoding='utf-8')
-    assert MAX_DAILY_CAP_PER_MAILBOX == 250
+    assert MAX_DAILY_CAP_PER_MAILBOX == 500
     assert int(re.search(r'COUNT <= (\d+)', script)[1]) == MAX_DAILY_CAP_PER_MAILBOX
     assert int(re.search(r'HSB_DAILY_CAP:-(\d+)', script)[1]) == MAX_DAILY_CAP_PER_MAILBOX
     assert f'Anzahl je Postfach (1-{MAX_DAILY_CAP_PER_MAILBOX})' in workflow

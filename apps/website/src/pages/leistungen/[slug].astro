@@ -45,7 +45,7 @@ const serviceImage = serviceImages[service.slug];
 ---
 
 <BaseLayout title={service.seoTitle} description={service.description} path={path} jsonLd={[buildServiceJsonLd({ name: service.title, description: service.description, path, standards: getStandardsForService(service.slug) }), buildFaqJsonLd(service.faqs), buildBreadcrumbJsonLd([{ name: "Start", path: "/" }, { name: "Leistungen", path: "/leistungen/" }, { name: service.title, path }])]}>
-  <PageHero eyebrow="Leistung" title={service.h1} text={service.description} ctaLabel={isRepair ? "Schadstelle einschätzen lassen" : service.ctaLabel} ctaHref={isRepair ? "#reparaturanfrage" : undefined} />
+  <PageHero eyebrow="Leistung" title={service.h1} text={service.description} ctaLabel={isRepair ? "Schadstelle einschätzen lassen" : service.ctaLabel} ctaHref={isRepair ? "#repair-photo" : undefined} ctaOpensRepairModal={isRepair} />
   {serviceImage && (
     <section class="section-tight">
       <div class="container">

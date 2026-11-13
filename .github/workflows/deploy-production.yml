@@ -43,6 +43,7 @@ jobs:
         # backwards-compatible cutover fallback.
         env:
           PUBLIC_LEAD_FORM_ENABLED: "true"
+          PUBLIC_REPAIR_PHOTO_ENABLED: "true"
         run: npm run build
 
       - name: Verify production SEO sitemap coverage
@@ -53,6 +54,7 @@ jobs:
         # build or the deployed HTML silently disables the lead form.
         env:
           PUBLIC_LEAD_FORM_ENABLED: "true"
+          PUBLIC_REPAIR_PHOTO_ENABLED: "true"
         run: |
           npm run deploy:dry-run
           # Release gate: confirm the artifact we actually upload has an

@@ -4,6 +4,7 @@ import Footer from "../components/layout/Footer.astro";
 import Header from "../components/layout/Header.astro";
 import LanguageSuggest from "../components/layout/LanguageSuggest.astro";
 import MobileQuickContact from "../components/layout/MobileQuickContact.astro";
+import RepairModal from "../components/forms/RepairModal.astro";
 import SEOHead from "../components/seo/SEOHead.astro";
 import { ui, type Lang } from "../lib/i18n";
 import "../styles/global.css";
@@ -52,6 +53,7 @@ const skipLabel = ui[lang].skip;
     <Footer lang={lang} />
     <MobileQuickContact lang={lang} />
     <CookieConsent lang={lang} />
+    <RepairModal />
     <script>
       const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
       const els = document.querySelectorAll(".reveal");

@@ -49,6 +49,20 @@ export const footerGroups = [
     ],
   },
   {
+    title: "Einsatzgebiete",
+    links: [
+      { label: "Baden-Württemberg", href: "/standorte/baden-wuerttemberg/" },
+      { label: "Bayern", href: "/standorte/bayern/" },
+      { label: "Hamburg", href: "/standorte/hamburg/" },
+      { label: "Hessen", href: "/standorte/hessen/" },
+      { label: "Niedersachsen", href: "/standorte/niedersachsen/" },
+      { label: "Nordrhein-Westfalen", href: "/standorte/nrw/" },
+      { label: "Rheinland-Pfalz", href: "/standorte/rheinland-pfalz/" },
+      { label: "Sachsen-Anhalt", href: "/standorte/sachsen-anhalt/" },
+      { label: "Thüringen", href: "/standorte/thueringen/" },
+    ],
+  },
+  {
     title: "Unternehmen & Team",
     links: [
       { label: "Über uns", href: "/#ueber-uns" },

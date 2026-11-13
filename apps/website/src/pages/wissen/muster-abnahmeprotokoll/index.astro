@@ -2,7 +2,7 @@
 import BaseLayout from "../../../layouts/BaseLayout.astro";
 import PageHero from "../../../components/sections/PageHero.astro";
 import LeadFormSection from "../../../components/forms/LeadFormSection.astro";
-import { buildBreadcrumbJsonLd } from "../../../lib/schema";
+import { buildArticleJsonLd, buildBreadcrumbJsonLd } from "../../../lib/schema";
 
 export const prerender = true;
 
@@ -16,6 +16,7 @@ const description = "Muster-Abnahmeprotokoll für Industrieböden: Prüfung nach
   description={description}
   path={path}
   jsonLd={[
+    buildArticleJsonLd({ headline: "Muster-Abnahmeprotokoll: Was ein belastbares Gutachten ausmacht", description, path }),
     buildBreadcrumbJsonLd([
       { name: "Start", path: "/" },
       { name: "Wissen", path: "/wissen/" },

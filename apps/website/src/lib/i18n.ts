@@ -149,7 +149,7 @@ export const landing: Record<Exclude<Lang, "de">, LandingContent> = {
     meta: {
       seoTitle: "Industrial Flooring & Acid Protection from Germany | HSB",
       description:
-        "HSB Hexagon Säurebau: ceramic industrial flooring, acid protection, PU concrete, drainage and floor refurbishment for food, beverage, pharma and chemical production. Based in Gronau, Germany.",
+        "HSB Hexagon Säurebau: ceramic industrial flooring, acid protection, PU concrete, drainage and refurbishment for food, beverage, pharma and chemical plants.",
     },
     hero: {
       eyebrow: "HSB Hexagon Säurebau · Gronau, Germany",
@@ -203,7 +203,7 @@ export const landing: Record<Exclude<Lang, "de">, LandingContent> = {
     meta: {
       seoTitle: "Endüstriyel Zemin ve Asit Koruma Sistemleri | HSB Almanya",
       description:
-        "HSB Hexagon Säurebau: gıda, içecek, ilaç ve kimya üretimi için seramik endüstriyel zeminler, asit koruması, PU-beton, drenaj ve zemin yenileme. Merkez: Gronau, Almanya.",
+        "HSB Hexagon Säurebau: gıda, içecek, ilaç ve kimya üretimi için seramik endüstriyel zeminler, asit koruması, PU-beton, drenaj ve zemin yenileme.",
     },
     hero: {
       eyebrow: "HSB Hexagon Säurebau · Gronau, Almanya",
@@ -257,7 +257,7 @@ export const landing: Record<Exclude<Lang, "de">, LandingContent> = {
     meta: {
       seoTitle: "Industrievloeren & Zuurbescherming uit Duitsland | HSB",
       description:
-        "HSB Hexagon Säurebau: keramische industrievloeren, zuurbescherming, PU-beton, afwatering en vloerrenovatie voor voedings-, dranken-, farma- en chemische productie. Gevestigd in Gronau, direct aan de Nederlandse grens.",
+        "HSB Hexagon Säurebau: keramische industrievloeren, zuurbescherming, PU-beton en vloerrenovatie voor voedings-, farma- en chemische productie, vlak bij de grens.",
     },
     hero: {
       eyebrow: "HSB Hexagon Säurebau · Gronau, direct aan de grens",
@@ -311,7 +311,7 @@ export const landing: Record<Exclude<Lang, "de">, LandingContent> = {
     meta: {
       seoTitle: "Posadzki Przemysłowe i Ochrona Kwasoodporna | HSB Niemcy",
       description:
-        "HSB Hexagon Säurebau: ceramiczne posadzki przemysłowe, ochrona kwasoodporna, PU-beton, odwodnienia i renowacja posadzek dla produkcji spożywczej, napojów, farmacji i chemii. Siedziba: Gronau, Niemcy.",
+        "HSB Hexagon Säurebau: ceramiczne posadzki przemysłowe, ochrona kwasoodporna, PU-beton i renowacja posadzek dla produkcji spożywczej, farmacji i chemii.",
     },
     hero: {
       eyebrow: "HSB Hexagon Säurebau · Gronau, Niemcy",
@@ -365,7 +365,7 @@ export const landing: Record<Exclude<Lang, "de">, LandingContent> = {
     meta: {
       seoTitle: "Sols Industriels & Protection Anti-Acide | HSB Allemagne",
       description:
-        "HSB Hexagon Säurebau : sols industriels céramiques, protection anti-acide, béton PU, drainage et rénovation de sols pour la production agroalimentaire, boissons, pharmaceutique et chimique. Siège : Gronau, Allemagne.",
+        "HSB Hexagon Säurebau : sols industriels céramiques, protection anti-acide, béton PU et rénovation de sols pour l'agroalimentaire, la pharmacie et la chimie.",
     },
     hero: {
       eyebrow: "HSB Hexagon Säurebau · Gronau, Allemagne",

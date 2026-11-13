@@ -2,13 +2,13 @@
 import BaseLayout from "../../../layouts/BaseLayout.astro";
 import PageHero from "../../../components/sections/PageHero.astro";
 import LeadFormSection from "../../../components/forms/LeadFormSection.astro";
-import { buildBreadcrumbJsonLd } from "../../../lib/schema";
+import { buildArticleJsonLd, buildBreadcrumbJsonLd } from "../../../lib/schema";
 
 export const prerender = true;
 
 const path = "/wissen/fugen-forensik/hohlkehle-undicht/";
 const title = "Schadensbild: Undichte Hohlkehlen & Wandanschlüsse | HSB";
-const description = "Undichte Hohlkehlen und Sockelbereiche in der Lebensmittelindustrie: Wie Feuchtigkeit hinter Sockel fliesen kriecht, Keimnester bildet und wie entkoppelte Hohlkehlensysteme dicht halten.";
+const description = "Undichte Hohlkehlen im Lebensmittelbetrieb: Wie Feuchtigkeit hinter Sockelfliesen kriecht, Keimnester bildet und wie entkoppelte Systeme dicht halten.";
 ---
 
 <BaseLayout
@@ -16,6 +16,7 @@ const description = "Undichte Hohlkehlen und Sockelbereiche in der Lebensmitteli
   description={description}
   path={path}
   jsonLd={[
+    buildArticleJsonLd({ headline: "Undichte Hohlkehlen: Die unterschätzte Gefahr am Wandanschluss", description, path }),
     buildBreadcrumbJsonLd([
       { name: "Start", path: "/" },
       { name: "Wissen", path: "/wissen/" },

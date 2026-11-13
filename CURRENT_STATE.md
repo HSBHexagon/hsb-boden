@@ -2,6 +2,14 @@
 
 Stand: 11.11.2026. Status: **PRODUKTIONSREIF (GO) & AKTIV IM LIVE-VERSAND**.
 
+## 13.11.2026 — SEO: Regionalseiten verlinkt, Snippets gekürzt, Artikel-Schema (Branch `claude/kind-knuth-6f6dml`)
+
+- **Regionale Landingpages verlinkt:** Die neun `/standorte/*`-Seiten standen nur in der Sitemap; keine Seite verlinkte sie (0 interne Links). Neue Footer-Gruppe „Einsatzgebiete“ verlinkt sie jetzt von jeder Seite.
+- **Cookie-Einstellungen im Footer wiederhergestellt:** Das Banner verweist auf „Cookie-Einstellungen im Footer“, der Button wurde aber nie gerendert (Bedingung prüfte eine nicht existierende Gruppe „Rechtliches“). Er steht jetzt unter „Unternehmen & Team“.
+- **Snippets:** 21 Meta-Beschreibungen über 160 und 8 Titel über 60 Zeichen (indexierte Seiten) gekürzt, gleiche Aussagen, keine neuen Claims; Tippfehler „Sockel fliesen“ behoben.
+- **Strukturierte Daten:** TechArticle-JSON-LD auf den fünf Fugen-Forensik-Artikeln, „Rüttelkeramik AGI S 40“ und „Muster-Abnahmeprotokoll“ (Headline = H1).
+- **Nicht verfügbar:** Ranking-Daten über Ahrefs (Tarif reicht nicht) und Semrush (keine API-Einheiten); Google Search Console ist nicht angebunden.
+
 ## 13.11.2026 — Website: Layout-Shift, Bildgewicht, unsichtbare Buttons (PR #581)
 
 - **Layout-Shift beseitigt:** Das Sprach-Banner (`LanguageSuggest.astro`) erschien per Skript im Seitenfluss und schob bei nicht-deutscher Browsersprache den gesamten Inhalt nach unten (CLS ≈ 0,10–0,12 auf jeder deutschen Seite). Es schwebt jetzt als Karte unter dem Header. Dazu Preload der Outfit-Schnitte 400/900 (`BaseLayout.astro`), wodurch auch der Schrift-Shift auf `/en/` (0,044) entfällt. Ergebnis: CLS 0 auf allen gemessenen Vorlagen.

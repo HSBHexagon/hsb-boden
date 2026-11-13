@@ -4,8 +4,12 @@ import { site } from "../../data/site";
 import { toTelephoneHref } from "../../lib/phone";
 
 const phoneHref = toTelephoneHref(site.phone);
+// Ohne aktivierten Foto-Upload gibt es kein Modal: Die Auslöser behalten dann
+// ihr normales Sprungziel (#reparaturanfrage) mit dem dort gewählten Formular.
+const enabled = site.hasRepairPhotoUpload;
 ---
 
+{enabled && (
 <dialog
   id="repair-modal"
   class="fixed inset-0 z-50 m-auto max-h-[92vh] w-[95vw] max-w-2xl overflow-y-auto rounded-xl border border-hsb-line bg-white p-0 shadow-2xl backdrop:bg-hsb-black/75 backdrop:backdrop-blur-sm"
@@ -41,6 +45,7 @@ const phoneHref = toTelephoneHref(site.phone);
     </div>
   </div>
 </dialog>
+)}
 
 <script>
   import { trackEvent, TrackingEvent } from "../../lib/tracking";
@@ -70,6 +75,10 @@ const phoneHref = toTelephoneHref(site.phone);
 
   // Klick auf das native Backdrop schließt den Dialog
   modal?.addEventListener("click", (event) => {
+    // Nur Klicks, die den Dialog selbst treffen, können Backdrop-Klicks sein.
+    // Per Tastatur ausgelöste Klicks auf Bedienelemente im Dialog haben die
+    // Koordinaten (0, 0) und dürfen ihn nicht schließen.
+    if (event.target !== modal) return;
     const rect = modal.getBoundingClientRect();
     const isInDialog =
       rect.top <= event.clientY &&
@@ -92,7 +101,7 @@ const phoneHref = toTelephoneHref(site.phone);
     const target = event.target as HTMLElement | null;
     const trigger = target?.closest("[data-open-repair-modal]");
     const linkTrigger = target?.closest('a[href="#foto-modal"], a[href="#schadstelle-melden"], a[href="#repair-modal"]');
-    if (trigger || linkTrigger) {
+    if (modal && (trigger || linkTrigger)) {
       event.preventDefault();
       openModal();
     }
@@ -108,7 +117,8 @@ const phoneHref = toTelephoneHref(site.phone);
       hash === "#repair-modal" ||
       search.get("openModal") === "repair"
     ) {
-      openModal();
+      if (modal) openModal();
+      else document.getElementById("reparaturanfrage")?.scrollIntoView();
     }
   }
 

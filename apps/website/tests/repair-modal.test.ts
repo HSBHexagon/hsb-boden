@@ -23,6 +23,16 @@ describe("RepairModal & Zero-Friction Lead Flow", () => {
     expect(source).toContain('idPrefix="modal-repair-photo"');
   });
 
+  it("schließt nicht bei Tastatur-Klicks und respektiert den Upload-Schalter", () => {
+    const source = readFileSync(join(root, "components/forms/RepairModal.astro"), "utf8");
+    // Backdrop-Schließen nur, wenn der Klick den Dialog selbst trifft
+    expect(source).toContain("if (event.target !== modal) return;");
+    // Ohne PUBLIC_REPAIR_PHOTO_ENABLED wird kein Modal gerendert und kein Link abgefangen
+    expect(source).toContain("const enabled = site.hasRepairPhotoUpload;");
+    expect(source).toMatch(/\{enabled && \(\s*<dialog/);
+    expect(source).toContain("if (modal && (trigger || linkTrigger))");
+  });
+
   it("verankert RepairModal global im BaseLayout", () => {
     const layoutPath = join(root, "layouts/BaseLayout.astro");
     const source = readFileSync(layoutPath, "utf8");

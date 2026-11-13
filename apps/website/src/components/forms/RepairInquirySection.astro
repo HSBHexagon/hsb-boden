@@ -4,26 +4,29 @@ import RepairPhotoForm from "./RepairPhotoForm.astro";
 import { site } from "../../data/site";
 import { toTelephoneHref } from "../../lib/phone";
 
-const subject = encodeURIComponent("Ersteinschätzung einer Schadstelle am Industrieboden");
-const body = encodeURIComponent("Guten Tag,\n\nbitte schätzen Sie folgende Schadstelle ein.\n\nBetrieb und Standort: \nBetroffener Bereich: \nVerfügbares Sperrfenster, falls bekannt: \n\nFreundliche Grüße\n");
-const emailHref = `mailto:${site.email}?subject=${subject}&body=${body}`;
+const phoneHref = toTelephoneHref(site.phone);
 ---
 
 <section id="reparaturanfrage" class="section scroll-mt-24 border-t border-hsb-line bg-hsb-mist" aria-labelledby="repair-inquiry-title">
   <div class="container grid gap-8 lg:grid-cols-2 lg:items-start">
-    <div>
+    <div class="order-2 lg:order-1">
       <p class="eyebrow">Technische Ersteinschätzung</p>
       <h2 id="repair-inquiry-title" class="h2 mt-3">Lässt sich die Schadstelle gezielt reparieren?</h2>
       <p class="lead mt-4">Beschreiben Sie kurz die Stelle und nennen Sie den Standort. Ein Foto und ein mögliches Sperrfenster helfen uns, den nächsten Prüfschritt einzugrenzen.</p>
       <p class="mt-4 font-semibold text-hsb-ink" data-repair-promise>Ersteinschätzung innerhalb eines Arbeitstags, kostenfrei.</p>
-      <p class="mt-2 text-hsb-steel">{site.hasRepairPhotoUpload ? "Laden Sie das Foto direkt hier hoch. Kein Foto zur Hand? Fordern Sie im Formular einen Rückruf oder einen Termin vor Ort an – oder antworten Sie einfach auf unsere E-Mail." : "Sie haben eine E-Mail von uns erhalten? Senden Sie das Foto einfach als Antwort auf diese E-Mail."}</p>
+      <p class="mt-2 text-hsb-steel">
+        {site.hasRepairPhotoUpload
+          ? "Laden Sie das Foto direkt im Formular hoch. Kein Foto zur Hand? Fordern Sie einfach einen Rückruf oder Vor-Ort-Termin an."
+          : "Fordern Sie über das Formular eine Einschätzung, einen Rückruf oder einen Termin an."}
+      </p>
       <div class="mt-6 flex flex-wrap gap-3">
-        <a class={site.hasRepairPhotoUpload ? "button-secondary-dark" : "button-primary"} href={emailHref} data-repair-contact="email">{site.hasRepairPhotoUpload ? "Per E-Mail senden" : "Foto per E-Mail senden"}</a>
-        <a class="button-secondary-dark" href={toTelephoneHref(site.phone)} data-repair-contact="phone">{site.phone}</a>
+        <a class="button-secondary-dark" href={phoneHref} data-repair-contact="phone">{site.phone}</a>
       </div>
-      <p class="mt-3 text-sm text-hsb-steel">{site.hasRepairPhotoUpload ? "Alternativ öffnet der E-Mail-Link Ihr E-Mail-Programm." : "Der Foto-Link öffnet Ihr E-Mail-Programm. Hängen Sie das Bild dort an."}</p>
+      <p class="mt-3 text-sm text-hsb-steel">Direkter Draht zu unseren Fachingenieuren für Industrieböden und Säureschutz.</p>
     </div>
-    {site.hasRepairPhotoUpload ? <RepairPhotoForm /> : site.hasLeadEndpoint && <LeadForm repairRequest />}
+    <div class="order-1 lg:order-2">
+      {site.hasRepairPhotoUpload ? <RepairPhotoForm /> : site.hasLeadEndpoint && <LeadForm repairRequest />}
+    </div>
   </div>
 </section>
 

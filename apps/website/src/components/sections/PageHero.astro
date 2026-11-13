@@ -5,9 +5,11 @@ interface Props {
   text: string;
   ctaLabel?: string;
   ctaHref?: string;
+  /** Öffnet das Reparatur-Modal; ctaHref bleibt Fallback ohne JavaScript. */
+  ctaOpensRepairModal?: boolean;
 }
 
-const { eyebrow = "HSB Hexagon Säurebau", title, text, ctaLabel = "Ersteinschätzung anfordern", ctaHref = "/kontakt/" } = Astro.props;
+const { eyebrow = "HSB Hexagon Säurebau", title, text, ctaLabel = "Ersteinschätzung anfordern", ctaHref = "/kontakt/", ctaOpensRepairModal = false } = Astro.props;
 
 const currentPath = Astro.url.pathname;
 ---
@@ -18,7 +20,7 @@ const currentPath = Astro.url.pathname;
     <h1 class="h1 mt-4">{title}</h1>
     <p class="lead mt-6 max-w-3xl">{text}</p>
     <div class="mt-8 flex flex-wrap gap-3">
-      {currentPath !== ctaHref && <a class="button-primary" href={ctaHref}>{ctaLabel}</a>}
+      {currentPath !== ctaHref && <a class="button-primary" href={ctaHref} data-open-repair-modal={ctaOpensRepairModal ? "" : undefined}>{ctaLabel}</a>}
       {currentPath !== "/referenzen/" && <a class="button-secondary-dark" href="/referenzen/">Referenzen ansehen</a>}
     </div>
   </div>

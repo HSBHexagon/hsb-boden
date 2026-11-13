@@ -2,6 +2,12 @@
 import { site } from "../../data/site";
 import { toTelephoneHref } from "../../lib/phone";
 
+interface Props {
+  idPrefix?: string;
+}
+
+const { idPrefix = "repair-photo" } = Astro.props;
+
 const inputClass =
   "rounded border border-hsb-line px-3 py-3 font-normal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-hsb-red aria-[invalid=true]:border-hsb-red";
 
@@ -15,8 +21,8 @@ const intents = [
 const phoneHref = toTelephoneHref(site.phone);
 ---
 
-<div class="surface p-5" id="repair-photo">
-  <form id="repair-photo-form" class="grid gap-5" novalidate data-delivery-configured={String(site.hasRepairPhotoUpload)}>
+<div class="surface scroll-mt-24 p-5" id={idPrefix} data-repair-photo-container>
+  <form id={`${idPrefix}-form`} class="grid gap-5" novalidate data-delivery-configured={String(site.hasRepairPhotoUpload)} data-repair-photo-form>
     <fieldset>
       <legend class="text-sm font-black text-hsb-ink">Wie möchten Sie vorgehen?</legend>
       <div class="mt-3 grid gap-2 sm:grid-cols-3">
@@ -34,8 +40,9 @@ const phoneHref = toTelephoneHref(site.phone);
 
     <div>
       <label
-        id="repair-photo-drop"
-        for="repair-photo-input"
+        id={`${idPrefix}-drop`}
+        for={`${idPrefix}-input`}
+        data-drop-zone
         class="group flex cursor-pointer flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-hsb-line bg-white px-4 py-8 text-center transition hover:border-hsb-red focus-within:border-hsb-red focus-within:ring-2 focus-within:ring-hsb-red/40 data-[drag=true]:border-hsb-red data-[drag=true]:bg-hsb-red/5"
       >
         <svg class="h-10 w-10 text-hsb-red" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
@@ -45,13 +52,13 @@ const phoneHref = toTelephoneHref(site.phone);
         <span class="text-base font-black text-hsb-ink" data-intent-only="photo">Foto der Schadstelle aufnehmen oder auswählen</span>
         <span class="text-base font-black text-hsb-ink" data-intent-only="callback visit" hidden>Fotos hinzufügen <span class="font-normal text-hsb-steel">(optional)</span></span>
         <span class="text-sm text-hsb-steel">Bis zu 3 Bilder. Am Handy öffnet sich die Kamera, am Rechner können Sie Bilder hierher ziehen.</span>
-        <input id="repair-photo-input" type="file" accept="image/*" multiple class="sr-only" aria-describedby="repair-photo-hint" />
+        <input id={`${idPrefix}-input`} data-file-input type="file" accept="image/*" multiple class="sr-only" aria-describedby={`${idPrefix}-hint`} />
       </label>
-      <p id="repair-photo-hint" class="mt-2 text-xs text-hsb-steel">
+      <p id={`${idPrefix}-hint`} class="mt-2 text-xs text-hsb-steel">
         Bilder werden vor dem Senden verkleinert, Standortdaten aus dem Foto werden dabei entfernt.
       </p>
-      <ul id="repair-photo-previews" class="mt-3 grid grid-cols-3 gap-3 empty:hidden" aria-label="Ausgewählte Fotos"></ul>
-      <div id="repair-photo-alt" data-intent-only="photo" class="mt-3 scroll-mt-28 flex flex-wrap items-center gap-x-3 gap-y-2 rounded border border-transparent px-0 py-0 text-sm text-hsb-steel transition-colors data-[emphasis=true]:border-hsb-red/40 data-[emphasis=true]:bg-hsb-red/5 data-[emphasis=true]:px-3 data-[emphasis=true]:py-3">
+      <ul id={`${idPrefix}-previews`} data-previews class="mt-3 grid grid-cols-3 gap-3 empty:hidden" aria-label="Ausgewählte Fotos"></ul>
+      <div id={`${idPrefix}-alt`} data-alt-box data-intent-only="photo" class="mt-3 scroll-mt-28 flex flex-wrap items-center gap-x-3 gap-y-2 rounded border border-transparent px-0 py-0 text-sm text-hsb-steel transition-colors data-[emphasis=true]:border-hsb-red/40 data-[emphasis=true]:bg-hsb-red/5 data-[emphasis=true]:px-3 data-[emphasis=true]:py-3">
         <span class="font-semibold text-hsb-ink">Gerade kein Foto zur Hand?</span>
         <button type="button" data-switch-intent="callback" class="min-h-11 font-bold text-hsb-red underline underline-offset-4">Rückruf anfordern</button>
         <span aria-hidden="true" class="hidden sm:inline">·</span>
@@ -119,9 +126,9 @@ const phoneHref = toTelephoneHref(site.phone);
       </span>
     </label>
 
-    <p id="repair-photo-error" role="alert" aria-live="assertive" class="hidden rounded border border-hsb-red/40 bg-hsb-red/5 px-3 py-2 text-sm text-hsb-red"></p>
+    <p id={`${idPrefix}-error`} data-error-box role="alert" aria-live="assertive" class="hidden rounded border border-hsb-red/40 bg-hsb-red/5 px-3 py-2 text-sm text-hsb-red"></p>
 
-    <button id="repair-photo-submit" type="submit" class="button-primary disabled:cursor-not-allowed disabled:opacity-60">
+    <button id={`${idPrefix}-submit`} data-submit-btn type="submit" class="button-primary disabled:cursor-not-allowed disabled:opacity-60">
       <span data-intent-only="photo">Foto senden und einschätzen lassen</span>
       <span data-intent-only="callback" hidden>Rückruf anfordern</span>
       <span data-intent-only="visit" hidden>Termin vor Ort anfragen</span>
@@ -134,7 +141,7 @@ const phoneHref = toTelephoneHref(site.phone);
     </p>
   </form>
 
-  <div id="repair-photo-success" class="hidden scroll-mt-28" role="status" aria-live="polite" tabindex="-1">
+  <div id={`${idPrefix}-success`} data-success-box class="hidden scroll-mt-28" role="status" aria-live="polite" tabindex="-1">
     <p class="eyebrow">Angekommen</p>
     <p class="h2 mt-3" data-success-for="photo">Danke, Ihr Foto liegt bei uns.</p>
     <p class="h2 mt-3" data-success-for="callback" hidden>Danke, wir rufen Sie zurück.</p>
@@ -155,8 +162,8 @@ const phoneHref = toTelephoneHref(site.phone);
       <li><strong class="text-hsb-ink">2.</strong> Vor Ort prüfen wir die Schadstelle und den Untergrund.</li>
       <li><strong class="text-hsb-ink">3.</strong> Danach erhalten Sie unsere Empfehlung: gezielte Reparatur oder größere Instandsetzung.</li>
     </ol>
-    <p class="mt-5 hidden text-sm text-hsb-steel" id="repair-photo-confirmation">
-      Eine Eingangsbestätigung ist unterwegs an <strong class="text-hsb-ink" id="repair-photo-confirmation-email"></strong>. Bitte prüfen Sie gegebenenfalls auch den Spam-Ordner.
+    <p class="mt-5 hidden text-sm text-hsb-steel" id={`${idPrefix}-confirmation`} data-confirmation-box>
+      Eine Eingangsbestätigung ist unterwegs an <strong class="text-hsb-ink" id={`${idPrefix}-confirmation-email`} data-confirmation-email></strong>. Bitte prüfen Sie gegebenenfalls auch den Spam-Ordner.
     </p>
     <div class="mt-6 flex flex-wrap items-center gap-3">
       <a class="button-secondary-dark repair-phone-cta" href={phoneHref} data-repair-success-phone>Lieber gleich sprechen: <span class="whitespace-nowrap">{site.phone}</span></a>
@@ -172,66 +179,8 @@ const phoneHref = toTelephoneHref(site.phone);
   const MAX_EDGE = 1600;
   const MAX_UPLOAD_BYTES = 4 * 1024 * 1024;
 
-  const form = document.getElementById("repair-photo-form") as HTMLFormElement | null;
-  const input = document.getElementById("repair-photo-input") as HTMLInputElement | null;
-  const drop = document.getElementById("repair-photo-drop");
-  const previews = document.getElementById("repair-photo-previews");
-  const errorBox = document.getElementById("repair-photo-error");
-  const submit = document.getElementById("repair-photo-submit") as HTMLButtonElement | null;
-  const success = document.getElementById("repair-photo-success");
-
-  const photos: { blob: Blob; url: string }[] = [];
-  const alt = document.getElementById("repair-photo-alt");
-  const phoneInput = form?.elements.namedItem("phone") as HTMLInputElement | null;
-  const locationInput = form?.elements.namedItem("location") as HTMLInputElement | null;
-
   type Intent = "photo" | "callback" | "visit";
   const INTENTS: Intent[] = ["photo", "callback", "visit"];
-
-  function currentIntent(): Intent {
-    const value = (form?.querySelector<HTMLInputElement>('input[name="intent"]:checked')?.value ?? "photo") as Intent;
-    return INTENTS.includes(value) ? value : "photo";
-  }
-
-  /** Zeigt nur die Teile des gewählten Wegs; Felder versteckter Teile werden deaktiviert (nicht geprüft, nicht gesendet). */
-  function applyIntent(intent: Intent) {
-    form?.querySelectorAll<HTMLElement>("[data-intent-only]").forEach((el) => {
-      const visible = (el.dataset.intentOnly ?? "").split(" ").includes(intent);
-      el.hidden = !visible;
-      el.querySelectorAll("input, select").forEach((field) => {
-        if (field instanceof HTMLInputElement || field instanceof HTMLSelectElement) field.disabled = !visible;
-      });
-    });
-    if (phoneInput) phoneInput.required = intent === "callback";
-    if (alt) delete alt.dataset.emphasis;
-  }
-
-  function selectIntent(intent: Intent, focusField = false) {
-    const radio = form?.querySelector<HTMLInputElement>(`input[name="intent"][value="${intent}"]`);
-    if (radio) radio.checked = true;
-    applyIntent(intent);
-    showError("");
-    clearInvalid();
-    if (focusField) (intent === "callback" ? phoneInput : intent === "visit" ? locationInput : input)?.focus();
-  }
-
-  form?.querySelectorAll<HTMLInputElement>('input[name="intent"]').forEach((radio) => {
-    radio.addEventListener("change", () => selectIntent(currentIntent()));
-  });
-  form?.querySelectorAll<HTMLButtonElement>("[data-switch-intent]").forEach((button) => {
-    button.addEventListener("click", () => {
-      const intent = button.dataset.switchIntent as Intent;
-      trackEvent(TrackingEvent.CtaClick, { placement: "repair_no_photo", target: intent });
-      selectIntent(intent, true);
-    });
-  });
-  applyIntent(currentIntent());
-
-  function showError(message: string) {
-    if (!errorBox) return;
-    errorBox.textContent = message;
-    errorBox.classList.toggle("hidden", !message);
-  }
 
   const FIELD_LABELS: Record<string, string> = {
     company: "Firma",
@@ -245,35 +194,12 @@ const phoneHref = toTelephoneHref(site.phone);
     location: "Standort (PLZ oder Ort)",
   };
 
-  function clearInvalid() {
-    form?.querySelectorAll("[aria-invalid]").forEach((el) => {
-      el.removeAttribute("aria-invalid");
-      el.removeAttribute("aria-describedby");
-    });
-    input?.setAttribute("aria-describedby", "repair-photo-hint");
-  }
-
-  /** Markiert die vom Server abgelehnten Felder, verweist sie auf die Fehlermeldung und fokussiert das erste. */
-  function markInvalid(fields: string[]) {
-    clearInvalid();
-    let first: HTMLElement | null = null;
-    for (const field of fields) {
-      const el = field.startsWith("photos") ? input : (form?.elements.namedItem(field) as HTMLElement | null);
-      if (!el) continue;
-      el.setAttribute("aria-invalid", "true");
-      el.setAttribute("aria-describedby", field.startsWith("photos") ? "repair-photo-error repair-photo-hint" : "repair-photo-error");
-      first ??= el;
-    }
-    const labels = fields.map((f) => FIELD_LABELS[f]).filter(Boolean);
-    showError(labels.length ? `Bitte prüfen: ${labels.join(", ")}.` : MESSAGES[422]);
-    first?.focus();
-  }
-
-  // Sobald jemand ein markiertes Feld korrigiert, verschwindet die Markierung an diesem Feld.
-  form?.addEventListener("input", (event) => {
-    const target = event.target as HTMLElement | null;
-    if (target?.getAttribute("aria-invalid") === "true") target.removeAttribute("aria-invalid");
-  });
+  const MESSAGES: Record<number, string> = {
+    413: "Die Fotos sind zu groß. Bitte weniger oder kleinere Bilder wählen.",
+    422: "Bitte prüfen Sie Ihre Angaben und die Einwilligung.",
+    429: "Zu viele Anfragen in kurzer Zeit. Bitte versuchen Sie es in ein paar Minuten erneut.",
+  };
+  const FALLBACK = "Senden hat nicht geklappt. Schicken Sie das Foto bitte per E-Mail an info@hsb-boden.de oder rufen Sie uns an.";
 
   type Drawable = { source: CanvasImageSource; width: number; height: number; release(): void };
 
@@ -322,147 +248,251 @@ const phoneHref = toTelephoneHref(site.phone);
     throw new Error("unsupported");
   }
 
-  function render() {
-    if (!previews) return;
-    previews.replaceChildren(
-      ...photos.map((photo, index) => {
-        const item = document.createElement("li");
-        item.className = "relative overflow-hidden rounded border border-hsb-line bg-white";
-        const img = document.createElement("img");
-        img.src = photo.url;
-        img.alt = `Foto ${index + 1}`;
-        img.className = "aspect-square w-full object-cover";
-        const remove = document.createElement("button");
-        remove.type = "button";
-        remove.textContent = "×";
-        remove.setAttribute("aria-label", `Foto ${index + 1} entfernen`);
-        remove.className =
-          "absolute right-1 top-1 flex h-8 w-8 items-center justify-center rounded-full bg-hsb-black/80 text-lg font-bold text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-hsb-red";
-        remove.addEventListener("click", () => {
-          URL.revokeObjectURL(photo.url);
-          photos.splice(index, 1);
-          render();
+  function initRepairPhotoForm(container: HTMLElement) {
+    const form = container.querySelector<HTMLFormElement>("[data-repair-photo-form]");
+    if (!form) return;
+
+    const input = container.querySelector<HTMLInputElement>("[data-file-input]");
+    const drop = container.querySelector<HTMLElement>("[data-drop-zone]");
+    const previews = container.querySelector<HTMLElement>("[data-previews]");
+    const errorBox = container.querySelector<HTMLElement>("[data-error-box]");
+    const submit = container.querySelector<HTMLButtonElement>("[data-submit-btn]");
+    const success = container.querySelector<HTMLElement>("[data-success-box]");
+    const alt = container.querySelector<HTMLElement>("[data-alt-box]");
+    const confirmation = container.querySelector<HTMLElement>("[data-confirmation-box]");
+    const confirmationEmail = container.querySelector<HTMLElement>("[data-confirmation-email]");
+
+    const photos: { blob: Blob; url: string }[] = [];
+    const phoneInput = form.elements.namedItem("phone") as HTMLInputElement | null;
+    const locationInput = form.elements.namedItem("location") as HTMLInputElement | null;
+
+    function currentIntent(): Intent {
+      const value = (form?.querySelector<HTMLInputElement>('input[name="intent"]:checked')?.value ?? "photo") as Intent;
+      return INTENTS.includes(value) ? value : "photo";
+    }
+
+    /** Zeigt nur die Teile des gewählten Wegs; Felder versteckter Teile werden deaktiviert (nicht geprüft, nicht gesendet). */
+    function applyIntent(intent: Intent) {
+      form?.querySelectorAll<HTMLElement>("[data-intent-only]").forEach((el) => {
+        const visible = (el.dataset.intentOnly ?? "").split(" ").includes(intent);
+        el.hidden = !visible;
+        el.querySelectorAll("input, select").forEach((field) => {
+          if (field instanceof HTMLInputElement || field instanceof HTMLSelectElement) field.disabled = !visible;
         });
-        item.appendChild(img);
-        item.appendChild(remove);
-        return item;
-      }),
-    );
-  }
-
-  async function addFiles(files: FileList | File[]) {
-    showError("");
-    for (const file of Array.from(files)) {
-      if (photos.length >= MAX_PHOTOS) {
-        showError(`Maximal ${MAX_PHOTOS} Fotos. Entfernen Sie ein Bild, um ein anderes hinzuzufügen.`);
-        break;
-      }
-      try {
-        const blob = await shrink(file);
-        photos.push({ blob, url: URL.createObjectURL(blob) });
-        trackEvent(TrackingEvent.FileUploadAdd, { placement: "repair_photo" });
-        input?.removeAttribute("aria-invalid");
-        input?.setAttribute("aria-describedby", "repair-photo-hint");
-        if (alt) delete alt.dataset.emphasis;
-      } catch {
-        showError("Dieses Bildformat können wir nicht verarbeiten. Bitte ein JPG- oder PNG-Foto wählen.");
-      }
+      });
+      if (phoneInput) phoneInput.required = intent === "callback";
+      if (alt) delete alt.dataset.emphasis;
     }
-    render();
-  }
 
-  input?.addEventListener("change", async () => {
-    if (input.files?.length) await addFiles(input.files);
-    input.value = "";
-  });
-
-  drop?.addEventListener("dragover", (event) => {
-    event.preventDefault();
-    drop.dataset.drag = "true";
-  });
-  drop?.addEventListener("dragleave", () => delete drop.dataset.drag);
-  drop?.addEventListener("drop", async (event) => {
-    event.preventDefault();
-    delete drop.dataset.drag;
-    if (event.dataTransfer?.files.length) await addFiles(event.dataTransfer.files);
-  });
-
-  const MESSAGES: Record<number, string> = {
-    413: "Die Fotos sind zu groß. Bitte weniger oder kleinere Bilder wählen.",
-    422: "Bitte prüfen Sie Ihre Angaben und die Einwilligung.",
-    429: "Zu viele Anfragen in kurzer Zeit. Bitte versuchen Sie es in ein paar Minuten erneut.",
-  };
-  const FALLBACK = "Senden hat nicht geklappt. Schicken Sie das Foto bitte per E-Mail an info@hsb-boden.de oder rufen Sie uns an.";
-
-  form?.addEventListener("submit", async (event) => {
-    event.preventDefault();
-    if (!form || !submit) return;
-    const intent = currentIntent();
-    if (intent === "photo" && photos.length === 0) {
-      // Kein Abbruch ohne Ausweg: Rückruf und Termin werden direkt neben dem Upload hervorgehoben.
-      showError("Bitte fügen Sie ein Foto hinzu – oder fordern Sie stattdessen einen Rückruf oder Termin vor Ort an.");
-      input?.setAttribute("aria-invalid", "true");
-      input?.setAttribute("aria-describedby", "repair-photo-error repair-photo-hint");
-      if (alt) {
-        // Den Ausweg dorthin bringen, wo der Nutzer gerade schaut (am Handy liegt er sonst außer Sicht).
-        alt.dataset.emphasis = "true";
-        alt.scrollIntoView({ block: "center", behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
-        alt.querySelector<HTMLButtonElement>("[data-switch-intent]")?.focus({ preventScroll: true });
-      } else {
-        input?.focus();
-      }
-      return;
+    function selectIntent(intent: Intent, focusField = false) {
+      const radio = form?.querySelector<HTMLInputElement>(`input[name="intent"][value="${intent}"]`);
+      if (radio) radio.checked = true;
+      applyIntent(intent);
+      showError("");
+      clearInvalid();
+      if (focusField) (intent === "callback" ? phoneInput : intent === "visit" ? locationInput : input)?.focus();
     }
-    if (!form.reportValidity()) return;
 
-    const data = new FormData(form);
-    photos.forEach((photo, index) => {
-      const type = photo.blob.type || "image/jpeg";
-      const extension = type === "image/png" ? "png" : type === "image/webp" ? "webp" : "jpg";
-      data.append("photos", new File([photo.blob], `foto-${index + 1}.${extension}`, { type }));
+    form.querySelectorAll<HTMLInputElement>('input[name="intent"]').forEach((radio) => {
+      radio.addEventListener("change", () => selectIntent(currentIntent()));
     });
-    data.set("page", window.location.pathname);
+    form.querySelectorAll<HTMLButtonElement>("[data-switch-intent]").forEach((button) => {
+      button.addEventListener("click", () => {
+        const intent = button.dataset.switchIntent as Intent;
+        trackEvent(TrackingEvent.CtaClick, { placement: "repair_no_photo", target: intent });
+        selectIntent(intent, true);
+      });
+    });
+    applyIntent(currentIntent());
 
-    submit.disabled = true;
-    const label = submit.innerHTML;
-    submit.textContent = "Wird gesendet …";
-    showError("");
-    clearInvalid();
+    function showError(message: string) {
+      if (!errorBox) return;
+      errorBox.textContent = message;
+      errorBox.classList.toggle("hidden", !message);
+    }
 
-    try {
-      const res = await fetch("/api/repair-photo", { method: "POST", body: data, headers: { Accept: "application/json" } });
-      if (res.status === 422) {
-        const body = (await res.json().catch(() => ({}))) as { fields?: unknown };
-        markInvalid(Array.isArray(body.fields) ? body.fields.filter((f): f is string => typeof f === "string") : []);
-        submit.disabled = false;
-        submit.innerHTML = label;
+    function clearInvalid() {
+      form?.querySelectorAll("[aria-invalid]").forEach((el) => {
+        el.removeAttribute("aria-invalid");
+        el.removeAttribute("aria-describedby");
+      });
+      if (input) {
+        const hintId = input.getAttribute("aria-describedby") || `${container.id}-hint`;
+        input.setAttribute("aria-describedby", hintId);
+      }
+    }
+
+    /** Markiert die vom Server abgelehnten Felder, verweist sie auf die Fehlermeldung und fokussiert das erste. */
+    function markInvalid(fields: string[]) {
+      clearInvalid();
+      let first: HTMLElement | null = null;
+      const errorId = errorBox?.id || `${container.id}-error`;
+      const hintId = `${container.id}-hint`;
+      for (const field of fields) {
+        const el = field.startsWith("photos") ? input : (form?.elements.namedItem(field) as HTMLElement | null);
+        if (!el) continue;
+        el.setAttribute("aria-invalid", "true");
+        el.setAttribute("aria-describedby", field.startsWith("photos") ? `${errorId} ${hintId}` : errorId);
+        first ??= el;
+      }
+      const labels = fields.map((f) => FIELD_LABELS[f]).filter(Boolean);
+      showError(labels.length ? `Bitte prüfen: ${labels.join(", ")}.` : MESSAGES[422]);
+      first?.focus();
+    }
+
+    form.addEventListener("input", (event) => {
+      const target = event.target as HTMLElement | null;
+      if (target?.getAttribute("aria-invalid") === "true") target.removeAttribute("aria-invalid");
+    });
+
+    function render() {
+      if (!previews) return;
+      previews.replaceChildren(
+        ...photos.map((photo, index) => {
+          const item = document.createElement("li");
+          item.className = "relative overflow-hidden rounded border border-hsb-line bg-white";
+          const img = document.createElement("img");
+          img.src = photo.url;
+          img.alt = `Foto ${index + 1}`;
+          img.className = "aspect-square w-full object-cover";
+          const remove = document.createElement("button");
+          remove.type = "button";
+          remove.textContent = "×";
+          remove.setAttribute("aria-label", `Foto ${index + 1} entfernen`);
+          remove.className =
+            "absolute right-1 top-1 flex h-8 w-8 items-center justify-center rounded-full bg-hsb-black/80 text-lg font-bold text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-hsb-red";
+          remove.addEventListener("click", () => {
+            URL.revokeObjectURL(photo.url);
+            photos.splice(index, 1);
+            render();
+          });
+          item.appendChild(img);
+          item.appendChild(remove);
+          return item;
+        }),
+      );
+    }
+
+    async function addFiles(files: FileList | File[]) {
+      showError("");
+      const hintId = `${container.id}-hint`;
+      for (const file of Array.from(files)) {
+        if (photos.length >= MAX_PHOTOS) {
+          showError(`Maximal ${MAX_PHOTOS} Fotos. Entfernen Sie ein Bild, um ein anderes hinzuzufügen.`);
+          break;
+        }
+        try {
+          const blob = await shrink(file);
+          photos.push({ blob, url: URL.createObjectURL(blob) });
+          trackEvent(TrackingEvent.FileUploadAdd, { placement: "repair_photo" });
+          input?.removeAttribute("aria-invalid");
+          input?.setAttribute("aria-describedby", hintId);
+          if (alt) delete alt.dataset.emphasis;
+        } catch {
+          showError("Dieses Bildformat können wir nicht verarbeiten. Bitte ein JPG- oder PNG-Foto wählen.");
+        }
+      }
+      render();
+    }
+
+    input?.addEventListener("change", async () => {
+      if (input.files?.length) await addFiles(input.files);
+      input.value = "";
+    });
+
+    drop?.addEventListener("dragover", (event) => {
+      event.preventDefault();
+      drop.dataset.drag = "true";
+    });
+    drop?.addEventListener("dragleave", () => delete drop.dataset.drag);
+    drop?.addEventListener("drop", async (event) => {
+      event.preventDefault();
+      delete drop.dataset.drag;
+      if (event.dataTransfer?.files.length) await addFiles(event.dataTransfer.files);
+    });
+
+    form.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      if (!form || !submit) return;
+      const intent = currentIntent();
+      if (intent === "photo" && photos.length === 0) {
+        showError("Bitte fügen Sie ein Foto hinzu – oder fordern Sie stattdessen einen Rückruf oder Termin vor Ort an.");
+        const errorId = errorBox?.id || `${container.id}-error`;
+        const hintId = `${container.id}-hint`;
+        input?.setAttribute("aria-invalid", "true");
+        input?.setAttribute("aria-describedby", `${errorId} ${hintId}`);
+        if (alt) {
+          alt.dataset.emphasis = "true";
+          alt.scrollIntoView({ block: "center", behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
+          alt.querySelector<HTMLButtonElement>("[data-switch-intent]")?.focus({ preventScroll: true });
+        } else {
+          input?.focus();
+        }
         return;
       }
-      if (!res.ok) throw new Error(String(res.status));
-      const result = (await res.json().catch(() => ({}))) as { confirmation?: unknown };
-      await trackAfterConfirmedLead(() =>
-        trackEventAndWait(TrackingEvent.LeadFormSubmit, { placement: "repair_photo", repair_intent: intent, photo_count: photos.length }),
-      );
-      photos.forEach((photo) => URL.revokeObjectURL(photo.url));
-      success?.querySelectorAll<HTMLElement>("[data-success-for]").forEach((el) => {
-        el.hidden = el.dataset.successFor !== intent;
+      if (!form.reportValidity()) return;
+
+      const data = new FormData(form);
+      photos.forEach((photo, index) => {
+        const type = photo.blob.type || "image/jpeg";
+        const extension = type === "image/png" ? "png" : type === "image/webp" ? "webp" : "jpg";
+        data.append("photos", new File([photo.blob], `foto-${index + 1}.${extension}`, { type }));
       });
-      const confirmation = document.getElementById("repair-photo-confirmation");
-      const confirmationEmail = document.getElementById("repair-photo-confirmation-email");
-      if (result.confirmation === true && confirmation && confirmationEmail) {
-        confirmationEmail.textContent = String(data.get("email") ?? "");
-        confirmation.classList.remove("hidden");
+      data.set("page", window.location.pathname);
+
+      submit.disabled = true;
+      const label = submit.innerHTML;
+      submit.textContent = "Wird gesendet …";
+      showError("");
+      clearInvalid();
+
+      try {
+        const res = await fetch("/api/repair-photo", { method: "POST", body: data, headers: { Accept: "application/json" } });
+        if (res.status === 422) {
+          const body = (await res.json().catch(() => ({}))) as { fields?: unknown };
+          markInvalid(Array.isArray(body.fields) ? body.fields.filter((f): f is string => typeof f === "string") : []);
+          submit.disabled = false;
+          submit.innerHTML = label;
+          return;
+        }
+        if (!res.ok) throw new Error(String(res.status));
+        const result = (await res.json().catch(() => ({}))) as { confirmation?: unknown };
+        await trackAfterConfirmedLead(() =>
+          trackEventAndWait(TrackingEvent.LeadFormSubmit, { placement: "repair_photo", repair_intent: intent, photo_count: photos.length }),
+        );
+        photos.forEach((photo) => URL.revokeObjectURL(photo.url));
+        success?.querySelectorAll<HTMLElement>("[data-success-for]").forEach((el) => {
+          el.hidden = el.dataset.successFor !== intent;
+        });
+        if (result.confirmation === true && confirmation && confirmationEmail) {
+          confirmationEmail.textContent = String(data.get("email") ?? "");
+          confirmation.classList.remove("hidden");
+        }
+        form.classList.add("hidden");
+        success?.classList.remove("hidden");
+        success?.scrollIntoView({ block: "start", behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
+        success?.focus({ preventScroll: true });
+      } catch (err) {
+        showError(MESSAGES[Number((err as Error).message)] ?? FALLBACK);
+        submit.disabled = false;
+        submit.innerHTML = label;
       }
-      form.classList.add("hidden");
-      success?.classList.remove("hidden");
-      success?.scrollIntoView({ block: "start", behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
-      success?.focus({ preventScroll: true });
-    } catch (err) {
-      showError(MESSAGES[Number((err as Error).message)] ?? FALLBACK);
-      submit.disabled = false;
-      submit.innerHTML = label;
-    }
-  });
+    });
+  }
+
+  function initAllRepairForms() {
+    document.querySelectorAll<HTMLElement>("[data-repair-photo-container]").forEach((container) => {
+      if (container.dataset.initialized === "true") return;
+      container.dataset.initialized = "true";
+      initRepairPhotoForm(container);
+    });
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", initAllRepairForms);
+  } else {
+    initAllRepairForms();
+  }
 </script>
 
 <style>

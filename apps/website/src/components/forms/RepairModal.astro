@@ -1,0 +1,124 @@
+---
+import RepairPhotoForm from "./RepairPhotoForm.astro";
+import { site } from "../../data/site";
+import { toTelephoneHref } from "../../lib/phone";
+
+const phoneHref = toTelephoneHref(site.phone);
+---
+
+<dialog
+  id="repair-modal"
+  class="fixed inset-0 z-50 m-auto max-h-[92vh] w-[95vw] max-w-2xl overflow-y-auto rounded-xl border border-hsb-line bg-white p-0 shadow-2xl backdrop:bg-hsb-black/75 backdrop:backdrop-blur-sm"
+  aria-labelledby="repair-modal-title"
+  aria-modal="true"
+>
+  <div class="sticky top-0 z-10 flex items-center justify-between border-b border-hsb-line bg-white px-5 py-4 sm:px-6">
+    <div>
+      <span class="inline-block rounded bg-hsb-red/10 px-2 py-0.5 text-xs font-black uppercase tracking-wide text-hsb-red">Ersteinschätzung</span>
+      <h2 id="repair-modal-title" class="text-lg font-black text-hsb-ink sm:text-xl">Schadstelle einschätzen lassen</h2>
+    </div>
+    <button
+      type="button"
+      id="repair-modal-close"
+      class="flex h-10 w-10 items-center justify-center rounded-lg border border-hsb-line bg-hsb-mist text-hsb-steel hover:bg-hsb-line hover:text-hsb-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-hsb-red"
+      aria-label="Modal schließen"
+    >
+      <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <line x1="18" y1="6" x2="6" y2="18"></line>
+        <line x1="6" y1="6" x2="18" y2="18"></line>
+      </svg>
+    </button>
+  </div>
+
+  <div class="p-5 sm:p-6">
+    <p class="mb-4 text-xs text-hsb-steel sm:text-sm">
+      Laden Sie Fotos der betroffenen Stelle hoch oder fordern Sie einen Rückruf an. Ersteinschätzung innerhalb eines Arbeitstags durch unsere Fachingenieure.
+    </p>
+    <RepairPhotoForm idPrefix="modal-repair-photo" />
+    <div class="mt-4 flex items-center justify-between border-t border-hsb-line pt-3 text-xs text-hsb-steel">
+      <span>Lieber telefonisch?</span>
+      <a class="font-bold text-hsb-red underline underline-offset-4" href={phoneHref}>{site.phone}</a>
+    </div>
+  </div>
+</dialog>
+
+<script>
+  import { trackEvent, TrackingEvent } from "../../lib/tracking";
+
+  const modal = document.getElementById("repair-modal") as HTMLDialogElement | null;
+  const closeBtn = document.getElementById("repair-modal-close");
+  let lastFocusedElement: HTMLElement | null = null;
+
+  function openModal() {
+    if (!modal || modal.open) return;
+    lastFocusedElement = document.activeElement as HTMLElement | null;
+    modal.showModal();
+    document.body.classList.add("overflow-hidden");
+    trackEvent(TrackingEvent.CtaClick, { placement: "repair_modal", cta: "open" });
+    const firstInteractive = modal.querySelector<HTMLElement>("input, button");
+    firstInteractive?.focus();
+  }
+
+  function closeModal() {
+    if (!modal || !modal.open) return;
+    modal.close();
+    document.body.classList.remove("overflow-hidden");
+    lastFocusedElement?.focus();
+  }
+
+  closeBtn?.addEventListener("click", closeModal);
+
+  // Klick auf das native Backdrop schließt den Dialog
+  modal?.addEventListener("click", (event) => {
+    const rect = modal.getBoundingClientRect();
+    const isInDialog =
+      rect.top <= event.clientY &&
+      event.clientY <= rect.top + rect.height &&
+      rect.left <= event.clientX &&
+      event.clientX <= rect.left + rect.width;
+    if (!isInDialog) {
+      closeModal();
+    }
+  });
+
+  // ESC schließt und stellt Scrollen wieder her
+  modal?.addEventListener("close", () => {
+    document.body.classList.remove("overflow-hidden");
+    lastFocusedElement?.focus();
+  });
+
+  // Globale Trigger über Data-Attribut oder Hash
+  document.addEventListener("click", (event) => {
+    const target = event.target as HTMLElement | null;
+    const trigger = target?.closest("[data-open-repair-modal]");
+    const linkTrigger = target?.closest('a[href="#foto-modal"], a[href="#schadstelle-melden"], a[href="#repair-modal"]');
+    if (trigger || linkTrigger) {
+      event.preventDefault();
+      openModal();
+    }
+  });
+
+  // Aufruf via URL-Hash (#foto-modal, #schadstelle-melden) oder Query-Parameter (?openModal=repair)
+  function checkUrlTriggers() {
+    const hash = window.location.hash.toLowerCase();
+    const search = new URLSearchParams(window.location.search);
+    if (
+      hash === "#foto-modal" ||
+      hash === "#schadstelle-melden" ||
+      hash === "#repair-modal" ||
+      search.get("openModal") === "repair"
+    ) {
+      openModal();
+    }
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", checkUrlTriggers);
+  } else {
+    checkUrlTriggers();
+  }
+  window.addEventListener("hashchange", checkUrlTriggers);
+
+  // Globale API für programmatische Aufrufe
+  (window as unknown as { openRepairModal?: () => void }).openRepairModal = openModal;
+</script>

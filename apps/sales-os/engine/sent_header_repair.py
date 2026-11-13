@@ -100,6 +100,142 @@ def _uid_search(imap, mid):
     return data[0].split()
 
 
+def purge_verified_backups(client, archive_dir=None, *, apply=False):
+    """Sichert Backups aus HSB-SALES-OS-SENT-ORIGINALS-20261111 lokal und löscht sie nur,
+    wenn für jede Message-ID eine saubere Sent-Kopie ohne X-Unsent verifiziert ist."""
+    import email as email_mod
+    import hashlib
+    from pathlib import Path
+
+    sent_folder = client.cfg.get("sent_folder")
+    if not sent_folder:
+        raise RuntimeError("SENT_FOLDER_MISSING")
+
+    arc_path = Path(archive_dir) if archive_dir else None
+    with client._get_imap() as imap:
+        try:
+            res, _ = imap.select(BACKUP, readonly=True)
+        except TypeError:
+            res, _ = imap.select(BACKUP)
+        if res != "OK":
+            return {"verified_backups": 0, "purged_backups": 0, "applied": apply, "archive_dir": str(arc_path) if arc_path else ""}
+
+        typ, data = imap.uid("search", None, "ALL")
+        if typ != "OK":
+            raise RuntimeError("BACKUP_SEARCH_FAILED")
+        raw_uids = data[0].split() if data and data[0] else []
+        backup_uids = [u.decode() if isinstance(u, bytes) else str(u) for u in raw_uids]
+        if not backup_uids:
+            return {"verified_backups": 0, "purged_backups": 0, "applied": apply, "archive_dir": str(arc_path) if arc_path else ""}
+
+        backups = []
+        for start in range(0, len(backup_uids), 100):
+            chunk = backup_uids[start : start + 100]
+            typ_f, fetched = imap.uid("fetch", ",".join(chunk), "(UID BODY.PEEK[])")
+            if typ_f != "OK":
+                raise RuntimeError("BACKUP_FETCH_FAILED")
+            items = fetched or []
+            for idx, item in enumerate(items):
+                if not isinstance(item, tuple) or len(item) < 2:
+                    continue
+                m_uid = re.search(rb"\bUID (\d+)\b", item[0])
+                if not m_uid and idx + 1 < len(items) and isinstance(items[idx + 1], bytes):
+                    m_uid = re.search(rb"\bUID (\d+)\b", items[idx + 1])
+                if not m_uid:
+                    raise RuntimeError("BACKUP_UID_MISSING")
+                raw = item[1] or b""
+                parsed = email_mod.message_from_bytes(raw)
+                backups.append({
+                    "uid": m_uid.group(1).decode(),
+                    "message_id": str(parsed.get("Message-ID") or "").strip().lower(),
+                    "lead_id": str(parsed.get("X-HSB-Lead-ID") or "").strip(),
+                    "to": str(parsed.get("To") or "").strip(),
+                    "sha256": hashlib.sha256(raw).hexdigest(),
+                    "raw": raw,
+                })
+
+        if len(backups) != len(backup_uids):
+            raise RuntimeError("BACKUP_FETCH_INCOMPLETE")
+
+        try:
+            res_s, _ = imap.select(sent_folder, readonly=True)
+        except TypeError:
+            res_s, _ = imap.select(sent_folder)
+        if res_s != "OK":
+            raise RuntimeError("SENT_FOLDER_UNAVAILABLE")
+
+        typ_s, data_s = imap.uid("search", None, "ALL")
+        if typ_s != "OK":
+            raise RuntimeError("SENT_SEARCH_FAILED")
+        sent_raw_uids = data_s[0].split() if data_s and data_s[0] else []
+        sent_uids = [u.decode() if isinstance(u, bytes) else str(u) for u in sent_raw_uids]
+        clean_sent_mids = set()
+        unsent_sent_mids = set()
+        for start in range(0, len(sent_uids), 200):
+            chunk = sent_uids[start : start + 200]
+            typ_f, fetched = imap.uid(
+                "fetch",
+                ",".join(chunk),
+                "(UID BODY.PEEK[HEADER.FIELDS (MESSAGE-ID X-UNSENT)])",
+            )
+            if typ_f != "OK":
+                raise RuntimeError("SENT_FETCH_FAILED")
+            for item in (fetched or []):
+                if not isinstance(item, tuple) or len(item) < 2:
+                    continue
+                parsed = email_mod.message_from_bytes(item[1] or b"")
+                mid = str(parsed.get("Message-ID") or "").strip().lower()
+                if not mid:
+                    continue
+                if "X-Unsent" in parsed and str(parsed.get("X-Unsent") or "").strip() != "":
+                    unsent_sent_mids.add(mid)
+                else:
+                    clean_sent_mids.add(mid)
+
+        for entry in backups:
+            mid = entry["message_id"]
+            if not mid or mid not in clean_sent_mids or mid in unsent_sent_mids:
+                raise RuntimeError(f"SENT_BACKUP_UNVERIFIED:{entry['uid']}:{mid}")
+
+        if arc_path is not None:
+            arc_path.mkdir(parents=True, exist_ok=True)
+            manifest = []
+            for entry in backups:
+                eml_path = arc_path / f"{entry['uid']}.eml"
+                eml_path.write_bytes(entry["raw"])
+                manifest.append({
+                    "uid": entry["uid"],
+                    "message_id": entry["message_id"],
+                    "lead_id": entry["lead_id"],
+                    "to": entry["to"],
+                    "sha256": entry["sha256"],
+                    "file": eml_path.name,
+                })
+            (arc_path / "manifest.json").write_text(json.dumps(manifest, ensure_ascii=False, indent=2))
+
+        purged = 0
+        if apply:
+            res_w, _ = imap.select(BACKUP)
+            if res_w != "OK":
+                raise RuntimeError("BACKUP_WRITE_SELECT_FAILED")
+            verified_uids = [entry["uid"] for entry in backups]
+            for start in range(0, len(verified_uids), 100):
+                del_chunk = ",".join(verified_uids[start : start + 100])
+                typ_del, _ = imap.uid("store", del_chunk, "+FLAGS", r"(\Deleted)")
+                if typ_del != "OK":
+                    raise RuntimeError("BACKUP_STORE_FAILED")
+            if hasattr(imap, "expunge"):
+                imap.expunge()
+            purged = len(verified_uids)
+
+    return {
+        "verified_backups": len(backups),
+        "purged_backups": purged,
+        "applied": apply,
+        "archive_dir": str(arc_path) if arc_path else "",
+    }
+
+
 def _read_uid(imap, uid):
     typ, data = imap.uid("FETCH", str(uid), "(UID INTERNALDATE FLAGS BODY.PEEK[])")
     pairs = [entry for entry in (data or []) if isinstance(entry, tuple)]
@@ -194,11 +330,23 @@ def main():
     parser.add_argument("--apply", action="store_true")
     parser.add_argument("--limit", type=int, default=1)
     parser.add_argument("--owner", choices=list(OWNERS) + ["ALL"], default="JORDI")
+    parser.add_argument("--purge-verified-backups", action="store_true")
+    parser.add_argument("--archive-dir", default=None)
     args = parser.parse_args()
-    if args.limit < 1 or args.limit > 400:
-        raise ValueError("INVALID_REPAIR_BATCH_LIMIT")
     if os.environ.get("HSB_CUSTOMER_SEND_ENABLED", "no") == "yes":
         raise RuntimeError("REPAIR_CANNOT_RUN_WITH_SMTP_ENABLED")
+    if args.purge_verified_backups:
+        owners = list(OWNERS) if args.owner == "ALL" else [args.owner]
+        report = {"mode": "purge_apply" if args.apply else "purge_preview", "owners": {},
+                  "customer_emails_sent": 0, "checked_at": datetime.now(timezone.utc).isoformat()}
+        for owner in owners:
+            client = ComMailboxClient(owner, timeout=60)
+            arc = Path(args.archive_dir) / owner if args.archive_dir else None
+            report["owners"][owner] = purge_verified_backups(client, archive_dir=arc, apply=args.apply)
+        print(json.dumps(report, ensure_ascii=False))
+        return
+    if args.limit < 1 or args.limit > 400:
+        raise ValueError("INVALID_REPAIR_BATCH_LIMIT")
     rows = get_sheets_service().spreadsheets().values().get(
         spreadsheetId=SPREADSHEET_ID, range="ALL_LEADS!A1:BU6425"
     ).execute().get("values", [])

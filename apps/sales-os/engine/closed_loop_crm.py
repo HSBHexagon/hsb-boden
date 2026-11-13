@@ -61,6 +61,7 @@ def sync_inbounds(apply=False, include_de=True):
     from sequence import reply_actions
     from hsb_core import FREEMAIL_DOMAINS
     from lead_quality import delivery_bounce_status
+    from dedupe_guards import is_opted_out
     from outbound_safety import crm_write_readback, UNSUBSCRIBE_TOKEN_RE
     from sales_reconciliation import addresses
     from sync_to_google_sheet import get_sheets_service, SPREADSHEET_ID
@@ -122,9 +123,10 @@ def sync_inbounds(apply=False, include_de=True):
             if str(lead.get('Reply_Status') or '').lower() not in {'opt_out','bounced'}:
                 change['Reply_Status']=compute_lead_update(row,lead.get('Lead-ID'),cls)['reply_status']
 
+            opted_out = is_opted_out(lead)
             rescued = False
             rescue_target = None
-            if cls.category == 'BOUNCE':
+            if cls.category == 'BOUNCE' and not opted_out:
                 target_email = cls.extracted_email or str(lead.get('E-Mail') or '')
                 try:
                     from bounce_rescue_agent import BounceRescueAgent
@@ -136,7 +138,7 @@ def sync_inbounds(apply=False, include_de=True):
                 except Exception as exc:
                     logger.warning("Bounce rescue exception for %s: %s", target_email, exc)
 
-            if rescued:
+            if rescued and not opted_out:
                 change['E-Mail'] = rescue_target
                 change['Bounce_Status'] = 'rescued'
                 change['Suppressed'] = 'no'
@@ -150,7 +152,7 @@ def sync_inbounds(apply=False, include_de=True):
                     change['Notizen'] = (old_notes + '; ' + note).strip('; ')
             elif blocked:
                 change['Versandfreigabe'] = 'no'
-                if permanently_suppressed:
+                if permanently_suppressed or opted_out:
                     change['Suppressed'] = 'yes'
                 if cls.category == 'OPTOUT' or not lead.get('Suppression_Reason'):
                     change['Suppression_Reason'] = 'INBOUND_' + cls.category
@@ -161,12 +163,12 @@ def sync_inbounds(apply=False, include_de=True):
                         change['Bounce_Status'] = 'hard_bounce' if outcome == 'hard_bounce' else 'bounce_review'
                         if 'Last_Error' in headers:
                             change['Last_Error'] = outcome
-                    if 'Pipeline' in headers:
+                    if 'Pipeline' in headers and not opted_out:
                         change['Pipeline'] = 'Bounce'
             if str(lead.get('Reply_Status') or '').lower() not in {'opt_out','bounced'}:
                 actions=reply_actions(cls.category, msg.body, return_date=cls.recontact_date)
                 # Bestehende Sheets können noch das alte Schema haben.
-                change.update({k:v for k,v in actions.items() if k in headers})
+                change.update({k:v for k,v in actions.items() if k in headers and not (opted_out and k in {'Suppressed', 'Versandfreigabe', 'Pipeline'})})
             if apply:
                 crm_write_readback(svc,SPREADSHEET_ID,headers,row,change)
                 if cls.category == "BOUNCE" and msg.source == "COM_IMAP" and getattr(msg, "uid", None):
@@ -265,7 +267,10 @@ def rescue_crm_bounces(apply=False, limit=50, svc=None):
     rescued_leads = []
     failed_leads = []
 
+    from dedupe_guards import is_opted_out
     for lead in leads:
+        if is_opted_out(lead):
+            continue
         bounce_st = str(lead.get('Bounce_Status') or '').strip().lower()
         reply_st = str(lead.get('Reply_Status') or '').strip().lower()
         if bounce_st == 'rescued' or reply_st == 'bounce_rescued':

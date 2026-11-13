@@ -64,10 +64,10 @@ const phoneHref = site.phone.replace("(0)", "").replace(/[^\d+]/g, "");
     <!-- Rechter Cluster: Navigation und CTA bilden eine bewusste Gruppe,
          damit der Header als Ganzes wirkt (Logo links, Aktionen rechts) und
          die Navigation nicht isoliert in der Mitte schwebt. -->
-    <div class="flex items-center gap-4 xl:gap-8">
-      <nav class="nav-links hidden items-center gap-4 text-sm font-bold lg:flex xl:gap-6" aria-label="Hauptnavigation">
+    <div class="flex items-center gap-4 xl:gap-5">
+      <nav class="nav-links hidden items-center gap-4 text-sm font-bold lg:flex xl:gap-[18px]" aria-label="Hauptnavigation">
         {navigation.filter(n => n.href !== "/kontakt/").map((item) => (
-          <a class="transition-colors" href={item.href}>{item.label}</a>
+          <a class="whitespace-nowrap transition-colors" href={item.href}>{item.label}</a>
         ))}
       </nav>
 

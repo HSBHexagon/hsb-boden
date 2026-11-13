@@ -32,9 +32,8 @@ const problems = [
     <div class="mb-14 grid gap-4 lg:grid-cols-[1fr_auto] lg:items-end">
       <div>
         <p class="eyebrow-light">Technische Schwachstellen</p>
-        <h2 class="h2 mt-4 max-w-2xl text-white">
-          Warum Industrieböden in der<br class="hidden lg:block" />
-          Produktion wirklich versagen
+        <h2 class="h2 mt-4 max-w-2xl text-white [text-wrap:balance]">
+          Warum Industrieböden in der Produktion wirklich versagen
         </h2>
       </div>
       <p class="max-w-xs text-sm leading-7 text-white/72 lg:text-right">
@@ -46,7 +45,7 @@ const problems = [
       {problems.map((item, i) => (
         <article class="reveal flex flex-col gap-6 bg-hsb-black p-8 lg:p-10" style={`--reveal-delay:${i * 60}ms`}>
           <div class="flex items-center gap-4">
-            <span class="rounded-[2px] border border-white/10 px-2.5 py-1 font-mono text-[0.65rem] font-black uppercase tracking-[0.2em] text-white/52">
+            <span class="rounded-[2px] border border-white/10 px-2.5 py-1 font-mono text-[0.6875rem] font-black uppercase tracking-[0.2em] text-white/52">
               Analyse {item.number}
             </span>
           </div>

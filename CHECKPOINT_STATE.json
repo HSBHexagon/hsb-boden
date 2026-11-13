@@ -1,9 +1,9 @@
 {
   "project": "HSB / HEXAFLOOR",
-  "last_updated": "2026-11-12",
+  "last_updated": "2026-11-13",
   "active_model": "Antigravity CLI (Team-Direktor)",
   "active_phase": "sales-os-high-volume-cap-elevation",
-  "active_task": "Tageslimit pro Postfach auf 250 Standard wiederhergestellt, min(100, ...)-Klammer entfernt, High-Volume-Skalierung bis 1000 freigegeben, versand-tranche.sh & Workflow synchronisiert",
+  "active_task": "Website: CLS/Bildgewicht/unsichtbare Buttons behoben (PR #581); Versand wartet auf erneuertes Health-Secret",
   "account_migration_2026_07_02": {
     "github_new_repo": "https://github.com/HSBHexagon/hsb-boden",
     "github_old_repo_access": "HSBHexagon ist Admin-Collaborator im Alt-Repo cherinojoel-lang/hsb-boden (Ownership-Transfer pending, nicht blockierend)",

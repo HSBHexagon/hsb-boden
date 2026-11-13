@@ -2,6 +2,17 @@
 
 Stand: 11.11.2026. Status: **PRODUKTIONSREIF (GO) & AKTIV IM LIVE-VERSAND**.
 
+## 13.11.2026 — Website: Layout-Shift, Bildgewicht, unsichtbare Buttons (PR #581)
+
+- **Layout-Shift beseitigt:** Das Sprach-Banner (`LanguageSuggest.astro`) erschien per Skript im Seitenfluss und schob bei nicht-deutscher Browsersprache den gesamten Inhalt nach unten (CLS ≈ 0,10–0,12 auf jeder deutschen Seite). Es schwebt jetzt als Karte unter dem Header. Dazu Preload der Outfit-Schnitte 400/900 (`BaseLayout.astro`), wodurch auch der Schrift-Shift auf `/en/` (0,044) entfällt. Ergebnis: CLS 0 auf allen gemessenen Vorlagen.
+- **Bildgewicht:** Projektfotos haben 640px-Varianten (`*-640.webp`) mit `srcset` über `src/lib/responsiveImage.ts` (Branchen-/Leistungs-Detail, Referenzen, Startseiten-Bildstrecke). Header-Logo und Kundenlogo-PNGs auf ihre doppelte Anzeigegröße verkleinert (Header-Logo 44 → 4 KB, Glossnerbräu 91 → 3 KB). Kein Motiv, kein Logo und keine Aussage wurde ersetzt.
+- **Unsichtbare Buttons behoben:** Auf `/kontakt/` („Vorab: Technischen Beanspruchungs-Check durchführen“) und der 404-Seite („Projekt anfragen“) stand der weiße Sekundärbutton auf hellem Grund. Die Freigabeliste im Regressionstest führte beide fälschlich als „dunkler Seitenkopf“ und ist korrigiert. Laufzeit-Scan über alle 69 Seiten: kein heller Button auf hellem Grund mehr.
+- **Mobile Breite:** Buttons dürfen unter 640px umbrechen (vorher 459px Seitenbreite auf `/kontakt/`); lange URLs auf `/datenschutz/` brechen um (vorher 417px). Kein Overflow mehr auf 69 Seiten bei 375px.
+- **Überschriften:** Rechner-Seite ohne übersprungene Ebene (h3→h2, h4→h3).
+- **Header & Typografie:** Menüpunkte brechen nicht mehr um („Beanspruchungs-Check“ war zweizeilig); Header passt von 1024 bis 1920px in allen sechs Sprachen in den Container. Headline „Warum Industrieböden in der Produktion wirklich versagen“ ohne verwaistes „der“.
+- **UX-Regeln (ui-ux-pro-max-Datenbank, nur gelesen):** Mikro-Beschriftungen von 9–10,4px auf mindestens 11px angehoben (Regel „Readable Font Size“); Herstellerlinks und „Cookie-Einstellungen“ haben jetzt mindestens 24px Tippfläche, Formular-Checkboxen 20px (Regel „Touch Target Size“). `prefers-reduced-motion` war bereits umgesetzt.
+- **Messung (Lighthouse mobil, Brotli wie Cloudflare, 7 Vorlagen):** Performance vorher 86–99, nachher 95–100; Barrierefreiheit überall 100. Tests 383/383, `check` 0 Fehler, Build und `deploy:dry-run` grün.
+
 ## 12.11.2026 — Sende-Obergrenze auf 250 Standard wiederhergestellt & High-Volume-Skalierung freigegeben (Branch `feat/sales-os-high-volume-cap-elevation`)
 - **Aufhebung des künstlichen 100er-Deckels:** Der in `bd64210` eingeführte starre `min(100, ...)`-Deckel wurde entfernt. Standardlimit pro Postfach ist 250 (bewährter Betriebsstand vom 10.11.2026 mit 249 Mails/Tag und 0 Spam-Score).
 - **Dynamische Skalierbarkeit:** Über die Umgebungsvariablen `HSB_MAX_DAILY_CAP` und `HSB_DAILY_CAP` kann der Betreiber das Volumen souverän bis auf 1.000+ Mails je Postfach/Tag anheben.

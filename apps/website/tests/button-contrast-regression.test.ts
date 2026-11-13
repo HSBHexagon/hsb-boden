@@ -26,8 +26,6 @@ describe("Lesbarkeit von Links und Buttons", () => {
     // .button-secondary hat weiße Schrift. Auf hellen Flächen ist er unsichtbar; dort gehört .button-secondary-dark hin.
     const allowed = new Map<string, number>([
       ["components/sections/CTASection.astro", 1], // bg-hsb-black
-      ["pages/kontakt/index.astro", 1], // dunkler Seitenkopf
-      ["pages/404.astro", 1], // dunkler Seitenkopf
       ["pages/index.astro", 1], // dunkler Hero
     ]);
     const found = new Map<string, number>();

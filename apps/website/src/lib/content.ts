@@ -355,7 +355,7 @@ export function getAllPublicPages() {
       h1: "Thermoschock: Wenn heißes Reinigungswasser Beschichtungen abplatzen lässt",
       seoTitle: "Thermoschock & Schubspannungsrisse beheben | HSB",
       description:
-        "Thermoschock am Industrieboden: Warum Heißwasser (CIP 85–95 °C) auf kaltem Untergrund Beschichtungen ablöst und welche Systeme standhalten.",
+        "Thermoschock am Industrieboden: Warum Heißwasser (CIP über 80 °C) auf kaltem Untergrund Beschichtungen ablöst und welche Systeme standhalten.",
       canonicalPath: "/wissen/fugen-forensik/thermoschock-schaeden/",
     },
     {

@@ -35,11 +35,30 @@ _OLD_PLANNER_LINES = {
 }
 
 
+def dedupe_queue_corporate_domains(balances):
+    """Lässt je nicht-Freemail-Firmendomain maximal einen versandfähigen Lead in der Queue zu."""
+    from dedupe_guards import corporate_domain_of
+    seen_domains = set()
+    for entry in balances:
+        if not entry.get('sendable'):
+            continue
+        dom = corporate_domain_of(entry.get('email', ''))
+        if not dom:
+            continue
+        if dom in seen_domains:
+            entry['sendable'] = False
+            reasons = set(entry.get('reasons') or [])
+            reasons.add('DUPLICATE_CORPORATE_DOMAIN_IN_QUEUE')
+            entry['reasons'] = sorted(reasons)
+        else:
+            seen_domains.add(dom)
+    return balances
+
+
 def contacted_firm_domains(contacted):
-    """Firmendomains bereits angeschriebener Empfänger. Freemail und eigene Domains sperren keine Dritten."""
-    from hsb_core import FREEMAIL_DOMAINS
-    own = {'hsb-boden.de', 'hsb-boden.com'}
-    return {a.rpartition('@')[2] for a in contacted if '@' in a} - set(FREEMAIL_DOMAINS) - own - {''}
+    """Firmendomains bereits angeschriebener Empfänger. Freemail, eigene und RFC-2606-Testdomains sperren keine Dritten."""
+    from dedupe_guards import corporate_domain_of
+    return {dom for a in contacted if (dom := corporate_domain_of(a))}
 
 
 def queue_block_reasons(lead):
@@ -457,7 +476,13 @@ def run_audit(output, reuse_snapshot=False):
             from outbound_safety import INTERNAL_RECIPIENTS
             record['internal_test']=bool(record['recipients']) and all(a in INTERNAL_RECIPIENTS for a in record['recipients'])
             draft_records.append(dict(item, **record))
-    contacted.update(str(l.get('E-Mail') or '').strip().lower() for l in leads if str(l.get('Send_Status') or '').lower() in {'sent', 'gesendet'} or l.get('Send_Datum'))
+    contacted.update(
+        str(l.get('E-Mail') or '').strip().lower()
+        for l in leads
+        if str(l.get('Send_Status') or '').strip().lower() in {'sent', 'gesendet', 'sending'}
+        or str(l.get('Send_Datum') or '').strip()
+        or str(l.get('Last_Send_Attempt_At') or '').strip()
+    )
     contacted_domains = contacted_firm_domains(contacted)
     link_cache = {}
     for draft in draft_records:
@@ -496,6 +521,7 @@ def run_audit(output, reuse_snapshot=False):
         elif len(ds)!=1: reasons.append('DRAFT_COUNT_NOT_ONE')
         for d in ds: reasons.extend(d['issues'])
         balances.append({'lead_id':lid, 'row':l['_row'], 'email':em, 'owner':normalize_owner(l.get('Verantwortlicher')), 'draft_uids':[{'owner':d['owner'],'uidvalidity':d['uidvalidity'],'uid':d['uid'],'message_id':d['message_id']} for d in ds], 'reasons':sorted(set(reasons)), 'sendable':not reasons})
+    dedupe_queue_corporate_domains(balances)
     source_at=json.loads((output/'summary.json').read_text())['timestamp'] if reuse_snapshot else datetime.now(timezone.utc).isoformat()
     summary = {'timestamp':source_at,'reassessed_at':datetime.now(timezone.utc).isoformat(), 'crm_total':len(leads), 'crm_owners':dict(owners), 'forensic_rows':len(forensic)-1, 'forensic_unique_recipients':len(historic), 'owners':{}, 'lead_reasons':dict(Counter(r.split('(')[0].strip() for b in balances for r in b['reasons'])), 'inbound_categories':dict(Counter(x['category'] for x in inbound_records)), 'links':links, 'customer_emails_sent':0, 'status':'NICHT VERSANDBEREIT'}
     for owner in SENDERS:

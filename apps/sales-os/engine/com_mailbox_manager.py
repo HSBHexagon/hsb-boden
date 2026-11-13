@@ -724,13 +724,50 @@ class ComMailboxClient:
                 res, _ = imap.select(target_folder)
                 if res != 'OK':
                     return False
-                imap.uid('store', str(uid), '+FLAGS', r'(\Deleted)')
+                store_res = imap.uid('store', str(uid), '+FLAGS', r'(\Deleted)')
+                if isinstance(store_res, tuple) and store_res and store_res[0] != 'OK':
+                    logger.warning(f"[{self.owner}] delete_draft_by_uid STORE fehlgeschlagen fuer UID {uid} in {target_folder}: {store_res}")
+                    return False
                 if hasattr(imap, 'expunge'):
-                    imap.expunge()
+                    exp_res = imap.expunge()
+                    if isinstance(exp_res, tuple) and exp_res and exp_res[0] != 'OK':
+                        logger.warning(f"[{self.owner}] delete_draft_by_uid EXPUNGE fehlgeschlagen fuer UID {uid} in {target_folder}: {exp_res}")
+                        return False
             return True
         except Exception as exc:
             logger.warning(f"[{self.owner}] delete_draft_by_uid({uid}) in {target_folder} fehlgeschlagen: {exc}")
             return False
+
+    def purge_drafts_by_identity(
+        self,
+        *,
+        lead_id: str = "",
+        message_id: str = "",
+        recipient: str = "",
+        folder: str = None,
+    ) -> int:
+        """Loescht alle Entwurfskopien zur selben Lead-ID, Message-ID oder Empfaengeradresse."""
+        from draft_purge import purge_owner_sent_drafts
+
+        target_folder = folder or self.cfg.get('drafts_folder', 'INBOX.Drafts')
+        sent_emails = {recipient.strip().lower()} if recipient and str(recipient).strip() else set()
+        sent_lead_ids = {lead_id.strip()} if lead_id and str(lead_id).strip() else set()
+        sent_message_ids = {message_id.strip().lower()} if message_id and str(message_id).strip() else set()
+        if not (sent_emails or sent_lead_ids or sent_message_ids):
+            return 0
+        try:
+            with self._get_imap() as imap:
+                return purge_owner_sent_drafts(
+                    imap,
+                    target_folder,
+                    sent_emails,
+                    sent_lead_ids=sent_lead_ids,
+                    sent_message_ids=sent_message_ids,
+                    apply=True,
+                )
+        except Exception as exc:
+            logger.warning(f"[{self.owner}] purge_drafts_by_identity in {target_folder} fehlgeschlagen: {exc}")
+            return 0
 
     def ensure_folder(self, folder_name: str) -> bool:
         """Stellt sicher, dass ein IMAP-Ordner existiert (z. B. 'Unzustellbar')."""

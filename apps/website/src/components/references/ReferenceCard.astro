@@ -28,7 +28,7 @@ const { reference } = Astro.props;
     <div>
       <div class="flex items-center gap-2 mb-2">
         <span class="size-1 bg-hsb-red"></span>
-        <p class="text-[0.65rem] font-black uppercase tracking-[0.2em] text-hsb-red">{reference.projectType}</p>
+        <p class="text-[0.6875rem] font-black uppercase tracking-[0.2em] text-hsb-red">{reference.projectType}</p>
       </div>
       <h3 class="text-xl font-black leading-tight text-hsb-black transition-colors group-hover:text-hsb-red">{reference.displayName}</h3>
       <div class="mt-2 flex items-center gap-2 text-[0.8rem] font-bold text-hsb-steel/80">
@@ -45,10 +45,10 @@ const { reference } = Astro.props;
     </div>
   </div>
   <div class="grid gap-6 p-6 lg:p-7 text-[0.9rem] leading-7 text-hsb-steel">
-    <div><p class="text-[0.65rem] font-black uppercase tracking-widest text-hsb-black mb-1 opacity-75">Anforderung</p><p class="font-medium text-hsb-black/80">{reference.challenge}</p></div>
-    <div class="grid gap-1"><p class="text-[0.65rem] font-black uppercase tracking-widest text-hsb-black mb-1 opacity-75">Lösung & Ergebnis</p><p>{reference.solution} {reference.result}</p></div>
+    <div><p class="text-[0.6875rem] font-black uppercase tracking-widest text-hsb-black mb-1 opacity-75">Anforderung</p><p class="font-medium text-hsb-black/80">{reference.challenge}</p></div>
+    <div class="grid gap-1"><p class="text-[0.6875rem] font-black uppercase tracking-widest text-hsb-black mb-1 opacity-75">Lösung & Ergebnis</p><p>{reference.solution} {reference.result}</p></div>
   </div>
   <div class="flex flex-wrap gap-2 border-t border-hsb-line/50 bg-[#fbfcfd] p-5">
-    {reference.systems.map((system) => <span class="rounded-[2px] border border-hsb-line/60 px-2 py-1 text-[0.65rem] font-bold uppercase tracking-wide text-hsb-steel/90">{serviceTitleMap[system] ?? system}</span>)}
+    {reference.systems.map((system) => <span class="rounded-[2px] border border-hsb-line/60 px-2 py-1 text-[0.6875rem] font-bold uppercase tracking-wide text-hsb-steel/90">{serviceTitleMap[system] ?? system}</span>)}
   </div>
 </article>

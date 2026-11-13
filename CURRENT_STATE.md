@@ -10,6 +10,7 @@ Stand: 11.11.2026. Status: **PRODUKTIONSREIF (GO) & AKTIV IM LIVE-VERSAND**.
 - **Mobile Breite:** Buttons dürfen unter 640px umbrechen (vorher 459px Seitenbreite auf `/kontakt/`); lange URLs auf `/datenschutz/` brechen um (vorher 417px). Kein Overflow mehr auf 69 Seiten bei 375px.
 - **Überschriften:** Rechner-Seite ohne übersprungene Ebene (h3→h2, h4→h3).
 - **Header & Typografie:** Menüpunkte brechen nicht mehr um („Beanspruchungs-Check“ war zweizeilig); Header passt von 1024 bis 1920px in allen sechs Sprachen in den Container. Headline „Warum Industrieböden in der Produktion wirklich versagen“ ohne verwaistes „der“.
+- **UX-Regeln (ui-ux-pro-max-Datenbank, nur gelesen):** Mikro-Beschriftungen von 9–10,4px auf mindestens 11px angehoben (Regel „Readable Font Size“); Herstellerlinks und „Cookie-Einstellungen“ haben jetzt mindestens 24px Tippfläche, Formular-Checkboxen 20px (Regel „Touch Target Size“). `prefers-reduced-motion` war bereits umgesetzt.
 - **Messung (Lighthouse mobil, Brotli wie Cloudflare, 7 Vorlagen):** Performance vorher 86–99, nachher 95–100; Barrierefreiheit überall 100. Tests 383/383, `check` 0 Fehler, Build und `deploy:dry-run` grün.
 
 ## 12.11.2026 — Sende-Obergrenze auf 250 Standard wiederhergestellt & High-Volume-Skalierung freigegeben (Branch `feat/sales-os-high-volume-cap-elevation`)

@@ -22,7 +22,7 @@ const phoneHref = toTelephoneHref(site.phone);
       <div class="mt-6 flex flex-wrap gap-3">
         <a class="button-secondary-dark" href={phoneHref} data-repair-contact="phone">{site.phone}</a>
       </div>
-      <p class="mt-3 text-sm text-hsb-steel">Direkter Draht zu unseren Fachingenieuren für Industrieböden und Säureschutz.</p>
+      <p class="mt-3 text-sm text-hsb-steel">Direkter Draht zu unserem Fachteam für Industrieböden und Säureschutz.</p>
     </div>
     <div class="order-1 lg:order-2">
       {site.hasRepairPhotoUpload ? <RepairPhotoForm /> : site.hasLeadEndpoint && <LeadForm repairRequest />}

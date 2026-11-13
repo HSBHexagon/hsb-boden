@@ -55,3 +55,13 @@
 - Behoben: Layout-Shift durch Sprach-Banner, Schrift-Shift, übergroße Logos/Projektfotos, unsichtbare Sekundärbuttons auf `/kontakt/` und 404, horizontales Scrollen auf `/kontakt/` und `/datenschutz/`, Überschriften-Reihenfolge im Rechner.
 - Werkzeuge: Firecrawl (Branding-Scan der Live-Seite), Exa (B2B-Homepage-Struktur; Ergebnis: keine Umstrukturierung nötig), Lighthouse 12, Playwright. Tavily nicht verfügbar (kein CLI/API-Key), „Stitch“ nicht installiert.
 - Versand unverändert blockiert: Health-Secret abgelaufen, Seed-Nachweis fehlt.
+
+## 13.11.2026 — Startseite: Fotos, Lesbarkeit, Texte (Claude Code, Branch `feat/home-visual-polish-20261113`)
+
+- Baut auf PR #592 (`c3cce23`) auf. Nur lokal committet, kein Push, kein Deploy.
+- Hero: Projektfoto mit Produktionsanlage statt blassem Fliesenmuster (neue 1024px-Variante), redundante vier Segmentkästen entfernt.
+- „Systeme & Branchen“: Textmatrix (11 px) ersetzt durch sechs Branchen-Fotokacheln und eine lesbare Leistungsliste; Bildzuordnung wie in `references.ts`.
+- Detailfotos (Rinne, Stützenanschluss, Beschichtung) mit `srcset`; Team-Block mit Foto „Halle in Ausführung“.
+- Logo-Raster: graue Leerfläche in der letzten Reihe behoben (zentriertes Flex-Raster).
+- Texte: „Zertifizierter Säureschutz“, „GMP-konforme Reinraumböden“, „Fachingenieure“, „ingenieurseitig“ entschärft; Herstellerzeile nennt nur noch Argelith und Zahna als Planungsgrundlage (Steuler, Silikal, MC-Bauchemie waren nirgends belegt).
+- Nachweis: `npm run check` 0 Fehler, `npm run test:run` 410/410, Build 69 Seiten, `deploy:dry-run` ok, `verify_ssot.py` Exit 0; Screenshots 1440/390 px ohne Überlauf. Desktop-Höhe 8.295 px (vorher 7.996 px; das 8.000-px-Ziel aus HSB-WEB-07 wird um 295 px überschritten).

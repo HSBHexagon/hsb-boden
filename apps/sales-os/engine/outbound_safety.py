@@ -556,16 +556,21 @@ def draft_segment(draft):
 
 def select_queue(queue, drafts, owners, count_per_owner, segments=None, variant=None):
     """Reihenfolge der Warteschlange beibehalten; optional nur Leads, deren versandbereiter Entwurf zu `segments`
-    gehört und (variant='reparatur') die Reparatur-Variante trägt."""
+    gehört und (variant='reparatur') die Reparatur-Variante trägt.
+    Filtert zuerst nach Owner/Segment/Variante und dedupliziert danach Firmendomains unter den berechtigten Kandidaten."""
     if variant not in (None, 'reparatur'):
         raise ValueError('INVALID_VARIANT')
-    seg_by_lead={}; tid_by_lead={}
-    if segments or variant:
-        for d in drafts:
-            if d.get('sendable'):
-                seg_by_lead.setdefault(d['lead_id'], draft_segment(d))
-                tid_by_lead.setdefault(d['lead_id'], str(d.get('template_id') or ''))
-    selected=[];used={o:0 for o in owners}
+    from dedupe_guards import corporate_domain_of
+    seg_by_lead={}; tid_by_lead={}; recips_by_lead={}
+    for d in drafts or []:
+        if d.get('sendable'):
+            lid = d.get('lead_id')
+            if segments or variant:
+                seg_by_lead.setdefault(lid, draft_segment(d))
+                tid_by_lead.setdefault(lid, str(d.get('template_id') or ''))
+            if d.get('recipients'):
+                recips_by_lead.setdefault(lid, d['recipients'][0])
+    selected=[]; used={o:0 for o in owners}; seen_domains=set()
     for item in queue:
         o=item['owner']
         if o not in owners or used[o]>=count_per_owner:
@@ -574,7 +579,13 @@ def select_queue(queue, drafts, owners, count_per_owner, segments=None, variant=
             continue
         if variant and f'-{variant}-' not in tid_by_lead.get(item['lead_id'], ''):
             continue
-        selected.append(item);used[o]+=1
+        addr = item.get('email') or recips_by_lead.get(item.get('lead_id'), '')
+        dom = corporate_domain_of(addr)
+        if dom:
+            if dom in seen_domains:
+                continue
+            seen_domains.add(dom)
+        selected.append(item); used[o]+=1
     return selected, used
 
 

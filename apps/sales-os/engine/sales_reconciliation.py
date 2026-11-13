@@ -521,7 +521,6 @@ def run_audit(output, reuse_snapshot=False):
         elif len(ds)!=1: reasons.append('DRAFT_COUNT_NOT_ONE')
         for d in ds: reasons.extend(d['issues'])
         balances.append({'lead_id':lid, 'row':l['_row'], 'email':em, 'owner':normalize_owner(l.get('Verantwortlicher')), 'draft_uids':[{'owner':d['owner'],'uidvalidity':d['uidvalidity'],'uid':d['uid'],'message_id':d['message_id']} for d in ds], 'reasons':sorted(set(reasons)), 'sendable':not reasons})
-    dedupe_queue_corporate_domains(balances)
     source_at=json.loads((output/'summary.json').read_text())['timestamp'] if reuse_snapshot else datetime.now(timezone.utc).isoformat()
     summary = {'timestamp':source_at,'reassessed_at':datetime.now(timezone.utc).isoformat(), 'crm_total':len(leads), 'crm_owners':dict(owners), 'forensic_rows':len(forensic)-1, 'forensic_unique_recipients':len(historic), 'owners':{}, 'lead_reasons':dict(Counter(r.split('(')[0].strip() for b in balances for r in b['reasons'])), 'inbound_categories':dict(Counter(x['category'] for x in inbound_records)), 'links':links, 'customer_emails_sent':0, 'status':'NICHT VERSANDBEREIT'}
     for owner in SENDERS:

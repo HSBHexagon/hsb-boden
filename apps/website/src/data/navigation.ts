@@ -4,7 +4,6 @@ export const navigation = [
   { label: "Referenzen", href: "/referenzen/" },
   { label: "Beanspruchungs-Check", href: "/beanspruchungs-check/" },
   { label: "Wissen", href: "/wissen/" },
-  { label: "Planer", href: "/planer/" },
   { label: "Projektablauf", href: "/projektablauf/" },
   { label: "Karriere", href: "/karriere/" },
   { label: "Kontakt", href: "/kontakt/" },
@@ -24,7 +23,6 @@ export const footerGroups = [
       { label: "Reparatur & Instandsetzung", href: "/leistungen/boden-reparatur-instandsetzung/" },
       { label: "Beanspruchungs-Check", href: "/beanspruchungs-check/" },
       { label: "Sanierungsfenster-Rechner", href: "/rechner/sanierungsfenster/" },
-      { label: "Planer & LV-Texte", href: "/planer/" },
     ],
   },
   {

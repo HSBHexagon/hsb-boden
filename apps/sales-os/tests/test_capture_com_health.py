@@ -160,3 +160,47 @@ def test_recent_bounce_in_both_folders_is_counted_once(monkeypatch):
     report = audit.check_snapshot()
     assert report["hard_bounces"] + report["review_bounces"] == 1
     assert "<dsn@provider>" in report["seen_inbound_ids"]
+
+
+def _snapshot_with_sent(monkeypatch, sent_per_mailbox):
+    import datetime as dt
+    from email import message_from_string
+    import capture_com_health as audit
+    from send_governance import MailboxHealthStore
+
+    class Client:
+        def __init__(self, owner):
+            self.cfg = {"inbox_folder": "INBOX", "sent_folder": "Sent"}
+
+        def fetch_inbound_messages(self, limit=0, *, folder=None):
+            return [] if folder == 'Unzustellbar' else [{"id": "x", "internet_message_id": "<in@example.test>"}]
+
+    monkeypatch.setattr(audit, "ComMailboxClient", Client)
+    monkeypatch.setattr(MailboxHealthStore, "read", lambda self: {'state': 'active'})
+    sent = message_from_string("To: customer@example.test\n\n")
+
+    def read_records(_client, folder, **kwargs):
+        if kwargs.get("history"):
+            return iter([(audit.NOW - dt.timedelta(hours=1), sent)] * sent_per_mailbox)
+        return iter(())
+
+    monkeypatch.setattr(audit, "extracted_records", read_records)
+    return audit.check_snapshot()
+
+
+def test_snapshot_accepts_a_full_send_day_above_100(monkeypatch):
+    # Nach einem Versandtag mit 250 Mails je Postfach muss ein Nachweis möglich sein.
+    report = _snapshot_with_sent(monkeypatch, 250)
+    assert report["sample_sent"] == 500
+
+
+def test_snapshot_limit_matches_pause_reason(monkeypatch):
+    from send_governance import max_health_sample, pause_reason
+
+    monkeypatch.setenv("HSB_MAX_SAMPLE_SIZE", "300")
+    assert max_health_sample() == 300
+    with pytest.raises(RuntimeError, match="HEALTH_SAMPLE_OVER_LIMIT_REQUIRES_SCOPE"):
+        _snapshot_with_sent(monkeypatch, 151)
+    stats = {'sample_sent': 301, 'hard_bounces': 0, 'policy_bounces': 0,
+             'deferrals_today': 0, 'spam_reports': 0, 'seed_dkim_pass': True}
+    assert pause_reason(stats) == 'HEALTH_EVIDENCE_INVALID'

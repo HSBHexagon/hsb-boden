@@ -162,6 +162,16 @@ def prepare_send_health(state_dir):
             temporary.unlink(missing_ok=True)
 
 
+def max_health_sample() -> int:
+    """Größte 24-Stunden-Stichprobe, die Messung und Prüfung akzeptieren.
+
+    Messung (capture_com_health) und Prüfung (pause_reason) müssen dieselbe Grenze
+    verwenden: Lehnt die Messung ab, was die Prüfung erlaubt, lässt sich nach einem
+    großen Versandtag kein neuer Health-Nachweis erzeugen.
+    """
+    return int(os.environ.get('HSB_MAX_SAMPLE_SIZE', 10000))
+
+
 def pause_reason(stats):
     """Statistiken müssen verifiziert sein. Fehlende Beobachtungen bedeuten keine Gesundheit."""
     required = ('sample_sent', 'hard_bounces', 'policy_bounces', 'deferrals_today', 'spam_reports', 'seed_dkim_pass')
@@ -176,7 +186,7 @@ def pause_reason(stats):
     if type(live_delta) is not int or live_delta < 0:
         return 'HEALTH_EVIDENCE_INVALID'
     snapshot_sent = sent - live_delta
-    max_sample = int(os.environ.get('HSB_MAX_SAMPLE_SIZE', 10000))
+    max_sample = max_health_sample()
     if snapshot_sent < 0 or snapshot_sent > max_sample or hard > sent:
         return 'HEALTH_EVIDENCE_INVALID'
     if stats['seed_dkim_pass'] is not True:

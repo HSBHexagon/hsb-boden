@@ -2,6 +2,12 @@
 
 Stand: 11.11.2026. Status: **PRODUKTIONSREIF (GO) & AKTIV IM LIVE-VERSAND**.
 
+## 13.11.2026 — Health-Messung skaliert mit dem Versandvolumen (Branch `claude/kind-knuth-6f6dml`)
+
+- `capture_com_health.py` brach bei mehr als 100 gesendeten Mails in 24 Stunden mit `HEALTH_SAMPLE_OVER_100_REQUIRES_SCOPE` ab. Bei 250–500 Mails je Postfach ließ sich damit am Tag nach jedem größeren Versand kein neuer Health-Nachweis erzeugen, und das Secret lief ab.
+- Messung und Prüfung nutzen jetzt dieselbe Grenze `send_governance.max_health_sample()` (`HSB_MAX_SAMPLE_SIZE`, Standard 10.000). Fehlercode bei Überschreitung: `HEALTH_SAMPLE_OVER_LIMIT_REQUIRES_SCOPE`. Bounce-Schwellen unverändert.
+- Tests: zwei neue in `test_capture_com_health.py` (500 Mails werden akzeptiert; Messung und `pause_reason` lehnen bei derselben Grenze ab). Sales-OS-Suite 843 passed, 1 skipped.
+
 ## 13.11.2026 — SEO: Regionalseiten verlinkt, Snippets gekürzt, Artikel-Schema (Branch `claude/kind-knuth-6f6dml`)
 
 - **Regionale Landingpages verlinkt:** Die neun `/standorte/*`-Seiten standen nur in der Sitemap; keine Seite verlinkte sie (0 interne Links). Neue Footer-Gruppe „Einsatzgebiete“ verlinkt sie jetzt von jeder Seite.

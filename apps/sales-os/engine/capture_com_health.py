@@ -161,9 +161,10 @@ def check_snapshot():
         latest_sent.append(sample)
         proof[owner]={'inbound_total':len({(it.get('internet_message_id') or it.get('id')) for it in inbound}), 'inbound_24h':recent_in,
                       'sent_24h':sample,'first_external_sent':earliest.isoformat()}
-    if sum(latest_sent) > 100:
-        raise RuntimeError('HEALTH_SAMPLE_OVER_100_REQUIRES_SCOPE')
-    from send_governance import MailboxHealthStore
+    from send_governance import MailboxHealthStore, max_health_sample
+    # Gleiche Grenze wie pause_reason; die frühere feste 100 blockierte jeden Nachweis nach einem Versandtag über 100 Mails.
+    if sum(latest_sent) > max_health_sample():
+        raise RuntimeError('HEALTH_SAMPLE_OVER_LIMIT_REQUIRES_SCOPE')
     shared_pause=MailboxHealthStore(ComMailboxClient('JOEL')).read()
     output={'checked_at':NOW.isoformat(),'first_send_date':max(pilot_dates),
             'seen_inbound_ids':sorted(seen),'sample_sent':sum(latest_sent),

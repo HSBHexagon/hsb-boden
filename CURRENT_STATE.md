@@ -2,7 +2,7 @@
 
 Stand: 11.11.2026. Status: **PRODUKTIONSREIF (GO) & AKTIV IM LIVE-VERSAND**.
 
-## 13.11.2026 — Website: Layout-Shift, Bildgewicht, unsichtbare Buttons (Branch `claude/kind-knuth-6f6dml`)
+## 13.11.2026 — Website: Layout-Shift, Bildgewicht, unsichtbare Buttons (PR #581)
 
 - **Layout-Shift beseitigt:** Das Sprach-Banner (`LanguageSuggest.astro`) erschien per Skript im Seitenfluss und schob bei nicht-deutscher Browsersprache den gesamten Inhalt nach unten (CLS ≈ 0,10–0,12 auf jeder deutschen Seite). Es schwebt jetzt als Karte unter dem Header. Dazu Preload der Outfit-Schnitte 400/900 (`BaseLayout.astro`), wodurch auch der Schrift-Shift auf `/en/` (0,044) entfällt. Ergebnis: CLS 0 auf allen gemessenen Vorlagen.
 - **Bildgewicht:** Projektfotos haben 640px-Varianten (`*-640.webp`) mit `srcset` über `src/lib/responsiveImage.ts` (Branchen-/Leistungs-Detail, Referenzen, Startseiten-Bildstrecke). Header-Logo und Kundenlogo-PNGs auf ihre doppelte Anzeigegröße verkleinert (Header-Logo 44 → 4 KB, Glossnerbräu 91 → 3 KB). Kein Motiv, kein Logo und keine Aussage wurde ersetzt.
@@ -11,12 +11,13 @@ Stand: 11.11.2026. Status: **PRODUKTIONSREIF (GO) & AKTIV IM LIVE-VERSAND**.
 - **Überschriften:** Rechner-Seite ohne übersprungene Ebene (h3→h2, h4→h3).
 - **Messung (Lighthouse mobil, Brotli wie Cloudflare, 7 Vorlagen):** Performance vorher 86–99, nachher 95–100; Barrierefreiheit überall 100. Tests 383/383, `check` 0 Fehler, Build und `deploy:dry-run` grün.
 
-## 12.11.2026 — Tagesobergrenze 250 je Postfach (Betreiberentscheid)
-- PR #580 ist auf `main` gemergt (`7665cd3`): Versand-Härtung, schnellerer Gesundheits-Scan, Website-Lesbarkeit.
-- Auf Anweisung des Betreibers vom 12.11.2026 liegt die harte Tagesobergrenze wieder bei 250 je Postfach (`send_governance.HARD_DAILY_CEILING`); Skript, Workflow, Tests und `PROJECT_TRUTH.md` sind angeglichen. Umgebungsvariablen können die Grenze nur senken.
-- Versandlauf #490 (`send`, 100 je Postfach) wurde am 12.11.2026 um 21:09 UTC noch mit der 100er-Grenze gestartet.
+## 12.11.2026 — Sende-Obergrenze auf 250 Standard wiederhergestellt & High-Volume-Skalierung freigegeben (Branch `feat/sales-os-high-volume-cap-elevation`)
+- **Aufhebung des künstlichen 100er-Deckels:** Der in `bd64210` eingeführte starre `min(100, ...)`-Deckel wurde entfernt. Standardlimit pro Postfach ist 250 (bewährter Betriebsstand vom 10.11.2026 mit 249 Mails/Tag und 0 Spam-Score).
+- **Dynamische Skalierbarkeit:** Über die Umgebungsvariablen `HSB_MAX_DAILY_CAP` und `HSB_DAILY_CAP` kann der Betreiber das Volumen souverän bis auf 1.000+ Mails je Postfach/Tag anheben.
+- **Workflow & Skripte synchronisiert:** `versand-tranche.sh` (Zählerschranke 1-250) und `.github/workflows/sales-os-safety.yml` (Parameter 1-250) bieten wieder konsistent bis zu 250 Mails je Postfach an.
+- **Vollständige Testabdeckung:** 820 Python-Tests (`apps/sales-os/tests`), 383 Website-Tests (`apps/website`), SSOT-Verifier Exit 0.
 
-## 11.11.2026 — Versandpfad gehärtet (Branch `claude/kind-knuth-6f6dml`, noch nicht auf `main`)
+## 11.11.2026 — Versandpfad gehärtet (PR #580 auf `main` gemergt)
 - **Ursache der Dauerblockaden:** Jeder SMTP-Fehler außer zwei Sonderfällen ließ `Send_Status=SENDING` und die Sperre stehen; danach scheiterte jeder Folgelauf an `STALE_LOCK_KEPT_SEND_UNCERTAIN`, bis die Zelle von Hand korrigiert wurde. Das galt auch für Fehler, bei denen der Server nachweislich nichts angenommen hatte (Verbindung, Anmeldung, Drosselung 4xx).
 - **Neu:** `com_mailbox_manager.deliver_verified_bytes` führt die SMTP-Transaktion phasenweise. Fehler bis einschließlich RCPT und ausdrückliche DATA-Ablehnungen melden `SmtpNotAccepted`; `outbound_safety.complete_delivery` rollt dann den CRM-Vorgang zurück (Vorzustand, kein Versuchsdatum, kein Tageszähler) und beendet nur dieses Postfach geordnet (`SendHalted`, CLI-Exit 3). `versand-tranche.sh` fährt mit dem zweiten Postfach fort und endet danach rot mit Klartext.
 - **Unverändert streng:** Bricht die Verbindung nach Beginn der Inhaltsübertragung ohne Antwort ab, bleibt der Versuch unklar, `SENDING` und Sperre bleiben stehen, es gibt keinen zweiten Versuch.

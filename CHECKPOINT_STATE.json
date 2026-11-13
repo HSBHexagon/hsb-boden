@@ -1,9 +1,9 @@
 {
   "project": "HSB / HEXAFLOOR",
   "last_updated": "2026-11-13",
-  "active_model": "Claude Code (Cloud-Sitzung)",
-  "active_phase": "sales-os-production-ready",
-  "active_task": "Website: CLS/Bildgewicht/unsichtbare Buttons behoben (Branch claude/kind-knuth-6f6dml, PR #581); Versand wartet auf erneuertes Health-Secret",
+  "active_model": "Antigravity CLI (Team-Direktor)",
+  "active_phase": "sales-os-high-volume-cap-elevation",
+  "active_task": "Website: CLS/Bildgewicht/unsichtbare Buttons behoben (PR #581); Versand wartet auf erneuertes Health-Secret",
   "account_migration_2026_07_02": {
     "github_new_repo": "https://github.com/HSBHexagon/hsb-boden",
     "github_old_repo_access": "HSBHexagon ist Admin-Collaborator im Alt-Repo cherinojoel-lang/hsb-boden (Ownership-Transfer pending, nicht blockierend)",
@@ -338,7 +338,7 @@
   },
   "current_truth_2026_11_11": {
     "branch": "claude/kind-knuth-6f6dml",
-    "merged_to_main": false,
+    "merged_to_main": true,
     "tests": "pytest apps/sales-os/tests: 815 passed, 1 skipped; verify_ssot.py Exit 0; Website 383 Tests, check 0 Fehler, build 69 Seiten",
     "customer_emails_sent_in_session": 0,
     "live_access_in_session": false,
@@ -353,5 +353,15 @@
       "Gesundheitspruefung liest Unzustellbar (bd64210, 383be5a)",
       "versand-tranche.sh und Workflow auf 1-100 begrenzt"
     ]
+  },
+  "current_truth_2026_11_12": {
+    "branch": "feat/sales-os-high-volume-cap-elevation",
+    "merged_to_main": false,
+    "pr_580_merged": true,
+    "main_head": "7665cd3",
+    "daily_cap_per_mailbox_default": 250,
+    "daily_cap_scaling": "Operator-configurable up to 1000+ via HSB_MAX_DAILY_CAP / HSB_DAILY_CAP",
+    "tests": "pytest apps/sales-os/tests: 820 passed, 1 skipped; verify_ssot.py Exit 0; Website 383 Tests pass",
+    "customer_emails_sent_in_session": 0
   }
 }

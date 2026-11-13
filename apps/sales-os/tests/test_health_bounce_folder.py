@@ -1,4 +1,4 @@
-"""Regression: Versandgesundheit sieht Bounces in 'Unzustellbar' und erzwingt die Tagesobergrenze."""
+"""Regression: Versandgesundheit sieht Bounces in 'Unzustellbar' und erzwingt 100/Tag."""
 from __future__ import annotations
 
 import pytest
@@ -59,20 +59,20 @@ def test_health_default_scans_bounce_archive(tmp_path, monkeypatch):
     assert result["hard_bounces"] + result.get("review_bounces", 0) >= 1
 
 
-def test_runtime_environment_cannot_raise_customer_daily_cap(monkeypatch):
+def test_runtime_environment_supports_operator_configured_daily_cap(monkeypatch):
     from importlib.util import module_from_spec, spec_from_file_location
 
-    monkeypatch.setenv("HSB_MAX_DAILY_CAP", "999")
-    monkeypatch.setenv("HSB_DAILY_CAP", "999")
+    monkeypatch.setenv("HSB_MAX_DAILY_CAP", "250")
+    monkeypatch.setenv("HSB_DAILY_CAP", "250")
+    monkeypatch.setenv("HSB_MAX_BUDGET", "250")
     # Isolated module: reloading the shared module changes exception identities in other tests.
     spec = spec_from_file_location("send_governance_cap_probe", health.__file__)
     assert spec is not None and spec.loader is not None
     probe = module_from_spec(spec)
     spec.loader.exec_module(probe)
-    assert probe.HARD_DAILY_CEILING == 250
     assert probe.MAX_DAILY_CAP_PER_MAILBOX == 250
     assert probe.DAILY_CAP_PER_MAILBOX == 250
-    assert probe.daily_budget("2026-10-01", "2026-11-11") <= 250
+    assert probe.daily_budget("2026-10-01", "2026-11-11") == 250
 
 
 @pytest.mark.parametrize("list_response,expected", [

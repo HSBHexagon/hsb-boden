@@ -556,16 +556,21 @@ def draft_segment(draft):
 
 def select_queue(queue, drafts, owners, count_per_owner, segments=None, variant=None):
     """Reihenfolge der Warteschlange beibehalten; optional nur Leads, deren versandbereiter Entwurf zu `segments`
-    gehört und (variant='reparatur') die Reparatur-Variante trägt."""
+    gehört und (variant='reparatur') die Reparatur-Variante trägt.
+    Filtert zuerst nach Owner/Segment/Variante und dedupliziert danach Firmendomains unter den berechtigten Kandidaten."""
     if variant not in (None, 'reparatur'):
         raise ValueError('INVALID_VARIANT')
-    seg_by_lead={}; tid_by_lead={}
-    if segments or variant:
-        for d in drafts:
-            if d.get('sendable'):
-                seg_by_lead.setdefault(d['lead_id'], draft_segment(d))
-                tid_by_lead.setdefault(d['lead_id'], str(d.get('template_id') or ''))
-    selected=[];used={o:0 for o in owners}
+    from dedupe_guards import corporate_domain_of
+    seg_by_lead={}; tid_by_lead={}; recips_by_lead={}
+    for d in drafts or []:
+        if d.get('sendable'):
+            lid = d.get('lead_id')
+            if segments or variant:
+                seg_by_lead.setdefault(lid, draft_segment(d))
+                tid_by_lead.setdefault(lid, str(d.get('template_id') or ''))
+            if d.get('recipients'):
+                recips_by_lead.setdefault(lid, d['recipients'][0])
+    selected=[]; used={o:0 for o in owners}; seen_domains=set()
     for item in queue:
         o=item['owner']
         if o not in owners or used[o]>=count_per_owner:
@@ -574,26 +579,43 @@ def select_queue(queue, drafts, owners, count_per_owner, segments=None, variant=
             continue
         if variant and f'-{variant}-' not in tid_by_lead.get(item['lead_id'], ''):
             continue
-        selected.append(item);used[o]+=1
+        addr = item.get('email') or recips_by_lead.get(item.get('lead_id'), '')
+        dom = corporate_domain_of(addr)
+        if dom:
+            if dom in seen_domains:
+                continue
+            seen_domains.add(dom)
+        selected.append(item); used[o]+=1
     return selected, used
 
 
-def cleanup_sent_draft(client, folder, uid):
-    """Löscht den gesendeten Entwurf aus dem IMAP-Entwurfsordner nach verifizierter Zustellung.
+def cleanup_sent_draft(client, folder, uid, *, lead_id='', message_id='', recipient=''):
+    """Löscht den gesendeten Entwurf (und eventuelle Duplikat-Kopien) nach verifizierter Zustellung.
     Verhindert, dass Mail-Clients wie Outlook den gesendeten Thread als [Entwurf] markieren."""
-    if not client or not folder or not uid:
+    if not client or not folder:
         return
     try:
-        if hasattr(client, 'delete_draft_by_uid'):
-            client.delete_draft_by_uid(uid, folder)
-        elif hasattr(client, '_get_imap'):
+        if uid and hasattr(client, 'delete_draft_by_uid'):
+            deleted = client.delete_draft_by_uid(uid, folder)
+            if deleted is False:
+                print(f"WARN: cleanup_sent_draft({folder}, {uid}) delete_draft_by_uid gab False zurück")
+        elif uid and hasattr(client, '_get_imap'):
             with client._get_imap() as imap:
                 typ, _ = imap.select(folder)
                 if typ == 'OK':
                     if hasattr(imap, 'uid'):
-                        imap.uid('store', str(uid), '+FLAGS', r'(\Deleted)')
+                        res = imap.uid('store', str(uid), '+FLAGS', r'(\Deleted)')
+                        if isinstance(res, tuple) and res and res[0] != 'OK':
+                            print(f"WARN: cleanup_sent_draft({folder}, {uid}) STORE fehlgeschlagen: {res}")
                     if hasattr(imap, 'expunge'):
                         imap.expunge()
+        if any((lead_id, message_id, recipient)) and hasattr(type(client), 'purge_drafts_by_identity'):
+            client.purge_drafts_by_identity(
+                lead_id=lead_id,
+                message_id=message_id,
+                recipient=recipient,
+                folder=folder,
+            )
     except Exception as exc:
         print(f"WARN: cleanup_sent_draft({folder}, {uid}) ignoriert: {exc}")
 
@@ -630,7 +652,8 @@ def dispatch_verified(count_per_owner=25, owners=('JOEL','JORDI'), dry_run=True,
     from sync_to_google_sheet import get_sheets_service, SPREADSHEET_ID
     from sales_reconciliation import run_audit, assess_message, has_unreviewed_legacy_variant
     min_allowed_jitter = int(os.environ.get('HSB_MIN_ALLOWED_JITTER', 0))
-    if not 1 <= count_per_owner <= cap <= DAILY_CAP or not min_allowed_jitter <= jitter_min <= jitter_max:
+    effective_daily_cap = int(os.environ.get('HSB_MAX_DAILY_CAP', DAILY_CAP))
+    if not 1 <= count_per_owner <= cap <= effective_daily_cap or not min_allowed_jitter <= jitter_min <= jitter_max:
         raise ValueError('INVALID_BATCH_LIMITS')
     owners=tuple(normalize_owner(o) for o in owners)
     if any(o not in {'JOEL','JORDI'} for o in owners): raise ValueError('INVALID_OWNER')
@@ -668,7 +691,40 @@ def dispatch_verified(count_per_owner=25, owners=('JOEL','JORDI'), dry_run=True,
         headers=rows[0] if rows else []
         leads_list=[dict(zip(headers,r)) for r in rows[1:] if r]
         leads_by_id={l.get('Lead-ID'): (i, l) for i, l in enumerate(leads_list, 2)}
+        from dedupe_guards import corporate_domain_of
+        from sales_reconciliation import addresses
+        session_contacted_emails = set()
+        session_contacted_domains = set()
+        for _row_idx, _l in leads_by_id.values():
+            _st = str(_l.get('Send_Status') or '').strip().lower()
+            _em = str(_l.get('E-Mail') or '').strip().lower()
+            if not _em:
+                continue
+            if (
+                _st in {'sent', 'gesendet', 'sending'}
+                or str(_l.get('Send_Datum') or '').strip()
+                or str(_l.get('Last_Send_Attempt_At') or '').strip()
+            ):
+                session_contacted_emails.add(_em)
+                _dom = corporate_domain_of(_em)
+                if _dom:
+                    session_contacted_domains.add(_dom)
+        mb_file = output / 'mailboxes.json'
+        if mb_file.is_file():
+            try:
+                mb_data = json.loads(mb_file.read_text())
+                for _mb in (mb_data.values() if isinstance(mb_data, dict) else []):
+                    for _smsg in (_mb.get('sent') or []):
+                        for _raw_to in (_smsg.get('to'), _smsg.get('recipients')):
+                            for _addr in addresses(_raw_to if not isinstance(_raw_to, list) else ','.join(str(x) for x in _raw_to)):
+                                session_contacted_emails.add(_addr)
+                                _dom = corporate_domain_of(_addr)
+                                if _dom:
+                                    session_contacted_domains.add(_dom)
+            except Exception:
+                pass
         last_svc_refresh=time.monotonic()
+        mx_cache={}
         try:
             for item in selected:
                 if sent_counts[item['owner']] >= count_per_owner:
@@ -689,17 +745,23 @@ def dispatch_verified(count_per_owner=25, owners=('JOEL','JORDI'), dry_run=True,
                 # Zurückgestellt (CRM-Tier Z) ist kein Fehler, sondern "nie senden": überspringen, Lauf läuft weiter.
                 if str(lead.get('Tier') or '').strip().upper()=='Z':
                     print(f"SKIP {item['lead_id']}: TIER_Z"); continue
-                from send_governance import enforce_domain_health, MailboxHealthStore
+                from send_governance import enforce_domain_health, MailboxHealthStore, record_verified_send
                 from lead_quality import deliverability_flags
-                # Domainweite Gesundheit und Hygiene unmittelbar vor jeder Reservierung.
-                effective_cap=min(cap,enforce_domain_health(state, datetime.now(ZoneInfo('Europe/Berlin')).date(), MailboxHealthStore(clients['JOEL'])))
-                lead['Deliverability_Flags']=deliverability_flags(lead,{},set())
+                lead['Deliverability_Flags']=deliverability_flags(lead,mx_cache,set())
                 verdict=check_eligibility(lead)
                 # Ein einzelner gesperrter oder nicht zustellbarer Lead stoppt die Tranche nicht; gesendet wird er nie.
                 if not verdict.eligible:
                     skip(item['lead_id'],','.join(r.split('(')[0].strip() for r in verdict.reasons)); continue
                 if normalize_owner(lead['Verantwortlicher'])!=item['owner'] or lead['E-Mail'].strip().lower()!=item['email']:
                     skip(item['lead_id'],'LIVE_IDENTITY_CHANGED'); continue
+                item_email = str(item['email'] or '').strip().lower()
+                item_dom = corporate_domain_of(item_email)
+                if item_email in session_contacted_emails:
+                    skip(item['lead_id'], 'CORPORATE_DOMAIN_ALREADY_CONTACTED' if item_dom else 'EMAIL_ALREADY_CONTACTED'); continue
+                if item_dom and item_dom in session_contacted_domains:
+                    skip(item['lead_id'], 'CORPORATE_DOMAIN_ALREADY_CONTACTED'); continue
+                # Domainweite Gesundheit und Hygiene unmittelbar vor jeder Reservierung.
+                effective_cap=min(cap,enforce_domain_health(state, datetime.now(ZoneInfo('Europe/Berlin')).date(), MailboxHealthStore(clients['JOEL'])))
                 today=datetime.now(ZoneInfo('Europe/Berlin')).date()
                 used_today=count_owner_attempts_today(leads_list,item['owner'],today)
                 day_str=today.isoformat()
@@ -740,9 +802,21 @@ def dispatch_verified(count_per_owner=25, owners=('JOEL','JORDI'), dry_run=True,
                 if delivered is not False:
                     sent_counts[item['owner']]+=1
                     lead['Send_Status']='sent'
+                    session_contacted_emails.add(item_email)
+                    if item_dom:
+                        session_contacted_domains.add(item_dom)
+                    if not dry_run:
+                        record_verified_send(state)
                     lead['Send_Datum']=datetime.now(timezone.utc).isoformat()
                     lead['Sender_Account']=getattr(client, 'cfg', {}).get('email') or ('j-cherino@hsb-boden.com' if item['owner']=='JOEL' else 'j-post@hsb-boden.com')
-                    cleanup_sent_draft(client, d.get('folder'), d.get('uid'))
+                    cleanup_sent_draft(
+                        client,
+                        d.get('folder'),
+                        d.get('uid'),
+                        lead_id=item['lead_id'],
+                        message_id=d.get('message_id') or lead.get('Internet_Message_ID') or '',
+                        recipient=item_email,
+                    )
                     if item is not selected[-1]: time.sleep(random.uniform(jitter_min,jitter_max))
                 else:
                     lead['Send_Status']='failed'

@@ -4,7 +4,7 @@
 #   bash apps/sales-os/bin/versand-tranche.sh 10           # Probelauf: zeigt, welche 10 je Postfach gingen
 #   bash apps/sales-os/bin/versand-tranche.sh 10 --apply   # sendet bis zu 10 je Postfach nach Health-Nachweis
 #
-# Tagesobergrenze je Postfach: 250 (HSB_DAILY_CAP kann sie nur senken). Opt-outs, Bounces, bereits Kontaktierte
+# Tagesobergrenze je Postfach: 250 (HSB_MAX_DAILY_CAP/HSB_DAILY_CAP ermöglichen Skalierung). Opt-outs, Bounces, bereits Kontaktierte
 # und Antworten werden vor jedem Versand frisch geprüft; jeder Versand wird im Journal und CRM zurückgelesen.
 set -euo pipefail
 COUNT="${1:?Anzahl je Postfach angeben, z. B. 10}"; APPLY=""; [[ "${2:-}" == "--apply" ]] && APPLY="--apply"

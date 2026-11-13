@@ -623,44 +623,62 @@ def cmd_ingest_bounces(args):
 
 
 def cmd_purge_sent_drafts(args, svc=None):
-    """Löscht verwaiste Entwürfe im IMAP-Entwurfsordner für Leads, die im CRM bereits als 'sent' markiert sind."""
+    """Löscht verwaiste Entwürfe im IMAP-Entwurfsordner für Leads, die im CRM oder im Gesendet-Ordner bereits versendet wurden."""
     from sync_to_google_sheet import get_sheets_service
     from com_mailbox_manager import ComMailboxClient
-    from email.utils import getaddresses
-    import email
+    from draft_purge import collect_sent_identities, purge_owner_sent_drafts
     if svc is None:
         svc = get_sheets_service()
     _, leads = _load_all_leads(svc)
+    sent_leads = [
+        l for l in leads
+        if str(l.get('Send_Status') or '').strip().lower() in {'sent', 'gesendet'}
+        or str(l.get('Send_Datum') or '').strip()
+    ]
     sent_emails = {
-        l['E-Mail'].strip().lower() for l in leads
-        if l.get('Send_Status', '').lower() == 'sent' and l.get('E-Mail')
+        str(l.get('E-Mail') or '').strip().lower() for l in sent_leads
+        if str(l.get('E-Mail') or '').strip()
+    }
+    sent_lead_ids = {
+        str(l.get('Lead-ID') or '').strip() for l in sent_leads
+        if str(l.get('Lead-ID') or '').strip()
+    }
+    sent_message_ids = {
+        str(l.get('Internet_Message_ID') or '').strip().lower() for l in sent_leads
+        if str(l.get('Internet_Message_ID') or '').strip()
     }
     owners = [args.owner] if getattr(args, 'owner', None) else ['JOEL', 'JORDI']
+    apply = bool(getattr(args, 'apply', False))
     report = {'total_sent_in_crm': len(sent_emails)}
     for o in owners:
         client = ComMailboxClient(o)
-        deleted_count = 0
         try:
             with client._get_imap() as imap:
-                res, _ = imap.select(client.cfg['drafts_folder'])
-                if res == 'OK':
-                    typ, data = imap.search(None, 'ALL')
-                    if data and data[0]:
-                        for num in data[0].split():
-                            typ, msg_data = imap.fetch(num, '(BODY.PEEK[HEADER.FIELDS (TO)])')
-                            raw = b''.join(p[1] for p in (msg_data or []) if isinstance(p, tuple))
-                            parsed = email.message_from_bytes(raw)
-                            recipients = {addr.strip().lower() for _, addr in getaddresses(parsed.get_all('To', []))}
-                            if recipients & sent_emails:
-                                if getattr(args, 'apply', False):
-                                    imap.store(num, '+FLAGS', r'\Deleted')
-                                deleted_count += 1
-                        if getattr(args, 'apply', False) and deleted_count > 0 and hasattr(imap, 'expunge'):
-                            imap.expunge()
+                owner_emails = set(sent_emails)
+                owner_lead_ids = set(sent_lead_ids)
+                owner_message_ids = set(sent_message_ids)
+                sent_folder = client.cfg.get('sent_folder')
+                if isinstance(sent_folder, str) and sent_folder.strip():
+                    live_emails, live_leads, live_mids = collect_sent_identities(imap, sent_folder)
+                    owner_emails |= live_emails
+                    owner_lead_ids |= live_leads
+                    owner_message_ids |= live_mids
+                purge_kwargs = {}
+                if owner_lead_ids:
+                    purge_kwargs['sent_lead_ids'] = owner_lead_ids
+                if owner_message_ids:
+                    purge_kwargs['sent_message_ids'] = owner_message_ids
+                deleted_count = purge_owner_sent_drafts(
+                    imap,
+                    client.cfg['drafts_folder'],
+                    owner_emails,
+                    apply=apply,
+                    **purge_kwargs,
+                )
         except Exception as exc:
             report[o] = {'error': str(exc)}
             continue
-        report[o] = {'orphaned_sent_drafts': deleted_count, 'applied': bool(getattr(args, 'apply', False))}
+        report[o] = {'orphaned_sent_drafts': deleted_count, 'applied': apply}
     print(json.dumps(report, ensure_ascii=False, indent=2))
     return report
 

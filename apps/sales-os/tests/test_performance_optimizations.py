@@ -193,3 +193,85 @@ def test_dispatch_verified_reuses_sheet_snapshot_across_batch(tmp_path, monkeypa
     assert len(deliveries) == 2
     # ALL_LEADS wurde exakt 1-mal gelesen (nicht 2-mal in der Schleife!)
     assert sheet_get_calls == ['ALL_LEADS!A1:BU6425']
+
+
+def test_dispatch_verified_shares_mx_cache_and_skips_health_for_ineligible(tmp_path, monkeypatch):
+    """Doppelte Domains nutzen einen gemeinsamen MX-Cache; unzulaessige Leads triggern keinen IMAP-Healthcheck."""
+    from test_outbound_safety_gate import _crm_lead
+
+    leads = [
+        _crm_lead(**{'Lead-ID': 'L1', 'Verantwortlicher': 'Joel Cherino Diaz', 'E-Mail': 'a@bad-domain.invalid', 'Tier': 'A'}),
+        _crm_lead(**{'Lead-ID': 'L2', 'Verantwortlicher': 'Joel Cherino Diaz', 'E-Mail': 'b@bad-domain.invalid', 'Tier': 'A'}),
+        _crm_lead(**{'Lead-ID': 'L3', 'Verantwortlicher': 'Joel Cherino Diaz', 'E-Mail': 'c@good-domain.invalid', 'Tier': 'A'}),
+    ]
+    headers = list(leads[0])
+    queue = [
+        {'lead_id': 'L1', 'owner': 'JOEL', 'email': 'a@bad-domain.invalid', 'row': 2},
+        {'lead_id': 'L2', 'owner': 'JOEL', 'email': 'b@bad-domain.invalid', 'row': 3},
+        {'lead_id': 'L3', 'owner': 'JOEL', 'email': 'c@good-domain.invalid', 'row': 4},
+    ]
+    raw_bytes = b'From: j-cherino@hsb-boden.com\r\nSubject: Test\r\n\r\nBody'
+    sha = hashlib.sha256(raw_bytes).hexdigest()
+    drafts = [
+        {'lead_id': 'L1', 'sendable': True, 'owner': 'JOEL', 'uid': '1', 'uidvalidity': '1', 'folder': 'Drafts', 'sha256': sha},
+        {'lead_id': 'L2', 'sendable': True, 'owner': 'JOEL', 'uid': '2', 'uidvalidity': '1', 'folder': 'Drafts', 'sha256': sha},
+        {'lead_id': 'L3', 'sendable': True, 'owner': 'JOEL', 'uid': '3', 'uidvalidity': '1', 'folder': 'Drafts', 'sha256': sha},
+    ]
+
+    class FakeValues:
+        def get(self, **kwargs):
+            rows = [headers] + [[l.get(h, '') for h in headers] for l in leads]
+            return SimpleNamespace(execute=lambda: {'values': rows})
+
+    fake_svc = SimpleNamespace(spreadsheets=lambda: SimpleNamespace(values=lambda: FakeValues()))
+    monkeypatch.setattr('sync_to_google_sheet.get_sheets_service', lambda: fake_svc)
+
+    out_dir = tmp_path / 'reconciliation'
+    out_dir.mkdir(parents=True, exist_ok=True)
+    (out_dir / 'queue.json').write_text(json.dumps(queue))
+    (out_dir / 'drafts.json').write_text(json.dumps(drafts))
+
+    monkeypatch.setattr(recon, 'run_audit', lambda *a, **k: None)
+    monkeypatch.setattr(recon, 'assess_message', lambda *a: {'issues': []})
+    monkeypatch.setattr(recon, 'has_unreviewed_legacy_variant', lambda *a: False)
+
+    mx_calls = []
+    seen_caches = []
+    from lead_quality import deliverability_flags as real_df
+
+    def fake_df(lead, mx_cache, bounced):
+        seen_caches.append(mx_cache)
+        return real_df(lead, mx_cache, bounced, mx_check=lambda d: (mx_calls.append(d) or d == 'good-domain.invalid'))
+
+    monkeypatch.setattr('lead_quality.deliverability_flags', fake_df)
+
+    health_calls = []
+    monkeypatch.setattr('send_governance.enforce_domain_health', lambda *a, **k: (health_calls.append(1) or 10))
+
+    class FakeClient:
+        cfg = {'email': 'j-cherino@hsb-boden.com'}
+        def _get_imap(self):
+            class Imap:
+                def select(self, *a, **k): return 'OK', [b'1']
+                def response(self, *a): return 'OK', [b'1']
+                def uid(self, *a): return 'OK', [(b'1 (UID 3)', raw_bytes)]
+                def __enter__(self): return self
+                def __exit__(self, *a): pass
+            return Imap()
+
+    monkeypatch.setattr('com_mailbox_manager.ComMailboxClient', lambda *a, **k: FakeClient())
+    deliveries = []
+    monkeypatch.setattr(out, 'complete_delivery', lambda *a: deliveries.append(a))
+    monkeypatch.setattr(out.time, 'sleep', lambda *a: None)
+    monkeypatch.setenv('HSB_CUSTOMER_SEND_ENABLED', 'yes')
+    monkeypatch.setenv('HSB_SALES_STATE_DIR', str(tmp_path))
+    from contextlib import nullcontext
+    monkeypatch.setattr(out, 'mailbox_dispatch_lock', lambda c, **k: nullcontext())
+    monkeypatch.setattr('closed_loop_crm.sync_inbounds', lambda **k: None)
+
+    res = out.dispatch_verified(3, owners=('JOEL',), dry_run=False)
+
+    assert res['sent_counts']['JOEL'] == 1
+    assert mx_calls == ['bad-domain.invalid', 'good-domain.invalid']
+    assert len(seen_caches) == 3 and seen_caches[0] is seen_caches[1] is seen_caches[2]
+    assert len(health_calls) == 1

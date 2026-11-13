@@ -67,7 +67,9 @@ def test_cursor_prefers_public_message_id_as_reconciliation_does(monkeypatch):
         def __init__(self, owner):
             self.cfg = {"inbox_folder": "INBOX", "sent_folder": "Sent"}
 
-        def fetch_inbound_messages(self, limit=0):
+        def fetch_inbound_messages(self, limit=0, *, folder=None):
+            if folder == 'Unzustellbar':
+                return []
             return [{"id": "COM_IMAP:JOEL:SHA256:abcdef", "internet_message_id": "<incoming@example.test>"}]
 
         def fetch_sent_messages(self, limit=0):
@@ -120,3 +122,85 @@ def test_policy_bounce_diagnostic_reports_structured_smtp_codes_without_address(
     assert '550' in repr(result['dsn_blocks'])
     assert 'test-recipient@customer.example' not in repr(result)
     assert '[EMAIL]' in repr(result)
+
+
+def test_recent_bounce_in_both_folders_is_counted_once(monkeypatch):
+    import datetime as dt
+    from email import message_from_string, policy
+    import capture_com_health as audit
+    from send_governance import MailboxHealthStore
+
+    class Client:
+        def __init__(self, owner):
+            self.owner = owner
+            self.cfg = {"inbox_folder": "INBOX", "sent_folder": "Sent"}
+
+        def fetch_inbound_messages(self, limit=0, *, folder=None):
+            if self.owner == "JOEL" and folder == "Unzustellbar":
+                return [{"id": "<dsn@provider>", "internet_message_id": "<dsn@provider>"}]
+            return []
+
+    bounced = message_from_string(
+        "From: mailer-daemon@provider.test\nSubject: Undeliverable\n"
+        "Message-ID: <dsn@provider>\n\n"
+        "Final-Recipient: rfc822; kunde@example.org\n550 5.1.1 user unknown",
+        policy=policy.default,
+    )
+    sent = message_from_string("To: outside@example.test\n\n", policy=policy.default)
+    def read_records(client, folder, **kwargs):
+        if kwargs.get("history"):
+            return iter([(audit.NOW - dt.timedelta(days=25), sent)])
+        if client.owner == "JOEL" and folder in ("INBOX", "Unzustellbar"):
+            return iter([(audit.NOW - dt.timedelta(hours=1), bounced)])
+        return iter(())
+
+    monkeypatch.setattr(audit, "ComMailboxClient", Client)
+    monkeypatch.setattr(audit, "extracted_records", read_records)
+    monkeypatch.setattr(MailboxHealthStore, "read", lambda self: None)
+    report = audit.check_snapshot()
+    assert report["hard_bounces"] + report["review_bounces"] == 1
+    assert "<dsn@provider>" in report["seen_inbound_ids"]
+
+
+def _snapshot_with_sent(monkeypatch, sent_per_mailbox):
+    import datetime as dt
+    from email import message_from_string
+    import capture_com_health as audit
+    from send_governance import MailboxHealthStore
+
+    class Client:
+        def __init__(self, owner):
+            self.cfg = {"inbox_folder": "INBOX", "sent_folder": "Sent"}
+
+        def fetch_inbound_messages(self, limit=0, *, folder=None):
+            return [] if folder == 'Unzustellbar' else [{"id": "x", "internet_message_id": "<in@example.test>"}]
+
+    monkeypatch.setattr(audit, "ComMailboxClient", Client)
+    monkeypatch.setattr(MailboxHealthStore, "read", lambda self: {'state': 'active'})
+    sent = message_from_string("To: customer@example.test\n\n")
+
+    def read_records(_client, folder, **kwargs):
+        if kwargs.get("history"):
+            return iter([(audit.NOW - dt.timedelta(hours=1), sent)] * sent_per_mailbox)
+        return iter(())
+
+    monkeypatch.setattr(audit, "extracted_records", read_records)
+    return audit.check_snapshot()
+
+
+def test_snapshot_accepts_a_full_send_day_above_100(monkeypatch):
+    # Nach einem Versandtag mit 250 Mails je Postfach muss ein Nachweis möglich sein.
+    report = _snapshot_with_sent(monkeypatch, 250)
+    assert report["sample_sent"] == 500
+
+
+def test_snapshot_limit_matches_pause_reason(monkeypatch):
+    from send_governance import max_health_sample, pause_reason
+
+    monkeypatch.setenv("HSB_MAX_SAMPLE_SIZE", "300")
+    assert max_health_sample() == 300
+    with pytest.raises(RuntimeError, match="HEALTH_SAMPLE_OVER_LIMIT_REQUIRES_SCOPE"):
+        _snapshot_with_sent(monkeypatch, 151)
+    stats = {'sample_sent': 301, 'hard_bounces': 0, 'policy_bounces': 0,
+             'deferrals_today': 0, 'spam_reports': 0, 'seed_dkim_pass': True}
+    assert pause_reason(stats) == 'HEALTH_EVIDENCE_INVALID'

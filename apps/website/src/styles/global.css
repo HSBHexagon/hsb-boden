@@ -33,8 +33,12 @@ body {
   font-feature-settings: "cv01", "cv02";
 }
 
-a {
-  color: inherit;
+/* In der Basisebene, damit Farb-Utilities (text-white, text-hsb-red …) auf Links greifen.
+   Ungeschichtet überstimmte diese Regel jede Utility-Klasse. */
+@layer base {
+  a {
+    color: inherit;
+  }
 }
 
 .container {
@@ -186,6 +190,25 @@ a {
     color 160ms var(--ease-out-strong),
     box-shadow 160ms var(--ease-out-strong);
   white-space: nowrap;
+}
+
+/* Lange Button-Texte ("Vorab: Technischen Beanspruchungs-Check durchführen")
+   sprengten auf 375px-Displays mit nowrap die Seitenbreite (horizontales Scrollen).
+   Unterhalb von sm dürfen Buttons umbrechen und nie breiter als ihr Container sein. */
+.button-primary,
+.button-secondary,
+.button-secondary-dark {
+  max-width: 100%;
+}
+
+@media (max-width: 639px) {
+  .button-primary,
+  .button-secondary,
+  .button-secondary-dark {
+    white-space: normal;
+    text-align: center;
+    padding-block: 12px;
+  }
 }
 
 .button-secondary-dark:hover {

@@ -7,6 +7,10 @@ import MobileQuickContact from "../components/layout/MobileQuickContact.astro";
 import SEOHead from "../components/seo/SEOHead.astro";
 import { ui, type Lang } from "../lib/i18n";
 import "../styles/global.css";
+// Gleiche gehashte Datei wie in global.css (Vite dedupliziert nach Inhalt):
+// 900 trägt die Hero-H1 (LCP-Element), 400 den Fließtext.
+import outfit400 from "@fontsource/outfit/files/outfit-latin-400-normal.woff2?url";
+import outfit900 from "@fontsource/outfit/files/outfit-latin-900-normal.woff2?url";
 
 interface Props {
   title: string;
@@ -27,6 +31,8 @@ const skipLabel = ui[lang].skip;
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="preload" href={outfit900} as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href={outfit400} as="font" type="font/woff2" crossorigin />
     <SEOHead title={title} description={description} path={path} jsonLd={jsonLd} alternates={alternates} robots={robots} />
     <!-- GA4 Basic Consent: Der externe Google-Request entsteht erst nach einer
          aktiven Statistik-Einwilligung. Der Loader reagiert auf hsb:consent. -->

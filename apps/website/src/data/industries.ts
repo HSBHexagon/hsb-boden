@@ -63,7 +63,7 @@ export const industries: Industry[] = [
     title: "Molkerei",
     seoTitle: "Industrieboden Molkerei & Käserei | HSB Hexagon",
     description:
-      "Spezial-Industrieböden für Molkereien: Beständig gegen Milchsäure, Fette & CIP-Heißwasserreinigung. Sanierung in abgestimmten Bauabschnitten mit Schutz der laufenden Produktion.",
+      "Industrieböden für Molkereien: beständig gegen Milchsäure, Fette und CIP-Heißwasserreinigung. Sanierung in Bauabschnitten bei laufender Produktion.",
     h1: "Industrieböden für Molkereien und Milchverarbeitung",
     searchIntent:
       "Molkereien benötigen Bodensysteme, die den extremen chemischen Angriff von Milchsäure und die thermische Last der CIP-Reinigung dauerhaft bestehen.",
@@ -171,7 +171,7 @@ export const industries: Industry[] = [
     title: "Chemieindustrie",
     seoTitle: "Industrieboden Chemieindustrie & Säureschutz | HSB",
     description:
-      "WHG-konform ausgeführte Systeme für chemisch belastete Bereiche. Wir planen und bauen hochresistente Systeme für Produktion, Lager und Havarieflächen nach WHG § 62 und AwSV.",
+      "WHG-konform ausgeführte, hochresistente Systeme für chemisch belastete Produktion, Lager und Havarieflächen nach WHG § 62 und AwSV.",
     h1: "Industrieböden für chemisch belastete Produktionsbereiche",
     searchIntent:
       "Chemiebetriebe suchen technisch belegte Sicherheit durch WHG-konforme Abdichtung und Beständigkeit gegen Mineralsäuren und Lösungsmittel.",

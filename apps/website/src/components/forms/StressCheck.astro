@@ -86,7 +86,7 @@ const systems = Object.values(STRESS_SYSTEMS);
 
       <div class="flex flex-wrap gap-3">
         <button type="submit" class="button-primary">Systemempfehlung berechnen</button>
-        <button type="reset" class="button-secondary" data-stress-reset>Zurücksetzen</button>
+        <button type="reset" class="button-secondary-dark" data-stress-reset>Zurücksetzen</button>
       </div>
     </form>
 
@@ -129,7 +129,7 @@ const systems = Object.values(STRESS_SYSTEMS);
 
           <div class="flex flex-wrap items-center gap-3" data-no-print>
             <a class="button-primary" href={auditAnchor} data-audit-cta>Qualifiziertes Vor-Ort-Audit anfragen</a>
-            <button type="button" class="button-secondary flex items-center gap-2" data-print-pdf>
+            <button type="button" class="button-secondary-dark flex items-center gap-2" data-print-pdf>
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                 <polyline points="6 9 6 2 18 2 18 9"></polyline>
                 <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
@@ -137,8 +137,8 @@ const systems = Object.values(STRESS_SYSTEMS);
               </svg>
               <span>1-Seiten-PDF drucken / exportieren</span>
             </button>
-            <a class="button-secondary" href={`/leistungen/${system.serviceSlug}/`}>Systemdetails ansehen</a>
-            <a class="button-secondary" href="/rechner/sanierungsfenster/">Sanierungsfenster berechnen</a>
+            <a class="button-secondary-dark" href={`/leistungen/${system.serviceSlug}/`}>Systemdetails ansehen</a>
+            <a class="button-secondary-dark" href="/rechner/sanierungsfenster/">Sanierungsfenster berechnen</a>
           </div>
         </article>
       ))}

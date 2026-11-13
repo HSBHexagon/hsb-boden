@@ -19,7 +19,7 @@ export const jobs: Job[] = [
   {
     slug: "fliesenleger",
     title: "Fliesenleger (m/w/d) Industrieboden",
-    seoTitle: "Fliesenleger (m/w/d) Industrieboden | Karriere bei HSB Hexagon Säurebau",
+    seoTitle: "Fliesenleger (m/w/d) Industrieboden | HSB Karriere",
     shortDescription:
       "Verlegung und Sanierung keramischer Industrieböden, Säureschutzsysteme und technischer Detailpunkte in Lebensmittel-, Getränke- und Industrieproduktion.",
     fullDescription:
@@ -47,7 +47,7 @@ export const jobs: Job[] = [
   {
     slug: "bauhelfer",
     title: "Bauhelfer mit Industrieerfahrung (m/w/d)",
-    seoTitle: "Bauhelfer mit Industrieerfahrung (m/w/d) | Karriere bei HSB Hexagon Säurebau",
+    seoTitle: "Bauhelfer mit Industrieerfahrung (m/w/d) | HSB Karriere",
     shortDescription:
       "Unterstützung bei Verlegung und Sanierung keramischer Industrieböden und Säureschutzsystemen in Industriebetrieben.",
     fullDescription:
@@ -75,7 +75,7 @@ export const jobs: Job[] = [
   {
     slug: "projektleitung-industrieboden",
     title: "Projektleitung Industrieboden (m/w/d)",
-    seoTitle: "Projektleitung Industrieboden (m/w/d) | Karriere bei HSB Hexagon Säurebau",
+    seoTitle: "Projektleitung Industrieboden (m/w/d) | HSB Karriere",
     shortDescription:
       "Planung, Koordination und Leitung von Projekten im Bereich keramische Industrieböden, Säureschutz und Sanierung für Industrie- und Lebensmittelbetriebe.",
     fullDescription:

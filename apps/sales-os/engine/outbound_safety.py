@@ -1,5 +1,8 @@
 """One bounded customer dispatch path. Unknown acceptance is never retried.
 
+A message the server provably did not accept (failure before DATA or an explicit rejection) is rolled
+back in the CRM and ends that mailbox's tranche cleanly (SendHalted); only an unclear outcome blocks.
+
 An IMAP CREATE lock serializes writers across devices. A crash leaves the
 empty lock folder in place deliberately; reconciliation is required to unlock.
 CRM SENDING readback precedes SMTP. Sent drafts are cleaned up from IMAP drafts folder after verified delivery.
@@ -334,19 +337,43 @@ def _release_binding(svc, spreadsheet_id, lead_id):
         print(f'WARNUNG: Bindung {lead_id} nicht entfernt: {exc}')
 
 
+class SendHalted(RuntimeError):
+    """Der Versand dieses Postfachs endet geordnet: die Nachricht wurde nachweislich nicht angenommen,
+    der CRM-Vorgang ist zurückgerollt, es bleibt weder SENDING noch eine offene Reservierung stehen."""
+
+    def __init__(self, owner, reason):
+        self.owner, self.reason = owner, reason
+        super().__init__(f'SEND_HALTED:{owner}:{reason}')
+
+
+_RETRYABLE_HTTP = {429, 500, 502, 503, 504}
+_KNOWN_UNKNOWN_MARKERS = (b'previously reported as unknown', b'relay access denied')
+SENT_COPY_ATTEMPTS = 3
+
+
+def _transient_backend_error(exc):
+    """Netzwerkfehler oder vorübergehende Antwort der Sheets-API; ein Wiederholen des Writes ist idempotent."""
+    if isinstance(exc, (BrokenPipeError, ConnectionResetError, TimeoutError, OSError)):
+        return True
+    return getattr(getattr(exc, 'resp', None), 'status', None) in _RETRYABLE_HTTP
+
+
 def complete_delivery(client, journal, svc, spreadsheet_id, headers, row, item, raw, mid, cap):
-    """Commit intent before SMTP; any later failure leaves a non-retryable attempt."""
+    """Commit intent before SMTP. Only a provably unaccepted message is rolled back; an unclear SMTP
+    outcome leaves a non-retryable attempt. Returns True (sent), False (recipient permanently refused)
+    or raises SendHalted (not accepted, rolled back, stop this mailbox for now)."""
+    from com_mailbox_manager import SmtpNotAccepted
     em=item['email']
     if os.environ.get('HSB_CRM_BINDINGS_VERIFIED')!='yes':
         raise RuntimeError('CRM_STABLE_BINDING_CANARY_REQUIRED')
 
     def _call(action):
         nonlocal svc
-        for attempt in range(3):
+        for attempt in range(4):
             try:
                 return action(svc)
-            except (BrokenPipeError, ConnectionResetError, TimeoutError, OSError):
-                if attempt == 2:
+            except Exception as exc:  # noqa: BLE001 - nur vorübergehende Fehler werden wiederholt
+                if attempt == 3 or not _transient_backend_error(exc):
                     raise
                 time.sleep(1.5 * (attempt + 1))
                 try:
@@ -361,42 +388,47 @@ def complete_delivery(client, journal, svc, spreadsheet_id, headers, row, item, 
     now=datetime.now(timezone.utc).isoformat()
     _call(lambda s: _send_write(s,spreadsheet_id,headers,row,item['lead_id'],{'Send_Status':'SENDING','Last_Send_Attempt_At':now,'Outbound_ID':mid,'Sender_Account':client.cfg['email']}))
     journal.transition(em,'SMTP_UNKNOWN')
-    try:
-        client.deliver_verified_bytes(raw,em,journal=journal)
-    except smtplib.SMTPDataError as exc:
-        err_msg = (exc.smtp_error or b'').lower()
-        if exc.smtp_code == 554 and (b'previously reported as unknown' in err_msg or b'relay access denied' in err_msg):
-            fail_fields = {
-                'Send_Status': 'failed',
-                'Bounce_Status': 'hard_bounce',
-                'Suppressed': 'yes',
-                'Suppression_Reason': 'PROVIDER_KNOWN_UNKNOWN',
-                'Versandfreigabe': 'no',
-                'Last_Send_Attempt_At': now
-            }
-            _call(lambda s: _send_write(s, spreadsheet_id, headers, row, item['lead_id'], fail_fields))
-            _call(lambda s: _release_binding(s, spreadsheet_id, item['lead_id']))
-            journal.db.execute('DELETE FROM attempts WHERE email=?', (em.lower(),))
-            print(f"HARD_BOUNCE {item['lead_id']} ({em}): Provider reported recipient unknown (554 5.7.1)")
-            return False
-        raise
-    except smtplib.SMTPRecipientsRefused as exc:
-        fail_fields = {
-            'Send_Status': 'failed',
-            'Bounce_Status': 'hard_bounce',
-            'Suppressed': 'yes',
-            'Suppression_Reason': 'RECIPIENT_REFUSED',
-            'Versandfreigabe': 'no',
-            'Last_Send_Attempt_At': now
-        }
-        _call(lambda s: _send_write(s, spreadsheet_id, headers, row, item['lead_id'], fail_fields))
+
+    def _forget_attempt(fields):
+        _call(lambda s: _send_write(s, spreadsheet_id, headers, row, item['lead_id'], fields))
         _call(lambda s: _release_binding(s, spreadsheet_id, item['lead_id']))
         journal.db.execute('DELETE FROM attempts WHERE email=?', (em.lower(),))
-        print(f"HARD_BOUNCE {item['lead_id']} ({em}): Recipient refused ({exc})")
+
+    def _hard_bounce(reason, note):
+        _forget_attempt({'Send_Status': 'failed', 'Bounce_Status': 'hard_bounce', 'Suppressed': 'yes',
+                         'Suppression_Reason': reason, 'Versandfreigabe': 'no', 'Last_Send_Attempt_At': now})
+        print(f"HARD_BOUNCE {item['lead_id']}: {note}")
         return False
+
+    def _rollback_and_halt(reason):
+        # Nichts wurde angenommen: Vorzustand wiederherstellen, damit der Lead später regulär versendet wird
+        # und der Versuch nicht auf das Tageslimit zählt.
+        prior = item.get('prior') or {}
+        _forget_attempt({'Send_Status': prior['Send_Status'] if 'Send_Status' in prior else 'drafted', 'Last_Send_Attempt_At': '',
+                         'Outbound_ID': prior.get('Outbound_ID') or '', 'Sender_Account': prior.get('Sender_Account') or ''})
+        print(f"NOT_ACCEPTED {item['lead_id']}: {reason} - zurückgerollt, Postfach {item['owner']} pausiert für diesen Lauf")
+        raise SendHalted(item['owner'], reason)
+
+    try:
+        client.deliver_verified_bytes(raw,em,journal=journal)
+    except SmtpNotAccepted as exc:
+        if exc.stage == 'rcpt' and exc.permanent:
+            return _hard_bounce('RECIPIENT_REFUSED', f'Recipient refused ({exc.code})')
+        if exc.stage == 'data' and exc.code == 554 and any(m in exc.detail.lower() for m in _KNOWN_UNKNOWN_MARKERS):
+            return _hard_bounce('PROVIDER_KNOWN_UNKNOWN', 'Provider reported recipient unknown (554 5.7.1)')
+        _rollback_and_halt(exc.reason)
+    except smtplib.SMTPDataError as exc:
+        # Ausdrückliche Antwort des Servers auf DATA: nicht angenommen.
+        if exc.smtp_code == 554 and any(m in (exc.smtp_error or b'').lower() for m in _KNOWN_UNKNOWN_MARKERS):
+            return _hard_bounce('PROVIDER_KNOWN_UNKNOWN', 'Provider reported recipient unknown (554 5.7.1)')
+        _rollback_and_halt(f'DATA_{exc.smtp_code}')
+    except smtplib.SMTPRecipientsRefused as exc:
+        codes = [code for code, _ in (exc.recipients or {}).values()]
+        if codes and all(500 <= code < 600 for code in codes):
+            return _hard_bounce('RECIPIENT_REFUSED', f'Recipient refused ({codes[0]})')
+        # 4xx ist eine vorübergehende Ablehnung (Drosselung, Greylisting): niemals dauerhaft sperren.
+        _rollback_and_halt(f'RCPT_{codes[0] if codes else "REFUSED"}')
     journal.transition(em,'SMTP_ACCEPTED')
-    sent_copy_readback(client,mid,raw,em)
-    journal.transition(em,'SENT_COPY_VERIFIED')
     msg=BytesParser(policy=policy.default).parsebytes(raw)
     final_fields={'Send_Status':'sent','Send_Datum':now,'Batch_Status':'SENT_COM_VERIFIED','Internet_Message_ID':mid}
     tmpl=str(msg.get('X-HSB-Template-ID') or '').strip()
@@ -407,6 +439,27 @@ def complete_delivery(client, journal, svc, spreadsheet_id, headers, row, item, 
         seg=parts[1] if len(parts)>=2 and parts[1] in ('produktion','architekten') else item.get('segment')
         if seg and 'Segment' in headers:
             final_fields['Segment']=seg
+    # Die Annahme steht fest. Der Nachweis im Gesendet-Ordner ist idempotent (Suche vor Ablage) und wird über
+    # frische Verbindungen wiederholt. Scheitert er endgültig, hält das CRM trotzdem die Wahrheit "gesendet" fest
+    # (sonst bliebe SENDING stehen und sperrte jeden Folgelauf); der Lauf endet dann mit dem Fehler.
+    copy_error=None
+    for attempt in range(1, SENT_COPY_ATTEMPTS + 1):
+        try:
+            sent_copy_readback(client,mid,raw,em)
+            copy_error=None
+            break
+        except Exception as exc:  # noqa: BLE001 - nach den Versuchen unverändert weitergereicht
+            copy_error=exc
+            if attempt < SENT_COPY_ATTEMPTS:
+                time.sleep(attempt)
+    if copy_error is not None:
+        _call(lambda s: _send_write(s,spreadsheet_id,headers,row,item['lead_id'],dict(final_fields,Batch_Status='SENT_COM_COPY_UNVERIFIED')))
+        _call(lambda s: _release_binding(s,spreadsheet_id,item['lead_id']))
+        # Zustand ist vollständig bekannt (gesendet, Kopie fehlt): kein offener Versuch, der Folgeläufe sperrt.
+        journal.transition(em,'VERIFIED')
+        print(f"SENT_COPY_UNVERIFIED {item['lead_id']}: zugestellt, Kopie im Gesendet-Ordner nicht bestätigt")
+        raise copy_error
+    journal.transition(em,'SENT_COPY_VERIFIED')
     _call(lambda s: _send_write(s,spreadsheet_id,headers,row,item['lead_id'],final_fields))
     _call(lambda s: _release_binding(s,spreadsheet_id,item['lead_id']))
     if tmpl.endswith('-s1'):
@@ -503,16 +556,21 @@ def draft_segment(draft):
 
 def select_queue(queue, drafts, owners, count_per_owner, segments=None, variant=None):
     """Reihenfolge der Warteschlange beibehalten; optional nur Leads, deren versandbereiter Entwurf zu `segments`
-    gehört und (variant='reparatur') die Reparatur-Variante trägt."""
+    gehört und (variant='reparatur') die Reparatur-Variante trägt.
+    Filtert zuerst nach Owner/Segment/Variante und dedupliziert danach Firmendomains unter den berechtigten Kandidaten."""
     if variant not in (None, 'reparatur'):
         raise ValueError('INVALID_VARIANT')
-    seg_by_lead={}; tid_by_lead={}
-    if segments or variant:
-        for d in drafts:
-            if d.get('sendable'):
-                seg_by_lead.setdefault(d['lead_id'], draft_segment(d))
-                tid_by_lead.setdefault(d['lead_id'], str(d.get('template_id') or ''))
-    selected=[];used={o:0 for o in owners}
+    from dedupe_guards import corporate_domain_of
+    seg_by_lead={}; tid_by_lead={}; recips_by_lead={}
+    for d in drafts or []:
+        if d.get('sendable'):
+            lid = d.get('lead_id')
+            if segments or variant:
+                seg_by_lead.setdefault(lid, draft_segment(d))
+                tid_by_lead.setdefault(lid, str(d.get('template_id') or ''))
+            if d.get('recipients'):
+                recips_by_lead.setdefault(lid, d['recipients'][0])
+    selected=[]; used={o:0 for o in owners}; seen_domains=set()
     for item in queue:
         o=item['owner']
         if o not in owners or used[o]>=count_per_owner:
@@ -521,38 +579,81 @@ def select_queue(queue, drafts, owners, count_per_owner, segments=None, variant=
             continue
         if variant and f'-{variant}-' not in tid_by_lead.get(item['lead_id'], ''):
             continue
-        selected.append(item);used[o]+=1
+        addr = item.get('email') or recips_by_lead.get(item.get('lead_id'), '')
+        dom = corporate_domain_of(addr)
+        if dom:
+            if dom in seen_domains:
+                continue
+            seen_domains.add(dom)
+        selected.append(item); used[o]+=1
     return selected, used
 
 
-def cleanup_sent_draft(client, folder, uid):
-    """Löscht den gesendeten Entwurf aus dem IMAP-Entwurfsordner nach verifizierter Zustellung.
+def cleanup_sent_draft(client, folder, uid, *, lead_id='', message_id='', recipient=''):
+    """Löscht den gesendeten Entwurf (und eventuelle Duplikat-Kopien) nach verifizierter Zustellung.
     Verhindert, dass Mail-Clients wie Outlook den gesendeten Thread als [Entwurf] markieren."""
-    if not client or not folder or not uid:
+    if not client or not folder:
         return
     try:
-        if hasattr(client, 'delete_draft_by_uid'):
-            client.delete_draft_by_uid(uid, folder)
-        elif hasattr(client, '_get_imap'):
+        if uid and hasattr(client, 'delete_draft_by_uid'):
+            deleted = client.delete_draft_by_uid(uid, folder)
+            if deleted is False:
+                print(f"WARN: cleanup_sent_draft({folder}, {uid}) delete_draft_by_uid gab False zurück")
+        elif uid and hasattr(client, '_get_imap'):
             with client._get_imap() as imap:
                 typ, _ = imap.select(folder)
                 if typ == 'OK':
                     if hasattr(imap, 'uid'):
-                        imap.uid('store', str(uid), '+FLAGS', r'(\Deleted)')
+                        res = imap.uid('store', str(uid), '+FLAGS', r'(\Deleted)')
+                        if isinstance(res, tuple) and res and res[0] != 'OK':
+                            print(f"WARN: cleanup_sent_draft({folder}, {uid}) STORE fehlgeschlagen: {res}")
                     if hasattr(imap, 'expunge'):
                         imap.expunge()
+        if any((lead_id, message_id, recipient)) and hasattr(type(client), 'purge_drafts_by_identity'):
+            client.purge_drafts_by_identity(
+                lead_id=lead_id,
+                message_id=message_id,
+                recipient=recipient,
+                folder=folder,
+            )
     except Exception as exc:
         print(f"WARN: cleanup_sent_draft({folder}, {uid}) ignoriert: {exc}")
+
+
+class DraftUnavailable(RuntimeError):
+    """Der im Audit geprüfte Entwurf liegt nicht mehr unverändert vor."""
+
+
+def _read_audited_draft(client, draft):
+    """Rohfassung des geprüften Entwurfs; ein Verbindungsabbruch wird einmal über eine frische Sitzung wiederholt."""
+    for attempt in range(2):
+        try:
+            with client._get_imap() as imap:
+                typ,_=imap.select(draft['folder'],readonly=True)
+                validity=imap.response('UIDVALIDITY')[1]
+                if typ!='OK' or not validity or validity[0].decode()!=draft['uidvalidity']:
+                    raise DraftUnavailable('DRAFT_UIDVALIDITY_CHANGED')
+                typ,data=imap.uid('fetch',draft['uid'],'(BODY.PEEK[])')
+                parts=[x[1] for x in data or [] if isinstance(x,tuple)] if typ=='OK' else []
+            break
+        except (imaplib.IMAP4.abort, OSError):
+            if attempt:
+                raise
+            time.sleep(2)
+    if len(parts)!=1 or hashlib.sha256(parts[0]).hexdigest()!=draft['sha256']:
+        raise DraftUnavailable('DRAFT_CHANGED')
+    return parts[0]
 
 
 def dispatch_verified(count_per_owner=25, owners=('JOEL','JORDI'), dry_run=True, cap=35, jitter_min=45, jitter_max=90, segments=None, variant=None, include_de_inbound=True):
     """include_de_inbound=False nur für Läufe ohne Azure-Zugang (GitHub Actions): .de-Antwortende sind über
     .de-Forensik und CRM-Versandstatus bereits gesperrt; neue .com-Antworten werden weiterhin synchronisiert."""
-    from com_mailbox_manager import ComMailboxClient
+    from com_mailbox_manager import ComMailboxClient, inbound_message_cache
     from sync_to_google_sheet import get_sheets_service, SPREADSHEET_ID
     from sales_reconciliation import run_audit, assess_message, has_unreviewed_legacy_variant
     min_allowed_jitter = int(os.environ.get('HSB_MIN_ALLOWED_JITTER', 0))
-    if not 1 <= count_per_owner <= cap <= DAILY_CAP or not min_allowed_jitter <= jitter_min <= jitter_max:
+    effective_daily_cap = int(os.environ.get('HSB_MAX_DAILY_CAP', DAILY_CAP))
+    if not 1 <= count_per_owner <= cap <= effective_daily_cap or not min_allowed_jitter <= jitter_min <= jitter_max:
         raise ValueError('INVALID_BATCH_LIMITS')
     owners=tuple(normalize_owner(o) for o in owners)
     if any(o not in {'JOEL','JORDI'} for o in owners): raise ValueError('INVALID_OWNER')
@@ -564,7 +665,8 @@ def dispatch_verified(count_per_owner=25, owners=('JOEL','JORDI'), dry_run=True,
     clients={o:ComMailboxClient(o) for o in {'JOEL','JORDI'}}
     @contextmanager
     def preview_lock(): yield
-    with (preview_lock() if dry_run else mailbox_dispatch_lock(clients['JOEL'])) as lock:
+    # Die Gesundheitsprüfung vor jeder Mail lädt innerhalb der Tranche nur neue Eingangsnachrichten nach.
+    with inbound_message_cache(), (preview_lock() if dry_run else mailbox_dispatch_lock(clients['JOEL'])) as lock:
         if not dry_run:
             from closed_loop_crm import sync_inbounds
             sync_inbounds(apply=True,include_de=include_de_inbound)
@@ -579,17 +681,55 @@ def dispatch_verified(count_per_owner=25, owners=('JOEL','JORDI'), dry_run=True,
         svc=get_sheets_service(); journal=SendJournal(state/'outbound.sqlite3')
         sent_counts={o:0 for o in owners}
         capped=set()  # Owner am Tageslimit: restliche Einträge ohne Sheet-/IMAP-Abfragen überspringen.
+        halted={}     # Owner, dessen SMTP eine Nachricht nachweislich nicht annahm: Rest dieses Laufs überspringen.
+        skipped={}    # Grund -> Anzahl; ein einzelner Lead stoppt die Tranche nie, gesendet wird er dann nicht.
+        def skip(lead_id, reason):
+            skipped[reason]=skipped.get(reason,0)+1
+            print(f"SKIP {lead_id}: {reason}")
         # CRM-Snapshot einmal je Tranche laden; Einzelbindungen verifizieren jede Zeile live beim Schreiben.
         rows=svc.spreadsheets().values().get(spreadsheetId=SPREADSHEET_ID,range='ALL_LEADS!A1:BU6425').execute().get('values', [])
         headers=rows[0] if rows else []
         leads_list=[dict(zip(headers,r)) for r in rows[1:] if r]
         leads_by_id={l.get('Lead-ID'): (i, l) for i, l in enumerate(leads_list, 2)}
+        from dedupe_guards import corporate_domain_of
+        from sales_reconciliation import addresses
+        session_contacted_emails = set()
+        session_contacted_domains = set()
+        for _row_idx, _l in leads_by_id.values():
+            _st = str(_l.get('Send_Status') or '').strip().lower()
+            _em = str(_l.get('E-Mail') or '').strip().lower()
+            if not _em:
+                continue
+            if (
+                _st in {'sent', 'gesendet', 'sending'}
+                or str(_l.get('Send_Datum') or '').strip()
+                or str(_l.get('Last_Send_Attempt_At') or '').strip()
+            ):
+                session_contacted_emails.add(_em)
+                _dom = corporate_domain_of(_em)
+                if _dom:
+                    session_contacted_domains.add(_dom)
+        mb_file = output / 'mailboxes.json'
+        if mb_file.is_file():
+            try:
+                mb_data = json.loads(mb_file.read_text())
+                for _mb in (mb_data.values() if isinstance(mb_data, dict) else []):
+                    for _smsg in (_mb.get('sent') or []):
+                        for _raw_to in (_smsg.get('to'), _smsg.get('recipients')):
+                            for _addr in addresses(_raw_to if not isinstance(_raw_to, list) else ','.join(str(x) for x in _raw_to)):
+                                session_contacted_emails.add(_addr)
+                                _dom = corporate_domain_of(_addr)
+                                if _dom:
+                                    session_contacted_domains.add(_dom)
+            except Exception:
+                pass
         last_svc_refresh=time.monotonic()
+        mx_cache={}
         try:
             for item in selected:
                 if sent_counts[item['owner']] >= count_per_owner:
                     continue
-                if item['owner'] in capped:
+                if item['owner'] in capped or item['owner'] in halted:
                     continue
                 if time.monotonic()-last_svc_refresh > 1800:
                     try:
@@ -599,41 +739,51 @@ def dispatch_verified(count_per_owner=25, owners=('JOEL','JORDI'), dry_run=True,
                     except Exception as exc:
                         print(f"WARNUNG: Prophylaktischer Sheets-Service-Refresh: {exc}")
                 match=leads_by_id.get(item['lead_id'])
-                if not match: raise RuntimeError('LEAD_CHANGED_OR_AMBIGUOUS')
+                if not match:
+                    skip(item['lead_id'],'LEAD_CHANGED_OR_AMBIGUOUS'); continue
                 row,lead=match
                 # Zurückgestellt (CRM-Tier Z) ist kein Fehler, sondern "nie senden": überspringen, Lauf läuft weiter.
                 if str(lead.get('Tier') or '').strip().upper()=='Z':
                     print(f"SKIP {item['lead_id']}: TIER_Z"); continue
-                from send_governance import enforce_domain_health, MailboxHealthStore
+                from send_governance import enforce_domain_health, MailboxHealthStore, record_verified_send
                 from lead_quality import deliverability_flags
-                # Domainweite Gesundheit und Hygiene unmittelbar vor jeder Reservierung.
-                effective_cap=min(cap,enforce_domain_health(state, datetime.now(ZoneInfo('Europe/Berlin')).date(), MailboxHealthStore(clients['JOEL'])))
-                lead['Deliverability_Flags']=deliverability_flags(lead,{},set())
+                lead['Deliverability_Flags']=deliverability_flags(lead,mx_cache,set())
                 verdict=check_eligibility(lead)
                 # Ein einzelner gesperrter oder nicht zustellbarer Lead stoppt die Tranche nicht; gesendet wird er nie.
                 if not verdict.eligible:
-                    print(f"SKIP {item['lead_id']}: {','.join(r.split('(')[0].strip() for r in verdict.reasons)}"); continue
+                    skip(item['lead_id'],','.join(r.split('(')[0].strip() for r in verdict.reasons)); continue
                 if normalize_owner(lead['Verantwortlicher'])!=item['owner'] or lead['E-Mail'].strip().lower()!=item['email']:
-                    raise RuntimeError('LIVE_IDENTITY_CHANGED')
+                    skip(item['lead_id'],'LIVE_IDENTITY_CHANGED'); continue
+                item_email = str(item['email'] or '').strip().lower()
+                item_dom = corporate_domain_of(item_email)
+                if item_email in session_contacted_emails:
+                    skip(item['lead_id'], 'CORPORATE_DOMAIN_ALREADY_CONTACTED' if item_dom else 'EMAIL_ALREADY_CONTACTED'); continue
+                if item_dom and item_dom in session_contacted_domains:
+                    skip(item['lead_id'], 'CORPORATE_DOMAIN_ALREADY_CONTACTED'); continue
+                # Domainweite Gesundheit und Hygiene unmittelbar vor jeder Reservierung.
+                effective_cap=min(cap,enforce_domain_health(state, datetime.now(ZoneInfo('Europe/Berlin')).date(), MailboxHealthStore(clients['JOEL'])))
                 today=datetime.now(ZoneInfo('Europe/Berlin')).date()
                 used_today=count_owner_attempts_today(leads_list,item['owner'],today)
                 day_str=today.isoformat()
                 journal_today=journal.db.execute('SELECT count(*) FROM attempts WHERE owner=? AND day=?',(item['owner'],day_str)).fetchone()[0]
                 if used_today>=effective_cap or journal_today>=effective_cap:
                     capped.add(item['owner']); continue
-                d=next(d for d in drafts if d['lead_id']==item['lead_id'] and d['sendable'])
+                d=next((d for d in drafts if d['lead_id']==item['lead_id'] and d['sendable']),None)
+                if d is None:
+                    skip(item['lead_id'],'NO_SENDABLE_DRAFT'); continue
                 client=clients[item['owner']]
-                with client._get_imap() as imap:
-                    typ,_=imap.select(d['folder'],readonly=True)
-                    validity=imap.response('UIDVALIDITY')[1]
-                    if typ!='OK' or not validity or validity[0].decode()!=d['uidvalidity']: raise RuntimeError('DRAFT_UIDVALIDITY_CHANGED')
-                    typ,data=imap.uid('fetch',d['uid'],'(BODY.PEEK[])')
-                    rawparts=[x[1] for x in data if isinstance(x,tuple)] if typ=='OK' else []
-                if len(rawparts)!=1 or hashlib.sha256(rawparts[0]).hexdigest()!=d['sha256']: raise RuntimeError('DRAFT_CHANGED')
-                if assess_message(rawparts[0],item['owner'],[lead])['issues']: raise RuntimeError('DRAFT_REVALIDATION_FAILED')
-                msg=BytesParser(policy=policy.default).parsebytes(rawparts[0])
+                # Der Entwurf kann seit dem Audit im Postfach bearbeitet, verschoben oder gelöscht worden sein.
+                # Das betrifft nur diesen Empfänger: er wird übersprungen, die übrige Tranche läuft weiter.
+                try:
+                    rawdraft=_read_audited_draft(client,d)
+                except DraftUnavailable as exc:
+                    skip(item['lead_id'],str(exc)); continue
+                if assess_message(rawdraft,item['owner'],[lead])['issues']:
+                    skip(item['lead_id'],'DRAFT_REVALIDATION_FAILED'); continue
+                msg=BytesParser(policy=policy.default).parsebytes(rawdraft)
                 # Historical variants need explicit reconciliation; only current standard is sent.
-                if has_unreviewed_legacy_variant(msg,item['owner']): raise RuntimeError('HISTORICAL_VARIANT_REQUIRES_REVIEW')
+                if has_unreviewed_legacy_variant(msg,item['owner']):
+                    skip(item['lead_id'],'HISTORICAL_VARIANT_REQUIRES_REVIEW'); continue
                 if 'X-Unsent' in msg: del msg['X-Unsent']
                 if 'Date' in msg: del msg['Date']
                 msg['Date']=formatdate(localtime=False)
@@ -643,18 +793,35 @@ def dispatch_verified(count_per_owner=25, owners=('JOEL','JORDI'), dry_run=True,
                 # Fencing: wurde die Sperre inzwischen fremd gelöst, nichts mehr senden.
                 if lock:
                     lock.assert_held()
-                delivered = complete_delivery(client,journal,svc,SPREADSHEET_ID,headers,row,item,raw,mid,effective_cap)
+                attempt=dict(item,prior={k:str(lead.get(k) or '') for k in ('Send_Status','Outbound_ID','Sender_Account')})
+                try:
+                    delivered = complete_delivery(client,journal,svc,SPREADSHEET_ID,headers,row,attempt,raw,mid,effective_cap)
+                except SendHalted as halt:
+                    halted[halt.owner]=halt.reason
+                    continue
                 if delivered is not False:
                     sent_counts[item['owner']]+=1
                     lead['Send_Status']='sent'
+                    session_contacted_emails.add(item_email)
+                    if item_dom:
+                        session_contacted_domains.add(item_dom)
+                    if not dry_run:
+                        record_verified_send(state)
                     lead['Send_Datum']=datetime.now(timezone.utc).isoformat()
                     lead['Sender_Account']=getattr(client, 'cfg', {}).get('email') or ('j-cherino@hsb-boden.com' if item['owner']=='JOEL' else 'j-post@hsb-boden.com')
-                    cleanup_sent_draft(client, d.get('folder'), d.get('uid'))
+                    cleanup_sent_draft(
+                        client,
+                        d.get('folder'),
+                        d.get('uid'),
+                        lead_id=item['lead_id'],
+                        message_id=d.get('message_id') or lead.get('Internet_Message_ID') or '',
+                        recipient=item_email,
+                    )
                     if item is not selected[-1]: time.sleep(random.uniform(jitter_min,jitter_max))
                 else:
                     lead['Send_Status']='failed'
         finally: journal.close()
-        return {'status':'COMPLETED','sent_counts':sent_counts}
+        return {'status':'COMPLETED','sent_counts':sent_counts,'skipped':skipped,'halted':halted}
 
 
 _SHEET_IDS = {}
@@ -711,5 +878,6 @@ def crm_write_lead_readback(svc, spreadsheet_id, lead_id, expected, *, binding=N
     if len(responses)!=1 or responses[0].get('updatedRows')!=1:
         raise RuntimeError('CRM_STABLE_WRITE_NOT_UNIQUE')
     actual=bound_row()
-    if any(headers.index(k)>=len(actual) or actual[headers.index(k)]!=v for k,v in expected.items()):
+    # Die API lässt leere Zellen am Zeilenende weg: eine fehlende Zelle ist ein leerer Wert.
+    if any((actual[headers.index(k)] if headers.index(k)<len(actual) else '')!=v for k,v in expected.items()):
         raise RuntimeError('CRM_READBACK_MISMATCH')

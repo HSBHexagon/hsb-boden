@@ -1,5 +1,5 @@
 """
-Testet Send-Governance, Jitter-Verzoegerung (45-180s) und konfigurierbares Tages-Cap (aktuell 250 Mails/Tag) (Goal G11).
+Testet Send-Governance, Jitter-Verzoegerung (45-180s) und konfigurierbares Tages-Cap (Obergrenze 100 Mails/Tag) (Goal G11).
 """
 import datetime
 from pathlib import Path
@@ -72,6 +72,20 @@ def test_independent_mailbox_quotas():
 
 def test_real_external_send_count_guardrail():
     assert REAL_EXTERNAL_PROSPECT_SEND_COUNT == 0, "REAL_EXTERNAL_PROSPECT_SEND_COUNT muss strikt 0 sein!"
+
+
+def test_governance_allows_operator_configured_high_caps(monkeypatch):
+    from importlib.util import module_from_spec, spec_from_file_location
+    import send_governance as sg
+    monkeypatch.setenv("HSB_MAX_DAILY_CAP", "1000")
+    monkeypatch.setenv("HSB_DAILY_CAP", "1000")
+    monkeypatch.setenv("HSB_MAX_BUDGET", "1000")
+    spec = spec_from_file_location("send_gov_probe", sg.__file__)
+    probe = module_from_spec(spec)
+    spec.loader.exec_module(probe)
+    assert probe.MAX_DAILY_CAP_PER_MAILBOX == 1000
+    assert probe.DAILY_CAP_PER_MAILBOX == 1000
+    assert probe.daily_budget("2026-10-01", "2026-11-12") == 1000
 
 
 if __name__ == "__main__":

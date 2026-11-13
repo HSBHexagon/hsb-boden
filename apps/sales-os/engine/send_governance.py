@@ -3,7 +3,7 @@ HSB Sales OS - Send Governance & EOP Anti-Spam Queue Guardrails (G11).
 
 Erzwingt:
 1. Natuerlichen stochastischen Jitter: 45 bis 180 Sekunden zwischen E-Mails.
-2. Tageslimit pro Postfach: standardmäßig 35, konfigurierbar bis 100.
+2. Tageslimit pro Postfach: standardmäßig 500, dynamisch skalierbar über HSB_MAX_DAILY_CAP / HSB_DAILY_CAP.
 3. Fail-closed Schutz: Blockiert strikt bei Cap-Erreichung.
 """
 from __future__ import annotations
@@ -18,8 +18,9 @@ from typing import Dict, Optional, Tuple
 
 MIN_JITTER_SECONDS: int = int(os.environ.get('HSB_JITTER_MIN', 45))
 MAX_JITTER_SECONDS: int = int(os.environ.get('HSB_JITTER_MAX', 180))
-MAX_DAILY_CAP_PER_MAILBOX = int(os.environ.get('HSB_MAX_DAILY_CAP', 250))
-DAILY_CAP_PER_MAILBOX: int = min(MAX_DAILY_CAP_PER_MAILBOX, int(os.environ.get('HSB_DAILY_CAP', 250)))
+# Tageslimit pro Postfach (Standard 500, dynamisch skalierbar über HSB_MAX_DAILY_CAP / HSB_DAILY_CAP).
+MAX_DAILY_CAP_PER_MAILBOX: int = int(os.environ.get('HSB_MAX_DAILY_CAP', 500))
+DAILY_CAP_PER_MAILBOX: int = min(MAX_DAILY_CAP_PER_MAILBOX, int(os.environ.get('HSB_DAILY_CAP', MAX_DAILY_CAP_PER_MAILBOX)))
 
 REAL_EXTERNAL_PROSPECT_SEND_COUNT: int = 0
 
@@ -103,7 +104,7 @@ def daily_budget(first_send_date, today):
     max_limit = int(os.environ.get('HSB_MAX_BUDGET', 30))
     if min(cap, max_limit) < 1:
         raise ValueError('INVALID_DAILY_BUDGET')
-    return min(cap, max_limit, 10 if age < 7 else 20 if age < 14 else MAX_DAILY_CAP_PER_MAILBOX)
+    return min(cap, max_limit, 10 if age < 7 else 20 if age < 14 else max_limit)
 
 
 def _parse_send_health(raw):
@@ -135,6 +136,7 @@ def _parse_send_health(raw):
                 or proof.get('dkim_domain') != 'hsb-boden.com'):
             raise RuntimeError('SEND_HEALTH_SEED_AUTH_NOT_PASS')
         ids.add(mid)
+    health.pop('_verified_live_delta', None)
     return health
 
 
@@ -160,6 +162,16 @@ def prepare_send_health(state_dir):
             temporary.unlink(missing_ok=True)
 
 
+def max_health_sample() -> int:
+    """Größte 24-Stunden-Stichprobe, die Messung und Prüfung akzeptieren.
+
+    Messung (capture_com_health) und Prüfung (pause_reason) müssen dieselbe Grenze
+    verwenden: Lehnt die Messung ab, was die Prüfung erlaubt, lässt sich nach einem
+    großen Versandtag kein neuer Health-Nachweis erzeugen.
+    """
+    return int(os.environ.get('HSB_MAX_SAMPLE_SIZE', 10000))
+
+
 def pause_reason(stats):
     """Statistiken müssen verifiziert sein. Fehlende Beobachtungen bedeuten keine Gesundheit."""
     required = ('sample_sent', 'hard_bounces', 'policy_bounces', 'deferrals_today', 'spam_reports', 'seed_dkim_pass')
@@ -170,7 +182,12 @@ def pause_reason(stats):
     if any(type(x) is not int or x < 0 for x in [*counts, review]):
         return 'HEALTH_EVIDENCE_INVALID'
     sent, hard, policy, deferrals, spam = counts
-    if sent > 100 or hard > sent:
+    live_delta = stats.get('_verified_live_delta', 0)
+    if type(live_delta) is not int or live_delta < 0:
+        return 'HEALTH_EVIDENCE_INVALID'
+    snapshot_sent = sent - live_delta
+    max_sample = max_health_sample()
+    if snapshot_sent < 0 or snapshot_sent > max_sample or hard > sent:
         return 'HEALTH_EVIDENCE_INVALID'
     if stats['seed_dkim_pass'] is not True:
         return 'SEED_DKIM_NOT_PASS'
@@ -296,20 +313,63 @@ def enforce_domain_health(state_dir, today, shared, collector=None):
     return budget
 
 
+def record_verified_send(state_dir):
+    """Zaehlt bestätigte Live-Zustellungen bezogen auf den aktuellen Health-Snapshot."""
+    import hashlib
+    health_path = Path(state_dir) / 'send-health.json'
+    try:
+        health_sha = hashlib.sha256(health_path.read_bytes()).hexdigest()[:20]
+    except OSError:
+        return
+    delta_path = Path(state_dir) / 'live-sample-delta.json'
+    count = 0
+    try:
+        prev = json.loads(delta_path.read_text(encoding='utf-8'))
+        if prev.get('health_sha') == health_sha and type(prev.get('sent_delta')) is int and prev['sent_delta'] > 0:
+            count = prev['sent_delta']
+    except (OSError, ValueError, TypeError):
+        count = 0
+    with NamedTemporaryFile(mode='w', encoding='utf-8', dir=delta_path.parent, delete=False) as tmp:
+        tmp_path = Path(tmp.name)
+        try:
+            tmp.write(json.dumps({'health_sha': health_sha, 'sent_delta': count + 1}))
+            tmp.close()
+            tmp_path.replace(delta_path)
+        finally:
+            tmp_path.unlink(missing_ok=True)
+
+
 def observed_health(state_dir, collector=None):
     """Neue Eingangsnachrichten nach erfassten IDs erkennen; Date-Header ist kein Eingangsnachweis."""
+    import hashlib
     import json
     import re
     from pathlib import Path
     from inbound_classifier import classify_inbound_message
     from lead_quality import delivery_bounce_status
     try:
-        stats=_parse_send_health((Path(state_dir)/'send-health.json').read_bytes())
-    except (OSError,ValueError,KeyError,TypeError):
+        raw_health = (Path(state_dir) / 'send-health.json').read_bytes()
+        health_sha = hashlib.sha256(raw_health).hexdigest()[:20]
+        stats = _parse_send_health(raw_health)
+    except (OSError, ValueError, KeyError, TypeError):
         raise RuntimeError('SEND_HEALTH_CURSOR_MISSING') from None
+    stats.pop('_verified_live_delta', None)
+    delta_path = Path(state_dir) / 'live-sample-delta.json'
+    try:
+        delta = json.loads(delta_path.read_text(encoding='utf-8'))
+        extra = delta.get('sent_delta', 0)
+        base_sent = stats.get('sample_sent')
+        if (delta.get('health_sha') == health_sha and type(extra) is int and extra > 0
+                and type(base_sent) is int and base_sent >= 0):
+            stats['sample_sent'] = base_sent + extra
+            stats['_verified_live_delta'] = extra
+    except (OSError, ValueError, TypeError):
+        pass
     if collector is None:
+        from functools import partial
         from dual_domain_collector import collect_all_inbounds
-        collector=collect_all_inbounds
+        # Include archived NDRs; the ordinary CRM collector still reads the Inbox only.
+        collector=partial(collect_all_inbounds, include_bounce_folder=True)
     seen=set(stats['seen_inbound_ids'])
     for s in list(seen):
         s_str = str(s).strip()

@@ -1,4 +1,5 @@
 ---
+import { projectSrcset } from "../../lib/responsiveImage";
 const mediaPanels = [
   {
     image: "/media/hsb/projekte/keramik-halle-rinnen.webp",
@@ -67,6 +68,8 @@ const mediaPanels = [
           <div class="absolute inset-0 overflow-hidden">
             <img
               src={panel.image}
+              srcset={projectSrcset(panel.image)}
+              sizes="(min-width: 1024px) 690px, calc(100vw - 32px)"
               alt={panel.alt}
               class="h-full w-full object-cover object-center transition-transform ease-out group-hover:scale-105"
               style="transition-duration: 1500ms"
@@ -90,6 +93,8 @@ const mediaPanels = [
             <div class="aspect-[16/10] overflow-hidden border-b border-hsb-line">
               <img
                 src={panel.image}
+                srcset={projectSrcset(panel.image)}
+                sizes="(min-width: 1024px) 470px, calc(100vw - 32px)"
                 alt={panel.alt}
                 class="h-full w-full object-cover object-center transition-transform duration-1000 group-hover:scale-105"
                 loading="lazy"
@@ -98,7 +103,7 @@ const mediaPanels = [
               />
             </div>
             <div class="p-6 lg:p-8">
-              <p class="mb-3 text-[0.65rem] font-black uppercase tracking-[0.18em] text-hsb-red">{panel.eyebrow}</p>
+              <p class="mb-3 text-[0.6875rem] font-black uppercase tracking-[0.18em] text-hsb-red">{panel.eyebrow}</p>
               <h3 class="text-xl font-black leading-tight text-hsb-black transition-colors group-hover:text-hsb-red">{panel.title}</h3>
               <p class="mt-4 text-sm leading-7 text-hsb-steel">{panel.text}</p>
             </div>

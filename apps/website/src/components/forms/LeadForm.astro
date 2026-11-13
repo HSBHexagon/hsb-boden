@@ -94,7 +94,7 @@ const deliveryConfigured = site.hasLeadEndpoint;
     <div class="grid gap-2 sm:grid-cols-2">
       {loadOptions.map((option) => (
         <label class="flex items-center gap-2 text-sm text-hsb-steel">
-          <input type="checkbox" name="loads" value={option} />
+          <input type="checkbox" name="loads" value={option} class="size-5 shrink-0 accent-hsb-red" />
           {option}
         </label>
       ))}
@@ -105,7 +105,7 @@ const deliveryConfigured = site.hasLeadEndpoint;
     <textarea required minlength={10} maxlength={2000} name="message" rows={5} placeholder={repairRequest ? "Beispiel: Fuge an einer Rinne ausgebrochen, Halle 2, Stillstandsfenster am Wochenende." : undefined} class="rounded border border-hsb-line px-3 py-3 font-normal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-hsb-red" />
   </label>
   <label class="flex items-start gap-3 text-sm leading-6 text-hsb-steel">
-    <input required type="checkbox" name="privacyConsent" class="mt-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-hsb-red" />
+    <input required type="checkbox" name="privacyConsent" class="mt-0.5 size-5 shrink-0 accent-hsb-red focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-hsb-red" />
     Ich stimme zu, dass meine Angaben zur Bearbeitung der Anfrage verarbeitet werden.
   </label>
 

@@ -2,6 +2,7 @@
 import base64
 import datetime as dt
 import email
+import hashlib
 import imaplib
 import json
 import os
@@ -28,6 +29,10 @@ def extracted_records(client, folder, full=False, history=False):
     with client._get_imap() as imap:
         typ, _ = imap.select(folder, readonly=True)
         if typ != 'OK':
+            if folder == 'Unzustellbar':
+                listed, boxes = imap.list('', folder)
+                if listed == 'OK' and not any(boxes or []):
+                    return  # A provably nonexistent archive is empty, not an IMAP failure.
             raise RuntimeError('MAILBOX_FOLDER_UNREADABLE')
         criterion = 'ALL' if full or history else 'SINCE'
         query = [criterion] if full or history else [criterion, (START-dt.timedelta(days=1)).strftime('%d-%b-%Y')]
@@ -102,7 +107,8 @@ def check_snapshot():
     bounce_diagnostics=[]
     for owner in ('JOEL','JORDI'):
         client=ComMailboxClient(owner)
-        inbound=client.fetch_inbound_messages(limit=0)
+        inbound=list(client.fetch_inbound_messages(limit=0))
+        inbound.extend(client.fetch_inbound_messages(limit=0, folder='Unzustellbar'))
         for item in inbound:
             # Use the same priority as collect_all_inbounds(), otherwise every
             # historical message with Message-ID looks newly received on send.
@@ -111,23 +117,31 @@ def check_snapshot():
                 raise RuntimeError('INBOUND_CURSOR_MISSING')
             seen.add(mid.strip())
         recent_in=0
-        for stored, msg in extracted_records(client,client.cfg['inbox_folder'],full=True):
-            if not START <= stored <= NOW:
-                continue
-            recent_in += 1
-            body=msg_body(msg)
-            subject=str(msg.get('Subject',''))
-            sender=str(msg.get('From',''))
-            cls=classify_inbound_message(sender,subject,body)
-            if cls.category=='BOUNCE':
-                outcome=delivery_bounce_status(body,cls.extracted_email)
-                kind={'hard_bounce':'hard_bounces','deferred':'deferrals_today',
-                      'policy_block':'policy_bounces'}.get(outcome,'review_bounces')
-                counts[kind]+=1
-                if len(bounce_diagnostics) < 12:
-                    bounce_diagnostics.append(policy_bounce_diagnostic(msg,body,owner,stored,outcome))
-            if re.search(r'feedback[- ]type:\s*abuse|feedback report|spam complaint',subject+'\n'+body,re.I):
-                counts['spam_reports']+=1
+        observed_recent=set()
+        for folder in (client.cfg['inbox_folder'], 'Unzustellbar'):
+            for stored, msg in extracted_records(client,folder,full=True):
+                if not START <= stored <= NOW:
+                    continue
+                # UID is folder-scoped: avoid counting a copied NDR in both folders.
+                mid=str(msg.get('Message-ID') or '').strip()
+                unique_id=(owner, mid or hashlib.sha256(msg.as_bytes(policy=policy.default)).hexdigest())
+                if unique_id in observed_recent:
+                    continue
+                observed_recent.add(unique_id)
+                recent_in += 1
+                body=msg_body(msg)
+                subject=str(msg.get('Subject',''))
+                sender=str(msg.get('From',''))
+                cls=classify_inbound_message(sender,subject,body)
+                if cls.category=='BOUNCE':
+                    outcome=delivery_bounce_status(body,cls.extracted_email)
+                    kind={'hard_bounce':'hard_bounces','deferred':'deferrals_today',
+                          'policy_block':'policy_bounces'}.get(outcome,'review_bounces')
+                    counts[kind]+=1
+                    if len(bounce_diagnostics) < 12:
+                        bounce_diagnostics.append(policy_bounce_diagnostic(msg,body,owner,stored,outcome))
+                if re.search(r'feedback[- ]type:\s*abuse|feedback report|spam complaint',subject+'\n'+body,re.I):
+                    counts['spam_reports']+=1
         # Read the server's authoritative INTERNALDATE, never an untrusted MIME Date header.
         historic=[]
         sample=0
@@ -145,11 +159,12 @@ def check_snapshot():
         earliest=min(historic)
         pilot_dates.append(earliest.date().isoformat())
         latest_sent.append(sample)
-        proof[owner]={'inbound_total':len(inbound),'inbound_24h':recent_in,
+        proof[owner]={'inbound_total':len({(it.get('internet_message_id') or it.get('id')) for it in inbound}), 'inbound_24h':recent_in,
                       'sent_24h':sample,'first_external_sent':earliest.isoformat()}
-    if sum(latest_sent) > 100:
-        raise RuntimeError('HEALTH_SAMPLE_OVER_100_REQUIRES_SCOPE')
-    from send_governance import MailboxHealthStore
+    from send_governance import MailboxHealthStore, max_health_sample
+    # Gleiche Grenze wie pause_reason; die frühere feste 100 blockierte jeden Nachweis nach einem Versandtag über 100 Mails.
+    if sum(latest_sent) > max_health_sample():
+        raise RuntimeError('HEALTH_SAMPLE_OVER_LIMIT_REQUIRES_SCOPE')
     shared_pause=MailboxHealthStore(ComMailboxClient('JOEL')).read()
     output={'checked_at':NOW.isoformat(),'first_send_date':max(pilot_dates),
             'seen_inbound_ids':sorted(seen),'sample_sent':sum(latest_sent),
@@ -159,7 +174,7 @@ def check_snapshot():
             'bounce_diagnostics':bounce_diagnostics,
             'shared_pause':shared_pause,
             'seed_dkim_pass':False,'mailboxes':proof,
-            'measurement_scope':'last 24h, genuine IMAP INTERNALDATE; all Inbox UIDs and sent folder scanned'}
+            'measurement_scope':'last 24h, genuine IMAP INTERNALDATE; Inbox and Unzustellbar deduplicated; sent folder scanned'}
     return output
 
 def encrypt(payload, pub_b64, output_path):

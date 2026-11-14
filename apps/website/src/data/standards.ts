@@ -14,7 +14,8 @@ export interface ExecutionStandard {
 export const executionStandards: ExecutionStandard[] = [
   {
     id: "AGI S 40",
-    name: "AGI Arbeitsblatt S 40 – Säureschutzbau: Keramische Beläge",
+    name:
+      "AGI Arbeitsblatt S 40 – Chemisch beständige Bodenbeläge im Rüttelverfahren (Säureschutzbau), Ausgabe Mai 1999",
     scope:
       "Planung und Ausführung säurefester keramischer Beläge im Rüttelverfahren mit Kunstharzfuge.",
     serviceSlugs: ["keramische-industrieboeden", "industrieboden-saeureschutz"],

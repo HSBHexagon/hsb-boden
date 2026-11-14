@@ -21,3 +21,6 @@ Vor jeder Arbeit lesen: `MASTER_EXECUTION_RULES.md`, `STARTUP_PROTOCOL.md`, `CHE
 
 ## Harte Verbote
 Kein Push, kein Deploy, kein Production-Cutover, keine Secrets im Repo, keine Website-Code-Änderung ohne Freigabe.
+
+## Einmalige private Betreiberübergabe für die nächste HSB-AGY-Sitzung (2026-11-02)
+Vor der nächsten HSB-Sales-OS-/Kampagnenarbeit die **neueste** noch offene Betreiberübergabe im privaten `cherinojoel-lang/ObsidianVault` unter `brain/pending/AGY_HSB_NEXT_SESSION_2026-11-02.md` lesen und mit Live-Quellen abgleichen. Zugriff über authentifiziertes `gh api repos/cherinojoel-lang/ObsidianVault/contents/brain/pending/AGY_HSB_NEXT_SESSION_2026-11-02.md --jq .content | base64 -D` (macOS) oder einen authentifizierten GitHub-Konnektor. Fehlt die Berechtigung, ausdrücklich melden; keine Annahmen. Ohne nachgewiesene Freigabe weder Serienversand noch Entsperrung von Bestandskunden auslösen. Nach bestätigter Übernahme die Übergabe als abgearbeitet kennzeichnen.

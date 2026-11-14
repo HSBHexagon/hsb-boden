@@ -1,5 +1,5 @@
 """
-Testet Send-Governance, Jitter-Verzoegerung (45-180s) und physikalisches Tages-Cap (max. 35 Mails/Tag) (Goal G11).
+Testet Send-Governance, Jitter-Verzoegerung (45-180s) und konfigurierbares Tages-Cap (Obergrenze 100 Mails/Tag) (Goal G11).
 """
 import datetime
 from pathlib import Path
@@ -31,24 +31,24 @@ def test_jitter_corridor_is_strictly_between_45_and_180_seconds():
     assert max(delays) > 150, f"Max delay zu niedrig: {max(delays)}"
 
 
-def test_strict_daily_cap_enforcement_at_35_mails_per_mailbox():
+def test_strict_daily_cap_enforcement_at_configured_limit():
     queue = SendGovernanceQueue()
     mailbox = "j-post@hsb-boden.de"
     today = datetime.date(2026, 9, 18)
 
-    # Exakt 35 Mails enqueuen -> alle muessen erlaubt sein
+    # Bis zum konfigurierten Limit muessen alle Nachrichten erlaubt sein
     for i in range(1, DAILY_CAP_PER_MAILBOX + 1):
         item = queue.queue_send(mailbox, f"prospect-{i}@kunde.de", target_date=today)
         assert item["status"] == "QUEUED"
         assert item["day_sequence_number"] == i
         assert MIN_JITTER_SECONDS <= item["jitter_delay_seconds"] <= MAX_JITTER_SECONDS
 
-    # Versuch #36 muss zwingend mit DailyCapReachedError abbrechen
+    # Die erste Nachricht ueber dem Limit muss blockiert werden
     with pytest.raises(DailyCapReachedError) as exc_info:
-        queue.queue_send(mailbox, "prospect-36@kunde.de", target_date=today)
+        queue.queue_send(mailbox, f"prospect-{DAILY_CAP_PER_MAILBOX + 1}@kunde.de", target_date=today)
 
-    assert "35/35 versendet" in str(exc_info.value)
-    print("Cap-Erreichung auf #36 erfolgreich abgewehrt.")
+    assert f"{DAILY_CAP_PER_MAILBOX}/{DAILY_CAP_PER_MAILBOX} versendet" in str(exc_info.value)
+    print(f"Cap-Erreichung auf #{DAILY_CAP_PER_MAILBOX + 1} erfolgreich abgewehrt.")
 
 
 def test_independent_mailbox_quotas():
@@ -56,14 +56,14 @@ def test_independent_mailbox_quotas():
     today = datetime.date(2026, 9, 18)
 
     # Erschoepfe Jordis Kontingent
-    for i in range(35):
+    for i in range(DAILY_CAP_PER_MAILBOX):
         queue.queue_send("j-post@hsb-boden.de", f"p-jordi-{i}@kunde.de", target_date=today)
 
     # Joels Kontingent muss weiterhin voll verfuegbar sein
     can_send_joel, count, remaining = queue.can_send("j-cherino@hsb-boden.de", target_date=today)
     assert can_send_joel is True
     assert count == 0
-    assert remaining == 35
+    assert remaining == DAILY_CAP_PER_MAILBOX
 
     item_joel = queue.queue_send("j-cherino@hsb-boden.de", "p-joel@kunde.de", target_date=today)
     assert item_joel["status"] == "QUEUED"
@@ -74,9 +74,23 @@ def test_real_external_send_count_guardrail():
     assert REAL_EXTERNAL_PROSPECT_SEND_COUNT == 0, "REAL_EXTERNAL_PROSPECT_SEND_COUNT muss strikt 0 sein!"
 
 
+def test_governance_allows_operator_configured_high_caps(monkeypatch):
+    from importlib.util import module_from_spec, spec_from_file_location
+    import send_governance as sg
+    monkeypatch.setenv("HSB_MAX_DAILY_CAP", "1000")
+    monkeypatch.setenv("HSB_DAILY_CAP", "1000")
+    monkeypatch.setenv("HSB_MAX_BUDGET", "1000")
+    spec = spec_from_file_location("send_gov_probe", sg.__file__)
+    probe = module_from_spec(spec)
+    spec.loader.exec_module(probe)
+    assert probe.MAX_DAILY_CAP_PER_MAILBOX == 1000
+    assert probe.DAILY_CAP_PER_MAILBOX == 1000
+    assert probe.daily_budget("2026-10-01", "2026-11-12") == 1000
+
+
 if __name__ == "__main__":
     test_jitter_corridor_is_strictly_between_45_and_180_seconds()
-    test_strict_daily_cap_enforcement_at_35_mails_per_mailbox()
+    test_strict_daily_cap_enforcement_at_configured_limit()
     test_independent_mailbox_quotas()
     test_real_external_send_count_guardrail()
     print("ALL G11 SEND GOVERNANCE TESTS PASSED SUCCESSFULLY.")

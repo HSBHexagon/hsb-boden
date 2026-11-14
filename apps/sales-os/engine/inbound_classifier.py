@@ -4,6 +4,7 @@ import datetime
 import html
 import re
 from dataclasses import dataclass
+from email.header import decode_header, make_header
 from typing import Optional
 
 EMAIL_RE = re.compile(r"[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+")
@@ -49,17 +50,11 @@ def strip_quoted_reply(body: str) -> str:
     """
     clean_body = FOOTER_CLEAN_RE.sub("", body)
     lines = []
-    quote_starters = [
-        "-----original message-----",
-        "-----ursprüngliche nachricht-----",
-        "von: ",
-        "from: ",
-        "am ",
-        "on "
-    ]
     for line in clean_body.splitlines():
         l_low = line.strip().lower()
-        if any(l_low.startswith(q) for q in quote_starters) and ("gesendet:" in l_low or "sent:" in l_low or "schrieb:" in l_low or "wrote:" in l_low or "@" in l_low):
+        if l_low.startswith(("-----original message-----", "-----ursprüngliche nachricht-----", "--- original message ---")):
+            break
+        if any(l_low.startswith(q) for q in ["von: ", "from: ", "am ", "on "]) and ("gesendet:" in l_low or "sent:" in l_low or "schrieb:" in l_low or "wrote:" in l_low or "@" in l_low):
             break
         if line.startswith(">"):
             continue
@@ -98,9 +93,17 @@ def extract_return_date(text: str, reference_date: Optional[datetime.date] = Non
     return None
 
 
+def decode_mime_header(value: str) -> str:
+    """RFC-2047-Wörter (z. B. =?UTF-8?B?QWJtZWxkZW4=?=) in Klartext; bei kaputter Kodierung unverändert."""
+    try:
+        return str(make_header(decode_header(value or "")))
+    except Exception:  # z. B. HeaderParseError: ein kaputter Betreff darf den Abgleich nie abbrechen
+        return value or ""
+
+
 def classify_inbound_message(sender: str, subject: str, body: str, reference_date: Optional[datetime.date] = None) -> InboundClassificationResult:
     sender_clean = sender.lower().strip()
-    subj_clean = subject.strip()
+    subj_clean = decode_mime_header(subject).strip()
 
     # 1. Bounces / NDRs (haben immer Vorrang, auch bei Mailer-Daemon)
     if BOUNCE_SUBJ_RE.search(subj_clean) or BOUNCE_BODY_RE.search(body) or "mailer-daemon" in sender_clean or "postmaster" in sender_clean:
@@ -123,7 +126,10 @@ def classify_inbound_message(sender: str, subject: str, body: str, reference_dat
     full_new_text = f"{subj_clean.lower()} {new_reply_text.lower()}"
 
     # 3. Echter Opt-out / Widerspruch des Kunden (hat Vorrang vor zufälligen Begriffen)
-    if OPTOUT_RE.search(full_new_text):
+    explicit_subject = re.fullmatch(r"(?:re:\s*|aw:\s*)*(?:abmelden|abmeldung|unsubscribe|stop)\s*[.!]?", subj_clean.strip(), re.I)
+    # Antworttext besteht (nach Bereinigung der Zitate) nur aus dem Opt-Out-Wort, wie im Mailtext vorgeschlagen:
+    body_only_optout = bool(re.fullmatch(r"(?:bitte\s+)?(?:abmelden|abmeldung|unsubscribe|stop)(?:\s+bitte)?[.!]?", new_reply_text.strip(), re.I))
+    if explicit_subject or body_only_optout or OPTOUT_RE.search(full_new_text):
         return InboundClassificationResult(category="OPTOUT", confidence=0.90, reason="Widerspruch / Opt-out Signal")
 
     # 4. Hot Lead / Termin-Interesse

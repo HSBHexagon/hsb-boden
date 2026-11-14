@@ -1,9 +1,9 @@
 {
   "project": "HSB / HEXAFLOOR",
-  "last_updated": "2026-09-19T16:40:00+0200",
-  "active_model": "Claude Code (Opus 5)",
-  "active_phase": "website-b2b-hardening",
-  "active_task": "B2B-Website-Auftrag: Schritte 1-4 als bereits gemergt verifiziert (8e44b67); site-weite Copy-Bereinigung (kostenlos/unverbindlich/Festpreis/Quadratmeterpreis) + Test-Erweiterung auf Branch feat/b2b-copy-purge; Gate gruen; PR/Merge = Owner-Gate.",
+  "last_updated": "2026-11-13",
+  "active_model": "Antigravity CLI (Team-Direktor)",
+  "active_phase": "sales-os-high-volume-cap-elevation",
+  "active_task": "Website: CLS/Bildgewicht/unsichtbare Buttons behoben (PR #581); Versand wartet auf erneuertes Health-Secret",
   "account_migration_2026_07_02": {
     "github_new_repo": "https://github.com/HSBHexagon/hsb-boden",
     "github_old_repo_access": "HSBHexagon ist Admin-Collaborator im Alt-Repo cherinojoel-lang/hsb-boden (Ownership-Transfer pending, nicht blockierend)",
@@ -124,7 +124,7 @@
     "docs/launch/PRE_DNS_GO_LIVE_MAX_CHECKLIST.md"
   ],
   "push_done": false,
-  "deploy_done": "not_run",
+  "deploy_done": false,
   "historical_deploy_evidence": [
     "Production-Run 29404977846 fuer bf0a257 war erfolgreich; dieser Truth-Pass fuehrt keinen Deploy aus."
   ],
@@ -317,5 +317,51 @@
     "deploy_done": "not_run (clasp push offen)",
     "live_verification_2026_09_19": "Migration idempotent 807|0|0|0|0; 7 BE2-Regeln; DASHBOARD 27 Zeilen; HEUTE/POSTEINGANG 0 Fehlerzellen; Spalte M vorhanden; Report 08_System/reports/validation/2026-09-18-hsb-crm-cockpit.md"
   },
-  "pull_request": "https://github.com/HSBHexagon/hsb-boden/pull/383"
+  "pull_request": "https://github.com/HSBHexagon/hsb-boden/pull/383",
+  "current_truth_2026_11_10": {
+    "status": "GO / PRODUKTIONSREIF",
+    "audit_time": "2026-11-10 17:00 UTC",
+    "git_main_sha": "ce26a6f",
+    "pr_572_merged": true,
+    "ssot_crm_sheet_id": "1W-NjwEq0UhDo2TaeS-2qp_qit4YFMz6k-IqKHlPpHmg",
+    "crm_total_leads": 6424,
+    "crm_sent_count": 1593,
+    "crm_drafted_count": 4824,
+    "send_health_secret_updated": "2026-11-10T16:43:59Z",
+    "send_health_status": "PASS (0 bounces, 0 deferrals, 0 spam, 125 cursor IDs)",
+    "actions_run_completed": "42829194956 (79 sent)",
+    "actions_run_active": "42849477751 (in progress)",
+    "daily_cap_per_mailbox": 250,
+    "ssot_verified": true,
+    "pytest_passed": 762,
+    "pytest_skipped": 1
+  },
+  "current_truth_2026_11_11": {
+    "branch": "claude/kind-knuth-6f6dml",
+    "merged_to_main": true,
+    "tests": "pytest apps/sales-os/tests: 815 passed, 1 skipped; verify_ssot.py Exit 0; Website 383 Tests, check 0 Fehler, build 69 Seiten",
+    "customer_emails_sent_in_session": 0,
+    "live_access_in_session": false,
+    "open_owner_points": [
+      "send-health Secret gilt nur 24 h",
+      "naechster Health-Nachweis muss archivierte Bounces aus Unzustellbar in seen_inbound_ids enthalten",
+      "erster Live-Lauf nach Merge mit kleiner Anzahl"
+    ],
+    "pull_request": "https://github.com/HSBHexagon/hsb-boden/pull/580",
+    "resolved_on_branch": [
+      "Tageslimit hart 100 (bd64210)",
+      "Gesundheitspruefung liest Unzustellbar (bd64210, 383be5a)",
+      "versand-tranche.sh und Workflow auf 1-100 begrenzt"
+    ]
+  },
+  "current_truth_2026_11_12": {
+    "branch": "feat/sales-os-high-volume-cap-elevation",
+    "merged_to_main": false,
+    "pr_580_merged": true,
+    "main_head": "7665cd3",
+    "daily_cap_per_mailbox_default": 250,
+    "daily_cap_scaling": "Operator-configurable up to 1000+ via HSB_MAX_DAILY_CAP / HSB_DAILY_CAP",
+    "tests": "pytest apps/sales-os/tests: 820 passed, 1 skipped; verify_ssot.py Exit 0; Website 383 Tests pass",
+    "customer_emails_sent_in_session": 0
+  }
 }

@@ -158,4 +158,69 @@ describe("trackEvent", () => {
       send_to: "G-VC4BJBEFTV",
     });
   });
+
+  it("sendet DownloadCheckliste und DownloadZertifikat mit validierten Parametern an GA4", () => {
+    const gtag = vi.fn();
+    win.gtag = gtag;
+
+    trackEvent(TrackingEvent.DownloadCheckliste, {
+      placement: "muster_abnahmeprotokoll",
+      download_type: "checkliste",
+      file_name: "ifs_checkliste",
+    });
+
+    expect(gtag).toHaveBeenCalledWith(
+      "event",
+      "download_checkliste",
+      {
+        placement: "muster_abnahmeprotokoll",
+        download_type: "checkliste",
+        file_name: "ifs_checkliste",
+        send_to: "G-VC4BJBEFTV",
+      },
+    );
+
+    trackEvent(TrackingEvent.DownloadZertifikat, {
+      placement: "stress_check_pdf",
+      asset_id: "pdf_export",
+    });
+
+    expect(gtag).toHaveBeenCalledWith(
+      "event",
+      "download_zertifikat",
+      {
+        placement: "stress_check_pdf",
+        asset_id: "pdf_export",
+        send_to: "G-VC4BJBEFTV",
+      },
+    );
+  });
+
+  it("sendet CheckComplete mit aggregierten Belastungsparametern an GA4", () => {
+    const gtag = vi.fn();
+    win.gtag = gtag;
+
+    trackEvent(TrackingEvent.CheckComplete, {
+      placement: "stress_check",
+      medium: "milchsaeure",
+      temp_range: "t_85",
+      mechanical_load: "stapler_schwer",
+      time_window: "wochenende",
+      recommended_system: "ruettelkeramik",
+    });
+
+    expect(gtag).toHaveBeenCalledWith(
+      "event",
+      "check_complete",
+      {
+        placement: "stress_check",
+        medium: "milchsaeure",
+        temp_range: "t_85",
+        mechanical_load: "stapler_schwer",
+        time_window: "wochenende",
+        recommended_system: "ruettelkeramik",
+        send_to: "G-VC4BJBEFTV",
+      },
+    );
+  });
 });

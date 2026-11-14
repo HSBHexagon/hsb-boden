@@ -32,3 +32,7 @@ apps/sales-os/.env
 apps/sales-os/engine/logs/
 apps/sales-os/data/reconciliation*/
 *.sqlite3
+apps/sales-os/config/seed_inboxes.json
+
+# Website-Cache (Kundendaten)
+apps/sales-os/data/website_cache/

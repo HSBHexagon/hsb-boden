@@ -18,7 +18,8 @@ def test_bounce_rescue_fallback_to_email_domain():
     domain = agent._derive_domain("", "einkauf@molkerei-alpen.de")
     assert domain == "molkerei-alpen.de"
 
-def test_bounce_rescue_skips_failed_email():
+def test_bounce_rescue_skips_failed_email(monkeypatch):
+    monkeypatch.setattr("bounce_rescue_agent.check_domain_mx", lambda dom: True)
     agent = BounceRescueAgent()
     # Mock search_alternative_emails
     agent.search_alternative_emails = lambda dom: [
@@ -31,16 +32,17 @@ def test_bounce_rescue_skips_failed_email():
     assert res.rescued_email == "info@kunde.de"
 
 def test_smart_vacation_date_calculation():
+    reference_date = datetime.date(2026, 10, 23)
     # Test weekday stays weekday
-    weekday = calculate_next_business_day("2026-11-13")
+    weekday = calculate_next_business_day("2026-11-13", reference_date=reference_date)
     assert weekday == "2026-11-13"
 
     # Test weekend skip (2026-11-14 is Saturday -> should skip to Monday 2026-11-16)
-    next_monday = calculate_next_business_day("2026-11-14")
+    next_monday = calculate_next_business_day("2026-11-14", reference_date=reference_date)
     assert next_monday == "2026-11-16"
 
     # Test Sunday skip (2026-11-15 is Sunday -> should skip to Monday 2026-11-16)
-    from_sunday = calculate_next_business_day("2026-11-15")
+    from_sunday = calculate_next_business_day("2026-11-15", reference_date=reference_date)
     assert from_sunday == "2026-11-16"
 
 def test_smart_vacation_agent_processing():
@@ -59,3 +61,10 @@ def test_smart_vacation_agent_processing():
     assert "Brauhaus Köln GmbH" in res.subject
     assert "Willkommen zurück" in res.subject
     assert "Hier abmelden" in res.body_html
+
+
+def test_smart_vacation_relative_to_explicit_reference_date():
+    baseline = datetime.date(2026, 10, 23)
+    assert calculate_next_business_day("2026-11-05", reference_date=baseline) == "2026-11-05"
+    assert calculate_next_business_day("2026-10-01", reference_date=baseline) == "2026-10-26"
+    assert calculate_next_business_day(None, default_days=14, reference_date=baseline) == "2026-11-06"

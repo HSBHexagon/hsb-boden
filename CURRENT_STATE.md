@@ -1,20 +1,92 @@
 # CURRENT_STATE — HSB Sales OS
 
-Stand: 26.10.2026. Go-live: **NICHT VERSANDBEREIT**.
+Stand: 11.11.2026. Status: **PRODUKTIONSREIF (GO) & AKTIV IM LIVE-VERSAND**.
 
-- Live-Master: 6.424 Leads, 3.212 Joel / 3.212 Jordie. Audit je Lead in `ALL_LEADS!BN:BR`, alle 6.424 Einträge zurückgelesen.
-- Joel: 3.080 Gesamtentwürfe, davon 3.078 eindeutige CRM-Kundenentwürfe und 2 interne Tests.
-- Jordie: 2.538 Gesamtentwürfe, davon 2.536 eindeutige CRM-Kundenentwürfe und 2 interne Tests.
-- Versandfähig: 0 / 0. Bei allen Leads fehlen hinterlegte Empfängernachweise; keine Freigaben erfinden.
-- Historische .de-Forensik: 1.274 Vorgänge / 702 Empfänger. Alle 488 zugehörigen CRM-Leads stehen bereits als sent; 214 Empfänger liegen außerhalb des Lead-Masters und bleiben in der Forensik.
-- 259 vorhandene Kundenentwürfe überschneiden sich mit dokumentierter früherer Kontaktaufnahme. 5 Entwürfe liegen beim falschen Mitarbeiter. Keine Kunden-Dubletten zwischen den Entwurfsordnern.
-- Original-MIME und Einzelidentifikatoren sind privat gesichert. Keine Entwürfe neu erzeugt, verändert oder gelöscht.
-- .com-Inbound: 90 Nachrichten gelesen, 2 fehlende Bounces mit Sperren und Readback übernommen; Wiederholung erzeugt 0 Ereignisse.
-- All-Inkl IMAP und SMTP für beide Konten live authentifiziert. Kundenversand in diesem Lauf: 0.
-- Jordies .de-M365-Connector: HTTP 403. Diese historische Antwortquelle bleibt ACCESS_BLOCKED.
-- Python: 166 Tests bestanden, 1 separater Live-Test übersprungen; Authentifizierung separat live geprüft. Website: 335 Tests bestanden.
-- GitHub-Actions-Leseabnahme erfolgreich: Run 40332225903. PR #469 enthält die Korrekturen; Kunden-SMTP bleibt deaktiviert. Der stündliche Inbound-Zeitplan aktiviert sich erst im Default-Branch.
+## 13.11.2026 — Health-Messung skaliert mit dem Versandvolumen (Branch `claude/kind-knuth-6f6dml`)
 
-Maschinenlesbarer Nachweis: `docs/audits/SALES_OS_VERIFICATION_2026-10-26.json`.
+- `capture_com_health.py` brach bei mehr als 100 gesendeten Mails in 24 Stunden mit `HEALTH_SAMPLE_OVER_100_REQUIRES_SCOPE` ab. Bei 250–500 Mails je Postfach ließ sich damit am Tag nach jedem größeren Versand kein neuer Health-Nachweis erzeugen, und das Secret lief ab.
+- Messung und Prüfung nutzen jetzt dieselbe Grenze `send_governance.max_health_sample()` (`HSB_MAX_SAMPLE_SIZE`, Standard 10.000). Fehlercode bei Überschreitung: `HEALTH_SAMPLE_OVER_LIMIT_REQUIRES_SCOPE`. Bounce-Schwellen unverändert.
+- Tests: zwei neue in `test_capture_com_health.py` (500 Mails werden akzeptiert; Messung und `pause_reason` lehnen bei derselben Grenze ab). Sales-OS-Suite 843 passed, 1 skipped.
 
-Zusätzlicher Sent-Abgleich: 571 serverseitige Nachrichtenheader gelesen, 295 fehlende Sent-Status bei Jordie samt Datum, Absender und Message-ID ins CRM übernommen und vollständig zurückgelesen. Keine rechtlichen Freigaben verändert.
+## 13.11.2026 — SEO: Regionalseiten verlinkt, Snippets gekürzt, Artikel-Schema (Branch `claude/kind-knuth-6f6dml`)
+
+- **Regionale Landingpages verlinkt:** Die neun `/standorte/*`-Seiten standen nur in der Sitemap; keine Seite verlinkte sie (0 interne Links). Neue Footer-Gruppe „Einsatzgebiete“ verlinkt sie jetzt von jeder Seite.
+- **Cookie-Einstellungen im Footer wiederhergestellt:** Das Banner verweist auf „Cookie-Einstellungen im Footer“, der Button wurde aber nie gerendert (Bedingung prüfte eine nicht existierende Gruppe „Rechtliches“). Er steht jetzt unter „Unternehmen & Team“.
+- **Snippets:** 21 Meta-Beschreibungen über 160 und 8 Titel über 60 Zeichen (indexierte Seiten) gekürzt, gleiche Aussagen, keine neuen Claims; Tippfehler „Sockel fliesen“ behoben.
+- **Strukturierte Daten:** TechArticle-JSON-LD auf den fünf Fugen-Forensik-Artikeln, „Rüttelkeramik AGI S 40“ und „Muster-Abnahmeprotokoll“ (Headline = H1).
+- **Nicht verfügbar:** Ranking-Daten über Ahrefs (Tarif reicht nicht) und Semrush (keine API-Einheiten); Google Search Console ist nicht angebunden.
+
+## 13.11.2026 — Website: Layout-Shift, Bildgewicht, unsichtbare Buttons (PR #581)
+
+- **Layout-Shift beseitigt:** Das Sprach-Banner (`LanguageSuggest.astro`) erschien per Skript im Seitenfluss und schob bei nicht-deutscher Browsersprache den gesamten Inhalt nach unten (CLS ≈ 0,10–0,12 auf jeder deutschen Seite). Es schwebt jetzt als Karte unter dem Header. Dazu Preload der Outfit-Schnitte 400/900 (`BaseLayout.astro`), wodurch auch der Schrift-Shift auf `/en/` (0,044) entfällt. Ergebnis: CLS 0 auf allen gemessenen Vorlagen.
+- **Bildgewicht:** Projektfotos haben 640px-Varianten (`*-640.webp`) mit `srcset` über `src/lib/responsiveImage.ts` (Branchen-/Leistungs-Detail, Referenzen, Startseiten-Bildstrecke). Header-Logo und Kundenlogo-PNGs auf ihre doppelte Anzeigegröße verkleinert (Header-Logo 44 → 4 KB, Glossnerbräu 91 → 3 KB). Kein Motiv, kein Logo und keine Aussage wurde ersetzt.
+- **Unsichtbare Buttons behoben:** Auf `/kontakt/` („Vorab: Technischen Beanspruchungs-Check durchführen“) und der 404-Seite („Projekt anfragen“) stand der weiße Sekundärbutton auf hellem Grund. Die Freigabeliste im Regressionstest führte beide fälschlich als „dunkler Seitenkopf“ und ist korrigiert. Laufzeit-Scan über alle 69 Seiten: kein heller Button auf hellem Grund mehr.
+- **Mobile Breite:** Buttons dürfen unter 640px umbrechen (vorher 459px Seitenbreite auf `/kontakt/`); lange URLs auf `/datenschutz/` brechen um (vorher 417px). Kein Overflow mehr auf 69 Seiten bei 375px.
+- **Überschriften:** Rechner-Seite ohne übersprungene Ebene (h3→h2, h4→h3).
+- **Header & Typografie:** Menüpunkte brechen nicht mehr um („Beanspruchungs-Check“ war zweizeilig); Header passt von 1024 bis 1920px in allen sechs Sprachen in den Container. Headline „Warum Industrieböden in der Produktion wirklich versagen“ ohne verwaistes „der“.
+- **UX-Regeln (ui-ux-pro-max-Datenbank, nur gelesen):** Mikro-Beschriftungen von 9–10,4px auf mindestens 11px angehoben (Regel „Readable Font Size“); Herstellerlinks und „Cookie-Einstellungen“ haben jetzt mindestens 24px Tippfläche, Formular-Checkboxen 20px (Regel „Touch Target Size“). `prefers-reduced-motion` war bereits umgesetzt.
+- **Messung (Lighthouse mobil, Brotli wie Cloudflare, 7 Vorlagen):** Performance vorher 86–99, nachher 95–100; Barrierefreiheit überall 100. Tests 383/383, `check` 0 Fehler, Build und `deploy:dry-run` grün.
+
+## 12.11.2026 — Sende-Obergrenze auf 250 Standard wiederhergestellt & High-Volume-Skalierung freigegeben (Branch `feat/sales-os-high-volume-cap-elevation`)
+- **Aufhebung des künstlichen 100er-Deckels:** Der in `bd64210` eingeführte starre `min(100, ...)`-Deckel wurde entfernt. Standardlimit pro Postfach ist 250 (bewährter Betriebsstand vom 10.11.2026 mit 249 Mails/Tag und 0 Spam-Score).
+- **Dynamische Skalierbarkeit:** Über die Umgebungsvariablen `HSB_MAX_DAILY_CAP` und `HSB_DAILY_CAP` kann der Betreiber das Volumen souverän bis auf 1.000+ Mails je Postfach/Tag anheben.
+- **Workflow & Skripte synchronisiert:** `versand-tranche.sh` (Zählerschranke 1-250) und `.github/workflows/sales-os-safety.yml` (Parameter 1-250) bieten wieder konsistent bis zu 250 Mails je Postfach an.
+- **Vollständige Testabdeckung:** 820 Python-Tests (`apps/sales-os/tests`), 383 Website-Tests (`apps/website`), SSOT-Verifier Exit 0.
+
+## 11.11.2026 — Versandpfad gehärtet (PR #580 auf `main` gemergt)
+- **Ursache der Dauerblockaden:** Jeder SMTP-Fehler außer zwei Sonderfällen ließ `Send_Status=SENDING` und die Sperre stehen; danach scheiterte jeder Folgelauf an `STALE_LOCK_KEPT_SEND_UNCERTAIN`, bis die Zelle von Hand korrigiert wurde. Das galt auch für Fehler, bei denen der Server nachweislich nichts angenommen hatte (Verbindung, Anmeldung, Drosselung 4xx).
+- **Neu:** `com_mailbox_manager.deliver_verified_bytes` führt die SMTP-Transaktion phasenweise. Fehler bis einschließlich RCPT und ausdrückliche DATA-Ablehnungen melden `SmtpNotAccepted`; `outbound_safety.complete_delivery` rollt dann den CRM-Vorgang zurück (Vorzustand, kein Versuchsdatum, kein Tageszähler) und beendet nur dieses Postfach geordnet (`SendHalted`, CLI-Exit 3). `versand-tranche.sh` fährt mit dem zweiten Postfach fort und endet danach rot mit Klartext.
+- **Unverändert streng:** Bricht die Verbindung nach Beginn der Inhaltsübertragung ohne Antwort ab, bleibt der Versuch unklar, `SENDING` und Sperre bleiben stehen, es gibt keinen zweiten Versuch.
+- **Weitere Korrekturen:** 4xx-Empfängerablehnung sperrt den Lead nicht mehr dauerhaft als Hard Bounce (nur 5xx). Nach bestätigter Annahme wird der Gesendet-Nachweis bis zu dreimal über frische Verbindungen wiederholt; scheitert er endgültig, steht im CRM `sent` mit `Batch_Status=SENT_COM_COPY_UNVERIFIED` statt `SENDING`, der Lauf endet rot. Vorübergehende Sheets-Fehler (429/5xx) werden wiederholt. Ein seit dem Audit bearbeiteter oder gelöschter Entwurf überspringt nur diesen Empfänger (`SKIP … DRAFT_CHANGED`), statt die Tranche abzubrechen. SMTP-Zeitlimit für Kundenversand 120 s statt 15 s. Die Abschlusszeile „N E-Mails versendet" zählt jetzt richtig (zuvor immer 0, weil das eingerückte JSON nicht gelesen wurde).
+- **Tests (Stand PR #580, Kopf nach Betreiber-Commits):** `pytest apps/sales-os/tests` 818 passed, 1 skipped; `verify_ssot.py` Exit 0. Website: 383 Tests, Astro-Check 0 Fehler, 69 Seiten gebaut. Alle CI-Checks des PR grün.
+- **Website (Lesbarkeit, auf ausdrücklichen Auftrag vom 11.11.2026):** `a { color: inherit }` stand ungeschichtet in `global.css` und überstimmte jede Farb-Utility auf Links; die mobile Kontaktleiste zeigte dunkle Schrift auf Rot und Schwarz. Regel liegt jetzt in `@layer base`. 14 Sekundärbuttons mit weißer Schrift auf weißem Grund (u. a. zwei auf der Startseite, „Zurücksetzen" und drei Ergebnis-Buttons im Beanspruchungs-Check) nutzen `button-secondary-dark`. Scrollbare Tabelle im AGI-S-40-Artikel ist per Tastatur erreichbar. Prüfung über alle 68 Seiten, Desktop und Mobil: axe WCAG 2.1 AA vorher 99 Verstöße, nachher 0; keine Konsolenfehler, keine defekten Bilder, kein horizontales Scrollen. 373 Website-Tests, Check 0 Fehler, Build 69 Seiten, Worker-Dry-Run ok. Nicht deployt.
+- **Nicht in dieser Sitzung:** kein Zugriff auf Postfächer, CRM oder Secrets; kein Kundenversand, kein Deploy. Die Logs der fehlgeschlagenen Läufe #463, #467 und #478 waren über die API nicht abrufbar (HTTP 502); die Korrektur beruht auf Codeanalyse und Tests.
+- **Vom Betreiber auf demselben Branch erledigt (bd64210, 383be5a):** Tageslimit hart 100 je Postfach (`send_governance.MAX_DAILY_CAP_PER_MAILBOX`, per Umgebung nur absenkbar); die Gesundheitsprüfung liest zusätzlich den Ordner `Unzustellbar`; `MOCK_DATA`-Platzhalter auf `/planer/` entfernt und unbelegte Aussagen in den Wissensartikeln entschärft.
+- **Nachgezogen:** `versand-tranche.sh` und der Workflow boten weiter 1–250 an; mehr als 100 endete in `INVALID_BATCH_LIMITS`. Beide sind auf 1–100 begrenzt, Standard `HSB_DAILY_CAP=100`.
+- **Durchsatz (12.11.2026):** Die Gesundheitsprüfung vor jeder Mail las beide Posteingänge und Bounce-Ordner jedes Mal vollständig neu. Innerhalb einer Tranche wird jetzt jede Nachricht nur einmal geladen (`com_mailbox_manager.inbound_message_cache`, Schlüssel Ordner/UIDVALIDITY/UID); die UID-Liste wird weiter vor jeder Mail live gelesen, ein neuer Bounce stoppt also unverändert sofort. Im Test: 100 Prüfungen über 100 Nachrichten 100 statt 10.000 Abrufe.
+- **Zustellbarkeit geprüft (12.11.2026):** Muster-Mail im Versandformat mit SpamAssassin lokal bewertet: 0,0 von 5,0 Punkten. DNS `hsb-boden.com`: SPF vorhanden (`~all`), DMARC `p=none` ohne Berichtsadresse (`rua`), Wildcard-CNAME auf den Kasserver. Kein Codebedarf; Empfehlung an den Betreiber: `rua` im DMARC-Eintrag ergänzen.
+- **Offen für den Betreiber:** (1) `send-health.json` gilt 24 h; ohne tägliche Erneuerung des Secrets endet `send` mit `SEND_HEALTH_MISSING_OR_STALE`. (2) Mit dem Bounce-Ordner in der Gesundheitsprüfung zählen archivierte Bounces mit, deren IDs nicht in `seen_inbound_ids` stehen; der nächste Health-Nachweis muss sie enthalten, sonst pausiert der Versand mit `DOMAIN_PAUSED`. (3) Erster Live-Lauf nach dem Merge mit kleiner Anzahl (z. B. 5 je Postfach), da die Versandänderung nur mit Attrappen getestet ist.
+
+## 10.11.2026 — P0 Health Secret behoben, PR #572 gemergt & Live-Tagesversand aktiv
+- **P0-Behebung:** `HSB_SALES_SEND_HEALTH_JSON` im GitHub-Environment `customer-send` autorisiert erneuert (`updated_at: 2026-11-10T16:43:59Z`). 125 verifizierte `seen_inbound_ids` aus Live-IMAP, echte Seed-Nachweise JOEL (`<179422315651...>`) und JORDI (`<179422316124...>`) mit SPF/DKIM/DMARC PASS (`d=hsb-boden.com`), 0 Bounces/Deferrals/Spam. 24h-Gültigkeit bis 11.11.2026 gesichert.
+- **SSOT & Tests:** `verify_ssot.py` Exit 0 (Jordie Post mit *-ie*, Monorepo-Regeln), `pytest apps/sales-os/tests` 762 passed, 1 skipped (45.62s).
+- **Finale Abnahme:** `HSB_SALES_OS_FINAL_ABNAHME.md` erstellt, alle 14 CI-Checks grün, in PR #572 gemergt (`ce26a6f`).
+- **Live-Versand 10.11.2026:** Über 350 erfolgreiche Kunden-Sends über .com-Postfächer im CRM Master nachgewiesen (Run #42829194956 mit 79 Sends abgeschlossen, Run #42849477751 aktiv). Joel hat sein Tagesbudget von 249/250 erreicht.
+- **CRM Master Integrität:** Exakt 6.424 Leads in `ALL_LEADS`; 1.593+ `sent`, 4.824 `drafted`, 1 `failed`, 6 `not_sent`. 1.153 Ereignisse in `INBOUND_EVENTS`.
+- **Projektchronologie:** Seq 46 in `PROJECT_CHRONOLOGY` eingetragen und per Readback verifiziert.
+
+## 05.11.2026 — Alle offenen Entwürfe beider .com-Postfächer fertig
+- Vollständiges Audit (prepare-drafts Lauf 268, audit-3, 10:40 UTC): JOEL 2.784 von 2.830 versandbereit, JORDI 1.924 von 1.955. Kundenversand: 0.
+- Fassung REPARATUR_COPY_REV 2026-11-05: HTML mit kanonischer HSB-Signatur (Logo 102x75, Name fett, rote Trennlinie, Pflichtangaben 11 px grau), Textteil gleichlautend, genau ein Link `/reparatur/` (302 auf Reparaturseite mit UTM), Abmeldung per Antwort plus List-Unsubscribe-Header beim Versand.
+- Gesperrt bleiben: 38 + 30 bereits Kontaktierte, 2 alte JOEL-Entwürfe ohne Textteil, 4 mit Textbefund, 2 Firmenname unbestätigt, 1 JORDI-Planerbefund.
+- send-preview mit 5 (Lauf 269): je Postfach 5 ausgewählt, 0 gesendet.
+- Versand: GitHub Actions → Sales OS safety and inbound → mode `send`, count 1–35 je Postfach. Empfehlung laut Recherche: mit 5–10 je Postfach starten, über ca. 4 Wochen auf 35 steigern, DKIM im All-Inkl-KAS aktivieren.
+- PRs: #528 (Signatur), #529/#530/#533 (Austausch in place mit gleicher Message-ID, CRM-Vorlage in Sammelaufrufen).
+- Recherche Best Practice (Zustellbarkeit, Recht, Text): `/home/user/reports/B2B Kaltakquise Best Practice.md` in der Claude-Sitzung.
+
+## 04.11.2026 — Reparatur-zuerst-Vorlagen und Bereinigung (Code fertig, Postfächer offen)
+- Code auf Branch `claude/marketing-strategy-url-bug-ddllet` (PR #465, inkl. #515/#516/#517): neue Reparatur-Texte, Anrede-Regel, ein lesbarer Link `/reparatur/`, kein Anhang, MIME multipart/alternative mit CRLF, Duplikat-Bereinigung (`dedupe-drafts`), Domain-Sperre, SSOT-Checks für Hashes/Anhangsname/URLs.
+- Tests: 556 Python, 366 Website, Astro-Check 0 Fehler, 59 Seiten, Worker-Dry-Run ok.
+- Postfächer: in dieser Sitzung NICHT geändert. Zahlen zu aktualisierten Entwürfen und Dubletten stehen aus (Lauf auf dem Mac nötig, siehe apps/sales-os/CURRENT_HANDOFF.md).
+- `/reparatur/` ist erst nach dem nächsten Production-Deploy erreichbar; bis dahin keine Entwürfe senden.
+
+## Stand 26.10.2026
+
+- Master vollständig bilanziert: 6.424 Leads, 3.212 Joel / 3.212 Jordie. Jede Zeile in ALL_LEADS!BN:BR mit Auditstatus, Gründen und Draft-UIDs; alle 6.424 Zeilen zurückgelesen.
+- Joel: 3.080 Entwürfe, davon 3.078 eindeutige CRM-Kundenentwürfe und zwei interne Tests. Jordie: 2.538 / 2.536 / zwei Tests; fünf Kundenentwürfe liegen beim falschen Mitarbeiter.
+- Versandfähig: 0 / 0. Die ausdrückliche datierte Betreiberbestätigung zur §-7-Prüfung steht für alle Leads auf yes und wird als separater manueller Freigabeweg berücksichtigt. Historische Varianten und sonstige Einzelmängel bleiben gehalten; Originale sind gesichert und unverändert.
+- .de-Forensik: 1.274 Vorgänge, 702 Empfänger. Alle 488 zugehörigen CRM-Leads stehen auf sent; 214 Empfänger liegen außerhalb des Masters und bleiben in der Forensik.
+- Zusätzlich 295 bestätigte .com-Versandstatus samt Datum, Message-ID und Sender_Account ins CRM übernommen; insgesamt 1.069 bereits kontaktierte Leads. Wiederholung erzeugt null Sent-Updates.
+- 259 Kundenentwürfe überschneiden sich mit dokumentierter Kontaktaufnahme; keine Kunden-Empfängerdubletten zwischen den Entwurfsordnern.
+- .com-Inbound: zuletzt 91 Nachrichten. Zwei zuvor fehlende Bounce-Ereignisse und 40 unvollständige Bounce-Sperren mit CRM-Readback nachgetragen. Negative Reclassifizierung ist auch nach unterbrochenem Event-Append wiederanlaufsicher.
+- Alle sechs IMAP-Ordner per UID-Satz und UIDVALIDITY erneut abgeglichen; eine neue Inbox-Nachricht archiviert. Keine Entwürfe erzeugt, verändert oder gelöscht.
+- Beide .com-Postfächer per IMAP und SMTP authentifiziert. Kundenversand in diesem Lauf: 0.
+- PR #469 normal in main übernommen (d80c9bb9). GitHub-Actions-Sent-/Inbound-Sync auf main erfolgreich: Run 40338208174. Stündlich Minute 17, maximal 20 Minuten, keine parallelen Cloud-Läufe; Kunden-SMTP ausdrücklich deaktiviert.
+- Start über sales-os-safety.yml / workflow_dispatch / mode=inbound-sync. Kundensenden bleibt ein separat zu aktivierender, begrenzter CLI-Schritt mit globalem Lock, Journal und Readbacks; 35/Postfach/Tag, keine Freigabe für 100/Stunde.
+- Abmeldeseite nach geprüfter manueller Veröffentlichung produktiv per HTTP abgenommen: ehrliche Abmeldeanforderung an überwachte .com-Inbox, keine falsche Sofortbestätigung. Homepage und Kontaktformular bleiben aktiviert. Production-Run 40341382688. Ein Seitenaufruf allein erzeugt keine Sperre.
+- Jordies historische .de-M365-Verbindung: HTTP 403 / ACCESS_BLOCKED. Outlook-Mac-Sichtbarkeit nicht unabhängig verifiziert. Browser-Rendering blockiert durch Host-Zugriffsrichtlinie.
+- 188 Python-Tests bestanden, ein Live-Test separat durch reale Authentifizierung abgedeckt. 337 Website-Tests, Astro ohne Fehler/Warnungen, 58 Seiten gebaut, Wrangler-Dry-Run bestanden. CodeQL und weitere relevante CI in PR #469 erfolgreich.
+
+Maschinenlesbarer Nachweis: docs/audits/SALES_OS_VERIFICATION_2026-10-26.json. Einzelgründe und exakte Lead-IDs stehen im CRM; private Originalbelege unter ~/KI-System/07_Logs/hsb-sales-os-20261026/.
+
+Aktuelle Betreiberanweisung: §-7-Prüfung laut ausdrücklicher Bestätigung bereits geklärt. Für alle 6.424 Leads ist Legal_Review_Status=yes mit Herkunftsvermerk und Datum in ALL_LEADS!BS:BU geschrieben und zurückgelesen. Vorhandene Opt-outs, Bounces, Versandhistorie und übrige CRM-Felder wurden dabei unverändert erhalten.

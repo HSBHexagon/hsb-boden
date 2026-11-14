@@ -48,9 +48,11 @@ class VacationFollowupResult:
     status: str  # SCHEDULED, FALLBACK_DEFAULT
 
 
-def calculate_next_business_day(date_iso: Optional[str], default_days: int = 14) -> str:
-    """Berechnet den nächsten Werktag (Mo-Fr) nach dem Rückkehrdatum."""
-    today = datetime.date.today()
+def calculate_next_business_day(
+    date_iso: Optional[str], default_days: int = 14, reference_date: Optional[datetime.date] = None
+) -> str:
+    """Berechnet einen Werktag relativ zu einem optionalen, fest definierten Referenzdatum."""
+    today = reference_date if reference_date is not None else datetime.date.today()
     if date_iso:
         try:
             d = datetime.date.fromisoformat(date_iso)
@@ -87,6 +89,7 @@ def build_vacation_followup_email(
     lead_copy["Company"] = company
     anrede = anrede_fuer(lead_copy)
     anrede_esc = html.escape(anrede)
+    company_esc = html.escape(company)
 
     mailbox = f"j-cherino@hsb-boden.com" if flyer.owner_key == "JOEL" else f"j-post@hsb-boden.com"
     lead_id = str(lead.get("Lead_ID") or lead.get("Lead-ID") or "")
@@ -100,7 +103,7 @@ def build_vacation_followup_email(
         f'<p style="margin:0 0 12px 0;">ich hoffe, Sie hatten eine erholsame Urlaubs- bzw. Abwesenheitszeit und '
         f'konnten gut wieder in den Betrieb starten.</p>'
         f'<p style="margin:0 0 12px 0;">Ich knüpfe kurz an meine Nachricht vor Ihrer Abwesenheit bezüglich der '
-        f'säurefesten und hygienischen Industrieböden für {company} an. Da im Produktionsalltag oft wenig Zeit bleibt, '
+        f'säurefesten und hygienischen Industrieböden für {company_esc} an. Da im Produktionsalltag oft wenig Zeit bleibt, '
         f'wollte ich mich kurz erkundigen, ob das Thema Bodenbelastung oder Sanierung aktuell bei Ihnen im Fokus steht.</p>'
         f'<p style="margin:0 0 12px 0;">Unser kompakter Online-Flyer mit Referenzflächen aus der Lebensmittel-, '
         f'Brauerei- und Chemiebranche steht Ihnen hier zur Verfügung:<br>'
@@ -133,7 +136,7 @@ class SmartVacationAgent:
         reference_date: Optional[datetime.date] = None
     ) -> VacationFollowupResult:
         ret_date = extract_return_date(reply_body, reference_date=reference_date)
-        followup_date = calculate_next_business_day(ret_date)
+        followup_date = calculate_next_business_day(ret_date, reference_date=reference_date)
 
         email_data = build_vacation_followup_email(owner, lead, return_date=ret_date)
         status = "SCHEDULED" if ret_date else "FALLBACK_DEFAULT"

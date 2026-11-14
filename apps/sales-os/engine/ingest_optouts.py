@@ -207,11 +207,6 @@ def process_optouts(
                         "range": f"ALL_LEADS!AT{row_num}",
                         "values": [["yes"]]
                     })
-                    # Spalte BE: Pipeline = Abgemeldet
-                    sheet_updates.append({
-                        "range": f"ALL_LEADS!BE{row_num}",
-                        "values": [["Abgemeldet"]]
-                    })
 
                 event_id = f"INBOUND-OPTOUT-{lead_id}"
                 if event_id not in existing_event_ids:
@@ -279,6 +274,12 @@ def suppress_lead_direct(
                 matched = lead
                 break
 
+    if target_email and target_id and (
+        not matched or str(matched.get("lead_id", "")) != target_id
+        or str(matched.get("email", "")).strip().lower() != target_email
+    ):
+        return {"ok": False, "error": "lead_id_email_mismatch"}
+
     row_num = matched["row"] if matched else None
     resolved_id = matched["lead_id"] if matched else (target_id or "WEB-DIRECT")
     resolved_email = matched["email"] if matched else target_email
@@ -292,7 +293,6 @@ def suppress_lead_direct(
         updates.append({"range": f"ALL_LEADS!Z{row_num}", "values": [["no"]]})
         updates.append({"range": f"ALL_LEADS!AR{row_num}", "values": [["opt_out"]]})
         updates.append({"range": f"ALL_LEADS!AT{row_num}", "values": [["yes"]]})
-        updates.append({"range": f"ALL_LEADS!BE{row_num}", "values": [["Abgemeldet"]]})
 
     event_id = f"INBOUND-WEB-OPTOUT-{resolved_id}"
     event_row = None
@@ -312,13 +312,14 @@ def suppress_lead_direct(
         )
 
     purged_drafts = 0
-    try:
-        from com_mailbox_manager import ComMailboxClient
-        for owner in ["JOEL", "JORDI"]:
-            c = ComMailboxClient(owner)
-            purged_drafts += c.purge_drafts_for_recipient(resolved_email)
-    except Exception as e:
-        logger.warning(f"Fehler bei IMAP-Entwurf-Loeschung: {e}")
+    if not dry_run and resolved_email:
+        try:
+            from com_mailbox_manager import ComMailboxClient
+            for owner in ["JOEL", "JORDI"]:
+                c = ComMailboxClient(owner)
+                purged_drafts += c.purge_drafts_for_recipient(resolved_email)
+        except Exception as e:
+            logger.warning(f"Fehler bei IMAP-Entwurf-Loeschung: {e}")
 
     if not dry_run and updates:
         sheets_svc.spreadsheets().values().batchUpdate(

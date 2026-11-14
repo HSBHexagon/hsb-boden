@@ -42,6 +42,7 @@ from reconcile_cloud_mailbox import (
     INTERNAL_DOMAINS,
     get_az_apihub_token,
     call_office365_api,
+    APIHubRateLimited,
     parse_rfc3464_dsn,
     build_inbound_event_row,
 )
@@ -66,7 +67,7 @@ def load_all_leads_index(sheets_svc: Any) -> Tuple[Dict[str, Dict[str, Any]], Se
     logger.info("Lade ALL_LEADS aus Google Sheet...")
     res = sheets_svc.spreadsheets().values().get(
         spreadsheetId=SPREADSHEET_ID,
-        range="ALL_LEADS!A1:BM6425"
+        range="ALL_LEADS!A1:BU6425"
     ).execute()
     rows = res.get("values", [])
     if not rows:
@@ -135,6 +136,11 @@ def scan_mailbox_for_bounces(
                         "failed_recipients": failed_recips,
                         "source_folder": folder,
                     })
+        except APIHubRateLimited:
+            # Drosselung: keine weiteren Ordner abfragen, bereits gefundene Bounces aber verarbeiten.
+            skipped = candidate_folders[candidate_folders.index(folder):]
+            logger.warning(f"[{owner_name}] APIHUB gedrosselt, Scan unvollständig; nicht gescannt: {skipped}")
+            break
         except Exception as e:
             # Folder does not exist or access forbidden
             continue
@@ -145,7 +151,9 @@ def scan_mailbox_for_bounces(
 
 def scan_com_mailbox_for_bounces(
     owner_name: str,
-    limit: int = 100
+    limit: int = 100,
+    move_bounces: bool = False,
+    target_folder: str = "Unzustellbar"
 ) -> List[Dict[str, Any]]:
     """Scans All-Inkl .com IMAP inbox for bounces/NDRs using ComMailboxClient."""
     found_bounces = []
@@ -159,8 +167,10 @@ def scan_com_mailbox_for_bounces(
             body = m.get("body") or ""
             is_bounce, reason, failed_recips = parse_rfc3464_dsn(subj, body)
             if is_bounce:
+                uid = m.get("uid") or m.get("id")
                 found_bounces.append({
-                    "msg_id": m.get("id"),
+                    "uid": uid,
+                    "msg_id": m.get("id") or uid,
                     "internet_message_id": m.get("internet_message_id") or "",
                     "date_str": m.get("date_str") or "",
                     "sender": m.get("from") or "",
@@ -169,6 +179,10 @@ def scan_com_mailbox_for_bounces(
                     "failed_recipients": failed_recips,
                     "source_folder": "INBOX",
                 })
+                if move_bounces and uid:
+                    moved = client.move_message_by_uid(str(uid), source_folder="INBOX", target_folder=target_folder)
+                    if moved:
+                        logger.info(f"[{owner_name}] Bounce-Nachricht UID {uid} nach '{target_folder}' verschoben.")
         logger.info(f"[{owner_name} .com IMAP] {len(msgs)} Nachrichten gescannt -> {len(found_bounces)} Bounce-Nachrichten erkannt.")
     except Exception as e:
         logger.warning(f"[{owner_name} .com IMAP] Fehler beim Abruf: {e}")
@@ -178,7 +192,8 @@ def scan_com_mailbox_for_bounces(
 def process_bounces(
     owner_key: str,
     dry_run: bool = True,
-    limit: int = 50
+    limit: int = 50,
+    move_bounces: Optional[bool] = None,
 ) -> int:
     """Processes bounces for owner and writes back to Google Sheets."""
     assert REAL_EXTERNAL_PROSPECT_SEND_COUNT == 0, "Sicherheits-Invariante verletzt!"
@@ -192,6 +207,9 @@ def process_bounces(
     sheets_svc = get_sheets_service()
     email_to_lead, existing_event_ids = load_all_leads_index(sheets_svc)
 
+    if move_bounces is None:
+        move_bounces = not dry_run
+
     owners = [owner_key] if owner_key != "ALL" else ["JOEL", "JORDI"]
     total_updated = 0
 
@@ -203,7 +221,7 @@ def process_bounces(
 
         bounces = []
         # 1. All-Inkl .com IMAP Inbox Scan
-        bounces.extend(scan_com_mailbox_for_bounces(o, limit=limit))
+        bounces.extend(scan_com_mailbox_for_bounces(o, limit=limit, move_bounces=move_bounces))
 
         # 2. Cloud M365 Scan (falls Token verfuegbar)
         if token and conf:
@@ -258,11 +276,6 @@ def process_bounces(
                             "range": f"ALL_LEADS!BD{row_num}",
                             "values": [[b["reason"]]]
                         })
-                        # Spalte BE: Pipeline = Bounce
-                        sheet_updates.append({
-                            "range": f"ALL_LEADS!BE{row_num}",
-                            "values": [["Bounce"]]
-                        })
 
 
                     # Event logging
@@ -313,13 +326,15 @@ def main():
     parser.add_argument("--owner", choices=["JOEL", "JORDI", "ALL"], default="JOEL", help="Postfach-Eigentuemer")
     parser.add_argument("--apply", action="store_true", default=False, help="Aenderungen ins Google Sheet schreiben")
     parser.add_argument("--limit", type=int, default=100, help="Maximale Nachrichten pro Ordner")
+    parser.add_argument("--move-bounces", action="store_true", default=False, help="Erkannte Bounces aus INBOX nach 'Unzustellbar' verschieben")
     args = parser.parse_args()
 
     dry_run = not args.apply
+    should_move = args.move_bounces or (not dry_run)
     logger.info(f"=== HSB BOUNCE INGESTION ENGINE ===")
-    logger.info(f"Owner: {args.owner} | Modus: {'DRY-RUN' if dry_run else 'APPLY (Live-Sync)'}")
+    logger.info(f"Owner: {args.owner} | Modus: {'DRY-RUN' if dry_run else 'APPLY (Live-Sync)'} | Move Bounces: {should_move}")
 
-    updated = process_bounces(args.owner, dry_run=dry_run, limit=args.limit)
+    updated = process_bounces(args.owner, dry_run=dry_run, limit=args.limit, move_bounces=should_move)
     logger.info(f"Fertig: {updated} Bounces verarbeitet.")
 
 

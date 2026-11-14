@@ -12,6 +12,7 @@ Funktionen:
 from __future__ import annotations
 
 import argparse
+from contextlib import contextmanager
 import email
 from email.header import Header
 from email.mime.application import MIMEApplication
@@ -21,6 +22,7 @@ from email.utils import formatdate, make_msgid
 import html
 import hashlib
 import imaplib
+import logging
 import os
 from pathlib import Path
 import re
@@ -36,6 +38,8 @@ if str(ENGINE_DIR) not in sys.path:
     sys.path.insert(0, str(ENGINE_DIR))
 
 from hsb_config import get_com_mailbox_config
+
+logger = logging.getLogger(__name__)
 
 
 def html_to_plaintext(source):
@@ -56,8 +60,95 @@ def html_to_plaintext(source):
     return ''.join(parser.parts).strip()
 
 
+_URL_IN_TEXT_RE = re.compile(r'https?://[^\s<>"\x27]+')
+
+
+def plaintext_to_html(text):
+    """Absatzgetreues HTML zum Text: Leerzeile -> neuer <p>, Zeilenumbruch -> <br>.
+
+    Outlook öffnet IMAP-Entwürfe zum Bearbeiten im HTML-Editor; ohne HTML-Teil gehen
+    dort die Absätze verloren. Links werden mit dem sichtbaren Text als Ziel verlinkt.
+    """
+    paragraphs = [p for p in re.split(r'\n\s*\n', text.replace('\r\n', '\n').strip()) if p.strip()]
+    out = []
+    for para in paragraphs:
+        lines = []
+        for line in para.split('\n'):
+            pos, chunks = 0, []
+            for m in _URL_IN_TEXT_RE.finditer(line):
+                chunks.append(html.escape(line[pos:m.start()]))
+                url = html.escape(m.group(0), quote=True)
+                chunks.append(f'<a href="{url}">{url}</a>')
+                pos = m.end()
+            chunks.append(html.escape(line[pos:]))
+            lines.append(''.join(chunks))
+        out.append('<p style="margin:0 0 12px 0;">' + '<br>\n'.join(lines) + '</p>')
+    return ('<!DOCTYPE html>\n<html><head><meta charset="utf-8"></head>\n'
+            '<body style="font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.5;color:#1f2937;">\n'
+            + '\n'.join(out) + '\n</body></html>\n')
+
+
+# Nur innerhalb von inbound_message_cache() gesetzt: {(Postfach, Ordner, UIDVALIDITY): {UID: Nachricht}}.
+_INBOUND_CACHE = None
+
+
+@contextmanager
+def inbound_message_cache():
+    """Innerhalb dieses Blocks lädt fetch_inbound_messages jede Nachricht nur einmal vom Server.
+
+    Die Versandgesundheit wird vor jeder einzelnen Mail geprüft und las dafür jedes Mal beide Posteingänge und
+    Bounce-Ordner vollständig neu. Eine Nachricht ist unter (Ordner, UIDVALIDITY, UID) unveränderlich; deshalb
+    genügt es, die Liste der UIDs weiterhin bei jedem Aufruf live zu lesen und nur neue Nachrichten nachzuladen.
+    Neue, verschobene und gelöschte Nachrichten wirken sich dadurch unverändert sofort aus."""
+    global _INBOUND_CACHE
+    previous = _INBOUND_CACHE
+    _INBOUND_CACHE = {} if previous is None else previous
+    try:
+        yield
+    finally:
+        _INBOUND_CACHE = previous
+
+
+def _selected_uidvalidity(imap):
+    """UIDVALIDITY des gerade ausgewählten Ordners; None, wenn der Server sie nicht eindeutig nennt (dann kein Cache)."""
+    try:
+        data = imap.response('UIDVALIDITY')[1]
+        value = data[0] if data else None
+        return value.decode('ascii') if isinstance(value, bytes) and value.isdigit() else None
+    except Exception:  # noqa: BLE001 - ohne belastbare UIDVALIDITY wird schlicht alles neu geladen
+        return None
+
+
 def stable_inbound_id(raw, owner, rfc_message_id=''):
     return str(rfc_message_id).strip() or f'COM_IMAP:{owner}:SHA256:{hashlib.sha256(raw).hexdigest()}'
+
+
+# Kundenversand: Die Antwort auf das Ende von DATA darf dauern (Spamprüfung beim Provider). Ein zu kurzes
+# Zeitlimit erzeugt genau den unklaren Zustand, der jeden Folgeversand sperrt.
+SMTP_SEND_TIMEOUT_SECONDS = 120
+SMTP_CONNECT_ATTEMPTS = 3
+SMTP_CONNECT_BACKOFF_SECONDS = 5
+
+
+class SmtpNotAccepted(RuntimeError):
+    """Der Server hat die Nachricht nachweislich nicht angenommen.
+
+    stage: connect, login, mail, rcpt oder data (ausdrückliche Ablehnung). Die Meldung enthält bewusst
+    weder Empfänger noch Servertext; der Servertext steht für die Einordnung in `detail`."""
+
+    def __init__(self, stage, code=0, detail=b''):
+        self.stage = stage
+        self.code = int(code or 0)
+        self.detail = detail if isinstance(detail, bytes) else str(detail or '').encode('utf-8', 'replace')
+        super().__init__(f'SMTP_NOT_ACCEPTED:{stage}:{self.code or "-"}')
+
+    @property
+    def permanent(self):
+        return 500 <= self.code < 600
+
+    @property
+    def reason(self):
+        return f'{self.stage.upper()}_{self.code}' if self.code else f'{self.stage.upper()}_UNREACHABLE'
 
 
 class ComMailboxClient:
@@ -114,14 +205,14 @@ class ComMailboxClient:
                     pass
         return counts
 
-    def _assert_draft_capacity(self, imap, recipients):
+    def _assert_draft_capacity(self, imap, recipients, max_existing=50):
         """Existing target met or ambiguous retry: preserve all originals."""
         from email.utils import getaddresses
         typ,_=imap.select(self.cfg['drafts_folder'],readonly=True)
         if typ!='OK':raise RuntimeError('DRAFT_FOLDER_UNAVAILABLE')
         typ,data=imap.uid('search',None,'ALL')
         if typ!='OK':raise RuntimeError('DRAFT_SEARCH_FAILED')
-        if data and data[0] and len(data[0].split())>=50:
+        if data and data[0] and len(data[0].split())>=max_existing:
             raise RuntimeError('DRAFT_TARGET_ALREADY_MET: reconcile existing drafts')
         normalized=[r.strip().lower() for r in recipients]
         if len(normalized)!=len(set(normalized)):raise RuntimeError('DUPLICATE_DRAFT_INPUT')
@@ -167,10 +258,16 @@ class ComMailboxClient:
         self,
         to_email: str,
         subject: str,
-        body_html: str,
+        body_html: str = '',
         flyer_bytes: Optional[bytes] = None,
         flyer_filename: Optional[str] = 'HSB-HEXAGON-Industrieboeden-Flyer.pdf',
-        custom_message_id: Optional[str] = None
+        custom_message_id: Optional[str] = None,
+        body_text: Optional[str] = None,
+        template_id: Optional[str] = None,
+        in_reply_to: Optional[str] = None,
+        references: Optional[str] = None,
+        lead_id: Optional[str] = None,
+        copy_rev: Optional[str] = None
     ) -> Tuple[bytes, str]:
         if not to_email or '@' not in to_email:
             raise ValueError(f'Ungueltige Empfaengeradresse: {to_email}')
@@ -185,6 +282,25 @@ class ComMailboxClient:
         msg_id = custom_message_id or make_msgid(domain='hsb-boden.com')
         msg['Message-ID'] = msg_id
         msg['X-Unsent'] = '1'
+        if body_text is not None:
+            # v2: multipart/alternative aus text/plain und gleichlautendem text/html, kein Anhang,
+            # nie Reply-To. CRLF und quoted-printable, damit Outlook (Lesen und Bearbeiten) die
+            # Absätze behält.
+            from email import policy as email_policy
+            if lead_id:
+                msg['X-HSB-Lead-ID'] = lead_id
+            if template_id:
+                msg['X-HSB-Template-ID'] = template_id
+            if copy_rev:
+                msg['X-HSB-Copy-Rev'] = copy_rev
+            if in_reply_to:
+                msg['In-Reply-To'] = in_reply_to
+            if references:
+                msg['References'] = references
+            plain = body_text.replace('\r\n', '\n').replace('\r', '\n')
+            msg.set_content(plain, charset='utf-8', cte='quoted-printable')
+            msg.add_alternative(body_html or plaintext_to_html(plain), subtype='html', charset='utf-8', cte='quoted-printable')
+            return msg.as_bytes(policy=email_policy.SMTP), msg_id
         ids = set(re.findall(r'HSB-\d{8}-\d+',unquote(body_html)))
         if len(ids)==1:
             msg['X-HSB-Lead-ID']=next(iter(ids))
@@ -200,7 +316,7 @@ class ComMailboxClient:
 
         return msg.as_bytes(), msg_id
 
-    def create_drafts_batch(self, items: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    def create_drafts_batch(self, items: List[Dict[str, Any]], max_existing: int = 50) -> List[Dict[str, Any]]:
         """Erstellt eine Liste von Entwuerfen in einer einzigen persistenten IMAP-Verbindung."""
         results = []
         flyer_cache: Dict[str, bytes] = {}
@@ -212,7 +328,7 @@ class ComMailboxClient:
                     flyer_cache[fpath] = f.read()
 
         with self._get_imap() as imap:
-            self._assert_draft_capacity(imap,[it['to_email'] for it in items])
+            self._assert_draft_capacity(imap,[it['to_email'] for it in items],max_existing)
             folder = self.cfg['drafts_folder']
             for it in items:
                 fpath = it.get('flyer_path')
@@ -221,10 +337,16 @@ class ComMailboxClient:
                     raw_bytes, mid = self.build_draft_message(
                         to_email=it['to_email'],
                         subject=it['subject'],
-                        body_html=it['body_html'],
+                        body_html=it.get('body_html', ''),
                         flyer_bytes=fbytes,
                         flyer_filename=it.get('flyer_filename'),
-                        custom_message_id=it.get('custom_message_id')
+                        custom_message_id=it.get('custom_message_id'),
+                        body_text=it.get('body_text'),
+                        template_id=it.get('template_id'),
+                        in_reply_to=it.get('in_reply_to'),
+                        references=it.get('references'),
+                        lead_id=it.get('lead_id') if it.get('body_text') is not None else None,
+                        copy_rev=it.get('copy_rev')
                     )
                     res, data = imap.append(
                         folder,
@@ -249,7 +371,8 @@ class ComMailboxClient:
         flyer_filename: Optional[str] = "HSB-HEXAGON-Industrieboeden-Flyer.pdf",
         custom_message_id: Optional[str] = None,
         bcc_email: Optional[str] = None,
-        body_plain: Optional[str] = None
+        body_plain: Optional[str] = None,
+        extra_allowed_recipients: Optional[set] = None
     ) -> Tuple[bool, str]:
         """
         Versendet eine E-Mail ueber SMTP-SSL und legt eine Kopie im Ordner Gesendet ab.
@@ -260,7 +383,7 @@ class ComMailboxClient:
             raise ValueError(f"Ungueltige Empfaengeradresse: {to_email}")
 
         from outbound_safety import require_internal_test
-        require_internal_test(to_email, bcc_email)
+        require_internal_test(to_email, bcc_email, extra_allowed_recipients)
 
         # Vollstaendiges HTML-Dokument sicherstellen (verhindert HTML_MIME_NO_HTML_TAG)
         html_content = body_html.strip()
@@ -353,12 +476,59 @@ class ComMailboxClient:
         ).fetchone()
         if row != (self.owner, mid, 'SMTP_UNKNOWN'):
             raise PermissionError('No durable matching SMTP reservation')
-        with smtplib.SMTP_SSL(self.cfg['smtp_server'], self.cfg['smtp_port'],
-                context=self.ssl_context, timeout=self.timeout) as smtp:
-            smtp.login(self.cfg['username'], self.cfg['password'])
-            refused = smtp.sendmail(self.cfg['email'], [recipient], raw_bytes)
-            if refused:
-                raise RuntimeError('SMTP_RECIPIENT_REFUSED')
+        for attempt in range(1, SMTP_CONNECT_ATTEMPTS + 1):
+            try:
+                return self._smtp_transaction(raw_bytes, recipient)
+            except SmtpNotAccepted as exc:
+                # Nur ein reiner Verbindungsfehler wird wiederholt: dort hat der Server noch nichts gesehen.
+                # Anmelde- und Protokollablehnungen sind Antworten des Servers und werden nicht erneut versucht.
+                if exc.stage != 'connect' or attempt == SMTP_CONNECT_ATTEMPTS:
+                    raise
+                time.sleep(SMTP_CONNECT_BACKOFF_SECONDS * attempt)
+
+    def _smtp_transaction(self, raw_bytes, recipient):
+        """Eine SMTP-Transaktion mit Phasenprotokoll.
+
+        Bis einschließlich RCPT hat der Server den Inhalt nicht erhalten; lehnt er DATA ausdrücklich ab,
+        hat er ihn nicht angenommen. Beides meldet SmtpNotAccepted. Bricht die Verbindung dagegen nach
+        Beginn der Inhaltsübertragung ohne Antwort ab, bleibt die Annahme unklar und der ursprüngliche
+        Fehler wird unverändert weitergereicht (kein automatischer zweiter Versuch)."""
+        stage, reject = 'connect', None
+        try:
+            with smtplib.SMTP_SSL(self.cfg['smtp_server'], self.cfg['smtp_port'],
+                    context=self.ssl_context, timeout=SMTP_SEND_TIMEOUT_SECONDS) as smtp:
+                stage = 'login'
+                smtp.login(self.cfg['username'], self.cfg['password'])
+                stage = 'mail'
+                smtp.ehlo_or_helo_if_needed()
+                options = [f'size={len(raw_bytes)}'] if smtp.does_esmtp and smtp.has_extn('size') else []
+                code, reply = smtp.mail(self.cfg['email'], options)
+                if code != 250:
+                    reject = ('mail', code, reply)
+                else:
+                    stage = 'rcpt'
+                    code, reply = smtp.rcpt(recipient)
+                    if code not in (250, 251):
+                        reject = ('rcpt', code, reply)
+                    else:
+                        stage = 'data'
+                        code, reply = smtp.data(raw_bytes)
+                        if code != 250:
+                            reject = ('data', code, reply)
+                        else:
+                            stage = 'accepted'
+        except smtplib.SMTPDataError as exc:
+            # Der Server hat DATA nicht mit 354 eröffnet: kein Inhalt übertragen.
+            reject = reject or ('data', exc.smtp_code, exc.smtp_error)
+        except Exception as exc:  # noqa: BLE001 - Einordnung nach Phase, Unklares wird weitergereicht
+            if stage == 'accepted' or reject:
+                pass  # Fehler erst beim Abmelden (QUIT): das Ergebnis der Transaktion steht bereits fest.
+            elif stage in ('connect', 'login', 'mail', 'rcpt'):
+                reject = (stage, getattr(exc, 'smtp_code', 0), getattr(exc, 'smtp_error', b'') or type(exc).__name__)
+            else:
+                raise
+        if reject:
+            raise SmtpNotAccepted(*reject)
 
     def list_drafts(self, limit: int = 10) -> List[Dict[str, Any]]:
         """Liest die neuesten Entwuerfe aus dem Entwurfsordner."""
@@ -415,44 +585,68 @@ class ComMailboxClient:
                         })
         return items
 
-    def fetch_inbound_messages(self, limit: int = 100) -> List[Dict[str, Any]]:
-        """Liest eingehende Nachrichten aus dem Posteingang (INBOX)."""
-        items = []
-        with self._get_imap() as imap:
-            res, _ = imap.select(self.cfg['inbox_folder'], readonly=True)
-            if res != 'OK':
-                return items
-            typ, data = imap.search(None, 'ALL')
-            if not data or not data[0]:
-                return items
-            msg_nums = data[0].split()
-            for num in (msg_nums[-limit:] if limit else msg_nums):
-                typ, msg_data = imap.fetch(num, '(BODY.PEEK[])')
-                for part in msg_data:
-                    if isinstance(part, tuple):
-                        parsed = email.message_from_bytes(part[1])
-                        body = ""
-                        if parsed.is_multipart():
-                            for p in parsed.walk():
-                                if p.get_content_type() == "message/delivery-status":
-                                    body += p.as_string() + "\n"
-                                if p.get_content_type() in ("text/plain", "text/html"):
-                                    payload = p.get_payload(decode=True)
-                                    if payload:
-                                        body += payload.decode(errors='replace') + "\n"
-                        else:
-                            payload = parsed.get_payload(decode=True)
+    def fetch_inbound_messages(self, limit: int = 100, *, folder: str | None = None) -> List[Dict[str, Any]]:
+        """Vollständiger UID-basierter Inbound-Snapshot; Lesefehler niemals als leer ausgeben."""
+        target_folder = folder or self.cfg['inbox_folder']
+        for attempt in range(3):
+            items = []
+            with self._get_imap() as imap:
+                res, _ = imap.select(target_folder, readonly=True)
+                if res != 'OK':
+                    if folder is not None:
+                        # A missing bounce folder is empty only if IMAP LIST proves it does not exist.
+                        listed, boxes = imap.list('', target_folder)
+                        if listed == 'OK' and not any(boxes or []):
+                            return []
+                        raise RuntimeError('BOUNCE_FOLDER_SELECT_FAILED')
+                    raise RuntimeError('INBOX_SELECT_FAILED')
+                typ, data = imap.uid('search', None, 'ALL')
+                if typ != 'OK' or not data:
+                    raise RuntimeError('INBOX_SEARCH_FAILED')
+                uids = data[0].split() if data[0] else []
+                known = None
+                if _INBOUND_CACHE is not None:
+                    validity = _selected_uidvalidity(imap)
+                    if validity:
+                        known = _INBOUND_CACHE.setdefault((self.owner, target_folder, validity), {})
+                for uid in (uids[-limit:] if limit else uids):
+                    if known is not None and uid in known:
+                        items.append(dict(known[uid]))
+                        continue
+                    typ, data = imap.uid('fetch', uid, '(BODY.PEEK[])')
+                    parts = [part[1] for part in data or [] if isinstance(part, tuple)] if typ == 'OK' else []
+                    if len(parts) != 1:
+                        raise RuntimeError('INBOX_FETCH_INCOMPLETE')
+                    raw = parts[0]
+                    parsed = email.message_from_bytes(raw)
+                    bodies = []
+                    for part in parsed.walk():
+                        if part.get_content_type() == 'message/delivery-status':
+                            bodies.append(part.as_string())
+                        elif part.get_content_type() in ('text/plain', 'text/html'):
+                            payload = part.get_payload(decode=True)
                             if payload:
-                                body = payload.decode(errors='replace')
-                        items.append({
-                            'id': stable_inbound_id(part[1],self.owner,parsed.get('Message-ID') or ''),
-                            'date_str': str(parsed.get('Date') or ''),
-                            'from': str(parsed.get('From') or ''),
-                            'to': str(parsed.get('To') or ''),
-                            'subject': str(parsed.get('Subject') or ''),
-                            'body': body,
-                            'internet_message_id': str(parsed.get('Message-ID') or ''),
-                        })
+                                bodies.append(payload.decode(errors='replace'))
+                    uid_str = uid.decode("ascii", errors="ignore") if isinstance(uid, bytes) else str(uid)
+                    item = {
+                        'uid': uid_str,
+                        'id': stable_inbound_id(raw, self.owner, parsed.get('Message-ID') or ''),
+                        'date_str': str(parsed.get('Date') or ''),
+                        'from': str(parsed.get('From') or ''),
+                        'to': str(parsed.get('To') or ''),
+                        'subject': str(parsed.get('Subject') or ''),
+                        'body': '\n'.join(bodies),
+                        'internet_message_id': str(parsed.get('Message-ID') or ''),
+                    }
+                    if known is not None:
+                        known[uid] = item
+                    items.append(dict(item))
+                typ, final = imap.uid('search', None, 'ALL')
+                if typ == 'OK' and final and (final[0].split() if final[0] else []) == uids:
+                    return items
+                time.sleep(1.0)
+            if attempt == 2:
+                return items
         return items
 
     def clean_test_drafts(self, marker: str = 'TEST') -> int:
@@ -507,11 +701,108 @@ class ComMailboxClient:
             typ, data = imap.search(None, 'HEADER', 'TO', target)
             if not data or not data[0]:
                 return 0
+            from email.utils import getaddresses
+            # IMAP HEADER TO ist eine Teilstring-Suche (ann@ trifft joann@): exakt nachprüfen.
             for num in data[0].split():
+                typ, msg_data = imap.fetch(num, '(BODY.PEEK[HEADER.FIELDS (TO)])')
+                raw = b''.join(p[1] for p in (msg_data or []) if isinstance(p, tuple))
+                parsed = email.message_from_bytes(raw)
+                recipients = {addr.strip().lower() for _, addr in getaddresses(parsed.get_all('To', []))}
+                if target not in recipients:
+                    continue
                 imap.store(num, '+FLAGS', r'\Deleted')
                 deleted += 1
-            imap.expunge()
+            if deleted:
+                imap.expunge()
         return deleted
+
+    def delete_draft_by_uid(self, uid: str, folder: str = None) -> bool:
+        """Loescht einen Entwurf anhand seiner UID nach erfolgreichem Versand."""
+        target_folder = folder or self.cfg.get('drafts_folder', 'INBOX.Drafts')
+        try:
+            with self._get_imap() as imap:
+                res, _ = imap.select(target_folder)
+                if res != 'OK':
+                    return False
+                store_res = imap.uid('store', str(uid), '+FLAGS', r'(\Deleted)')
+                if isinstance(store_res, tuple) and store_res and store_res[0] != 'OK':
+                    logger.warning(f"[{self.owner}] delete_draft_by_uid STORE fehlgeschlagen fuer UID {uid} in {target_folder}: {store_res}")
+                    return False
+                if hasattr(imap, 'expunge'):
+                    exp_res = imap.expunge()
+                    if isinstance(exp_res, tuple) and exp_res and exp_res[0] != 'OK':
+                        logger.warning(f"[{self.owner}] delete_draft_by_uid EXPUNGE fehlgeschlagen fuer UID {uid} in {target_folder}: {exp_res}")
+                        return False
+            return True
+        except Exception as exc:
+            logger.warning(f"[{self.owner}] delete_draft_by_uid({uid}) in {target_folder} fehlgeschlagen: {exc}")
+            return False
+
+    def purge_drafts_by_identity(
+        self,
+        *,
+        lead_id: str = "",
+        message_id: str = "",
+        recipient: str = "",
+        folder: str = None,
+    ) -> int:
+        """Loescht alle Entwurfskopien zur selben Lead-ID, Message-ID oder Empfaengeradresse."""
+        from draft_purge import purge_owner_sent_drafts
+
+        target_folder = folder or self.cfg.get('drafts_folder', 'INBOX.Drafts')
+        sent_emails = {recipient.strip().lower()} if recipient and str(recipient).strip() else set()
+        sent_lead_ids = {lead_id.strip()} if lead_id and str(lead_id).strip() else set()
+        sent_message_ids = {message_id.strip().lower()} if message_id and str(message_id).strip() else set()
+        if not (sent_emails or sent_lead_ids or sent_message_ids):
+            return 0
+        try:
+            with self._get_imap() as imap:
+                return purge_owner_sent_drafts(
+                    imap,
+                    target_folder,
+                    sent_emails,
+                    sent_lead_ids=sent_lead_ids,
+                    sent_message_ids=sent_message_ids,
+                    apply=True,
+                )
+        except Exception as exc:
+            logger.warning(f"[{self.owner}] purge_drafts_by_identity in {target_folder} fehlgeschlagen: {exc}")
+            return 0
+
+    def ensure_folder(self, folder_name: str) -> bool:
+        """Stellt sicher, dass ein IMAP-Ordner existiert (z. B. 'Unzustellbar')."""
+        folder_clean = folder_name.strip('"')
+        try:
+            with self._get_imap() as imap:
+                typ, folders = imap.list()
+                existing = [f.decode(errors='ignore').split(' "/" ')[-1].strip(' "') for f in (folders or [])]
+                if folder_clean in existing:
+                    return True
+                typ, res = imap.create(f'"{folder_clean}"')
+                return typ == "OK"
+        except Exception as e:
+            logger.warning(f"[{self.owner}] Fehler beim Anlegen des Ordners {folder_clean}: {e}")
+            return False
+
+    def move_message_by_uid(self, uid: str, source_folder: str = "INBOX", target_folder: str = "Unzustellbar") -> bool:
+        """Verschiebt eine Nachricht per UID atomar in einen Zielordner."""
+        clean_target = target_folder.strip('"')
+        if not self.ensure_folder(clean_target):
+            return False
+        try:
+            with self._get_imap() as imap:
+                res, _ = imap.select(source_folder, readonly=False)
+                if res != 'OK':
+                    return False
+                typ, _ = imap.uid("COPY", str(uid), f'"{clean_target}"')
+                if typ != "OK":
+                    return False
+                imap.uid("STORE", str(uid), "+FLAGS", r'(\Deleted)')
+                imap.expunge()
+                return True
+        except Exception as e:
+            logger.warning(f"[{self.owner}] Fehler beim Verschieben von UID {uid} nach {clean_target}: {e}")
+            return False
 
 
 def print_status():
@@ -528,6 +819,9 @@ def print_status():
         smtp_status = 'OK' if conn['smtp'] else 'FAIL'
         print(f'{owner:<10} | {conn["email"]:26} | {imap_status:<6} | {smtp_status:<6} | {counts["drafts"]:>8} | {counts["sent"]:>6} | {counts["inbox"]:>6}')
     print('=' * 80)
+
+
+ComMailboxManager = ComMailboxClient
 
 
 if __name__ == '__main__':

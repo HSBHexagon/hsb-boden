@@ -57,6 +57,11 @@ def load_from_csv(path: str | Path) -> list[dict]:
                 for nr, r in enumerate(reader, start=2) if any(r)]
 
 
+def has_export() -> bool:
+    """Liegt ein Sheet-Export vor? Fehlt z. B. auf dem chunk-Sidecar (data/*.xlsx ist dort per .gitignore ausgenommen)."""
+    return any(DATA_DIR.glob("*.xlsx"))
+
+
 def _newest_xlsx() -> Path:
     files = sorted(DATA_DIR.glob("*.xlsx"), key=lambda p: p.stat().st_mtime)
     if not files:

@@ -7,7 +7,7 @@ export const articles: Article[] = [
     title: "PU-Beton oder keramischer Industrieboden?",
     seoTitle: "PU-Beton oder keramischer Industrieboden? | HSB Wissen",
     description:
-      "Detaillierter Systemvergleich für die Lebensmittel- und Pharmaindustrie: Wann PU-Beton (Polyurethanbeton) die beste Wahl ist und wann keramische Beläge technische Vorteile bieten.",
+      "Systemvergleich für Lebensmittel- und Pharmaindustrie: Wann PU-Beton die beste Wahl ist und wann keramische Beläge technische Vorteile bieten.",
     h1: "PU-Beton oder keramischer Industrieboden: Ein technischer Systemvergleich",
     category: "Systemvergleich",
     readTime: "12 Minuten",
@@ -59,7 +59,7 @@ export const articles: Article[] = [
     title: "Warum Industrieböden in Molkereien versagen",
     seoTitle: "Ursachen für Bodenschäden in Molkereien | HSB Wissen",
     description:
-      "Fachartikel über Milchsäure, Thermoschocks und Reinigungschemie: Warum Molkereiböden oft nach wenigen Jahren sanierungsbedürftig sind und wie Sie dies verhindern.",
+      "Milchsäure, Thermoschocks, Reinigungschemie: Warum Molkereiböden oft nach wenigen Jahren saniert werden müssen und wie Sie das verhindern.",
     h1: "Schwachstellenanalyse: Warum Industrieböden in Molkereien versagen",
     category: "Molkerei",
     readTime: "10 Minuten",
@@ -110,7 +110,7 @@ export const articles: Article[] = [
     slug: "saeurefeste-fliesen-industrieboden",
     title: "Säurefeste Fliesen im Industrieboden",
     seoTitle:
-      "Säurefeste Fliesen im Industrieboden richtig planen | HSB Wissen",
+      "Säurefeste Fliesen im Industrieboden planen | HSB Wissen",
     description:
       "Alles über säurefeste Fliesen: Materialwahl, Verlegetechniken, chemische Beständigkeit und warum die Fuge das wichtigste Bauteil ist.",
     h1: "Säurefeste Fliesen: Hochleistungskeramik für extreme Bedingungen",
@@ -161,9 +161,9 @@ export const articles: Article[] = [
   {
     slug: "entwaesserung-gefaelle-produktionsbereiche",
     title: "Entwässerung und Gefälle in Produktionsbereichen",
-    seoTitle: "Entwässerung & Gefälle für Industrieböden planen | HSB Wissen",
+    seoTitle: "Entwässerung & Gefälle im Industrieboden | HSB Wissen",
     description:
-      "Warum Gefälleplanung und Rinnensysteme die Basis für Hygiene und Arbeitssicherheit in der Produktion bilden. Technische Details zu Rinnen, Abläufen und Anschlüssen.",
+      "Warum Gefälle und Rinnensysteme die Basis für Hygiene und Arbeitssicherheit in der Produktion sind – mit Details zu Rinnen, Abläufen und Anschlüssen.",
     h1: "Entwässerung und Gefälle: Das Wasserleitsystem der Produktion",
     category: "Entwässerung",
     readTime: "8 Minuten",

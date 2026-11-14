@@ -1,25 +1,71 @@
 ---
+import { projectSrcset } from "../../lib/responsiveImage";
+
 interface Props {
   eyebrow?: string;
   title: string;
   text: string;
   ctaLabel?: string;
   ctaHref?: string;
+  /** Öffnet das Reparatur-Modal; ctaHref bleibt Fallback ohne JavaScript. */
+  ctaOpensRepairModal?: boolean;
+  /** Reales Projektfoto neben der Überschrift, damit die Ausführung im ersten Bildschirm sichtbar ist. */
+  image?: { src: string; alt: string; caption?: string };
+  /** Auf Seiten mit eigener Hauptaufgabe (Kontaktformular) lenkt der Referenzlink nur ab. */
+  hideReferencesLink?: boolean;
 }
 
-const { eyebrow = "HSB Hexagon Säurebau", title, text, ctaLabel = "Ersteinschätzung anfordern", ctaHref = "/kontakt/" } = Astro.props;
+const {
+  eyebrow = "HSB Hexagon Säurebau",
+  title,
+  text,
+  ctaLabel = "Projekt besprechen",
+  ctaHref = "/kontakt/",
+  ctaOpensRepairModal = false,
+  image,
+  hideReferencesLink = false,
+} = Astro.props;
 
-const currentPath = Astro.url.pathname;
+const showPrimary = currentPathIsNot(ctaHref);
+const showReferences = !hideReferencesLink && currentPathIsNot("/referenzen/");
+
+function currentPathIsNot(href: string) {
+  return Astro.url.pathname !== href;
+}
+
 ---
 
-<section class="section bg-hsb-mist">
-  <div class="container max-w-5xl">
-    <p class="eyebrow">{eyebrow}</p>
-    <h1 class="h1 mt-4">{title}</h1>
-    <p class="lead mt-6 max-w-3xl">{text}</p>
-    <div class="mt-8 flex flex-wrap gap-3">
-      {currentPath !== ctaHref && <a class="button-primary" href={ctaHref}>{ctaLabel}</a>}
-      {currentPath !== "/referenzen/" && <a class="button-secondary-dark" href="/referenzen/">Referenzen ansehen</a>}
+<section class="page-hero bg-hsb-mist">
+  <div class:list={["container", image && "grid items-center gap-8 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)] lg:gap-12"]}>
+    <div class:list={[!image && "max-w-4xl"]}>
+      <p class="eyebrow">{eyebrow}</p>
+      <h1 class="h1 mt-3">{title}</h1>
+      <p class="lead mt-5 max-w-[62ch]">{text}</p>
+      {(showPrimary || showReferences) && (
+        <div class="mt-7 flex flex-wrap gap-3">
+          {showPrimary && <a class="button-primary" href={ctaHref} data-open-repair-modal={ctaOpensRepairModal ? "" : undefined}>{ctaLabel}</a>}
+          {showReferences && <a class="button-secondary-dark" href="/referenzen/">Referenzen ansehen</a>}
+        </div>
+      )}
     </div>
+    {image && (
+      <figure class="overflow-hidden rounded-[4px] border border-hsb-line bg-white">
+        <img
+          src={image.src}
+          srcset={projectSrcset(image.src)}
+          sizes="(min-width: 1024px) 520px, calc(100vw - 32px)"
+          alt={image.alt}
+          class="aspect-[16/9] w-full object-cover object-center lg:aspect-[4/3]"
+          fetchpriority="high"
+          loading="eager"
+          decoding="async"
+          width="1200"
+          height="900"
+        />
+        <figcaption class="border-t border-hsb-line px-4 py-3 text-xs font-bold leading-5 text-hsb-steel">
+          {image.caption ?? "Projektfläche aus dem HSB-Arbeitsumfeld."}
+        </figcaption>
+      </figure>
+    )}
   </div>
 </section>

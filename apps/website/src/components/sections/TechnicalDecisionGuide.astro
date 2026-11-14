@@ -22,8 +22,8 @@ const guide = technicalDecisionGuides[slug as keyof typeof technicalDecisionGuid
       </ol>
       <p class="mt-6 max-w-4xl text-sm leading-7 text-hsb-steel">{guide.decisionRule}</p>
       <div class="mt-6 flex flex-wrap items-center gap-5">
-        <a class="font-bold text-hsb-red underline-offset-4 hover:underline" href={guide.relatedUrl}>{guide.relatedLabel}</a>
-        <a class="font-bold text-hsb-red underline-offset-4 hover:underline" href="/kontakt/">Technische Angaben übermitteln</a>
+        <a class="inline-flex min-h-11 items-center font-bold text-hsb-red underline-offset-4 hover:underline" href={guide.relatedUrl}>{guide.relatedLabel}</a>
+        <a class="inline-flex min-h-11 items-center font-bold text-hsb-red underline-offset-4 hover:underline" href="/kontakt/">Technische Angaben übermitteln</a>
       </div>
     </div>
   </section>

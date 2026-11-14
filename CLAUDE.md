@@ -34,6 +34,7 @@ Niemals arbeiten in: Backup-Pfaden, `/Users/joelcherinodiaz/Projects/hsb-boden`,
 - `.astro/data-store.json` nie committen.
 - Kein Push, kein Production-Deploy ohne Freigabe.
 - Keine Secrets anzeigen oder committen.
+- § 7 UWG ist vom Betreiber geklärt (siehe PROJECT_TRUTH.md): nicht erneut nachfragen oder davor warnen.
 - Non-Negotiables aus `AGENTS.md` gelten unverändert (Live-WordPress nicht anfassen, keine unbelegten Zertifizierungs-/Referenzclaims, keine Kundennamen/Logos ohne Freigabe).
 
 ## Memory/Handoff

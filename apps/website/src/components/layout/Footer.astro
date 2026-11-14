@@ -1,7 +1,7 @@
 ---
 import { footerGroups } from "../../data/navigation";
 import { site } from "../../data/site";
-import { ui, type Lang } from "../../lib/i18n";
+import { languages, ui, type Lang } from "../../lib/i18n";
 
 interface Props {
   lang?: Lang;
@@ -15,28 +15,46 @@ const cookieSettingsLabel = ui[lang].cookieSettings;
   <div class="container grid gap-10 pt-14 pb-24 md:pb-14 lg:grid-cols-[1.2fr_2fr]">
     <div>
       <div class="mb-4">
-        <img src="/brand/hsb-boden-logo.png" alt="Hexagon Säurebau GmbH" class="h-12 w-auto object-contain" loading="lazy" width="148" height="48" />
+        <img src="/brand/hsb-boden-logo-dark.png" alt="Hexagon Säurebau GmbH" class="h-12 w-auto object-contain" loading="lazy" width="148" height="48" />
       </div>
       <p class="max-w-md text-sm leading-7 text-white/70">{site.description}</p>
       <p class="mt-6 text-sm text-white/60">Gronau · NRW · Industrieböden, Säureschutz und Sanierung für produktionskritische Bereiche.</p>
       <p class="mt-4 text-sm leading-7 text-white/60">Ausführung mit eigenem, festangestelltem Fachpersonal – ohne wechselnde Subunternehmer. Eingespieltes, branchenspezialisiertes und mehrsprachiges Team mit jahrzehntelanger Erfahrung, von der Detailreparatur bis zur kompletten Systemlösung.</p>
     </div>
-    <div class="grid gap-8 sm:grid-cols-3">
+    <div class="grid grid-cols-2 gap-x-6 gap-y-8 sm:grid-cols-3">
       {footerGroups.map((group) => (
         <div>
           <h2 class="mb-4 text-sm font-black uppercase tracking-wide text-white">{group.title}</h2>
-          <ul class="space-y-3 text-sm text-white/70">
+          <ul class="space-y-1 text-sm text-white/70">
             {group.links.map((link) => (
-              <li><a class="hover:text-white" href={link.href}>{link.label}</a></li>
+              <li><a class="inline-block py-1.5 hover:text-white" href={link.href}>{link.label}</a></li>
             ))}
-            {group.title === "Rechtliches" && (
+            {group.title === "Unternehmen & Team" && (
               <li>
-                <button id="footer-cookie-settings" class="underline-offset-2 hover:text-white hover:underline">{cookieSettingsLabel}</button>
+                <button id="footer-cookie-settings" class="py-1.5 text-left underline-offset-2 hover:text-white hover:underline">{cookieSettingsLabel}</button>
               </li>
             )}
           </ul>
         </div>
       ))}
+    </div>
+  </div>
+
+  <div class="border-t border-white/10 bg-black/40 py-6">
+    <div class="container flex flex-col gap-4 text-xs text-white/60 sm:flex-row sm:items-center sm:justify-between">
+      <nav class="flex flex-wrap items-center gap-x-1 gap-y-0" aria-label="Internationale Sprachversionen">
+        <span class="font-bold text-white/80">Sprachen:</span>
+        {languages.map((l) => (
+          <a
+            href={l.href}
+            class={`inline-flex min-h-11 items-center px-2 transition-colors hover:text-white ${l.code === lang ? "text-white font-bold underline" : ""}`}
+            aria-current={l.code === lang ? "page" : undefined}
+          >
+            {l.title}
+          </a>
+        ))}
+      </nav>
+      <p>© {new Date().getFullYear()} {site.name}. Alle Rechte vorbehalten.</p>
     </div>
   </div>
 </footer>

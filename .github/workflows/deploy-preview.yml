@@ -33,6 +33,7 @@ jobs:
         # requires the Pages preview secret; this only enables the UI path.
         env:
           PUBLIC_LEAD_FORM_ENABLED: "true"
+          PUBLIC_REPAIR_PHOTO_ENABLED: "true"
         run: npm run build
 
       - name: Verify SEO sitemap coverage

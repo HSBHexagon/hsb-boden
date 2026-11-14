@@ -5,7 +5,7 @@ export const keramischeIndustrieboeden: Service = {
   title: "Keramische Industrieböden",
   seoTitle: "Keramische Industrieböden & Rüttelkeramik | HSB",
   description:
-    "Hochbelastbare keramische Industrieböden im Rüttelverfahren: Extrem druckfest, säurebeständig, langlebig und ideal für Lebensmittel-, Molkerei- und Chemiebetriebe.",
+    "Keramische Industrieböden im Rüttelverfahren: druckfest, säurebeständig und langlebig – für Lebensmittel-, Molkerei- und Chemiebetriebe.",
   h1: "Keramische Industrieböden für mechanische Höchstlasten",
   primaryKeyword: "keramischer Industrieboden",
   secondaryKeywords: [

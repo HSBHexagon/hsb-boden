@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  Stündlicher Anstoß des CRM-Abgleichs (Gesendet-Ordner + Antworten/Abmeldungen/Bounces → CRM).
+  Startet nur den GitHub-Workflow sales-os-safety.yml im Modus inbound-sync; dieser kann keine
+  Kundenmails senden (HSB_CUSTOMER_SEND_ENABLED='no'). Ergänzt den GitHub-Cron, der unter Last ausfällt.
+  Installieren: cp … ~/Library/LaunchAgents/ && launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/de.hsb-boden.crm-sync-trigger.plist
+-->
+<plist version="1.0">
+<dict>
+  <key>Label</key><string>de.hsb-boden.crm-sync-trigger</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>/opt/homebrew/bin/gh</string>
+    <string>workflow</string><string>run</string><string>sales-os-safety.yml</string>
+    <string>--repo</string><string>HSBHexagon/hsb-boden</string>
+    <string>--ref</string><string>main</string>
+    <string>-f</string><string>mode=inbound-sync</string>
+  </array>
+  <key>StartCalendarInterval</key><dict><key>Minute</key><integer>47</integer></dict>
+  <key>RunAtLoad</key><false/>
+  <key>StandardOutPath</key><string>/Users/joelcherinodiaz/Library/Logs/hsb-crm-sync-trigger.log</string>
+  <key>StandardErrorPath</key><string>/Users/joelcherinodiaz/Library/Logs/hsb-crm-sync-trigger.log</string>
+</dict>
+</plist>

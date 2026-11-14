@@ -56,6 +56,6 @@ def test_dual_dispatch_filters_bad_permissions_and_duplicate_emails(monkeypatch)
 
 def test_mass_draft_rollout_never_sets_legal_approval():
     for name in ("run_mass_draft_rollout.py", "run_rollout_500_com.py"):
-        code = (ENGINE / name).read_text()
+        code = (ENGINE / name).read_text(encoding="utf-8")
         assert '"Z": "yes"' not in code
         assert '"AS": "CONTRACT_APPROVED"' not in code

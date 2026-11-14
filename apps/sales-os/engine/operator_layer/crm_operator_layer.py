@@ -101,7 +101,8 @@ def main():
         print(f"Zeilentönung: {len(stale_idx)} bestehende =$BE2=-Regeln würden gelöscht, 7 neue angefügt.")
         sys.exit(0)
     sheets.spreadsheets().batchUpdate(spreadsheetId=SID, body={"requests":req}).execute()
-    # 12) Pipeline-Header + Formel
+    # 12) Pipeline-Header + Formel (BE3:BE leeren, damit die ArrayFormula expandieren kann)
+    sheets.spreadsheets().values().clear(spreadsheetId=SID, range="ALL_LEADS!BE3:BE").execute()
     formula = '=ARRAYFORMULA(IF(A2:A="";"";IFS(Y2:Y="yes";"Abgemeldet";AQ2:AQ<>"";"Bounce";(AR2:AR<>"")*(AR2:AR<>"bounced")*(AR2:AR<>"auto_reply_ooo");"Antwort";AO2:AO="sent";"Versendet";AW2:AW<>"";"Entwurf";Z2:Z="yes";"Freigegeben";1=1;"Neu")))'
     sheets.spreadsheets().values().batchUpdate(spreadsheetId=SID, body={"valueInputOption":"USER_ENTERED","data":[{"range":"ALL_LEADS!BE1","values":[["Pipeline"]]},{"range":"ALL_LEADS!BE2","values":[[formula]]}]}).execute()
     print("applied successfully")

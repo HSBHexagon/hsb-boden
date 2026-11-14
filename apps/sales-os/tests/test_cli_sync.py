@@ -25,3 +25,29 @@ def test_cli_sync_dry_run():
     )
     assert res.returncode == 0
     assert "--apply" in res.stdout
+
+
+def test_cli_rescue_bounces_help():
+    cli_path = REPO_ROOT / "apps" / "sales-os" / "engine" / "hsb_cli.py"
+    res = subprocess.run(
+        [sys.executable, str(cli_path), "rescue-bounces", "--help"],
+        capture_output=True,
+        text=True
+    )
+    assert res.returncode == 0
+    assert "--limit" in res.stdout
+    assert "--apply" in res.stdout
+
+
+def test_cli_approve_verified_drafts_help():
+    cli_path = REPO_ROOT / "apps" / "sales-os" / "engine" / "hsb_cli.py"
+    res = subprocess.run(
+        [sys.executable, str(cli_path), "approve-verified-drafts", "--help"],
+        capture_output=True,
+        text=True
+    )
+    assert res.returncode == 0
+    assert "--owner" in res.stdout
+    assert "--audit-dir" in res.stdout
+    assert "--apply" in res.stdout
+

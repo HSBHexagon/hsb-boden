@@ -66,6 +66,10 @@ main :where(input, select, textarea) {
   padding-block: clamp(36px, 6vw, 72px);
 }
 
+.page-hero {
+  padding-block: clamp(40px, 5vw, 76px);
+}
+
 .eyebrow {
   color: #cb0000;
   font-size: 0.75rem;
@@ -83,10 +87,14 @@ main :where(input, select, textarea) {
 }
 
 .h1 {
-  font-size: clamp(2.6rem, 6.5vw, 5.2rem);
-  line-height: 0.94;
-  letter-spacing: -0.02em;
+  /* Unterseiten-Überschrift: bewusst kleiner als früher (max. 83 px), damit
+     Einleitung, Handlungsaufforderung und Projektfoto im ersten Bildschirm
+     stehen. Obergrenze knapp über der Startseiten-Hauptaussage. */
+  font-size: clamp(1.9rem, 1.25rem + 2.9vw, 3.25rem);
+  line-height: 1.06;
+  letter-spacing: -0.022em;
   font-weight: 900;
+  text-wrap: balance;
   /* Lange deutsche Komposita brechen notfalls an der Wortgrenze (break-word).
      Keine Auto-Silbentrennung: sie zerhackt normale Headlines mit zufaelligen
      Trennstrichen (z.B. "Industriebö-den") und liest sich roh statt souveraen. */
@@ -95,10 +103,11 @@ main :where(input, select, textarea) {
 }
 
 .h2 {
-  font-size: clamp(1.8rem, 4vw, 3.2rem);
-  line-height: 1.0;
+  font-size: clamp(1.55rem, 1.2rem + 1.6vw, 2.375rem);
+  line-height: 1.12;
   letter-spacing: -0.02em;
   font-weight: 900;
+  text-wrap: balance;
   overflow-wrap: break-word;
   hyphens: manual;
 }

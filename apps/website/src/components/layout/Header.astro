@@ -69,9 +69,9 @@ const phoneHref = site.phone.replace("(0)", "").replace(/[^\d+]/g, "");
 
     <!-- Rechter Cluster: Navigation, Sprache und CTA bilden eine bewusste Gruppe -->
     <div class="flex min-w-0 items-center gap-3 xl:gap-4">
-      <nav class="nav-links hidden min-w-0 flex-wrap items-center gap-x-3 gap-y-2 text-xs font-bold lg:flex xl:gap-4 xl:text-sm" aria-label="Hauptnavigation">
+      <nav class="nav-links hidden min-w-0 flex-wrap items-center gap-x-3 gap-y-0 text-xs font-bold lg:flex xl:gap-4 xl:text-sm" aria-label="Hauptnavigation">
         {navigation.filter(n => n.href !== "/kontakt/").map((item) => (
-          <a class="whitespace-nowrap transition-colors" href={item.href}>{item.label}</a>
+          <a class="inline-flex min-h-11 items-center whitespace-nowrap transition-colors" href={item.href}>{item.label}</a>
         ))}
       </nav>
 
@@ -116,7 +116,7 @@ const phoneHref = site.phone.replace("(0)", "").replace(/[^\d+]/g, "");
       </a>
 
       <div class="hidden lg:block">
-        <a class="button-primary text-xs xl:text-sm px-4 py-2.5 xl:px-5 xl:py-3" href="/kontakt/">Ersteinschätzung</a>
+        <a class="button-primary text-xs xl:text-sm px-4 py-2.5 xl:px-5 xl:py-3" href="/kontakt/">Projekt besprechen</a>
       </div>
 
       <button
@@ -161,12 +161,12 @@ const phoneHref = site.phone.replace("(0)", "").replace(/[^\d+]/g, "");
         <span class="text-white/65">{site.phone}</span>
       </a>
       <div class="pt-4">
-        <a class="button-primary w-full text-center" href="/kontakt/">Ersteinschätzung anfordern</a>
+        <a class="button-primary w-full text-center" href="/kontakt/">Projekt besprechen</a>
       </div>
 
       <!-- Sprachen im mobilen Menü -->
       <div class="mt-5 border-t border-white/10 pt-4" aria-label="Sprachauswahl mobil">
-        <p class="mb-2.5 text-[11px] font-black uppercase tracking-wider text-white/50">Sprache / Language</p>
+        <p class="mb-2.5 text-xs font-black uppercase tracking-wider text-white/50">Sprache / Language</p>
         <div class="grid grid-cols-3 gap-2">
           {languages.map((item) => (
             <a

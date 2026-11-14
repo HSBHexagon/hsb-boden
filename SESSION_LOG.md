@@ -65,3 +65,13 @@
 - Logo-Raster: graue Leerfläche in der letzten Reihe behoben (zentriertes Flex-Raster).
 - Texte: „Zertifizierter Säureschutz“, „GMP-konforme Reinraumböden“, „Fachingenieure“, „ingenieurseitig“ entschärft; Herstellerzeile nennt nur noch Argelith und Zahna als Planungsgrundlage (Steuler, Silikal, MC-Bauchemie waren nirgends belegt).
 - Nachweis: `npm run check` 0 Fehler, `npm run test:run` 410/410, Build 69 Seiten, `deploy:dry-run` ok, `verify_ssot.py` Exit 0; Screenshots 1440/390 px ohne Überlauf. Desktop-Höhe 8.295 px (vorher 7.996 px; das 8.000-px-Ziel aus HSB-WEB-07 wird um 295 px überschritten).
+
+## 14.11.2026 — Design-Master: Codex-Übersicht erweitert und umgesetzt (Claude Code, Branch `feat/design-master-20261114`)
+
+- Grundlage: Codex-Optimierungsübersicht vom 13.11. (acht Punkte). Auf alle 68 Seiten bei 375/1440 px erweitert; Details in `docs/design/2026-11-14-design-master.md`.
+- Seitenweit: Unterseiten-Überschrift 83 → 52 px (mobil 42 → 31 px), Seitenkopf mit Projektfoto (24 statt 8 Seiten mit Foto im ersten Bildschirm), keine Schrift unter 12 px, größere Tippziele.
+- Anfragewege: „Projekt besprechen" → Kontaktseite, „Schadstelle melden" → Reparaturanfrage. Mobile Auswahl im Reparaturformular als vollbreite Zeilen.
+- Kontaktformular: Branche, Fläche, laufender Betrieb optional und eingeklappt; Serververtrag unverändert (`loads` bleibt Pflicht).
+- Startseite mobil 14.822 → 12.957 px.
+- Skills: UI UX Pro Max, Frontend Design, UI UX Conversion.
+- Nachweis: `npm run check` 0 Fehler, `npm run test:run` 417/417, Build 69 Seiten, `deploy:dry-run` ok, Modal-Browsertest bestanden, `verify_ssot.py` Exit 0. Kein Production-Deploy.

@@ -1,29 +1,35 @@
 ---
 import LeadForm from "./LeadForm.astro";
+
+const onStressCheck = Astro.url.pathname.startsWith("/beanspruchungs-check");
 ---
 
-<section class="section border-b border-hsb-line" id="kontaktformular">
-  <div class="container grid gap-12 lg:grid-cols-[0.9fr_1.1fr] lg:items-start">
+<section class="section-tight border-b border-hsb-line" id="kontaktformular">
+  <div class="container grid gap-8 lg:grid-cols-[0.9fr_1.1fr] lg:items-start lg:gap-12">
     <div>
       <h2 class="h2">Technische Ersteinschätzung anfordern</h2>
       <p class="lead mt-4">
-        HSB bewertet Belastungsprofil, Untergrund und Sanierungsoptionen vor Ort – die Ersteinschätzung wird nicht in Rechnung gestellt und ist mit keiner Kaufverpflichtung verbunden. Drei Angaben genügen für eine erste Einschätzung:
+        HSB bewertet Belastungsprofil, Untergrund und Sanierungsoptionen vor Ort. Die Ersteinschätzung wird nicht in Rechnung gestellt und ist mit keiner Kaufverpflichtung verbunden.
       </p>
-      <div class="mt-8 space-y-6 border-t border-hsb-line pt-8">
+      <ul class="mt-6 hidden space-y-4 border-t border-hsb-line pt-6 lg:block">
         {[
-          ["Branche und Nutzung", "Welche Belastungen sind relevant?"],
-          ["Fläche und Situation", "Neubau, Sanierung oder Reparatur?"],
-          ["Zeitfenster", "Wann ist der Eingriff möglich?"],
+          ["Worum es geht", "Neubau, Sanierung oder technische Bewertung."],
+          ["Was den Boden belastet", "Medien, Temperatur, Reinigung oder Verkehr."],
+          ["Wann gearbeitet werden kann", "Sperrfenster oder Stillstand kurz in der Nachricht nennen."],
         ].map(([label, hint]) => (
-          <div class="flex items-start gap-3.5">
-            <span class="mt-2 size-2 shrink-0 rounded-full bg-hsb-red"></span>
+          <li class="flex items-start gap-3.5">
+            <span class="mt-2 size-2 shrink-0 rounded-full bg-hsb-red" aria-hidden="true"></span>
             <div>
-              <p class="text-lg font-bold leading-snug">{label}</p>
-              <p class="mt-1 text-sm leading-6 text-hsb-steel">{hint}</p>
+              <p class="text-base font-bold leading-snug">{label}</p>
+              <p class="mt-0.5 text-sm leading-6 text-hsb-steel">{hint}</p>
             </div>
-          </div>
+          </li>
         ))}
-      </div>
+      </ul>
+      {!onStressCheck && <p class="mt-4 text-sm leading-6 text-hsb-steel">
+        Belastung noch unklar?{" "}
+        <a class="font-bold text-hsb-red underline underline-offset-4" href="/beanspruchungs-check/">Beanspruchungs-Check vorab durchführen</a>
+      </p>}
     </div>
     <LeadForm />
   </div>

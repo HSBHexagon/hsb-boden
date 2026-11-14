@@ -7,7 +7,6 @@ import ManufacturerProof from "../../components/sections/ManufacturerProof.astro
 import PageHero from "../../components/sections/PageHero.astro";
 import TechnicalDecisionGuide from "../../components/sections/TechnicalDecisionGuide.astro";
 import BaseLayout from "../../layouts/BaseLayout.astro";
-import { projectSrcset } from "../../lib/responsiveImage";
 import { getArticles, getIndustries, getReferencesForSlugs, getServices } from "../../lib/content";
 import { buildBreadcrumbJsonLd, buildFaqJsonLd, buildServiceJsonLd } from "../../lib/schema";
 import { getStandardsForService } from "../../data/standards";
@@ -35,6 +34,14 @@ const serviceImages: Record<string, { src: string; alt: string }> = {
     src: "/media/hsb/projekte/saeulen-anschluss-keramik.webp",
     alt: "Dicht ausgeführter Säulen- und Sockelanschluss in Sechskant-Keramik, Detail einer Produktionsfläche",
   },
+  "entwaesserung-industrieboden": {
+    src: "/media/hsb/projekte/entwaesserungsrinne-detail.webp",
+    alt: "Entwässerungsrinne im keramischen Industrieboden, Detail des Rinnenanschlusses",
+  },
+  "epoxidharz-bodenbeschichtung": {
+    src: "/media/hsb/projekte/beschichtete-halle.webp",
+    alt: "Frisch beschichteter, glänzender Industrieboden in einer Halle",
+  },
   "keramische-industrieboeden": {
     src: "/media/hsb/projekte/verlegung-keramik.webp",
     alt: "Verlegung eines keramischen Sechskant-Industriebodens während der Ausführung",
@@ -45,19 +52,7 @@ const serviceImage = serviceImages[service.slug];
 ---
 
 <BaseLayout title={service.seoTitle} description={service.description} path={path} jsonLd={[buildServiceJsonLd({ name: service.title, description: service.description, path, standards: getStandardsForService(service.slug) }), buildFaqJsonLd(service.faqs), buildBreadcrumbJsonLd([{ name: "Start", path: "/" }, { name: "Leistungen", path: "/leistungen/" }, { name: service.title, path }])]}>
-  <PageHero eyebrow="Leistung" title={service.h1} text={service.description} ctaLabel={isRepair ? "Schadstelle einschätzen lassen" : service.ctaLabel} ctaHref={isRepair ? "#repair-photo" : undefined} ctaOpensRepairModal={isRepair} />
-  {serviceImage && (
-    <section class="section-tight">
-      <div class="container">
-        <figure class="overflow-hidden rounded-[4px] border border-hsb-line">
-          <img src={serviceImage.src} srcset={projectSrcset(serviceImage.src)} sizes="(min-width: 1212px) 1180px, calc(100vw - 32px)" alt={serviceImage.alt} class="max-h-[480px] w-full object-cover object-center" fetchpriority="high" loading="eager" decoding="async" width="1200" height="480" />
-          <figcaption class="border-t border-hsb-line bg-white px-5 py-3 text-xs font-bold text-hsb-steel">
-            Reale Projektfläche aus dem HSB-Arbeitsumfeld – keine Stockfotos.
-          </figcaption>
-        </figure>
-      </div>
-    </section>
-  )}
+  <PageHero eyebrow="Leistung" title={service.h1} text={service.description} ctaLabel={isRepair ? "Schadstelle melden" : service.ctaLabel} ctaHref={isRepair ? "#repair-photo" : undefined} ctaOpensRepairModal={isRepair} image={serviceImage} />
   <section class="section">
     <div class="container grid gap-8 lg:grid-cols-[0.9fr_1.1fr]">
       <div>
@@ -117,7 +112,7 @@ const serviceImage = serviceImages[service.slug];
     <section class="section">
       <div class="container">
         <p class="eyebrow">Passende Referenzen</p>
-        <h2 class="h2 mt-3">Projektbeispiele mit Freigabelogik</h2>
+        <h2 class="h2 mt-3">Ausgeführte Projekte zu dieser Leistung</h2>
         <div class="mt-8 grid-auto">
           {relatedReferences.map((reference) => <ReferenceCard reference={reference} />)}
         </div>

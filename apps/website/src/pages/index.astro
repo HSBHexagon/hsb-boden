@@ -62,11 +62,11 @@ const proofCards = [
             Industrieböden und Säureschutz für Ihre Produktion.
           </h1>
           <p class="mt-6 max-w-xl text-lg leading-8 text-white/70">
-            Für Lebensmittel-, Getränke-, Pharma- und Chemiebetriebe. Planung und Ausführung aus einer Hand – in Deutschland und europaweit. Sanierung in Bauabschnitten, an Wochenenden und in Schichtfenstern.
+            Für Lebensmittel-, Getränke-, Pharma- und Chemiebetriebe. <span class="hidden sm:inline">Planung und Ausführung aus einer Hand – in Deutschland und europaweit.</span> Sanierung in Bauabschnitten, an Wochenenden und in Schichtfenstern.
           </p>
           <div class="mt-8 flex flex-wrap items-center gap-4">
-            <a class="button-primary" href="#reparaturanfrage" data-open-repair-modal>Ersteinschätzung anfragen</a>
-            <a class="button-secondary" href="/referenzen/">Referenzen ansehen</a>
+            <a class="button-primary" href="/kontakt/">Projekt besprechen</a>
+            <a class="button-secondary" href="#reparaturanfrage" data-open-repair-modal>Schadstelle melden</a>
           </div>
         </div>
 
@@ -119,13 +119,13 @@ const proofCards = [
         <a href="/branchen/" class="inline-flex min-h-11 items-center self-start text-base font-bold text-hsb-red hover:underline sm:self-auto">Alle Branchen →</a>
       </div>
 
-      <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <div class="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3">
         {industryTiles.map((b) => (
-          <a href={b.href} class="group relative flex min-h-[176px] items-end overflow-hidden rounded-[4px] bg-hsb-black no-underline sm:min-h-[220px] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-hsb-red">
+          <a href={b.href} class="group relative flex min-h-[148px] items-end overflow-hidden rounded-[4px] bg-hsb-black no-underline sm:min-h-[220px] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-hsb-red">
             <img
               src={b.image}
               srcset={projectSrcset(b.image)}
-              sizes="(min-width: 1024px) 380px, (min-width: 640px) 50vw, 100vw"
+              sizes="(min-width: 1024px) 380px, 50vw"
               alt={b.alt}
               class="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
               loading="lazy"
@@ -134,12 +134,12 @@ const proofCards = [
               height="480"
             />
             <div class="absolute inset-0 bg-gradient-to-t from-black via-black/60 via-45% to-black/5"></div>
-            <div class="relative z-10 w-full p-5">
-              <h3 class="flex items-center justify-between gap-3 text-lg font-black leading-tight text-white">
-                <span>{b.title}</span>
-                <span class="text-hsb-red-light transition-transform group-hover:translate-x-1" aria-hidden="true">→</span>
+            <div class="relative z-10 w-full p-3 sm:p-5">
+              <h3 class="flex items-end justify-between gap-2 text-[0.9375rem] font-black leading-tight text-white sm:items-center sm:gap-3 sm:text-lg">
+                <span class="min-w-0 hyphens-auto">{b.title}</span>
+                <span class="hidden text-hsb-red-light transition-transform group-hover:translate-x-1 sm:inline" aria-hidden="true">→</span>
               </h3>
-              <p class="mt-1.5 text-[0.9375rem] leading-6 text-white/90">{b.desc}</p>
+              <p class="mt-1.5 hidden text-[0.9375rem] leading-6 text-white/90 sm:block">{b.desc}</p>
             </div>
           </a>
         ))}
@@ -208,23 +208,23 @@ const proofCards = [
         </a>
       </div>
 
-      <div class="grid gap-6 md:grid-cols-3">
+      <div class="grid gap-3 md:grid-cols-3 md:gap-6">
         {proofCards.map((c) => (
-          <article class="group overflow-hidden rounded-[4px] border border-hsb-line bg-white">
-            <div class="aspect-[4/3] overflow-hidden bg-hsb-mist">
+          <article class="group grid grid-cols-[112px_minmax(0,1fr)] overflow-hidden rounded-[4px] border border-hsb-line bg-white md:block">
+            <div class="relative overflow-hidden bg-hsb-mist md:aspect-[4/3]">
               <img
                 src={c.image}
                 srcset={projectSrcset(c.image)}
-                sizes="(min-width: 768px) 33vw, 100vw"
+                sizes="(min-width: 768px) 33vw, 112px"
                 alt={c.alt}
-                class="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
+                class="absolute inset-0 h-full w-full md:static object-cover transition-transform duration-700 group-hover:scale-105"
                 loading="lazy"
                 decoding="async"
                 width="640"
                 height="480"
               />
             </div>
-            <div class="p-5">
+            <div class="p-4 md:p-5">
               <p class="text-xs font-black uppercase tracking-[0.14em] text-hsb-red">{c.tag}</p>
               <h3 class="mt-1.5 text-lg font-black leading-tight text-hsb-black">{c.title}</h3>
               <p class="mt-2 text-[0.9375rem] leading-6 text-hsb-steel">{c.text}</p>
@@ -272,7 +272,7 @@ const proofCards = [
 
       <div class="mt-8 flex flex-wrap items-center gap-4">
         <a class="button-secondary-dark" href="/projektablauf/">Projektablauf im Detail</a>
-        <a class="button-primary" href="#reparaturanfrage" data-open-repair-modal>Ersteinschätzung anfragen</a>
+        <a class="button-primary" href="/kontakt/">Projekt besprechen</a>
       </div>
     </div>
   </section>
@@ -288,7 +288,7 @@ const proofCards = [
             HSB baut Industrieböden, Säureschutz und keramische Bodensysteme für produktionskritische Bereiche. Ausgeführt wird mit eigenem, festangestelltem Personal – ohne wechselnde Subunternehmer. Das Team ist eingespielt, mehrsprachig und auf diese Branchen spezialisiert.
           </p>
         </div>
-        <figure class="overflow-hidden rounded-[4px] border border-hsb-line bg-hsb-mist">
+        <figure class="hidden overflow-hidden rounded-[4px] border border-hsb-line bg-hsb-mist sm:block">
           <img
             src="/media/hsb/projekte/halle-in-ausfuehrung.webp"
             srcset={projectSrcset("/media/hsb/projekte/halle-in-ausfuehrung.webp")}

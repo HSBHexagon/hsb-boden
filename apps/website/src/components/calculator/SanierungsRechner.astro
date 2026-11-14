@@ -12,7 +12,7 @@ const { auditAnchor = "/kontakt/" } = Astro.props;
       <span class="inline-block rounded bg-hsb-mist px-2.5 py-1 text-xs font-black uppercase tracking-[0.12em] text-hsb-black">
         Interaktives Planungswerkzeug
       </span>
-      <span class="inline-block rounded border border-hsb-line bg-white px-2 py-0.5 font-mono text-[11px] font-bold text-hsb-steel">
+      <span class="inline-block rounded border border-hsb-line bg-white px-2 py-0.5 font-mono text-xs font-bold text-hsb-steel">
         MOCK_DATA · Exemplarische Modellrechnung
       </span>
     </div>
@@ -44,7 +44,7 @@ const { auditAnchor = "/kontakt/" } = Astro.props;
           value="250"
           class="mt-3 w-full accent-hsb-red cursor-pointer"
         />
-        <div class="mt-1 flex justify-between text-[11px] text-hsb-steel">
+        <div class="mt-1 flex justify-between text-xs text-hsb-steel">
           <span>30 m² (Detailbereich)</span>
           <span>1.000 m²</span>
           <span>2.500 m² (Großhalle)</span>
@@ -104,7 +104,7 @@ const { auditAnchor = "/kontakt/" } = Astro.props;
           <div class="rounded border border-hsb-line bg-white p-4">
             <span class="text-xs text-hsb-steel block">Aushärtezeit vor Wiederinbetriebnahme</span>
             <span id="result-aushaertung" class="text-lg font-bold text-hsb-black">Gemäß technischem Merkblatt & Vor-Ort-Audit</span>
-            <span class="text-[11px] text-hsb-steel block mt-0.5">abhängig von freigegebenem Harzsystem, Untergrund- und Raumtemperatur</span>
+            <span class="text-xs text-hsb-steel block mt-0.5">abhängig von freigegebenem Harzsystem, Untergrund- und Raumtemperatur</span>
           </div>
 
           <div class="rounded border border-hsb-line bg-white p-4">
@@ -117,7 +117,7 @@ const { auditAnchor = "/kontakt/" } = Astro.props;
       </div>
 
       <div class="mt-6 pt-4 border-t border-hsb-line">
-        <p class="text-[11px] leading-relaxed text-hsb-steel italic">
+        <p class="text-xs leading-relaxed text-hsb-steel italic">
           Hinweis (`MOCK_DATA`): Exemplarische Beispielrechnung mit exemplarischen Modell-Annahmen (keine zugesicherten Tagesleistungen oder Freigabezeiten). Verbindliche Abschnittsgrößen und Taktungen werden erst nach bauseitiger Prüfung von Untergrund, Temperatur und konkretem Hersteller-Datenblatt festgelegt.
         </p>
         <div class="mt-4">

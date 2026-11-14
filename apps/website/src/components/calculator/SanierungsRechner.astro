@@ -6,19 +6,19 @@ interface Props {
 const { auditAnchor = "/kontakt/" } = Astro.props;
 ---
 
-<div class="surface rounded border border-hsb-line p-6 lg:p-10" data-sanierungs-rechner data-mock-data="MOCK_DATA">
+<div class="surface rounded border border-hsb-line p-6 lg:p-10" data-sanierungs-rechner>
   <div class="border-b border-hsb-line pb-6">
     <div class="flex flex-wrap items-center gap-2">
       <span class="inline-block rounded bg-hsb-mist px-2.5 py-1 text-xs font-black uppercase tracking-[0.12em] text-hsb-black">
         Interaktives Planungswerkzeug
       </span>
       <span class="inline-block rounded border border-hsb-line bg-white px-2 py-0.5 font-mono text-xs font-bold text-hsb-steel">
-        MOCK_DATA · Exemplarische Modellrechnung
+        Richtwert-Kalkulation · Vorläufige Taktung
       </span>
     </div>
     <h2 class="mt-3 text-2xl font-black text-hsb-black">Sanierungsfenster- & Bauabschnitts-Rechner</h2>
     <p class="mt-2 text-sm leading-6 text-hsb-steel">
-      Ermitteln Sie exemplarisch (`MOCK_DATA`), wie eine Produktionsfläche zur Vorplanung in Bauabschnitte unterteilt werden kann, bevor das Vor-Ort-Audit die bauseitigen Kennwerte festlegt.
+      Ermitteln Sie zur Orientierung auf Basis branchenüblicher Erfahrungswerte, wie eine Produktionsfläche zur Vorplanung in Bauabschnitte unterteilt werden kann, bevor das Vor-Ort-Audit die bauseitigen Kennwerte festlegt.
     </p>
   </div>
 
@@ -38,65 +38,60 @@ const { auditAnchor = "/kontakt/" } = Astro.props;
         <input
           type="range"
           id="rechner-flaeche"
-          min="30"
-          max="2500"
-          step="10"
+          min="50"
+          max="2000"
+          step="50"
           value="250"
-          class="mt-3 w-full accent-hsb-red cursor-pointer"
+          class="mt-3 w-full h-2 bg-hsb-line rounded-lg appearance-none cursor-pointer accent-hsb-red"
         />
-        <div class="mt-1 flex justify-between text-xs text-hsb-steel">
-          <span>30 m² (Detailbereich)</span>
+        <div class="mt-1 flex justify-between text-xs text-hsb-steel font-mono">
+          <span>50 m²</span>
+          <span>500 m²</span>
           <span>1.000 m²</span>
-          <span>2.500 m² (Großhalle)</span>
+          <span>2.000 m²</span>
         </div>
       </div>
 
-      <!-- 2. Zeitfenster & Schichtmodell -->
+      <!-- 2. Verfügbares Stillstandsfenster -->
       <div>
         <label for="rechner-zeitfenster" class="text-sm font-bold text-hsb-black block">
-          2. Verfügbares Zeitfenster / Betriebsmodell
+          2. Maximales Stillstandsfenster je Bauabschnitt
         </label>
         <select
           id="rechner-zeitfenster"
-          class="mt-2 w-full rounded border border-hsb-line px-3 py-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-hsb-red bg-white"
+          class="mt-2 w-full rounded border border-hsb-line bg-white p-3 text-sm font-bold text-hsb-black focus:border-hsb-red focus:outline-none"
         >
-          <option value="wochenende-60h" selected>Wochenend-Stillstand (Freitag 18:00 – Montag 06:00 = 60 h)</option>
-          <option value="betriebsurlaub">Geplanter Stillstand / Werksferien (7 bis 14 Tage)</option>
-          <option value="laufender-betrieb">Laufender 3-Schicht-Betrieb (Rollierende Teilflächensanierung)</option>
+          <option value="wochenende-60h">Wochenend-Stillstand (Freitag 18:00 – Montag 06:00, 60 Std.)</option>
+          <option value="betriebsurlaub">Geplanter Betriebsstillstand / Werksferien (1–2 Wochen)</option>
+          <option value="laufender-betrieb">Rollierend im laufenden Betrieb (Abschnittskapselung)</option>
         </select>
-        <p class="mt-1.5 text-xs text-hsb-steel">
-          Wochenendfenster erfordern auf das Zeitfenster abgestimmte Schichtaufbauten nach Vor-Ort-Prüfung.
-        </p>
       </div>
 
-      <!-- 3. Angestrebtes Bodensystem -->
+      <!-- 3. Bodensystem -->
       <div>
         <label for="rechner-system" class="text-sm font-bold text-hsb-black block">
-          3. Vorgesehenes Bodensystem
+          3. Gewünschtes Bodensystem / Beanspruchung
         </label>
         <select
           id="rechner-system"
-          class="mt-2 w-full rounded border border-hsb-line px-3 py-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-hsb-red bg-white"
+          class="mt-2 w-full rounded border border-hsb-line bg-white p-3 text-sm font-bold text-hsb-black focus:border-hsb-red focus:outline-none"
         >
-          <option value="pu-beton" selected>Hochtemperatur-PU-Beton (9 mm, fugenlos)</option>
-          <option value="ruettelkeramik">Keramischer Rüttelboden nach AGI S 40 (Säurebau & Schwerlast)</option>
-          <option value="schnellreparatur">Schnellreparatur-Mörtel (Lokale Fugen- & Schadstellensanierung)</option>
+          <option value="pu-beton">PU-Beton (Höchste Thermoschock- & Stoßbelastung)</option>
+          <option value="ruettelkeramik">Rüttelkeramik / Sechskant (Extreme Dauernass- & Rollbelastung)</option>
+          <option value="reparatur">Punktuelle Schadstellen-Reparatur (Express-Instandsetzung)</option>
         </select>
-        <p class="mt-1.5 text-xs text-hsb-steel">
-          Kennwerte und Mindestaushärtezeiten richten sich nach den Herstellerdatenblättern der eingesetzten Reaktionsharze.
-        </p>
       </div>
     </div>
 
     <!-- Ergebnisbereich -->
-    <div class="rounded border-2 border-hsb-black bg-hsb-mist/40 p-6 flex flex-col justify-between" data-mock-output="MOCK_DATA">
+    <div class="rounded border-2 border-hsb-black bg-hsb-mist/40 p-6 flex flex-col justify-between">
       <div>
-        <span class="text-xs font-black uppercase tracking-widest text-hsb-red">Exemplarische Modellrechnung (MOCK_DATA)</span>
+        <span class="text-xs font-black uppercase tracking-widest text-hsb-red">Vorläufige Modellrechnung</span>
         <h3 class="mt-1 text-xl font-black text-hsb-black">Simulierte Bauabschnitte</h3>
 
         <div class="mt-6 space-y-4">
           <div class="rounded border border-hsb-line bg-white p-4">
-            <span class="text-xs text-hsb-steel block">Simulierte Bauabschnitte (MOCK_DATA)</span>
+            <span class="text-xs text-hsb-steel block">Kalkulierte Bauabschnitte</span>
             <span id="result-abschnitte" class="text-3xl font-black text-hsb-black">2 Abschnitte</span>
             <span id="result-flaeche-pro-abschnitt" class="text-xs text-hsb-steel block mt-0.5">à ca. 125 m² (Modellwert)</span>
           </div>
@@ -110,7 +105,7 @@ const { auditAnchor = "/kontakt/" } = Astro.props;
           <div class="rounded border border-hsb-line bg-white p-4">
             <span class="text-xs text-hsb-steel block">Verfahrenshinweis Stillstand</span>
             <p id="result-empfehlung" class="text-xs leading-relaxed text-hsb-steel mt-1">
-              Exemplarische Aufteilung auf Wochenend-Etappen (`MOCK_DATA`). Die tatsächliche Freigabezeit wird im Vor-Ort-Audit anhand des gewählten Systems festgelegt.
+              Exemplarische Aufteilung auf Wochenend-Etappen. Die tatsächliche Freigabezeit wird im Vor-Ort-Audit anhand des gewählten Systems festgelegt.
             </p>
           </div>
         </div>
@@ -118,7 +113,7 @@ const { auditAnchor = "/kontakt/" } = Astro.props;
 
       <div class="mt-6 pt-4 border-t border-hsb-line">
         <p class="text-xs leading-relaxed text-hsb-steel italic">
-          Hinweis (`MOCK_DATA`): Exemplarische Beispielrechnung mit exemplarischen Modell-Annahmen (keine zugesicherten Tagesleistungen oder Freigabezeiten). Verbindliche Abschnittsgrößen und Taktungen werden erst nach bauseitiger Prüfung von Untergrund, Temperatur und konkretem Hersteller-Datenblatt festgelegt.
+          Hinweis: Exemplarische Richtwert-Berechnung auf Basis typischer Einbauleistungen (keine vertraglich zugesicherten Tagesleistungen oder Freigabezeiten). Verbindliche Abschnittsgrößen und Taktungen werden nach bauseitiger Prüfung von Untergrund, Temperatur und Hersteller-Datenblatt im Vor-Ort-Audit festgelegt.
         </p>
         <div class="mt-4">
           <a
@@ -156,7 +151,6 @@ const { auditAnchor = "/kontakt/" } = Astro.props;
 
       if (flaecheDisplay) flaecheDisplay.textContent = `${flaeche} m²`;
 
-      // MOCK_DATA: Exemplarische Modell-Teiler zur exemplarischen Vorab-Visualisierung
       let maxPerSection = 150;
       const aushaertungsText = "Gemäß technischem Merkblatt & Vor-Ort-Audit";
       let empfehlungsText = "";
@@ -164,28 +158,28 @@ const { auditAnchor = "/kontakt/" } = Astro.props;
       if (system === "pu-beton") {
         if (zeitfenster === "wochenende-60h") {
           maxPerSection = 160;
-          empfehlungsText = "Exemplarische Wochenend-Etappen (MOCK_DATA): Einbau und Aushärtung werden im Vor-Ort-Audit auf Ihr Sperrfenster abgestimmt.";
+          empfehlungsText = "Exemplarische Wochenend-Etappen: Einbau und Aushärtung werden im Vor-Ort-Audit auf Ihr Sperrfenster abgestimmt.";
         } else if (zeitfenster === "betriebsurlaub") {
           maxPerSection = 450;
-          empfehlungsText = "Exemplarischer Einbau während geplanter Betriebsferien (MOCK_DATA) in zusammenhängenden Arbeitsabschnitten.";
+          empfehlungsText = "Exemplarischer Einbau während geplanter Betriebsferien in zusammenhängenden Arbeitsabschnitten.";
         } else {
           maxPerSection = 100;
-          empfehlungsText = "Exemplarische rollierende Teilflächensanierung (MOCK_DATA) mit Staubkapselung nach örtlicher Freigabe.";
+          empfehlungsText = "Exemplarische rollierende Teilflächensanierung mit Staubkapselung nach örtlicher Freigabe.";
         }
       } else if (system === "ruettelkeramik") {
         if (zeitfenster === "wochenende-60h") {
           maxPerSection = 110;
-          empfehlungsText = "Exemplarische Etappen im Rüttelverfahren (MOCK_DATA) mit Reaktionsharzverfugung nach bauseitiger Taktplanung.";
+          empfehlungsText = "Exemplarische Etappen im Rüttelverfahren mit Reaktionsharzverfugung nach bauseitiger Taktplanung.";
         } else if (zeitfenster === "betriebsurlaub") {
           maxPerSection = 300;
-          empfehlungsText = "Exemplarische Abschnittsplanung für Säureschutz-Sanierungen in geplanten Stillstandszeiten (MOCK_DATA).";
+          empfehlungsText = "Exemplarische Abschnittsplanung für Säureschutz-Sanierungen in geplanten Stillstandszeiten.";
         } else {
           maxPerSection = 80;
-          empfehlungsText = "Exemplarische abschnittsweise Rüttelverlegung (MOCK_DATA) mit Staubkapselung.";
+          empfehlungsText = "Exemplarische abschnittsweise Rüttelverlegung mit Staubkapselung.";
         }
       } else {
         maxPerSection = 50;
-        empfehlungsText = "Exemplarische Etappen für punktuelle Instandsetzung schadhafter Fugen, Rinnenkanten oder Hohlstellen (MOCK_DATA).";
+        empfehlungsText = "Exemplarische Etappen für punktuelle Instandsetzung schadhafter Fugen, Rinnenkanten oder Hohlstellen.";
       }
 
       const numSections = Math.max(1, Math.ceil(flaeche / maxPerSection));

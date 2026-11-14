@@ -29,7 +29,7 @@ if [[ -n "$APPLY" ]]; then
   echo "Bereinige verwaiste Entwürfe für bereits versendete Leads..."
   python3 -u hsb_cli.py purge-sent-drafts --apply || true
   export HSB_CUSTOMER_SEND_ENABLED=yes
-  export HSB_SEND_PAUSE_ACK="${HSB_SEND_PAUSE_ACK:-c15523f3950513f2cbb3}"
+  export HSB_SEND_PAUSE_ACK="${HSB_SEND_PAUSE_ACK:-8305cf4adb54dda6c54d}"
 fi
 # Ohne Azure-Zugang (GitHub Actions) nur .com-Antworten abgleichen; .de-Antwortende sind bereits gesperrt.
 INBOUND=""; [[ "${HSB_COM_ONLY_INBOUND:-}" == "yes" ]] && INBOUND="--com-only-inbound"

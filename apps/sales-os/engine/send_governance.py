@@ -313,13 +313,55 @@ def enforce_domain_health(state_dir, today, shared, collector=None):
     return budget
 
 
+def _crm_sent_since_snapshot(state_dir, checked_at_raw) -> int:
+    """Zählt im aktuellen CRM-Reconciliation-Snapshot alle seit checked_at verifiziert versendeten Leads."""
+    if not checked_at_raw:
+        return 0
+    crm_path = Path(state_dir) / 'reconciliation' / 'crm-original.json'
+    if not crm_path.is_file():
+        return 0
+    try:
+        checked_at = datetime.datetime.fromisoformat(str(checked_at_raw).replace('Z', '+00:00'))
+        if checked_at.tzinfo is None:
+            return 0
+        data = json.loads(crm_path.read_text(encoding='utf-8'))
+        rows = (data.get('valueRanges') or [{}])[0].get('values') or []
+        if len(rows) < 2:
+            return 0
+        headers = rows[0]
+        if 'Send_Datum' not in headers or 'Send_Status' not in headers:
+            return 0
+        idx_date = headers.index('Send_Datum')
+        idx_status = headers.index('Send_Status')
+        count = 0
+        for r in rows[1:]:
+            if len(r) <= max(idx_date, idx_status):
+                continue
+            if str(r[idx_status]).strip().lower() != 'sent':
+                continue
+            stamp = str(r[idx_date]).strip()
+            if not stamp:
+                continue
+            try:
+                dt = datetime.datetime.fromisoformat(stamp.replace('Z', '+00:00'))
+                if dt.tzinfo is not None and dt > checked_at:
+                    count += 1
+            except ValueError:
+                continue
+        return count
+    except Exception:
+        return 0
+
+
 def record_verified_send(state_dir):
     """Zaehlt bestätigte Live-Zustellungen bezogen auf den aktuellen Health-Snapshot."""
     import hashlib
     health_path = Path(state_dir) / 'send-health.json'
     try:
-        health_sha = hashlib.sha256(health_path.read_bytes()).hexdigest()[:20]
-    except OSError:
+        raw_health = health_path.read_bytes()
+        health_sha = hashlib.sha256(raw_health).hexdigest()[:20]
+        checked_at_raw = json.loads(raw_health.decode('utf-8')).get('checked_at')
+    except (OSError, ValueError):
         return
     delta_path = Path(state_dir) / 'live-sample-delta.json'
     count = 0
@@ -329,6 +371,7 @@ def record_verified_send(state_dir):
             count = prev['sent_delta']
     except (OSError, ValueError, TypeError):
         count = 0
+    count = max(count, _crm_sent_since_snapshot(state_dir, checked_at_raw))
     with NamedTemporaryFile(mode='w', encoding='utf-8', dir=delta_path.parent, delete=False) as tmp:
         tmp_path = Path(tmp.name)
         try:
@@ -355,16 +398,18 @@ def observed_health(state_dir, collector=None):
         raise RuntimeError('SEND_HEALTH_CURSOR_MISSING') from None
     stats.pop('_verified_live_delta', None)
     delta_path = Path(state_dir) / 'live-sample-delta.json'
+    extra = 0
     try:
         delta = json.loads(delta_path.read_text(encoding='utf-8'))
-        extra = delta.get('sent_delta', 0)
-        base_sent = stats.get('sample_sent')
-        if (delta.get('health_sha') == health_sha and type(extra) is int and extra > 0
-                and type(base_sent) is int and base_sent >= 0):
-            stats['sample_sent'] = base_sent + extra
-            stats['_verified_live_delta'] = extra
+        if delta.get('health_sha') == health_sha and type(delta.get('sent_delta')) is int and delta['sent_delta'] > 0:
+            extra = delta['sent_delta']
     except (OSError, ValueError, TypeError):
-        pass
+        extra = 0
+    extra = max(extra, _crm_sent_since_snapshot(state_dir, stats.get('checked_at')))
+    base_sent = stats.get('sample_sent')
+    if extra > 0 and type(base_sent) is int and base_sent >= 0:
+        stats['sample_sent'] = base_sent + extra
+        stats['_verified_live_delta'] = extra
     if collector is None:
         from functools import partial
         from dual_domain_collector import collect_all_inbounds

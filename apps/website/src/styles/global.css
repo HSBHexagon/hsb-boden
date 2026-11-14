@@ -303,3 +303,25 @@ main :where(input, select, textarea) {
     scroll-behavior: auto;
   }
 }
+
+/* Sechskant-Raster als leise Struktur dunkler Flächen – das Fliesenformat, das HSB verlegt. */
+.hex-ground {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='56' height='97' viewBox='0 0 56 97'%3E%3Cpath d='M28 0 56 16.2v32.3L28 64.7 0 48.5V16.2zM28 64.7V97M0 48.5 0 80.8M56 48.5V80.8' fill='none' stroke='%23ffffff' stroke-opacity='.045' stroke-width='1'/%3E%3C/svg%3E");
+  background-size: 56px 97px;
+}
+
+/* Weicher Seitenwechsel ohne JavaScript; Browser ohne Unterstützung wechseln wie bisher. */
+@media (prefers-reduced-motion: no-preference) {
+  @view-transition {
+    navigation: auto;
+  }
+
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation-duration: 180ms;
+  }
+
+  #site-header {
+    view-transition-name: site-header;
+  }
+}

@@ -13,6 +13,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd)"
 SALES_DIR="$REPO_ROOT/apps/sales-os"
 STATE_DIR="${HSB_SALES_STATE_DIR:-$HOME/.local/state/hsb-sales-os}"
+export HSB_COM_ONLY_INBOUND="${HSB_COM_ONLY_INBOUND:-yes}"
 mkdir -p "$STATE_DIR"
 AUDIT_LOG="$STATE_DIR/n8n_orchestration_audit.log"
 

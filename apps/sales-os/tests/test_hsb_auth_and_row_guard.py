@@ -186,3 +186,26 @@ def test_binding_that_was_silently_skipped_is_refused(monkeypatch, field):
     monkeypatch.setattr(outbound_safety, 'require_stable_crm_binding', lambda *a: {'ok': 1})
     with pytest.raises(RuntimeError, match='CRM_LEAD_BINDING_NOT_CREATED'):
         outbound_safety.prepare_lead_binding('svc', 'sid', 'HSB-20260708-00001')
+
+
+@pytest.mark.row_guard
+def test_prepare_lead_binding_passes_cached_binding_and_headers_to_send_write(monkeypatch):
+    import outbound_safety, crm_bindings
+    captured = []
+    expected_binding = {'developerMetadataLookup': {'metadataId': 42}}
+    monkeypatch.setattr(crm_bindings, 'ensure_bindings', lambda svc, sid, **k: {'conflicts': 0, 'skipped_duplicate': 0, 'skipped_invalid': 0})
+    monkeypatch.setattr(outbound_safety, 'require_stable_crm_binding', lambda svc, sid, lead: expected_binding)
+    monkeypatch.setattr(crm_bindings, 'remove_binding', lambda svc, sid, lead: 1)
+    monkeypatch.setattr(
+        outbound_safety,
+        'crm_write_lead_readback',
+        lambda svc, sid, lead, fields, *, binding=None, headers=None: captured.append((lead, fields, binding, headers)),
+    )
+    svc = object()
+    b = outbound_safety.prepare_lead_binding(svc, 'sid', 'HSB-20260708-00001')
+    assert b == expected_binding
+    outbound_safety._send_write(svc, 'sid', ['Lead-ID', 'Send_Status'], 10, 'HSB-20260708-00001', {'Send_Status': 'SENDING'})
+    outbound_safety._release_binding(svc, 'sid', 'HSB-20260708-00001')
+    assert captured == [('HSB-20260708-00001', {'Send_Status': 'SENDING'}, expected_binding, ['Lead-ID', 'Send_Status'])]
+    assert (id(svc), 'sid', 'HSB-20260708-00001') not in outbound_safety._ACTIVE_BINDINGS
+

@@ -312,6 +312,9 @@ def assert_row_lead(svc, spreadsheet_id, row, lead_id):
         raise RuntimeError('CRM_ROW_MOVED: Zeile gehört nicht mehr zu diesem Lead')
 
 
+_ACTIVE_BINDINGS = {}
+
+
 def prepare_lead_binding(svc, spreadsheet_id, lead_id):
     """Bindung für genau diesen Lead anlegen und als eindeutig bestätigen – vor journal.reserve(),
     damit ein Bindungsfehler keinen RESERVED-Rest hinterlässt, der jeden Folgeversand sperrt."""
@@ -319,17 +322,27 @@ def prepare_lead_binding(svc, spreadsheet_id, lead_id):
     result=crm_bindings.ensure_bindings(svc, spreadsheet_id, apply=True, sleep=lambda s: None, only={lead_id})
     if any(result.get(k) for k in ('conflicts','skipped_duplicate','skipped_invalid')):
         raise RuntimeError('CRM_LEAD_BINDING_NOT_CREATED')
-    require_stable_crm_binding(svc, spreadsheet_id, lead_id)
+    binding = require_stable_crm_binding(svc, spreadsheet_id, lead_id)
+    _ACTIVE_BINDINGS[(id(svc), spreadsheet_id, lead_id)] = binding
+    return binding
 
 
 def _send_write(svc, spreadsheet_id, headers, row, lead_id, fields):
     """Versand-Writes nur über die vorab angelegte Lead-Bindung (Developer-Metadaten), nie per Zeilennummer.
     headers/row bleiben für Test-Attrappen."""
+    binding = _ACTIVE_BINDINGS.get((id(svc), spreadsheet_id, lead_id))
+    if binding is not None:
+        try:
+            crm_write_lead_readback(svc, spreadsheet_id, lead_id, fields, binding=binding, headers=headers)
+            return
+        except TypeError:
+            pass
     crm_write_lead_readback(svc, spreadsheet_id, lead_id, fields)
 
 
 def _release_binding(svc, spreadsheet_id, lead_id):
     """Bindung nach Abschluss entfernen (Metadaten-Kapazität); Fehler hier blockieren den Versand nicht."""
+    _ACTIVE_BINDINGS.pop((id(svc), spreadsheet_id, lead_id), None)
     try:
         import crm_bindings
         crm_bindings.remove_binding(svc, spreadsheet_id, lead_id)
@@ -725,6 +738,10 @@ def dispatch_verified(count_per_owner=25, owners=('JOEL','JORDI'), dry_run=True,
                 pass
         last_svc_refresh=time.monotonic()
         mx_cache={}
+        sendable_draft_by_lead={}
+        for _d in drafts:
+            if _d.get('sendable') and _d.get('lead_id') not in sendable_draft_by_lead:
+                sendable_draft_by_lead[_d['lead_id']] = _d
         try:
             for item in selected:
                 if sent_counts[item['owner']] >= count_per_owner:
@@ -768,7 +785,7 @@ def dispatch_verified(count_per_owner=25, owners=('JOEL','JORDI'), dry_run=True,
                 journal_today=journal.db.execute('SELECT count(*) FROM attempts WHERE owner=? AND day=?',(item['owner'],day_str)).fetchone()[0]
                 if used_today>=effective_cap or journal_today>=effective_cap:
                     capped.add(item['owner']); continue
-                d=next((d for d in drafts if d['lead_id']==item['lead_id'] and d['sendable']),None)
+                d=sendable_draft_by_lead.get(item['lead_id'])
                 if d is None:
                     skip(item['lead_id'],'NO_SENDABLE_DRAFT'); continue
                 client=clients[item['owner']]

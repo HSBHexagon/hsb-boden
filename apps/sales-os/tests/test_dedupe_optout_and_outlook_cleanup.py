@@ -391,3 +391,28 @@ def test_collect_sent_identities_and_purge_match_case_insensitively():
     assert set(imap.deleted_uids) == {b"21", b"22"}
     assert list(imap.folders["Entwuerfe"].keys()) == [b"23"]
 
+
+def test_purge_owner_sent_drafts_targeted_search_skips_full_folder_fetch():
+    from draft_purge import purge_owner_sent_drafts
+
+    imap = MagicMock()
+    imap.select.return_value = ("OK", [b"2500"])
+    imap.uid.return_value = ("OK", [b""])
+
+    purged = purge_owner_sent_drafts(
+        imap,
+        "Entw&APw-rfe",
+        {"info@firma.de"},
+        sent_lead_ids={"HSB-20260708-00001"},
+        sent_message_ids={"<m1@hsb-boden.com>"},
+        apply=True,
+        targeted_search=True,
+    )
+    assert purged == 0
+    search_calls = [c for c in imap.uid.call_args_list if c.args and c.args[0] == "search"]
+    fetch_calls = [c for c in imap.uid.call_args_list if c.args and c.args[0] == "fetch"]
+    assert len(search_calls) == 3
+    assert all("HEADER" in c.args for c in search_calls)
+    assert fetch_calls == []
+
+

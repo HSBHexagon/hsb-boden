@@ -53,6 +53,32 @@ def collect_sent_identities(imap, sent_folder: str, batch_size: int = PURGE_BATC
     return sent_emails, sent_lead_ids, sent_mids
 
 
+def _search_candidate_uids(
+    imap,
+    email_targets: set[str],
+    lead_ids: set[str],
+    mids: set[str],
+) -> list[bytes]:
+    """Use server-side IMAP UID SEARCH HEADER for small identity sets to avoid full-folder header scans."""
+    queries = (
+        [("HEADER", "To", e) for e in sorted(email_targets)]
+        + [("HEADER", "X-HSB-Lead-ID", lid) for lid in sorted(lead_ids)]
+        + [("HEADER", "Message-ID", mid) for mid in sorted(mids)]
+    )
+    if not queries:
+        return []
+    seen: dict[bytes, None] = {}
+    for q in queries:
+        typ, data = imap.uid("search", None, *q)
+        if typ != "OK":
+            raise RuntimeError("PURGE_SEARCH_FAILED")
+        raw_uids = data[0].split() if data and data[0] else []
+        for u in raw_uids:
+            ub = u if isinstance(u, bytes) else str(u).encode()
+            seen[ub] = None
+    return list(seen.keys())
+
+
 def purge_owner_sent_drafts(
     imap,
     drafts_folder: str,
@@ -62,24 +88,27 @@ def purge_owner_sent_drafts(
     sent_message_ids: set[str] | None = None,
     apply: bool = False,
     batch_size: int = PURGE_BATCH_SIZE,
+    targeted_search: bool = False,
 ) -> int:
     """Count and optionally delete drafts whose recipient, Lead-ID or Message-ID is already sent."""
     res, _ = imap.select(drafts_folder)
     if res != "OK":
         raise RuntimeError("PURGE_FOLDER_UNAVAILABLE")
 
-    typ, data = imap.uid("search", None, "ALL")
-    if typ != "OK":
-        raise RuntimeError("PURGE_SEARCH_FAILED")
-
-    raw_uids = data[0].split() if data and data[0] else []
-    uids = [u if isinstance(u, bytes) else str(u).encode() for u in raw_uids]
-    if not uids:
-        return 0
-
     email_targets = _normalize_set(sent_emails)
     lead_ids = _normalize_set(sent_lead_ids)
     mids = _normalize_set(sent_message_ids)
+
+    if targeted_search and (len(email_targets) + len(lead_ids) + len(mids)) <= 6:
+        uids = _search_candidate_uids(imap, email_targets, lead_ids, mids)
+    else:
+        typ, data = imap.uid("search", None, "ALL")
+        if typ != "OK":
+            raise RuntimeError("PURGE_SEARCH_FAILED")
+        raw_uids = data[0].split() if data and data[0] else []
+        uids = [u if isinstance(u, bytes) else str(u).encode() for u in raw_uids]
+    if not uids:
+        return 0
     to_delete: list[bytes] = []
     for start in range(0, len(uids), batch_size):
         chunk = uids[start : start + batch_size]

@@ -764,6 +764,7 @@ class ComMailboxClient:
                     sent_lead_ids=sent_lead_ids,
                     sent_message_ids=sent_message_ids,
                     apply=True,
+                    targeted_search=True,
                 )
         except Exception as exc:
             logger.warning(f"[{self.owner}] purge_drafts_by_identity in {target_folder} fehlgeschlagen: {exc}")

@@ -131,6 +131,20 @@ export function buildLocalBusinessJsonLd() {
     telephone: site.phone,
     email: site.email,
     areaServed: ["Deutschland", "DACH", "Europa"],
+    hasCredential: buildCredentialJsonLd(),
+    knowsAbout: [
+      "Industrieböden",
+      "Säureschutz",
+      "Keramische Industrieböden",
+      "PU-Beton",
+      "Epoxidharz",
+      "Entwässerung",
+      "Bodensanierung",
+      "WHG-Beschichtung",
+      "HACCP-Böden",
+      "Rüttelkeramik",
+      ...NORM_KNOWLEDGE,
+    ],
   };
 }
 

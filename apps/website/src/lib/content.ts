@@ -359,10 +359,10 @@ export function getAllPublicPages() {
       canonicalPath: "/wissen/fugen-forensik/thermoschock-schaeden/",
     },
     {
-      h1: "Rüttelkeramik nach AGI S 40: Der Industriestandard für Säureschutz und Schwerlast",
-      seoTitle: "Rüttelkeramik AGI S 40: Säureschutz-Rüttelbelag | HSB",
+      h1: "Rüttelboden-Aufbau: Schichten, Verlegung und AGI S 40",
+      seoTitle: "Rüttelboden-Aufbau: Schichten & AGI S 40 | HSB",
       description:
-        "Leitfaden zu AGI S 40 Rüttelbelägen: Maschinelle Vollbettung, Druckfestigkeit laut Herstellerdatenblatt und Säureschutz für Lebensmittel- und Chemiebetriebe.",
+        "Wie ist ein Rüttelboden aufgebaut? Untergrund, Haftbrücke, Mörtelbett, Rüttelfliesen und Fugen im Überblick – mit Planungshinweisen zu AGI S 40.",
       canonicalPath: "/wissen/ruettelkeramik-agi-s-40/",
     },
     {

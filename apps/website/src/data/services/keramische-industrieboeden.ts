@@ -3,12 +3,15 @@ import type { Service } from "../../lib/types";
 export const keramischeIndustrieboeden: Service = {
   slug: "keramische-industrieboeden",
   title: "Keramische Industrieböden",
-  seoTitle: "Keramische Industrieböden & Rüttelkeramik | HSB",
+  seoTitle: "Rüttelboden & Rüttelklinker für Industrie | HSB",
   description:
-    "Keramische Industrieböden im Rüttelverfahren: druckfest, säurebeständig und langlebig – für Lebensmittel-, Molkerei- und Chemiebetriebe.",
-  h1: "Keramische Industrieböden für mechanische Höchstlasten",
-  primaryKeyword: "keramischer Industrieboden",
+    "Rüttelboden aus keramischen Industriefliesen: Aufbau, Fugen und Entwässerung für Produktion und Molkerei gemeinsam planen. Projekt mit HSB besprechen.",
+  h1: "Rüttelboden für Industrie und belastete Produktionsflächen",
+  primaryKeyword: "Rüttelboden",
   secondaryKeywords: [
+    "Rüttelfliesen",
+    "Rüttelklinker",
+    "keramischer Industrieboden",
     "Rüttelkeramik",
     "Industriefliesen",
     "Feinsteinzeug Produktion",
@@ -32,7 +35,7 @@ export const keramischeIndustrieboeden: Service = {
     "Hygienische Hohlkehl-Anschlüsse",
   ],
   systemSolution:
-    "Wir planen das Rüttelverfahren mit geeigneten keramischen Fliesen und Platten. DIN EN 14411 regelt deren Produkteigenschaften, nicht die Verlegemethode. Untergrund, Verbund, Fugen und Lasten sind projektspezifisch abzustimmen.",
+    "Ein Rüttelboden verbindet keramische Industriefliesen mit einer abgestimmten Mörtelbettung. Beim Rüttelverfahren werden geeignete Rüttelfliesen oder Rüttelklinker maschinell in das Mörtelbett eingebettet. Wir planen Untergrund, Verbund, Bewegungsfugen, Entwässerung und chemische Beanspruchung zusammen. DIN EN 14411 regelt die Produkteigenschaften der keramischen Fliesen und Platten, nicht die Verlegemethode. Ob das System für Staplerverkehr, Nassreinigung oder Säurebelastung geeignet ist, wird anhand der konkreten Belastungen und Produktnachweise geprüft.",
   benefits: [
     "Höchste Verschleißfestigkeit und Abrasionswiderstand",
     "Hygienisch durch schmale, vollflächig gefüllte Fugen",
@@ -59,6 +62,21 @@ export const keramischeIndustrieboeden: Service = {
     "hohlkehle-sockelausbildung-industrieboden",
   ],
   faqs: [
+    {
+      question: "Was unterscheidet Rüttelboden, Rüttelfliesen und Rüttelklinker?",
+      answer:
+        "Rüttelboden bezeichnet das Bodensystem aus keramischem Belag und Mörtelbettung. Rüttelfliesen und Rüttelklinker bezeichnen Beläge, die für die jeweilige Anwendung und das Rüttelverfahren geeignet sein müssen. Entscheidend sind Produktkennwerte, Bettung, Fugen und die tatsächlichen Lasten; der Produktname allein ist kein Eignungsnachweis.",
+    },
+    {
+      question: "Wie ist ein Rüttelboden für die Industrie aufgebaut?",
+      answer:
+        "Zum Aufbau gehören ein tragfähiger Untergrund, eine geeignete Haftbrücke, die Mörtelbettung, keramische Fliesen und die Verfugung. Bewegungsfugen, Rinnen und Wandanschlüsse werden mitgeplant. Ob eine zusätzliche Abdichtung erforderlich ist, hängt von Nutzung, Medien und Anlagenanforderungen ab. Schichtdicken und Produkte werden projektspezifisch festgelegt.",
+    },
+    {
+      question: "Was kostet ein Rüttelboden pro Quadratmeter?",
+      answer:
+        "Eine belastbare Kosteneinschätzung setzt Angaben zu Fläche, Untergrund, Belastung und Bauablauf voraus. Rückbau, Gefälle, Entwässerung, Fugenmaterial und kurze Sperrfenster können den Aufwand wesentlich verändern. Für eine technische Ersteinschätzung helfen Flächenangaben, Fotos und Informationen zu Reinigung, Staplerverkehr und Produktionszeiten.",
+    },
     {
       question: "Wie schnell ist ein Rüttelboden befahrbar?",
       answer:

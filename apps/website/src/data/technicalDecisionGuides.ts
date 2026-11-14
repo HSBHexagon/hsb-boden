@@ -38,8 +38,8 @@ export const technicalDecisionGuides = {
     intro: "DIN EN 14411 definiert Eigenschaften keramischer Fliesen und Platten. Das ist kein pauschaler Nachweis für die Eignung einer Rüttelverlegung unter jeder Industriebeanspruchung.",
     requiredInputs: ["Produktkennwerte und Prüfzeugnisse der gewählten keramischen Fliesen", "Untergrund, Einbauverfahren, Verbund und konstruktive Bewegungsfugen", "Radlasten, Medienbeständigkeit der Fuge und notwendige Rutschhemmung"],
     decisionRule: "Materialeigenschaften, Einbauqualität und Fugenaufbau bilden ein Gesamtsystem. Wiederbefahrbarkeit erst nach systembezogener Freigabe ansetzen.",
-    relatedUrl: "/leistungen/pu-beton-industrieboden/",
-    relatedLabel: "Alternative PU-Beton-Systeme vergleichen",
+    relatedUrl: "/wissen/ruettelkeramik-agi-s-40/",
+    relatedLabel: "Rüttelboden-Aufbau und AGI S 40 im Detail",
   },
   "pu-beton-industrieboden": {
     heading: "PU-Beton nur mit freigegebenem Systemaufbau spezifizieren",

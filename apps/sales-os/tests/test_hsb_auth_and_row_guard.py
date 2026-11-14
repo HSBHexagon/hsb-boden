@@ -209,3 +209,37 @@ def test_prepare_lead_binding_passes_cached_binding_and_headers_to_send_write(mo
     assert captured == [('HSB-20260708-00001', {'Send_Status': 'SENDING'}, expected_binding, ['Lead-ID', 'Send_Status'])]
     assert (id(svc), 'sid', 'HSB-20260708-00001') not in outbound_safety._ACTIVE_BINDINGS
 
+
+@pytest.mark.row_guard
+def test_tranche_batch_prebind_binds_once_for_multiple_leads_and_cleans_up_on_exit(monkeypatch):
+    import outbound_safety, crm_bindings
+    from test_crm_bindings import FakeSheets
+
+    monkeypatch.setenv('HSB_CRM_BINDINGS_VERIFIED', 'yes')
+    leads = ['HSB-20260708-00001', 'HSB-20260708-00002', 'HSB-20260708-00003']
+    svc = FakeSheets(leads)
+    ensure_calls = []
+    real_ensure = crm_bindings.ensure_bindings
+    monkeypatch.setattr(
+        crm_bindings,
+        'ensure_bindings',
+        lambda s, sid, **k: (ensure_calls.append(set(k.get('only') or ())), real_ensure(s, sid, **k))[1],
+    )
+    key = (id(svc), 'sid')
+    outbound_safety._TRANCHE_CANDIDATE_LEADS[key] = list(leads)
+    try:
+        b1 = outbound_safety.prepare_lead_binding(svc, 'sid', leads[0])
+        outbound_safety._release_binding(svc, 'sid', leads[0])
+        b2 = outbound_safety.prepare_lead_binding(svc, 'sid', leads[1])
+        outbound_safety._release_binding(svc, 'sid', leads[1])
+        b3 = outbound_safety.prepare_lead_binding(svc, 'sid', leads[2])
+        outbound_safety._release_binding(svc, 'sid', leads[2])
+        assert len(ensure_calls) == 1
+        assert ensure_calls[0] == set(leads)
+        assert b1 != b2 and b2 != b3
+        assert len(svc.meta) == 3
+    finally:
+        outbound_safety._cleanup_tranche_bindings(svc, 'sid')
+    assert svc.meta == []
+
+

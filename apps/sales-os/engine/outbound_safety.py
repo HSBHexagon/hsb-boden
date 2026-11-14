@@ -313,11 +313,97 @@ def assert_row_lead(svc, spreadsheet_id, row, lead_id):
 
 
 _ACTIVE_BINDINGS = {}
+_TRANCHE_CANDIDATE_LEADS = {}
+_TRANCHE_PREBOUND = {}
+_TRANCHE_CREATED_BINDINGS = {}
+_PREBIND_CHUNK_SIZE = 250
+
+
+def _prebind_tranche_chunk(svc, spreadsheet_id, lead_id):
+    """Legt Bindungen für einen Block von bis zu 250 Kandidaten in einem Batch an (verhindert Sheets-429-Drosselung)."""
+    import crm_bindings
+    key = (id(svc), spreadsheet_id)
+    remaining = _TRANCHE_CANDIDATE_LEADS.get(key)
+    if remaining is None:
+        return None
+    prior_created = _TRANCHE_CREATED_BINDINGS.pop(key, None)
+    if prior_created:
+        try:
+            crm_bindings.remove_bindings(svc, spreadsheet_id, prior_created)
+        except Exception:  # noqa: BLE001
+            pass
+    _TRANCHE_PREBOUND.pop(key, None)
+    chunk_list = []
+    if lead_id in remaining:
+        idx = remaining.index(lead_id)
+        remaining = remaining[idx:]
+    chunk_list = remaining[:_PREBIND_CHUNK_SIZE]
+    _TRANCHE_CANDIDATE_LEADS[key] = remaining[_PREBIND_CHUNK_SIZE:]
+    chunk_ids = set(chunk_list) | {lead_id}
+    existing = set(crm_bindings.existing_bindings(svc, spreadsheet_id)) & chunk_ids
+    to_create = chunk_ids - existing
+    _TRANCHE_CREATED_BINDINGS[key] = set(to_create)
+    result = crm_bindings.ensure_bindings(svc, spreadsheet_id, apply=True, sleep=lambda s: None, only=chunk_ids)
+    if any(result.get(k) for k in ('conflicts', 'skipped_duplicate', 'skipped_invalid')):
+        raise RuntimeError('CRM_LEAD_BINDING_NOT_CREATED')
+    if os.environ.get('HSB_CRM_BINDINGS_VERIFIED') != 'yes':
+        raise RuntimeError('CRM_STABLE_BINDING_CANARY_REQUIRED')
+    ids = _all_leads_sheet_ids(svc, spreadsheet_id)
+    if len(ids) != 1:
+        raise RuntimeError('CRM_BINDING_WRONG_SHEET')
+    found = svc.spreadsheets().developerMetadata().search(
+        spreadsheetId=spreadsheet_id,
+        body={'dataFilters': [{'developerMetadataLookup': {'metadataKey': 'hsb.lead_id', 'locationType': 'ROW', 'visibility': 'DOCUMENT'}}]},
+    ).execute()
+    by_lead = {}
+    for m in found.get('matchedDeveloperMetadata', []):
+        meta = m['developerMetadata']
+        val = meta.get('metadataValue')
+        if val not in chunk_ids:
+            continue
+        if meta.get('location', {}).get('dimensionRange', {}).get('sheetId') != ids[0]:
+            raise RuntimeError('CRM_BINDING_WRONG_SHEET')
+        by_lead.setdefault(val, []).append(meta['metadataId'])
+    prebound = {}
+    for lid, mids in by_lead.items():
+        if len(mids) == 1:
+            prebound[lid] = {'developerMetadataLookup': {'metadataId': mids[0]}}
+    _TRANCHE_PREBOUND[key] = prebound
+    if lead_id not in prebound:
+        raise RuntimeError('CRM_STABLE_LEAD_BINDING_REQUIRED')
+    return prebound[lead_id]
+
+
+def _cleanup_tranche_bindings(svc, spreadsheet_id):
+    """Entfernt alle im Batch vorab angelegten Bindungen der Tranche in einem Aufruf."""
+    key = (id(svc), spreadsheet_id)
+    _TRANCHE_CANDIDATE_LEADS.pop(key, None)
+    _TRANCHE_PREBOUND.pop(key, None)
+    created = _TRANCHE_CREATED_BINDINGS.pop(key, None)
+    if created:
+        try:
+            import crm_bindings
+            crm_bindings.remove_bindings(svc, spreadsheet_id, created)
+        except Exception as exc:  # noqa: BLE001
+            print(f'WARNUNG: Batch-Bindungen nicht entfernt: {exc}')
 
 
 def prepare_lead_binding(svc, spreadsheet_id, lead_id):
     """Bindung für genau diesen Lead anlegen und als eindeutig bestätigen – vor journal.reserve(),
     damit ein Bindungsfehler keinen RESERVED-Rest hinterlässt, der jeden Folgeversand sperrt."""
+    key = (id(svc), spreadsheet_id)
+    prebound = _TRANCHE_PREBOUND.get(key)
+    if prebound and lead_id in prebound:
+        if os.environ.get('HSB_CRM_BINDINGS_VERIFIED') != 'yes':
+            raise RuntimeError('CRM_STABLE_BINDING_CANARY_REQUIRED')
+        binding = prebound[lead_id]
+        _ACTIVE_BINDINGS[(id(svc), spreadsheet_id, lead_id)] = binding
+        return binding
+    if key in _TRANCHE_CANDIDATE_LEADS:
+        binding = _prebind_tranche_chunk(svc, spreadsheet_id, lead_id)
+        if binding is not None:
+            _ACTIVE_BINDINGS[(id(svc), spreadsheet_id, lead_id)] = binding
+            return binding
     import crm_bindings
     result=crm_bindings.ensure_bindings(svc, spreadsheet_id, apply=True, sleep=lambda s: None, only={lead_id})
     if any(result.get(k) for k in ('conflicts','skipped_duplicate','skipped_invalid')):
@@ -343,6 +429,9 @@ def _send_write(svc, spreadsheet_id, headers, row, lead_id, fields):
 def _release_binding(svc, spreadsheet_id, lead_id):
     """Bindung nach Abschluss entfernen (Metadaten-Kapazität); Fehler hier blockieren den Versand nicht."""
     _ACTIVE_BINDINGS.pop((id(svc), spreadsheet_id, lead_id), None)
+    prebound = _TRANCHE_PREBOUND.get((id(svc), spreadsheet_id))
+    if prebound and lead_id in prebound:
+        return
     try:
         import crm_bindings
         crm_bindings.remove_binding(svc, spreadsheet_id, lead_id)
@@ -742,6 +831,9 @@ def dispatch_verified(count_per_owner=25, owners=('JOEL','JORDI'), dry_run=True,
         for _d in drafts:
             if _d.get('sendable') and _d.get('lead_id') not in sendable_draft_by_lead:
                 sendable_draft_by_lead[_d['lead_id']] = _d
+        _TRANCHE_CANDIDATE_LEADS[(id(svc), SPREADSHEET_ID)] = [
+            it['lead_id'] for it in selected if it.get('lead_id') in sendable_draft_by_lead
+        ]
         try:
             for item in selected:
                 if sent_counts[item['owner']] >= count_per_owner:
@@ -751,7 +843,10 @@ def dispatch_verified(count_per_owner=25, owners=('JOEL','JORDI'), dry_run=True,
                 if time.monotonic()-last_svc_refresh > 1800:
                     try:
                         from sync_to_google_sheet import get_sheets_service
+                        _old_svc = svc
                         svc=get_sheets_service()
+                        _TRANCHE_CANDIDATE_LEADS[(id(svc), SPREADSHEET_ID)] = _TRANCHE_CANDIDATE_LEADS.get((id(_old_svc), SPREADSHEET_ID), [])
+                        _cleanup_tranche_bindings(_old_svc, SPREADSHEET_ID)
                         last_svc_refresh=time.monotonic()
                     except Exception as exc:
                         print(f"WARNUNG: Prophylaktischer Sheets-Service-Refresh: {exc}")
@@ -837,7 +932,9 @@ def dispatch_verified(count_per_owner=25, owners=('JOEL','JORDI'), dry_run=True,
                     if item is not selected[-1]: time.sleep(random.uniform(jitter_min,jitter_max))
                 else:
                     lead['Send_Status']='failed'
-        finally: journal.close()
+        finally:
+            _cleanup_tranche_bindings(svc, SPREADSHEET_ID)
+            journal.close()
         return {'status':'COMPLETED','sent_counts':sent_counts,'skipped':skipped,'halted':halted}
 
 

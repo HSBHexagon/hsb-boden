@@ -4,6 +4,7 @@ import ReferenceCard from "../../components/references/ReferenceCard.astro";
 import CTASection from "../../components/sections/CTASection.astro";
 import FAQAccordion from "../../components/sections/FAQAccordion.astro";
 import ManufacturerProof from "../../components/sections/ManufacturerProof.astro";
+import SystemAufbau from "../../components/sections/SystemAufbau.astro";
 import PageHero from "../../components/sections/PageHero.astro";
 import TechnicalDecisionGuide from "../../components/sections/TechnicalDecisionGuide.astro";
 import BaseLayout from "../../layouts/BaseLayout.astro";
@@ -107,6 +108,7 @@ const serviceImage = serviceImages[service.slug];
       </div>
     </section>
   )}
+  {service.slug === "keramische-industrieboeden" && <SystemAufbau showServiceLinks={false} />}
   {service.slug.includes("keramische") || service.slug.includes("saeureschutz") ? <ManufacturerProof /> : null}
   {relatedReferences.length > 0 && (
     <section class="section">

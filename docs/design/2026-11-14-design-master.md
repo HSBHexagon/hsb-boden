@@ -50,3 +50,10 @@ Marke bleibt unverändert: HSB-Rot, Schwarz, Outfit. Die Farb- und Schriftempfeh
 - Der Sanierungsfenster-Rechner zeigt Besuchern den Vermerk „MOCK_DATA". Das folgt der Projektregel zur Kennzeichnung von Beispieldaten, liest sich aber intern.
 - 23 Wissensartikel haben mobil weiterhin vier bis fünf Überschriftenzeilen. Das liegt an der Länge der Titel, nicht an der Schriftgröße.
 - Die Wirkung auf die Anfragequote ist nicht gemessen.
+
+## Nachtrag: eigener Gestaltungsschwerpunkt (14.11., zweiter Durchgang)
+
+- **Systemschnitt Rüttelkeramik.** Isometrische Zeichnung der fünf Schichten (Betonuntergrund, Haftbrücke, Rüttelbett, Sechskantkeramik, Reaktionsharzfuge) auf der Startseite und der Leistungsseite „Keramische Industrieböden". Die Schichten setzen sich beim ersten Sichtkontakt einmal von unten nach oben; die Zeile unter dem Mauszeiger oder Tastaturfokus hebt ihre Schicht hervor. Inhalt ist eine echte Liste, die Zeichnung selbst ist Schmuck. Ohne JavaScript und bei reduzierter Bewegung steht sie vollständig da.
+- **Sechskant-Raster** als leise Struktur der dunklen Flächen (Startseiten-Kopf, Systemschnitt, Abschluss-Aufruf).
+- **Weicher Seitenwechsel** über die CSS-Seitenübergänge des Browsers, ohne JavaScript.
+- Preis: Die Startseite wird dadurch länger (Desktop rund 8.670 px, mobil rund 14.170 px).

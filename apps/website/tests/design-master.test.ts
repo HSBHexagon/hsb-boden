@@ -59,3 +59,25 @@ describe("Gestaltungsregeln der Website", () => {
     expect(hero).toContain('fetchpriority="high"');
   });
 });
+
+describe("Systemschnitt Rüttelkeramik", () => {
+  const component = readFileSync(join(root, "src/components/sections/SystemAufbau.astro"), "utf8");
+
+  it("steht auf der Startseite und der Keramik-Leistungsseite", () => {
+    expect(read("src/pages/index.astro")).toContain("<SystemAufbau />");
+    expect(read("src/pages/leistungen/[slug].astro")).toContain('service.slug === "keramische-industrieboeden" && <SystemAufbau');
+  });
+
+  it("trägt den Inhalt als Liste, die Zeichnung bleibt Schmuck", () => {
+    expect(component).toContain('aria-hidden="true"');
+    expect(component).toContain("<ol");
+    expect(component).toContain("Schematische Darstellung");
+  });
+
+  it("zeigt die Zeichnung ohne JavaScript und bei reduzierter Bewegung vollständig", () => {
+    // Versteckt wird nur per Skript (data-armed), nie im Grundzustand.
+    expect(component).toContain(".system-aufbau[data-armed] .slab");
+    expect(component).toContain("prefers-reduced-motion: reduce");
+    expect(component).not.toMatch(/\n  \.slab \{[^}]*opacity: 0/);
+  });
+});

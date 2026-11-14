@@ -75,3 +75,10 @@
 - Startseite mobil 14.822 → 12.957 px.
 - Skills: UI UX Pro Max, Frontend Design, UI UX Conversion.
 - Nachweis: `npm run check` 0 Fehler, `npm run test:run` 417/417, Build 69 Seiten, `deploy:dry-run` ok, Modal-Browsertest bestanden, `verify_ssot.py` Exit 0. Kein Production-Deploy.
+
+## 14.11.2026 — Systemschnitt Rüttelkeramik (Claude Code, Branch `feat/systemschnitt-20261114`)
+
+- Neue Komponente `SystemAufbau.astro`: isometrischer Schnitt durch den Rüttelboden, fünf Schichten, auf Startseite und `/leistungen/keramische-industrieboeden/`.
+- Sechskant-Raster für dunkle Flächen, CSS-Seitenübergänge.
+- Startseite wird länger: Desktop rund 8.670 px, mobil rund 14.170 px.
+- Nachweis: `npm run check` 0 Fehler, Tests grün, Build 69 Seiten, `deploy:dry-run` ok. Kein Production-Deploy.

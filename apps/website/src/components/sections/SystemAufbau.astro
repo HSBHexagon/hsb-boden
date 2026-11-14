@@ -1,0 +1,208 @@
+---
+// Isometrischer Schnitt durch einen keramischen Rüttelboden. Die Zeichnung ist
+// schematisch (keine Maßstabs- oder Dickenangabe); die Schichtfolge entspricht
+// der Systembeschreibung auf /leistungen/keramische-industrieboeden/.
+interface Props {
+  /** Auf der Leistungsseite steht der Schnitt im hellen Seitenfluss ohne eigene Handlungsaufforderung. */
+  showServiceLinks?: boolean;
+}
+
+const { showServiceLinks = true } = Astro.props;
+
+const layers = [
+  {
+    title: "Betonuntergrund",
+    text: "Kugelgestrahlt oder gefräst, damit der Aufbau im Verbund trägt.",
+  },
+  {
+    title: "Haftbrücke",
+    text: "Polymervergütet. Sie verbindet Untergrund und Bettung.",
+  },
+  {
+    title: "Rüttelbett",
+    text: "Erdfeuchter, kunstharzmodifizierter Mörtel. Die Dicke richtet sich nach Untergrund und Last.",
+  },
+  {
+    title: "Sechskantkeramik",
+    text: "Maschinell eingerüttelt, für eine möglichst hohlstellenarme Bettung nach AGI S 40.",
+    href: "/leistungen/keramische-industrieboeden/",
+    linkLabel: "Keramische Industrieböden",
+  },
+  {
+    title: "Reaktionsharzfuge",
+    text: "Epoxidharz oder Vinylester, ausgewählt nach Medienliste und Produktdatenblatt.",
+    href: "/leistungen/industrieboden-saeureschutz/",
+    linkLabel: "Industrieboden-Säureschutz",
+  },
+];
+
+// --- Geometrie ---------------------------------------------------------------
+const SIZE = 200;
+const COS = Math.cos(Math.PI / 6);
+const SIN = 0.5;
+const ORIGIN_X = 180;
+const ORIGIN_Y = 142;
+
+const iso = (x: number, y: number, z: number) =>
+  `${(ORIGIN_X + (x - y) * COS).toFixed(1)},${(ORIGIN_Y + (x + y) * SIN - z).toFixed(1)}`;
+
+// base/top in Zeichnungseinheiten; die Abstände dazwischen sind die „Explosion“.
+const slabs = [
+  { base: 0, top: 34, colors: ["#6a7079", "#4b5058", "#3a3f46"] },
+  { base: 56, top: 61, colors: ["#e23b3b", "#b01212", "#8a0c0c"] },
+  { base: 83, top: 103, colors: ["#b3aa9c", "#8c8477", "#716a5f"] },
+  { base: 125, top: 134, colors: ["#ebe8e1", "#c5c1b8", "#a9a59c"] },
+].map((slab) => ({
+  ...slab,
+  topFace: [iso(0, 0, slab.top), iso(SIZE, 0, slab.top), iso(SIZE, SIZE, slab.top), iso(0, SIZE, slab.top)].join(" "),
+  leftFace: [iso(0, SIZE, slab.top), iso(SIZE, SIZE, slab.top), iso(SIZE, SIZE, slab.base), iso(0, SIZE, slab.base)].join(" "),
+  rightFace: [iso(SIZE, 0, slab.top), iso(SIZE, SIZE, slab.top), iso(SIZE, SIZE, slab.base), iso(SIZE, 0, slab.base)].join(" "),
+}));
+
+// Sechskantfliesen auf der Oberseite: flach gezeichnet, per Matrix in die Isometrie gelegt.
+const RADIUS = 14;
+const HEX_W = Math.sqrt(3) * RADIUS;
+const hexes: { points: string; dark: boolean }[] = [];
+for (let row = -1; row * RADIUS * 1.5 < SIZE + RADIUS; row++) {
+  for (let col = -1; col * HEX_W < SIZE + HEX_W; col++) {
+    const cx = col * HEX_W + (Math.abs(row) % 2) * (HEX_W / 2);
+    const cy = row * RADIUS * 1.5;
+    const points = Array.from({ length: 6 }, (_, i) => {
+      const angle = (Math.PI / 3) * i + Math.PI / 6;
+      return `${(cx + RADIUS * Math.cos(angle)).toFixed(1)},${(cy + RADIUS * Math.sin(angle)).toFixed(1)}`;
+    }).join(" ");
+    hexes.push({ points, dark: row % 4 === 1 && col % 3 === 1 });
+  }
+}
+const topMatrix = `matrix(${COS.toFixed(4)} ${SIN} ${(-COS).toFixed(4)} ${SIN} ${ORIGIN_X} ${ORIGIN_Y - slabs[3].top})`;
+---
+
+<section class="system-aufbau hex-ground bg-hsb-black text-white" data-system-aufbau>
+  <div class="container section-tight grid items-center gap-x-14 gap-y-6 lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)] lg:grid-rows-[auto_1fr]">
+    <div class="order-2 lg:order-none lg:row-span-2">
+      <svg class="mx-auto block h-auto w-full max-w-[280px] lg:max-w-[440px]" viewBox="0 0 360 350" aria-hidden="true" focusable="false">
+        <defs>
+          <clipPath id="system-aufbau-top"><rect x="0" y="0" width={SIZE} height={SIZE} /></clipPath>
+        </defs>
+        {slabs.map((slab, index) => (
+          <g class={`slab slab-${index + 1}`} style={`--i:${index}`}>
+            <polygon points={slab.leftFace} fill={slab.colors[1]} />
+            <polygon points={slab.rightFace} fill={slab.colors[2]} />
+            <polygon points={slab.topFace} fill={slab.colors[0]} />
+            {index === 3 && (
+              <g transform={topMatrix} clip-path="url(#system-aufbau-top)" class="joints">
+                {hexes.map((hex) => <polygon points={hex.points} fill={hex.dark ? "#2a2f36" : "#ebe8e1"} />)}
+              </g>
+            )}
+          </g>
+        ))}
+      </svg>
+    </div>
+
+    <div class="order-1 lg:order-none lg:self-end">
+      <p class="eyebrow-light">Systemaufbau Rüttelkeramik</p>
+      <h2 class="h2 mt-3 text-white">Fünf Schichten, ein Bauteil</h2>
+      <p class="mt-4 max-w-[54ch] text-base leading-7 text-white/70">
+        Ein Rüttelboden hält, wenn jede Schicht zur nächsten passt. So ist er aufgebaut, von unten nach oben.
+      </p>
+    </div>
+
+    <div class="order-3 lg:order-none lg:self-start">
+      <ol class="border-b border-white/10">
+        {layers.map((layer, index) => (
+          <li class="layer grid grid-cols-[2.25rem_minmax(0,1fr)] gap-x-2 border-t border-white/10 py-3 lg:py-3.5" data-layer={index + 1} tabindex={layer.href && showServiceLinks ? undefined : 0}>
+            <span class="pt-0.5 text-sm font-black tabular-nums text-hsb-red-light" aria-hidden="true">{String(index + 1).padStart(2, "0")}</span>
+            <div>
+              <h3 class="text-base font-black leading-snug text-white">{layer.title}</h3>
+              <p class="mt-1 text-[0.9375rem] leading-6 text-white/70">{layer.text}</p>
+              {layer.href && showServiceLinks && (
+                <a class="inline-flex min-h-11 items-center gap-2 text-sm font-bold text-white underline decoration-hsb-red decoration-2 underline-offset-4 hover:text-hsb-red-light" href={layer.href}>
+                  {layer.linkLabel}
+                </a>
+              )}
+            </div>
+          </li>
+        ))}
+      </ol>
+      <p class="mt-4 text-xs leading-5 text-white/60">Schematische Darstellung. Schichtdicken und Produkte werden je Projekt festgelegt.</p>
+    </div>
+  </div>
+</section>
+
+<style>
+  .slab {
+    transition:
+      opacity 220ms var(--ease-out-strong),
+      transform 900ms var(--ease-out-strong);
+  }
+
+  .joints polygon {
+    stroke: #7d838a;
+    stroke-width: 1.8;
+    transition: stroke 220ms var(--ease-out-strong);
+  }
+
+  /* Einmaliger Aufbau beim ersten Sichtkontakt: Die Schichten setzen sich von unten nach oben. */
+  .system-aufbau[data-armed] .slab {
+    opacity: 0;
+    transform: translateY(calc((var(--i) + 1) * -16px));
+  }
+
+  .system-aufbau[data-armed][data-built] .slab {
+    opacity: 1;
+    transform: none;
+    transition-delay: calc(var(--i) * 110ms);
+  }
+
+  /* Schicht zur gewählten Zeile hervorheben. */
+  .system-aufbau:has(.layer[data-layer="1"]:is(:hover, :focus-within, :focus)) .slab:not(.slab-1),
+  .system-aufbau:has(.layer[data-layer="2"]:is(:hover, :focus-within, :focus)) .slab:not(.slab-2),
+  .system-aufbau:has(.layer[data-layer="3"]:is(:hover, :focus-within, :focus)) .slab:not(.slab-3),
+  .system-aufbau:has(.layer[data-layer="4"]:is(:hover, :focus-within, :focus)) .slab:not(.slab-4),
+  .system-aufbau:has(.layer[data-layer="5"]:is(:hover, :focus-within, :focus)) .slab:not(.slab-4) {
+    opacity: 0.28;
+    transition-delay: 0ms;
+  }
+
+  .system-aufbau:has(.layer[data-layer="5"]:is(:hover, :focus-within, :focus)) .joints polygon {
+    stroke: #ff4d4d;
+  }
+
+  .layer {
+    transition: background-color 160ms var(--ease-out-strong);
+  }
+
+  .layer:is(:hover, :focus-within, :focus) {
+    background-color: rgb(255 255 255 / 0.04);
+  }
+
+  .layer:focus-visible {
+    outline: 2px solid #ff4d4d;
+    outline-offset: -2px;
+  }
+</style>
+
+<script>
+  const sections = document.querySelectorAll<HTMLElement>("[data-system-aufbau]");
+  const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  if (!reduced && "IntersectionObserver" in window) {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (!entry.isIntersecting) continue;
+          (entry.target as HTMLElement).dataset.built = "";
+          observer.unobserve(entry.target);
+        }
+      },
+      { threshold: 0.35 },
+    );
+    sections.forEach((section) => {
+      // Nur verstecken, was noch nicht im Bild ist – sonst blitzt die Zeichnung beim Laden.
+      if (section.getBoundingClientRect().top > window.innerHeight * 0.9) {
+        section.dataset.armed = "";
+        observer.observe(section);
+      }
+    });
+  }
+</script>

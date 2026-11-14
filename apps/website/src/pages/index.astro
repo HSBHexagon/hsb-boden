@@ -1,5 +1,6 @@
 ---
 import HomepageFAQSection from "../components/sections/HomepageFAQSection.astro";
+import SystemAufbau from "../components/sections/SystemAufbau.astro";
 import LogoCloud from "../components/sections/LogoCloud.astro";
 import CTASection from "../components/sections/CTASection.astro";
 import RepairInquirySection from "../components/forms/RepairInquirySection.astro";
@@ -46,7 +47,7 @@ const proofCards = [
 >
 
   <!-- BLOCK 1: HERO -->
-  <section class="relative overflow-hidden border-b-4 border-hsb-red bg-hsb-black text-white">
+  <section class="hex-ground relative overflow-hidden border-b-4 border-hsb-red bg-hsb-black text-white">
     <div class="container relative z-10 pb-0 pt-14 lg:pt-20">
       <div class="grid gap-12 lg:grid-cols-[1.05fr_0.95fr] lg:items-stretch">
 
@@ -240,6 +241,9 @@ const proofCards = [
       </p>
     </div>
   </section>
+
+  <!-- SYSTEMAUFBAU: isometrischer Schnitt durch den Rüttelboden -->
+  <SystemAufbau />
 
   <!-- BLOCK 4: PROJEKTABLAUF -->
   <section class="border-b border-hsb-line bg-[#f8f9fb] py-12 lg:py-16" id="projektablauf">

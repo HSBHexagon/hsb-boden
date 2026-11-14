@@ -3,6 +3,8 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
 import { homeAlternates, landing } from "../../lib/i18n";
 import { toTelephoneHref } from "../../lib/phone";
 import { site } from "../../data/site";
+import LeadForm from "../forms/LeadForm.astro";
+import { internationalHeroMedia } from "../../data/internationalLandings";
 
 interface Props {
   lang: keyof typeof landing;
@@ -12,11 +14,13 @@ const { lang } = Astro.props;
 const t = landing[lang];
 const path = `/${lang}/`;
 const phoneHref = toTelephoneHref(site.phone);
+const heroMedia = internationalHeroMedia[lang];
 ---
 
 <BaseLayout title={t.meta.seoTitle} description={t.meta.description} path={path} lang={lang} alternates={homeAlternates}>
   <section class="section bg-hsb-mist">
-    <div class="container max-w-5xl">
+    <div class="container grid items-center gap-8 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)] lg:gap-12">
+      <div>
       <p class="eyebrow">{t.hero.eyebrow}</p>
       <h1 class="h1 mt-4">{t.hero.h1}</h1>
       <p class="lead mt-6 max-w-3xl">{t.hero.text}</p>
@@ -24,6 +28,11 @@ const phoneHref = toTelephoneHref(site.phone);
         <a class="button-primary" href="#contact">{t.hero.ctaContact}</a>
         <a class="button-secondary-dark" href="/">{t.hero.ctaGerman}</a>
       </div>
+      </div>
+      <figure class="overflow-hidden rounded-[4px] border border-hsb-line bg-white">
+        <img src="/media/hsb/projekte/verlegung-keramik-640.webp" alt={heroMedia.alt} width="640" height="480" loading="eager" fetchpriority="high" decoding="async" class="aspect-[4/3] w-full object-cover" />
+        <figcaption class="border-t border-hsb-line px-4 py-3 text-xs font-bold leading-5 text-hsb-steel">{heroMedia.caption}</figcaption>
+      </figure>
     </div>
   </section>
 
@@ -62,7 +71,7 @@ const phoneHref = toTelephoneHref(site.phone);
     </div>
   </section>
 
-  <section class="section">
+  <section id="proceso" class="section">
     <div class="container">
       <h2 class="h2">{t.process.title}</h2>
       <div class="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -74,10 +83,20 @@ const phoneHref = toTelephoneHref(site.phone);
           </article>
         ))}
       </div>
+      {lang === "es" && (
+        <div class="mt-10 flex flex-wrap gap-3 border-t border-hsb-line pt-8">
+          <a class="button-primary" href="/es/servicios/">Ver todos los servicios</a>
+          <a class="button-secondary-dark" href="/es/sectores/">Sectores industriales</a>
+          <a class="button-secondary-dark" href="/es/conocimiento/">Artículos técnicos y análisis de juntas</a>
+          <a class="button-secondary-dark" href="/es/referencias/">Proyectos de referencia</a>
+          <a class="button-secondary-dark" href="/es/analisis-cargas/">Comprobador de cargas</a>
+          <a class="button-secondary-dark" href="/es/calculadora-paradas/">Calculadora de paradas</a>
+        </div>
+      )}
     </div>
   </section>
 
-  <section id="contact" class="section bg-hsb-black text-white">
+  <section id="contact" tabindex="-1" class="section bg-hsb-black text-white">
     <div class="container max-w-4xl">
       <h2 class="h2 text-white">{t.contact.title}</h2>
       <p class="mt-4 max-w-2xl text-base leading-7 text-white/70">{t.contact.text}</p>
@@ -92,6 +111,11 @@ const phoneHref = toTelephoneHref(site.phone);
         </a>
       </div>
       <p class="mt-6 text-sm text-white/60">{t.contact.languagesNote}</p>
+      {lang === "es" && (
+        <div class="mt-8 text-hsb-black">
+          <LeadForm lang="es" />
+        </div>
+      )}
     </div>
   </section>
 </BaseLayout>

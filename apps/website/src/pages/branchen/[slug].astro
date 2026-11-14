@@ -8,6 +8,7 @@ import TechnicalDecisionGuide from "../../components/sections/TechnicalDecisionG
 import BaseLayout from "../../layouts/BaseLayout.astro";
 import { getArticles, getIndustries, getReferencesForSlugs, getServices } from "../../lib/content";
 import { buildBreadcrumbJsonLd, buildFaqJsonLd } from "../../lib/schema";
+import { spanishAlternates } from "../../lib/spanishPaths";
 
 export const prerender = true;
 
@@ -56,7 +57,7 @@ const industryImages: Record<string, { src: string; alt: string }> = {
 const industryImage = industryImages[industry.slug];
 ---
 
-<BaseLayout title={industry.seoTitle} description={industry.description} path={path} jsonLd={[buildFaqJsonLd(industry.faqs), buildBreadcrumbJsonLd([{ name: "Start", path: "/" }, { name: "Branchen", path: "/branchen/" }, { name: industry.title, path }])]}>
+<BaseLayout alternates={spanishAlternates(path)} title={industry.seoTitle} description={industry.description} path={path} jsonLd={[buildFaqJsonLd(industry.faqs), buildBreadcrumbJsonLd([{ name: "Start", path: "/" }, { name: "Branchen", path: "/branchen/" }, { name: industry.title, path }])]}>
   <PageHero eyebrow="Branche" title={industry.h1} text={industry.description} ctaLabel={industry.ctaLabel} image={industryImage} />
   <LogoCloud industryFilter={industry.slug} eyebrow="Branchennahe Einträge zuerst" title="Referenzkunden und Kundenstandorte (Auszug)" />
   <section class="section">

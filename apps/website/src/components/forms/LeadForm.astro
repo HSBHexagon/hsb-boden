@@ -1,22 +1,26 @@
 ---
 import { loadOptions } from "../../lib/validation";
 import { site } from "../../data/site";
+import { getLeadFormCopy } from "../../data/leadFormCopy";
+import { cookieTexts, type Lang } from "../../lib/i18n";
 
 interface Props {
   repairRequest?: boolean;
+  lang?: Lang;
 }
 
-const { repairRequest = false } = Astro.props;
+const { repairRequest = false, lang = "de" } = Astro.props;
+const t = getLeadFormCopy(lang);
 // Online-Versand aktiv, wenn der serverseitige Lead-Endpoint im Build freigegeben ist.
 const deliveryConfigured = site.hasLeadEndpoint;
 ---
 
-<form id="lead-form" method="post" action="/api/lead" class="surface grid gap-4 p-5" data-delivery-configured={deliveryConfigured} data-repair-request={repairRequest ? "true" : undefined}>
+<form id="lead-form" method="post" action="/api/lead" class="surface grid gap-4 p-5" data-delivery-configured={deliveryConfigured} data-repair-request={repairRequest ? "true" : undefined} data-error-loads={t.errorLoads} data-sending-label={t.sending} data-success-path={t.successPath} data-mail-copy={JSON.stringify({ subject: t.mailSubject, hello: t.mailHello, firstName: t.firstName, company: t.company, email: t.email, phone: t.phone, industry: t.industry, projectType: t.projectType, area: t.area, operation: t.operation, loads: t.loads, message: t.message, noSelection: t.noSelection })}>
   {!deliveryConfigured ? (
     <div class="rounded border border-hsb-red/30 bg-hsb-red/5 p-4 text-sm leading-6 text-hsb-black">
-      <p class="font-black">Direkter Draht ins Projektgeschäft</p>
+      <p class="font-black">{t.directTitle}</p>
       <p class="mt-1 text-hsb-steel">
-        Für die schnellste technische Ersteinschätzung erreichen Sie HSB direkt per Telefon oder E-Mail:
+        {t.directIntro}
       </p>
       <p class="mt-2 font-bold">
         <a class="text-hsb-red hover:underline" href={`tel:${site.phone.replace("(0)", "").replace(/[^+\d]/g, "")}`}>{site.phone}</a>
@@ -24,109 +28,118 @@ const deliveryConfigured = site.hasLeadEndpoint;
         <a class="text-hsb-red hover:underline" href={`mailto:${site.email}`}>{site.email}</a>
       </p>
       <p class="mt-2 text-xs text-hsb-steel">
-        Sie können das Formular auch ausfüllen – die Schaltfläche unten öffnet Ihre Angaben direkt vorbefüllt in Ihrem E-Mail-Programm.
+        {t.fallbackHint}
       </p>
     </div>
   ) : null}
 
   <div class="grid gap-4 sm:grid-cols-2">
     <label class="grid gap-2 text-sm font-bold">
-      <span>Vorname <span class="text-hsb-red" aria-hidden="true">*</span></span>
+      <span>{t.firstName} <span class="text-hsb-red" aria-hidden="true">*</span></span>
       <input required minlength={2} maxlength={80} name="firstName" autocomplete="given-name" class="rounded border border-hsb-line px-3 py-3 font-normal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-hsb-red" />
     </label>
     <label class="grid gap-2 text-sm font-bold">
-      <span>Nachname <span class="text-hsb-red" aria-hidden="true">*</span></span>
+      <span>{t.lastName} <span class="text-hsb-red" aria-hidden="true">*</span></span>
       <input required minlength={2} maxlength={80} name="lastName" autocomplete="family-name" class="rounded border border-hsb-line px-3 py-3 font-normal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-hsb-red" />
     </label>
   </div>
   <label class="grid gap-2 text-sm font-bold">
-    <span>Firma <span class="text-hsb-red" aria-hidden="true">*</span></span>
+    <span>{t.company} <span class="text-hsb-red" aria-hidden="true">*</span></span>
     <input required minlength={2} maxlength={120} name="company" autocomplete="organization" class="rounded border border-hsb-line px-3 py-3 font-normal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-hsb-red" />
   </label>
   <div class="grid gap-4 sm:grid-cols-2">
     <label class="grid gap-2 text-sm font-bold">
-      <span>E-Mail <span class="text-hsb-red" aria-hidden="true">*</span></span>
+      <span>{t.email} <span class="text-hsb-red" aria-hidden="true">*</span></span>
       <input required type="email" name="email" autocomplete="email" class="rounded border border-hsb-line px-3 py-3 font-normal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-hsb-red" />
     </label>
     <label class="grid gap-2 text-sm font-bold">
-      <span>Telefon <span class="text-hsb-red" aria-hidden="true">*</span></span>
+      <span>{t.phone} <span class="text-hsb-red" aria-hidden="true">*</span></span>
       <input required minlength={5} type="tel" name="phone" autocomplete="tel" class="rounded border border-hsb-line px-3 py-3 font-normal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-hsb-red" />
     </label>
   </div>
   <label class="grid gap-2 text-sm font-bold">
-    <span>Worum geht es? <span class="text-hsb-red" aria-hidden="true">*</span></span>
+    <span>{t.projectType} <span class="text-hsb-red" aria-hidden="true">*</span></span>
     <select required name="projectType" class="rounded border border-hsb-line px-3 py-3 font-normal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-hsb-red">
-      <option value="">Bitte wählen</option>
-      <option value="neubau">Neubau</option>
-      <option value="sanierung" selected={repairRequest}>{repairRequest ? "Reparatur oder Sanierung" : "Sanierung"}</option>
-      <option value="bewertung">Technische Bewertung</option>
+      <option value="">{t.choose}</option>
+      <option value="neubau">{t.newBuild}</option>
+      <option value="sanierung" selected={repairRequest}>{repairRequest ? t.repair : t.refurbishment}</option>
+      <option value="bewertung">{t.assessment}</option>
     </select>
   </label>
   <fieldset id="loads-fieldset" class="grid gap-3">
-    <legend class="text-sm font-black">Was belastet den Boden? <span class="text-hsb-red" aria-hidden="true">*</span> <span class="font-normal text-hsb-steel">(mindestens eine Angabe)</span></legend>
+    <legend class="text-sm font-black">{t.loads} <span class="text-hsb-red" aria-hidden="true">*</span> <span class="font-normal text-hsb-steel">{t.atLeastOne}</span></legend>
     <div class="grid gap-2 sm:grid-cols-2">
       {loadOptions.map((option) => (
         <label class="flex min-h-11 cursor-pointer items-center gap-3 rounded border border-hsb-line bg-white px-3 text-sm text-hsb-ink has-[:checked]:border-hsb-red has-[:checked]:bg-hsb-red/5">
           <input type="checkbox" name="loads" value={option} class="size-5 shrink-0 accent-hsb-red" />
-          {option}
+          {t.loadLabels[option]}
         </label>
       ))}
     </div>
   </fieldset>
   <label class="grid gap-2 text-sm font-bold">
-    <span>Nachricht <span class="text-hsb-red" aria-hidden="true">*</span></span>
-    <textarea required minlength={10} maxlength={2000} name="message" rows={5} placeholder={repairRequest ? "Beispiel: Fuge an einer Rinne ausgebrochen, Halle 2, Stillstandsfenster am Wochenende." : undefined} class="rounded border border-hsb-line px-3 py-3 font-normal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-hsb-red" />
+    <span>{t.message} <span class="text-hsb-red" aria-hidden="true">*</span></span>
+    <textarea required minlength={10} maxlength={2000} name="message" rows={5} placeholder={repairRequest ? t.repairPlaceholder : undefined} class="rounded border border-hsb-line px-3 py-3 font-normal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-hsb-red" />
   </label>
   <details id="lead-details" class="rounded border border-hsb-line bg-hsb-mist/60 open:bg-white">
     <summary class="flex min-h-12 cursor-pointer items-center justify-between gap-3 px-4 py-3 text-sm font-black text-hsb-black">
-      <span>Weitere Angaben zu Branche, Fläche und Betrieb <span class="font-normal text-hsb-steel">(optional)</span></span>
+      <span>{t.details} <span class="font-normal text-hsb-steel">{t.optional}</span></span>
       <svg class="size-4 shrink-0 text-hsb-red transition-transform [details[open]_&]:rotate-180" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9" /></svg>
     </summary>
     <div class="grid gap-4 border-t border-hsb-line p-4 sm:grid-cols-3">
       <label class="grid gap-2 text-sm font-bold">
-        Branche
+        {t.industry}
         <select name="industry" class="rounded border border-hsb-line px-3 py-3 font-normal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-hsb-red">
-          <option value="">Keine Angabe</option>
-          <option value="lebensmittelindustrie">Lebensmittelindustrie</option>
-          <option value="molkerei">Molkerei</option>
-          <option value="brauerei-getraenkeindustrie">Brauerei/Getränke</option>
-          <option value="chemieindustrie">Chemie</option>
-          <option value="pharmaindustrie">Pharma</option>
-          <option value="backwarenproduktion-grosskueche">Backwaren/Großküche</option>
-          <option value="sonstige">Sonstige</option>
+          <option value="">{t.noSelection}</option>
+          <option value="lebensmittelindustrie">{t.food}</option>
+          <option value="molkerei">{t.dairy}</option>
+          <option value="brauerei-getraenkeindustrie">{t.brewery}</option>
+          <option value="chemieindustrie">{t.chemical}</option>
+          <option value="pharmaindustrie">{t.pharma}</option>
+          <option value="backwarenproduktion-grosskueche">{t.bakery}</option>
+          <option value="sonstige">{t.other}</option>
         </select>
       </label>
       <label class="grid gap-2 text-sm font-bold">
-        Fläche in m²
+        {t.area}
         <input name="areaSize" inputmode="numeric" class="rounded border border-hsb-line px-3 py-3 font-normal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-hsb-red" />
       </label>
       <label class="grid gap-2 text-sm font-bold">
-        Laufender Betrieb
+        {t.operation}
         <select name="liveOperation" class="rounded border border-hsb-line px-3 py-3 font-normal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-hsb-red">
-          <option value="unklar" selected>Noch unklar</option>
-          <option value="ja">Ja</option>
-          <option value="nein">Nein</option>
+          <option value="unklar" selected>{t.unsure}</option>
+          <option value="ja">{t.yes}</option>
+          <option value="nein">{t.no}</option>
         </select>
       </label>
     </div>
   </details>
   <label class="flex items-start gap-3 text-sm leading-6 text-hsb-steel">
     <input required type="checkbox" name="privacyConsent" class="mt-0.5 size-5 shrink-0 accent-hsb-red focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-hsb-red" />
-    Ich stimme zu, dass meine Angaben zur Bearbeitung der Anfrage verarbeitet werden.
+    <span>{t.privacy} <a class="underline underline-offset-2 hover:text-hsb-red" href="/datenschutz/" hreflang="de">{cookieTexts[lang].privacyLink}</a></span>
   </label>
 
   <p id="form-error" role="alert" aria-live="assertive" class="hidden rounded border border-hsb-red/40 bg-hsb-red/5 px-3 py-2 text-sm text-hsb-red">
-    Senden fehlgeschlagen. Bitte kontaktieren Sie uns direkt unter {site.phone} oder {site.email}.
+    {t.errorPrefix}{" "}{site.phone}{" "}{t.or}{" "}{site.email}.
   </p>
+
+  <noscript>
+    <p class="rounded border border-hsb-line bg-hsb-mist p-4 text-sm leading-6 text-hsb-black">
+      {t.noScript}{" "}
+      <a class="font-bold underline" href={`tel:${site.phone.replace("(0)", "").replace(/[^+\d]/g, "")}`}>{site.phone}</a>{" "}
+      {t.or}{" "}<a class="font-bold underline" href={`mailto:${site.email}`}>{site.email}</a>.
+    </p>
+  </noscript>
 
   <button
     id="form-submit"
     class="button-primary"
     type="submit"
+    disabled
   >
     {!deliveryConfigured
-      ? "Anfrage per E-Mail zusammenstellen"
-      : "Projektanfrage senden"}
+      ? t.composeEmail
+      : t.send}
   </button>
 </form>
 
@@ -144,6 +157,7 @@ const deliveryConfigured = site.hasLeadEndpoint;
 
   const form = document.getElementById("lead-form") as HTMLFormElement | null;
   const submitBtn = document.getElementById("form-submit") as HTMLButtonElement | null;
+  if (submitBtn) submitBtn.disabled = false;
   const errorMsg = document.getElementById("form-error");
   const deliveryConfigured = form?.dataset.deliveryConfigured === "true";
   const genericErrorText = errorMsg?.textContent ?? "";
@@ -167,7 +181,7 @@ const deliveryConfigured = site.hasLeadEndpoint;
     // Checkbox-Gruppen haben kein natives required, daher hier prüfen.
     if (fd.getAll("loads").length === 0) {
       errorMsg.textContent =
-        "Bitte wählen Sie mindestens eine Belastung aus, damit wir Ihr Projekt einschätzen können.";
+        form.dataset.errorLoads || "Bitte wählen Sie mindestens eine Belastung aus, damit wir Ihr Projekt einschätzen können.";
       errorMsg.classList.remove("hidden");
       document.getElementById("loads-fieldset")?.querySelector("input")?.focus();
       return;
@@ -176,21 +190,22 @@ const deliveryConfigured = site.hasLeadEndpoint;
     // Ehrlicher Mailto-Fallback, wenn Webhook-Endpunkt nicht aktiv/konfiguriert ist
     if (!deliveryConfigured) {
       const company = String(fd.get("company") || "Industrieboden");
-      const subject = encodeURIComponent(`Projektanfrage Industrieboden: ${company}`);
+      const mailCopy = JSON.parse(form.dataset.mailCopy || "{}") as Record<string, string>;
+      const subject = encodeURIComponent(`${mailCopy.subject || "Projektanfrage Industrieboden"}: ${company}`);
       const bodyLines = [
-        "Guten Tag HSB-Team,",
+        mailCopy.hello || "Guten Tag HSB-Team,",
         "",
-        `Name: ${fd.get("firstName")} ${fd.get("lastName")}`,
-        `Firma: ${company}`,
-        `E-Mail: ${fd.get("email")}`,
-        `Telefon: ${fd.get("phone") || "k. A."}`,
-        `Branche: ${fd.get("industry") || "k. A."}`,
-        `Projektart: ${fd.get("projectType")}`,
-        `Fläche: ${fd.get("areaSize") || "k. A."} m²`,
-        `Laufender Betrieb: ${fd.get("liveOperation")}`,
-        `Belastungen: ${fd.getAll("loads").join(", ")}`,
+        `${mailCopy.firstName || "Name"}: ${fd.get("firstName")} ${fd.get("lastName")}`,
+        `${mailCopy.company || "Firma"}: ${company}`,
+        `${mailCopy.email || "E-Mail"}: ${fd.get("email")}`,
+        `${mailCopy.phone || "Telefon"}: ${fd.get("phone") || mailCopy.noSelection || "k. A."}`,
+        `${mailCopy.industry || "Branche"}: ${fd.get("industry") || mailCopy.noSelection || "k. A."}`,
+        `${mailCopy.projectType || "Projektart"}: ${fd.get("projectType")}`,
+        `${mailCopy.area || "Fläche"}: ${fd.get("areaSize") || mailCopy.noSelection || "k. A."} m²`,
+        `${mailCopy.operation || "Laufender Betrieb"}: ${fd.get("liveOperation")}`,
+        `${mailCopy.loads || "Belastungen"}: ${fd.getAll("loads").join(", ")}`,
         "",
-        "Nachricht:",
+        `${mailCopy.message || "Nachricht"}:`,
         String(fd.get("message") || ""),
       ];
       window.location.href = `mailto:${site.email}?subject=${subject}&body=${encodeURIComponent(bodyLines.join("\n"))}`;
@@ -235,7 +250,7 @@ const deliveryConfigured = site.hasLeadEndpoint;
 
     submitBtn.disabled = true;
     const originalBtnText = submitBtn.textContent;
-    submitBtn.textContent = "Wird gesendet …";
+    submitBtn.textContent = form.dataset.sendingLabel || "Wird gesendet …";
     errorMsg.classList.add("hidden");
 
     try {
@@ -256,7 +271,7 @@ const deliveryConfigured = site.hasLeadEndpoint;
 
     // Only an unsuccessful backend delivery may re-enable submission.
     await trackAfterConfirmedLead(() => trackEventAndWait(TrackingEvent.LeadFormSubmit));
-    window.location.href = "/danke-projektanfrage/";
+    window.location.href = form.dataset.successPath || "/danke-projektanfrage/";
   }
 
   // Übergabe aus dem Beanspruchungs-Check: Belastungen, Projektart, Betrieb

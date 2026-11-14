@@ -2,6 +2,8 @@
 import { footerGroups } from "../../data/navigation";
 import { site } from "../../data/site";
 import { languages, ui, type Lang } from "../../lib/i18n";
+import { spanishUi, spanishFooterGroups, spanishLinkLabel } from "../../data/spanishUi";
+import { hasSpanishEquivalent, toGermanPath, toSpanishPath } from "../../lib/spanishPaths";
 
 interface Props {
   lang?: Lang;
@@ -9,29 +11,46 @@ interface Props {
 
 const { lang = "de" } = Astro.props;
 const cookieSettingsLabel = ui[lang].cookieSettings;
+const isSpanish = lang === "es";
+const currentPathname = Astro.url.pathname;
+const resolveFooterHref = (href: string) => {
+  if (!isSpanish) return href;
+  if (href === "/#ueber-uns") return "/es/";
+  return toSpanishPath(href);
+};
+const resolveLangHref = (code: Lang, defaultHref: string) => {
+  if (!hasSpanishEquivalent(currentPathname)) return defaultHref;
+  if (code === "es") return toSpanishPath(currentPathname);
+  if (code === "de") return toGermanPath(currentPathname);
+  return defaultHref;
+};
 ---
 
-<footer class="border-t border-hsb-line bg-hsb-black text-white">
+<footer lang={isSpanish ? "es" : "de"} class="border-t border-hsb-line bg-hsb-black text-white">
   <div class="container grid gap-10 pt-14 pb-24 md:pb-14 lg:grid-cols-[1.2fr_2fr]">
     <div>
       <div class="mb-4">
         <img src="/brand/hsb-boden-logo-dark.png" alt="Hexagon Säurebau GmbH" class="h-12 w-auto aspect-[148/48] object-contain" loading="lazy" width="148" height="48" />
       </div>
-      <p class="max-w-md text-sm leading-7 text-white/70">{site.description}</p>
-      <p class="mt-6 text-sm text-white/60">Gronau · NRW · Industrieböden, Säureschutz und Sanierung für produktionskritische Bereiche.</p>
-      <p class="mt-4 text-sm leading-7 text-white/60">Ausführung mit eigenem, festangestelltem Fachpersonal – ohne wechselnde Subunternehmer. Eingespieltes, branchenspezialisiertes und mehrsprachiges Team mit jahrzehntelanger Erfahrung, von der Detailreparatur bis zur kompletten Systemlösung.</p>
+      <p class="max-w-md text-sm leading-7 text-white/70">{isSpanish ? spanishUi.description : site.description}</p>
+      <p class="mt-6 text-sm text-white/60">{isSpanish ? spanishUi.location : "Gronau · NRW · Industrieböden, Säureschutz und Sanierung für produktionskritische Bereiche."}</p>
+      <p class="mt-4 text-sm leading-7 text-white/60">{isSpanish ? spanishUi.team : "Ausführung mit eigenem, festangestelltem Fachpersonal – ohne wechselnde Subunternehmer. Eingespieltes, branchenspezialisiertes und mehrsprachiges Team mit jahrzehntelanger Erfahrung, von der Detailreparatur bis zur kompletten Systemlösung."}</p>
     </div>
     <div class="grid grid-cols-2 gap-x-6 gap-y-8 sm:grid-cols-3">
       {footerGroups.map((group) => (
         <div>
-          <h2 class="mb-4 text-sm font-black uppercase tracking-wide text-white">{group.title}</h2>
+          <h2 class="mb-4 text-sm font-black uppercase tracking-wide text-white">{isSpanish ? spanishFooterGroups[group.title] ?? group.title : group.title}</h2>
           <ul class="space-y-1 text-sm text-white/70">
-            {group.links.map((link) => (
-              <li><a class="inline-block py-1.5 hover:text-white" href={link.href}>{link.label}</a></li>
-            ))}
+            {group.links.map((link) => {
+              const targetHref = resolveFooterHref(link.href);
+              const isGermanFallback = isSpanish && targetHref === link.href;
+              return (
+                <li><a class="inline-block py-1.5 hover:text-white" href={targetHref} hreflang={isGermanFallback ? "de" : undefined}>{isSpanish ? spanishLinkLabel(link.href, link.label) : link.label}</a></li>
+              );
+            })}
             {group.title === "Unternehmen & Team" && (
               <li>
-                <button id="footer-cookie-settings" class="py-1.5 text-left underline-offset-2 hover:text-white hover:underline">{cookieSettingsLabel}</button>
+                <button id="footer-cookie-settings" lang={lang} class="py-1.5 text-left underline-offset-2 hover:text-white hover:underline">{cookieSettingsLabel}</button>
               </li>
             )}
           </ul>
@@ -42,11 +61,13 @@ const cookieSettingsLabel = ui[lang].cookieSettings;
 
   <div class="border-t border-white/10 bg-black/40 py-6">
     <div class="container flex flex-col gap-4 text-xs text-white/60 sm:flex-row sm:items-center sm:justify-between">
-      <nav class="flex flex-wrap items-center gap-x-1 gap-y-0" aria-label="Internationale Sprachversionen">
-        <span class="font-bold text-white/80">Sprachen:</span>
+      <nav class="flex flex-wrap items-center gap-x-1 gap-y-0" aria-label={isSpanish ? spanishUi.chooseLanguage : "Internationale Sprachversionen"}>
+        <span class="font-bold text-white/80">{isSpanish ? spanishUi.languages : "Sprachen:"}</span>
         {languages.map((l) => (
           <a
-            href={l.href}
+            href={resolveLangHref(l.code, l.href)}
+            lang={l.code}
+            hreflang={l.code}
             class={`inline-flex min-h-11 items-center px-2 transition-colors hover:text-white ${l.code === lang ? "text-white font-bold underline" : ""}`}
             aria-current={l.code === lang ? "page" : undefined}
           >
@@ -54,7 +75,7 @@ const cookieSettingsLabel = ui[lang].cookieSettings;
           </a>
         ))}
       </nav>
-      <p>© {new Date().getFullYear()} {site.name}. Alle Rechte vorbehalten.</p>
+      <p>© {new Date().getFullYear()} {site.name}. {isSpanish ? spanishUi.rights : "Alle Rechte vorbehalten."}</p>
     </div>
   </div>
 </footer>

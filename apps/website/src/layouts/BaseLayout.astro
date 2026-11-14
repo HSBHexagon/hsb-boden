@@ -7,6 +7,7 @@ import MobileQuickContact from "../components/layout/MobileQuickContact.astro";
 import RepairModal from "../components/forms/RepairModal.astro";
 import SEOHead from "../components/seo/SEOHead.astro";
 import { ui, type Lang } from "../lib/i18n";
+import { spanishAlternates } from "../lib/spanishPaths";
 import "../styles/global.css";
 // Gleiche gehashte Datei wie in global.css (Vite dedupliziert nach Inhalt):
 // 900 trägt die Hero-H1 (LCP-Element), 400 den Fließtext.
@@ -24,6 +25,7 @@ interface Props {
 }
 
 const { title, description, path, jsonLd = [], lang = "de", alternates = [], robots } = Astro.props;
+const effectiveAlternates = alternates.length > 0 ? alternates : spanishAlternates(path);
 const skipLabel = ui[lang].skip;
 ---
 
@@ -34,7 +36,7 @@ const skipLabel = ui[lang].skip;
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <link rel="preload" href={outfit900} as="font" type="font/woff2" crossorigin />
     <link rel="preload" href={outfit400} as="font" type="font/woff2" crossorigin />
-    <SEOHead title={title} description={description} path={path} jsonLd={jsonLd} alternates={alternates} robots={robots} />
+    <SEOHead title={title} description={description} path={path} jsonLd={jsonLd} alternates={effectiveAlternates} robots={robots} />
     <!-- GA4 Basic Consent: Der externe Google-Request entsteht erst nach einer
          aktiven Statistik-Einwilligung. Der Loader reagiert auf hsb:consent. -->
     <script>

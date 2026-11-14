@@ -6,7 +6,11 @@ export async function GET() {
   const urls = pages
     // Conversion-Bestaetigungsseiten gehoeren nicht in die Sitemap, da die
     // Sitemap nur URLs enthalten soll, die in der Suche erscheinen sollen.
-    .filter((page) => page.canonicalPath !== "/danke-projektanfrage/")
+    .filter(
+      (page) =>
+        page.canonicalPath !== "/danke-projektanfrage/" &&
+        page.canonicalPath !== "/es/gracias/",
+    )
     // Google ignoriert priority/changefreq. Ein pauschales Build-Datum als
     // lastmod waere nicht verifizierbar; daher nur kanonische URLs ausgeben.
     .map((page) => `<url><loc>${canonical(page.canonicalPath)}</loc></url>`)

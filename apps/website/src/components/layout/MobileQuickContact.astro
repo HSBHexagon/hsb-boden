@@ -17,15 +17,20 @@ const labels: Record<Lang, { call: string; request: string }> = {
   nl: { call: "Bellen", request: "Offerte aanvragen" },
   pl: { call: "Zadzwoń", request: "Zapytaj o wycenę" },
   fr: { call: "Appeler", request: "Demander un devis" },
+  es: { call: "Llamar", request: "Consultar proyecto" },
 };
 
 const text = labels[lang] ?? labels.de;
-const contactHref = lang === "de" ? "/kontakt/" : `/${lang}/`;
+const regionLabels: Record<Lang, string> = {
+  de: "Schnellkontakt", en: "Quick contact", tr: "Hızlı iletişim", nl: "Snel contact",
+  pl: "Szybki kontakt", fr: "Contact rapide", es: "Contacto rápido",
+};
+const contactHref = lang === "de" ? "/kontakt/" : `/${lang}/#contact`;
 ---
 
 <aside
   class="fixed inset-x-0 bottom-0 z-40 flex items-center justify-between gap-2 border-t border-white/15 bg-hsb-black/95 px-3 py-2 shadow-[0_-4px_20px_rgba(0,0,0,0.45)] backdrop-blur-md md:hidden"
-  aria-label="Schnellkontakt"
+  aria-label={regionLabels[lang]}
 >
   <a
     href={phoneHref}

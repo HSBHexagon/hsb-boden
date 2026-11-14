@@ -1,5 +1,39 @@
 ---
 import { manufacturers } from "../../data/manufacturers";
+
+const isSpanish = Astro.url.pathname.startsWith("/es/");
+
+const spanishManufacturers = [
+  {
+    name: "Argelith",
+    role: "Fuente técnica de fabricante sobre pavimentos cerámicos industriales",
+    links: [
+      { label: "Gres porcelánico", href: "https://argelith.de/produkte/feinsteinzeug/" },
+      { label: "Industria láctea", href: "https://argelith.de/einsatzbereiche/milchindustrie/" },
+      { label: "Descargas", href: "https://argelith.de/de/downloads/" },
+    ],
+    proofPoints: [
+      "Gres porcelánico como base cerámica para superficies de producción sometidas a altas exigencias",
+      "Criterios de selección: densidad, facilidad de limpieza, resistencia al deslizamiento y resistencia química y térmica",
+      "La información del producto se cita como referencia técnica del fabricante, no como certificación propia de HSB",
+    ],
+  },
+  {
+    name: "Zahna Fliesen GmbH",
+    role: "Fuente técnica de fabricante sobre baldosas industriales y antiácidas",
+    links: [
+      { label: "Baldosas industriales", href: "https://www.zahna-industrie.de/" },
+      { label: "Resistencia a ácidos", href: "https://www.zahna-industrie.de/kopie-von-features-2" },
+    ],
+    proofPoints: [
+      "Baldosas cerámicas industriales resistentes a ácidos y álcalis",
+      "La resistencia al deslizamiento, la capacidad mecánica y la colocación como sistema son magnitudes relevantes de proyecto",
+      "Fuente técnica de apoyo para las páginas de servicios de HSB sobre cerámica y protección contra ácidos",
+    ],
+  },
+];
+
+const items = isSpanish ? spanishManufacturers : manufacturers;
 ---
 
 <section class="section bg-white border-b border-hsb-line">
@@ -8,17 +42,19 @@ import { manufacturers } from "../../data/manufacturers";
       <div class="max-w-3xl">
         <div class="flex items-center gap-3 eyebrow mb-6">
           <span class="size-1.5 bg-hsb-red"></span>
-          <span>Material- & Planungsgrundlage</span>
+          <span>{isSpanish ? "Base de materiales y planificación" : "Material- & Planungsgrundlage"}</span>
         </div>
-        <h2 class="h2">Technische Systeme, ehrlich eingeordnet</h2>
+        <h2 class="h2">{isSpanish ? "Sistemas técnicos descritos con rigor" : "Technische Systeme, ehrlich eingeordnet"}</h2>
         <p class="lead mt-8 text-hsb-steel/80">
-          HSB nutzt anerkannte Herstellersysteme als technische Basis. Wir kommunizieren keine exklusiven Partnerschafts-Claims, sondern die belastbare Anwendung von Industriestandards.
+          {isSpanish
+            ? "HSB utiliza sistemas reconocidos de fabricantes como base técnica. No comunicamos acuerdos exclusivos no verificados, sino la aplicación técnica de estándares industriales."
+            : "HSB nutzt anerkannte Herstellersysteme als technische Basis. Wir kommunizieren keine exklusiven Partnerschafts-Claims, sondern die belastbare Anwendung von Industriestandards."}
         </p>
       </div>
     </div>
 
     <div class="grid gap-8 lg:grid-cols-2">
-      {manufacturers.map((manufacturer) => (
+      {items.map((manufacturer) => (
         <article class="relative flex flex-col p-8 lg:p-10 border border-hsb-line rounded-[2px] bg-[#fbfcfd] hover:bg-white transition-all duration-300 group">
           <div class="flex flex-col gap-1 mb-8">
             <h3 class="text-2xl font-black text-hsb-black group-hover:text-hsb-red transition-colors">{manufacturer.name}</h3>

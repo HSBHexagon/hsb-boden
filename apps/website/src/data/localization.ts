@@ -1,4 +1,4 @@
-export type LanguageCode = "de" | "en" | "tr" | "pl" | "fr" | "nl";
+export type LanguageCode = "de" | "en" | "tr" | "pl" | "fr" | "nl" | "es";
 
 export const supportedLanguages: Array<{
   code: LanguageCode;
@@ -12,9 +12,10 @@ export const supportedLanguages: Array<{
   { code: "pl", label: "Polish", nativeLabel: "Polski", shortHint: "Dla odwiedzających z Polski" },
   { code: "fr", label: "French", nativeLabel: "Français", shortHint: "Pour les visiteurs francophones" },
   { code: "nl", label: "Dutch", nativeLabel: "Nederlands", shortHint: "Voor bezoekers uit Nederland" },
+  { code: "es", label: "Spanish", nativeLabel: "Español", shortHint: "Información para visitantes de habla española" },
 ];
 
-const fallbackOrder: LanguageCode[] = ["en", "de", "tr", "pl", "fr", "nl"];
+const fallbackOrder: LanguageCode[] = ["en", "de", "tr", "pl", "fr", "nl", "es"];
 
 export function resolveSuggestedLanguages(locale: string | undefined) {
   const normalized = (locale ?? "").toLowerCase();

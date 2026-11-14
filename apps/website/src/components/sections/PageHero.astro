@@ -13,21 +13,30 @@ interface Props {
   image?: { src: string; alt: string; caption?: string };
   /** Auf Seiten mit eigener Hauptaufgabe (Kontaktformular) lenkt der Referenzlink nur ab. */
   hideReferencesLink?: boolean;
+  lang?: "de" | "es";
 }
 
 const {
   eyebrow = "HSB Hexagon Säurebau",
   title,
   text,
-  ctaLabel = "Projekt besprechen",
-  ctaHref = "/kontakt/",
+  ctaLabel,
+  ctaHref,
   ctaOpensRepairModal = false,
   image,
   hideReferencesLink = false,
+  lang,
 } = Astro.props;
 
-const showPrimary = currentPathIsNot(ctaHref);
-const showReferences = !hideReferencesLink && currentPathIsNot("/referenzen/");
+const isSpanish = lang ? lang === "es" : Astro.url.pathname.startsWith("/es/");
+const resolvedCtaLabel = ctaLabel ?? (isSpanish ? "Consultar proyecto" : "Projekt besprechen");
+const resolvedCtaHref = ctaHref ?? (isSpanish ? "#contact" : "/kontakt/");
+const referencesHref = isSpanish ? "/es/referencias/" : "/referenzen/";
+const referencesLabel = isSpanish ? "Ver referencias" : "Referenzen ansehen";
+const defaultCaption = isSpanish ? "Superficie real del entorno de trabajo de HSB." : "Projektfläche aus dem HSB-Arbeitsumfeld.";
+
+const showPrimary = currentPathIsNot(resolvedCtaHref);
+const showReferences = !hideReferencesLink && currentPathIsNot(referencesHref);
 
 function currentPathIsNot(href: string) {
   return Astro.url.pathname !== href;
@@ -43,8 +52,8 @@ function currentPathIsNot(href: string) {
       <p class="lead mt-5 max-w-[62ch]">{text}</p>
       {(showPrimary || showReferences) && (
         <div class="mt-7 flex flex-wrap gap-3">
-          {showPrimary && <a class="button-primary" href={ctaHref} data-open-repair-modal={ctaOpensRepairModal ? "" : undefined}>{ctaLabel}</a>}
-          {showReferences && <a class="button-secondary-dark" href="/referenzen/">Referenzen ansehen</a>}
+          {showPrimary && <a class="button-primary" href={resolvedCtaHref} data-open-repair-modal={ctaOpensRepairModal ? "" : undefined}>{resolvedCtaLabel}</a>}
+          {showReferences && <a class="button-secondary-dark" href={referencesHref}>{referencesLabel}</a>}
         </div>
       )}
     </div>
@@ -63,7 +72,7 @@ function currentPathIsNot(href: string) {
           height="900"
         />
         <figcaption class="border-t border-hsb-line px-4 py-3 text-xs font-bold leading-5 text-hsb-steel">
-          {image.caption ?? "Projektfläche aus dem HSB-Arbeitsumfeld."}
+          {image.caption ?? defaultCaption}
         </figcaption>
       </figure>
     )}

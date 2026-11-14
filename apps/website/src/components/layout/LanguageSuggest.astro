@@ -35,6 +35,12 @@ const { lang = "de" } = Astro.props;
   const banner = document.getElementById("lang-suggest");
 
   const variants: Record<string, { text: string; cta: string; href: string; dismiss: string }> = {
+    es: {
+      text: "Esta página está en alemán. ¿Prefiere la versión en español?",
+      cta: "Ver en español",
+      href: "/es/",
+      dismiss: "Continuar en alemán",
+    },
     en: {
       text: "This page is in German. Would you like to view it in English?",
       cta: "View in English",
@@ -81,6 +87,7 @@ const { lang = "de" } = Astro.props;
     if (browserLang === "de") return;
 
     const variant = variants[browserLang] ?? variants.en;
+    banner.lang = variants[browserLang] ? browserLang : "en";
     const text = document.getElementById("lang-suggest-text");
     const link = document.getElementById("lang-suggest-link") as HTMLAnchorElement | null;
     const dismiss = document.getElementById("lang-suggest-dismiss");

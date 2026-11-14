@@ -3,20 +3,23 @@ import BaseLayout from "../../../layouts/BaseLayout.astro";
 import PageHero from "../../../components/sections/PageHero.astro";
 import LeadFormSection from "../../../components/forms/LeadFormSection.astro";
 import { buildArticleJsonLd, buildBreadcrumbJsonLd } from "../../../lib/schema";
+import { spanishAlternates } from "../../../lib/spanishPaths";
 
 export const prerender = true;
 
 const path = "/wissen/ruettelkeramik-agi-s-40/";
-const title = "Rüttelkeramik AGI S 40: Säureschutz-Rüttelbelag | HSB";
-const description = "Leitfaden zu AGI S 40 Rüttelbelägen: Maschinelle Vollbettung, Druckfestigkeit laut Herstellerdatenblatt und Säureschutz für Lebensmittel- und Chemiebetriebe.";
+const title = "Rüttelboden-Aufbau: Schichten & AGI S 40 | HSB";
+const headline = "Rüttelboden-Aufbau: Schichten, Verlegung und AGI S 40";
+const description = "Wie ist ein Rüttelboden aufgebaut? Untergrund, Haftbrücke, Mörtelbett, Rüttelfliesen und Fugen im Überblick – mit Planungshinweisen zu AGI S 40.";
 ---
 
 <BaseLayout
+  alternates={spanishAlternates(path)}
   title={title}
   description={description}
   path={path}
   jsonLd={[
-    buildArticleJsonLd({ headline: "Rüttelkeramik nach AGI S 40: Der Industriestandard für Säureschutz und Schwerlast", description, path }),
+    buildArticleJsonLd({ headline, description, path }),
     buildBreadcrumbJsonLd([
       { name: "Start", path: "/" },
       { name: "Wissen", path: "/wissen/" },
@@ -26,13 +29,19 @@ const description = "Leitfaden zu AGI S 40 Rüttelbelägen: Maschinelle Vollbett
 >
   <PageHero
     eyebrow="Fachnorm & Ingenieurbau"
-    title="Rüttelkeramik nach AGI S 40: Der Industriestandard für Säureschutz und Schwerlast"
-    text="Während herkömmliche Fliesenverlegung im Industriebau an Hohlräumen und Scherspannungen scheitert, definiert das Arbeitsblatt AGI S 40 („Chemisch beständige Bodenbeläge im Rüttelverfahren (Säureschutzbau)“, Ausgabe Mai 1999) den anerkannten Industriestandard für produktionskritische Böden. Erfahren Sie alles über das maschinelle Rüttelverfahren, Materialkennwerte und die fachgerechte Ausführung."
+    title={headline}
+    text="Ein Rüttelboden ist ein abgestimmtes System aus Untergrund, Haftbrücke, Mörtelbett, keramischem Belag und Fugen. Dieser Leitfaden erklärt die Schichten und das Rüttelverfahren sowie die Einordnung von AGI S 40 für chemisch beständige Bodenbeläge. Die konkrete Auslegung folgt dem Belastungsprofil und den Produktnachweisen."
   />
 
   <section class="section border-b border-hsb-line bg-white">
     <div class="container max-w-4xl">
       <div class="prose max-w-none text-hsb-steel">
+        <p>
+          Sie planen einen neuen Boden oder die Sanierung einer Produktionsfläche?
+          Auf der Leistungsseite <a href="/leistungen/keramische-industrieboeden/">Rüttelboden und keramische Industrieböden</a>
+          finden Sie Einsatzbereiche und Entscheidungskriterien. Den Vergleich mit einem anderen System bietet unser
+          <a href="/wissen/pu-beton-oder-keramischer-industrieboden/">Ratgeber zu PU-Beton und Keramik</a>.
+        </p>
         <h2 class="text-2xl font-black text-hsb-black">Was regelt das Arbeitsblatt AGI S 40?</h2>
         <p>
           Das Arbeitsblatt <strong>AGI S 40</strong> mit dem Titel <em>„Chemisch beständige Bodenbeläge im Rüttelverfahren (Säureschutzbau)“</em> (Ausgabe Mai 1999) wird von der Arbeitsgemeinschaft Industriebau e. V. herausgegeben und regelt die Planung, Ausführung und Gütesicherung von keramischen Belägen im industriellen Säureschutzbau. Es richtet sich an Betriebe, in denen Bodenflächen gleichzeitig extremen chemischen Angriffen (Säuren, Laugen, Fette) und mechanischen Einwirkungen (Flurförderzeuge, dynamische Radstöße) standhalten müssen.
@@ -96,15 +105,16 @@ const description = "Leitfaden zu AGI S 40 Rüttelbelägen: Maschinelle Vollbett
 
         <h2 class="mt-10 text-2xl font-black text-hsb-black">Systemaufbau eines AGI S 40 Rüttelbodens</h2>
         <ol class="space-y-4">
-          <li><strong>1. Tragfähiger Unterbeton:</strong> Kugelgestrahlt oder gefräst, Mindesthaftzugfestigkeit 1,5 N/mm².</li>
+          <li><strong>1. Tragfähiger Unterbeton:</strong> Kugelgestrahlt oder gefräst, mit nachgewiesener Oberflächenzugfestigkeit gemäß Projekt- und Systemvorgabe.</li>
           <li><strong>2. Haftbrücke / Dichtschicht:</strong> Reaktionsharz-Grundierung oder polymermodifizierte Kontaktschlämme.</li>
-          <li><strong>3. Rüttelbettmörtel:</strong> Erdfeuchter, kunststoffvergüteter Spezialmörtel mit optimierter Sieblinie (Schichtdicke ca. 50–80 mm).</li>
-          <li><strong>4. Säureschutz-Spaltklinker / Steinzeug:</strong> Hochabriebfeste, säurebeständige Platten mit 15 bis 18 mm Materialstärke.</li>
+          <li><strong>3. Rüttelbettmörtel:</strong> Erdfeuchter, kunststoffvergüteter Spezialmörtel mit optimierter Sieblinie; Schichtdicke nach Objektbelastung und Herstellerangabe.</li>
+          <li><strong>4. Säureschutz-Spaltklinker / Steinzeug:</strong> Hochabriebfeste, säurebeständige Platten in objektspezifisch nach Last- und Herstellerfreigabe bemessener Materialstärke.</li>
           <li><strong>5. Chemikalienbeständige Verfugung:</strong> Vollfugiger Verguss mit 2K-Epoxidharzmörtel nach AGI S 40.</li>
         </ol>
 
         <div class="mt-10 flex flex-wrap items-center gap-4 border-t border-hsb-line pt-8">
-          <a class="button-primary" href="/beanspruchungs-check/">System im Beanspruchungs-Check berechnen</a>
+          <a class="button-primary" href="/leistungen/keramische-industrieboeden/">Rüttelboden für Ihr Projekt planen</a>
+          <a class="button-secondary-dark" href="/beanspruchungs-check/">Belastungen im Beanspruchungs-Check prüfen</a>
         </div>
       </div>
     </div>

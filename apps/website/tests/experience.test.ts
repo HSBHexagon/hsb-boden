@@ -11,6 +11,7 @@ describe("localized consent and language experience", () => {
       "pl",
       "fr",
       "nl",
+      "es",
     ]);
   });
 
@@ -23,10 +24,16 @@ describe("localized consent and language experience", () => {
   });
 
   it("falls back to English and German for unsupported browser locales", () => {
-    expect(resolveSuggestedLanguages("es-ES").map((language) => language.code).slice(0, 2)).toEqual([
+    expect(resolveSuggestedLanguages("pt-BR").map((language) => language.code).slice(0, 2)).toEqual([
       "en",
       "de",
     ]);
+  });
+
+  it.each(["es-ES", "es-MX", "es-AR"])("suggests Spanish first for %s without duplicates", (locale) => {
+    const codes = resolveSuggestedLanguages(locale).map((language) => language.code);
+    expect(codes.slice(0, 3)).toEqual(["es", "en", "de"]);
+    expect(new Set(codes).size).toBe(codes.length);
   });
 
   it("keeps essential cookies as the only mandatory category", () => {

@@ -3,10 +3,10 @@ import type { Service } from "../../lib/types";
 export const whgAbdichtungIndustrieboden: Service = {
   slug: "whg-abdichtung-industrieboden",
   title: "WHG-Abdichtung im Industrieboden",
-  seoTitle: "WHG-Bodenabdichtung für Industrieanlagen | HSB",
+  seoTitle: "WHG-Bodenabdichtung: Planung & Ausführung | HSB",
   description:
-    "WHG-/AwSV-relevante Abdichtungen für Industrieanlagen: Medienliste, Systemnachweise, Anschlüsse und erforderliche Dokumentation projektbezogen prüfen.",
-  h1: "WHG-konforme Abdichtungssysteme für die Industrie",
+    "WHG-Abdichtung für Industrieböden und Auffangflächen: Anlagenpflicht, Medienbeständigkeit, Fugen und Nachweise mit HSB projektbezogen klären.",
+  h1: "WHG-Abdichtung für Industrieböden und Auffangflächen",
   primaryKeyword: "WHG Abdichtung Industrieboden",
   secondaryKeywords: [
     "Gewässerschutz Boden",
@@ -50,6 +50,16 @@ export const whgAbdichtungIndustrieboden: Service = {
     "whg-abdichtung-industrieboden-pflicht",
   ],
   faqs: [
+    {
+      question: "Was gehört zur Planung einer WHG-Abdichtung am Industrieboden?",
+      answer:
+        "Zuerst werden Anlagenart, Stoffe, Konzentrationen, Temperatur und mögliche Einwirkdauer erfasst. Danach werden Abdichtungssystem, Untergrund, Fugen, Rinnen und Durchdringungen gemeinsam bewertet. Welche Eignungsnachweise, Prüfungen und Dokumentationspflichten erforderlich sind, wird anhand der konkreten WHG-/AwSV-Anforderungen geklärt.",
+    },
+    {
+      question: "Reicht eine chemikalienbeständige Bodenbeschichtung als WHG-Abdichtung?",
+      answer:
+        "Nicht automatisch. Chemische Beständigkeit des Belags und Eignung als flüssigkeitsdichtes Schutzsystem sind getrennt nachzuweisen. Auch Fugen und Anschlüsse müssen zum Schutzkonzept passen. Ob eine Beschichtung die Anforderungen erfüllt, lässt sich nur anhand von Anlagenart, vorgesehenem Einsatz und den zugehörigen Systemnachweisen beurteilen.",
+    },
     {
       question: "Muss jede chemisch belastete Fläche WHG-konform sein?",
       answer:

@@ -1,0 +1,42 @@
+---
+import PageHero from "../../../components/sections/PageHero.astro";
+import ServiceGrid from "../../../components/sections/ServiceGrid.astro";
+import SpanishContactSection from "../../../components/forms/SpanishContactSection.astro";
+import BaseLayout from "../../../layouts/BaseLayout.astro";
+import { spanishAlternates, toSpanishPath } from "../../../lib/spanishPaths";
+import { buildBreadcrumbJsonLd } from "../../../lib/schema";
+
+const path = "/es/servicios/";
+const title = "Servicios: cerámica vibrada, antiácidos y WHG | HSB";
+const description =
+  "Ingeniería de pavimentos industriales: cerámica vibrada según AGI S 40, protección antiácida, PU-cemento, resina epoxi, drenaje, impermeabilización WHG y rehabilitación.";
+---
+
+<BaseLayout
+  lang="es"
+  alternates={spanishAlternates(path)}
+  title={title}
+  description={description}
+  path={path}
+  jsonLd={[
+    buildBreadcrumbJsonLd([
+      { name: "Inicio", path: toSpanishPath("/") },
+      { name: "Servicios", path },
+    ]),
+  ]}
+>
+  <PageHero
+    lang="es"
+    eyebrow="Servicios"
+    title="Servicios para pavimentos industriales y protección antiácida"
+    text="Todos los servicios se conciben como un sistema integral: soporte, revestimiento, junta, drenaje, impermeabilización, ventana de rehabilitación y mantenimiento se planifican de forma conjunta."
+    ctaLabel="Solicitar evaluación"
+    ctaHref="#contact"
+    image={{
+      src: "/media/hsb/projekte/verlegung-keramik.webp",
+      alt: "Colocación de un pavimento industrial cerámico hexagonal durante la ejecución",
+    }}
+  />
+  <ServiceGrid lang="es" />
+  <SpanishContactSection />
+</BaseLayout>

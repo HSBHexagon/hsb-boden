@@ -15,7 +15,7 @@ export const supplementalArticles: Article[] = [
     sections: [
       {
         title: "Was die Rutschhemmklasse tatsächlich misst",
-        body: "Die Rutschhemmklasse nach DIN 51130 beschreibt den Neigungswinkel, bei dem eine Testperson auf einer geölten schiefen Ebene noch sicheren Halt hat. Je höher die Klasse (R9 bis R13), desto größer der gemessene Neigungswinkel und desto rutschsicherer die Oberfläche unter Ölbelastung. Für Nassbereiche mit Wasser statt Öl gilt zusätzlich die Bewertungsgruppe A bis C nach DIN 51097.",
+        body: "Die Rutschhemmklasse nach DIN 51130 (historisch) bzw. DIN EN 16165 mit Zuordnung nach ASR A1.5 beschreibt den Neigungswinkel, bei dem eine Testperson auf einer geölten schiefen Ebene noch sicheren Halt hat. Je höher die Klasse (R9 bis R13), desto größer der gemessene Neigungswinkel und desto rutschsicherer die Oberfläche unter Ölbelastung. Für Nassbereiche mit Wasser statt Öl wird ergänzend die barfuß begangene schiefe Ebene (Bewertungsgruppen A bis C) herangezogen.",
       },
       {
         title: "R9 bis R11: Trockene und leicht feuchte Bereiche",
@@ -27,7 +27,7 @@ export const supplementalArticles: Article[] = [
       },
       {
         title: "Die Verdrängungsraum-Klassen V4 und V6",
-        body: "Zusätzlich zur Rutschhemmklasse wird bei Nassbereichen ein Verdrängungsraum gefordert, der Flüssigkeit von der Standfläche wegleitet. V4 entspricht mindestens 4 Liter Verdrängungsraum pro Quadratmeter, V6 mindestens 6 Liter. Ein hoher Rutschhemmwert ohne ausreichenden Verdrängungsraum kann in der Praxis trotzdem zu Pfützenbildung und Rutschgefahr führen — beide Werte müssen zusammen betrachtet werden.",
+        body: "Zusätzlich zur Rutschhemmklasse wird bei Bereichen mit pastösen oder flüssigen Stoffen ein Verdrängungsraum gefordert, der Medien unter der Schuhsohle aufnimmt. Nach DIN 51130 / ASR A1.5 bezeichnet V4 ein Mindestvolumen von 4 cm³/dm² und V6 mindestens 6 cm³/dm² (entspricht numerisch 0,4 bzw. 0,6 l/m²). Ein hoher Rutschhemmwert ohne ausreichenden Verdrängungsraum kann in der Praxis trotzdem zu Aufschwimmen und Rutschgefahr führen — beide Kennwerte müssen zusammen betrachtet werden.",
       },
       {
         title: "Typischer Fehler: Eine Klasse für die ganze Fläche",
@@ -230,7 +230,7 @@ export const supplementalArticles: Article[] = [
     title: "Lebenszykluskosten im Industrieboden: Fliese vs. Beschichtung",
     seoTitle: "Lebenszykluskosten Industrieboden: TCO-Vergleich | HSB",
     description:
-      "TCO-Vergleich über 20 Jahre: Warum keramische Industrieböden trotz höherer Initialkosten oft wirtschaftlicher sind als wiederkehrende Beschichtungen.",
+      "Lebenszykluskosten (TCO) im Vergleich: Warum keramische Industrieböden bei hoher Belastung über die Gesamtnutzungsdauer oft wirtschaftlicher sind als wiederkehrende Beschichtungen.",
     h1: "Lebenszykluskosten (TCO): Keramischer Industrieboden vs. Beschichtung",
     category: "Wirtschaftlichkeit",
     readTime: "9 Minuten",
@@ -239,7 +239,7 @@ export const supplementalArticles: Article[] = [
     sections: [
       {
         title: "Der Unterschied zwischen Anschaffungs- und Gesamtkosten",
-        body: "Eine Beschichtung (z. B. Epoxidharz) hat geringere Anschaffungskosten, muss jedoch in hochbelasteten Bereichen typischerweise alle 5 bis 8 Jahre erneuert oder überarbeitet werden. Keramische Rüttelböden erfordern eine höhere Anfangsinvestition, erreichen aber Standzeiten von 25 bis 30 Jahren bei minimalem Wartungsaufwand.",
+        body: "Eine dünnschichtige Beschichtung (z. B. Epoxidharz) hat geringere Anschaffungskosten, unterliegt jedoch bei hoher chemischer, thermischer und mechanischer Beanspruchung kürzeren Überarbeitungsintervallen. Keramische Rüttelböden erfordern eine höhere Anfangsinvestition, sind bei fachgerechter Auslegung und Fugenpflege jedoch auf lange Nutzungszeiträume ausgelegt; die konkrete Standzeit hängt vom realen Belastungsprofil und der Instandhaltung ab.",
       },
       {
         title: "Der versteckte Kostenfaktor: Produktionsstillstand bei Sanierungen",

@@ -1,0 +1,177 @@
+---
+import ReferenceCard from "../../../components/references/ReferenceCard.astro";
+import SpanishContactSection from "../../../components/forms/SpanishContactSection.astro";
+import FAQAccordion from "../../../components/sections/FAQAccordion.astro";
+import LogoCloud from "../../../components/sections/LogoCloud.astro";
+import PageHero from "../../../components/sections/PageHero.astro";
+import TechnicalDecisionGuide from "../../../components/sections/TechnicalDecisionGuide.astro";
+import BaseLayout from "../../../layouts/BaseLayout.astro";
+import { getReferencesForSlugs } from "../../../lib/content";
+import { spanishArticles } from "../../../data/es/articles";
+import { spanishIndustries } from "../../../data/es/industries";
+import { spanishServices } from "../../../data/es/services";
+import { spanishAlternates, toSpanishPath } from "../../../lib/spanishPaths";
+import { buildBreadcrumbJsonLd, buildFaqJsonLd } from "../../../lib/schema";
+
+export const prerender = true;
+
+export function getStaticPaths() {
+  return spanishIndustries.map((industry) => ({
+    params: { slug: industry.localizedSlug },
+    props: { industry },
+  }));
+}
+
+const { industry } = Astro.props;
+const services = spanishServices.filter((service) =>
+  industry.relatedServices.includes(service.slug),
+);
+const relatedReferences = getReferencesForSlugs(industry.relatedReferences);
+const relatedArticles = spanishArticles.filter((article) =>
+  industry.relatedArticles.includes(article.slug),
+);
+const path = `/es/sectores/${industry.localizedSlug}/`;
+
+const industryImages: Record<string, { src: string; alt: string }> = {
+  "brauerei-getraenkeindustrie": {
+    src: "/media/hsb/projekte/brauerei-tanks-keramik.webp",
+    alt: "Tanques de fermentación de una cervecería sobre pavimento cerámico hexagonal con sumidero",
+  },
+  lebensmittelindustrie: {
+    src: "/media/hsb/projekte/keramik-halle-rinnen.webp",
+    alt: "Pavimento industrial cerámico con baldosas hexagonales y canaletas integradas en una nave de producción",
+  },
+  molkerei: {
+    src: "/media/hsb/projekte/hexagon-rinne-detail.webp",
+    alt: "Canaleta de drenaje de acero inoxidable integrada en baldosas cerámicas hexagonales",
+  },
+  chemieindustrie: {
+    src: "/media/hsb/projekte/chemie-anlage-keramik.webp",
+    alt: "Instalación de producción química sobre pavimento cerámico hexagonal resistente a los ácidos",
+  },
+  pharmaindustrie: {
+    src: "/media/hsb/projekte/pharma-halle-keramik.webp",
+    alt: "Nave de producción luminosa con pavimento cerámico hexagonal higiénico y sumideros integrados",
+  },
+  "backwarenproduktion-grosskueche": {
+    src: "/media/hsb/projekte/produktionsanlage-keramik.webp",
+    alt: "Instalación de producción alimentaria sobre pavimento cerámico hexagonal con canaleta de drenaje",
+  },
+};
+
+const industryImage = industryImages[industry.slug];
+---
+
+<BaseLayout
+  lang="es"
+  alternates={spanishAlternates(path)}
+  title={industry.seoTitle}
+  description={industry.description}
+  path={path}
+  jsonLd={[
+    buildFaqJsonLd(industry.faqs),
+    buildBreadcrumbJsonLd([
+      { name: "Inicio", path: toSpanishPath("/") },
+      { name: "Sectores", path: toSpanishPath("/branchen/") },
+      { name: industry.title, path },
+    ]),
+  ]}
+>
+  <PageHero
+    lang="es"
+    eyebrow="Sector"
+    title={industry.h1}
+    text={industry.description}
+    ctaLabel={industry.ctaLabel}
+    ctaHref="#contact"
+    image={industryImage}
+  />
+  <LogoCloud
+    lang="es"
+    industryFilter={industry.slug}
+    eyebrow="Referencias cercanas al sector primero"
+    title="Clientes de referencia y ubicaciones (selección)"
+  />
+  <section class="section">
+    <div class="container grid gap-8 lg:grid-cols-[0.9fr_1.1fr]">
+      <div>
+        <p class="eyebrow">Criterio técnico</p>
+        <h2 class="h2 mt-3">Qué evalúan aquí los responsables de planta</h2>
+        <p class="lead mt-4">{industry.searchIntent}</p>
+      </div>
+      <div class="grid gap-4">
+        <article class="surface p-6">
+          <h3 class="h3">Problemas habituales</h3>
+          <div class="mt-4 flex flex-wrap gap-2">
+            {industry.typicalProblems.map((item) => (
+              <span class="rounded bg-hsb-mist px-3 py-2 text-sm font-bold text-hsb-steel">{item}</span>
+            ))}
+          </div>
+        </article>
+        <article class="surface p-6">
+          <h3 class="h3">Requisitos del pavimento</h3>
+          <div class="mt-4 flex flex-wrap gap-2">
+            {industry.floorRequirements.map((item) => (
+              <span class="rounded bg-hsb-mist px-3 py-2 text-sm font-bold text-hsb-steel">{item}</span>
+            ))}
+          </div>
+        </article>
+      </div>
+    </div>
+  </section>
+  <TechnicalDecisionGuide slug={industry.slug} lang="es" />
+  <section class="section-tight bg-hsb-mist">
+    <div class="container">
+      <p class="eyebrow">Sistemas recomendados</p>
+      <h2 class="h2 mt-3">Ámbitos de servicio adecuados</h2>
+      <div class="mt-8 grid-auto">
+        {services.map((service) => (
+          <a class="surface p-6 no-underline" href={`/es/servicios/${service.localizedSlug}/`}>
+            <h3 class="h3">{service.title}</h3>
+            <p class="mt-3 text-sm leading-7 text-hsb-steel">{service.problem}</p>
+          </a>
+        ))}
+      </div>
+      <div class="mt-8 flex flex-wrap items-center justify-between gap-4 rounded-[4px] border border-hsb-line bg-white px-6 py-5">
+        <p class="text-sm leading-7 text-hsb-steel">
+          <strong class="text-hsb-black">¿Qué sistema se adapta a sus solicitaciones?</strong> Compruebe medio químico, temperatura, carga mecánica y ventana de parada en cuatro pasos.
+        </p>
+        <a class="button-primary" href={toSpanishPath("/beanspruchungs-check/")}>
+          Iniciar análisis de cargas
+        </a>
+      </div>
+    </div>
+  </section>
+  {relatedReferences.length > 0 && (
+    <section class="section">
+      <div class="container">
+        <p class="eyebrow">Referencias</p>
+        <h2 class="h2 mt-3">Ejemplos de proyectos en áreas comparables</h2>
+        <div class="mt-8 grid-auto">
+          {relatedReferences.map((reference) => (
+            <ReferenceCard reference={reference} lang="es" />
+          ))}
+        </div>
+      </div>
+    </section>
+  )}
+  {relatedArticles.length > 0 && (
+    <section class="section-tight bg-hsb-mist">
+      <div class="container">
+        <p class="eyebrow">Conocimiento</p>
+        <h2 class="h2 mt-3">Artículos técnicos sobre este sector</h2>
+        <div class="mt-8 grid-auto">
+          {relatedArticles.map((article) => (
+            <a class="surface p-6 no-underline" href={`/es/conocimiento/${article.localizedSlug}/`}>
+              <p class="eyebrow">{article.category}</p>
+              <h3 class="h3 mt-2">{article.title}</h3>
+              <p class="mt-3 text-sm leading-7 text-hsb-steel">{article.intro}</p>
+            </a>
+          ))}
+        </div>
+      </div>
+    </section>
+  )}
+  <FAQAccordion faqs={industry.faqs} lang="es" />
+  <SpanishContactSection />
+</BaseLayout>

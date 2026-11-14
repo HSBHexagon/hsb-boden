@@ -14,7 +14,7 @@ export const footerGroups = [
     title: "Leistungen",
     links: [
       { label: "Säureschutz", href: "/leistungen/industrieboden-saeureschutz/" },
-      { label: "Keramische Industrieböden", href: "/leistungen/keramische-industrieboeden/" },
+      { label: "Rüttelboden & Keramik", href: "/leistungen/keramische-industrieboeden/" },
       { label: "PU-Beton", href: "/leistungen/pu-beton-industrieboden/" },
       { label: "Epoxidharz", href: "/leistungen/epoxidharz-bodenbeschichtung/" },
       { label: "Entwässerung", href: "/leistungen/entwaesserung-industrieboden/" },
@@ -41,7 +41,7 @@ export const footerGroups = [
     links: [
       { label: "Wissensmagazin", href: "/wissen/" },
       { label: "Fugen-Forensik", href: "/wissen/fugen-forensik/" },
-      { label: "Rüttelkeramik AGI S 40", href: "/wissen/ruettelkeramik-agi-s-40/" },
+      { label: "Rüttelboden-Aufbau · AGI S 40", href: "/wissen/ruettelkeramik-agi-s-40/" },
       { label: "Muster-Abnahmeprotokoll", href: "/wissen/muster-abnahmeprotokoll/" },
       { label: "HACCP & Audit Prüfpunkte", href: "/wissen/haccp-audit-industrieboden-pruefpunkte/" },
     ],

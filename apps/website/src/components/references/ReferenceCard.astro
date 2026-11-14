@@ -1,5 +1,7 @@
 ---
 import { serviceTitleMap } from "../../data/services";
+import { spanishServiceTitleMap } from "../../data/es/services";
+import { spanishReferenceCopy } from "../../data/es/references";
 
 interface ReferenceItem {
   id: string;
@@ -12,43 +14,75 @@ interface ReferenceItem {
   solution: string;
   result: string;
   approvalStatus: string;
+  canShowExactLocation?: boolean;
   logo?: string;
   year?: string;
 }
 
 interface Props {
   reference: ReferenceItem;
+  lang?: "de" | "es";
 }
 
-const { reference } = Astro.props;
+const { reference, lang = Astro.url.pathname.startsWith("/es/") ? "es" : "de" } = Astro.props;
+const isSpanish = lang === "es";
+const esCopy = isSpanish ? spanishReferenceCopy[reference.id] : undefined;
+const projectType = esCopy?.projectType ?? reference.projectType;
+const displayName =
+  isSpanish && reference.approvalStatus !== "approved" && esCopy
+    ? esCopy.anonymousName
+    : reference.displayName;
+const ES_REGION_LABELS: Record<string, string> = {
+  "Sachsen-Anhalt": "Sajonia-Anhalt",
+  "Süddeutschland": "Sur de Alemania",
+  "Baden-Württemberg": "Baden-Wurtemberg",
+  "Nordrhein-Westfalen": "Renania del Norte-Westfalia",
+  "Hessen": "Hesse",
+  "Thüringen": "Turingia",
+  "Rheinland-Pfalz": "Renania-Palatinado",
+};
+
+function translateLocation(loc: string): string {
+  let out = loc;
+  for (const [de, es] of Object.entries(ES_REGION_LABELS)) {
+    out = out.replace(de, es);
+  }
+  return out;
+}
+
+const displayLocation = isSpanish ? translateLocation(reference.displayLocation) : reference.displayLocation;
+const challenge = esCopy?.challenge ?? reference.challenge;
+const solution = esCopy?.solution ?? reference.solution;
+const result = esCopy?.result ?? reference.result;
+const titleMap = isSpanish ? spanishServiceTitleMap : serviceTitleMap;
 ---
 
 <article class="surface group overflow-hidden p-0 border-hsb-line/60 hover:border-hsb-red/40 transition-colors duration-300">
   <div class="flex items-start justify-between gap-4 border-b border-hsb-line/50 p-6 lg:p-7">
-    <div>
+    <div class="min-w-0 flex-1">
       <div class="flex items-center gap-2 mb-2">
         <span class="size-1 bg-hsb-red"></span>
-        <p class="text-xs font-black uppercase tracking-[0.14em] text-hsb-red">{reference.projectType}</p>
+        <p class="text-xs font-black uppercase tracking-[0.14em] text-hsb-red">{projectType}</p>
       </div>
-      <h3 class="text-xl font-black leading-tight text-hsb-black transition-colors group-hover:text-hsb-red">{reference.displayName}</h3>
-      <div class="mt-2 flex items-center gap-2 text-[0.8rem] font-bold text-hsb-steel/80">
-        <span>{reference.displayLocation}</span>
-        {reference.year ? <span class="size-1 rounded-full bg-hsb-line"></span><span>{reference.year}</span> : null}
+      <h3 class="text-xl font-black leading-tight text-hsb-black transition-colors group-hover:text-hsb-red">{displayName}</h3>
+      <div class="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-[0.8rem] font-bold text-hsb-steel/80">
+        <span>{displayLocation}</span>
+        {reference.year ? <span class="size-1 shrink-0 rounded-full bg-hsb-line" aria-hidden="true"></span><span class="shrink-0 whitespace-nowrap">{reference.year}</span> : null}
       </div>
     </div>
-    <div class="flex flex-col items-end gap-3">
+    <div class="flex shrink-0 flex-col items-end gap-3">
       {reference.logo ? (
         <div class="grid h-10 w-28 place-items-center rounded bg-white border border-hsb-line/30 px-3 shadow-sm">
-          <img src={reference.logo} alt={`${reference.displayName} Logo`} class="max-h-5 w-auto max-w-full aspect-[112/40] grayscale opacity-70 contrast-125" loading="lazy" width="112" height="40" decoding="async" />
+          <img src={reference.logo} alt={`${displayName} Logo`} class="max-h-5 w-auto max-w-full aspect-[112/40] grayscale opacity-70 contrast-125" loading="lazy" width="112" height="40" decoding="async" />
         </div>
       ) : null}
     </div>
   </div>
   <div class="grid gap-6 p-6 lg:p-7 text-[0.9rem] leading-7 text-hsb-steel">
-    <div><p class="text-xs font-black uppercase tracking-widest text-hsb-black mb-1 opacity-75">Anforderung</p><p class="font-medium text-hsb-black/80">{reference.challenge}</p></div>
-    <div class="grid gap-1"><p class="text-xs font-black uppercase tracking-widest text-hsb-black mb-1 opacity-75">Lösung & Ergebnis</p><p>{reference.solution} {reference.result}</p></div>
+    <div><p class="text-xs font-black uppercase tracking-widest text-hsb-black mb-1 opacity-75">{isSpanish ? "Requisito" : "Anforderung"}</p><p class="font-medium text-hsb-black/80">{challenge}</p></div>
+    <div class="grid gap-1"><p class="text-xs font-black uppercase tracking-widest text-hsb-black mb-1 opacity-75">{isSpanish ? "Solución y resultado" : "Lösung & Ergebnis"}</p><p>{solution} {result}</p></div>
   </div>
   <div class="flex flex-wrap gap-2 border-t border-hsb-line/50 bg-[#fbfcfd] p-5">
-    {reference.systems.map((system) => <span class="rounded-[2px] border border-hsb-line/60 px-2 py-1 text-xs font-bold uppercase tracking-wide text-hsb-steel/90">{serviceTitleMap[system] ?? system}</span>)}
+    {reference.systems.map((system) => <span class="rounded-[2px] border border-hsb-line/60 px-2 py-1 text-xs font-bold uppercase tracking-wide text-hsb-steel/90">{titleMap[system] ?? system}</span>)}
   </div>
 </article>

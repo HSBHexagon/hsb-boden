@@ -3,10 +3,10 @@ import type { Service } from "../../lib/types";
 export const puBetonIndustrieboden: Service = {
   slug: "pu-beton-industrieboden",
   title: "PU-Beton Industrieboden",
-  seoTitle: "PU-Beton & Polyurethanbeton Industrieböden | HSB",
+  seoTitle: "PU-Beton Industrieboden: Aufbau & Sanierung | HSB",
   description:
-    "PU-Beton für Lebensmittel- und Hygienebereiche: Reinigungschemie, Temperaturwechsel, Schichtaufbau und Wiederfreigabe nach Herstellerdaten prüfen.",
-  h1: "PU-Beton: fugenloser Hochleistungsboden für Thermoschock-Belastung",
+    "PU-Beton und Polyurethanbeton für Lebensmittel- und Nassbereiche: Aufbau, Reinigung und Sanierungsfenster passend zum Betrieb mit HSB planen.",
+  h1: "PU-Beton Industrieboden für Lebensmittel- und Nassbereiche",
   primaryKeyword: "PU-Beton Industrieboden",
   secondaryKeywords: [
     "Polyurethanbeton",
@@ -56,6 +56,21 @@ export const puBetonIndustrieboden: Service = {
     "sanierung-ohne-produktionsstillstand",
   ],
   faqs: [
+    {
+      question: "Wann eignet sich ein PU-Beton Industrieboden statt Rüttelkeramik?",
+      answer:
+        "PU-Beton kann für flächige, reinigungsintensive Nassbereiche eine Option sein. Bei der Auswahl werden Temperaturwechsel, Reinigungsmittel, Radlasten und der vorhandene Untergrund verglichen. Keramische Systeme können bei anderen Belastungsprofilen sinnvoller sein. Die Entscheidung folgt den konkreten Einsatzbedingungen und den Produktfreigaben.",
+    },
+    {
+      question: "Ist Polyurethanbeton vollständig fugenlos?",
+      answer:
+        "PU-Beton wird flächig ohne keramische Belagsfugen hergestellt. Erforderliche Bewegungsfugen, Anschlüsse an Rinnen und andere Bauteilübergänge bleiben trotzdem Teil der Planung. Ein flächiger Belag ersetzt weder ein Fugen- noch ein Entwässerungskonzept.",
+    },
+    {
+      question: "Wovon hängen Kosten und Sanierungsdauer eines PU-Betonbodens ab?",
+      answer:
+        "Wesentlich sind Zustand und Feuchte des Untergrunds, Rückbau, Fläche, Schichtaufbau, Rutschhemmung und Anschlussdetails. Die Dauer richtet sich zusätzlich nach Produktfreigaben, Einbaubedingungen und dem verfügbaren Betriebsfenster. Eine pauschale Wiederfreigabe lässt sich daraus nicht ableiten.",
+    },
     {
       question: "Ist PU-Beton dampfstrahlfest?",
       answer:

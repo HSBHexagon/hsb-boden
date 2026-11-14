@@ -1,0 +1,48 @@
+---
+import SpanishContactSection from "../../../components/forms/SpanishContactSection.astro";
+import StressCheck from "../../../components/forms/StressCheck.astro";
+import PageHero from "../../../components/sections/PageHero.astro";
+import BaseLayout from "../../../layouts/BaseLayout.astro";
+import { spanishAlternates, toSpanishPath } from "../../../lib/spanishPaths";
+import { buildBreadcrumbJsonLd } from "../../../lib/schema";
+
+export const prerender = true;
+
+const path = "/es/analisis-cargas/";
+const title = "Análisis de cargas para pavimentos industriales | HSB";
+const description =
+  "Introduzca medio químico, temperatura, carga mecánica y ventana de intervención para obtener una orientación técnica entre cerámica vibrada AGI S 40, PU-cemento o WHG § 62.";
+---
+
+<BaseLayout
+  lang="es"
+  alternates={spanishAlternates(path)}
+  title={title}
+  description={description}
+  path={path}
+  jsonLd={[
+    buildBreadcrumbJsonLd([
+      { name: "Inicio", path: toSpanishPath("/") },
+      { name: "Análisis de cargas", path },
+    ]),
+  ]}
+>
+  <PageHero
+    lang="es"
+    eyebrow="Ingeniería de aplicación"
+    title="Análisis técnico de cargas para pavimentos de producción"
+    text="Cuatro parámetros operativos orientan la elección entre cerámica vibrada según AGI S 40, PU-cemento de alta temperatura o recubrimiento homologado según WHG § 62. El resultado puede transferirse directamente a una solicitud de evaluación técnica."
+    ctaLabel="Iniciar análisis"
+    ctaHref="#beanspruchungs-check"
+  />
+  <div class="border-b border-hsb-line bg-hsb-mist/50 py-3">
+    <div class="container max-w-5xl text-xs text-hsb-steel">
+      <span class="font-bold text-hsb-black">Planificación de paradas:</span> ¿Ventana reducida de fin de semana o producción 24/7?
+      <a href={toSpanishPath("/rechner/sanierungsfenster/")} class="font-bold text-hsb-red underline hover:text-black ml-1">
+        Ir a la calculadora de ventanas de rehabilitación &rarr;
+      </a>
+    </div>
+  </div>
+  <StressCheck lang="es" auditAnchor="#contact" />
+  <SpanishContactSection />
+</BaseLayout>

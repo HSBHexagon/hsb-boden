@@ -1,0 +1,92 @@
+---
+import SpanishContactSection from "../../../components/forms/SpanishContactSection.astro";
+import PageHero from "../../../components/sections/PageHero.astro";
+import BaseLayout from "../../../layouts/BaseLayout.astro";
+import { spanishArticles } from "../../../data/es/articles";
+import { spanishAlternates, toSpanishPath } from "../../../lib/spanishPaths";
+import { buildBreadcrumbJsonLd } from "../../../lib/schema";
+
+const path = "/es/conocimiento/";
+const title = "Conocimiento técnico sobre pavimentos industriales | HSB";
+const description =
+  "Artículos técnicos y guías prácticas sobre PU-cemento, cerámica vibrada AGI S 40, pavimentos para lácteas, baldosas antiácidas, drenaje y rehabilitación.";
+
+const specialGuides = [
+  {
+    href: "/es/conocimiento/analisis-juntas/",
+    category: "Diagnóstico de daños",
+    title: "Análisis de juntas y daños frecuentes en pavimentos industriales",
+    description:
+      "Cinco patrones de fallo reales en juntas, baldosas huecas, canaletas, medias cañas y choque térmico con diagnóstico técnico y solución de rehabilitación.",
+    badge: "5 casos forenses",
+  },
+  {
+    href: "/es/conocimiento/estructura-pavimento-vibrado-agi-s-40/",
+    category: "Ingeniería y normas",
+    title: "Estructura de capas de un pavimento cerámico vibrado según AGI S 40",
+    description:
+      "Por qué la colocación vibrada en lecho de mortero fresco crea un sistema monolítico sin huecos para cargas pesadas, ácidos y limpieza térmica.",
+    badge: "Guía AGI S 40",
+  },
+  {
+    href: "/es/conocimiento/protocolo-recepcion-pavimentos/",
+    category: "Control de calidad",
+    title: "Protocolo de recepción y lista de control para pavimentos industriales",
+    description:
+      "Puntos de control técnicos para la entrega de obra: preparación del soporte, adherencia, pendientes hacia canaletas, juntas y documentación.",
+    badge: "Lista de control",
+  },
+];
+---
+
+<BaseLayout
+  lang="es"
+  alternates={spanishAlternates(path)}
+  title={title}
+  description={description}
+  path={path}
+  jsonLd={[
+    buildBreadcrumbJsonLd([
+      { name: "Inicio", path: toSpanishPath("/") },
+      { name: "Conocimiento", path },
+    ]),
+  ]}
+>
+  <PageHero
+    lang="es"
+    eyebrow="Conocimiento"
+    title="Conocimiento sobre pavimentos industriales, protección antiácida y rehabilitación"
+    text="Artículos técnicos sobre pavimentos industriales, protección antiácida y rehabilitación, desde la elección del sistema hasta la ejecución con la planta en funcionamiento. Criterios prácticos para ingeniería, mantenimiento y dirección de planta."
+    ctaLabel="Solicitar evaluación"
+    ctaHref="#contact"
+  />
+  <section class="section-tight bg-hsb-mist border-b border-hsb-line">
+    <div class="container">
+      <p class="eyebrow">Guías especiales y herramientas de diagnóstico</p>
+      <h2 class="h2 mt-3">Diagnóstico técnico, estructura AGI S 40 y recepción de obra</h2>
+      <div class="mt-8 grid-auto">
+        {specialGuides.map((guide) => (
+          <a class="surface p-6 no-underline" href={guide.href}>
+            <p class="eyebrow">{guide.category}</p>
+            <h3 class="h3 mt-3">{guide.title}</h3>
+            <p class="mt-3 text-sm leading-7 text-hsb-steel">{guide.description}</p>
+            <span class="mt-5 inline-block text-sm font-black text-hsb-red">{guide.badge} →</span>
+          </a>
+        ))}
+      </div>
+    </div>
+  </section>
+  <section class="section">
+    <div class="container grid-auto">
+      {spanishArticles.map((article) => (
+        <a class="surface p-6 no-underline" href={`/es/conocimiento/${article.localizedSlug}/`}>
+          <p class="eyebrow">{article.category}</p>
+          <h2 class="h3 mt-3">{article.title}</h2>
+          <p class="mt-3 text-sm leading-7 text-hsb-steel">{article.description}</p>
+          <span class="mt-5 inline-block text-sm font-black text-hsb-red">{article.readTime}</span>
+        </a>
+      ))}
+    </div>
+  </section>
+  <SpanishContactSection />
+</BaseLayout>

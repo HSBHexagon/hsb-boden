@@ -1,0 +1,84 @@
+---
+import BaseLayout from "../../../../../layouts/BaseLayout.astro";
+import PageHero from "../../../../../components/sections/PageHero.astro";
+import SpanishContactSection from "../../../../../components/forms/SpanishContactSection.astro";
+import { buildArticleJsonLd, buildBreadcrumbJsonLd } from "../../../../../lib/schema";
+
+import { spanishStaticAlternates } from "../../../../../lib/spanishStaticPaths";
+import { toSpanishPath } from "../../../../../lib/spanishPaths";
+
+export const prerender = true;
+
+const path = "/es/conocimiento/analisis-juntas/filtraciones-media-cana/";
+const title = "Filtraciones en medias cañas y encuentros de pared | HSB";
+const description = "Filtraciones en medias cañas: humedad tras los zócalos, focos microbianos y soluciones desacopladas para los encuentros entre suelo y pared.";
+---
+
+<BaseLayout
+  lang="es"
+  alternates={spanishStaticAlternates("/wissen/fugen-forensik/hohlkehle-undicht/")}
+  title={title}
+  description={description}
+  path={path}
+  jsonLd={[
+    buildArticleJsonLd({ headline: "Filtraciones en medias cañas: el riesgo infravalorado del encuentro con la pared", description, path, language: "es" }),
+    buildBreadcrumbJsonLd([
+      { name: "Inicio", path: toSpanishPath("/") },
+      { name: "Conocimiento", path: toSpanishPath("/wissen/") },
+      { name: "Análisis de juntas", path: toSpanishPath("/wissen/fugen-forensik/") },
+      { name: "Filtración en media caña", path },
+    ]),
+  ]}
+>
+  <PageHero
+    ctaLabel="Solicitar asesoramiento"
+    ctaHref="#contact"
+    hideReferencesLink
+    eyebrow="Análisis de juntas · Caso 04"
+    title="Filtraciones en medias cañas: el riesgo infravalorado del encuentro con la pared"
+    text="En las áreas alimentarias y farmacéuticas se exigen medias cañas para evitar rincones de 90° que acumulen suciedad. Si el zócalo se separa de la pared o se rompe el encuentro con el suelo, la media caña se convierte en un peligroso depósito de microorganismos. Así abordamos una solución duradera."
+  />
+
+  <section class="section border-b border-hsb-line bg-white">
+    <div class="container max-w-4xl">
+      <div class="prose max-w-none text-hsb-steel">
+        <h2 class="text-2xl font-black text-hsb-black">Síntomas: moho detrás de las piezas del zócalo</h2>
+        <p>
+          A primera vista, la media caña puede parecer aceptable. Sin embargo, al examinarla durante auditorías IFS, BRC o EHEDG se aprecian separaciones entre el zócalo y la baldosa del suelo. Detrás se ha acumulado humedad y aparecen películas microbianas y cambios de color.
+        </p>
+
+        <div class="my-8 rounded border-l-4 border-hsb-red bg-hsb-mist p-6 text-hsb-black">
+          <h3 class="text-lg font-bold">La causa técnica: unión rígida entre elementos con movimiento independiente</h3>
+          <p class="mt-2 text-sm leading-6 text-hsb-steel">
+            El pavimento y su solera se mueven continuamente: se dilatan con la temperatura, flexionan ligeramente con el tráfico de carretillas y retraen tras la ejecución. La pared de la nave —a menudo de hormigón celular, panel sándwich o fábrica— se mueve de forma independiente. Si la media caña se pega rígidamente tanto a la pared COMO al suelo, la unión se rompe por su punto más débil.
+          </p>
+        </div>
+
+        <h2 class="text-2xl font-black text-hsb-black">Consecuencias para la auditoría y el estado constructivo</h2>
+        <ul class="space-y-3">
+          <li><strong>No conformidad de auditoría:</strong> en las auditorías IFS o BRC, los encuentros de zócalo no estancos suelen generar no conformidades, porque el agua de limpieza y la suciedad no se eliminan sin dejar residuos.</li>
+          <li><strong>Humedad en los elementos de pared:</strong> en los paneles sándwich, la salmuera o el líquido de limpieza CIP penetran en el núcleo aislante y deterioran el panel desde el interior.</li>
+          <li><strong>Contaminación bacteriana:</strong> los huecos cálidos y húmedos favorecen la multiplicación de listeria y salmonela.</li>
+        </ul>
+
+        <h2 class="mt-10 text-2xl font-black text-hsb-black">Rehabilitación duradera: medias cañas desacopladas según el detalle de HSB</h2>
+        <p>
+          Una media caña higiénica debe desacoplar los movimientos constructivos y, al mismo tiempo, ejecutarse de forma estanca a los líquidos:
+        </p>
+        <ol class="space-y-4">
+          <li><strong>1. Retirada del zócalo rígido:</strong> desmontaje completo de los zócalos cerámicos o de mortero agrietados hasta alcanzar el soporte resistente.</li>
+          <li><strong>2. Colocación de una banda de desacoplamiento:</strong> separación entre la solera y la pared mediante una banda perimetral compresible de PE.</li>
+          <li><strong>3. Montaje de piezas de media caña conformadas:</strong> uso de medias cañas cerámicas prefabricadas o piezas de polímero con ligante mineral y radio definido; el radio se determina según el detalle de sistema aprobado.</li>
+          <li><strong>4. Capa impermeabilizante y junta de sellado:</strong> impermeabilización adherida muy flexible de 2 componentes hasta 15 cm por encima de la cota del pavimento terminado (OKFF), rematada con un sellador resistente a sustancias químicas.</li>
+        </ol>
+
+        <div class="mt-10 flex flex-wrap items-center gap-4 border-t border-hsb-line pt-8">
+          <a class="button-primary" href={toSpanishPath("/wissen/hohlkehle-sockelausbildung-industrieboden/")}>Artículo técnico sobre medias cañas y zócalos</a>
+          <a class="button-secondary-dark" href={toSpanishPath("/wissen/fugen-forensik/")}>Volver al resumen del análisis de juntas</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <SpanishContactSection />
+</BaseLayout>

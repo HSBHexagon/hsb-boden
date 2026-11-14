@@ -1,15 +1,16 @@
 ---
 interface Props {
   faqs: Array<{ question: string; answer: string }>;
+  lang?: "de" | "es";
 }
 
-const { faqs } = Astro.props;
+const { faqs, lang = "de" } = Astro.props;
 ---
 
 <section class="section-tight">
   <div class="container max-w-4xl">
     <p class="eyebrow">FAQ</p>
-    <h2 class="h2 mt-3">Häufige Fragen</h2>
+    <h2 class="h2 mt-3">{lang === "es" ? "Preguntas frecuentes" : "Häufige Fragen"}</h2>
     <div class="mt-8 divide-y divide-hsb-line rounded-lg border border-hsb-line bg-white">
       {faqs.map((faq) => (
         <details class="group p-5">

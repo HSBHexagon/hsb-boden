@@ -23,9 +23,11 @@ interface ClientLocation {
 interface Props {
   references: ReferenceItem[];
   clients?: readonly ClientLocation[];
+  lang?: "de" | "es";
 }
 
-const { references, clients = [] } = Astro.props;
+const { references, clients = [], lang = Astro.url.pathname.startsWith("/es/") ? "es" : "de" } = Astro.props;
+const isSpanish = lang === "es";
 
 const project = (lat: number, lng: number) => ({
   x: 4 + ((lng - germanyMapBounds.minLng) / (germanyMapBounds.maxLng - germanyMapBounds.minLng)) * (germanyMapViewBox.width - 8),
@@ -88,11 +90,11 @@ for (const label of otherRegions) {
 
 <div class="flex flex-col bg-white" data-testid="reference-map">
   <div class="border-b border-hsb-line p-6 lg:p-8">
-    <p class="eyebrow">Deutschlandkarte</p>
-    <h3 class="h3 mt-2">Referenzen und Kundenstandorte – Deutschland und europaweit</h3>
+    <p class="eyebrow">{isSpanish ? "Mapa de Alemania" : "Deutschlandkarte"}</p>
+    <h3 class="h3 mt-2">{isSpanish ? "Referencias y emplazamientos de clientes – Alemania y Europa" : "Referenzen und Kundenstandorte – Deutschland und europaweit"}</h3>
   </div>
   <div class="flex min-h-[390px] items-center justify-center bg-[linear-gradient(135deg,#f3f5f7_0%,#ffffff_48%,#eef1f4_100%)] px-4 py-7 sm:min-h-[430px] sm:px-6 lg:py-8">
-    <svg viewBox={`0 0 ${germanyMapViewBox.width} ${germanyMapViewBox.height}`} role="img" aria-label="Deutschlandkarte mit allen 16 Bundesländern und markierten Referenzstandorten" class="h-auto w-full max-w-[420px] overflow-visible" data-testid="germany-reference-map">
+    <svg viewBox={`0 0 ${germanyMapViewBox.width} ${germanyMapViewBox.height}`} role="img" aria-label={isSpanish ? "Mapa de Alemania con los 16 estados federados y emplazamientos de referencia marcados" : "Deutschlandkarte mit allen 16 Bundesländern und markierten Referenzstandorten"} class="h-auto w-full max-w-[420px] overflow-visible" data-testid="germany-reference-map">
       <desc>Deutschlandkarte mit sichtbaren Bundesländergrenzen sowie Markern für Husum, Aachen, Görlitz, Oberstdorf, Zeitz, Bonefeld und Gebesee.</desc>
       <g>
         {germanyStates.map((state, index) => (
@@ -153,16 +155,16 @@ for (const label of otherRegions) {
     </ul>
     <div class="mt-5 grid gap-3 text-sm leading-6 text-hsb-steel">
       <p>
-        Echte Deutschlandkarte mit allen 16 Bundesländern. Referenzprojekte sind rot markiert, weitere Kundenstandorte dezent ergänzt.
+        {isSpanish ? "Mapa de Alemania con los 16 estados federados. Los proyectos de referencia se marcan en rojo y otros emplazamientos de clientes de forma discreta." : "Echte Deutschlandkarte mit allen 16 Bundesländern. Referenzprojekte sind rot markiert, weitere Kundenstandorte dezent ergänzt."}
       </p>
       <div class="flex flex-wrap gap-3 text-xs font-black uppercase tracking-[0.12em] text-hsb-steel">
-        <span class="inline-flex items-center gap-2"><span class="size-2 rounded-full bg-hsb-red"></span> Referenzprojekt</span>
-        <span class="inline-flex items-center gap-2"><span class="size-2 rounded-full bg-hsb-black/45"></span> Kundenstandort</span>
+        <span class="inline-flex items-center gap-2"><span class="size-2 rounded-full bg-hsb-red"></span> {isSpanish ? "Proyecto de referencia" : "Referenzprojekt"}</span>
+        <span class="inline-flex items-center gap-2"><span class="size-2 rounded-full bg-hsb-black/45"></span> {isSpanish ? "Emplazamiento de cliente" : "Kundenstandort"}</span>
       </div>
     </div>
     {clientPoints.length > 0 && (
       <div class="mt-6 border-t border-hsb-line pt-6">
-        <p class="text-xs font-black uppercase tracking-[0.14em] text-hsb-steel">Weitere Kundenstandorte</p>
+        <p class="text-xs font-black uppercase tracking-[0.14em] text-hsb-steel">{isSpanish ? "Otros emplazamientos de clientes" : "Weitere Kundenstandorte"}</p>
         <ul class="mt-3 grid gap-x-6 gap-y-1.5 text-sm leading-6 text-hsb-steel sm:grid-cols-2">
           {clientPoints.map((client) => (
             <li class="flex items-center gap-2">

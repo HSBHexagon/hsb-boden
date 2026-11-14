@@ -1,29 +1,40 @@
 ---
 import { technicalDecisionGuides } from "../../data/technicalDecisionGuides";
-interface Props { slug: string; }
-const { slug } = Astro.props;
-const guide = technicalDecisionGuides[slug as keyof typeof technicalDecisionGuides];
+import { spanishTechnicalDecisionGuides } from "../../data/es/technicalDecisionGuides";
+import { toSpanishPath } from "../../lib/spanishPaths";
+
+interface Props {
+  slug: string;
+  lang?: "de" | "es";
+}
+const { slug, lang = Astro.url.pathname.startsWith("/es/") ? "es" : "de" } = Astro.props;
+const isSpanish = lang === "es";
+const guide = isSpanish
+  ? spanishTechnicalDecisionGuides[slug]
+  : technicalDecisionGuides[slug as keyof typeof technicalDecisionGuides];
+const relatedUrl = guide ? (isSpanish ? toSpanishPath(guide.relatedUrl) : guide.relatedUrl) : "";
+const contactHref = isSpanish ? "#contact" : "/kontakt/";
 ---
 
 {guide && (
-  <section class="section-tight border-y border-hsb-line bg-hsb-mist" aria-label="Technische Entscheidungshilfe">
+  <section class="section-tight border-y border-hsb-line bg-hsb-mist" aria-label={isSpanish ? "Guía de decisión técnica" : "Technische Entscheidungshilfe"}>
     <div class="container max-w-5xl">
-      <p class="eyebrow">Für Betriebsleitung, Technik und Einkauf</p>
+      <p class="eyebrow">{isSpanish ? "Para dirección de planta, ingeniería y compras" : "Für Betriebsleitung, Technik und Einkauf"}</p>
       <h2 class="h2 mt-3">{guide.heading}</h2>
       <p class="mt-5 max-w-3xl text-base leading-8 text-hsb-steel">{guide.intro}</p>
-      <h3 class="h3 mt-8">Diese Informationen gehören in die Projektanfrage</h3>
+      <h3 class="h3 mt-8">{isSpanish ? "Datos necesarios para la consulta del proyecto" : "Diese Informationen gehören in die Projektanfrage"}</h3>
       <ol class="mt-5 grid gap-4 lg:grid-cols-3">
         {guide.requiredInputs.map((item, i) => (
           <li class="surface p-5">
-            <span class="text-xs font-black text-hsb-red">SCHRITT {i + 1}</span>
+            <span class="text-xs font-black text-hsb-red">{isSpanish ? `PASO ${i + 1}` : `SCHRITT ${i + 1}`}</span>
             <p class="mt-2 text-sm leading-7 text-hsb-steel">{item}</p>
           </li>
         ))}
       </ol>
       <p class="mt-6 max-w-4xl text-sm leading-7 text-hsb-steel">{guide.decisionRule}</p>
       <div class="mt-6 flex flex-wrap items-center gap-5">
-        <a class="inline-flex min-h-11 items-center font-bold text-hsb-red underline-offset-4 hover:underline" href={guide.relatedUrl}>{guide.relatedLabel}</a>
-        <a class="inline-flex min-h-11 items-center font-bold text-hsb-red underline-offset-4 hover:underline" href="/kontakt/">Technische Angaben übermitteln</a>
+        <a class="inline-flex min-h-11 items-center font-bold text-hsb-red underline-offset-4 hover:underline" href={relatedUrl}>{guide.relatedLabel}</a>
+        <a class="inline-flex min-h-11 items-center font-bold text-hsb-red underline-offset-4 hover:underline" href={contactHref}>{isSpanish ? "Enviar datos técnicos" : "Technische Angaben übermitteln"}</a>
       </div>
     </div>
   </section>

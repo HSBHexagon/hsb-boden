@@ -4,9 +4,9 @@ export const industries: Industry[] = [
   {
     slug: "lebensmittelindustrie",
     title: "Lebensmittelindustrie",
-    seoTitle: "Industrieboden Lebensmittelindustrie | HACCP & HSB",
+    seoTitle: "Industrieboden Lebensmittelindustrie & HACCP | HSB",
     description:
-      "Hygienische Industrieböden für die Lebensmittelproduktion: R11–R13 Rutschhemmung, dichte Hohlkehlen, Beständigkeit gegen Fette & Säuren nach HACCP/IFS.",
+      "Böden für die Lebensmittelindustrie: Rutschhemmung, Reinigung, Fugen und Entwässerung im Hygienekonzept gemeinsam planen. Ersteinschätzung mit HSB.",
     h1: "Industrieböden für die Lebensmittelindustrie",
     searchIntent:
       "Entscheider suchen nach hygienischen, reinigungsbeständigen und dauerhaft belastbaren Böden für Nass- und Produktionsbereiche unter Einhaltung strenger Audits.",
@@ -53,7 +53,12 @@ export const industries: Industry[] = [
       {
         question: "Welches System erfüllt die HACCP-Vorgaben am besten?",
         answer:
-          "Sowohl PU-Beton als auch fachgerecht verfugte Rüttelkeramik erfüllen HACCP-Kriterien. Entscheidend ist die porenfreie Oberfläche und die dichte Anbindung an Entwässerungsrinnen.",
+          "Der Boden ist ein Bestandteil des betrieblichen Hygienekonzepts. Keramik oder PU-Beton werden anhand von Reinigungsablauf, Medien, Temperatur und Verkehrsbelastung gewählt. Reinigbare Oberflächen, dichte Fugen und geeignete Rinnenanschlüsse müssen im jeweiligen Bereich zusammenpassen; ein Belag allein ersetzt keinen HACCP-Nachweis.",
+      },
+      {
+        question: "Welche Angaben braucht die Planung eines Bodens für die Lebensmittelindustrie?",
+        answer:
+          "Hilfreich sind ein Grundriss mit Nass- und Trockenbereichen, Reinigungs- und Medienlisten, Verkehrsbelastungen sowie vorhandene Schadstellen. Dazu kommen Anforderungen an Rutschhemmung, Entwässerung und verfügbare Sperrzeiten. Daraus lassen sich geeignete Systeme und die notwendigen Detailprüfungen ableiten.",
       },
     ],
     ctaLabel: "Hygiene-Audit für Ihren Boden anfragen",
@@ -110,6 +115,16 @@ export const industries: Industry[] = [
           "Warum reicht eine normale Epoxidharz-Fuge in Molkereien oft nicht aus?",
         answer:
           "Bei permanenter Einwirkung von Milchsäure und Heißwasser können Standard-EP-Fugen verspröden. Wir empfehlen Vinylester- oder Furanharzsysteme für maximale Standzeiten.",
+      },
+      {
+        question: "Welcher Boden eignet sich für Milchsäure und CIP-Reinigung in einer Molkerei?",
+        answer:
+          "Für eine Auswahl werden Milchsäure, Reinigungsmittel, Konzentrationen, Temperaturen und Einwirkdauer gemeinsam betrachtet. Belag, Fugen und Rinnenanschlüsse müssen dazu passen. Ob keramischer Industrieboden oder ein anderes System geeignet ist, wird anhand von Herstellerdaten und dem tatsächlichen Betriebsablauf geprüft.",
+      },
+      {
+        question: "Wie lässt sich ein Molkereiboden bei laufender Produktion sanieren?",
+        answer:
+          "Mögliche Bauabschnitte werden mit Hygienezonen, Reinigung und Transportwegen abgestimmt. Ob Wochenendfenster oder einzelne Stillstände ausreichen, hängt von Rückbau, Untergrund, gewähltem System und dessen Freigabezeiten ab. Eine vollständig unterbrechungsfreie Sanierung kann nicht pauschal zugesagt werden.",
       },
     ],
     ctaLabel: "Milchsäure-Check vereinbaren",
@@ -171,8 +186,8 @@ export const industries: Industry[] = [
     title: "Chemieindustrie",
     seoTitle: "Industrieboden Chemieindustrie & Säureschutz | HSB",
     description:
-      "WHG-konform ausgeführte, hochresistente Systeme für chemisch belastete Produktion, Lager und Havarieflächen nach WHG § 62 und AwSV.",
-    h1: "Industrieböden für chemisch belastete Produktionsbereiche",
+      "Industrieboden für Chemieproduktion, Lager- und Abfüllflächen: Säureschutz, Medienbeständigkeit und WHG-/AwSV-Anforderungen mit HSB klären.",
+    h1: "Industrieböden für die Chemieindustrie",
     searchIntent:
       "Chemiebetriebe suchen technisch belegte Sicherheit durch WHG-konforme Abdichtung und Beständigkeit gegen Mineralsäuren und Lösungsmittel.",
     typicalProblems: [
@@ -216,6 +231,16 @@ export const industries: Industry[] = [
         question: "Welche Beständigkeiten deckt Hexagon Säurebau ab?",
         answer:
           "Die chemische Beständigkeit hängt von Stoff, Konzentration, Temperatur, Einwirkdauer und Systemaufbau ab. Wir prüfen geeignete Beläge, Fugen und Abdichtungen anhand Ihrer konkreten Medienliste.",
+      },
+      {
+        question: "Welche Unterlagen braucht die Auswahl eines Industriebodens für die Chemieindustrie?",
+        answer:
+          "Grundlage sind Medienliste und Sicherheitsdatenblätter, Konzentrationen, Temperaturen und Einwirkzeiten. Hinzu kommen mechanische Lasten, Untergrundzustand und Angaben zur Anlage. Daraus werden Anforderungen an Belag, Fugen, gegebenenfalls Abdichtung und erforderliche Nachweise abgeleitet.",
+      },
+      {
+        question: "Braucht jeder Boden in einem Chemiebetrieb eine WHG-Abdichtung?",
+        answer:
+          "Die Branchenzugehörigkeit allein reicht für diese Entscheidung nicht aus. Anlagenart, Stoffe und die anwendbaren WHG-/AwSV-Anforderungen bestimmen das Schutzkonzept. Chemische Beständigkeit, Abdichtung und gegebenenfalls Ableitfähigkeit werden deshalb getrennt geprüft und anschließend im System aufeinander abgestimmt.",
       },
     ],
     ctaLabel: "Chemische Beständigkeit prüfen lassen",

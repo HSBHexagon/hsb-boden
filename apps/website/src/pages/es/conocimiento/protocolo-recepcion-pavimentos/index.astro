@@ -1,0 +1,164 @@
+---
+import BaseLayout from "../../../../layouts/BaseLayout.astro";
+import PageHero from "../../../../components/sections/PageHero.astro";
+import SpanishContactSection from "../../../../components/forms/SpanishContactSection.astro";
+import { buildArticleJsonLd, buildBreadcrumbJsonLd } from "../../../../lib/schema";
+
+import { spanishStaticAlternates } from "../../../../lib/spanishStaticPaths";
+import { toSpanishPath } from "../../../../lib/spanishPaths";
+
+export const prerender = true;
+
+const path = "/es/conocimiento/protocolo-recepcion-pavimentos/";
+const title = "Protocolo de recepción y lista IFS del pavimento | HSB";
+const description = "Modelo de recepción de pavimentos: comprobaciones DIN 18202, pendientes, adherencia, encuentros con canaletas y lista de control IFS/BRC.";
+---
+
+<BaseLayout
+  lang="es"
+  alternates={spanishStaticAlternates("/wissen/muster-abnahmeprotokoll/")}
+  title={title}
+  description={description}
+  path={path}
+  jsonLd={[
+    buildArticleJsonLd({ headline: "Modelo de protocolo de recepción: qué debe justificar un informe técnico", description, path, language: "es" }),
+    buildBreadcrumbJsonLd([
+      { name: "Inicio", path: toSpanishPath("/") },
+      { name: "Conocimiento", path: toSpanishPath("/wissen/") },
+      { name: "Protocolo de recepción", path },
+    ]),
+  ]}
+>
+  <PageHero
+    ctaLabel="Solicitar asesoramiento"
+    ctaHref="#contact"
+    hideReferencesLink
+    eyebrow="Control de calidad y documentación de auditoría"
+    title="Modelo de protocolo de recepción: qué debe justificar un informe técnico"
+    text="Muchas empresas se encuentran con un pavimento nuevo de buen aspecto que, sin embargo, no supera la primera inspección IFS o WHG. HSB entrega con cada ejecución un protocolo de recepción completo y de enfoque técnico. Aquí se muestran su estructura y sus puntos de control."
+  />
+
+  <section class="section border-b border-hsb-line bg-white">
+    <div class="container max-w-4xl">
+      <div class="prose max-w-none text-hsb-steel">
+        <h2 class="text-2xl font-black text-hsb-black">Transparencia antes del primer lote de producción</h2>
+        <p>
+          Un protocolo de recepción conforme a las normas protege a responsables de explotación, mantenimiento y auditoría frente a defectos ocultos. Documenta de forma vinculante el cumplimiento de los parámetros constructivos, químicos e higiénicos al finalizar los trabajos.
+        </p>
+
+        <!-- Interaktives / Strukturiertes Muster-Protokoll -->
+        <div class="my-8 rounded border-2 border-hsb-black bg-white p-6 shadow-sm">
+          <div class="flex flex-wrap items-center justify-between border-b-2 border-hsb-red pb-4">
+            <div>
+              <span class="text-xs font-black uppercase tracking-widest text-hsb-red">HSB Hexagon Säurebau GmbH</span>
+              <h3 class="text-xl font-black text-hsb-black mt-1">Protocolo de recepción de obra (extracto de ejemplo)</h3>
+              <p class="text-xs text-hsb-steel mt-1 font-medium">Aviso: todos los valores de comprobación y medición que aparecen a continuación son ejemplos ficticios con fines ilustrativos.</p>
+            </div>
+            <span class="rounded bg-hsb-mist px-3 py-1 text-xs font-bold text-hsb-black">Proyecto: instalación de ejemplo (ficticia)</span>
+          </div>
+
+          <div class="mt-6 space-y-6 text-sm">
+            <!-- Prüfpunkt 1 -->
+            <div class="border-b border-hsb-line pb-4">
+              <div class="flex items-center justify-between">
+                <strong class="text-hsb-black">1. Planeidad según DIN 18202 (tabla 3, fila 3)</strong>
+                <span class="text-xs font-bold text-green-700 bg-green-50 px-2 py-0.5 rounded">Desviación límite &le; 4 mm en 2 m (valor de ejemplo ficticio)</span>
+              </div>
+              <p class="text-xs text-hsb-steel mt-1">Comprobado con regla y cuña de medición a lo largo de ejes de la línea de producción. Sin irregularidades que retengan agua (ejemplo ficticio).</p>
+            </div>
+
+            <!-- Prüfpunkt 2 -->
+            <div class="border-b border-hsb-line pb-4">
+              <div class="flex items-center justify-between">
+                <strong class="text-hsb-black">2. Formación de pendientes hacia las canaletas de drenaje</strong>
+                <span class="text-xs font-bold text-green-700 bg-green-50 px-2 py-0.5 rounded">Pendiente medida: 1,8 % continua (valor de ejemplo ficticio)</span>
+              </div>
+              <p class="text-xs text-hsb-steel mt-1">Ensayo con agua de prueba. Evacuación completa sin charcos después de 10 minutos (ejemplo ficticio).</p>
+            </div>
+
+            <!-- Prüfpunkt 3 -->
+            <div class="border-b border-hsb-line pb-4">
+              <div class="flex items-center justify-between">
+                <strong class="text-hsb-black">3. Resistencia a tracción superficial o al arrancamiento del soporte</strong>
+                <span class="text-xs font-bold text-green-700 bg-green-50 px-2 py-0.5 rounded">Valor medio: 2,1 N/mm² (valor de ejemplo ficticio)</span>
+              </div>
+              <p class="text-xs text-hsb-steel mt-1">Ensayo según DIN EN 1542, con probetas de &Oslash; 50 mm. Rotura cohesiva del hormigón documentada (ejemplo ficticio).</p>
+            </div>
+
+            <!-- Prüfpunkt 4 -->
+            <div class="border-b border-hsb-line pb-4">
+              <div class="flex items-center justify-between">
+                <strong class="text-hsb-black">4. Encuentros con canaletas y juntas de dilatación elásticas</strong>
+                <span class="text-xs font-bold text-green-700 bg-green-50 px-2 py-0.5 rounded">Adherencia a los flancos y cota &minus;1,5 mm (valor de ejemplo ficticio)</span>
+              </div>
+              <p class="text-xs text-hsb-steel mt-1">Cuerpo de la canaleta recibido con mortero de relleno resistente. Junta híbrida adherida a dos flancos colocada e inspeccionada visualmente (ejemplo ficticio).</p>
+            </div>
+
+            <!-- Prüfpunkt 5 -->
+            <div>
+              <div class="flex items-center justify-between">
+                <strong class="text-hsb-black">5. Clase de resistencia al deslizamiento (DIN EN 16165 / regla DGUV 108-003)</strong>
+                <span class="text-xs font-bold text-green-700 bg-green-50 px-2 py-0.5 rounded">Resistencia al deslizamiento según el sistema y su certificado de ensayo (p. ej., R12 / V4; ejemplo ficticio)</span>
+              </div>
+              <p class="text-xs text-hsb-steel mt-1">Se adjunta el certificado de ensayo del fabricante para el perfil de pavimento elegido. Idoneidad para zonas húmedas confirmada (ejemplo ficticio).</p>
+            </div>
+          </div>
+        </div>
+
+        <h2 class="text-2xl font-black text-hsb-black">Lista de control del pavimento para IFS y HACCP</h2>
+        <p>
+          Para responsables de calidad y de explotación, resumimos los puntos principales que revisan IFS Food, BRCGS y las autoridades al inspeccionar los pavimentos:
+        </p>
+
+        <div class="my-6 grid gap-4 sm:grid-cols-2 not-prose">
+          <div class="rounded border border-hsb-line p-5 bg-[#f8f9fb]">
+            <h3 class="font-bold text-hsb-black text-base">Encuentros higiénicos</h3>
+            <ul class="mt-2 space-y-1.5 text-xs text-hsb-steel">
+              <li>✓ Medias cañas en el zócalo con radio mínimo r &ge; 50 mm</li>
+              <li>✓ Sin aristas de 90° en los encuentros entre suelo y pared</li>
+              <li>✓ Juntas estancas de resina de reacción sin erosión</li>
+              <li>✓ Sin juntas cementosas porosas o pulverulentas</li>
+            </ul>
+          </div>
+          <div class="rounded border border-hsb-line p-5 bg-[#f8f9fb]">
+            <h3 class="font-bold text-hsb-black text-base">Drenaje y pendientes</h3>
+            <ul class="mt-2 space-y-1.5 text-xs text-hsb-steel">
+              <li>✓ Pendiente sin retenciones hacia los desagües (mínimo 1,5 %)</li>
+              <li>✓ Sin charcos en las vías de circulación</li>
+              <li>✓ Sifones y cestillos de sedimentos de las canaletas en buen estado</li>
+              <li>✓ Borde superior de la canaleta enrasado o ligeramente por debajo del pavimento</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="mt-10 rounded border border-hsb-line bg-hsb-mist p-6 flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <h3 class="text-base font-bold text-hsb-black">Descargar la lista de control de auditoría en PDF</h3>
+            <p class="text-xs text-hsb-steel mt-1">Lista compacta de 1 página para la inspección interna previa a la próxima auditoría IFS o HACCP.</p>
+          </div>
+          <button
+            type="button"
+            class="button-primary text-xs"
+            data-download="checkliste"
+            data-placement="muster_abnahmeprotokoll"
+          >
+            Imprimir lista / guardar PDF
+          </button>
+        </div>
+
+        <div class="mt-10 flex flex-wrap items-center gap-4 border-t border-hsb-line pt-8">
+          <a class="button-primary" href={toSpanishPath("/kontakt/")}>Solicitar la evaluación de su proyecto</a>
+          <a class="button-secondary-dark" href={toSpanishPath("/wissen/ruettelkeramik-agi-s-40/")}>Consultar el documento de ejecución AGI S 40</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <SpanishContactSection />
+</BaseLayout>
+
+<script>
+  document.querySelector<HTMLButtonElement>('[data-download="checkliste"]')?.addEventListener("click", () => {
+    window.print();
+  });
+</script>

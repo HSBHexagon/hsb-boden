@@ -6,7 +6,7 @@ export const supplementalArticles: Article[] = [
     title: "Rutschhemmklassen R9 bis R13 für Industrieböden",
     seoTitle: "Rutschhemmklassen R9-R13 Industrieboden erklärt | HSB Wissen",
     description:
-      "Welche Rutschhemmklasse (R9 bis R13, mit V4/V6-Verdrängungsraum) für welchen Produktionsbereich vorgeschrieben ist und wie die Klassifizierung praktisch geprüft wird.",
+      "Welche Rutschhemmklasse (R9 bis R13, V4/V6-Verdrängungsraum) für welchen Produktionsbereich vorgeschrieben ist und wie sie geprüft wird.",
     h1: "Rutschhemmklassen R9 bis R13: Welche Klasse für welchen Bereich?",
     category: "Technik",
     readTime: "8 Minuten",
@@ -52,7 +52,7 @@ export const supplementalArticles: Article[] = [
   {
     slug: "hohlkehle-sockelausbildung-industrieboden",
     title: "Hohlkehle und Sockelausbildung im Industrieboden",
-    seoTitle: "Hohlkehle & Sockel im Industrieboden: Detail entscheidet | HSB",
+    seoTitle: "Hohlkehle & Sockel: Das Detail entscheidet | HSB Wissen",
     description:
       "Warum die Hohlkehle am Wand-Boden-Übergang über die Standzeit eines Industriebodens entscheidet und welche Ausführungsfehler zu wiederkehrenden Schäden führen.",
     h1: "Hohlkehle und Sockelausbildung: Das unterschätzte Detail",
@@ -92,9 +92,9 @@ export const supplementalArticles: Article[] = [
   {
     slug: "whg-abdichtung-industrieboden-pflicht",
     title: "WHG-Abdichtung für Industrieböden — wann ist sie Pflicht",
-    seoTitle: "WHG-Abdichtung Industrieboden: Pflicht oder Kür? | HSB Wissen",
+    seoTitle: "WHG-Abdichtung Industrieboden: Pflicht oder Kür? | HSB",
     description:
-      "Wann eine WHG-konforme Bodenabdichtung nach Wasserhaushaltsgesetz für Ihren Produktionsbereich rechtlich vorgeschrieben ist und was bei der Systemwahl zu beachten ist.",
+      "Wann eine WHG-konforme Bodenabdichtung für Ihren Produktionsbereich rechtlich vorgeschrieben ist und was bei der Systemwahl zu beachten ist.",
     h1: "WHG-Abdichtung für Industrieböden: Wann ist sie Pflicht?",
     category: "Recht & Technik",
     readTime: "8 Minuten",
@@ -134,7 +134,7 @@ export const supplementalArticles: Article[] = [
     title: "IFS/BRC-Audit: Was Auditoren am Industrieboden prüfen",
     seoTitle: "IFS/BRC-Audit: Boden-Prüfpunkte im Detail | HSB Wissen",
     description:
-      "Welche konkreten Prüfpunkte am Industrieboden bei IFS- und BRC-Audits in der Lebensmittelproduktion typischerweise zu Beanstandungen führen und wie sich Betriebe vorbereiten.",
+      "Welche Prüfpunkte am Industrieboden bei IFS- und BRC-Audits typischerweise zu Beanstandungen führen und wie sich Lebensmittelbetriebe vorbereiten.",
     h1: "IFS/BRC-Audit: Diese Prüfpunkte am Boden entscheiden über die Bewertung",
     category: "Audit & Hygiene",
     readTime: "8 Minuten",

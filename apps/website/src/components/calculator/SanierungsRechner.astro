@@ -1,0 +1,220 @@
+---
+interface Props {
+  auditAnchor?: string;
+}
+
+const { auditAnchor = "/kontakt/" } = Astro.props;
+---
+
+<div class="surface rounded border border-hsb-line p-6 lg:p-10" data-sanierungs-rechner>
+  <div class="border-b border-hsb-line pb-6">
+    <div class="flex flex-wrap items-center gap-2">
+      <span class="inline-block rounded bg-hsb-mist px-2.5 py-1 text-xs font-black uppercase tracking-[0.12em] text-hsb-black">
+        Interaktives Planungswerkzeug
+      </span>
+      <span class="inline-block rounded border border-hsb-line bg-white px-2 py-0.5 font-mono text-xs font-bold text-hsb-steel">
+        Richtwert-Kalkulation · Vorläufige Taktung
+      </span>
+    </div>
+    <h2 class="mt-3 text-2xl font-black text-hsb-black">Sanierungsfenster- & Bauabschnitts-Rechner</h2>
+    <p class="mt-2 text-sm leading-6 text-hsb-steel">
+      Ermitteln Sie zur Orientierung auf Basis branchenüblicher Erfahrungswerte, wie eine Produktionsfläche zur Vorplanung in Bauabschnitte unterteilt werden kann, bevor das Vor-Ort-Audit die bauseitigen Kennwerte festlegt.
+    </p>
+  </div>
+
+  <div class="mt-8 grid gap-8 lg:grid-cols-[1.1fr_0.9fr]">
+    <!-- Eingabebereich -->
+    <div class="space-y-6">
+      <!-- 1. Flächengröße -->
+      <div>
+        <div class="flex items-center justify-between">
+          <label for="rechner-flaeche" class="text-sm font-bold text-hsb-black">
+            1. Zu sanierende Fläche (in m²)
+          </label>
+          <span id="flaeche-display" class="rounded bg-hsb-mist px-3 py-1 font-mono text-base font-black text-hsb-black">
+            250 m²
+          </span>
+        </div>
+        <input
+          type="range"
+          id="rechner-flaeche"
+          min="50"
+          max="2000"
+          step="50"
+          value="250"
+          class="mt-3 w-full h-2 bg-hsb-line rounded-lg appearance-none cursor-pointer accent-hsb-red"
+        />
+        <div class="mt-1 flex justify-between text-xs text-hsb-steel font-mono">
+          <span>50 m²</span>
+          <span>500 m²</span>
+          <span>1.000 m²</span>
+          <span>2.000 m²</span>
+        </div>
+      </div>
+
+      <!-- 2. Verfügbares Stillstandsfenster -->
+      <div>
+        <label for="rechner-zeitfenster" class="text-sm font-bold text-hsb-black block">
+          2. Maximales Stillstandsfenster je Bauabschnitt
+        </label>
+        <select
+          id="rechner-zeitfenster"
+          class="mt-2 w-full rounded border border-hsb-line bg-white p-3 text-sm font-bold text-hsb-black focus:border-hsb-red focus:outline-none"
+        >
+          <option value="wochenende-60h">Wochenend-Stillstand (Freitag 18:00 – Montag 06:00, 60 Std.)</option>
+          <option value="betriebsurlaub">Geplanter Betriebsstillstand / Werksferien (1–2 Wochen)</option>
+          <option value="laufender-betrieb">Rollierend im laufenden Betrieb (Abschnittskapselung)</option>
+        </select>
+      </div>
+
+      <!-- 3. Bodensystem -->
+      <div>
+        <label for="rechner-system" class="text-sm font-bold text-hsb-black block">
+          3. Gewünschtes Bodensystem / Beanspruchung
+        </label>
+        <select
+          id="rechner-system"
+          class="mt-2 w-full rounded border border-hsb-line bg-white p-3 text-sm font-bold text-hsb-black focus:border-hsb-red focus:outline-none"
+        >
+          <option value="pu-beton">PU-Beton (Höchste Thermoschock- & Stoßbelastung)</option>
+          <option value="ruettelkeramik">Rüttelkeramik / Sechskant (Extreme Dauernass- & Rollbelastung)</option>
+          <option value="reparatur">Punktuelle Schadstellen-Reparatur (Express-Instandsetzung)</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Ergebnisbereich -->
+    <div class="rounded border-2 border-hsb-black bg-hsb-mist/40 p-6 flex flex-col justify-between">
+      <div>
+        <span class="text-xs font-black uppercase tracking-widest text-hsb-red">Vorläufige Modellrechnung</span>
+        <h3 class="mt-1 text-xl font-black text-hsb-black">Simulierte Bauabschnitte</h3>
+
+        <div class="mt-6 space-y-4">
+          <div class="rounded border border-hsb-line bg-white p-4">
+            <span class="text-xs text-hsb-steel block">Kalkulierte Bauabschnitte</span>
+            <span id="result-abschnitte" class="text-3xl font-black text-hsb-black">2 Abschnitte</span>
+            <span id="result-flaeche-pro-abschnitt" class="text-xs text-hsb-steel block mt-0.5">à ca. 125 m² (Modellwert)</span>
+          </div>
+
+          <div class="rounded border border-hsb-line bg-white p-4">
+            <span class="text-xs text-hsb-steel block">Aushärtezeit vor Wiederinbetriebnahme</span>
+            <span id="result-aushaertung" class="text-lg font-bold text-hsb-black">Gemäß technischem Merkblatt & Vor-Ort-Audit</span>
+            <span class="text-xs text-hsb-steel block mt-0.5">abhängig von freigegebenem Harzsystem, Untergrund- und Raumtemperatur</span>
+          </div>
+
+          <div class="rounded border border-hsb-line bg-white p-4">
+            <span class="text-xs text-hsb-steel block">Verfahrenshinweis Stillstand</span>
+            <p id="result-empfehlung" class="text-xs leading-relaxed text-hsb-steel mt-1">
+              Exemplarische Aufteilung auf Wochenend-Etappen. Die tatsächliche Freigabezeit wird im Vor-Ort-Audit anhand des gewählten Systems festgelegt.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="mt-6 pt-4 border-t border-hsb-line">
+        <p class="text-xs leading-relaxed text-hsb-steel italic">
+          Hinweis: Exemplarische Richtwert-Berechnung auf Basis typischer Einbauleistungen (keine vertraglich zugesicherten Tagesleistungen oder Freigabezeiten). Verbindliche Abschnittsgrößen und Taktungen werden nach bauseitiger Prüfung von Untergrund, Temperatur und Hersteller-Datenblatt im Vor-Ort-Audit festgelegt.
+        </p>
+        <div class="mt-4">
+          <a
+            id="rechner-audit-btn"
+            href={auditAnchor}
+            class="button-primary w-full text-center block text-sm"
+          >
+            Berechnung ins Vor-Ort-Audit übernehmen
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  function initSanierungsRechner() {
+    const flaecheInput = document.getElementById("rechner-flaeche") as HTMLInputElement | null;
+    const flaecheDisplay = document.getElementById("flaeche-display");
+    const zeitfensterSelect = document.getElementById("rechner-zeitfenster") as HTMLSelectElement | null;
+    const systemSelect = document.getElementById("rechner-system") as HTMLSelectElement | null;
+
+    const resultAbschnitte = document.getElementById("result-abschnitte");
+    const resultFlaeche = document.getElementById("result-flaeche-pro-abschnitt");
+    const resultAushaertung = document.getElementById("result-aushaertung");
+    const resultEmpfehlung = document.getElementById("result-empfehlung");
+    const auditBtn = document.getElementById("rechner-audit-btn") as HTMLAnchorElement | null;
+
+    if (!flaecheInput || !flaecheDisplay || !zeitfensterSelect || !systemSelect) return;
+
+    function calculate() {
+      const flaeche = parseInt(flaecheInput?.value || "250", 10);
+      const zeitfenster = zeitfensterSelect?.value || "wochenende-60h";
+      const system = systemSelect?.value || "pu-beton";
+
+      if (flaecheDisplay) flaecheDisplay.textContent = `${flaeche} m²`;
+
+      let maxPerSection = 150;
+      const aushaertungsText = "Gemäß technischem Merkblatt & Vor-Ort-Audit";
+      let empfehlungsText = "";
+
+      if (system === "pu-beton") {
+        if (zeitfenster === "wochenende-60h") {
+          maxPerSection = 160;
+          empfehlungsText = "Exemplarische Wochenend-Etappen: Einbau und Aushärtung werden im Vor-Ort-Audit auf Ihr Sperrfenster abgestimmt.";
+        } else if (zeitfenster === "betriebsurlaub") {
+          maxPerSection = 450;
+          empfehlungsText = "Exemplarischer Einbau während geplanter Betriebsferien in zusammenhängenden Arbeitsabschnitten.";
+        } else {
+          maxPerSection = 100;
+          empfehlungsText = "Exemplarische rollierende Teilflächensanierung mit Staubkapselung nach örtlicher Freigabe.";
+        }
+      } else if (system === "ruettelkeramik") {
+        if (zeitfenster === "wochenende-60h") {
+          maxPerSection = 110;
+          empfehlungsText = "Exemplarische Etappen im Rüttelverfahren mit Reaktionsharzverfugung nach bauseitiger Taktplanung.";
+        } else if (zeitfenster === "betriebsurlaub") {
+          maxPerSection = 300;
+          empfehlungsText = "Exemplarische Abschnittsplanung für Säureschutz-Sanierungen in geplanten Stillstandszeiten.";
+        } else {
+          maxPerSection = 80;
+          empfehlungsText = "Exemplarische abschnittsweise Rüttelverlegung mit Staubkapselung.";
+        }
+      } else {
+        maxPerSection = 50;
+        empfehlungsText = "Exemplarische Etappen für punktuelle Instandsetzung schadhafter Fugen, Rinnenkanten oder Hohlstellen.";
+      }
+
+      const numSections = Math.max(1, Math.ceil(flaeche / maxPerSection));
+      const flaecheProAbschnitt = Math.round(flaeche / numSections);
+
+      if (resultAbschnitte) {
+        resultAbschnitte.textContent = numSections === 1 ? "1 Abschnitt" : `${numSections} Abschnitte`;
+      }
+      if (resultFlaeche) {
+        resultFlaeche.textContent = numSections === 1 ? "Gesamtfläche in einem Durchgang (Modellwert)" : `à ca. ${flaecheProAbschnitt} m² (Modellwert)`;
+      }
+      if (resultAushaertung) {
+        resultAushaertung.textContent = aushaertungsText;
+      }
+      if (resultEmpfehlung) {
+        resultEmpfehlung.textContent = empfehlungsText;
+      }
+
+      if (auditBtn) {
+        const urlParams = new URLSearchParams({
+          areaSize: String(flaeche),
+          system: system,
+          timeWindow: zeitfenster,
+          sections: String(numSections),
+        });
+        auditBtn.href = `/kontakt/?${urlParams.toString()}#kontaktformular`;
+      }
+    }
+
+    flaecheInput.addEventListener("input", calculate);
+    zeitfensterSelect.addEventListener("change", calculate);
+    systemSelect.addEventListener("change", calculate);
+    calculate();
+  }
+
+  initSanierungsRechner();
+  document.addEventListener("astro:page-load", initSanierungsRechner);
+</script>

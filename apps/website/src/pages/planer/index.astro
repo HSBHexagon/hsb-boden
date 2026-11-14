@@ -1,0 +1,184 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import PageHero from "../../components/sections/PageHero.astro";
+import LeadFormSection from "../../components/forms/LeadFormSection.astro";
+import { buildBreadcrumbJsonLd } from "../../lib/schema";
+
+export const prerender = true;
+
+const path = "/planer/";
+const title = "Planerportal & LV-Texte Industrieboden | HSB";
+const description = "Ausschreibungstexte (LV) für Architekten und Planer: Rüttelkeramik nach AGI S 40, PU-Beton 9 mm und WHG § 62 Dichtflächen mit 1-Klick-Kopierfunktion.";
+
+const lvItems = [
+  {
+    id: "lv-ruettelkeramik",
+    title: "LV-Pos. 01: Chemisch beständiger Rüttelboden nach AGI S 40",
+    standard: "AGI S 40 (Mai 1999) / DIN EN 13813 / DIN 18202",
+    shortText: "Maschinell eingerüttelter keramischer Säureschutzbelag mit projektabhängig zu prüfender, möglichst vollflächiger Bettung für chemische und mechanische Belastungen.",
+    fullText: `Position 01: Keramischer Rüttelboden nach AGI S 40 (Ausgabe Mai 1999)
+Gewerke: Säureschutzbau / Industrieboden
+
+1. Untergrundvorbereitung:
+Betonuntergrund durch Kugelstrahlen oder Fräsen vorbereiten. Tragende Gesteinskörnung freilegen. Oberfläche absaugen. Erforderliche Haftzugfestigkeit nach Untergrundprüfung und freigegebenem System festlegen.
+
+2. Haftbrücke & Rüttelbett:
+Aufbringen einer polymervergüteten Haftbrücke im Verbund. Einbau eines kunstharzmodifizierten, erdfeuchten Rüttelbettmörtels in einer nach Untergrund, Lasten und freigegebenem System festzulegenden Nenndicke. Mörtelklasse anhand des Produktdatenblatts spezifizieren.
+
+3. Belagsmaterial & Verlegung:
+Verlegung von säure- und laugenbeständigen Spaltklinkern bzw. volldurchgefärbtem Feinsteinzeug (Format und Dicke gemäß freigegebenem System). Einbettung erfolgt maschinell durch Flächenrüttler zur möglichst hohlstellenarmen Bettung nach AGI S 40; Einbauqualität objektspezifisch prüfen (Chemisch beständige Bodenbeläge im Rüttelverfahren, Ausgabe Mai 1999).
+
+4. Verfugung:
+Auswaschen der Fugen und Verfugung mit 2-Komponenten-Reaktionsharzmörtel (Epoxidharz oder Novolac-Vinylester) nach AGI S 40, beständig gegen Fette, Säuren, Laugen und CIP-Reinigungsmedien (chemische und thermische Beständigkeit nur gemäß freigegebenem Produktdatenblatt und Medienliste).
+
+5. Ebenheit & Toleranzen:
+Ebenheit nach DIN 18202, Tabelle 3, Zeile 3. Rutschhemmungsklasse nach DGUV Regel 108-003 / DIN EN 16165: je nach System und Prüfzeugnis (z. B. R11 bis R13, Verdrängungsraum V4 bis V6 nach Vorgabe).`,
+  },
+  {
+    id: "lv-pu-beton",
+    title: "LV-Pos. 02: Hochtemperatur-Polyurethanbeton (9 mm)",
+    standard: "DIN EN 13813 (Klassen nach zugelassenem Produktdatenblatt)",
+    shortText: "Nahtloser 3-Komponenten-PU-Zement-Hybridbelag für hohe thermische Wechselbeanspruchung und Dampfstrahlreinigung (Kennwerte und Eignung anhand eines freigegebenen Produktdatenblatts nachweisen).",
+    fullText: `Position 02: Hochtemperatur-PU-Beton (9 mm)
+Gewerke: Beschichtung / Reaktionsharzestrich
+
+1. Untergrundvorbereitung:
+Kugelstrahlen der Betonunterlage, Freilegen des Zuschlagkorns. Herstellen von Rückverankerungsnuten gemäß zugelassenem Systemdetail entlang aller freien Kanten, Einbauteile und Entwässerungsrinnen zur Aufnahme von Schubspannungen.
+
+2. Grundierung & Ausgleich:
+Grundierung mit kratzfähiger 3K-Polyurethan-Zement-Grundierung, Einstreuung mit feuergetrocknetem Quarzsand zur mechanischen Verkrallung.
+
+3. Belagskörper (9 mm Dicke):
+Einbau eines 3-komponentigen, pigmentierten Polyurethan-Zement-Hybridestrichs in einer Nenndicke von 9 mm.
+- Dauergebrauchstemperatur: anhand der realen Belastung und des freigegebenen Produktdatenblatts festlegen
+- Dampfstrahlreinigung: nur bei nachgewiesener Herstellerfreigabe für Druck, Temperatur und Reinigungsmedium
+- Druck- und Biegezugfestigkeit: Klassen nach DIN EN 13813 anhand des gewählten Systemdatenblatts festlegen
+
+4. Oberflächenstruktur:
+Rutschhemmende Einstreuung zur Erzielung der geforderten Rutschhemmklasse nach DGUV Regel 108-003 / DIN EN 16165: je nach System und Prüfzeugnis (z. B. R11 bis R13). Versiegelung mit UV- und chemikalienbeständigem PU-Kopfsiegel.`,
+  },
+  {
+    id: "lv-whg-dichtflaeche",
+    title: "LV-Pos. 03: WHG § 62 Dichtfläche & chemikalienbeständige Hohlkehle",
+    standard: "WHG § 62 / AwSV / DIBt-zugelassene Systeme",
+    shortText: "Fachgerechte Dichtfläche nach WHG § 62 und AwSV für Havarie-, Umschlag- und Lagerbereiche wassergefährdender Stoffe.",
+    fullText: `Position 03: WHG § 62 Dichtfläche & Fugenabdichtung
+Gewerke: Bautenschutz / Gewässerschutz nach AwSV
+
+1. Anforderung:
+Herstellung einer flüssigkeitsundurchlässigen Dichtfläche nach § 62 WHG und AwSV für LAU- und HBV-Anlagen. Beständigkeit gegen Medien gemäß bauaufsichtlicher Medienliste (Säuren, Laugen, Kohlenwasserstoffe).
+
+2. Rissüberbrückende Beschichtung / Dichtschicht:
+Applikation eines bauaufsichtlich allgemein zugelassenen (abZ / aBG) Epoxid- oder Polyurethanharzsystems. Rissüberbrückung nur entsprechend dem nachgewiesenen Leistungsbereich des ausgewählten Systems.
+
+3. Hohlkehlenausbildung am Sockel:
+Ausbildung einer entkoppelten Hohlkehle (Radius gemäß freigegebenem Ausführungsdetail) an allen aufgehenden Wänden und Stützen mit mineralischem oder polymerem Formkörper. Hochzug der Dichtschicht in projektspezifisch festzulegender Höhe über OKFF als fluiddichte Wanne.
+
+4. Fugenausbildung nach WHG:
+Abdichtung aller Bauwerksfugen mit bauaufsichtlich zugelassenem WHG-Fugendichtstoff auf Polysulfid- oder Polyurethanbasis inklusive chemikalienbeständiger Hinterfüllung und Flankenprimer. Dokumentation der Einbauprotokolle für die Sachverständigenabnahme nach AwSV.`,
+  },
+];
+---
+
+<BaseLayout
+  title={title}
+  description={description}
+  path={path}
+  jsonLd={[
+    buildBreadcrumbJsonLd([
+      { name: "Start", path: "/" },
+      { name: "Planer & Ausschreibung", path },
+    ]),
+  ]}
+>
+  <PageHero
+    eyebrow="Architekten- & Planerportal"
+    title="Ausschreibungstexte & technische Spezifikationen für Industrieböden"
+    text="Planungssicherheit für Architekten, Ingenieurbüros und Generalunternehmer. Nutzen Sie unsere praxisnahen LV-Textvorschläge (Kennwerte laut Herstellerdatenblatt) nach AGI S 40, DIN EN 13813 und WHG § 62. Kopieren Sie die Positionen mit einem Klick direkt in Ihre Ausschreibungssoftware."
+  />
+
+  <section class="section border-b border-hsb-line bg-white">
+    <div class="container max-w-5xl">
+      <div class="mb-10 max-w-3xl">
+        <p class="eyebrow">Praxisnahe Textvorschläge</p>
+        <h2 class="h2">Ausschreibungstexte zum direkten Übernehmen</h2>
+        <p class="lead mt-4 text-hsb-steel">
+          Kopieren Sie die Textvorschläge direkt in Ihre AVA-Software (z. B. ORCA, RIB iTWO, California). Alle technischen Kennwerte sind als Sollwerte laut jeweiligem Herstellerdatenblatt anzusetzen.
+        </p>
+      </div>
+
+      <div class="space-y-8">
+        {lvItems.map((item) => (
+          <article class="surface rounded border border-hsb-line p-6 lg:p-8" id={item.id}>
+            <div class="flex flex-wrap items-center justify-between gap-4 border-b border-hsb-line pb-4">
+              <div>
+                <span class="rounded bg-hsb-mist px-2.5 py-1 text-xs font-black uppercase tracking-wider text-hsb-black">
+                  {item.standard}
+                </span>
+                <h3 class="mt-2 text-xl font-black text-hsb-black">{item.title}</h3>
+                <p class="mt-1 text-xs text-hsb-steel">{item.shortText}</p>
+              </div>
+              <button
+                type="button"
+                class="button-primary text-xs flex items-center gap-2"
+                data-copy-target={item.id}
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                  <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                </svg>
+                <span class="btn-text">Text kopieren</span>
+              </button>
+            </div>
+
+            <div class="mt-4">
+              <pre class="overflow-x-auto rounded bg-hsb-mist p-4 text-xs font-mono leading-relaxed text-hsb-black whitespace-pre-wrap selection:bg-hsb-red selection:text-white" data-text-content>{item.fullText}</pre>
+            </div>
+          </article>
+        ))}
+      </div>
+
+      <!-- Planerberatung & Sonderfälle -->
+      <div class="mt-12 rounded border-2 border-hsb-black bg-hsb-mist p-8 lg:p-10">
+        <div class="max-w-2xl">
+          <span class="text-xs font-black uppercase tracking-wider text-hsb-red">Individuelle Fachplanung</span>
+          <h3 class="mt-2 text-2xl font-black text-hsb-black">Sie benötigen projektspezifische Details oder GAEB-Dateien?</h3>
+          <p class="mt-3 text-sm leading-6 text-hsb-steel">
+            Unsere Bauingenieure unterstützen Sie kostenfrei bei der Ausarbeitung spezifischer Leistungsbeschreibungen, Gefälleberechnungen, Rinnenintegrationen und Nachweisen für AwSV-Prüfungen.
+          </p>
+          <div class="mt-6 flex flex-wrap gap-4">
+            <a class="button-primary" href="#kontaktformular">Planer-Beratung anfragen</a>
+            <a class="button-secondary-dark" href="/wissen/ruettelkeramik-agi-s-40/">AGI S 40 Fachartikel lesen</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <LeadFormSection />
+</BaseLayout>
+
+<script>
+  document.querySelectorAll<HTMLButtonElement>("[data-copy-target]").forEach((button) => {
+    button.addEventListener("click", async () => {
+      const targetId = button.getAttribute("data-copy-target");
+      const article = targetId ? document.getElementById(targetId) : null;
+      const pre = article?.querySelector<HTMLElement>("[data-text-content]");
+      const text = pre?.textContent || "";
+      const label = button.querySelector<HTMLElement>(".btn-text");
+
+      try {
+        await navigator.clipboard.writeText(text);
+        if (label) label.textContent = "Kopiert!";
+        button.classList.add("bg-green-700");
+        setTimeout(() => {
+          if (label) label.textContent = "Text kopieren";
+          button.classList.remove("bg-green-700");
+        }, 2000);
+      } catch (e) {
+        // Fallback
+        if (label) label.textContent = "Strg+C zum Kopieren";
+      }
+    });
+  });
+</script>

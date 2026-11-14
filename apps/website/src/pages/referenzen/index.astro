@@ -4,6 +4,7 @@ import ReferenceMap from "../../components/references/ReferenceMap.astro";
 import CTASection from "../../components/sections/CTASection.astro";
 import PageHero from "../../components/sections/PageHero.astro";
 import BaseLayout from "../../layouts/BaseLayout.astro";
+import { projectSrcset } from "../../lib/responsiveImage";
 import { getPublicReferences, getSupplementalClientLocations } from "../../lib/content";
 
 const references = getPublicReferences();
@@ -12,8 +13,8 @@ const references = getPublicReferences();
 const supplementalClients = getSupplementalClientLocations();
 ---
 
-<BaseLayout title="Referenzen Industrieböden & Säureschutz | HSB Hexagon Säurebau" description="Referenzen für keramische Industrieböden, Säureschutz, Entwässerung und Industrieboden-Sanierung. Lebensmittelproduktion, Molkerei, Brauerei, Chemie und NRW." path="/referenzen/">
-  <PageHero eyebrow="Referenzen" title="Ausgeführte Industrieböden für produktionskritische Bereiche" text="Unsere Referenzen zeigen, welche Belastungen, Systeme und Branchen Hexagon Säurebau kennt – konkret beschrieben nach Herausforderung, System und Ergebnis." />
+<BaseLayout title="Referenzen Industrieböden & Säureschutz | HSB Hexagon" description="Referenzen für keramische Industrieböden, Säureschutz, Entwässerung und Industrieboden-Sanierung. Lebensmittelproduktion, Molkerei, Brauerei, Chemie und NRW." path="/referenzen/">
+  <PageHero eyebrow="Referenzen" title="Ausgeführte Industrieböden für produktionskritische Bereiche" text="Unsere Referenzen zeigen, welche Belastungen, Systeme und Branchen Hexagon Säurebau kennt – konkret beschrieben nach Herausforderung, System und Ergebnis." image={{ src: "/media/hsb/projekte/halle-doppelrinne-keramik.webp", alt: "Produktionshalle mit zwei Entwässerungsrinnen im Sechskant-Keramikboden" }} />
 
   <!-- Fotogalerie: echte Referenzflächen -->
   <section class="section-tight border-b border-hsb-line bg-hsb-mist">
@@ -26,8 +27,8 @@ const supplementalClients = getSupplementalClientLocations();
         </p>
       </div>
       <div class="grid gap-5 lg:grid-cols-[1.25fr_0.75fr]">
-        <figure class="overflow-hidden rounded-[4px] border border-hsb-line bg-white">
-          <div class="aspect-[16/10] overflow-hidden bg-hsb-black">
+        <figure class="flex flex-col overflow-hidden rounded-[4px] border border-hsb-line bg-white">
+          <div class="aspect-[16/10] overflow-hidden bg-hsb-black lg:aspect-auto lg:flex-1">
             <img
               src="/media/hsb/current/referenzflaeche-1.webp"
               alt="Keramischer Industrieboden mit Entwässerungsrinne als Referenzfläche von Hexagon Säurebau"
@@ -61,6 +62,8 @@ const supplementalClients = getSupplementalClientLocations();
               <div class="aspect-[4/3] overflow-hidden sm:aspect-auto lg:aspect-[4/3]">
                 <img
                   src={img.src}
+                  srcset={projectSrcset(img.src)}
+                  sizes="(min-width: 1024px) 380px, (min-width: 640px) 190px, calc(100vw - 32px)"
                   alt={img.alt}
                   class="h-full w-full object-cover object-center transition-transform duration-500 hover:scale-[1.015]"
                   loading="lazy"
@@ -111,6 +114,8 @@ const supplementalClients = getSupplementalClientLocations();
             <div class="aspect-[4/3] overflow-hidden">
               <img
                 src={img.src}
+                srcset={projectSrcset(img.src)}
+                sizes="(min-width: 1024px) 380px, (min-width: 640px) 50vw, calc(100vw - 32px)"
                 alt={img.alt}
                 class="h-full w-full object-cover object-center transition-transform duration-500 hover:scale-[1.015]"
                 loading="lazy"

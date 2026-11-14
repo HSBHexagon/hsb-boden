@@ -88,7 +88,7 @@ def cmd_status(args):
     print(f"\n[3] GOOGLE SHEET SSOT (ID: {SPREADSHEET_ID}):")
     try:
         sheets_svc = get_sheets_service()
-        res = sheets_svc.spreadsheets().values().get(spreadsheetId=SPREADSHEET_ID, range="ALL_LEADS!A1:BM6425").execute()
+        res = sheets_svc.spreadsheets().values().get(spreadsheetId=SPREADSHEET_ID, range="ALL_LEADS!A1:BU6425").execute()
         rows = res.get("values", [])
         total_leads = len(rows) - 1 if rows else 0
         print(f"  ✓ ALL_LEADS geladen: {total_leads} Leads indiziert.")
@@ -205,12 +205,20 @@ def cmd_overhaul_all(args):
                 print(f"  Row {l.get('_row')}: {l.get('Lead_ID') or l.get('Lead-ID')} | {l.get('E-Mail') or l.get('Email')} | {l.get('Firma') or l.get('Company')}")
 
 
+SEND_HALTED_EXIT_CODE = 3
+
+
 def cmd_send_batch(args):
     from outbound_safety import dispatch_verified
     result = dispatch_verified(count_per_owner=args.count, owners=(args.owner,),
         dry_run=not args.apply, cap=args.cap,
-        jitter_min=args.jitter_min, jitter_max=args.jitter_max)
+        jitter_min=args.jitter_min, jitter_max=args.jitter_max,
+        segments=set(args.segment) if args.segment else None, variant=args.variant,
+        include_de_inbound=not args.com_only_inbound)
     print(json.dumps(result, ensure_ascii=False, indent=2))
+    if result.get('halted'):
+        # Geordnetes Ende ohne offenen Versuch: der Aufrufer darf mit dem nächsten Postfach fortfahren.
+        sys.exit(SEND_HALTED_EXIT_CODE)
 
 
 def cmd_test_mail(args):
@@ -256,7 +264,7 @@ def cmd_optouts(args):
     sheets_svc = get_sheets_service()
 
     # 1. Aus ALL_LEADS
-    res = sheets_svc.spreadsheets().values().get(spreadsheetId=SPREADSHEET_ID, range="ALL_LEADS!A1:BM6425").execute()
+    res = sheets_svc.spreadsheets().values().get(spreadsheetId=SPREADSHEET_ID, range="ALL_LEADS!A1:BU6425").execute()
     rows = res.get("values", [])
     optouts = []
     if rows:
@@ -301,6 +309,9 @@ def cmd_optout_direct(args):
         dry_run=not args.apply
     )
     mode_str = "LIVE" if args.apply else "DRY-RUN"
+    if not res.get("ok"):
+        print(f"[{mode_str}] Sperre abgelehnt: {res.get('error')} (nichts geändert)")
+        sys.exit(1)
     print(f"[{mode_str}] Sperre verarbeitet: Lead-ID={res['lead_id']}, E-Mail={res['email']}, Gelöschte Entwürfe={res.get('purged_drafts', 0)}")
 
 
@@ -310,6 +321,388 @@ def cmd_sync(args):
     result=sync_inbounds(apply=args.apply,include_de=not getattr(args,'com_only',False))
     result["sent_reconciliation"]=sent_result
     print(json.dumps(result,ensure_ascii=False,indent=2))
+
+
+def cmd_click_sync(args, kv_client=None, svc=None):
+    """Klick-Ereignisse aus Cloudflare KV in den CRM-Tab CLICK_EVENTS übernehmen (Dry-Run: nur Zählungen)."""
+    import click_sync
+    result = click_sync.sync_clicks(args.apply, kv_client=kv_client, sheets_svc=svc)
+    print(json.dumps(result, ensure_ascii=False, indent=2))
+
+
+def cmd_create_v2_drafts(args, svc=None, client=None):
+    """Lead → v2-Entwurf; gibt nur Zählungen aus, versendet nie."""
+    from com_mailbox_manager import ComMailboxClient
+    from new_drafts import click_secret, create_v2_drafts
+    if not 1 <= args.limit <= 200:
+        raise SystemExit("--limit muss zwischen 1 und 200 liegen")
+    _, leads = _load_all_leads(svc or get_sheets_service())
+    result = create_v2_drafts(args.owner, args.limit, args.apply, leads=leads,
+                              client=client or ComMailboxClient(args.owner), secret=click_secret())
+    print(json.dumps(result))
+
+
+def cmd_crm_bindings(args, svc=None):
+    """Bindungen anlegen oder Sortier-Canary ausführen; gibt nur Zählungen aus."""
+    import json as _json
+    import crm_bindings
+    from hsb_config import CANONICAL_SPREADSHEET_ID
+    svc = svc or get_sheets_service()
+    if args.canary:
+        print(_json.dumps(crm_bindings.sort_canary(svc, CANONICAL_SPREADSHEET_ID)))
+    else:
+        only = None
+        if args.leads_file:
+            only = {line.strip() for line in open(args.leads_file, encoding="utf-8") if line.strip()}
+        if args.prune:
+            if only is None:
+                raise SystemExit("--prune braucht --leads-file")
+            print(_json.dumps(crm_bindings.prune_bindings(svc, CANONICAL_SPREADSHEET_ID, only, apply=args.apply)))
+        print(_json.dumps(crm_bindings.ensure_bindings(svc, CANONICAL_SPREADSHEET_ID, apply=args.apply, only=only)))
+
+
+def cmd_bounce_report(args, collector=None):
+    """Zählt Bounces je DSN-Klasse und Domain (nur Zählungen, keine Adressen)."""
+    from lead_quality import summarize_bounces
+    if collector is None:
+        from dual_domain_collector import collect_all_inbounds as collector
+    msgs = collector(limit_per_mailbox=args.limit, include_de=not getattr(args, "com_only", False))
+    summary = summarize_bounces(msgs)
+    print(f"Bounces gesamt: {summary['total']}")
+    print("Je Klasse:")
+    for cls, n in sorted(summary["by_class"].items(), key=lambda kv: -kv[1]):
+        print(f"  {cls}: {n}")
+    print("Je Domain:")
+    for dom, n in sorted(summary["by_domain"].items(), key=lambda kv: -kv[1]):
+        print(f"  {dom}: {n}")
+    print("Nur Hard Bounces je Domain:")
+    for dom, n in sorted(summary["hard_by_domain"].items(), key=lambda kv: -kv[1]):
+        print(f"  {dom}: {n}")
+
+
+def cmd_seed_send(args, client=None):
+    import seed_test
+    if client is None:
+        client = ComMailboxClient(normalize_owner(args.owner))
+    token, results = seed_test.send_seed(client, args.seed_file or None, args.to or None)
+    print(f"Seed-Kennung: {token}")
+    for r in results:
+        print(f"  {r['address']}: {'gesendet' if r['ok'] else 'FEHLER'}")
+
+
+def cmd_seed_read(args):
+    import seed_test
+    if args.raw_file:
+        r = seed_test.parse_auth_results(Path(args.raw_file).read_bytes())
+        for k in ("spf", "dkim", "dmarc", "dkim_domain", "folder"):
+            print(f"{k}: {r[k] if r[k] is not None else 'unbekannt'}")
+        return
+    seed_test.print_checklist(seed_test.load_seed_inboxes(args.seed_file or None), args.token or "<Kennung aus seed-send>")
+
+
+def cmd_blocklist_check(args):
+    import seed_test
+    for name, status in seed_test.blocklist_status(args.ip).items():
+        print(f"{name}: {status}")
+    print(seed_test.SPAMHAUS_NOTE)
+
+
+def _load_all_leads(svc):
+    """Liest ALL_LEADS komplett: (Kopfzeile, Leads mit _row)."""
+    from hsb_config import CANONICAL_SPREADSHEET_ID
+    rows = svc.spreadsheets().values().get(spreadsheetId=CANONICAL_SPREADSHEET_ID, range="ALL_LEADS").execute().get("values", [])
+    if not rows:
+        return [], []
+    headers = rows[0]
+    leads = []
+    for idx, r in enumerate(rows[1:], start=2):
+        d = {h: (r[i] if i < len(r) else "") for i, h in enumerate(headers)}
+        d["_row"] = idx
+        leads.append(d)
+    return headers, leads
+
+
+def cmd_fetch_websites(args, svc=None, cache_dir=None, opener=None):
+    """Fuellt den Website-Cache (hoeflich: robots.txt, 1 Anfrage/s). Gibt nur Zaehlungen aus."""
+    import website_signals as ws
+    svc = svc or get_sheets_service()
+    cache_dir = Path(cache_dir or ws.DEFAULT_CACHE_DIR)
+    _, leads = _load_all_leads(svc)
+    fetched = skipped = failed = 0
+    for lead in leads:
+        url = str(lead.get("Website") or "").strip()
+        if not url or ws.cached_website_text(url, cache_dir) is not None or ws.skip_state(url, cache_dir):
+            skipped += 1
+            continue
+        if fetched + failed >= args.limit:  # zaehlt nur echte Versuche
+            break
+        if ws.website_text(url, cache_dir, opener=opener):
+            fetched += 1
+        else:
+            failed += 1
+    print(f"Abgerufen: {fetched}, ohne Text/gesperrt: {failed}, uebersprungen (Cache/Marker/ohne URL): {skipped}")
+
+
+def cmd_score_leads(args, svc=None, cache_dir=None, out_path=None, sleep=time.sleep):
+    """Fit-Score je Lead. Dry-Run zeigt nur Zaehlungen; --apply schreibt nur in leere Tier/Score/Segment-Zellen."""
+    from collections import Counter
+    import website_signals as ws
+    from lead_quality import fit_score, segment_for
+    from outbound_safety import crm_write_readback
+    from hsb_config import CANONICAL_SPREADSHEET_ID
+    svc = svc or get_sheets_service()
+    cache_dir = Path(cache_dir or ws.DEFAULT_CACHE_DIR)
+    out_path = Path(out_path or Path(__file__).resolve().parent.parent / "data" / "fit_scores.jsonl")
+    headers, leads = _load_all_leads(svc)
+    counts: Counter = Counter()
+    records = []
+    writes = []
+    for lead in leads:
+        text = ws.cached_website_text(str(lead.get("Website") or ""), cache_dir)
+        signals = ws.website_signals(text) if text else {"positive": [], "negative": [], "quotes": []}
+        score, tier, reasons = fit_score(lead, signals)
+        segment = segment_for(lead)
+        counts[(segment, tier)] += 1
+        records.append({"lead_id": lead.get("Lead-ID", ""), "row": lead["_row"], "segment": segment, "tier": tier,
+                        "score": score, "reasons": reasons, "quotes": signals["quotes"]})
+        wanted = {"Tier": tier, "Score": str(score), "Segment": segment}
+        expected = {k: v for k, v in wanted.items() if k in headers and not str(lead.get(k) or "").strip()}
+        if expected:
+            writes.append((lead["_row"], expected))
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    out_path.write_text("".join(json.dumps(r, ensure_ascii=False) + "\n" for r in records), encoding="utf-8")
+    for (segment, tier), n in sorted(counts.items()):
+        print(f"{segment} {tier}: {n}")
+    if not args.apply:
+        print(f"Dry-Run: {len(writes)} Zeilen haetten leere Zellen. Mit --apply schreiben.")
+        return
+    for i, (row, expected) in enumerate(writes):
+        if i:
+            sleep(1.0)  # ca. 1 Zeile/s gegen Sheets-Quota
+        for attempt in range(4):
+            try:
+                crm_write_readback(svc, CANONICAL_SPREADSHEET_ID, headers, row, expected)
+                break
+            except Exception as exc:
+                transient = "429" in str(exc) or "CRM_READBACK_MISMATCH" in str(exc) or getattr(getattr(exc, "resp", None), "status", None) == 429
+                if not transient or attempt == 3:
+                    raise
+                sleep(2.0 * 2 ** attempt)
+    print(f"Geschrieben: {len(writes)} Zeilen (nur leere Zellen).")
+
+
+def cmd_sequence_preview(args):
+    from datetime import date
+    import sqlite3
+    from sequence import next_step_due
+    journal_path = Path(args.journal)
+    if not journal_path.exists():
+        print(json.dumps({'due': 0, 'customer_emails_sent': 0, 'reason': 'NO_VERIFIED_V2_HISTORY'}))
+        return
+    # Read-only URI verhindert nebenbei eine neue Datenbank anzulegen.
+    db=sqlite3.connect(journal_path.resolve().as_uri()+'?mode=ro',uri=True)
+    db.row_factory=sqlite3.Row
+    try:
+        history=[dict(r) for r in db.execute('SELECT * FROM sequence')]
+    finally:
+        db.close()
+    _,leads=_load_all_leads(get_sheets_service())
+    counts={2:0,3:0}
+    for lead in leads:
+        step=next_step_due(lead,history,date.today())
+        if step:counts[step]+=1
+    print(json.dumps({'due_by_step':counts,'customer_emails_sent':0}))
+
+
+def _load_deep_defects(audit: Path) -> frozenset[str]:
+    path = audit / 'deep_defects.json'
+    return frozenset(json.loads(path.read_text(encoding='utf-8'))) if path.is_file() else frozenset()
+
+
+def cmd_verify_audit(args):
+    """Tiefenprüfung eines vorhandenen Audits; schreibt deep_defects.json und druckt nur Zählungen."""
+    import draft_verify as dv
+    try:
+        result = dv.verify_audit_dir(Path(args.audit_dir))
+    except dv.IncompleteSnapshot as exc:
+        print(json.dumps({'verdict': 'INCOMPLETE', 'reason': str(exc), 'customer_emails_sent': 0}))
+        sys.exit(dv.EXIT_INCOMPLETE)
+    print(json.dumps(result, ensure_ascii=False, sort_keys=True))
+    if result['verdict'] != 'PERFECT' and not args.allow_not_ready:
+        sys.exit(dv.EXIT_NOT_READY)
+
+
+def cmd_fill_missing_drafts(args):
+    """Fehlende Reparatur-Entwürfe für sendefähige NO_DRAFT-Leads eines Audits anlegen und im CRM binden."""
+    from new_drafts import fill_missing_drafts
+    from hsb_config import CANONICAL_SPREADSHEET_ID
+    audit = Path(args.audit_dir)
+    if args.apply and time.time()-(audit/'drafts.json').stat().st_mtime > 86400:
+        raise RuntimeError('AUDIT_SNAPSHOT_STALE')
+    drafts = json.loads((audit/'drafts.json').read_text())
+    balances = json.loads((audit/'leads.json').read_text())
+    original = json.loads((audit/'crm-original.json').read_text())['valueRanges'][0]['values']
+    leads = [dict(zip(original[0], r), _row=i) for i, r in enumerate(original[1:], 2)]
+    owners = [args.owner] if args.owner else ['JOEL', 'JORDI']
+    print(json.dumps(fill_missing_drafts(owners, balances, drafts, leads, apply=args.apply,
+        svc=get_sheets_service() if args.apply else None, spreadsheet_id=CANONICAL_SPREADSHEET_ID,
+        headers=original[0]), ensure_ascii=False, default=dict))
+
+
+def cmd_upgrade_drafts(args):
+    """Verwendet einen vorhandenen Audit-Snapshot; Apply liest das CRM zusätzlich live zurück."""
+    from draft_upgrade import upgrade_drafts
+    from com_mailbox_manager import ComMailboxClient
+    audit = Path(args.audit_dir)
+    # Ein vorhandener Snapshot ist lesbar, aber ohne frischen Stand kein Apply.
+    if args.apply and time.time()-(audit/'drafts.json').stat().st_mtime > 86400:
+        raise RuntimeError('AUDIT_SNAPSHOT_STALE')
+    records = json.loads((audit/'drafts.json').read_text())
+    original = json.loads((audit/'crm-original.json').read_text())['valueRanges'][0]['values']
+    leads = [dict(zip(original[0],r), _row=i) for i,r in enumerate(original[1:],2)]
+    result = upgrade_drafts(args.owner,args.limit,args.cohort,args.apply,
+        journal_path=Path(args.journal),variant=getattr(args,'variant','standard'),records=records,leads=leads,
+        client=ComMailboxClient(args.owner) if args.apply else None,
+        svc=get_sheets_service() if args.apply else None,
+        deep_defects=_load_deep_defects(audit))
+    print(json.dumps(result,ensure_ascii=False,default=dict))
+
+
+def cmd_refresh_signature(args):
+    """Veraltete Reparatur-Erstkontakte in place erneuern (gleiche Message-ID, kein CRM-Schreiben)."""
+    from signature_refresh import refresh_signatures
+    audit = Path(args.audit_dir)
+    if args.apply and time.time()-(audit/'drafts.json').stat().st_mtime > 86400:
+        raise RuntimeError('AUDIT_SNAPSHOT_STALE')
+    records = json.loads((audit/'drafts.json').read_text())
+    original = json.loads((audit/'crm-original.json').read_text())['valueRanges'][0]['values']
+    leads = [dict(zip(original[0],r), _row=i) for i,r in enumerate(original[1:],2)]
+    owners = [args.owner] if args.owner else ['JOEL','JORDI']
+    from hsb_config import CANONICAL_SPREADSHEET_ID
+    print(json.dumps(refresh_signatures(owners, records, leads, apply=args.apply,
+        svc=get_sheets_service() if args.apply else None, spreadsheet_id=CANONICAL_SPREADSHEET_ID,
+        headers=original[0], deep_defects=_load_deep_defects(audit)), ensure_ascii=False, default=dict))
+
+
+def cmd_archive_purge(args):
+    """Archiv und nicht endgültige Entwürfe in den Server-Papierkorb leeren; ohne --apply nur Zahlen."""
+    from archive_purge import purge_archive, purge_nonfinal
+    from com_mailbox_manager import ComMailboxClient
+    owners = ('JOEL', 'JORDI')
+    clients = {o: ComMailboxClient(o) for o in owners}
+    if args.apply:
+        from outbound_safety import mailbox_dispatch_lock
+        with mailbox_dispatch_lock(clients['JOEL'], release_on_error=True):
+            result = {'archive': purge_archive(owners, clients, apply=True),
+                      'nonfinal': purge_nonfinal(args.audit_dir, owners, clients, apply=True)}
+    else:
+        result = {'archive': purge_archive(owners, clients, apply=False),
+                  'nonfinal': purge_nonfinal(args.audit_dir, owners, clients, apply=False)}
+    print(json.dumps(result, ensure_ascii=False))
+
+
+def cmd_rescue_bounces(args, svc=None):
+    from closed_loop_crm import rescue_crm_bounces
+    result = rescue_crm_bounces(apply=args.apply, limit=args.limit, svc=svc)
+    print(json.dumps(result, ensure_ascii=False, indent=2))
+
+
+def cmd_approve_verified_drafts(args, svc=None):
+    from closed_loop_crm import approve_verified_drafts
+    result = approve_verified_drafts(apply=args.apply, limit=args.limit, owner=args.owner, audit_dir=args.audit_dir, svc=svc)
+    print(json.dumps(result, ensure_ascii=False, indent=2))
+
+
+def cmd_ingest_bounces(args):
+    """Liest Bounces ein, sperrt sie im CRM und verschiebt sie in den Ordner 'Unzustellbar'."""
+    from ingest_bounces import process_bounces
+    dry_run = not args.apply
+    should_move = args.move or (not dry_run)
+    updated = process_bounces(args.owner, dry_run=dry_run, limit=args.limit, move_bounces=should_move)
+    print(json.dumps({"updated": updated, "dry_run": dry_run, "moved": should_move}, ensure_ascii=False, indent=2))
+
+
+def cmd_purge_sent_drafts(args, svc=None):
+    """Löscht verwaiste Entwürfe im IMAP-Entwurfsordner für Leads, die im CRM oder im Gesendet-Ordner bereits versendet wurden."""
+    from sync_to_google_sheet import get_sheets_service
+    from com_mailbox_manager import ComMailboxClient
+    from draft_purge import collect_sent_identities, purge_owner_sent_drafts
+    if svc is None:
+        svc = get_sheets_service()
+    _, leads = _load_all_leads(svc)
+    sent_leads = [
+        l for l in leads
+        if str(l.get('Send_Status') or '').strip().lower() in {'sent', 'gesendet'}
+        or str(l.get('Send_Datum') or '').strip()
+    ]
+    sent_emails = {
+        str(l.get('E-Mail') or '').strip().lower() for l in sent_leads
+        if str(l.get('E-Mail') or '').strip()
+    }
+    sent_lead_ids = {
+        str(l.get('Lead-ID') or '').strip() for l in sent_leads
+        if str(l.get('Lead-ID') or '').strip()
+    }
+    sent_message_ids = {
+        str(l.get('Internet_Message_ID') or '').strip().lower() for l in sent_leads
+        if str(l.get('Internet_Message_ID') or '').strip()
+    }
+    owners = [args.owner] if getattr(args, 'owner', None) else ['JOEL', 'JORDI']
+    apply = bool(getattr(args, 'apply', False))
+    report = {'total_sent_in_crm': len(sent_emails)}
+    for o in owners:
+        client = ComMailboxClient(o)
+        try:
+            with client._get_imap() as imap:
+                owner_emails = set(sent_emails)
+                owner_lead_ids = set(sent_lead_ids)
+                owner_message_ids = set(sent_message_ids)
+                sent_folder = client.cfg.get('sent_folder')
+                if isinstance(sent_folder, str) and sent_folder.strip():
+                    live_emails, live_leads, live_mids = collect_sent_identities(imap, sent_folder)
+                    owner_emails |= live_emails
+                    owner_lead_ids |= live_leads
+                    owner_message_ids |= live_mids
+                purge_kwargs = {}
+                if owner_lead_ids:
+                    purge_kwargs['sent_lead_ids'] = owner_lead_ids
+                if owner_message_ids:
+                    purge_kwargs['sent_message_ids'] = owner_message_ids
+                deleted_count = purge_owner_sent_drafts(
+                    imap,
+                    client.cfg['drafts_folder'],
+                    owner_emails,
+                    apply=apply,
+                    **purge_kwargs,
+                )
+        except Exception as exc:
+            report[o] = {'error': str(exc)}
+            continue
+        report[o] = {'orphaned_sent_drafts': deleted_count, 'applied': apply}
+    print(json.dumps(report, ensure_ascii=False, indent=2))
+    return report
+
+
+def cmd_dedupe_drafts(args):
+    """Doppelte Entwürfe je Empfänger ins Archiv verschieben; ohne --apply nur der Plan."""
+    from draft_dedupe import apply_dedupe, plan_dedupe
+    from com_mailbox_manager import ComMailboxClient
+    audit = Path(args.audit_dir)
+    if args.apply and time.time()-(audit/'drafts.json').stat().st_mtime > 86400:
+        raise RuntimeError('AUDIT_SNAPSHOT_STALE')
+    records = json.loads((audit/'drafts.json').read_text())
+    original = json.loads((audit/'crm-original.json').read_text())['valueRanges'][0]['values']
+    leads = [dict(zip(original[0],r), _row=i) for i,r in enumerate(original[1:],2)]
+    plan = plan_dedupe(records, leads)
+    summary = {k: plan[k] for k in ('groups_with_duplicates','archive_count','archive_by_owner','reasons')}
+    summary.update(protected_groups=len(plan['protected_groups']), ambiguous_groups=len(plan['ambiguous_groups']),
+                   dry_run=not args.apply, customer_emails_sent=0)
+    if args.apply:
+        from outbound_safety import mailbox_dispatch_lock
+        clients = {o: ComMailboxClient(o) for o in ('JOEL','JORDI')}
+        with mailbox_dispatch_lock(clients['JOEL'], release_on_error=True):
+            summary['result'] = apply_dedupe(plan, clients, Path(args.journal))
+    print(json.dumps(summary,ensure_ascii=False,default=dict))
 
 
 def main():
@@ -356,13 +749,56 @@ def main():
     p_send.add_argument("--cap", type=int, default=DAILY_CAP_PER_MAILBOX)
     p_send.add_argument("--bcc-de", action="store_true", help="Blindkopie (BCC) an .de Firmenkonto senden")
     p_send.add_argument("--with-attachment", action="store_true", help="Optional den 241 KB Flyer als Datei anhängen (Standard: Aus, da Online-Link aktiv)")
+    p_send.add_argument("--segment", action="append", choices=["produktion", "architekten"],
+                        help="Nur Entwürfe dieses Segments (wiederholbar)")
+    p_send.add_argument("--variant", choices=["reparatur"], help="Nur Entwürfe dieser Textvariante")
     p_send.add_argument("--apply", action="store_true", help="Echten Versand starten")
+    p_send.add_argument("--com-only-inbound", action="store_true",
+                        help="Vor dem Versand nur .com-Antworten abgleichen (Läufe ohne Azure-Zugang, z. B. GitHub Actions)")
 
     # sync
     p_sync = subparsers.add_parser("sync", help="Dual-Domain Closed-Loop Reconciliation (Antworten, Bounces, Abwesenheiten)")
     p_sync.add_argument("--limit", type=int, default=100)
     p_sync.add_argument("--com-only", action="store_true", help="Nur .com IMAP; .de bleibt separat zu verifizieren")
     p_sync.add_argument("--apply", action="store_true", help="Erkannte Status-Änderungen live ins Google Sheet schreiben")
+
+    # click-sync
+    p_click = subparsers.add_parser("click-sync", help="Klick-Zähler aus Cloudflare KV in CRM-Tab CLICK_EVENTS übernehmen")
+    p_click.add_argument("--apply", action="store_true", help="Neue Klicks live ins Google Sheet schreiben (Standard: nur zählen)")
+
+    # bounce-report
+    p_new = subparsers.add_parser("create-v2-drafts", help="Neue v2-Entwürfe direkt aus dem CRM anlegen (Dry-Run ohne --apply)")
+    p_new.add_argument("--owner", required=True, choices=["JOEL", "JORDI"])
+    p_new.add_argument("--limit", type=int, default=10)
+    p_new.add_argument("--apply", action="store_true")
+
+    p_bind = subparsers.add_parser("crm-bindings", help="Stabile Zeilenbindungen im CRM anlegen (Dry-Run ohne --apply) bzw. Sortier-Canary")
+    p_bind.add_argument("--apply", action="store_true")
+    p_bind.add_argument("--canary", action="store_true", help="Nur Sortier-Canary im temporären Tab")
+    p_bind.add_argument("--leads-file", help="Nur diese Lead-IDs binden (eine je Zeile)")
+    p_bind.add_argument("--prune", action="store_true", help="Bindungen außerhalb von --leads-file entfernen")
+
+    p_bounce = subparsers.add_parser("bounce-report", help="Bounce-Zählung je DSN-Klasse und Domain (nur Zählungen)")
+    p_bounce.add_argument("--limit", type=int, default=0, help="Max. Nachrichten je Postfach (0 = alle)")
+    p_bounce.add_argument("--com-only", action="store_true", help="Nur .com IMAP")
+
+    # seed-send / seed-read / blocklist-check
+    p_ss = subparsers.add_parser("seed-send", help="Neutrale Testmail an Seed-Postfaecher (nur Seed-Liste, internes Test-Flag noetig)")
+    p_ss.add_argument("--owner", choices=["JOEL", "JORDI"], default="JOEL")
+    p_ss.add_argument("--to", action="append", help="Nur diese Seed-Adresse (wiederholbar); Standard: alle")
+    p_ss.add_argument("--seed-file", help="Pfad zur Seed-Liste (Standard: config/seed_inboxes.json)")
+    p_sr = subparsers.add_parser("seed-read", help="Checkliste fuer manuelle Platzierungspruefung oder --raw-file auswerten")
+    p_sr.add_argument("--raw-file", help="Gespeicherte Rohnachricht (.eml, 'Original anzeigen')")
+    p_sr.add_argument("--token", help="Seed-Kennung aus seed-send")
+    p_sr.add_argument("--seed-file", help="Pfad zur Seed-Liste")
+    p_bl = subparsers.add_parser("blocklist-check", help="DNSBL-Status einer IPv4 (Spamhaus nur manuell)")
+    p_bl.add_argument("ip", help="IPv4-Adresse")
+
+    # fetch-websites / score-leads
+    p_fw = subparsers.add_parser("fetch-websites", help="Website-Texte in den lokalen Cache laden (robots.txt, 1 Anfrage/s)")
+    p_fw.add_argument("--limit", type=int, required=True, help="Max. Abrufe in diesem Lauf")
+    p_sl = subparsers.add_parser("score-leads", help="Fit-Score je Lead (Dry-Run: nur Zaehlungen je Segment und Tier)")
+    p_sl.add_argument("--apply", action="store_true", help="Nur leere Tier/Score/Segment-Zellen im CRM schreiben")
 
     # test-mail
     p_test = subparsers.add_parser("test-mail", help="Einzelne Test-E-Mail senden")
@@ -371,9 +807,106 @@ def main():
     p_test.add_argument("--bcc-de", action="store_true", help="Blindkopie (BCC) an .de Firmenkonto senden")
     p_test.add_argument("--with-attachment", action="store_true", help="Optional den 241 KB Flyer als Datei anhängen (Standard: Aus, da Online-Link aktiv)")
 
+    p_sequence = subparsers.add_parser("sequence-preview", help="Fällige v2-Nachfasskontakte zählen (kein Versand)")
+    p_sequence.add_argument("--journal", default=str(Path.home()/".local/state/hsb-sales-os/outbound.sqlite3"))
+    p_dedupe = subparsers.add_parser("dedupe-drafts", help="Doppelte Entwürfe je Empfänger archivieren; Standard Dry-Run")
+    p_dedupe.add_argument("--audit-dir", required=True)
+    p_dedupe.add_argument("--journal", default=str(Path.home()/".local/state/hsb-sales-os/dedupe.sqlite3"))
+    p_dedupe.add_argument("--apply", action="store_true")
+
+    p_purge_arch = subparsers.add_parser("archive-purge", help="Archiv und nicht endgültige Entwürfe in den Papierkorb leeren; Standard Dry-Run")
+    p_purge_arch.add_argument("--audit-dir", required=True)
+    p_purge_arch.add_argument("--apply", action="store_true")
+
+    p_lock = subparsers.add_parser("release-stale-lock", help="Versandsperre nach Abbruch lösen, nur ohne unklaren Versand (SENDING)")
+    p_lock.add_argument("--apply", action="store_true")
+
+    p_refresh = subparsers.add_parser("refresh-signature", help="Veraltete Reparatur-Entwürfe in place erneuern; Standard Dry-Run")
+    p_refresh.add_argument("--owner", choices=["JOEL","JORDI"])
+    p_refresh.add_argument("--audit-dir", required=True)
+    p_refresh.add_argument("--apply", action="store_true")
+
+    p_verify = subparsers.add_parser("verify-audit", help="Tiefenprüfung eines Audits gegen frisches Rendering")
+    p_verify.add_argument("--audit-dir", required=True)
+    p_verify.add_argument("--allow-not-ready", action="store_true")
+
+    p_fill = subparsers.add_parser("fill-missing-drafts", help="Fehlende Reparatur-Entwürfe aus einem Audit anlegen und im CRM binden")
+    p_fill.add_argument("--owner", choices=["JOEL","JORDI"])
+    p_fill.add_argument("--audit-dir", required=True)
+    p_fill.add_argument("--apply", action="store_true")
+
+    p_upgrade = subparsers.add_parser("upgrade-drafts", help="Entwürfe anhand eines Audits erneuern; Standard Dry-Run")
+    p_upgrade.add_argument("--owner", choices=["JOEL","JORDI"], required=True)
+    p_upgrade.add_argument("--limit", type=int, default=5)
+    p_upgrade.add_argument("--cohort", choices=["pilot","all"], default="pilot")
+    p_upgrade.add_argument("--variant", choices=["standard","reparatur"], default="reparatur")
+    p_upgrade.add_argument("--audit-dir", required=True)
+    p_upgrade.add_argument("--journal", default=str(Path.home()/".local/state/hsb-sales-os/upgrade.sqlite3"))
+    p_upgrade.add_argument("--apply", action="store_true")
+
+    p_rescue = subparsers.add_parser("rescue-bounces", help="Bestehende CRM-Bounces via Website/Impressum retten")
+    p_rescue.add_argument("--limit", type=int, default=50, help="Maximal zu rettende Leads (0 = alle)")
+    p_rescue.add_argument("--apply", action="store_true", help="Gerettete Leads ins CRM schreiben")
+
+    p_appr = subparsers.add_parser("approve-verified-drafts", help="Geprüfte All-Inkl Entwürfe im CRM freigeben (Spalte BE Freigegeben, Spalte Z yes)")
+    p_appr.add_argument("--owner", choices=["JOEL", "JORDI"], default=None, help="Nur Entwürfe dieses Owners freigeben")
+    p_appr.add_argument("--limit", type=int, default=0, help="Maximal freizugebende Leads (0 = alle)")
+    p_appr.add_argument("--audit-dir", help="Optionaler Pfad zum Audit-Verzeichnis mit drafts.json")
+    p_appr.add_argument("--apply", action="store_true", help="Freigaben ins Google Sheet schreiben")
+
+    p_purge_sent = subparsers.add_parser("purge-sent-drafts", help="Verwaiste Entwürfe für bereits versendete Leads löschen (Standard Dry-Run)")
+    p_purge_sent.add_argument("--owner", choices=["JOEL", "JORDI"], default=None, help="Nur bestimmter Owner")
+    p_purge_sent.add_argument("--apply", action="store_true", help="Tatsächlich aus IMAP-Entwurfsordner löschen")
+
+    p_ingest = subparsers.add_parser("ingest-bounces", help="Bounces einlesen, im CRM sperren und in Ordner 'Unzustellbar' verschieben")
+    p_ingest.add_argument("--owner", choices=["JOEL", "JORDI", "ALL"], default="ALL", help="Postfach-Eigentuemer")
+    p_ingest.add_argument("--apply", action="store_true", help="Live-Sync ins CRM ausfuehren")
+    p_ingest.add_argument("--move", action="store_true", help="Bounces in IMAP-Ordner 'Unzustellbar' verschieben")
+    p_ingest.add_argument("--limit", type=int, default=100, help="Maximale Nachrichten pro Ordner")
     args = parser.parse_args()
 
-    if args.command == "status":
+    if args.command == "sequence-preview":
+        cmd_sequence_preview(args)
+    elif args.command == "ingest-bounces":
+        cmd_ingest_bounces(args)
+    elif args.command == "purge-sent-drafts":
+        cmd_purge_sent_drafts(args)
+    elif args.command == "rescue-bounces":
+        cmd_rescue_bounces(args)
+    elif args.command == "approve-verified-drafts":
+        cmd_approve_verified_drafts(args)
+    elif args.command == "verify-audit":
+        cmd_verify_audit(args)
+    elif args.command == "fill-missing-drafts":
+        cmd_fill_missing_drafts(args)
+    elif args.command == "upgrade-drafts":
+        cmd_upgrade_drafts(args)
+    elif args.command == "refresh-signature":
+        cmd_refresh_signature(args)
+    elif args.command == "release-stale-lock":
+        from outbound_safety import release_stale_lock
+        from send_governance import MailboxHealthStore
+        from com_mailbox_manager import ComMailboxClient
+        from hsb_config import CANONICAL_SPREADSHEET_ID
+        client = ComMailboxClient("JOEL")
+        res = release_stale_lock(get_sheets_service(), client, CANONICAL_SPREADSHEET_ID, apply=args.apply)
+        try:
+            store = MailboxHealthStore(client)
+            remote = store.read()
+            if remote and remote.get('state') == 'paused':
+                if args.apply:
+                    store.append(dict(remote, state='ack'))
+                    res['health_pause'] = {'state': 'ack', 'ack_id': remote.get('ack_id'), 'reason': remote.get('reason'), 'released': True}
+                else:
+                    res['health_pause'] = {'state': 'paused', 'ack_id': remote.get('ack_id'), 'reason': remote.get('reason'), 'released': False}
+        except Exception as e:
+            res['health_pause_error'] = str(e)
+        print(json.dumps(res, ensure_ascii=False))
+    elif args.command == "dedupe-drafts":
+        cmd_dedupe_drafts(args)
+    elif args.command == "archive-purge":
+        cmd_archive_purge(args)
+    elif args.command == "status":
         cmd_status(args)
     elif args.command == "purge-de":
         cmd_purge_de(args)
@@ -388,6 +921,24 @@ def main():
         cmd_sync(args)
     elif args.command == "test-mail":
         cmd_test_mail(args)
+    elif args.command == "click-sync":
+        cmd_click_sync(args)
+    elif args.command == "create-v2-drafts":
+        cmd_create_v2_drafts(args)
+    elif args.command == "crm-bindings":
+        cmd_crm_bindings(args)
+    elif args.command == "bounce-report":
+        cmd_bounce_report(args)
+    elif args.command == "seed-send":
+        cmd_seed_send(args)
+    elif args.command == "seed-read":
+        cmd_seed_read(args)
+    elif args.command == "blocklist-check":
+        cmd_blocklist_check(args)
+    elif args.command == "fetch-websites":
+        cmd_fetch_websites(args)
+    elif args.command == "score-leads":
+        cmd_score_leads(args)
     elif args.command == "optouts":
         cmd_optouts(args)
     elif args.command == "optout":

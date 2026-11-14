@@ -1,0 +1,660 @@
+from datetime import datetime, timezone, date
+import json
+import pytest
+from send_governance import daily_budget, pause_reason, enforce_send_health
+
+
+def health():
+    return {'seen_inbound_ids':[],'sample_sent':100,'hard_bounces':2,'policy_bounces':0,'deferrals_today':0,'spam_reports':0,'seed_dkim_pass':True,
+            'seed_reports':{owner:{'message_id':f'<{owner}@example.test>', 'spf':'pass', 'dkim':'pass', 'dmarc':'pass',
+                                   'dkim_domain':'hsb-boden.com', 'sender':sender} for owner,sender in
+                            (('JOEL','j-cherino@hsb-boden.com'),('JORDI','j-post@hsb-boden.com'))},
+            'checked_at':datetime.now(timezone.utc).isoformat(),'first_send_date':datetime.now(timezone.utc).date().isoformat()}
+
+
+def test_budget_10_20_30_cap_35():
+    assert [daily_budget('2026-10-01',d) for d in ['2026-10-01','2026-10-08','2026-10-15','2027-01-01']]==[10,20,30,30]
+
+
+@pytest.mark.parametrize('field,value,reason',[('hard_bounces',3,'HARD_BOUNCES'),('policy_bounces',1,'POLICY_BOUNCE'),('deferrals_today',3,'DEFERRALS'),('spam_reports',1,'SPAM_REPORT'),('seed_dkim_pass',False,'SEED_DKIM_NOT_PASS')])
+def test_each_problem_pauses(field,value,reason):
+    h=health(); h[field]=value
+    assert pause_reason(h)==reason
+    assert pause_reason({})=='HEALTH_EVIDENCE_MISSING'
+
+
+def test_pause_is_persistent_and_health_reread(tmp_path,monkeypatch):
+    p=tmp_path/'send-health.json'; h=health(); p.write_text(json.dumps(h))
+    assert enforce_send_health(tmp_path)==10
+    h['policy_bounces']=1; p.write_text(json.dumps(h))
+    with pytest.raises(RuntimeError,match='DOMAIN_PAUSED'): enforce_send_health(tmp_path)
+    h['policy_bounces']=0; p.write_text(json.dumps(h))
+    with pytest.raises(RuntimeError,match='ACK_REQUIRED'): enforce_send_health(tmp_path)
+    ack=json.loads((tmp_path/'send-pause.json').read_text())['ack_id']
+    monkeypatch.setenv('HSB_SEND_PAUSE_ACK',ack)
+    assert enforce_send_health(tmp_path)==10
+
+
+def test_stale_stats_and_missing_stats_block(tmp_path):
+    with pytest.raises(RuntimeError): enforce_send_health(tmp_path)
+    h=health();h['checked_at']='2020-01-01T00:00:00+00:00'
+    (tmp_path/'send-health.json').write_text(json.dumps(h))
+    with pytest.raises(RuntimeError): enforce_send_health(tmp_path)
+
+
+def test_runner_rejects_legacy_bootstrap_and_requires_both_senders(tmp_path, monkeypatch):
+    from send_governance import prepare_send_health
+    path = tmp_path / 'send-health.json'
+    monkeypatch.delenv('HSB_VERIFIED_SEND_HEALTH_JSON', raising=False)
+    with pytest.raises(RuntimeError, match='SEND_HEALTH_EVIDENCE_REQUIRED'):
+        prepare_send_health(tmp_path)
+    legacy = health()
+    legacy.pop('seed_reports')
+    path.write_text(json.dumps(legacy))
+    with pytest.raises(RuntimeError, match='SEND_HEALTH_SEED_EVIDENCE_REQUIRED'):
+        prepare_send_health(tmp_path)
+    evidence = health()
+    evidence['seed_reports']['JORDI']['dmarc'] = 'fail'
+    monkeypatch.setenv('HSB_VERIFIED_SEND_HEALTH_JSON', json.dumps(evidence))
+    with pytest.raises(RuntimeError, match='SEND_HEALTH_SEED_AUTH_NOT_PASS'):
+        prepare_send_health(tmp_path)
+    assert json.loads(path.read_text()) == legacy
+    evidence['seed_reports']['JORDI']['dmarc'] = 'pass'
+    monkeypatch.setenv('HSB_VERIFIED_SEND_HEALTH_JSON', json.dumps(evidence))
+    prepare_send_health(tmp_path)
+    assert enforce_send_health(tmp_path) == 10
+
+
+def test_health_guard_runs_before_each_delivery(tmp_path,monkeypatch):
+    """Beim zweiten Kontakt neu auftauchende Sperre stoppt vor dem Transport."""
+    import hashlib
+    from contextlib import nullcontext
+    from email.message import EmailMessage
+    from types import SimpleNamespace
+    import outbound_safety as out
+    import sales_reconciliation as recon
+    import sync_to_google_sheet as sheets
+    import com_mailbox_manager as mail
+    import closed_loop_crm as inbound
+    import send_governance as guard
+    from test_outbound_safety_gate import _crm_lead
+    leads=[_crm_lead(**{'Lead-ID':f'L{i}','Verantwortlicher':'Joel Cherino Diaz','E-Mail':f'test{i}@firma.invalid'}) for i in (1,2)]
+    headers=list(leads[0])
+    raws={}
+    queue=[];drafts=[]
+    for i,lead in enumerate(leads,1):
+        msg=EmailMessage();msg['To']=lead['E-Mail'];msg['From']='j-cherino@hsb-boden.com';msg['Subject']='x';msg['Message-ID']=f'<{i}@hsb-boden.com>';msg.set_content('Test')
+        raw=msg.as_bytes();raws[str(i)]=raw
+        queue.append({'lead_id':lead['Lead-ID'],'owner':'JOEL','email':lead['E-Mail']})
+        drafts.append({'lead_id':lead['Lead-ID'],'sendable':True,'folder':'Drafts','uidvalidity':'7','uid':str(i),'sha256':hashlib.sha256(raw).hexdigest()})
+    class IMAP:
+        def __enter__(self):return self
+        def __exit__(self,*a):pass
+        def select(self,*a,**k):return 'OK',[]
+        def response(self,*a):return None,[b'7']
+        def uid(self,cmd,uid,*a):return 'OK',[(b'h',raws[uid])]
+    client=SimpleNamespace(_get_imap=lambda:IMAP(),cfg={})
+    monkeypatch.setattr(mail,'ComMailboxClient',lambda o:client)
+    monkeypatch.setattr(out,'mailbox_dispatch_lock',lambda c,**k:nullcontext())
+    monkeypatch.setattr(inbound,'sync_inbounds',lambda **k:None)
+    def audit(path):
+        path.mkdir(parents=True)
+        (path/'queue.json').write_text(json.dumps(queue));(path/'drafts.json').write_text(json.dumps(drafts))
+    monkeypatch.setattr(recon,'run_audit',audit)
+    monkeypatch.setattr(recon,'assess_message',lambda *a:{'issues':[]})
+    monkeypatch.setattr(recon,'has_unreviewed_legacy_variant',lambda *a:False)
+    values=SimpleNamespace(get=lambda **k:SimpleNamespace(execute=lambda:{'values':[headers]+[[l.get(h,'') for h in headers] for l in leads]}))
+    monkeypatch.setattr(sheets,'get_sheets_service',lambda:SimpleNamespace(spreadsheets=lambda:SimpleNamespace(values=lambda:values)))
+    monkeypatch.setattr('lead_quality.deliverability_flags',lambda *a:[])
+    checks=[];deliveries=[]
+    def health_check(*a):
+        checks.append(1)
+        if len(checks)==2:raise RuntimeError('DOMAIN_PAUSED:POLICY_BOUNCE')
+        return 10
+    monkeypatch.setattr(guard,'enforce_domain_health',health_check)
+    monkeypatch.setattr(out,'complete_delivery',lambda *a:deliveries.append(a))
+    monkeypatch.setattr(out.time,'sleep',lambda *a:None)
+    monkeypatch.setenv('HSB_CUSTOMER_SEND_ENABLED','yes')
+    monkeypatch.setenv('HSB_SALES_STATE_DIR',str(tmp_path))
+    with pytest.raises(RuntimeError,match='DOMAIN_PAUSED'):
+        out.dispatch_verified(2,owners=('JOEL',),dry_run=False)
+    assert len(checks)==2 and len(deliveries)==1
+
+
+def test_pause_propagates_to_second_device(tmp_path,monkeypatch):
+    from send_governance import enforce_domain_health
+    class Shared:
+        event=None
+        def read(self): return self.event
+        def append(self,event): self.event=event
+    shared=Shared()
+    a=tmp_path/'A';b=tmp_path/'B';a.mkdir();b.mkdir()
+    h=health();h['policy_bounces']=1;(a/'send-health.json').write_text(json.dumps(h))
+    (b/'send-health.json').write_text(json.dumps(health()))
+    with pytest.raises(RuntimeError):enforce_domain_health(a,date.today(),shared,collector=lambda **k:[])
+    with pytest.raises(RuntimeError,match='SERVER_ACK_REQUIRED'):enforce_domain_health(b,date.today(),shared,collector=lambda **k:[])
+    for invalid_ack in ('auto', 'yes'):
+        monkeypatch.setenv('HSB_SEND_PAUSE_ACK',invalid_ack)
+        with pytest.raises(RuntimeError,match='SERVER_ACK_REQUIRED'):
+            enforce_domain_health(b,date.today(),shared,collector=lambda **k:[])
+    monkeypatch.setenv('HSB_SEND_PAUSE_ACK',shared.event['ack_id'])
+    assert enforce_domain_health(b,date.today(),shared,collector=lambda **k:[])==10
+    assert shared.event['state']=='ack'
+
+
+def test_new_policy_event_is_observed_before_next_mail(tmp_path):
+    from types import SimpleNamespace
+    from send_governance import enforce_domain_health
+    class Shared:
+        event=None
+        def read(self):return self.event
+        def append(self,event):self.event=event
+    (tmp_path/'send-health.json').write_text(json.dumps(health()))
+    shared=Shared()
+    incoming=[]
+    collect=lambda **k:incoming
+    assert enforce_domain_health(tmp_path,date.today(),shared,collector=collect)==10
+    incoming.append(SimpleNamespace(message_id='<new@server.invalid>',sender='mailer-daemon@firma.invalid',date=datetime.now(timezone.utc).isoformat(),subject='Undeliverable',body='Status: 5.7.1\nDiagnostic-Code: smtp; 554 5.7.1 spam policy'))
+    with pytest.raises(RuntimeError,match='DOMAIN_PAUSED:POLICY_BOUNCE'):
+        enforce_domain_health(tmp_path,date.today(),shared,collector=collect)
+    assert shared.event['state']=='paused'
+
+
+def test_delayed_bounce_with_old_date_is_not_ignored(tmp_path):
+    from types import SimpleNamespace
+    from send_governance import observed_health, pause_reason
+    (tmp_path/'send-health.json').write_text(json.dumps(health()))
+    bounce=SimpleNamespace(message_id='<late@server.invalid>',sender='mailer-daemon@firma.invalid',
+        date='Mon, 1 Jan 2024 10:00:00 +0000',subject='Undeliverable',body='Status: 5.7.1')
+    observed=observed_health(tmp_path,collector=lambda **k:[bounce])
+    assert pause_reason(observed)=='POLICY_BOUNCE'
+
+
+def test_final_temporary_error_requires_review_instead_of_counting_as_pending(tmp_path):
+    from types import SimpleNamespace
+    from send_governance import observed_health
+
+    (tmp_path/'send-health.json').write_text(json.dumps(health()))
+    bounce = SimpleNamespace(message_id='<final@example.test>', sender='mailer-daemon@example.test',
+                             subject='Undeliverable', body='Action: failed\nStatus: 4.2.0')
+    observed = observed_health(tmp_path, collector=lambda **_: [bounce])
+    assert observed['deferrals_today'] == 0
+    assert pause_reason(observed) == 'BOUNCE_REVIEW_REQUIRED'
+
+
+def test_second_run_same_day_respects_cap(tmp_path, monkeypatch):
+    """Zweiter dispatch_verified-Lauf am selben Tag sendet 0, wenn das Tagesbudget bereits erschöpft ist."""
+    import hashlib
+    from contextlib import nullcontext
+    from email.message import EmailMessage
+    from types import SimpleNamespace
+    from zoneinfo import ZoneInfo
+    import outbound_safety as out
+    import sales_reconciliation as recon
+    import sync_to_google_sheet as sheets
+    import com_mailbox_manager as mail
+    import closed_loop_crm as inbound
+    import send_governance as guard
+    from test_outbound_safety_gate import _crm_lead
+
+    # Lead mit Sendedatum heute
+    now_berlin = datetime.now(ZoneInfo('Europe/Berlin')).isoformat()
+    leads = [
+        _crm_lead(**{
+            'Lead-ID': 'L1',
+            'Verantwortlicher': 'Joel Cherino Diaz',
+            'E-Mail': 'test1@firma.invalid',
+            'Sender_Account': 'j-cherino@hsb-boden.com',
+            'Send_Datum': now_berlin,
+            'Send_Status': 'sent',
+        }),
+        _crm_lead(**{
+            'Lead-ID': 'L2',
+            'Verantwortlicher': 'Joel Cherino Diaz',
+            'E-Mail': 'test2@firma.invalid',
+        })
+    ]
+    headers = list(leads[0])
+    raws = {}
+    queue = [{'lead_id': 'L2', 'owner': 'JOEL', 'email': 'test2@firma.invalid'}]
+    drafts = []
+    msg = EmailMessage()
+    msg['To'] = 'test2@firma.invalid'
+    msg['From'] = 'j-cherino@hsb-boden.com'
+    msg['Subject'] = 'Test'
+    msg['Message-ID'] = '<2@hsb-boden.com>'
+    msg.set_content('Test')
+    raw = msg.as_bytes()
+    raws['2'] = raw
+    drafts.append({
+        'lead_id': 'L2',
+        'sendable': True,
+        'folder': 'Drafts',
+        'uidvalidity': '7',
+        'uid': '2',
+        'sha256': hashlib.sha256(raw).hexdigest(),
+    })
+
+    class IMAP:
+        def __enter__(self): return self
+        def __exit__(self, *a): pass
+        def select(self, *a, **k): return 'OK', []
+        def response(self, *a): return None, [b'7']
+        def uid(self, cmd, uid, *a): return 'OK', [(b'h', raws[uid])]
+
+    client = SimpleNamespace(_get_imap=lambda: IMAP(), cfg={'email': 'j-cherino@hsb-boden.com'})
+    monkeypatch.setattr(mail, 'ComMailboxClient', lambda o: client)
+    monkeypatch.setattr(out, 'mailbox_dispatch_lock', lambda c, **k: nullcontext())
+    monkeypatch.setattr(inbound, 'sync_inbounds', lambda **k: None)
+
+    def audit(path):
+        path.mkdir(parents=True, exist_ok=True)
+        (path / 'queue.json').write_text(json.dumps(queue))
+        (path / 'drafts.json').write_text(json.dumps(drafts))
+
+    monkeypatch.setattr(recon, 'run_audit', audit)
+    monkeypatch.setattr(recon, 'assess_message', lambda *a: {'issues': []})
+    monkeypatch.setattr(recon, 'has_unreviewed_legacy_variant', lambda *a: False)
+
+    values = SimpleNamespace(
+        get=lambda **k: SimpleNamespace(
+            execute=lambda: {'values': [headers] + [[l.get(h, '') for h in headers] for l in leads]}
+        )
+    )
+    monkeypatch.setattr(sheets, 'get_sheets_service', lambda: SimpleNamespace(spreadsheets=lambda: SimpleNamespace(values=lambda: values)))
+    monkeypatch.setattr('lead_quality.deliverability_flags', lambda *a: [])
+    # Cap = 1 (Tagesbudget 1 wurde durch L1 bereits erreicht)
+    monkeypatch.setattr(guard, 'enforce_domain_health', lambda *a: 1)
+
+    deliveries = []
+    monkeypatch.setattr(out, 'complete_delivery', lambda *a: deliveries.append(a))
+    monkeypatch.setattr(out.time, 'sleep', lambda *a: None)
+    monkeypatch.setenv('HSB_CUSTOMER_SEND_ENABLED', 'yes')
+    monkeypatch.setenv('HSB_SALES_STATE_DIR', str(tmp_path))
+
+    # Aufruf mit count_per_owner=1, cap=1 -> Budget von 1 ist durch L1 bereits verbraucht.
+    result = out.dispatch_verified(1, owners=('JOEL',), dry_run=False, cap=1)
+    assert result['status'] == 'COMPLETED'
+    assert result['sent_counts']['JOEL'] == 0
+    assert len(deliveries) == 0
+
+
+
+def test_deferred_tier_z_lead_is_skipped_at_live_gate(tmp_path,monkeypatch):
+    """Ein schon erzeugter Entwurf an einen inzwischen zurückgestellten Lead (CRM-Tier Z) wird nie gesendet."""
+    import hashlib
+    from contextlib import nullcontext
+    from email.message import EmailMessage
+    from types import SimpleNamespace
+    import outbound_safety as out
+    import sales_reconciliation as recon
+    import sync_to_google_sheet as sheets
+    import com_mailbox_manager as mail
+    import closed_loop_crm as inbound
+    import send_governance as guard
+    from test_outbound_safety_gate import _crm_lead
+    leads=[_crm_lead(**{'Lead-ID':f'L{i}','Verantwortlicher':'Joel Cherino Diaz','E-Mail':f'test{i}@firma.invalid','Tier':tier})
+           for i,tier in ((1,'Z'),(2,'B'))]
+    headers=list(leads[0])
+    raws={};queue=[];drafts=[]
+    for i,lead in enumerate(leads,1):
+        msg=EmailMessage();msg['To']=lead['E-Mail'];msg['From']='j-cherino@hsb-boden.com';msg['Subject']='x';msg['Message-ID']=f'<{i}@hsb-boden.com>';msg.set_content('Test')
+        raw=msg.as_bytes();raws[str(i)]=raw
+        queue.append({'lead_id':lead['Lead-ID'],'owner':'JOEL','email':lead['E-Mail']})
+        drafts.append({'lead_id':lead['Lead-ID'],'sendable':True,'folder':'Drafts','uidvalidity':'7','uid':str(i),'sha256':hashlib.sha256(raw).hexdigest()})
+    class IMAP:
+        def __enter__(self):return self
+        def __exit__(self,*a):pass
+        def select(self,*a,**k):return 'OK',[]
+        def response(self,*a):return None,[b'7']
+        def uid(self,cmd,uid,*a):return 'OK',[(b'h',raws[uid])]
+    client=SimpleNamespace(_get_imap=lambda:IMAP(),cfg={})
+    monkeypatch.setattr(mail,'ComMailboxClient',lambda o:client)
+    monkeypatch.setattr(out,'mailbox_dispatch_lock',lambda c,**k:nullcontext())
+    monkeypatch.setattr(inbound,'sync_inbounds',lambda **k:None)
+    def audit(path):
+        path.mkdir(parents=True)
+        (path/'queue.json').write_text(json.dumps(queue));(path/'drafts.json').write_text(json.dumps(drafts))
+    monkeypatch.setattr(recon,'run_audit',audit)
+    monkeypatch.setattr(recon,'assess_message',lambda *a:{'issues':[]})
+    monkeypatch.setattr(recon,'has_unreviewed_legacy_variant',lambda *a:False)
+    values=SimpleNamespace(get=lambda **k:SimpleNamespace(execute=lambda:{'values':[headers]+[[l.get(h,'') for h in headers] for l in leads]}))
+    monkeypatch.setattr(sheets,'get_sheets_service',lambda:SimpleNamespace(spreadsheets=lambda:SimpleNamespace(values=lambda:values)))
+    monkeypatch.setattr('lead_quality.deliverability_flags',lambda *a:[])
+    monkeypatch.setattr(guard,'enforce_domain_health',lambda *a:10)
+    deliveries=[]
+    monkeypatch.setattr(out,'complete_delivery',lambda *a:deliveries.append(a[6]['lead_id']))
+    monkeypatch.setattr(out.time,'sleep',lambda *a:None)
+    monkeypatch.setenv('HSB_CUSTOMER_SEND_ENABLED','yes')
+    monkeypatch.setenv('HSB_SALES_STATE_DIR',str(tmp_path))
+    out.dispatch_verified(2,owners=('JOEL',),dry_run=False)
+    assert deliveries==['L2']
+
+
+@pytest.mark.parametrize('flag,expected', [(True, True), (False, False)])
+def test_dispatch_passes_inbound_scope_to_sync(tmp_path, monkeypatch, flag, expected):
+    from types import SimpleNamespace
+    from contextlib import nullcontext
+    # GitHub-Lauf ohne Azure: nur .com-Antworten; Standard bleibt der vollständige Abgleich inkl. .de.
+    import closed_loop_crm as inbound_mod, com_mailbox_manager as mail_mod, outbound_safety as out_mod
+    import sales_reconciliation as recon_mod
+    seen = []
+    monkeypatch.setattr(mail_mod, 'ComMailboxClient', lambda o: SimpleNamespace(cfg={}))
+    monkeypatch.setattr(out_mod, 'mailbox_dispatch_lock', lambda c, **k: nullcontext())
+    monkeypatch.setattr(inbound_mod, 'sync_inbounds', lambda **k: seen.append(k))
+    def stop(path): raise RuntimeError('AUDIT_REACHED')
+    monkeypatch.setattr(recon_mod, 'run_audit', stop)
+    monkeypatch.setenv('HSB_CUSTOMER_SEND_ENABLED', 'yes')
+    monkeypatch.setenv('HSB_SALES_STATE_DIR', str(tmp_path))
+    with pytest.raises(RuntimeError, match='AUDIT_REACHED'):
+        out_mod.dispatch_verified(1, owners=('JOEL',), dry_run=False, include_de_inbound=flag)
+    assert seen == [{'apply': True, 'include_de': expected}]
+
+
+def test_daily_cap_and_budget_supports_500_when_configured(monkeypatch):
+    from send_governance import daily_budget
+    import outbound_safety as out_mod
+    monkeypatch.setenv('HSB_DAILY_CAP', '1000')
+    monkeypatch.setenv('HSB_MAX_BUDGET', '1000')
+    assert daily_budget('2026-10-01', '2026-11-06') == 500
+    assert out_mod.DAILY_CAP == 500
+
+
+def test_daily_cap_and_budget_supports_arbitrary_high_cap(monkeypatch):
+    from importlib.util import module_from_spec, spec_from_file_location
+    import send_governance as sg
+    monkeypatch.setenv('HSB_MAX_DAILY_CAP', '1000')
+    monkeypatch.setenv('HSB_DAILY_CAP', '1000')
+    monkeypatch.setenv('HSB_MAX_BUDGET', '1000')
+    spec = spec_from_file_location("send_gov_probe2", sg.__file__)
+    probe = module_from_spec(spec)
+    spec.loader.exec_module(probe)
+    assert probe.MAX_DAILY_CAP_PER_MAILBOX == 1000
+    assert probe.daily_budget('2026-10-01', '2026-11-06') == 1000
+
+
+@pytest.mark.parametrize("requested", [1, 2])
+def test_blocked_lead_is_skipped_and_tranche_continues(tmp_path, monkeypatch, capsys, requested):
+    """Ein Lead ohne zustellbare Domain wird nie gesendet und stoppt die übrigen nicht."""
+    from contextlib import nullcontext
+    from email.message import EmailMessage
+    import hashlib
+    from types import SimpleNamespace
+    import outbound_safety as out
+    import sales_reconciliation as recon
+    import sync_to_google_sheet as sheets
+    import com_mailbox_manager as mail
+    import closed_loop_crm as inbound
+    import send_governance as guard
+    from test_outbound_safety_gate import _crm_lead
+    leads = [_crm_lead(**{'Lead-ID': f'L{i}', 'Verantwortlicher': 'Joel Cherino Diaz', 'E-Mail': f'test{i}@firma.invalid'}) for i in (1, 2)]
+    headers = list(leads[0])
+    raws = {}
+    queue = []
+    drafts = []
+    for i, lead in enumerate(leads, 1):
+        msg = EmailMessage()
+        msg['To'] = lead['E-Mail']
+        msg['From'] = 'j-cherino@hsb-boden.com'
+        msg['Subject'] = 'x'
+        msg['Message-ID'] = f'<{i}@hsb-boden.com>'
+        msg.set_content('Test')
+        raws[str(i)] = msg.as_bytes()
+        queue.append({'lead_id': lead['Lead-ID'], 'owner': 'JOEL', 'email': lead['E-Mail']})
+        drafts.append({'lead_id': lead['Lead-ID'], 'sendable': True, 'folder': 'Drafts', 'uidvalidity': '7', 'uid': str(i),
+                       'sha256': hashlib.sha256(raws[str(i)]).hexdigest()})
+
+    class IMAP:
+        def __enter__(self): return self
+        def __exit__(self, *a): pass
+        def select(self, *a, **k): return 'OK', []
+        def response(self, *a): return None, [b'7']
+        def uid(self, cmd, uid, *a): return 'OK', [(b'h', raws[uid])]
+
+    client = SimpleNamespace(_get_imap=lambda: IMAP(), cfg={})
+    monkeypatch.setattr(mail, 'ComMailboxClient', lambda o: client)
+    monkeypatch.setattr(out, 'mailbox_dispatch_lock', lambda c, **k: nullcontext())
+    monkeypatch.setattr(inbound, 'sync_inbounds', lambda **k: None)
+
+    def audit(path):
+        path.mkdir(parents=True)
+        (path / 'queue.json').write_text(json.dumps(queue))
+        (path / 'drafts.json').write_text(json.dumps(drafts))
+    monkeypatch.setattr(recon, 'run_audit', audit)
+    monkeypatch.setattr(recon, 'assess_message', lambda *a: {'issues': []})
+    monkeypatch.setattr(recon, 'has_unreviewed_legacy_variant', lambda *a: False)
+    values = SimpleNamespace(get=lambda **k: SimpleNamespace(
+        execute=lambda: {'values': [headers] + [[l.get(h, '') for h in headers] for l in leads]}))
+    monkeypatch.setattr(sheets, 'get_sheets_service', lambda: SimpleNamespace(spreadsheets=lambda: SimpleNamespace(values=lambda: values)))
+    monkeypatch.setattr('lead_quality.deliverability_flags', lambda lead, *a: ['NO_MX'] if lead['Lead-ID'] == 'L1' else [])
+    monkeypatch.setattr(guard, 'enforce_domain_health', lambda *a: 10)
+    deliveries = []
+    monkeypatch.setattr(out, 'complete_delivery', lambda *a: deliveries.append(a))
+    monkeypatch.setattr(out.time, 'sleep', lambda *a: None)
+    monkeypatch.setenv('HSB_CUSTOMER_SEND_ENABLED', 'yes')
+    monkeypatch.setenv('HSB_SALES_STATE_DIR', str(tmp_path))
+
+    result = out.dispatch_verified(requested, owners=('JOEL',), dry_run=False)
+
+    assert result['sent_counts']['JOEL'] == 1 and len(deliveries) == 1
+    assert deliveries[0][6]['lead_id'] == 'L2'
+    printed = capsys.readouterr().out
+    assert 'SKIP L1: Deliverability=NO_MX' in printed and 'firma.invalid' not in printed
+
+
+def test_observed_health_ignores_baseline_inbounds(tmp_path):
+    from types import SimpleNamespace
+    from send_governance import observed_health, pause_reason
+    (tmp_path / 'send-health.json').write_text(json.dumps(health()))
+    recon_dir = tmp_path / 'reconciliation'
+    recon_dir.mkdir(parents=True, exist_ok=True)
+    (recon_dir / 'inbound.json').write_text(json.dumps([
+        {'message_id': '<historic-bounce@test.invalid>', 'owner': 'JOEL', 'sha256': 'abc123hash'}
+    ]))
+    hist_bounce = SimpleNamespace(message_id='<historic-bounce@test.invalid>', sender='mailer-daemon@test.invalid',
+                                  subject='Delivery Failure', body='Status: 5.7.1')
+    obs = observed_health(tmp_path, collector=lambda **k: [hist_bounce])
+    assert obs['policy_bounces'] == 0
+    assert pause_reason(obs) is None
+
+    new_bounce = SimpleNamespace(message_id='<new-bounce@test.invalid>', sender='mailer-daemon@test.invalid',
+                                 subject='Delivery Failure', body='Status: 5.7.1')
+    obs_new = observed_health(tmp_path, collector=lambda **k: [hist_bounce, new_bounce])
+    assert obs_new['policy_bounces'] == 1
+    assert pause_reason(obs_new) == 'POLICY_BOUNCE'
+
+
+def test_release_stale_lock_acknowledges_mailbox_health_pause(monkeypatch, capsys):
+    import hsb_cli
+    import send_governance
+
+    class FakeStore:
+        def __init__(self, client):
+            self.events = [{'state': 'paused', 'ack_id': 'ack-1234', 'reason': 'POLICY_BOUNCE'}]
+        def read(self):
+            return self.events[-1] if self.events else None
+        def append(self, event):
+            self.events.append(event)
+
+    fake_store = None
+    def fake_init(client):
+        nonlocal fake_store
+        fake_store = FakeStore(client)
+        return fake_store
+
+    monkeypatch.setattr(send_governance, 'MailboxHealthStore', fake_init)
+    monkeypatch.setattr('outbound_safety.release_stale_lock', lambda *a, **k: {'lock': 'NONE', 'released': False})
+    monkeypatch.setattr(hsb_cli, 'get_sheets_service', lambda: None)
+    monkeypatch.setattr('com_mailbox_manager.ComMailboxClient', lambda o: None)
+
+    # Dry-run without --apply: pause remains unreleased
+    monkeypatch.setattr('sys.argv', ['hsb_cli.py', 'release-stale-lock'])
+    hsb_cli.main()
+    out = json.loads(capsys.readouterr().out)
+    assert out['health_pause']['state'] == 'paused'
+    assert out['health_pause']['released'] is False
+
+    # With --apply: pause is set to ack
+    monkeypatch.setattr('sys.argv', ['hsb_cli.py', 'release-stale-lock', '--apply'])
+    hsb_cli.main()
+    out_apply = json.loads(capsys.readouterr().out)
+    assert out_apply['health_pause']['state'] == 'ack'
+    assert out_apply['health_pause']['released'] is True
+    assert fake_store.events[-1]['state'] == 'ack'
+
+
+def test_observed_health_counts_verified_live_sends_and_resets_on_new_snapshot(tmp_path):
+    from types import SimpleNamespace
+    from send_governance import observed_health, pause_reason, record_verified_send
+
+    h = health()
+    h['sample_sent'] = 15
+    h['hard_bounces'] = 0
+    (tmp_path / 'send-health.json').write_text(json.dumps(h))
+
+    # Three hard bounces out of 15 initial sends must still pause (> 2% / <100 sample)
+    bounces = [
+        SimpleNamespace(
+            message_id=f'<b{i}@example.test>',
+            sender='mailer-daemon@example.test',
+            subject='Undeliverable',
+            body='Action: failed\nStatus: 5.1.1',
+        )
+        for i in range(3)
+    ]
+    obs_small = observed_health(tmp_path, collector=lambda **_: bounces)
+    assert obs_small['sample_sent'] == 15
+    assert pause_reason(obs_small) == 'HARD_BOUNCES'
+
+    # After 145 verified live deliveries (sample_sent = 15 + 145 = 160), 3 hard bounces = 1.875% <= 2%
+    for _ in range(145):
+        record_verified_send(tmp_path)
+    obs_scaled = observed_health(tmp_path, collector=lambda **_: bounces)
+    assert obs_scaled['sample_sent'] == 160
+    assert pause_reason(obs_scaled) is None
+
+    # A 4th bounce (4 / 160 = 2.5% > 2%) must still pause fail-closed
+    four_bounces = bounces + [
+        SimpleNamespace(
+            message_id='<b3@example.test>',
+            sender='mailer-daemon@example.test',
+            subject='Undeliverable',
+            body='Action: failed\nStatus: 5.1.1',
+        )
+    ]
+    assert pause_reason(observed_health(tmp_path, collector=lambda **_: four_bounces)) == 'HARD_BOUNCES'
+
+    # Refreshing send-health.json invalidates previous live delta automatically
+    h2 = health()
+    h2['sample_sent'] = 20
+    h2['hard_bounces'] = 0
+    (tmp_path / 'send-health.json').write_text(json.dumps(h2))
+    obs_fresh = observed_health(tmp_path, collector=lambda **_: [])
+    assert obs_fresh['sample_sent'] == 20
+
+
+def test_dispatch_verified_records_live_sample_only_for_confirmed_deliveries(tmp_path, monkeypatch):
+    from contextlib import nullcontext
+    from email.message import EmailMessage
+    import hashlib
+    from types import SimpleNamespace
+    import outbound_safety as out
+    import sales_reconciliation as recon
+    import sync_to_google_sheet as sheets
+    import com_mailbox_manager as mail
+    import closed_loop_crm as inbound
+    import send_governance as guard
+    from test_outbound_safety_gate import _crm_lead
+
+    h = health()
+    h['sample_sent'] = 15
+    h['hard_bounces'] = 0
+    (tmp_path / 'send-health.json').write_text(json.dumps(h))
+
+    leads = [_crm_lead(**{'Lead-ID': f'L{i}', 'Verantwortlicher': 'Joel Cherino Diaz', 'E-Mail': f'test{i}@firma.invalid'}) for i in (1, 2)]
+    headers = list(leads[0])
+    raws, queue, drafts = {}, [], []
+    for i, lead in enumerate(leads, 1):
+        msg = EmailMessage()
+        msg['To'] = lead['E-Mail']
+        msg['From'] = 'j-cherino@hsb-boden.com'
+        msg['Subject'] = 'x'
+        msg['Message-ID'] = f'<{i}@hsb-boden.com>'
+        msg.set_content('Test')
+        raws[str(i)] = msg.as_bytes()
+        queue.append({'lead_id': lead['Lead-ID'], 'owner': 'JOEL', 'email': lead['E-Mail']})
+        drafts.append({'lead_id': lead['Lead-ID'], 'sendable': True, 'folder': 'Drafts', 'uidvalidity': '7', 'uid': str(i),
+                       'sha256': hashlib.sha256(raws[str(i)]).hexdigest()})
+
+    class IMAP:
+        def __enter__(self): return self
+        def __exit__(self, *a): pass
+        def select(self, *a, **k): return 'OK', []
+        def response(self, *a): return None, [b'7']
+        def uid(self, cmd, uid, *a): return 'OK', [(b'h', raws[uid])]
+
+    client = SimpleNamespace(_get_imap=lambda: IMAP(), cfg={})
+    monkeypatch.setattr(mail, 'ComMailboxClient', lambda o: client)
+    monkeypatch.setattr(out, 'mailbox_dispatch_lock', lambda c, **k: nullcontext())
+    monkeypatch.setattr(inbound, 'sync_inbounds', lambda **k: None)
+    def audit(path):
+        path.mkdir(parents=True)
+        (path / 'queue.json').write_text(json.dumps(queue))
+        (path / 'drafts.json').write_text(json.dumps(drafts))
+    monkeypatch.setattr(recon, 'run_audit', audit)
+    monkeypatch.setattr(recon, 'assess_message', lambda *a: {'issues': []})
+    monkeypatch.setattr(recon, 'has_unreviewed_legacy_variant', lambda *a: False)
+    values = SimpleNamespace(get=lambda **k: SimpleNamespace(
+        execute=lambda: {'values': [headers] + [[l.get(h, '') for h in headers] for l in leads]}))
+    monkeypatch.setattr(sheets, 'get_sheets_service', lambda: SimpleNamespace(spreadsheets=lambda: SimpleNamespace(values=lambda: values)))
+    monkeypatch.setattr('lead_quality.deliverability_flags', lambda *a: [])
+    monkeypatch.setattr(guard, 'enforce_domain_health', lambda *a: 10)
+    monkeypatch.setattr(out, 'complete_delivery', lambda *a: False if a[6]['lead_id'] == 'L1' else True)
+    monkeypatch.setattr(out.time, 'sleep', lambda *a: None)
+    monkeypatch.setenv('HSB_CUSTOMER_SEND_ENABLED', 'yes')
+    monkeypatch.setenv('HSB_SALES_STATE_DIR', str(tmp_path))
+
+    result = out.dispatch_verified(2, owners=('JOEL',), dry_run=False)
+    assert result['sent_counts']['JOEL'] == 1
+    assert guard.observed_health(tmp_path, collector=lambda **_: [])['sample_sent'] == 16
+
+
+def test_observed_health_allows_live_growth_beyond_snapshot_sample_cap(tmp_path):
+    from types import SimpleNamespace
+    from send_governance import observed_health, pause_reason, record_verified_send
+
+    h = health()
+    h['sample_sent'] = 10000
+    h['hard_bounces'] = 0
+    (tmp_path / 'send-health.json').write_text(json.dumps(h))
+
+    assert pause_reason(observed_health(tmp_path, collector=lambda **_: [])) is None
+
+    record_verified_send(tmp_path)
+    obs = observed_health(tmp_path, collector=lambda **_: [])
+    assert obs['sample_sent'] == 10001
+    assert pause_reason(obs) is None
+
+    # Bounce-rate check still uses total denominator (201 / 10001 = 2.0098% > 2%)
+    bounces_over_2pct = [
+        SimpleNamespace(
+            message_id=f'<cap{i}@example.test>',
+            sender='mailer-daemon@example.test',
+            subject='Undeliverable',
+            body='Action: failed\nStatus: 5.1.1',
+        )
+        for i in range(201)
+    ]
+    assert pause_reason(observed_health(tmp_path, collector=lambda **_: bounces_over_2pct)) == 'HARD_BOUNCES'
+
+    # Unverified raw snapshots > HSB_MAX_SAMPLE_SIZE must still fail closed even with forged delta keys
+    h_over = health()
+    h_over['sample_sent'] = 10001
+    h_over['_verified_live_delta'] = 1
+    (tmp_path / 'send-health.json').write_text(json.dumps(h_over))
+    assert pause_reason(observed_health(tmp_path, collector=lambda **_: [])) == 'HEALTH_EVIDENCE_INVALID'
+
+
+
+
+

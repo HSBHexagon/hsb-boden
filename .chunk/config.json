@@ -1,22 +1,23 @@
 {
-  "vcs": {
-    "org": "HSBHexagon",
-    "repo": "hsb-boden"
-  },
   "commands": [
     {
       "name": "sales-safety",
       "run": "python3.14 -m pytest apps/sales-os/tests/ -q",
       "role": "gate",
-      "timeout": 300,
-      "remote": false
+      "timeout": 300
     },
     {
       "name": "ssot",
       "run": "python3.14 scripts/verify_ssot.py",
       "role": "gate",
-      "timeout": 60,
-      "remote": false
+      "timeout": 60
     }
-  ]
+  ],
+  "vcs": {
+    "org": "HSBHexagon",
+    "repo": "hsb-boden"
+  },
+  "validation": {
+    "sidecarImage": "0021d916-0aa2-4d77-b088-049204edac75"
+  }
 }

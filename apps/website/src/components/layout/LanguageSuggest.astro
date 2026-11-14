@@ -14,14 +14,16 @@ const { lang = "de" } = Astro.props;
 {lang === "de" && (
   <div
     id="lang-suggest"
-    class="hidden border-b border-hsb-line bg-white"
+    class="lang-suggest hidden fixed inset-x-3 top-[78px] z-50 sm:top-[84px] rounded-[4px] border border-hsb-line bg-white shadow-[0_18px_40px_rgba(15,17,20,0.16)] sm:inset-x-auto sm:right-6 sm:max-w-sm"
     role="region"
     aria-label="Language suggestion"
   >
-    <div class="container flex flex-wrap items-center justify-between gap-2 py-2">
-      <p class="text-xs font-bold text-hsb-black"><span id="lang-suggest-text"></span></p>
+    <!-- Schwebend statt im Fluss: das Banner erscheint erst nach dem Laden per Skript
+         und verschob vorher den gesamten Inhalt (Layout-Shift ~0,10 auf jeder deutschen Seite). -->
+    <div class="flex flex-wrap items-center justify-between gap-x-3 gap-y-1.5 px-3 py-2 sm:gap-3 sm:px-4 sm:py-3">
+      <p class="text-xs font-bold leading-4 text-hsb-black sm:text-xs"><span id="lang-suggest-text"></span></p>
       <div class="flex items-center gap-2">
-        <a id="lang-suggest-link" class="button-primary !px-3 !py-1.5 text-xs" href="/en/"></a>
+        <a id="lang-suggest-link" class="button-primary !min-h-9 !px-3 !py-1.5 text-xs" href="/en/"></a>
         <button id="lang-suggest-dismiss" class="text-xs font-bold text-hsb-steel underline hover:text-hsb-black"></button>
       </div>
     </div>

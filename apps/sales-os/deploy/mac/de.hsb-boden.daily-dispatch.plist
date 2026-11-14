@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  Täglicher automatisierter HSB Sales-OS Versandjob mit Anti-Spam Hochlauf (Mo–Fr 09:30 Europe/Berlin).
+  Führt services/system/bin/hsb-dispatch-daily aus.
+  Installieren (NUR NACH AUSDRÜCKLICHER NUTZERFREIGABE):
+    cp apps/sales-os/deploy/mac/de.hsb-boden.daily-dispatch.plist ~/Library/LaunchAgents/
+    launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/de.hsb-boden.daily-dispatch.plist
+-->
+<plist version="1.0">
+<dict>
+  <key>Label</key><string>de.hsb-boden.daily-dispatch</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>/Users/joelcherinodiaz/KI-System/services/system/bin/hsb-dispatch-daily</string>
+  </array>
+  <key>StartCalendarInterval</key>
+  <array>
+    <dict><key>Weekday</key><integer>1</integer><key>Hour</key><integer>9</integer><key>Minute</key><integer>30</integer></dict>
+    <dict><key>Weekday</key><integer>2</integer><key>Hour</key><integer>9</integer><key>Minute</key><integer>30</integer></dict>
+    <dict><key>Weekday</key><integer>3</integer><key>Hour</key><integer>9</integer><key>Minute</key><integer>30</integer></dict>
+    <dict><key>Weekday</key><integer>4</integer><key>Hour</key><integer>9</integer><key>Minute</key><integer>30</integer></dict>
+    <dict><key>Weekday</key><integer>5</integer><key>Hour</key><integer>9</integer><key>Minute</key><integer>30</integer></dict>
+  </array>
+  <key>RunAtLoad</key><false/>
+  <key>StandardOutPath</key><string>/Users/joelcherinodiaz/.local/state/hsb-sales-os/launchd-daily-dispatch.log</string>
+  <key>StandardErrorPath</key><string>/Users/joelcherinodiaz/.local/state/hsb-sales-os/launchd-daily-dispatch.log</string>
+</dict>
+</plist>

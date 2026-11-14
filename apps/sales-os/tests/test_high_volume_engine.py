@@ -20,7 +20,13 @@ from high_volume_matrix_engine import (
     PacedDispatcher
 )
 from hsb_core import EMAIL_RE
+from sheet_loader import has_export
 
+needs_export = pytest.mark.skipif(not has_export(),
+                                  reason="kein Sheet-Export mit Kundendaten (z. B. chunk-Sidecar)")
+
+
+@needs_export
 def test_partition_1000_leads_integrity():
     joel_leads, jordi_leads = partition_leads(500, joel_start_row=152, jordi_start_row=3534, use_live_sheet=True)
 
@@ -50,6 +56,7 @@ def test_partition_1000_leads_integrity():
         assert str(l.get("Opt_Out") or "").lower() not in ["yes", "ja", "opt_out"]
         assert str(l.get("Suppressed") or "").lower() not in ["yes", "ja", "true"]
 
+@needs_export
 def test_partition_offline_xlsx_fallback():
     joel_leads, jordi_leads = partition_leads(10, joel_start_row=152, jordi_start_row=3314, use_live_sheet=False)
     assert len(joel_leads) == 10

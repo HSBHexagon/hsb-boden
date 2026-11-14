@@ -4,9 +4,14 @@ import Footer from "../components/layout/Footer.astro";
 import Header from "../components/layout/Header.astro";
 import LanguageSuggest from "../components/layout/LanguageSuggest.astro";
 import MobileQuickContact from "../components/layout/MobileQuickContact.astro";
+import RepairModal from "../components/forms/RepairModal.astro";
 import SEOHead from "../components/seo/SEOHead.astro";
 import { ui, type Lang } from "../lib/i18n";
 import "../styles/global.css";
+// Gleiche gehashte Datei wie in global.css (Vite dedupliziert nach Inhalt):
+// 900 trägt die Hero-H1 (LCP-Element), 400 den Fließtext.
+import outfit400 from "@fontsource/outfit/files/outfit-latin-400-normal.woff2?url";
+import outfit900 from "@fontsource/outfit/files/outfit-latin-900-normal.woff2?url";
 
 interface Props {
   title: string;
@@ -27,6 +32,8 @@ const skipLabel = ui[lang].skip;
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="preload" href={outfit900} as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href={outfit400} as="font" type="font/woff2" crossorigin />
     <SEOHead title={title} description={description} path={path} jsonLd={jsonLd} alternates={alternates} robots={robots} />
     <!-- GA4 Basic Consent: Der externe Google-Request entsteht erst nach einer
          aktiven Statistik-Einwilligung. Der Loader reagiert auf hsb:consent. -->
@@ -46,6 +53,7 @@ const skipLabel = ui[lang].skip;
     <Footer lang={lang} />
     <MobileQuickContact lang={lang} />
     <CookieConsent lang={lang} />
+    <RepairModal />
     <script>
       const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
       const els = document.querySelectorAll(".reveal");
@@ -85,8 +93,29 @@ const skipLabel = ui[lang].skip;
     </script>
     <script>
       import { initializeCloudflareAnalytics } from "../lib/cloudflareAnalytics";
+      import { trackEvent, TrackingEvent } from "../lib/tracking";
 
       initializeCloudflareAnalytics(window, document);
+
+      // Sekundäre Konversions- und Interaktions-Ereignisse erfassen
+      document.addEventListener("click", (event) => {
+        const target = (event.target as HTMLElement | null)?.closest("a, button");
+        if (!target || target.hasAttribute("data-repair-contact")) return;
+        const href = target.getAttribute("href") || "";
+        const downloadType = target.getAttribute("data-download");
+
+        if (downloadType === "checkliste") {
+          trackEvent(TrackingEvent.DownloadCheckliste, { placement: target.getAttribute("data-placement") || "global_download" });
+        } else if (downloadType === "zertifikat" || downloadType === "abnahmeprotokoll") {
+          trackEvent(TrackingEvent.DownloadZertifikat, { placement: target.getAttribute("data-placement") || "global_download" });
+        }
+
+        if (href.startsWith("tel:")) {
+          trackEvent(TrackingEvent.PhoneClick, { placement: "global_link" });
+        } else if (href.startsWith("mailto:")) {
+          trackEvent(TrackingEvent.EmailClick, { placement: "global_link" });
+        }
+      });
     </script>
   </body>
 </html>

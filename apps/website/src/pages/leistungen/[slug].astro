@@ -1,8 +1,10 @@
 ---
+import RepairInquirySection from "../../components/forms/RepairInquirySection.astro";
 import ReferenceCard from "../../components/references/ReferenceCard.astro";
 import CTASection from "../../components/sections/CTASection.astro";
 import FAQAccordion from "../../components/sections/FAQAccordion.astro";
 import ManufacturerProof from "../../components/sections/ManufacturerProof.astro";
+import SystemAufbau from "../../components/sections/SystemAufbau.astro";
 import PageHero from "../../components/sections/PageHero.astro";
 import TechnicalDecisionGuide from "../../components/sections/TechnicalDecisionGuide.astro";
 import BaseLayout from "../../layouts/BaseLayout.astro";
@@ -24,6 +26,7 @@ const relatedReferences = getReferencesForSlugs(service.relatedReferences);
 const relatedIndustries = getIndustries().filter((industry) => service.relatedIndustries.includes(industry.slug));
 const relatedArticles = getArticles().filter((article) => service.relatedArticles.includes(article.slug));
 const path = `/leistungen/${service.slug}/`;
+const isRepair = service.slug === "boden-reparatur-instandsetzung";
 
 // Reale Projektfotos aus dem HSB-Arbeitsumfeld (keine Stockfotos) für Leistungen,
 // zu denen ein passendes, freigegebenes Motiv vorliegt.
@@ -31,6 +34,14 @@ const serviceImages: Record<string, { src: string; alt: string }> = {
   "industrieboden-saeureschutz": {
     src: "/media/hsb/projekte/saeulen-anschluss-keramik.webp",
     alt: "Dicht ausgeführter Säulen- und Sockelanschluss in Sechskant-Keramik, Detail einer Produktionsfläche",
+  },
+  "entwaesserung-industrieboden": {
+    src: "/media/hsb/projekte/entwaesserungsrinne-detail.webp",
+    alt: "Entwässerungsrinne im keramischen Industrieboden, Detail des Rinnenanschlusses",
+  },
+  "epoxidharz-bodenbeschichtung": {
+    src: "/media/hsb/projekte/beschichtete-halle.webp",
+    alt: "Frisch beschichteter, glänzender Industrieboden in einer Halle",
   },
   "keramische-industrieboeden": {
     src: "/media/hsb/projekte/verlegung-keramik.webp",
@@ -42,19 +53,7 @@ const serviceImage = serviceImages[service.slug];
 ---
 
 <BaseLayout title={service.seoTitle} description={service.description} path={path} jsonLd={[buildServiceJsonLd({ name: service.title, description: service.description, path, standards: getStandardsForService(service.slug) }), buildFaqJsonLd(service.faqs), buildBreadcrumbJsonLd([{ name: "Start", path: "/" }, { name: "Leistungen", path: "/leistungen/" }, { name: service.title, path }])]}>
-  <PageHero eyebrow="Leistung" title={service.h1} text={service.description} ctaLabel={service.ctaLabel} />
-  {serviceImage && (
-    <section class="section-tight">
-      <div class="container">
-        <figure class="overflow-hidden rounded-[10px] border border-hsb-line">
-          <img src={serviceImage.src} alt={serviceImage.alt} class="max-h-[480px] w-full object-cover object-center" fetchpriority="high" loading="eager" decoding="async" width="1200" height="480" />
-          <figcaption class="border-t border-hsb-line bg-white px-5 py-3 text-xs font-bold text-hsb-steel">
-            Reale Projektfläche aus dem HSB-Arbeitsumfeld – keine Stockfotos.
-          </figcaption>
-        </figure>
-      </div>
-    </section>
-  )}
+  <PageHero eyebrow="Leistung" title={service.h1} text={service.description} ctaLabel={isRepair ? "Schadstelle melden" : service.ctaLabel} ctaHref={isRepair ? "#repair-photo" : undefined} ctaOpensRepairModal={isRepair} image={serviceImage} />
   <section class="section">
     <div class="container grid gap-8 lg:grid-cols-[0.9fr_1.1fr]">
       <div>
@@ -109,12 +108,13 @@ const serviceImage = serviceImages[service.slug];
       </div>
     </section>
   )}
+  {service.slug === "keramische-industrieboeden" && <SystemAufbau showServiceLinks={false} />}
   {service.slug.includes("keramische") || service.slug.includes("saeureschutz") ? <ManufacturerProof /> : null}
   {relatedReferences.length > 0 && (
     <section class="section">
       <div class="container">
         <p class="eyebrow">Passende Referenzen</p>
-        <h2 class="h2 mt-3">Projektbeispiele mit Freigabelogik</h2>
+        <h2 class="h2 mt-3">Ausgeführte Projekte zu dieser Leistung</h2>
         <div class="mt-8 grid-auto">
           {relatedReferences.map((reference) => <ReferenceCard reference={reference} />)}
         </div>
@@ -139,5 +139,5 @@ const serviceImage = serviceImages[service.slug];
     </section>
   )}
   <FAQAccordion faqs={service.faqs} />
-  <CTASection title={service.ctaLabel} text="Die technische Ersteinschätzung startet mit Belastung, Fläche, Nutzung, Untergrund und Zeitfenster." label="Anfrage starten" />
+  {isRepair ? <RepairInquirySection /> : <CTASection title={service.ctaLabel} text="Die technische Ersteinschätzung startet mit Belastung, Fläche, Nutzung, Untergrund und Zeitfenster." label="Anfrage starten" />}
 </BaseLayout>

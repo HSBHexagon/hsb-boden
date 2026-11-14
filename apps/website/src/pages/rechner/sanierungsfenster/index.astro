@@ -1,0 +1,61 @@
+---
+import BaseLayout from "../../../layouts/BaseLayout.astro";
+import PageHero from "../../../components/sections/PageHero.astro";
+import SanierungsRechner from "../../../components/calculator/SanierungsRechner.astro";
+import LeadFormSection from "../../../components/forms/LeadFormSection.astro";
+import { buildBreadcrumbJsonLd } from "../../../lib/schema";
+
+export const prerender = true;
+
+const path = "/rechner/sanierungsfenster/";
+const title = "Sanierungsfenster-Rechner | HSB Hexagon";
+const description = "Sanierungsfenster für Industrieböden berechnen: Hallenfläche, Schichtbetrieb und Aushärtezeiten indikativ auf Bauabschnitte planen.";
+---
+
+<BaseLayout
+  title={title}
+  description={description}
+  path={path}
+  jsonLd={[
+    buildBreadcrumbJsonLd([
+      { name: "Start", path: "/" },
+      { name: "Rechner", path: "/rechner/sanierungsfenster/" },
+      { name: "Sanierungsfenster-Rechner", path },
+    ]),
+  ]}
+>
+  <PageHero
+    eyebrow="Betriebliche Stillstandsplanung"
+    title="Sanierungsfenster-Rechner: Bauabschnitte und Stillstandszeiten planen"
+    text="Produktionsunterbrechungen minimieren: Kalkulieren Sie indikativ, wie sich Ihre Hallenfläche abhängig von Schichtmodell und Bodensystem auf machbare Bauabschnitte verteilen lässt."
+  />
+
+  <section class="section border-b border-hsb-line bg-white">
+    <div class="container max-w-5xl">
+      <SanierungsRechner />
+
+      <div class="mt-16 grid gap-8 md:grid-cols-3 text-hsb-steel">
+        <div class="rounded border border-hsb-line p-6 bg-hsb-mist/20">
+          <h3 class="font-bold text-hsb-black text-base">Wochenend-Sanierung</h3>
+          <p class="mt-2 text-xs leading-relaxed">
+            Freitag 18:00 Uhr Arbeitsbeginn (Untergrundvorbereitung & Kugelstrahlen), Samstag Einbau des Bodensystems, Sonntag Aushärtung laut Herstellerdatenblatt, Montag 06:00 Uhr Übergabe zur Produktion.
+          </p>
+        </div>
+        <div class="rounded border border-hsb-line p-6 bg-hsb-mist/20">
+          <h3 class="font-bold text-hsb-black text-base">Staubschutz-Einhausung</h3>
+          <p class="mt-2 text-xs leading-relaxed">
+            Bei Sanierungen im laufenden 3-Schicht-Betrieb kapseln wir die Sanierungszone mit mobilen Unterdruck-Staubwänden ab. Keine Kontamination benachbarter Linien.
+          </p>
+        </div>
+        <div class="rounded border border-hsb-line p-6 bg-hsb-mist/20">
+          <h3 class="font-bold text-hsb-black text-base">Aushärtung & Audit-Freigabe</h3>
+          <p class="mt-2 text-xs leading-relaxed">
+            Jedes System besitzt spezifische chemische und mechanische Durchhärtungszeiten. Wir dokumentieren die Raumtemperatur und Luftfeuchte für eine sichere Wiederinbetriebnahme.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <LeadFormSection />
+</BaseLayout>

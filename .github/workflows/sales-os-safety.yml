@@ -1,23 +1,50 @@
 name: Sales OS safety and inbound
 on:
   pull_request:
-    paths: ['apps/sales-os/**', '.github/workflows/sales-os-safety.yml']
+    paths: ['apps/sales-os/**', '.github/workflows/sales-os-safety.yml', 'apps/website/scripts/verify_ssot.py', 'PROJECT_TRUTH.md', 'apps/website/public/_redirects']
   push:
     branches: ['fix/sales-os-completion-20261026']
   workflow_dispatch:
     inputs:
       mode:
-        description: Bounded operation; customer sending is always disabled
+        description: "Bounded operation. prepare-drafts* bereitet Entwürfe vor (kein Versand); send* versendet nur auf ausdrückliche Auswahl"
         type: choice
-        options: [audit, inbound-preview, inbound-sync]
+        options: [audit, inventory, inbound-preview, inbound-sync, fill-missing-preview, fill-missing, prepare-drafts-preview, prepare-drafts, health-seed, health-audit, send-preview, send, sent-label-preview, sent-label-fix, archive-purge-preview, archive-purge]
         default: audit
+      confirm:
+        description: "Nur für archive-purge: exakt ARCHIV-LEEREN eintippen"
+        type: string
+        default: ''
+      health_ack:
+        description: "Nur für send nach behobener Versandpause: ID der geprüften Pause"
+        type: string
+        default: ''
+      health_recipient_pub:
+        description: "Nur health-audit: RSA-Public-Key im DER/Base64-Format; keine Geheimnisse"
+        type: string
+        default: ''
+      count:
+        description: "Nur für send/send-preview: Anzahl je Postfach (1-500)"
+        type: number
+        default: 10
+      sent_label_limit:
+        description: "Only for sent-label-fix: max original Sent copies to correct (1-400)"
+        type: number
+        default: 1
+      sent_label_owner:
+        description: "Only for sent-label-fix: mailbox owner"
+        type: choice
+        options: [JORDI, JOEL, ALL]
+        default: JORDI
+      chain:
+        description: "Lauf-Kette prepare-drafts: Zähler, nicht von Hand ändern"
+        type: number
+        default: 0
   schedule:
     - cron: '17 * * * *'
 permissions:
   contents: read
-concurrency:
-  group: hsb-sales-os-runtime
-  cancel-in-progress: false
+# Sperre nur auf den Live-Jobs: PR-Tests warten sonst stundenlang hinter einem Lauf und werden vom nächsten Start ersetzt.
 jobs:
   tests:
     runs-on: ubuntu-latest
@@ -27,12 +54,39 @@ jobs:
       - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
         with:
           python-version: '3.14'
+      - run: sudo apt-get update && sudo apt-get install -y bind9-host dnsutils || true
       - run: pip install -r apps/sales-os/requirements.txt
       - run: python -m pytest apps/sales-os/tests/ -q
       - run: python scripts/verify_ssot.py
+  # Je Gruppe wartet nur ein Job, und ein neuer ersetzt den wartenden. Der Cron hält sich deshalb heraus, solange
+  # ein von Hand oder von der Kette gestarteter Lauf aktiv ist oder wartet.
+  runtime-gate:
+    if: github.event_name == 'schedule'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      actions: read
+    outputs:
+      busy: ${{ steps.check.outputs.busy }}
+    steps:
+      - id: check
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          n="$(gh run list --workflow sales-os-safety.yml --event workflow_dispatch --limit 20 --json status --jq '[.[]|select(.status!="completed")]|length')"
+          if [ "$n" -gt 0 ]; then echo "busy=yes" >> "$GITHUB_OUTPUT"; else echo "busy=no" >> "$GITHUB_OUTPUT"; fi
   live-readonly-and-inbound:
-    if: github.event_name != 'pull_request'
-    needs: tests
+    if: >-
+      !cancelled() && needs.tests.result == 'success' && github.event_name != 'pull_request' &&
+      needs.runtime-gate.outputs.busy != 'yes' &&
+      inputs.mode != 'inventory' && !startsWith(inputs.mode, 'archive-purge') &&
+      !startsWith(inputs.mode, 'prepare-drafts') && !startsWith(inputs.mode, 'fill-missing') && !startsWith(inputs.mode, 'send') && !startsWith(inputs.mode, 'sent-label')
+    needs: [tests, runtime-gate]
+    concurrency:
+      group: hsb-sales-os-runtime
+      queue: max
+      cancel-in-progress: false
     runs-on: ubuntu-latest
     timeout-minutes: 20
     env:
@@ -45,6 +99,7 @@ jobs:
       - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
         with:
           python-version: '3.14'
+      - run: sudo apt-get update && sudo apt-get install -y bind9-host dnsutils || true
       - run: pip install -r apps/sales-os/requirements.txt
       - name: Verify configured authentication without exposing secrets
         run: |
@@ -62,4 +117,314 @@ jobs:
       - name: Full read-only reconciliation
         if: github.event_name == 'push' || inputs.mode == 'audit'
         run: python -u apps/sales-os/engine/sales_reconciliation.py --output "$RUNNER_TEMP/hsb-reconciliation"
+      # Nur der ausdrücklich gestartete Audit endet rot, solange nicht jeder Entwurf bestanden hat; Log enthält nur Zahlen.
+      - name: Verify every draft against a fresh render
+        if: inputs.mode == 'audit'
+        run: python -u apps/sales-os/engine/draft_verify.py --audit-dir "$RUNNER_TEMP/hsb-reconciliation"
       # Raw MIME, customer lists, queue and credentials are never uploaded.
+
+  # Strictly read-only: do not wait for the long writer being diagnosed.
+  inventory:
+    if: github.event_name == 'workflow_dispatch' && inputs.mode == 'inventory'
+    needs: tests
+    concurrency:
+      group: hsb-sales-os-inventory
+      cancel-in-progress: false
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      HSB_GOOGLE_AUTHORIZED_USER_JSON: ${{ secrets.HSB_SALES_GOOGLE_AUTH }}
+      HSB_MAILBOX_CONFIG_JSON: ${{ secrets.HSB_SALES_MAILBOXES_JSON }}
+      HSB_CUSTOMER_SEND_ENABLED: 'no'
+      HSB_INTERNAL_TEST_SEND_ENABLED: 'no'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: '3.14'
+      - run: sudo apt-get update && sudo apt-get install -y bind9-host dnsutils || true
+      - run: pip install -r apps/sales-os/requirements.txt
+      - name: Read-only draft ownership and distribution inventory
+        run: python -u apps/sales-os/engine/mailbox_inventory.py --output "$RUNNER_TEMP/hsb-inventory"
+
+  # Minimaler Abschluss: ausschließlich noch fehlende, separat freigegebene Reparatur-Entwürfe
+  # ergänzen. Bestehende Entwürfe werden weder gelöscht noch massenhaft umgeschrieben;
+  # kein Kundenversand. Im Preview wird nichts geschrieben.
+  fill-missing:
+    if: github.event_name == 'workflow_dispatch' && startsWith(inputs.mode, 'fill-missing') && github.ref == 'refs/heads/main'
+    needs: tests
+    concurrency:
+      group: hsb-sales-os-runtime
+      queue: max
+      cancel-in-progress: false
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      HSB_GOOGLE_AUTHORIZED_USER_JSON: ${{ secrets.HSB_SALES_GOOGLE_AUTH }}
+      HSB_MAILBOX_CONFIG_JSON: ${{ secrets.HSB_SALES_MAILBOXES_JSON }}
+      HSB_CUSTOMER_SEND_ENABLED: 'no'
+      HSB_INTERNAL_TEST_SEND_ENABLED: 'no'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: '3.14'
+      - run: sudo apt-get update && sudo apt-get install -y bind9-host dnsutils || true
+      - run: pip install -r apps/sales-os/requirements.txt
+      - name: Bounded missing-draft reconciliation (${{ inputs.mode }})
+        env:
+          MODE: ${{ inputs.mode }}
+        run: |
+          set -euo pipefail
+          BEFORE="$RUNNER_TEMP/hsb-missing-before"
+          python -u apps/sales-os/engine/sales_reconciliation.py --output "$BEFORE"
+          python -u apps/sales-os/engine/hsb_cli.py verify-audit --audit-dir "$BEFORE" --allow-not-ready
+          if [ "$MODE" = 'fill-missing' ]; then
+            [ "$GITHUB_REF" = 'refs/heads/main' ] || { echo 'MAIN_ONLY_DRAFT_MUTATION'; exit 2; }
+            python -u apps/sales-os/engine/hsb_cli.py fill-missing-drafts --audit-dir "$BEFORE" --apply
+            AFTER="$RUNNER_TEMP/hsb-missing-after"
+            python -u apps/sales-os/engine/sales_reconciliation.py --output "$AFTER"
+            python -u apps/sales-os/engine/draft_verify.py --audit-dir "$AFTER"
+          else
+            python -u apps/sales-os/engine/hsb_cli.py fill-missing-drafts --audit-dir "$BEFORE"
+          fi
+
+  # Entwürfe-Archiv-v1 in den Server-Papierkorb leeren (Owner-Entscheidung 06.11.2026). Vorschau zählt nur.
+  # Anwenden nur auf main mit getippter Bestätigung; Log enthält nur Zahlen und Ordnernamen.
+  archive-purge:
+    if: github.event_name == 'workflow_dispatch' && startsWith(inputs.mode, 'archive-purge')
+    needs: tests
+    concurrency:
+      group: hsb-sales-os-runtime
+      queue: max
+      cancel-in-progress: false
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      HSB_GOOGLE_AUTHORIZED_USER_JSON: ${{ secrets.HSB_SALES_GOOGLE_AUTH }}
+      HSB_MAILBOX_CONFIG_JSON: ${{ secrets.HSB_SALES_MAILBOXES_JSON }}
+      HSB_CUSTOMER_SEND_ENABLED: 'no'
+      HSB_INTERNAL_TEST_SEND_ENABLED: 'no'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: '3.14'
+      - run: sudo apt-get update && sudo apt-get install -y bind9-host dnsutils || true
+      - run: pip install -r apps/sales-os/requirements.txt
+      - name: Archiv leeren (${{ inputs.mode }})
+        env:
+          MODE: ${{ inputs.mode }}
+          CONFIRM: ${{ inputs.confirm }}
+        run: |
+          AUDIT="$RUNNER_TEMP/hsb-reconciliation"
+          if [ "$MODE" = "archive-purge-preview" ]; then
+            python -u apps/sales-os/engine/sales_reconciliation.py --output "$AUDIT"
+            python -u apps/sales-os/engine/hsb_cli.py archive-purge --audit-dir "$AUDIT"
+            exit 0
+          fi
+          if [ "$CONFIRM" != "ARCHIV-LEEREN" ] || [ "$GITHUB_REF" != "refs/heads/main" ]; then
+            echo "archive-purge verlangt confirm=ARCHIV-LEEREN und main" >&2
+            exit 1
+          fi
+          # Sperre eines beendeten Laufs lösen; bei unklarem Versand (SENDING) endet der Job, bevor etwas bewegt wird.
+          python -u apps/sales-os/engine/hsb_cli.py release-stale-lock --apply
+          python -u apps/sales-os/engine/sales_reconciliation.py --output "$AUDIT"
+          python -u apps/sales-os/engine/hsb_cli.py archive-purge --audit-dir "$AUDIT" --apply
+
+  # Entwürfe versandfertig machen: Audit, Dubletten-Archiv, Audit, Reparatur-Erneuerung, Abschluss-Audit.
+  # Kein Kundenversand. Im Log stehen nur Zahlen; Rohdaten bleiben im Runner-Temp und werden nicht hochgeladen.
+  prepare-drafts:
+    if: github.event_name == 'workflow_dispatch' && startsWith(inputs.mode, 'prepare-drafts')
+    needs: tests
+    concurrency:
+      group: hsb-sales-os-runtime
+      queue: max
+      cancel-in-progress: false
+    runs-on: ubuntu-latest
+    timeout-minutes: 240
+    permissions:
+      contents: read
+      actions: write
+    env:
+      HSB_GOOGLE_AUTHORIZED_USER_JSON: ${{ secrets.HSB_SALES_GOOGLE_AUTH }}
+      HSB_MAILBOX_CONFIG_JSON: ${{ secrets.HSB_SALES_MAILBOXES_JSON }}
+      HSB_CUSTOMER_SEND_ENABLED: 'no'
+      HSB_INTERNAL_TEST_SEND_ENABLED: 'no'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: '3.14'
+      - run: sudo apt-get update && sudo apt-get install -y bind9-host dnsutils || true
+      - run: pip install -r apps/sales-os/requirements.txt
+      - name: Entwürfe vorbereiten (${{ inputs.mode }})
+        id: lauf
+        env:
+          HSB_RUN_DIR: ${{ runner.temp }}
+          # Vor dem 240-Minuten-Abbruch sauber enden (Abschluss-Audit inklusive); der nächste Lauf macht weiter.
+          HSB_RUN_BUDGET_MIN: '190'
+          HSB_RELEASE_STALE_LOCK: 'yes'
+          MODE: ${{ inputs.mode }}
+        run: |
+          if [ "$MODE" = "prepare-drafts" ]; then bash apps/sales-os/bin/postfach-lauf.sh --apply
+          else bash apps/sales-os/bin/postfach-lauf.sh; fi
+      # Lauf-Kette: Nur nach Erfolg, nur bei Rest und Fortschritt, höchstens 8 Folgeläufe, immer nur prepare-drafts.
+      # Abbrechen des laufenden Laufs stoppt die Kette.
+      - name: Nächsten Lauf anstoßen
+        if: inputs.mode == 'prepare-drafts' && steps.lauf.outputs.more == 'yes' && github.ref == 'refs/heads/main' && inputs.chain < 8
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          CHAIN: ${{ inputs.chain }}
+        run: gh workflow run sales-os-safety.yml --ref main -f mode=prepare-drafts -f chain="$((CHAIN + 1))"
+
+  # Versand einer Tranche, nur per manueller Auswahl von send/send-preview. Doppelversand ist ausgeschlossen:
+  # CRM bekommt SENDING vor SMTP, ein Abbruch lässt die IMAP-Sperre stehen und blockiert jeden Folgelauf.
+  customer-send:
+    if: github.event_name == 'workflow_dispatch' && (inputs.mode == 'send-preview' || (inputs.mode == 'send' && github.ref == 'refs/heads/main'))
+    needs: tests
+    concurrency:
+      group: hsb-sales-os-runtime
+      queue: max
+      cancel-in-progress: false
+    runs-on: ubuntu-latest
+    timeout-minutes: 240
+    environment: customer-send
+    env:
+      HSB_GOOGLE_AUTHORIZED_USER_JSON: ${{ secrets.HSB_SALES_GOOGLE_AUTH }}
+      HSB_MAILBOX_CONFIG_JSON: ${{ secrets.HSB_SALES_MAILBOXES_JSON }}
+      HSB_INTERNAL_TEST_SEND_ENABLED: 'no'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: '3.14'
+      - run: sudo apt-get update && sudo apt-get install -y bind9-host dnsutils || true
+      - run: pip install -r apps/sales-os/requirements.txt
+      - name: Tranche ${{ inputs.mode }} (${{ inputs.count }} je Postfach)
+        env:
+          HSB_SALES_STATE_DIR: ${{ runner.temp }}/hsb-state
+          HSB_COM_ONLY_INBOUND: 'yes'
+          HSB_RELEASE_STALE_LOCK: 'yes'
+          HSB_SEND_PAUSE_ACK: ${{ secrets.HSB_SALES_SEND_PAUSE_ACK || inputs.health_ack }}
+          HSB_VERIFIED_SEND_HEALTH_JSON: ${{ secrets.HSB_SALES_SEND_HEALTH_JSON }}
+          MODE: ${{ inputs.mode }}
+          COUNT: ${{ inputs.count }}
+        run: |
+          if [ "$MODE" = "send" ]; then bash apps/sales-os/bin/versand-tranche.sh "$COUNT" --apply
+          else bash apps/sales-os/bin/versand-tranche.sh "$COUNT"; fi
+
+  internal-seed-health:
+    # Controlled sender-authentication check. No prospect recipients, no CRM edits.
+    if: github.event_name == 'workflow_dispatch' && inputs.mode == 'health-seed' && github.ref == 'refs/heads/main'
+    needs: tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    env:
+      HSB_MAILBOX_CONFIG_JSON: ${{ secrets.HSB_SALES_MAILBOXES_JSON }}
+      HSB_SEED_RECIPIENT: ${{ secrets.HSB_SALES_SEED_RECIPIENT }}
+      HSB_CUSTOMER_SEND_ENABLED: 'no'
+      HSB_INTERNAL_TEST_SEND_ENABLED: 'yes'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: '3.14'
+      - run: sudo apt-get update && sudo apt-get install -y bind9-host dnsutils || true
+      - run: pip install -r apps/sales-os/requirements.txt
+      - name: Configure verified owner-controlled seed mailbox
+        run: |
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+          recipient = os.environ.get('HSB_SEED_RECIPIENT', '').strip().lower()
+          if not recipient.endswith('@gmail.com') or len(recipient) > 254:
+              raise RuntimeError('OWNED_GMAIL_SEED_NOT_CONFIGURED')
+          if not os.environ.get('HSB_MAILBOX_CONFIG_JSON'):
+              raise RuntimeError('COM_MAILBOX_CONFIG_NOT_CONFIGURED')
+          path = Path(os.environ['RUNNER_TEMP']) / 'hsb-seed-inboxes.json'
+          path.write_text(json.dumps([{'provider': 'gmail', 'address': recipient}]))
+          path.chmod(0o600)
+          PY
+      - name: Send internal control messages via both real com SMTP accounts
+        run: |
+          set -euo pipefail
+          SEEDS="$RUNNER_TEMP/hsb-seed-inboxes.json"
+          for OWNER in JOEL JORDI; do
+            if python -u apps/sales-os/engine/hsb_cli.py seed-send --owner "$OWNER" --seed-file "$SEEDS" > "$RUNNER_TEMP/seed-$OWNER.log" 2>&1; then
+              echo "$OWNER: seed SMTP command succeeded; recipient authentication still requires independent Gmail readback"
+            else
+              echo "$OWNER: seed SMTP command failed; no customer mail has been attempted" >&2
+              exit 1
+            fi
+          done
+
+  health-audit:
+    # Read-only IMAP evidence: encrypted artifact, no customer send and no raw message data in logs.
+    if: github.event_name == 'workflow_dispatch' && inputs.mode == 'health-audit' && github.ref == 'refs/heads/main'
+    needs: tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    env:
+      HSB_MAILBOX_CONFIG_JSON: ${{ secrets.HSB_SALES_MAILBOXES_JSON }}
+      HSB_HEALTH_RECEIVER_PUBLIC_KEY: ${{ inputs.health_recipient_pub }}
+      HSB_CUSTOMER_SEND_ENABLED: 'no'
+      HSB_INTERNAL_TEST_SEND_ENABLED: 'no'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: '3.14'
+      - run: sudo apt-get update && sudo apt-get install -y bind9-host dnsutils || true
+      - run: pip install -r apps/sales-os/requirements.txt && pip install cryptography==50.0.2
+      - name: Gather and encrypt real com mailbox snapshots
+        run: python apps/sales-os/engine/capture_com_health.py "$RUNNER_TEMP/hsb-com-health.enc.json"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: hsb-com-health-encrypted
+          path: ${{ runner.temp }}/hsb-com-health.enc.json
+          retention-days: 1
+          if-no-files-found: error
+
+  # Repair NEVER sends mail. Original retained in dedicated IMAP backup.
+  sent-label-repair:
+    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && (inputs.mode == 'sent-label-preview' || inputs.mode == 'sent-label-fix')
+    needs: tests
+    concurrency:
+      group: hsb-sales-os-runtime
+      queue: max
+      cancel-in-progress: false
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    permissions:
+      contents: read
+    env:
+      HSB_GOOGLE_AUTHORIZED_USER_JSON: ${{ secrets.HSB_SALES_GOOGLE_AUTH }}
+      HSB_MAILBOX_CONFIG_JSON: ${{ secrets.HSB_SALES_MAILBOXES_JSON }}
+      HSB_CUSTOMER_SEND_ENABLED: 'no'
+      HSB_INTERNAL_TEST_SEND_ENABLED: 'no'
+      OWNER: ${{ inputs.sent_label_owner }}
+      LIMIT: ${{ inputs.sent_label_limit }}
+      MODE: ${{ inputs.mode }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: '3.14'
+      - run: pip install -r apps/sales-os/requirements.txt
+      - name: Verify Sent header repair or preview without SMTP
+        run: |
+          if [ "$MODE" = 'sent-label-fix' ]; then
+            python -u apps/sales-os/engine/sent_header_repair.py --owner "$OWNER" --limit "$LIMIT" --apply
+          else
+            python -u apps/sales-os/engine/sent_header_repair.py --owner "$OWNER" --limit "$LIMIT"
+          fi

@@ -1,0 +1,482 @@
+---
+import { site } from "../../data/site";
+import { toTelephoneHref } from "../../lib/phone";
+
+interface Props {
+  idPrefix?: string;
+}
+
+const { idPrefix = "repair-photo" } = Astro.props;
+
+const inputClass =
+  "rounded border border-hsb-line px-3 py-3 font-normal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-hsb-red aria-[invalid=true]:border-hsb-red";
+
+// Drei Wege zur Ersteinschätzung. Wer gerade kein Foto hat, soll nicht abspringen, sondern einen Rückruf
+// oder einen Termin vor Ort anfragen können (gleicher Endpunkt, gleiche Mail an info@).
+const intents = [
+  { value: "photo", title: "Foto senden", hint: "Am schnellsten" },
+  { value: "callback", title: "Rückruf", hint: "Kein Foto zur Hand" },
+  { value: "visit", title: "Termin vor Ort", hint: "Wir sehen es uns an" },
+];
+const phoneHref = toTelephoneHref(site.phone);
+---
+
+<div class="surface scroll-mt-24 p-5" id={idPrefix} data-repair-photo-container>
+  <form id={`${idPrefix}-form`} class="grid gap-5" novalidate data-delivery-configured={String(site.hasRepairPhotoUpload)} data-repair-photo-form>
+    <fieldset>
+      <legend class="text-sm font-black text-hsb-ink">Wie möchten Sie vorgehen?</legend>
+      <div class="mt-3 grid gap-2 sm:grid-cols-3">
+        {intents.map((intent) => (
+          <label class="flex min-h-12 cursor-pointer items-center gap-3 rounded border border-hsb-line bg-white px-3 py-3 transition-colors sm:items-start sm:gap-2 focus-within:ring-2 focus-within:ring-hsb-red/40 has-[:checked]:border-hsb-red has-[:checked]:bg-hsb-red/5">
+            <input type="radio" name="intent" value={intent.value} checked={intent.value === "photo"} class="size-5 shrink-0 accent-hsb-red sm:mt-0.5 sm:size-4" />
+            <span class="flex min-w-0 flex-1 items-baseline justify-between gap-3 sm:block">
+              <span class="whitespace-nowrap text-sm font-black text-hsb-ink sm:block">{intent.title}</span>
+              <span class="text-right text-xs text-hsb-steel sm:block sm:text-left">{intent.hint}</span>
+            </span>
+          </label>
+        ))}
+      </div>
+    </fieldset>
+
+    <div>
+      <label
+        id={`${idPrefix}-drop`}
+        for={`${idPrefix}-input`}
+        data-drop-zone
+        class="group flex cursor-pointer flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-hsb-line bg-white px-4 py-5 text-center transition hover:border-hsb-red focus-within:border-hsb-red focus-within:ring-2 focus-within:ring-hsb-red/40 data-[drag=true]:border-hsb-red data-[drag=true]:bg-hsb-red/5"
+      >
+        <svg class="h-10 w-10 text-hsb-red" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M3 8.5A2.5 2.5 0 0 1 5.5 6h1.6l1.2-1.8A1.5 1.5 0 0 1 9.55 3.5h4.9a1.5 1.5 0 0 1 1.25.7L16.9 6h1.6A2.5 2.5 0 0 1 21 8.5v9a2.5 2.5 0 0 1-2.5 2.5h-13A2.5 2.5 0 0 1 3 17.5v-9Z" />
+          <circle cx="12" cy="12.5" r="3.5" />
+        </svg>
+        <span class="text-base font-black text-hsb-ink" data-intent-only="photo">Foto der Schadstelle aufnehmen oder auswählen</span>
+        <span class="text-base font-black text-hsb-ink" data-intent-only="callback visit" hidden>Fotos hinzufügen <span class="font-normal text-hsb-steel">(optional)</span></span>
+        <span class="text-sm text-hsb-steel">Bis zu 3 Bilder aufnehmen, auswählen oder hierher ziehen.</span>
+        <input id={`${idPrefix}-input`} data-file-input type="file" accept="image/*" multiple class="sr-only" aria-describedby={`${idPrefix}-hint`} />
+      </label>
+      <p id={`${idPrefix}-hint`} class="mt-2 text-xs text-hsb-steel">
+        Bilder werden vor dem Senden verkleinert, Standortdaten aus dem Foto werden dabei entfernt.
+      </p>
+      <ul id={`${idPrefix}-previews`} data-previews class="mt-3 grid grid-cols-3 gap-3 empty:hidden" aria-label="Ausgewählte Fotos"></ul>
+      <div id={`${idPrefix}-alt`} data-alt-box data-intent-only="photo" class="mt-3 scroll-mt-28 flex flex-wrap items-center gap-x-3 gap-y-2 rounded border border-transparent px-0 py-0 text-sm text-hsb-steel transition-colors data-[emphasis=true]:border-hsb-red/40 data-[emphasis=true]:bg-hsb-red/5 data-[emphasis=true]:px-3 data-[emphasis=true]:py-3">
+        <span class="font-semibold text-hsb-ink">Gerade kein Foto zur Hand?</span>
+        <button type="button" data-switch-intent="callback" class="min-h-11 font-bold text-hsb-red underline underline-offset-4">Rückruf anfordern</button>
+        <span aria-hidden="true" class="hidden sm:inline">·</span>
+        <button type="button" data-switch-intent="visit" class="min-h-11 font-bold text-hsb-red underline underline-offset-4">Termin vor Ort anfragen</button>
+      </div>
+    </div>
+
+    <div class="grid gap-4 sm:grid-cols-2">
+      <label class="grid gap-2 text-sm font-bold">
+        <span>Firma <span class="text-hsb-red" aria-hidden="true">*</span></span>
+        <input required minlength={2} maxlength={120} name="company" autocomplete="organization" class={inputClass} />
+      </label>
+      <label class="grid gap-2 text-sm font-bold">
+        <span>Ihr Name <span class="text-hsb-red" aria-hidden="true">*</span></span>
+        <input required minlength={2} maxlength={80} name="name" autocomplete="name" class={inputClass} />
+      </label>
+      <label class="grid gap-2 text-sm font-bold">
+        <span>E-Mail <span class="text-hsb-red" aria-hidden="true">*</span></span>
+        <input required type="email" maxlength={160} name="email" autocomplete="email" class={inputClass} />
+      </label>
+      <label class="grid gap-2 text-sm font-bold">
+        <span>
+          Telefon
+          <span class="text-hsb-red" aria-hidden="true" data-intent-only="callback" hidden>*</span>
+          <span class="font-normal text-hsb-steel" data-intent-only="photo visit">{" "}(optional)</span>
+        </span>
+        <input type="tel" maxlength={40} name="phone" autocomplete="tel" pattern="[+0-9\s\/\-\(\)]{6,40}" class={inputClass} />
+      </label>
+    </div>
+
+    <label class="grid gap-2 text-sm font-bold" data-intent-only="callback" hidden>
+      <span>Wann erreichen wir Sie am besten?</span>
+      <select name="callbackWindow" class={inputClass}>
+        <option value="egal">Jederzeit</option>
+        <option value="vormittags">Vormittags (8–12 Uhr)</option>
+        <option value="nachmittags">Nachmittags (12–16 Uhr)</option>
+      </select>
+    </label>
+
+    <div class="grid gap-4 sm:grid-cols-2" data-intent-only="visit" hidden>
+      <label class="grid gap-2 text-sm font-bold">
+        <span>Standort (PLZ oder Ort) <span class="text-hsb-red" aria-hidden="true">*</span></span>
+        <input required minlength={2} maxlength={120} name="location" autocomplete="address-level2" class={inputClass} />
+      </label>
+      <label class="grid gap-2 text-sm font-bold">
+        <span>Mögliches Sperrfenster <span class="font-normal text-hsb-steel">(optional)</span></span>
+        <input maxlength={120} name="blackout" placeholder="z. B. Wochenende, Betriebsruhe KW 52" class={inputClass} />
+      </label>
+    </div>
+
+    <label class="grid gap-2 text-sm font-bold">
+      <span>Was ist zu sehen? <span class="font-normal text-hsb-steel">(optional)</span></span>
+      <textarea maxlength={2000} name="message" rows={3} placeholder="Beispiel: Fuge an einer Rinne ausgebrochen, Halle 2, ca. 2 m²." class={inputClass}></textarea>
+    </label>
+
+    <div class="hidden" aria-hidden="true">
+      <label>Website <input type="text" name="website" tabindex="-1" autocomplete="off" /></label>
+    </div>
+
+    <label class="flex items-start gap-3 text-sm leading-6 text-hsb-steel">
+      <input required type="checkbox" name="privacyConsent" class="mt-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-hsb-red" />
+      <span>
+        Ich bin einverstanden, dass HSB meine Angaben und gegebenenfalls Fotos zur Bearbeitung der Anfrage verarbeitet
+        (<a class="text-hsb-red underline" href="/datenschutz/#reparaturfoto">Datenschutz</a>).
+      </span>
+    </label>
+
+    <p id={`${idPrefix}-error`} data-error-box role="alert" aria-live="assertive" class="hidden rounded border border-hsb-red/40 bg-hsb-red/5 px-3 py-2 text-sm text-hsb-red"></p>
+
+    <button id={`${idPrefix}-submit`} data-submit-btn type="submit" class="button-primary disabled:cursor-not-allowed disabled:opacity-60">
+      <span data-intent-only="photo">Foto senden und einschätzen lassen</span>
+      <span data-intent-only="callback" hidden>Rückruf anfordern</span>
+      <span data-intent-only="visit" hidden>Termin vor Ort anfragen</span>
+    </button>
+    <p class="text-xs text-hsb-steel">
+      <span data-intent-only="photo">Ersteinschätzung innerhalb eines Arbeitstags, kostenfrei.</span>
+      <span data-intent-only="callback" hidden>Wir rufen innerhalb eines Arbeitstags zurück.</span>
+      <span data-intent-only="visit" hidden>Terminvorschlag innerhalb eines Arbeitstags.</span>
+      {" "}Sie erhalten eine Eingangsbestätigung per E-Mail.
+    </p>
+  </form>
+
+  <div id={`${idPrefix}-success`} data-success-box class="hidden scroll-mt-28" role="status" aria-live="polite" tabindex="-1">
+    <p class="eyebrow">Angekommen</p>
+    <p class="h2 mt-3" data-success-for="photo">Danke, Ihr Foto liegt bei uns.</p>
+    <p class="h2 mt-3" data-success-for="callback" hidden>Danke, wir rufen Sie zurück.</p>
+    <p class="h2 mt-3" data-success-for="visit" hidden>Danke, Ihre Terminanfrage ist da.</p>
+    <p class="mt-6 text-sm font-black uppercase tracking-wide text-hsb-ink">So geht es weiter</p>
+    <ol class="mt-3 grid gap-3 text-base leading-7 text-hsb-steel" data-success-for="photo">
+      <li><strong class="text-hsb-ink">1.</strong> Wir sehen uns Ihr Foto und Ihre Angaben an.</li>
+      <li><strong class="text-hsb-ink">2.</strong> Innerhalb eines Arbeitstags erhalten Sie eine erste, kostenfreie Einschätzung per E-Mail oder Telefon.</li>
+      <li><strong class="text-hsb-ink">3.</strong> Falls nötig, schlagen wir einen Termin vor Ort vor.</li>
+    </ol>
+    <ol class="mt-3 grid gap-3 text-base leading-7 text-hsb-steel" data-success-for="callback" hidden>
+      <li><strong class="text-hsb-ink">1.</strong> Wir rufen Sie innerhalb eines Arbeitstags im gewünschten Zeitfenster an.</li>
+      <li><strong class="text-hsb-ink">2.</strong> Im Gespräch klären wir Schadensbild, betroffene Fläche und mögliche Sperrzeiten.</li>
+      <li><strong class="text-hsb-ink">3.</strong> Fotos können Sie jederzeit nachreichen: per E-Mail an info@hsb-boden.de oder als Antwort auf unsere E-Mail.</li>
+    </ol>
+    <ol class="mt-3 grid gap-3 text-base leading-7 text-hsb-steel" data-success-for="visit" hidden>
+      <li><strong class="text-hsb-ink">1.</strong> Wir melden uns innerhalb eines Arbeitstags mit einem Terminvorschlag.</li>
+      <li><strong class="text-hsb-ink">2.</strong> Vor Ort prüfen wir die Schadstelle und den Untergrund.</li>
+      <li><strong class="text-hsb-ink">3.</strong> Danach erhalten Sie unsere Empfehlung: gezielte Reparatur oder größere Instandsetzung.</li>
+    </ol>
+    <p class="mt-5 hidden text-sm text-hsb-steel" id={`${idPrefix}-confirmation`} data-confirmation-box>
+      Eine Eingangsbestätigung ist unterwegs an <strong class="text-hsb-ink" id={`${idPrefix}-confirmation-email`} data-confirmation-email></strong>. Bitte prüfen Sie gegebenenfalls auch den Spam-Ordner.
+    </p>
+    <div class="mt-6 flex flex-wrap items-center gap-3">
+      <a class="button-secondary-dark repair-phone-cta" href={phoneHref} data-repair-success-phone>Lieber gleich sprechen: <span class="whitespace-nowrap">{site.phone}</span></a>
+    </div>
+  </div>
+</div>
+
+<script>
+  import { shrink } from "../../lib/repairPhotoImage";
+  import { trackEvent, trackEventAndWait, TrackingEvent } from "../../lib/tracking";
+  import { trackAfterConfirmedLead } from "../../lib/confirmedLeadTracking";
+
+  const MAX_PHOTOS = 3;
+
+  type Intent = "photo" | "callback" | "visit";
+  const INTENTS: Intent[] = ["photo", "callback", "visit"];
+
+  const FIELD_LABELS: Record<string, string> = {
+    company: "Firma",
+    name: "Ihr Name",
+    email: "gültige E-Mail",
+    privacyConsent: "Einwilligung",
+    photos: "mindestens ein Foto",
+    photos_count: "höchstens drei Fotos",
+    photos_type: "Fotos als JPEG, PNG oder WebP",
+    phone: "Telefonnummer für den Rückruf",
+    location: "Standort (PLZ oder Ort)",
+  };
+
+  const MESSAGES: Record<number, string> = {
+    413: "Die Fotos sind zu groß. Bitte weniger oder kleinere Bilder wählen.",
+    422: "Bitte prüfen Sie Ihre Angaben und die Einwilligung.",
+    429: "Zu viele Anfragen in kurzer Zeit. Bitte versuchen Sie es in ein paar Minuten erneut.",
+  };
+  const FALLBACK = "Senden hat nicht geklappt. Schicken Sie das Foto bitte per E-Mail an info@hsb-boden.de oder rufen Sie uns an.";
+
+  function initRepairPhotoForm(container: HTMLElement) {
+    const form = container.querySelector<HTMLFormElement>("[data-repair-photo-form]");
+    if (!form) return;
+
+    const input = container.querySelector<HTMLInputElement>("[data-file-input]");
+    const drop = container.querySelector<HTMLElement>("[data-drop-zone]");
+    const previews = container.querySelector<HTMLElement>("[data-previews]");
+    const errorBox = container.querySelector<HTMLElement>("[data-error-box]");
+    const submit = container.querySelector<HTMLButtonElement>("[data-submit-btn]");
+    const success = container.querySelector<HTMLElement>("[data-success-box]");
+    const alt = container.querySelector<HTMLElement>("[data-alt-box]");
+    const confirmation = container.querySelector<HTMLElement>("[data-confirmation-box]");
+    const confirmationEmail = container.querySelector<HTMLElement>("[data-confirmation-email]");
+
+    const photos: { blob: Blob; url: string }[] = [];
+    let processing = Promise.resolve();
+    let pendingBatches = 0;
+    let sending = false;
+    const phoneInput = form.elements.namedItem("phone") as HTMLInputElement | null;
+    const locationInput = form.elements.namedItem("location") as HTMLInputElement | null;
+
+    function currentIntent(): Intent {
+      const value = (form?.querySelector<HTMLInputElement>('input[name="intent"]:checked')?.value ?? "photo") as Intent;
+      return INTENTS.includes(value) ? value : "photo";
+    }
+
+    /** Zeigt nur die Teile des gewählten Wegs; Felder versteckter Teile werden deaktiviert (nicht geprüft, nicht gesendet). */
+    function applyIntent(intent: Intent) {
+      form?.querySelectorAll<HTMLElement>("[data-intent-only]").forEach((el) => {
+        const visible = (el.dataset.intentOnly ?? "").split(" ").includes(intent);
+        el.hidden = !visible;
+        el.querySelectorAll("input, select").forEach((field) => {
+          if (field instanceof HTMLInputElement || field instanceof HTMLSelectElement) field.disabled = !visible;
+        });
+      });
+      if (phoneInput) phoneInput.required = intent === "callback";
+      if (alt) delete alt.dataset.emphasis;
+    }
+
+    function selectIntent(intent: Intent, focusField = false) {
+      const radio = form?.querySelector<HTMLInputElement>(`input[name="intent"][value="${intent}"]`);
+      if (radio) radio.checked = true;
+      applyIntent(intent);
+      showError("");
+      clearInvalid();
+      if (focusField) (intent === "callback" ? phoneInput : intent === "visit" ? locationInput : input)?.focus();
+    }
+
+    form.querySelectorAll<HTMLInputElement>('input[name="intent"]').forEach((radio) => {
+      radio.addEventListener("change", () => selectIntent(currentIntent()));
+    });
+    form.querySelectorAll<HTMLButtonElement>("[data-switch-intent]").forEach((button) => {
+      button.addEventListener("click", () => {
+        const intent = button.dataset.switchIntent as Intent;
+        trackEvent(TrackingEvent.CtaClick, { placement: "repair_no_photo", target: intent });
+        selectIntent(intent, true);
+      });
+    });
+    applyIntent(currentIntent());
+
+    function showError(message: string) {
+      if (!errorBox) return;
+      errorBox.textContent = message;
+      errorBox.classList.toggle("hidden", !message);
+    }
+
+    function clearInvalid() {
+      form?.querySelectorAll("[aria-invalid]").forEach((el) => {
+        el.removeAttribute("aria-invalid");
+        el.removeAttribute("aria-describedby");
+      });
+      if (input) {
+        const hintId = input.getAttribute("aria-describedby") || `${container.id}-hint`;
+        input.setAttribute("aria-describedby", hintId);
+      }
+    }
+
+    /** Markiert die vom Server abgelehnten Felder, verweist sie auf die Fehlermeldung und fokussiert das erste. */
+    function markInvalid(fields: string[]) {
+      clearInvalid();
+      let first: HTMLElement | null = null;
+      const errorId = errorBox?.id || `${container.id}-error`;
+      const hintId = `${container.id}-hint`;
+      for (const field of fields) {
+        const el = field.startsWith("photos") ? input : (form?.elements.namedItem(field) as HTMLElement | null);
+        if (!el) continue;
+        el.setAttribute("aria-invalid", "true");
+        el.setAttribute("aria-describedby", field.startsWith("photos") ? `${errorId} ${hintId}` : errorId);
+        first ??= el;
+      }
+      const labels = fields.map((f) => FIELD_LABELS[f]).filter(Boolean);
+      showError(labels.length ? `Bitte prüfen: ${labels.join(", ")}.` : MESSAGES[422]);
+      first?.focus();
+    }
+
+    form.addEventListener("input", (event) => {
+      const target = event.target as HTMLElement | null;
+      if (target?.getAttribute("aria-invalid") === "true") target.removeAttribute("aria-invalid");
+    });
+
+    function render() {
+      if (!previews) return;
+      previews.replaceChildren(
+        ...photos.map((photo, index) => {
+          const item = document.createElement("li");
+          item.className = "relative overflow-hidden rounded border border-hsb-line bg-white";
+          const img = document.createElement("img");
+          img.src = photo.url;
+          img.alt = `Foto ${index + 1}`;
+          img.className = "aspect-square w-full object-cover";
+          const remove = document.createElement("button");
+          remove.type = "button";
+          remove.textContent = "×";
+          remove.setAttribute("aria-label", `Foto ${index + 1} entfernen`);
+          remove.className =
+            "absolute right-1 top-1 flex h-8 w-8 items-center justify-center rounded-full bg-hsb-black/80 text-lg font-bold text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-hsb-red";
+          remove.addEventListener("click", () => {
+            URL.revokeObjectURL(photo.url);
+            photos.splice(index, 1);
+            render();
+          });
+          item.appendChild(img);
+          item.appendChild(remove);
+          return item;
+        }),
+      );
+    }
+
+    async function processFiles(files: File[]) {
+      showError("");
+      const hintId = `${container.id}-hint`;
+      for (const file of files) {
+        if (photos.length >= MAX_PHOTOS) {
+          showError(`Maximal ${MAX_PHOTOS} Fotos. Entfernen Sie ein Bild, um ein anderes hinzuzufügen.`);
+          break;
+        }
+        try {
+          const blob = await shrink(file);
+          photos.push({ blob, url: URL.createObjectURL(blob) });
+          trackEvent(TrackingEvent.FileUploadAdd, { placement: "repair_photo" });
+          input?.removeAttribute("aria-invalid");
+          input?.setAttribute("aria-describedby", hintId);
+          if (alt) delete alt.dataset.emphasis;
+        } catch {
+          showError("Dieses Bildformat können wir nicht verarbeiten. Bitte ein JPG- oder PNG-Foto wählen.");
+        }
+      }
+      render();
+    }
+
+    function addFiles(files: FileList | File[]) {
+      if (sending) return;
+      const batch = Array.from(files);
+      pendingBatches += 1;
+      if (submit) submit.disabled = true;
+      form?.setAttribute("aria-busy", "true");
+      processing = processing.then(() => processFiles(batch)).finally(() => {
+        pendingBatches -= 1;
+        if (submit) submit.disabled = sending || pendingBatches > 0;
+        form?.setAttribute("aria-busy", String(sending || pendingBatches > 0));
+      });
+    }
+
+    input?.addEventListener("change", () => {
+      if (input.files?.length) addFiles(input.files);
+      input.value = "";
+    });
+
+    drop?.addEventListener("dragover", (event) => {
+      event.preventDefault();
+      drop.dataset.drag = "true";
+    });
+    drop?.addEventListener("dragleave", () => delete drop.dataset.drag);
+    drop?.addEventListener("drop", (event) => {
+      event.preventDefault();
+      delete drop.dataset.drag;
+      if (event.dataTransfer?.files.length) addFiles(event.dataTransfer.files);
+    });
+
+    form.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      if (!form || !submit || pendingBatches > 0 || sending) return;
+      const intent = currentIntent();
+      if (intent === "photo" && photos.length === 0) {
+        showError("Bitte fügen Sie ein Foto hinzu – oder fordern Sie stattdessen einen Rückruf oder Termin vor Ort an.");
+        const errorId = errorBox?.id || `${container.id}-error`;
+        const hintId = `${container.id}-hint`;
+        input?.setAttribute("aria-invalid", "true");
+        input?.setAttribute("aria-describedby", `${errorId} ${hintId}`);
+        if (alt) {
+          alt.dataset.emphasis = "true";
+          alt.scrollIntoView({ block: "center", behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
+          alt.querySelector<HTMLButtonElement>("[data-switch-intent]")?.focus({ preventScroll: true });
+        } else {
+          input?.focus();
+        }
+        return;
+      }
+      if (!form.reportValidity()) return;
+
+      const data = new FormData(form);
+      photos.forEach((photo, index) => {
+        const type = photo.blob.type || "image/jpeg";
+        const extension = type === "image/png" ? "png" : type === "image/webp" ? "webp" : "jpg";
+        data.append("photos", new File([photo.blob], `foto-${index + 1}.${extension}`, { type }));
+      });
+      data.set("page", window.location.pathname);
+
+      sending = true;
+      form.setAttribute("aria-busy", "true");
+      submit.disabled = true;
+      const label = submit.innerHTML;
+      submit.textContent = "Wird gesendet …";
+      showError("");
+      clearInvalid();
+
+      try {
+        const res = await fetch("/api/repair-photo", { method: "POST", body: data, headers: { Accept: "application/json" } });
+        if (res.status === 422) {
+          const body = (await res.json().catch(() => ({}))) as { fields?: unknown };
+          markInvalid(Array.isArray(body.fields) ? body.fields.filter((f): f is string => typeof f === "string") : []);
+          submit.disabled = false;
+          submit.innerHTML = label;
+          return;
+        }
+        if (!res.ok) throw new Error(String(res.status));
+        const result = (await res.json().catch(() => ({}))) as { confirmation?: unknown };
+        await trackAfterConfirmedLead(() =>
+          trackEventAndWait(TrackingEvent.LeadFormSubmit, { placement: "repair_photo", repair_intent: intent, photo_count: photos.length }),
+        );
+        photos.forEach((photo) => URL.revokeObjectURL(photo.url));
+        success?.querySelectorAll<HTMLElement>("[data-success-for]").forEach((el) => {
+          el.hidden = el.dataset.successFor !== intent;
+        });
+        if (result.confirmation === true && confirmation && confirmationEmail) {
+          confirmationEmail.textContent = String(data.get("email") ?? "");
+          confirmation.classList.remove("hidden");
+        }
+        form.classList.add("hidden");
+        success?.classList.remove("hidden");
+        success?.scrollIntoView({ block: "start", behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
+        success?.focus({ preventScroll: true });
+      } catch (err) {
+        showError(MESSAGES[Number((err as Error).message)] ?? FALLBACK);
+        submit.disabled = false;
+        submit.innerHTML = label;
+      } finally {
+        sending = false;
+        form.setAttribute("aria-busy", "false");
+      }
+    });
+  }
+
+  function initAllRepairForms() {
+    document.querySelectorAll<HTMLElement>("[data-repair-photo-container]").forEach((container) => {
+      if (container.dataset.initialized === "true") return;
+      container.dataset.initialized = "true";
+      initRepairPhotoForm(container);
+    });
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", initAllRepairForms);
+  } else {
+    initAllRepairForms();
+  }
+</script>
+
+<style>
+  /* Die globale Button-Klasse verbietet Umbrüche; am Handy würde der lange Text die Seite verbreitern. */
+  .repair-phone-cta {
+    max-width: 100%;
+    flex-wrap: wrap;
+    column-gap: 0.35em;
+    row-gap: 0;
+    padding-block: 0.75rem;
+    text-align: center;
+    white-space: normal;
+  }
+</style>

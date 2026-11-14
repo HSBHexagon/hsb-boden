@@ -179,3 +179,35 @@ def test_reconciliation_mismatch_triggers_alert_and_blocks_send(tmp_path: Path):
     alerts_file = tmp_path / "n8n_alerts.jsonl"
     alerts = [json.loads(line) for line in alerts_file.read_text(encoding="utf-8").splitlines() if line.strip()]
     assert any(a["alert_type"] == "RECONCILIATION_DRIFT" for a in alerts)
+
+
+def test_live_executor_gate_failure_emits_alert_and_fails_closed(tmp_path: Path):
+    from n8n_orchestrator import OrchestratorConfig, run_orchestrated_action
+
+    cfg = OrchestratorConfig(
+        state_dir=tmp_path,
+        max_budget_per_run=500,
+        allow_live_send=True,
+    )
+
+    def _failing_engine(_count: int):
+        raise RuntimeError("SEND_HEALTH_MISSING_OR_STALE")
+
+    result = run_orchestrated_action(
+        mode="send-gated",
+        count=500,
+        job_key="engine-health-block-001",
+        config=cfg,
+        leitstand_metrics={"optouts_unsuppressed": 0, "bounces_unsuppressed": 0},
+        live_executor=_failing_engine,
+    )
+
+    assert result["status"] == "ENGINE_EXECUTION_BLOCKED"
+    assert result["gate_status"] == "RED"
+    assert result["customer_emails_sent"] == 0
+    assert "SEND_HEALTH_MISSING_OR_STALE" in result["error"]
+
+    alerts_file = tmp_path / "n8n_alerts.jsonl"
+    alerts = [json.loads(line) for line in alerts_file.read_text(encoding="utf-8").splitlines() if line.strip()]
+    assert any(a["alert_type"] == "ENGINE_EXECUTION_BLOCKED" for a in alerts)
+

@@ -230,7 +230,26 @@ def run_orchestrated_action(
             return res
 
         if mode == "preflight":
-            exec_res = dry_run_executor(count) if dry_run_executor else {"customer_emails_sent": 0}
+            try:
+                exec_res = dry_run_executor(count) if dry_run_executor else {"customer_emails_sent": 0}
+            except RuntimeError as exc:
+                _emit_alert(
+                    state_dir,
+                    "ENGINE_EXECUTION_BLOCKED",
+                    f"Dry-Run durch Engine-Gate blockiert: {exc}",
+                    {"job_key": job_key, "mode": mode, "count": count, "error": str(exc)},
+                )
+                res = {
+                    "timestamp": _utc_now(),
+                    "job_key": job_key,
+                    "mode": mode,
+                    "status": "ENGINE_EXECUTION_BLOCKED",
+                    "gate_status": "RED",
+                    "customer_emails_sent": 0,
+                    "error": str(exc),
+                }
+                _append_jsonl(journal_path, res)
+                return res
             _record_job_key(state_dir, job_key, mode, "DRY_RUN_COMPLETED")
             res = {
                 "timestamp": _utc_now(),
@@ -263,7 +282,26 @@ def run_orchestrated_action(
                 _append_jsonl(journal_path, res)
                 return res
 
-            exec_res = live_executor(count) if live_executor else {"customer_emails_sent": 0}
+            try:
+                exec_res = live_executor(count) if live_executor else {"customer_emails_sent": 0}
+            except RuntimeError as exc:
+                _emit_alert(
+                    state_dir,
+                    "ENGINE_EXECUTION_BLOCKED",
+                    f"Live-Versand durch Engine-Gate blockiert: {exc}",
+                    {"job_key": job_key, "mode": mode, "count": count, "error": str(exc)},
+                )
+                res = {
+                    "timestamp": _utc_now(),
+                    "job_key": job_key,
+                    "mode": mode,
+                    "status": "ENGINE_EXECUTION_BLOCKED",
+                    "gate_status": "RED",
+                    "customer_emails_sent": 0,
+                    "error": str(exc),
+                }
+                _append_jsonl(journal_path, res)
+                return res
             _record_job_key(state_dir, job_key, mode, "LIVE_BATCH_EXECUTED")
             res = {
                 "timestamp": _utc_now(),

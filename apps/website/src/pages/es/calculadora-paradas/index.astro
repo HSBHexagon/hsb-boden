@@ -1,0 +1,67 @@
+---
+import BaseLayout from "../../../layouts/BaseLayout.astro";
+import PageHero from "../../../components/sections/PageHero.astro";
+import SanierungsRechner from "../../../components/calculator/SanierungsRechner.astro";
+import SpanishContactSection from "../../../components/forms/SpanishContactSection.astro";
+import { spanishAlternates, toSpanishPath } from "../../../lib/spanishPaths";
+import { buildBreadcrumbJsonLd } from "../../../lib/schema";
+
+export const prerender = true;
+
+const path = "/es/calculadora-paradas/";
+const title = "Calculadora de ventanas de rehabilitación | HSB Hexagon";
+const description =
+  "Calcule de forma orientativa las ventanas de rehabilitación para pavimentos industriales: superficie de nave, régimen de turnos y tiempos de curado por fases.";
+---
+
+<BaseLayout
+  lang="es"
+  alternates={spanishAlternates(path)}
+  title={title}
+  description={description}
+  path={path}
+  jsonLd={[
+    buildBreadcrumbJsonLd([
+      { name: "Inicio", path: toSpanishPath("/") },
+      { name: "Calculadora de ventanas de rehabilitación", path },
+    ]),
+  ]}
+>
+  <PageHero
+    lang="es"
+    eyebrow="Planificación operativa de paradas"
+    title="Calculadora de ventanas de rehabilitación: planificar fases de obra y tiempos de parada"
+    text="Minimice las interrupciones de producción: calcule de forma orientativa cómo dividir la superficie de su nave en fases viables según el modelo de turnos y el sistema de pavimento."
+    ctaLabel="Solicitar evaluación"
+    ctaHref="#contact"
+  />
+
+  <section class="section border-b border-hsb-line bg-white">
+    <div class="container max-w-5xl">
+      <SanierungsRechner lang="es" auditAnchor="#contact" />
+
+      <div class="mt-16 grid gap-8 md:grid-cols-3 text-hsb-steel">
+        <div class="rounded border border-hsb-line p-6 bg-hsb-mist/20">
+          <h3 class="font-bold text-hsb-black text-base">Rehabilitación de fin de semana</h3>
+          <p class="mt-2 text-xs leading-relaxed">
+            Inicio el viernes a las 18:00 h (preparación del soporte y granallado), instalación del sistema el sábado, curado el domingo según ficha técnica del fabricante y entrega a producción el lunes a las 06:00 h.
+          </p>
+        </div>
+        <div class="rounded border border-hsb-line p-6 bg-hsb-mist/20">
+          <h3 class="font-bold text-hsb-black text-base">Encapsulado contra el polvo</h3>
+          <p class="mt-2 text-xs leading-relaxed">
+            En rehabilitaciones con régimen de 3 turnos aislamos la zona de obra mediante tabiques móviles de protección con depresión controlada para evitar cualquier contaminación de las líneas contiguas.
+          </p>
+        </div>
+        <div class="rounded border border-hsb-line p-6 bg-hsb-mist/20">
+          <h3 class="font-bold text-hsb-black text-base">Curado y liberación de auditoría</h3>
+          <p class="mt-2 text-xs leading-relaxed">
+            Cada sistema presenta tiempos específicos de endurecimiento mecánico y químico. Documentamos la temperatura ambiente y la humedad relativa para una puesta en servicio segura.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <SpanishContactSection />
+</BaseLayout>

@@ -1,0 +1,84 @@
+---
+import BaseLayout from "../../../../../layouts/BaseLayout.astro";
+import PageHero from "../../../../../components/sections/PageHero.astro";
+import SpanishContactSection from "../../../../../components/forms/SpanishContactSection.astro";
+import { buildArticleJsonLd, buildBreadcrumbJsonLd } from "../../../../../lib/schema";
+
+import { spanishStaticAlternates } from "../../../../../lib/spanishStaticPaths";
+import { toSpanishPath } from "../../../../../lib/spanishPaths";
+
+export const prerender = true;
+
+const path = "/es/conocimiento/analisis-juntas/junta-erosionada/";
+const title = "Rehabilitar juntas erosionadas en pavimentos | HSB";
+const description = "Juntas erosionadas en la industria alimentaria: efectos del ácido láctico, las grasas y los productos CIP, y protección con juntas de resina de reacción.";
+---
+
+<BaseLayout
+  lang="es"
+  alternates={spanishStaticAlternates("/wissen/fugen-forensik/fuge-ausgewaschen/")}
+  title={title}
+  description={description}
+  path={path}
+  jsonLd={[
+    buildArticleJsonLd({ headline: "Juntas erosionadas: cuando la química de limpieza deteriora el pavimento", description, path, language: "es" }),
+    buildBreadcrumbJsonLd([
+      { name: "Inicio", path: toSpanishPath("/") },
+      { name: "Conocimiento", path: toSpanishPath("/wissen/") },
+      { name: "Análisis de juntas", path: toSpanishPath("/wissen/fugen-forensik/") },
+      { name: "Junta erosionada", path },
+    ]),
+  ]}
+>
+  <PageHero
+    ctaLabel="Solicitar asesoramiento"
+    ctaHref="#contact"
+    hideReferencesLink
+    eyebrow="Análisis de juntas · Caso 01"
+    title="Juntas erosionadas: cuando la química de limpieza deteriora el pavimento"
+    text="Juntas rebajadas, mortero pulverulento y agua sucia retenida: las juntas erosionadas son el defecto más frecuente en las auditorías de higiene IFS Food o BRC. Explicamos por qué fallan las juntas cementosas y cómo se organiza su rehabilitación con resinas de reacción durante la actividad de la planta."
+  />
+
+  <section class="section border-b border-hsb-line bg-white">
+    <div class="container max-w-4xl">
+      <div class="prose max-w-none text-hsb-steel">
+        <h2 class="text-2xl font-black text-hsb-black">El aspecto habitual del daño en la práctica</h2>
+        <p>
+          En muchas instalaciones alimentarias —especialmente en industrias lácteas, queserías, cervecerías y empresas cárnicas— se repite el mismo problema: las baldosas cerámicas permanecen intactas, pero el mortero de las juntas ha perdido varios milímetros o ha desaparecido por completo. Se forman surcos profundos junto a las piezas, donde se acumulan materia orgánica, restos de grasa y agua de lavado.
+        </p>
+
+        <div class="my-8 rounded border-l-4 border-hsb-red bg-hsb-mist p-6 text-hsb-black">
+          <h3 class="text-lg font-bold">La causa técnica: exposición alterna a ácidos y álcalis</h3>
+          <p class="mt-2 text-sm leading-6 text-hsb-steel">
+            Los morteros de juntas cementosos contienen hidróxido de calcio. Este componente básico es muy sensible a los ácidos orgánicos, por ejemplo al ácido láctico con pH 3,5–4,5 o al ácido acético. El ácido disuelve el calcio; el cemento pierde resistencia y se vuelve pulverulento. La limpieza posterior con espumas alcalinas y lanzas de alta presión de 100–150 bar arrastra mecánicamente el material deteriorado.
+          </p>
+        </div>
+
+        <h2 class="text-2xl font-black text-hsb-black">Riesgos operativos: por qué es necesario actuar con rapidez</h2>
+        <ul class="space-y-3">
+          <li><strong>No conformidades en auditorías IFS Food / BRC:</strong> las juntas abiertas se señalan como posibles focos de contaminación por moho y listeria.</li>
+          <li><strong>Infiltración bajo el revestimiento:</strong> el agua y los productos de limpieza penetran bajo las baldosas, reblandecen el mortero de colocación y pueden dar lugar, en pocos meses, a piezas huecas y roturas.</li>
+          <li><strong>Formación de olores:</strong> en los rebajes de las juntas, los restos de leche o jugos cárnicos se descomponen sin oxígeno y provocan olores difíciles de controlar.</li>
+        </ul>
+
+        <h2 class="mt-10 text-2xl font-black text-hsb-black">La rehabilitación técnica según AGI S 40</h2>
+        <p>
+          Extender mortero nuevo por encima del daño no suele durar más de unas semanas. El procedimiento de rehabilitación de HSB se organiza por etapas:
+        </p>
+        <ol class="space-y-4">
+          <li><strong>1. Fresado mecánico:</strong> las juntas deterioradas se vacían con fresas diamantadas, con flancos paralelos, hasta la profundidad resistente que requiera el sistema de reparación elegido.</li>
+          <li><strong>2. Secado y desengrasado:</strong> secado exhaustivo con aire caliente y neutralización química de los flancos para eliminar la humedad residual.</li>
+          <li><strong>3. Rejuntado con resina de reacción:</strong> aplicación de mortero epoxi de 2 componentes o resina de viniléster novolaca de alta resistencia química mediante lechada o prensado de juntas.</li>
+          <li><strong>4. Puesta de nuevo en servicio:</strong> solo después de comprobar el curado y obtener la autorización según la ficha del sistema; las paradas deben coordinarse para cada proyecto.</li>
+        </ol>
+
+        <div class="mt-10 flex flex-wrap items-center gap-4 border-t border-hsb-line pt-8">
+          <a class="button-primary" href={toSpanishPath("/beanspruchungs-check/")}>Ir al comprobador de cargas</a>
+          <a class="button-secondary-dark" href={toSpanishPath("/wissen/fugen-forensik/")}>Ver todos los tipos de daños</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <SpanishContactSection />
+</BaseLayout>

@@ -1,27 +1,50 @@
 ---
 import { regionalGuides } from "../../data/regionalGuides";
+import { spanishRegionalGuides } from "../../data/es/regionalGuides";
+import { spanishServices } from "../../data/es/services";
+import { spanishIndustries } from "../../data/es/industries";
+import { spanishArticles } from "../../data/es/articles";
 import { getArticles, getIndustries, getServices } from "../../lib/content";
+import { toSpanishPath } from "../../lib/spanishPaths";
 
-interface Props { slug: keyof typeof regionalGuides; }
-const { slug } = Astro.props;
-const guide = regionalGuides[slug];
-const services = guide.serviceSlugs.map((key) => getServices().find((entry) => entry.slug === key)).filter((x) => x !== undefined);
-const industries = guide.industrySlugs.map((key) => getIndustries().find((entry) => entry.slug === key)).filter((x) => x !== undefined);
-const article = getArticles().find((entry) => entry.slug === guide.articleSlug);
+interface Props {
+  slug: keyof typeof regionalGuides;
+  lang?: "de" | "es";
+}
+const { slug, lang = Astro.url.pathname.startsWith("/es/") ? "es" : "de" } = Astro.props;
+const isSpanish = lang === "es";
+const guide = isSpanish ? spanishRegionalGuides[slug] : regionalGuides[slug];
+const services = guide.serviceSlugs
+  .map((key) =>
+    isSpanish
+      ? spanishServices.find((entry) => entry.slug === key)
+      : getServices().find((entry) => entry.slug === key),
+  )
+  .filter((x) => x !== undefined);
+const industries = guide.industrySlugs
+  .map((key) =>
+    isSpanish
+      ? spanishIndustries.find((entry) => entry.slug === key)
+      : getIndustries().find((entry) => entry.slug === key),
+  )
+  .filter((x) => x !== undefined);
+const article = isSpanish
+  ? spanishArticles.find((entry) => entry.slug === guide.articleSlug)
+  : getArticles().find((entry) => entry.slug === guide.articleSlug);
 ---
 
 <section class="section" aria-labelledby="region-entscheidung">
   <div class="container max-w-5xl">
-    <p class="eyebrow">Planung für das Einsatzgebiet {guide.label}</p>
+    <p class="eyebrow">{isSpanish ? `Planificación para la zona de ${guide.label}` : `Planung für das Einsatzgebiet ${guide.label}`}</p>
     <h2 class="h2 mt-3" id="region-entscheidung">{guide.focus}</h2>
     <p class="lead mt-5 max-w-4xl">{guide.summary}</p>
 
     <div class="mt-9 rounded border border-hsb-line bg-hsb-mist p-6 lg:p-8">
-      <h3 class="h3">Drei Fragen vor der Systementscheidung</h3>
+      <h3 class="h3">{isSpanish ? "Tres preguntas antes de elegir el sistema" : "Drei Fragen vor der Systementscheidung"}</h3>
       <ol class="mt-5 grid gap-4 lg:grid-cols-3">
         {guide.diagnosticQuestions.map((question, index) => (
           <li class="border-l-2 border-hsb-red bg-white px-5 py-4">
-            <span class="text-xs font-black text-hsb-red">PRÜFPUNKT {index + 1}</span>
+            <span class="text-xs font-black text-hsb-red">{isSpanish ? `PUNTO DE CONTROL ${index + 1}` : `PRÜFPUNKT ${index + 1}`}</span>
             <p class="mt-2 text-sm leading-7 text-hsb-steel">{question}</p>
           </li>
         ))}
@@ -30,20 +53,20 @@ const article = getArticles().find((entry) => entry.slug === guide.articleSlug);
 
     <div class="mt-10 grid gap-8 lg:grid-cols-2">
       <div>
-        <h3 class="h3">Technische Leistungen im Vergleich</h3>
-        <p class="mt-3 text-sm leading-7 text-hsb-steel">Die passende Konstruktion ergibt sich aus Medium, Temperatur, Tragfähigkeit, Untergrund und Nutzung. Die folgenden Leistungen erläutern die technischen Unterschiede.</p>
+        <h3 class="h3">{isSpanish ? "Comparación de servicios técnicos" : "Technische Leistungen im Vergleich"}</h3>
+        <p class="mt-3 text-sm leading-7 text-hsb-steel">{isSpanish ? "La solución adecuada depende de los medios químicos, la temperatura, la capacidad de carga, el soporte y el uso. Los siguientes servicios explican las diferencias técnicas." : "Die passende Konstruktion ergibt sich aus Medium, Temperatur, Tragfähigkeit, Untergrund und Nutzung. Die folgenden Leistungen erläutern die technischen Unterschiede."}</p>
         <ul class="mt-5 space-y-3">
           {services.map((service) => (
-            <li><a class="font-bold text-hsb-red underline-offset-4 hover:underline" href={`/leistungen/${service.slug}/`}>{service.title}</a></li>
+            <li><a class="font-bold text-hsb-red underline-offset-4 hover:underline" href={isSpanish ? toSpanishPath(`/leistungen/${service.slug}/`) : `/leistungen/${service.slug}/`}>{service.title}</a></li>
           ))}
         </ul>
       </div>
       <div>
-        <h3 class="h3">Anforderungen nach Produktionsbereich</h3>
-        <p class="mt-3 text-sm leading-7 text-hsb-steel">Branchen unterscheiden sich insbesondere durch Reinigungsabläufe, Chemikalien, Hygieneanforderungen und Materialtransport.</p>
+        <h3 class="h3">{isSpanish ? "Requisitos según el sector de producción" : "Anforderungen nach Produktionsbereich"}</h3>
+        <p class="mt-3 text-sm leading-7 text-hsb-steel">{isSpanish ? "Los sectores se diferencian sobre todo por los procesos de limpieza, los productos químicos, las exigencias higiénicas y el transporte interno." : "Branchen unterscheiden sich insbesondere durch Reinigungsabläufe, Chemikalien, Hygieneanforderungen und Materialtransport."}</p>
         <ul class="mt-5 space-y-3">
           {industries.map((industry) => (
-            <li><a class="font-bold text-hsb-red underline-offset-4 hover:underline" href={`/branchen/${industry.slug}/`}>{industry.title}</a></li>
+            <li><a class="font-bold text-hsb-red underline-offset-4 hover:underline" href={isSpanish ? toSpanishPath(`/branchen/${industry.slug}/`) : `/branchen/${industry.slug}/`}>{industry.title}</a></li>
           ))}
         </ul>
       </div>
@@ -51,12 +74,12 @@ const article = getArticles().find((entry) => entry.slug === guide.articleSlug);
 
     {article && (
       <div class="mt-10 border-t border-hsb-line pt-6">
-        <p class="eyebrow">Fachliche Vertiefung</p>
-        <a class="mt-2 inline-block font-bold text-hsb-red underline-offset-4 hover:underline" href={`/wissen/${article.slug}/`}>{article.title}</a>
+        <p class="eyebrow">{isSpanish ? "Profundización técnica" : "Fachliche Vertiefung"}</p>
+        <a class="mt-2 inline-block font-bold text-hsb-red underline-offset-4 hover:underline" href={isSpanish ? toSpanishPath(`/wissen/${article.slug}/`) : `/wissen/${article.slug}/`}>{article.title}</a>
         <p class="mt-2 max-w-3xl text-sm leading-7 text-hsb-steel">{article.intro}</p>
       </div>
     )}
-    <p class="mt-8 text-sm leading-7 text-hsb-steel">HSB hat den Unternehmenssitz in Gronau. Eine Projektbesichtigung und die Ausführung im angegebenen Einsatzgebiet werden individuell abgestimmt; aus dieser Seite folgt keine zusätzliche Niederlassung oder bereits ausgeführte regionale Referenz.</p>
-    <a class="mt-2 inline-flex min-h-11 items-center font-bold text-hsb-red underline-offset-4 hover:underline" href="/referenzen/">Veröffentlichte Referenzbeispiele ansehen</a>
+    <p class="mt-8 text-sm leading-7 text-hsb-steel">{isSpanish ? "HSB tiene su sede empresarial en Gronau (Unternehmenssitz in Gronau). La visita técnica y la ejecución en la región indicada se coordinan de forma individual; esta página no implica una delegación adicional ni una referencia regional ya publicada." : "HSB hat den Unternehmenssitz in Gronau. Eine Projektbesichtigung und die Ausführung im angegebenen Einsatzgebiet werden individuell abgestimmt; aus dieser Seite folgt keine zusätzliche Niederlassung oder bereits ausgeführte regionale Referenz."}</p>
+    <a class="mt-2 inline-flex min-h-11 items-center font-bold text-hsb-red underline-offset-4 hover:underline" href={isSpanish ? "/es/referencias/" : "/referenzen/"}>{isSpanish ? "Ver ejemplos de referencias publicadas" : "Veröffentlichte Referenzbeispiele ansehen"}</a>
   </div>
 </section>

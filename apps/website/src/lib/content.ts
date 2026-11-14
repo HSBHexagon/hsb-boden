@@ -1,5 +1,9 @@
 import { articles } from "../data/articles";
 import { clientLocations } from "../data/clientLocations";
+import { spanishArticles } from "../data/es/articles";
+import { spanishIndustries } from "../data/es/industries";
+import { spanishRegionalGuides } from "../data/es/regionalGuides";
+import { spanishServices } from "../data/es/services";
 import { industries } from "../data/industries";
 import { jobs } from "../data/jobs";
 import { references } from "../data/references";
@@ -466,5 +470,127 @@ export function getAllPublicPages() {
         "Industrieboden Sachsen-Anhalt: Bestandsaufnahme, chemische Belastung und WHG-/AwSV-relevante Abdichtungen technisch klären.",
       canonicalPath: "/standorte/sachsen-anhalt/",
     },
+    {
+      h1: "Servicios para pavimentos industriales y protección antiácida",
+      seoTitle: "Servicios: cerámica vibrada, antiácidos y WHG | HSB",
+      description:
+        "Ingeniería de pavimentos industriales: cerámica vibrada según AGI S 40, protección antiácida, PU-cemento, resina epoxi, drenaje, impermeabilización WHG y rehabilitación.",
+      canonicalPath: "/es/servicios/",
+    },
+    {
+      h1: "Cada planta de producción presenta un perfil de cargas distinto",
+      seoTitle: "Pavimentos industriales por sector | HSB Hexagon",
+      description:
+        "Pavimentos industriales para industria alimentaria, lácteas, cerveceras, industria química, farmacéutica, panaderías industriales y cocinas centrales.",
+      canonicalPath: "/es/sectores/",
+    },
+    {
+      h1: "Pavimentos industriales ejecutados en áreas críticas de producción",
+      seoTitle: "Referencias en pavimentos industriales y antiácidos | HSB",
+      description:
+        "Referencias de pavimentos industriales cerámicos, protección antiácida, drenaje y rehabilitación en producción alimentaria, lácteas, cervecerías e industria química.",
+      canonicalPath: "/es/referencias/",
+    },
+    {
+      h1: "Conocimiento sobre pavimentos industriales, protección antiácida y rehabilitación",
+      seoTitle: "Conocimiento técnico sobre pavimentos industriales | HSB",
+      description:
+        "Artículos técnicos y guías prácticas sobre PU-cemento, cerámica vibrada AGI S 40, pavimentos para lácteas, baldosas antiácidas, drenaje y rehabilitación.",
+      canonicalPath: "/es/conocimiento/",
+    },
+    {
+      h1: "Análisis técnico de cargas para pavimentos de producción",
+      seoTitle: "Análisis de cargas para pavimentos industriales | HSB",
+      description:
+        "Introduzca medio químico, temperatura, carga mecánica y ventana de intervención para obtener una orientación técnica entre cerámica vibrada AGI S 40, PU-cemento o WHG § 62.",
+      canonicalPath: "/es/analisis-cargas/",
+    },
+    {
+      h1: "Calculadora de ventanas de rehabilitación: planificar fases de obra y tiempos de parada",
+      seoTitle: "Calculadora de ventanas de rehabilitación | HSB Hexagon",
+      description:
+        "Calcule de forma orientativa las ventanas de rehabilitación para pavimentos industriales: superficie de nave, régimen de turnos y tiempos de curado por fases.",
+      canonicalPath: "/es/calculadora-paradas/",
+    },
+    {
+      h1: "Análisis de juntas: comprender los daños habituales en pavimentos industriales",
+      seoTitle: "Análisis de juntas y daños del pavimento industrial | HSB",
+      description:
+        "Diagnóstico técnico de daños en pavimentos industriales: juntas erosionadas, baldosas huecas, fisuras junto a canaletas y choque térmico. Causas y rehabilitación.",
+      canonicalPath: "/es/conocimiento/analisis-juntas/",
+    },
+    {
+      h1: "Juntas erosionadas: cuando los productos de limpieza degradan el pavimento",
+      seoTitle: "Rehabilitación de juntas erosionadas en pavimentos | HSB",
+      description:
+        "Juntas erosionadas en la industria alimentaria: cómo el ácido láctico, las grasas y los limpiadores CIP degradan las juntas cementosas y cómo protegen las resinas de reacción.",
+      canonicalPath: "/es/conocimiento/analisis-juntas/junta-erosionada/",
+    },
+    {
+      h1: "Baldosas huecas y rotura de piezas bajo el paso de carretillas",
+      seoTitle: "Rehabilitación de baldosas huecas y roturas de bordes | HSB",
+      description:
+        "Baldosas huecas y roturas de piezas: causas por apoyo incompleto y tensiones de cizallamiento, y rehabilitación mediante colocación por vibración según AGI S 40.",
+      canonicalPath: "/es/conocimiento/analisis-juntas/baldosas-huecas/",
+    },
+    {
+      h1: "Bordes de canaleta agrietados: el encuentro crítico entre el acero y el pavimento",
+      seoTitle: "Rehabilitar bordes de canaletas y encuentros | HSB",
+      description:
+        "Fisuras junto a canaletas de drenaje: por qué el acero inoxidable y el hormigón se fisuran sin junta híbrida elástica y cómo HSB ejecuta encuentros duraderos.",
+      canonicalPath: "/es/conocimiento/analisis-juntas/fisuras-borde-canaleta/",
+    },
+    {
+      h1: "Medias cañas con filtraciones: un punto crítico en el encuentro con la pared",
+      seoTitle: "Daño habitual: medias cañas y encuentros con filtraciones | HSB",
+      description:
+        "Medias cañas y zócalos con filtraciones en la industria alimentaria: cómo penetra la humedad tras el zócalo, genera focos bacterianos y cómo se mantienen estancos los sistemas desacoplados.",
+      canonicalPath: "/es/conocimiento/analisis-juntas/filtraciones-media-cana/",
+    },
+    {
+      h1: "Choque térmico: cuando el agua caliente de limpieza desprende los revestimientos",
+      seoTitle: "Corregir daños por choque térmico y fisuras | HSB",
+      description:
+        "Choque térmico en el pavimento industrial: por qué el agua caliente de limpieza sobre un soporte frío desprende revestimientos y qué sistemas deben estudiarse según las cargas.",
+      canonicalPath: "/es/conocimiento/analisis-juntas/danos-choque-termico/",
+    },
+    {
+      h1: "Estructura de un pavimento vibrado: capas, colocación y AGI S 40",
+      seoTitle: "Estructura de un pavimento vibrado: capas y AGI S 40 | HSB",
+      description:
+        "¿Cómo se compone un pavimento vibrado? Soporte, puente de adherencia, lecho de mortero, baldosas para vibrado y juntas en resumen, con criterios de planificación según AGI S 40.",
+      canonicalPath: "/es/conocimiento/estructura-pavimento-vibrado-agi-s-40/",
+    },
+    {
+      h1: "Protocolo de recepción de pavimentos industriales: qué aporta una evaluación técnica",
+      seoTitle: "Protocolo de recepción y lista IFS de pavimentos | HSB",
+      description:
+        "Modelo de protocolo de recepción para pavimentos industriales: comprobación según DIN 18202, pendientes, adherencia, encuentros de canaletas y lista de control para auditorías IFS/BRC.",
+      canonicalPath: "/es/conocimiento/protocolo-recepcion-pavimentos/",
+    },
+    ...spanishServices.map((service) => ({
+      h1: service.h1,
+      seoTitle: service.seoTitle,
+      description: service.description,
+      canonicalPath: `/es/servicios/${service.localizedSlug}/`,
+    })),
+    ...spanishIndustries.map((industry) => ({
+      h1: industry.h1,
+      seoTitle: industry.seoTitle,
+      description: industry.description,
+      canonicalPath: `/es/sectores/${industry.localizedSlug}/`,
+    })),
+    ...spanishArticles.map((article) => ({
+      h1: article.h1,
+      seoTitle: article.seoTitle,
+      description: article.description,
+      canonicalPath: `/es/conocimiento/${article.localizedSlug}/`,
+    })),
+    ...Object.entries(spanishRegionalGuides).map(([slug, guide]) => ({
+      h1: `Especialista en pavimentos industriales en ${guide.label}`,
+      seoTitle: `Pavimento industrial ${guide.label} | HSB Hexagon`,
+      description: `Pavimento industrial en ${guide.label}: ${guide.focus.toLowerCase()}. Evaluación técnica según medios químicos, juntas y ventanas operativas.`,
+      canonicalPath: `/es/regiones/${slug}/`,
+    })),
   ];
 }

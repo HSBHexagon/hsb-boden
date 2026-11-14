@@ -3,6 +3,7 @@ import BaseLayout from "../../../layouts/BaseLayout.astro";
 import PageHero from "../../../components/sections/PageHero.astro";
 import LeadFormSection from "../../../components/forms/LeadFormSection.astro";
 import { buildArticleJsonLd, buildBreadcrumbJsonLd } from "../../../lib/schema";
+import { spanishAlternates } from "../../../lib/spanishPaths";
 
 export const prerender = true;
 
@@ -12,6 +13,7 @@ const description = "Risse an Entwässerungsrinnen: Warum Edelstahl und Beton oh
 ---
 
 <BaseLayout
+  alternates={spanishAlternates(path)}
   title={title}
   description={description}
   path={path}
@@ -58,7 +60,7 @@ const description = "Risse an Entwässerungsrinnen: Warum Edelstahl und Beton oh
           HSB plant und baut Entwässerungsrinnen nicht als isoliertes Bauteil, sondern als integrale Systemeinheit:
         </p>
         <ol class="space-y-4">
-          <li><strong>1. Massive Rinnenkörper mit Randeinfassung:</strong> V4A-Rinnen mit angeschweißten Rinnenverankerungspratzen, die im 30-cm-Abstand formschlüssig in den Unterbeton verdübelt werden.</li>
+          <li><strong>1. Massive Rinnenkörper mit Randeinfassung:</strong> V4A-Rinnen mit angeschweißten Rinnenverankerungspratzen, die nach Rinnenstatik und Herstellerangabe formschlüssig in den Unterbeton eingebunden werden.</li>
           <li><strong>2. Kraftschlüssiger Reaktionsharz-Unterguss:</strong> Vollflächige Unterfütterung des Rinnenflansches mit schrumpffreiem Epoxidharz-Vergussmörtel zur Aufnahme dynamischer Radstöße.</li>
           <li><strong>3. Dauerelastische Hybrid-Dehnungsfuge:</strong> Einbau einer objektspezifisch dimensionierten, chemikalien- und mikrobenbeständigen Polyurethan- oder MS-Polymer-Fuge mit geschlossenzelligem PE-Hinterfüllprofil (Zweiflankenhaftung).</li>
           <li><strong>4. Höhengleicher Übergang:</strong> Rinnenoberkante wird entsprechend dem freigegebenen Anschlussdetail zum angrenzenden Fliesenbelag gesetzt, um Anfahrkanten für Staplerräder auszuschließen.</li>

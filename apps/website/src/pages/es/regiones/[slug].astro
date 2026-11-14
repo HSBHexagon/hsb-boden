@@ -1,0 +1,56 @@
+---
+import SpanishContactSection from "../../../components/forms/SpanishContactSection.astro";
+import PageHero from "../../../components/sections/PageHero.astro";
+import BaseLayout from "../../../layouts/BaseLayout.astro";
+import RegionalDecisionGuide from "../../../components/sections/RegionalDecisionGuide.astro";
+import type { regionalGuides } from "../../../data/regionalGuides";
+import { spanishRegionalGuides } from "../../../data/es/regionalGuides";
+import { spanishAlternates, toSpanishPath } from "../../../lib/spanishPaths";
+import { buildBreadcrumbJsonLd, buildRegionalServiceJsonLd } from "../../../lib/schema";
+
+export const prerender = true;
+
+export function getStaticPaths() {
+  return Object.entries(spanishRegionalGuides).map(([slug, guide]) => ({
+    params: { slug },
+    props: { slug, guide },
+  }));
+}
+
+const { slug, guide } = Astro.props;
+const path = `/es/regiones/${slug}/`;
+const title = `Pavimento industrial ${guide.label} | HSB Hexagon`;
+const description = `Pavimento industrial en ${guide.label}: ${guide.focus.toLowerCase()}. Evaluación técnica según medios químicos, juntas y ventanas operativas.`;
+---
+
+<BaseLayout
+  lang="es"
+  alternates={spanishAlternates(path)}
+  title={title}
+  description={description}
+  path={path}
+  jsonLd={[
+    buildRegionalServiceJsonLd(guide.label, path),
+    buildBreadcrumbJsonLd([
+      { name: "Inicio", path: toSpanishPath("/") },
+      { name: `Región ${guide.label}`, path },
+    ]),
+  ]}
+>
+  <PageHero
+    lang="es"
+    eyebrow={`Región ${guide.label}`}
+    title={`Especialista en pavimentos industriales en ${guide.label}`}
+    text={`Diseño técnico y ejecución de pavimentos industriales para plantas en ${guide.label}. La solución adecuada depende de las solicitaciones químicas, térmicas y mecánicas reales.`}
+    ctaLabel="Solicitar evaluación"
+    ctaHref="#contact"
+    image={{
+      src: "/media/hsb/projekte/keramik-halle-rinnen.webp",
+      alt: "Pavimento industrial cerámico con baldosas hexagonales y canaletas de drenaje integradas",
+    }}
+  />
+
+  <RegionalDecisionGuide slug={slug as keyof typeof regionalGuides} lang="es" />
+
+  <SpanishContactSection />
+</BaseLayout>

@@ -1,0 +1,130 @@
+---
+import BaseLayout from "../../../../layouts/BaseLayout.astro";
+import PageHero from "../../../../components/sections/PageHero.astro";
+import SpanishContactSection from "../../../../components/forms/SpanishContactSection.astro";
+import { buildArticleJsonLd, buildBreadcrumbJsonLd } from "../../../../lib/schema";
+
+import { spanishStaticAlternates } from "../../../../lib/spanishStaticPaths";
+import { toSpanishPath } from "../../../../lib/spanishPaths";
+
+export const prerender = true;
+
+const path = "/es/conocimiento/estructura-pavimento-vibrado-agi-s-40/";
+const title = "Estructura del pavimento vibrado y AGI S 40 | HSB";
+const headline = "Estructura del pavimento vibrado: capas, colocación y AGI S 40";
+const description = "Cómo se estructura un pavimento vibrado: soporte, puente de adherencia, lecho de mortero, baldosas y juntas, con criterios de planificación de AGI S 40.";
+---
+
+<BaseLayout
+  lang="es"
+  alternates={spanishStaticAlternates("/wissen/ruettelkeramik-agi-s-40/")}
+  title={title}
+  description={description}
+  path={path}
+  jsonLd={[
+    buildArticleJsonLd({ headline, description, path, language: "es" }),
+    buildBreadcrumbJsonLd([
+      { name: "Inicio", path: toSpanishPath("/") },
+      { name: "Conocimiento", path: toSpanishPath("/wissen/") },
+      { name: "Cerámica vibrada AGI S 40", path },
+    ]),
+  ]}
+>
+  <PageHero
+    ctaLabel="Solicitar asesoramiento"
+    ctaHref="#contact"
+    hideReferencesLink
+    eyebrow="Normativa técnica y construcción industrial"
+    title={headline}
+    text="Un pavimento vibrado es un sistema coordinado de soporte, puente de adherencia, lecho de mortero, revestimiento cerámico y juntas. Esta guía explica sus capas, la colocación por vibración y el alcance de AGI S 40 para pavimentos resistentes a sustancias químicas. La configuración concreta depende de las cargas y de los justificantes del producto."
+  />
+
+  <section class="section border-b border-hsb-line bg-white">
+    <div class="container max-w-4xl">
+      <div class="prose max-w-none text-hsb-steel">
+        <p>
+          ¿Está planificando un pavimento nuevo o la rehabilitación de una zona de producción?
+          En la página del servicio <a href={toSpanishPath("/leistungen/keramische-industrieboeden/")}>pavimentos vibrados y cerámicos industriales</a>
+          encontrará aplicaciones y criterios de selección. Para comparar con otro sistema, consulte nuestra
+          <a href={toSpanishPath("/wissen/pu-beton-oder-keramischer-industrieboden/")}>guía sobre PU-cemento y cerámica</a>.
+        </p>
+        <h2 class="text-2xl font-black text-hsb-black">¿Qué regula el documento técnico AGI S 40?</h2>
+        <p>
+          El documento técnico <strong>AGI S 40</strong>, titulado <em>«Pavimentos químicamente resistentes colocados mediante vibración (construcción de protección contra ácidos)»</em> (edición de mayo de 1999), está publicado por la Arbeitsgemeinschaft Industriebau e. V. y regula la planificación, la ejecución y el aseguramiento de la calidad de revestimientos cerámicos para la protección industrial contra ácidos. Se dirige a instalaciones cuyos pavimentos deben soportar simultáneamente ataques químicos intensos —ácidos, álcalis y grasas— y acciones mecánicas como el tráfico de carretillas y los impactos dinámicos de las ruedas.
+        </p>
+
+        <div class="my-8 rounded border-l-4 border-hsb-red bg-hsb-mist p-6 text-hsb-black">
+          <h3 class="text-lg font-bold">La diferencia esencial respecto a la colocación manual</h3>
+          <p class="mt-2 text-sm leading-6 text-hsb-steel">
+            Un método de colocación inadecuado o una ejecución insuficiente pueden dejar huecos bajo las baldosas. Bajo el paso de carretillas con ruedas duras, la pieza se rompe precisamente en esas zonas. En la <strong>colocación mecánica por vibración</strong> según AGI S 40, las piezas se asientan en el lecho de mortero plástico mediante vibradores de alta frecuencia. La vibración fluidifica brevemente el mortero por efecto tixotrópico. El procedimiento puede favorecer un alto grado de apoyo; la ausencia efectiva de huecos debe comprobarse. Durante el proceso, el mortero puede ascender por los laterales de las juntas.
+          </p>
+        </div>
+
+        <h2 class="text-2xl font-black text-hsb-black">Comparación de prestaciones técnicas</h2>
+        <div class="not-prose my-6 overflow-x-auto" role="region" aria-label="Comparación de prestaciones de la colocación manual y AGI S 40; tabla con desplazamiento horizontal" tabindex="0">
+          <table class="w-full text-left text-sm border border-hsb-line">
+            <thead class="bg-hsb-mist text-hsb-black">
+              <tr>
+                <th class="p-3 border-b border-hsb-line">Parámetro de prestación</th>
+                <th class="p-3 border-b border-hsb-line">Baldosa colocada manualmente</th>
+                <th class="p-3 border-b border-hsb-line text-hsb-red font-bold">Cerámica vibrada según AGI S 40</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-hsb-line text-hsb-steel">
+              <tr>
+                <td class="p-3 font-semibold text-hsb-black">Grado de apoyo (lecho completo)</td>
+                <td class="p-3">Depende de la ejecución</td>
+                <td class="p-3 font-bold text-hsb-black">Se busca un alto grado de apoyo; debe verificarse</td>
+              </tr>
+              <tr>
+                <td class="p-3 font-semibold text-hsb-black">Resistencia a compresión del sistema</td>
+                <td class="p-3">Depende del mortero y del soporte</td>
+                <td class="p-3 font-bold text-hsb-black">Resistencia a compresión según la ficha del fabricante</td>
+              </tr>
+              <tr>
+                <td class="p-3 font-semibold text-hsb-black">Resistencia térmica</td>
+                <td class="p-3">Únicamente según la aprobación del sistema</td>
+                <td class="p-3 font-bold text-hsb-black">Depende del sistema y de las sustancias; comprobar la ficha técnica</td>
+              </tr>
+              <tr>
+                <td class="p-3 font-semibold text-hsb-black">Carga puntual (ruedas Vulkollan)</td>
+                <td class="p-3">Riesgo de rotura si existen huecos</td>
+                <td class="p-3 font-bold text-hsb-black">Capacidad de carga según el grado de apoyo y su justificación</td>
+              </tr>
+              <tr>
+                <td class="p-3 font-semibold text-hsb-black">Material de rejuntado</td>
+                <td class="p-3">Junta cementosa o de dispersión</td>
+                <td class="p-3 font-bold text-hsb-black">Resina epoxi de 2 componentes o resina novolaca</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h2 class="text-2xl font-black text-hsb-black">Aplicaciones industriales habituales</h2>
+        <p>La cerámica vibrada según AGI S 40 se utiliza donde el fallo del pavimento puede comprometer la continuidad de la actividad:</p>
+        <ul class="space-y-2">
+          <li><strong>Industrias lácteas y queserías:</strong> resistencia al ácido láctico, la salmuera y la limpieza CIP diaria con productos calientes, según la aprobación del sistema.</li>
+          <li><strong>Cervecerías e industria de bebidas:</strong> protección frente a ácidos de frutas, ácido carbónico, álcalis y carros pesados para barriles.</li>
+          <li><strong>Industrias cárnicas y de alimentos preparados:</strong> resistencia a grasas, sangre y proteínas, con la resistencia al deslizamiento exigida para el proyecto.</li>
+          <li><strong>Industria química y producción de baterías:</strong> protección contra ácidos según WHG § 62 y resistencia a ácidos inorgánicos, como el sulfúrico o el clorhídrico.</li>
+        </ul>
+
+        <h2 class="mt-10 text-2xl font-black text-hsb-black">Capas de un pavimento vibrado según AGI S 40</h2>
+        <ol class="space-y-4">
+          <li><strong>1. Soporte de hormigón resistente:</strong> granallado o fresado, con resistencia a tracción superficial comprobada según las exigencias del proyecto y del sistema.</li>
+          <li><strong>2. Puente de adherencia o capa de impermeabilización:</strong> imprimación de resina de reacción o lechada de contacto modificada con polímeros.</li>
+          <li><strong>3. Mortero de colocación para vibrado:</strong> mortero especial de consistencia semiseca, mejorado con polímeros y granulometría optimizada; espesor definido según las cargas del proyecto y las instrucciones del fabricante.</li>
+          <li><strong>4. Baldosas extruidas o de gres para protección contra ácidos:</strong> piezas resistentes a la abrasión y a los ácidos, con espesor definido según las cargas y la aprobación del fabricante.</li>
+          <li><strong>5. Rejuntado resistente a sustancias químicas:</strong> llenado completo de las juntas con mortero epoxi de 2 componentes según AGI S 40.</li>
+        </ol>
+
+        <div class="mt-10 flex flex-wrap items-center gap-4 border-t border-hsb-line pt-8">
+          <a class="button-primary" href={toSpanishPath("/leistungen/keramische-industrieboeden/")}>Planificar el pavimento vibrado de su proyecto</a>
+          <a class="button-secondary-dark" href={toSpanishPath("/beanspruchungs-check/")}>Analizar las cargas en el comprobador</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <SpanishContactSection />
+</BaseLayout>

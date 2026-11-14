@@ -1,0 +1,84 @@
+---
+import BaseLayout from "../../../../../layouts/BaseLayout.astro";
+import PageHero from "../../../../../components/sections/PageHero.astro";
+import SpanishContactSection from "../../../../../components/forms/SpanishContactSection.astro";
+import { buildArticleJsonLd, buildBreadcrumbJsonLd } from "../../../../../lib/schema";
+
+import { spanishStaticAlternates } from "../../../../../lib/spanishStaticPaths";
+import { toSpanishPath } from "../../../../../lib/spanishPaths";
+
+export const prerender = true;
+
+const path = "/es/conocimiento/analisis-juntas/baldosas-huecas/";
+const title = "Reparar baldosas huecas y bordes rotos | HSB";
+const description = "Baldosas huecas y roturas: causas por apoyo incompleto y tensiones de cizallamiento, y rehabilitación mediante vibrado según AGI S 40.";
+---
+
+<BaseLayout
+  lang="es"
+  alternates={spanishStaticAlternates("/wissen/fugen-forensik/fliesen-hohl/")}
+  title={title}
+  description={description}
+  path={path}
+  jsonLd={[
+    buildArticleJsonLd({ headline: "Baldosas huecas y rotura de piezas bajo el tráfico de carretillas", description, path, language: "es" }),
+    buildBreadcrumbJsonLd([
+      { name: "Inicio", path: toSpanishPath("/") },
+      { name: "Conocimiento", path: toSpanishPath("/wissen/") },
+      { name: "Análisis de juntas", path: toSpanishPath("/wissen/fugen-forensik/") },
+      { name: "Baldosas huecas", path },
+    ]),
+  ]}
+>
+  <PageHero
+    ctaLabel="Solicitar asesoramiento"
+    ctaHref="#contact"
+    hideReferencesLink
+    eyebrow="Análisis de juntas · Caso 02"
+    title="Baldosas huecas y rotura de piezas bajo el tráfico de carretillas"
+    text="Sonido hueco al pisar, fisuras que atraviesan varias piezas y bordes que se desprenden al pasar las carretillas: los huecos bajo las baldosas preceden al fallo completo del pavimento. Explicamos por qué falla la colocación convencional y cómo la cerámica vibrada aporta un apoyo duradero."
+  />
+
+  <section class="section border-b border-hsb-line bg-white">
+    <div class="container max-w-4xl">
+      <div class="prose max-w-none text-hsb-steel">
+        <h2 class="text-2xl font-black text-hsb-black">Síntomas: cómo se manifiestan los huecos bajo las baldosas</h2>
+        <p>
+          Los huecos se desarrollan progresivamente. A menudo comienzan con fisuras finas junto a las juntas o con un sonido claramente hueco cuando las carretillas pasan por determinadas zonas de la nave. Cuando la carga puntual de ruedas duras de Vulkollan o poliamida —en ocasiones superior a 2 o 3 toneladas por eje— actúa sobre una baldosa sin apoyo completo, la pieza cerámica termina fracturándose.
+        </p>
+
+        <div class="my-8 rounded border-l-4 border-hsb-red bg-hsb-mist p-6 text-hsb-black">
+          <h3 class="text-lg font-bold">La causa técnica: huecos en la colocación en capa fina con llana dentada</h3>
+          <p class="mt-2 text-sm leading-6 text-hsb-steel">
+            En la edificación convencional, las baldosas se colocan habitualmente en capa fina con llana dentada. Una ejecución inadecuada en un entorno industrial puede dejar huecos y un apoyo insuficiente. Bajo la dilatación térmica o las cargas dinámicas de las ruedas, las zonas sin apoyo ceden. A ello pueden sumarse una preparación insuficiente del soporte —por ejemplo, sin granallado— o puentes de adherencia inadecuados.
+          </p>
+        </div>
+
+        <h2 class="text-2xl font-black text-hsb-black">Riesgos de seguridad e higiene en la planta</h2>
+        <ul class="space-y-3">
+          <li><strong>Riesgo para las carretillas:</strong> los desniveles repentinos y las roturas de piezas dañan las ruedas, los ejes y los elementos de elevación de las carretillas apiladoras.</li>
+          <li><strong>Mayor riesgo de accidente:</strong> obstáculos que pueden provocar tropiezos y una circulación irregular de los carros, con riesgo de vuelco de la carga.</li>
+          <li><strong>Acumulación de suciedad:</strong> bajo las baldosas huecas se forma un depósito de agua sucia que, por efecto de bombeo, expulsa líquido a la superficie cada vez que pasa una carga.</li>
+        </ul>
+
+        <h2 class="mt-10 text-2xl font-black text-hsb-black">La solución duradera: colocación mecánica por vibración (AGI S 40)</h2>
+        <p>
+          Para evitar físicamente los huecos, HSB utiliza la colocación por vibración según AGI S 40:
+        </p>
+        <ol class="space-y-4">
+          <li><strong>1. Preparación del soporte:</strong> granallado del hormigón hasta descubrir el árido resistente; resistencia a tracción superficial según la comprobación del soporte del proyecto.</li>
+          <li><strong>2. Lecho de colocación fresco:</strong> ejecución de un lecho de mortero de alta resistencia, con resistencia a compresión según el sistema previsto y la justificación de las cargas.</li>
+          <li><strong>3. Compactación mecánica por vibración:</strong> los vibradores de superficie asientan las piezas en el lecho de mortero con una frecuencia definida. El mortero asciende por las juntas para conseguir un <strong>apoyo lo más completo posible</strong>; deben verificarse la calidad de la colocación y la ausencia de huecos.</li>
+          <li><strong>4. Alta resistencia a compresión:</strong> resistencia según la ficha del fabricante; con apoyo completo, el pavimento permite el tráfico de carretillas y ruedas duras de carga.</li>
+        </ol>
+
+        <div class="mt-10 flex flex-wrap items-center gap-4 border-t border-hsb-line pt-8">
+          <a class="button-primary" href={toSpanishPath("/wissen/ruettelkeramik-agi-s-40/")}>Más información sobre cerámica vibrada según AGI S 40</a>
+          <a class="button-secondary-dark" href={toSpanishPath("/wissen/fugen-forensik/")}>Volver al resumen del análisis de juntas</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <SpanishContactSection />
+</BaseLayout>

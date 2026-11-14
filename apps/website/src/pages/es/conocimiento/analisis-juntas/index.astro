@@ -1,0 +1,151 @@
+---
+import BaseLayout from "../../../../layouts/BaseLayout.astro";
+import PageHero from "../../../../components/sections/PageHero.astro";
+import SpanishContactSection from "../../../../components/forms/SpanishContactSection.astro";
+import { buildBreadcrumbJsonLd } from "../../../../lib/schema";
+
+import { spanishStaticAlternates } from "../../../../lib/spanishStaticPaths";
+import { toSpanishPath } from "../../../../lib/spanishPaths";
+
+export const prerender = true;
+
+const path = "/es/conocimiento/analisis-juntas/";
+const title = "Análisis de juntas y daños del pavimento industrial | HSB";
+const description = "Diagnóstico técnico de daños en pavimentos industriales: juntas erosionadas, baldosas huecas, fisuras junto a canaletas y choque térmico. Causas y rehabilitación.";
+
+const cases = [
+  {
+    slug: "fuge-ausgewaschen",
+    title: "Junta erosionada y porosa",
+    symptom: "Flancos hundidos, mortero de juntas desmenuzado y agua sucia estancada en las juntas.",
+    cause: "Ataque de ácido láctico, ácidos de frutas o limpiadores alcalinos demasiado agresivos sobre un material de rejuntado inadecuado, como una junta cementosa en lugar de resina de reacción.",
+    risk: "Incumplimientos higiénicos en la auditoría IFS/BRC, focos bacterianos e infiltración bajo el lecho de las baldosas.",
+    solution: "Fresado mecánico de las juntas y nuevo rejuntado con resina epoxi o viniléster resistente a los ácidos.",
+    badge: "Sustancias químicas y limpieza",
+  },
+  {
+    slug: "fliesen-hohl",
+    title: "Baldosas huecas y rotura de piezas",
+    symptom: "Sonido hueco al caminar, fisuras al paso de carretillas y bordes astillados.",
+    cause: "Puente de adherencia deficiente, apoyo incompleto con huecos en el mortero o tensiones de cizallamiento por choque térmico.",
+    risk: "Pérdida total del revestimiento, riesgo de accidente para los vehículos industriales y entrada incontrolada de líquidos en el hormigón de apoyo.",
+    solution: "Retirada de las zonas dañadas y nueva colocación por vibración según AGI S 40, con comprobación técnica del apoyo.",
+    badge: "Cargas mecánicas y colocación",
+  },
+  {
+    slug: "rinnenkante-gerissen",
+    title: "Desprendimiento y fisuras junto a la canaleta",
+    symptom: "Fisura longitudinal junto a la canaleta de acero inoxidable, bordes de baldosas desprendidos y entrada de agua.",
+    cause: "Diferentes coeficientes de dilatación del acero inoxidable y el hormigón sin junta elástica de dilatación, o relleno insuficiente bajo la canaleta.",
+    risk: "Corrosión por picaduras y socavación de la solera alrededor de los desagües, con riesgo de hundimiento de elementos de la canaleta.",
+    solution: "Instalación de canaletas rígidas de acero inoxidable con patillas de anclaje, relleno resistente de mortero epoxi y junta híbrida permanentemente elástica.",
+    badge: "Drenaje y dilatación",
+  },
+  {
+    slug: "hohlkehle-undicht",
+    title: "Media caña con filtraciones y encuentro abierto con la pared",
+    symptom: "Humedad y moho en los encuentros con las paredes, baldosas del zócalo desprendidas y olor a humedad.",
+    cause: "Unión rígida entre solera flotante y pared, dilatación térmica o falta de impermeabilización de la media caña.",
+    risk: "Daños por humedad en la fábrica, deficiencia higiénica grave en auditorías y riesgo de contaminación en los bordes.",
+    solution: "Perfiles de media caña desacoplados de hormigón polímero o cerámica vibrada, con impermeabilización duradera de 2 componentes.",
+    badge: "Higiene y encuentros con paredes",
+  },
+  {
+    slug: "thermoschock-schaeden",
+    title: "Choque térmico y fisuras por cizallamiento",
+    symptom: "Desprendimiento del revestimiento en placas, fisuras reticuladas y pérdida de adherencia en grandes superficies.",
+    cause: "Contacto repentino de agua caliente —85–95 °C en limpieza CIP— con pavimentos refrigerados, por ejemplo a 4–8 °C en cámaras frigoríficas.",
+    risk: "Pérdida repentina de estanqueidad, accidentes por resbalones e interrupción inmediata de la producción.",
+    solution: "Sustitución por cerámica vibrada resistente al calor o PU-cemento para altas temperaturas; el espesor y los límites térmicos deben ajustarse a la aprobación del sistema concreto.",
+    badge: "Temperatura y agua caliente",
+  },
+];
+---
+
+<BaseLayout
+  lang="es"
+  alternates={spanishStaticAlternates("/wissen/fugen-forensik/")}
+  title={title}
+  description={description}
+  path={path}
+  jsonLd={[buildBreadcrumbJsonLd([{ name: "Inicio", path: toSpanishPath("/") }, { name: "Conocimiento", path: toSpanishPath("/wissen/") }, { name: "Análisis de juntas", path }])]}
+>
+  <PageHero
+    ctaLabel="Solicitar asesoramiento"
+    ctaHref="#contact"
+    hideReferencesLink
+    eyebrow="Análisis de daños y conocimientos prácticos"
+    title="Análisis de juntas: comprender los daños habituales en pavimentos industriales"
+    text="Los pavimentos de las industrias alimentaria, química y de producción rara vez fallan por casualidad. Suele intervenir una combinación de ataque químico, choque térmico y cargas mecánicas de cizallamiento. Conozca los 5 daños más frecuentes y cómo rehabilitarlos de forma duradera."
+  />
+
+  <section class="section border-b border-hsb-line bg-white">
+    <div class="container">
+      <div class="mb-12 max-w-3xl">
+        <p class="eyebrow">Diagnóstico antes de rehabilitar</p>
+        <h2 class="h2">Por qué los parches aislados rara vez duran</h2>
+        <p class="lead mt-4 text-hsb-steel">
+          Cuando las juntas se erosionan o las baldosas suenan huecas, suele aplicarse rápidamente una masilla. A las pocas semanas, el daño reaparece. Una rehabilitación duradera exige un diagnóstico técnico: ¿qué ácido actúa?, ¿qué temperatura interviene?, ¿dónde está la junta de dilatación?
+        </p>
+      </div>
+
+      <div class="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
+        {cases.map((c) => (
+          <article class="surface flex flex-col justify-between border-t-4 border-t-hsb-red p-6 lg:p-8">
+            <div>
+              <span class="inline-block rounded bg-hsb-mist px-2.5 py-1 text-xs font-black uppercase tracking-[0.12em] text-hsb-black">
+                {c.badge}
+              </span>
+              <h3 class="mt-4 text-xl font-black text-hsb-black">{c.title}</h3>
+              <div class="mt-4 space-y-3 text-sm">
+                <div>
+                  <strong class="text-xs uppercase tracking-wider text-hsb-black block">Daño observado:</strong>
+                  <p class="text-hsb-steel leading-relaxed mt-0.5">{c.symptom}</p>
+                </div>
+                <div>
+                  <strong class="text-xs uppercase tracking-wider text-hsb-black block">Causa:</strong>
+                  <p class="text-hsb-steel leading-relaxed mt-0.5">{c.cause}</p>
+                </div>
+                <div>
+                  <strong class="text-xs uppercase tracking-wider text-hsb-red block">Riesgo operativo:</strong>
+                  <p class="text-hsb-steel leading-relaxed mt-0.5">{c.risk}</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="mt-8 border-t border-hsb-line pt-5">
+              <a class="button-primary text-xs w-full text-center" href={toSpanishPath(`/wissen/fugen-forensik/${c.slug}/`)}>
+                Analizar el daño y su rehabilitación →
+              </a>
+            </div>
+          </article>
+        ))}
+
+        <!-- Spezial-Kachel: Vor-Ort-Audit -->
+        <article class="surface flex flex-col justify-between border-t-4 border-t-hsb-black bg-hsb-mist p-6 lg:p-8">
+          <div>
+            <span class="inline-block rounded bg-hsb-black px-2.5 py-1 text-xs font-black uppercase tracking-[0.12em] text-white">
+              Auditoría y asistencia inmediata
+            </span>
+            <h3 class="mt-4 text-xl font-black text-hsb-black">¿No identifica con certeza el daño de su pavimento?</h3>
+            <p class="mt-4 text-sm leading-6 text-hsb-steel">
+              Nuestros ingenieros y técnicos de aplicación inspeccionan el pavimento en su nave de producción. Comprobamos los flancos de las juntas, la humedad del soporte, la adherencia y las pendientes.
+            </p>
+            <ul class="mt-5 space-y-2 text-xs text-hsb-steel">
+              <li class="flex items-center gap-2">✓ Medición de huecos y trazado de fisuras</li>
+              <li class="flex items-center gap-2">✓ Estudio de periodos de intervención durante el fin de semana</li>
+              <li class="flex items-center gap-2">✓ Primera evaluación con fundamento técnico</li>
+            </ul>
+          </div>
+          <div class="mt-8 border-t border-hsb-line pt-5">
+            <a class="button-primary w-full text-center text-xs" href={toSpanishPath("/kontakt/")}>
+              Solicitar una visita técnica
+            </a>
+          </div>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <SpanishContactSection />
+</BaseLayout>

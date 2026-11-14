@@ -1,24 +1,29 @@
 ---
 interface Props {
   auditAnchor?: string;
+  lang?: "de" | "es";
 }
 
-const { auditAnchor = "/kontakt/" } = Astro.props;
+const { auditAnchor, lang = Astro.url.pathname.startsWith("/es/") ? "es" : "de" } = Astro.props;
+const isSpanish = lang === "es";
+const resolvedAuditAnchor = auditAnchor ?? (isSpanish ? "#contact" : "/kontakt/");
 ---
 
-<div class="surface rounded border border-hsb-line p-6 lg:p-10" data-sanierungs-rechner>
+<div class="surface rounded border border-hsb-line p-6 lg:p-10" data-sanierungs-rechner data-lang={lang}>
   <div class="border-b border-hsb-line pb-6">
     <div class="flex flex-wrap items-center gap-2">
       <span class="inline-block rounded bg-hsb-mist px-2.5 py-1 text-xs font-black uppercase tracking-[0.12em] text-hsb-black">
-        Interaktives Planungswerkzeug
+        {isSpanish ? "Herramienta interactiva de planificación" : "Interaktives Planungswerkzeug"}
       </span>
       <span class="inline-block rounded border border-hsb-line bg-white px-2 py-0.5 font-mono text-xs font-bold text-hsb-steel">
-        Richtwert-Kalkulation · Vorläufige Taktung
+        {isSpanish ? "Cálculo orientativo · Planificación por fases" : "Richtwert-Kalkulation · Vorläufige Taktung"}
       </span>
     </div>
-    <h2 class="mt-3 text-2xl font-black text-hsb-black">Sanierungsfenster- & Bauabschnitts-Rechner</h2>
+    <h2 class="mt-3 text-2xl font-black text-hsb-black">{isSpanish ? "Calculadora de ventanas de parada y fases de obra" : "Sanierungsfenster- & Bauabschnitts-Rechner"}</h2>
     <p class="mt-2 text-sm leading-6 text-hsb-steel">
-      Ermitteln Sie zur Orientierung auf Basis branchenüblicher Erfahrungswerte, wie eine Produktionsfläche zur Vorplanung in Bauabschnitte unterteilt werden kann, bevor das Vor-Ort-Audit die bauseitigen Kennwerte festlegt.
+      {isSpanish
+        ? "Estime de forma orientativa cómo dividir una superficie de producción en fases de ejecución antes de que la inspección técnica in situ fije los parámetros definitivos."
+        : "Ermitteln Sie zur Orientierung auf Basis branchenüblicher Erfahrungswerte, wie eine Produktionsfläche zur Vorplanung in Bauabschnitte unterteilt werden kann, bevor das Vor-Ort-Audit die bauseitigen Kennwerte festlegt."}
     </p>
   </div>
 
@@ -29,7 +34,7 @@ const { auditAnchor = "/kontakt/" } = Astro.props;
       <div>
         <div class="flex items-center justify-between">
           <label for="rechner-flaeche" class="text-sm font-bold text-hsb-black">
-            1. Zu sanierende Fläche (in m²)
+            {isSpanish ? "1. Superficie a rehabilitar (en m²)" : "1. Zu sanierende Fläche (in m²)"}
           </label>
           <span id="flaeche-display" class="rounded bg-hsb-mist px-3 py-1 font-mono text-base font-black text-hsb-black">
             250 m²
@@ -55,30 +60,30 @@ const { auditAnchor = "/kontakt/" } = Astro.props;
       <!-- 2. Verfügbares Stillstandsfenster -->
       <div>
         <label for="rechner-zeitfenster" class="text-sm font-bold text-hsb-black block">
-          2. Maximales Stillstandsfenster je Bauabschnitt
+          {isSpanish ? "2. Ventana máxima de parada por fase" : "2. Maximales Stillstandsfenster je Bauabschnitt"}
         </label>
         <select
           id="rechner-zeitfenster"
           class="mt-2 w-full rounded border border-hsb-line bg-white p-3 text-sm font-bold text-hsb-black focus:border-hsb-red focus:outline-none"
         >
-          <option value="wochenende-60h">Wochenend-Stillstand (Freitag 18:00 – Montag 06:00, 60 Std.)</option>
-          <option value="betriebsurlaub">Geplanter Betriebsstillstand / Werksferien (1–2 Wochen)</option>
-          <option value="laufender-betrieb">Rollierend im laufenden Betrieb (Abschnittskapselung)</option>
+          <option value="wochenende-60h">{isSpanish ? "Parada de fin de semana (viernes 18:00 – lunes 06:00, 60 h)" : "Wochenend-Stillstand (Freitag 18:00 – Montag 06:00, 60 Std.)"}</option>
+          <option value="betriebsurlaub">{isSpanish ? "Parada técnica programada / vacaciones de planta (1–2 semanas)" : "Geplanter Betriebsstillstand / Werksferien (1–2 Wochen)"}</option>
+          <option value="laufender-betrieb">{isSpanish ? "Por fases durante la producción (encapsulado de zonas)" : "Rollierend im laufenden Betrieb (Abschnittskapselung)"}</option>
         </select>
       </div>
 
       <!-- 3. Bodensystem -->
       <div>
         <label for="rechner-system" class="text-sm font-bold text-hsb-black block">
-          3. Gewünschtes Bodensystem / Beanspruchung
+          {isSpanish ? "3. Sistema de pavimento / solicitación prevista" : "3. Gewünschtes Bodensystem / Beanspruchung"}
         </label>
         <select
           id="rechner-system"
           class="mt-2 w-full rounded border border-hsb-line bg-white p-3 text-sm font-bold text-hsb-black focus:border-hsb-red focus:outline-none"
         >
-          <option value="pu-beton">PU-Beton (Höchste Thermoschock- & Stoßbelastung)</option>
-          <option value="ruettelkeramik">Rüttelkeramik / Sechskant (Extreme Dauernass- & Rollbelastung)</option>
-          <option value="reparatur">Punktuelle Schadstellen-Reparatur (Express-Instandsetzung)</option>
+          <option value="pu-beton">{isSpanish ? "PU-cemento (alta exigencia térmica y de impacto)" : "PU-Beton (Höchste Thermoschock- & Stoßbelastung)"}</option>
+          <option value="ruettelkeramik">{isSpanish ? "Cerámica vibrada / hexagonal (humedad continua y cargas rodantes)" : "Rüttelkeramik / Sechskant (Extreme Dauernass- & Rollbelastung)"}</option>
+          <option value="reparatur">{isSpanish ? "Reparación localizada de daños (intervención rápida)" : "Punktuelle Schadstellen-Reparatur (Express-Instandsetzung)"}</option>
         </select>
       </div>
     </div>
@@ -86,26 +91,28 @@ const { auditAnchor = "/kontakt/" } = Astro.props;
     <!-- Ergebnisbereich -->
     <div class="rounded border-2 border-hsb-black bg-hsb-mist/40 p-6 flex flex-col justify-between">
       <div>
-        <span class="text-xs font-black uppercase tracking-widest text-hsb-red">Vorläufige Modellrechnung</span>
-        <h3 class="mt-1 text-xl font-black text-hsb-black">Simulierte Bauabschnitte</h3>
+        <span class="text-xs font-black uppercase tracking-widest text-hsb-red">{isSpanish ? "Simulación preliminar" : "Vorläufige Modellrechnung"}</span>
+        <h3 class="mt-1 text-xl font-black text-hsb-black">{isSpanish ? "Fases de ejecución simuladas" : "Simulierte Bauabschnitte"}</h3>
 
         <div class="mt-6 space-y-4">
           <div class="rounded border border-hsb-line bg-white p-4">
-            <span class="text-xs text-hsb-steel block">Kalkulierte Bauabschnitte</span>
-            <span id="result-abschnitte" class="text-3xl font-black text-hsb-black">2 Abschnitte</span>
-            <span id="result-flaeche-pro-abschnitt" class="text-xs text-hsb-steel block mt-0.5">à ca. 125 m² (Modellwert)</span>
+            <span class="text-xs text-hsb-steel block">{isSpanish ? "Fases de obra calculadas" : "Kalkulierte Bauabschnitte"}</span>
+            <span id="result-abschnitte" class="text-3xl font-black text-hsb-black">{isSpanish ? "2 fases" : "2 Abschnitte"}</span>
+            <span id="result-flaeche-pro-abschnitt" class="text-xs text-hsb-steel block mt-0.5">{isSpanish ? "de aprox. 125 m² (valor orientativo)" : "à ca. 125 m² (Modellwert)"}</span>
           </div>
 
           <div class="rounded border border-hsb-line bg-white p-4">
-            <span class="text-xs text-hsb-steel block">Aushärtezeit vor Wiederinbetriebnahme</span>
-            <span id="result-aushaertung" class="text-lg font-bold text-hsb-black">Gemäß technischem Merkblatt & Vor-Ort-Audit</span>
-            <span class="text-xs text-hsb-steel block mt-0.5">abhängig von freigegebenem Harzsystem, Untergrund- und Raumtemperatur</span>
+            <span class="text-xs text-hsb-steel block">{isSpanish ? "Tiempo de curado antes de reanudar la actividad" : "Aushärtezeit vor Wiederinbetriebnahme"}</span>
+            <span id="result-aushaertung" class="text-lg font-bold text-hsb-black">{isSpanish ? "Según ficha técnica y evaluación in situ" : "Gemäß technischem Merkblatt & Vor-Ort-Audit"}</span>
+            <span class="text-xs text-hsb-steel block mt-0.5">{isSpanish ? "según el sistema de resina aprobado y la temperatura del soporte y del ambiente" : "abhängig von freigegebenem Harzsystem, Untergrund- und Raumtemperatur"}</span>
           </div>
 
           <div class="rounded border border-hsb-line bg-white p-4">
-            <span class="text-xs text-hsb-steel block">Verfahrenshinweis Stillstand</span>
+            <span class="text-xs text-hsb-steel block">{isSpanish ? "Nota sobre la planificación de paradas" : "Verfahrenshinweis Stillstand"}</span>
             <p id="result-empfehlung" class="text-xs leading-relaxed text-hsb-steel mt-1">
-              Exemplarische Aufteilung auf Wochenend-Etappen. Die tatsächliche Freigabezeit wird im Vor-Ort-Audit anhand des gewählten Systems festgelegt.
+              {isSpanish
+                ? "División orientativa en etapas de fin de semana. El plazo real de puesta en servicio se define en la visita técnica según el sistema elegido."
+                : "Exemplarische Aufteilung auf Wochenend-Etappen. Die tatsächliche Freigabezeit wird im Vor-Ort-Audit anhand des gewählten Systems festgelegt."}
             </p>
           </div>
         </div>
@@ -113,15 +120,17 @@ const { auditAnchor = "/kontakt/" } = Astro.props;
 
       <div class="mt-6 pt-4 border-t border-hsb-line">
         <p class="text-xs leading-relaxed text-hsb-steel italic">
-          Hinweis: Exemplarische Richtwert-Berechnung auf Basis typischer Einbauleistungen (keine vertraglich zugesicherten Tagesleistungen oder Freigabezeiten). Verbindliche Abschnittsgrößen und Taktungen werden nach bauseitiger Prüfung von Untergrund, Temperatur und Hersteller-Datenblatt im Vor-Ort-Audit festgelegt.
+          {isSpanish
+            ? "Nota: cálculo orientativo basado en rendimientos habituales de ejecución (no constituye un compromiso contractual de rendimiento diario ni de tiempo de puesta en servicio). Los tamaños de fase y los plazos vinculantes se determinan tras comprobar el soporte, la temperatura y la ficha técnica del fabricante."
+            : "Hinweis: Exemplarische Richtwert-Berechnung auf Basis typischer Einbauleistungen (keine vertraglich zugesicherten Tagesleistungen oder Freigabezeiten). Verbindliche Abschnittsgrößen und Taktungen werden nach bauseitiger Prüfung von Untergrund, Temperatur und Hersteller-Datenblatt im Vor-Ort-Audit festgelegt."}
         </p>
         <div class="mt-4">
           <a
             id="rechner-audit-btn"
-            href={auditAnchor}
+            href={resolvedAuditAnchor}
             class="button-primary w-full text-center block text-sm"
           >
-            Berechnung ins Vor-Ort-Audit übernehmen
+            {isSpanish ? "Incluir cálculo en la consulta técnica" : "Berechnung ins Vor-Ort-Audit übernehmen"}
           </a>
         </div>
       </div>
@@ -151,45 +160,68 @@ const { auditAnchor = "/kontakt/" } = Astro.props;
 
       if (flaecheDisplay) flaecheDisplay.textContent = `${flaeche} m²`;
 
+      const root = document.querySelector<HTMLElement>("[data-sanierungs-rechner]");
+      const isEs = root?.dataset.lang === "es";
+
       let maxPerSection = 150;
-      const aushaertungsText = "Gemäß technischem Merkblatt & Vor-Ort-Audit";
+      const aushaertungsText = isEs
+        ? "Según ficha técnica y evaluación in situ"
+        : "Gemäß technischem Merkblatt & Vor-Ort-Audit";
       let empfehlungsText = "";
 
       if (system === "pu-beton") {
         if (zeitfenster === "wochenende-60h") {
           maxPerSection = 160;
-          empfehlungsText = "Exemplarische Wochenend-Etappen: Einbau und Aushärtung werden im Vor-Ort-Audit auf Ihr Sperrfenster abgestimmt.";
+          empfehlungsText = isEs
+            ? "Etapas orientativas de fin de semana: la colocación y el curado se ajustan a su ventana de parada en la visita técnica."
+            : "Exemplarische Wochenend-Etappen: Einbau und Aushärtung werden im Vor-Ort-Audit auf Ihr Sperrfenster abgestimmt.";
         } else if (zeitfenster === "betriebsurlaub") {
           maxPerSection = 450;
-          empfehlungsText = "Exemplarischer Einbau während geplanter Betriebsferien in zusammenhängenden Arbeitsabschnitten.";
+          empfehlungsText = isEs
+            ? "Ejecución orientativa durante paradas programadas de planta en sectores continuos de trabajo."
+            : "Exemplarischer Einbau während geplanter Betriebsferien in zusammenhängenden Arbeitsabschnitten.";
         } else {
           maxPerSection = 100;
-          empfehlungsText = "Exemplarische rollierende Teilflächensanierung mit Staubkapselung nach örtlicher Freigabe.";
+          empfehlungsText = isEs
+            ? "Rehabilitación rotativa por zonas parciales con encapsulado contra el polvo tras la autorización en planta."
+            : "Exemplarische rollierende Teilflächensanierung mit Staubkapselung nach örtlicher Freigabe.";
         }
       } else if (system === "ruettelkeramik") {
         if (zeitfenster === "wochenende-60h") {
           maxPerSection = 110;
-          empfehlungsText = "Exemplarische Etappen im Rüttelverfahren mit Reaktionsharzverfugung nach bauseitiger Taktplanung.";
+          empfehlungsText = isEs
+            ? "Etapas orientativas mediante colocación por vibración y rejuntado con resina reactiva según la planificación de obra."
+            : "Exemplarische Etappen im Rüttelverfahren mit Reaktionsharzverfugung nach bauseitiger Taktplanung.";
         } else if (zeitfenster === "betriebsurlaub") {
           maxPerSection = 300;
-          empfehlungsText = "Exemplarische Abschnittsplanung für Säureschutz-Sanierungen in geplanten Stillstandszeiten.";
+          empfehlungsText = isEs
+            ? "Planificación orientativa por fases para rehabilitaciones antiácidas durante paradas programadas."
+            : "Exemplarische Abschnittsplanung für Säureschutz-Sanierungen in geplanten Stillstandszeiten.";
         } else {
           maxPerSection = 80;
-          empfehlungsText = "Exemplarische abschnittsweise Rüttelverlegung mit Staubkapselung.";
+          empfehlungsText = isEs
+            ? "Colocación por vibración en fases parciales con encapsulado de protección."
+            : "Exemplarische abschnittsweise Rüttelverlegung mit Staubkapselung.";
         }
       } else {
         maxPerSection = 50;
-        empfehlungsText = "Exemplarische Etappen für punktuelle Instandsetzung schadhafter Fugen, Rinnenkanten oder Hohlstellen.";
+        empfehlungsText = isEs
+          ? "Etapas orientativas para la reparación puntual de juntas dañadas, bordes de canaletas o zonas huecas."
+          : "Exemplarische Etappen für punktuelle Instandsetzung schadhafter Fugen, Rinnenkanten oder Hohlstellen.";
       }
 
       const numSections = Math.max(1, Math.ceil(flaeche / maxPerSection));
       const flaecheProAbschnitt = Math.round(flaeche / numSections);
 
       if (resultAbschnitte) {
-        resultAbschnitte.textContent = numSections === 1 ? "1 Abschnitt" : `${numSections} Abschnitte`;
+        resultAbschnitte.textContent = isEs
+          ? numSections === 1 ? "1 fase" : `${numSections} fases`
+          : numSections === 1 ? "1 Abschnitt" : `${numSections} Abschnitte`;
       }
       if (resultFlaeche) {
-        resultFlaeche.textContent = numSections === 1 ? "Gesamtfläche in einem Durchgang (Modellwert)" : `à ca. ${flaecheProAbschnitt} m² (Modellwert)`;
+        resultFlaeche.textContent = isEs
+          ? numSections === 1 ? "Superficie completa en una sola intervención (valor orientativo)" : `de aprox. ${flaecheProAbschnitt} m² (valor orientativo)`
+          : numSections === 1 ? "Gesamtfläche in einem Durchgang (Modellwert)" : `à ca. ${flaecheProAbschnitt} m² (Modellwert)`;
       }
       if (resultAushaertung) {
         resultAushaertung.textContent = aushaertungsText;
@@ -205,7 +237,9 @@ const { auditAnchor = "/kontakt/" } = Astro.props;
           timeWindow: zeitfenster,
           sections: String(numSections),
         });
-        auditBtn.href = `/kontakt/?${urlParams.toString()}#kontaktformular`;
+        auditBtn.href = isEs
+          ? `/es/calculadora-paradas/?${urlParams.toString()}#contact`
+          : `/kontakt/?${urlParams.toString()}#kontaktformular`;
       }
     }
 

@@ -7,19 +7,89 @@ import {
   STRESS_TEMPERATURES,
   STRESS_TIME_WINDOWS,
 } from "../../data/stressMatrix";
+import { toSpanishPath } from "../../lib/spanishPaths";
 
 interface Props {
   auditAnchor?: string;
+  lang?: "de" | "es";
 }
 
-const { auditAnchor = "#kontaktformular" } = Astro.props;
+const { auditAnchor = "#kontaktformular", lang = Astro.url.pathname.startsWith("/es/") ? "es" : "de" } = Astro.props;
+const isSpanish = lang === "es";
 
-const steps = [
-  { key: "medium", number: 1, title: "Chemisches Medium", question: "Welches Medium wirkt dauerhaft auf die Fläche ein?", options: STRESS_MEDIA },
-  { key: "tempRange", number: 2, title: "Thermische Belastung", question: "Welche Temperaturbelastung tritt im Betrieb auf?", options: STRESS_TEMPERATURES },
-  { key: "mechanicalLoad", number: 3, title: "Mechanische Last", question: "Welche Flurförderzeuge befahren die Fläche?", options: STRESS_MECHANICAL },
-  { key: "timeWindow", number: 4, title: "Sanierungsfenster", question: "Welches Zeitfenster steht für die Ausführung zur Verfügung?", options: STRESS_TIME_WINDOWS },
+const esMedia = [
+  { id: "milchsaeure-molke", label: "Ácido láctico / suero lácteo", hint: "Industria láctea, queserías, procesamiento de leche" },
+  { id: "fruchtsaeuren", label: "Ácidos de frutas", hint: "Bebidas, procesamiento de frutas y verduras" },
+  { id: "cip-laugen", label: "Álcalis CIP (NaOH)", hint: "Circuitos de limpieza, líneas de envasado" },
+  { id: "anorganische-saeuren", label: "Ácidos inorgánicos (pH 0–2)", hint: "Química, decapado, cubetos de retención" },
+  { id: "fette-oele", label: "Grasas / aceites", hint: "Alimentos preparados, panificación, cocinas industriales" },
 ] as const;
+
+const esTemperatures = [
+  { id: "dauernass-kalt", label: "Humedad permanente en frío (< 20 °C)" },
+  { id: "warmwasser-60", label: "Agua caliente hasta 60 °C" },
+  { id: "thermoschock-85", label: "Choque térmico / limpieza CIP hasta 85 °C" },
+  { id: "heissdampf-100", label: "Vapor sobrecalentado > 100 °C" },
+] as const;
+
+const esMechanical = [
+  { id: "handhubwagen", label: "Transpaletas manuales" },
+  { id: "gabelstapler-3-5t", label: "Carretillas elevadoras 3–5 t" },
+  { id: "schwerlast-vulkollan", label: "Vehículos pesados con ruedas Vulkollan (> 30 N/mm²)" },
+] as const;
+
+const esTimeWindows = [
+  { id: "wochenende-48h", label: "Parada de fin de semana (< 48 h)" },
+  { id: "revision-7-14d", label: "Parada de mantenimiento (7–14 días)" },
+  { id: "neubau", label: "Obra nueva" },
+] as const;
+
+const steps = isSpanish
+  ? ([
+      { key: "medium", number: 1, title: "Medio químico", question: "¿Qué sustancia actúa de forma habitual sobre la superficie?", options: esMedia },
+      { key: "tempRange", number: 2, title: "Solicitación térmica", question: "¿Qué temperaturas se alcanzan durante el proceso o la limpieza?", options: esTemperatures },
+      { key: "mechanicalLoad", number: 3, title: "Carga mecánica", question: "¿Qué equipos de transporte circulan por la zona?", options: esMechanical },
+      { key: "timeWindow", number: 4, title: "Ventana de intervención", question: "¿De qué margen de parada se dispone para la ejecución?", options: esTimeWindows },
+    ] as const)
+  : ([
+      { key: "medium", number: 1, title: "Chemisches Medium", question: "Welches Medium wirkt dauerhaft auf die Fläche ein?", options: STRESS_MEDIA },
+      { key: "tempRange", number: 2, title: "Thermische Belastung", question: "Welche Temperaturbelastung tritt im Betrieb auf?", options: STRESS_TEMPERATURES },
+      { key: "mechanicalLoad", number: 3, title: "Mechanische Last", question: "Welche Flurförderzeuge befahren die Fläche?", options: STRESS_MECHANICAL },
+      { key: "timeWindow", number: 4, title: "Sanierungsfenster", question: "Welches Zeitfenster steht für die Ausführung zur Verfügung?", options: STRESS_TIME_WINDOWS },
+    ] as const);
+
+const esSystemCopy: Record<string, { name: string; description: string }> = {
+  "agi-s40-ruettelkeramik": {
+    name: "Cerámica vibrada según AGI S 40 con junta de resina sintética",
+    description:
+      "Baldosas cerámicas conformes a DIN EN 14411 colocadas mediante vibración sobre lecho de mortero y selladas con junta de resina reactiva. Adecuado para ácidos orgánicos e inorgánicos, álcalis, cambios térmicos y elevadas presiones puntuales según la aprobación del sistema.",
+  },
+  "pu-beton-hochtemperatur": {
+    name: "Hormigón de poliuretano para altas temperaturas (PU-cemento)",
+    description:
+      "Sistema continuo de poliuretano-cemento para grasas, aceites, ácidos orgánicos y choques térmicos según la ficha técnica del fabricante. Su curado rápido permite planificar intervenciones en ventanas de parada reducidas.",
+  },
+  "whg-fachbeschichtung": {
+    name: "Recubrimiento técnico según WHG § 62 (química / cubetos de retención)",
+    description:
+      "Impermeabilización resistente a sustancias químicas para instalaciones con sustancias peligrosas para el agua conforme a § 62 WHG / AwSV, con documentación técnica para la propiedad y las autoridades competentes.",
+  },
+};
+
+const esNormCopy: Record<string, { name: string; scope: string }> = {
+  "AGI S 40": {
+    name: "Hoja de trabajo AGI S 40 – Pavimentos químicamente resistentes colocados por vibración (mayo de 1999)",
+    scope: "Planificación y ejecución de revestimientos cerámicos resistentes a los ácidos colocados por vibración con junta de resina sintética.",
+  },
+  "DIN EN 14411": {
+    name: "DIN EN 14411 – Baldosas cerámicas",
+    scope: "Norma de producto para las baldosas de gres porcelánico y extruidas utilizadas (absorción de agua, resistencia a flexión y resistencia química).",
+  },
+  "WHG § 62": {
+    name: "§ 62 WHG / AwSV – Instalaciones con sustancias peligrosas para el agua",
+    scope: "Requisitos aplicables a las instalaciones y superficies de retención afectadas; obligaciones de empresa especializada según §§ 45 y 62 AwSV cuando corresponda.",
+  },
+};
 
 const systems = Object.values(STRESS_SYSTEMS);
 ---
@@ -50,12 +120,14 @@ const systems = Object.values(STRESS_SYSTEMS);
   }
 </style>
 
-<section class="section bg-hsb-mist" id="beanspruchungs-check" data-stress-check data-audit-anchor={auditAnchor}>
+<section class="section bg-hsb-mist" id="beanspruchungs-check" data-stress-check data-lang={lang} data-audit-anchor={auditAnchor}>
   <div class="container max-w-5xl">
-    <p class="eyebrow">Technischer Beanspruchungs-Check</p>
-    <h2 class="h2 mt-3">Vier Parameter, eine deterministische Systemempfehlung</h2>
+    <p class="eyebrow">{isSpanish ? "Comprobador técnico de cargas" : "Technischer Beanspruchungs-Check"}</p>
+    <h2 class="h2 mt-3">{isSpanish ? "Cuatro parámetros, una orientación técnica del sistema" : "Vier Parameter, eine deterministische Systemempfehlung"}</h2>
     <p class="lead mt-4 max-w-3xl">
-      Für Werks- und Betriebsleiter: Medium, Temperatur, mechanische Last und Stillstandsfenster bestimmen das Bodensystem. Die Auswertung folgt festen ingenieurtechnischen Regeln und ersetzt kein Vor-Ort-Audit.
+      {isSpanish
+        ? "Para responsables de planta y mantenimiento: el medio químico, la temperatura, la carga mecánica y la ventana de parada orientan la elección del sistema. La evaluación aplica criterios de ingeniería y no sustituye una inspección in situ."
+        : "Für Werks- und Betriebsleiter: Medium, Temperatur, mechanische Last und Stillstandsfenster bestimmen das Bodensystem. Die Auswertung folgt festen ingenieurtechnischen Regeln und ersetzt kein Vor-Ort-Audit."}
     </p>
 
     <form class="mt-10 grid gap-6" data-stress-form novalidate>
@@ -81,35 +153,35 @@ const systems = Object.values(STRESS_SYSTEMS);
       ))}
 
       <p data-stress-error role="alert" aria-live="assertive" class="hidden rounded border border-hsb-red/40 bg-hsb-red/5 px-3 py-2 text-sm text-hsb-red">
-        Bitte beantworten Sie alle vier Parameter, damit die Systemempfehlung berechnet werden kann.
+        {isSpanish ? "Responda a los cuatro parámetros para calcular la recomendación de sistema." : "Bitte beantworten Sie alle vier Parameter, damit die Systemempfehlung berechnet werden kann."}
       </p>
 
       <div class="flex flex-wrap gap-3">
-        <button type="submit" class="button-primary">Systemempfehlung berechnen</button>
-        <button type="reset" class="button-secondary-dark" data-stress-reset>Zurücksetzen</button>
+        <button type="submit" class="button-primary">{isSpanish ? "Calcular sistema recomendado" : "Systemempfehlung berechnen"}</button>
+        <button type="reset" class="button-secondary-dark" data-stress-reset>{isSpanish ? "Restablecer" : "Zurücksetzen"}</button>
       </div>
     </form>
 
     <div class="mt-10 hidden" data-stress-result aria-live="polite">
       {systems.map((system) => (
         <article class="surface hidden gap-5 p-6 lg:p-8" data-system={system.id}>
-          <p class="eyebrow">Vorläufige Systemempfehlung</p>
-          <h3 class="h2 mt-2">{system.name}</h3>
-          <p class="mt-3 text-base leading-8 text-hsb-steel">{system.description}</p>
+          <p class="eyebrow">{isSpanish ? "Recomendación preliminar de sistema" : "Vorläufige Systemempfehlung"}</p>
+          <h3 class="h2 mt-2">{isSpanish ? esSystemCopy[system.id]?.name ?? system.name : system.name}</h3>
+          <p class="mt-3 text-base leading-8 text-hsb-steel">{isSpanish ? esSystemCopy[system.id]?.description ?? system.description : system.description}</p>
           <div>
-            <p class="text-sm font-black uppercase tracking-[0.14em] text-hsb-black">Technische Begründung</p>
+            <p class="text-sm font-black uppercase tracking-[0.14em] text-hsb-black">{isSpanish ? "Justificación técnica" : "Technische Begründung"}</p>
             <ul class="mt-3 grid gap-2 text-sm leading-7 text-hsb-steel" data-reasons></ul>
             <p class="mt-3 hidden rounded border border-hsb-line bg-hsb-mist px-4 py-3 text-sm leading-6 text-hsb-black" data-window-note></p>
           </div>
           {system.norms.length > 0 && (
             <div class="grid gap-2">
-              <p class="text-sm font-black uppercase tracking-[0.14em] text-hsb-black">Ausführungsgrundlage</p>
+              <p class="text-sm font-black uppercase tracking-[0.14em] text-hsb-black">{isSpanish ? "Base normativa y técnica" : "Ausführungsgrundlage"}</p>
               {system.norms.map((normId) => {
                 const standard = executionStandards.find((item) => item.id === normId);
                 return standard ? (
                   <details class="rounded border border-hsb-line bg-white px-4 py-3" data-norm={standard.id}>
-                    <summary class="cursor-pointer text-sm font-bold text-hsb-black">{standard.name}</summary>
-                    <p class="mt-2 text-sm leading-6 text-hsb-steel">{standard.scope}</p>
+                    <summary class="cursor-pointer text-sm font-bold text-hsb-black">{isSpanish ? esNormCopy[standard.id]?.name ?? standard.name : standard.name}</summary>
+                    <p class="mt-2 text-sm leading-6 text-hsb-steel">{isSpanish ? esNormCopy[standard.id]?.scope ?? standard.scope : standard.scope}</p>
                   </details>
                 ) : null;
               })}
@@ -118,27 +190,27 @@ const systems = Object.values(STRESS_SYSTEMS);
 
           <!-- Eingegebene Parameter & Zusammenfassung für Werksbegehung -->
           <div class="rounded border border-hsb-line bg-white p-5 print:border-black print:p-4">
-            <h4 class="text-xs font-black uppercase tracking-[0.16em] text-hsb-black">Erfasstes Belastungsprofil (Grundlage für Werksbegehung & Audit)</h4>
+            <h4 class="text-xs font-black uppercase tracking-[0.16em] text-hsb-black">{isSpanish ? "Perfil de cargas registrado (base para la visita técnica)" : "Erfasstes Belastungsprofil (Grundlage für Werksbegehung & Audit)"}</h4>
             <div class="mt-3 grid gap-3 sm:grid-cols-2 text-sm text-hsb-steel" data-input-summary>
-              <div><strong class="text-hsb-black">Chemisches Medium:</strong> <span data-val-medium>-</span></div>
-              <div><strong class="text-hsb-black">Thermische Belastung:</strong> <span data-val-temp>-</span></div>
-              <div><strong class="text-hsb-black">Mechanische Last:</strong> <span data-val-mech>-</span></div>
-              <div><strong class="text-hsb-black">Sanierungsfenster:</strong> <span data-val-time>-</span></div>
+              <div><strong class="text-hsb-black">{isSpanish ? "Medio químico:" : "Chemisches Medium:"}</strong> <span data-val-medium>-</span></div>
+              <div><strong class="text-hsb-black">{isSpanish ? "Solicitación térmica:" : "Thermische Belastung:"}</strong> <span data-val-temp>-</span></div>
+              <div><strong class="text-hsb-black">{isSpanish ? "Carga mecánica:" : "Mechanische Last:"}</strong> <span data-val-mech>-</span></div>
+              <div><strong class="text-hsb-black">{isSpanish ? "Ventana de intervención:" : "Sanierungsfenster:"}</strong> <span data-val-time>-</span></div>
             </div>
           </div>
 
           <div class="flex flex-wrap items-center gap-3" data-no-print>
-            <a class="button-primary" href={auditAnchor} data-audit-cta>Qualifiziertes Vor-Ort-Audit anfragen</a>
+            <a class="button-primary" href={auditAnchor} data-audit-cta>{isSpanish ? "Solicitar evaluación técnica in situ" : "Qualifiziertes Vor-Ort-Audit anfragen"}</a>
             <button type="button" class="button-secondary-dark flex items-center gap-2" data-print-pdf>
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                 <polyline points="6 9 6 2 18 2 18 9"></polyline>
                 <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
                 <rect x="6" y="14" width="12" height="8"></rect>
               </svg>
-              <span>1-Seiten-PDF drucken / exportieren</span>
+              <span>{isSpanish ? "Imprimir / exportar resumen en PDF" : "1-Seiten-PDF drucken / exportieren"}</span>
             </button>
-            <a class="button-secondary-dark" href={`/leistungen/${system.serviceSlug}/`}>Systemdetails ansehen</a>
-            <a class="button-secondary-dark" href="/rechner/sanierungsfenster/">Sanierungsfenster berechnen</a>
+            <a class="button-secondary-dark" href={isSpanish ? toSpanishPath(`/leistungen/${system.serviceSlug}/`) : `/leistungen/${system.serviceSlug}/`}>{isSpanish ? "Ver detalles del sistema" : "Systemdetails ansehen"}</a>
+            <a class="button-secondary-dark" href={isSpanish ? "/es/calculadora-paradas/" : "/rechner/sanierungsfenster/"}>{isSpanish ? "Calcular ventana de parada" : "Sanierungsfenster berechnen"}</a>
           </div>
         </article>
       ))}
@@ -230,6 +302,68 @@ const systems = Object.values(STRESS_SYSTEMS);
 
   function render(input: StressCheckInput, result: StressCheckResult) {
     if (!resultContainer) return;
+    const isEs = root?.dataset.lang === "es";
+
+    const ES_REASONS: Record<string, string> = {
+      "Heißdampf über 100 °C als Dauer- und Wechselbelastung liegt an der Systemgrenze fugenarmer PU- und Reaktionsharz-Systeme; Rüttelkeramik mit Kunstharzfuge bleibt formstabil.":
+        "El vapor a más de 100 °C como carga continua o alterna se sitúa en el límite de muchos sistemas continuos de PU y resina; la cerámica vibrada con junta de resina sintética mantiene su estabilidad dimensional.",
+      "Flächenpressungen über 30 N/mm² aus Vulkollanrollen werden von der keramischen Rüttelverlegung abgetragen.":
+        "Las presiones superficiales superiores a 30 N/mm² generadas por ruedas Vulkollan se absorben mediante la colocación cerámica vibrada.",
+      "Flächenpressungen über 30 N/mm² aus Vulkollanrollen erfordern die Druckfestigkeit keramischer Rüttelbeläge nach AGI S 40.":
+        "Las presiones superficiales superiores a 30 N/mm² de ruedas Vulkollan requieren la resistencia a compresión de los revestimientos cerámicos vibrados según AGI S 40.",
+      "Anorganische Säuren im pH-Bereich 0–2 werden durch die Kunstharzfuge nach AGI S 40 dauerhaft abgedeckt.":
+        "Los ácidos inorgánicos en el rango de pH 0–2 quedan cubiertos de forma duradera por la junta de resina sintética según AGI S 40.",
+      "Die Kombination aus anorganischen Säuren (pH 0–2) und Thermoschock bis 85 °C überfordert Beschichtungen; Rüttelkeramik mit Kunstharzfuge nach AGI S 40 ist hier Stand der Technik.":
+        "La combinación de ácidos inorgánicos (pH 0–2) y choque térmico hasta 85 °C supera la capacidad de los recubrimientos convencionales; la cerámica vibrada con junta de resina según AGI S 40 es la solución técnica de referencia.",
+      "Anorganische Säuren im pH-Bereich 0–2 sind in der Regel wassergefährdende Stoffe im Sinne der AwSV; für Anlagen greift § 62 WHG, die Fachbeschichtung liefert Dichtheit, Beständigkeit und die behördlich geforderte Dokumentation.":
+        "Los ácidos inorgánicos en el rango de pH 0–2 suelen clasificarse como sustancias peligrosas para el agua según AwSV; en estas instalaciones se aplica el § 62 WHG y el recubrimiento homologado aporta estanqueidad, resistencia química y documentación oficial.",
+      "Staplerverkehr bis 5 t wird bei der Auslegung des Schichtaufbaus berücksichtigt.":
+        "El tráfico de carretillas de hasta 5 t se contempla en el dimensionamiento de la estructura de capas.",
+      "Ein Wochenendfenster unter 48 h erlaubt nur schnell härtende Systeme; PU-Beton ist nach kurzer Zeit befahrbar und voll belastbar.":
+        "Una ventana de fin de semana inferior a 48 h exige sistemas de curado rápido; el PU-cemento permite una puesta en servicio acelerada según la ficha técnica del sistema.",
+      "PU-Beton ist thermoschockbeständig und übersteht CIP-Reinigung bis 85 °C.":
+        "El PU-cemento es resistente al choque térmico y soporta la limpieza CIP hasta 85 °C en los espesores homologados.",
+      "Die Laugenbeständigkeit wird im Audit anhand Konzentration und Temperatur gegen das Systemdatenblatt geprüft.":
+        "La resistencia a los álcalis se comprueba en la auditoría técnica contrastando concentración y temperatura con la ficha técnica del sistema.",
+      "Organische Säuren im Konzentrationsbereich der Lebensmittelproduktion werden dauerhaft abgedeckt.":
+        "Los ácidos orgánicos en las concentraciones habituales de la producción alimentaria quedan cubiertos de forma duradera.",
+      "Fette und Öle verlangen eine fugenarme, porenfreie Oberfläche; PU-Beton verhindert Unterwanderung und Keimnester.":
+        "Las grasas y aceites requieren una superficie continua y libre de poros; el PU-cemento evita infiltraciones y focos higiénicos.",
+      "Milchsäure, Fruchtsäuren und CIP-Laugen greifen zementöse und viele Reaktionsharz-Fugen an; die Kunstharzfuge nach AGI S 40 deckt pH 0–14 dauerhaft ab.":
+        "El ácido láctico, los ácidos de frutas y los álcalis CIP atacan las juntas cementosas; la junta de resina sintética según AGI S 40 cubre el rango de pH según el sistema elegido.",
+      "Thermoschock bis 85 °C wird durch die keramische Rüttelverlegung ohne Haftverbund-Verlust aufgenommen.":
+        "El choque térmico hasta 85 °C es absorbido por la colocación cerámica vibrada sin pérdida de adherencia.",
+      "Staplerverkehr bis 5 t liegt innerhalb der Druckfestigkeit keramischer Rüttelbeläge nach AGI S 40.":
+        "El tráfico de carretillas de hasta 5 t se sitúa dentro de la resistencia a compresión de los revestimientos cerámicos vibrados según AGI S 40.",
+      "Im Neubau kann Gefälle- und Rinnenplanung direkt in die keramische Fläche integriert werden.":
+        "En obra nueva, la planificación de pendientes y canaletas puede integrarse directamente en la superficie cerámica.",
+    };
+
+    const ES_NOTES: Record<string, string> = {
+      "Rüttelkeramik ist in einem Wochenendfenster unter 48 h nur in Bauabschnitten realisierbar – die Taktung wird im Vor-Ort-Audit festgelegt.":
+        "La cerámica vibrada solo puede ejecutarse por fases en una ventana de fin de semana inferior a 48 h; la secuencia se define en la inspección técnica en planta.",
+      "Eine WHG-Fachbeschichtung benötigt Untergrundvorbereitung, Dichtheitsprüfung und Dokumentation – ein Wochenendfenster reicht nur für Teilflächen.":
+        "Un recubrimiento homologado según WHG requiere preparación del soporte, comprobación de estanqueidad y documentación; un fin de semana solo permite actuar en superficies parciales.",
+    };
+
+    const ES_LABELS: Record<string, string> = {
+      "milchsaeure-molke": "Ácido láctico / suero lácteo",
+      "fruchtsaeuren": "Ácidos de frutas",
+      "cip-laugen": "Álcalis CIP (NaOH)",
+      "anorganische-saeuren": "Ácidos inorgánicos (pH 0–2)",
+      "fette-oele": "Grasas / aceites",
+      "dauernass-kalt": "Humedad permanente en frío (< 20 °C)",
+      "warmwasser-60": "Agua caliente hasta 60 °C",
+      "thermoschock-85": "Choque térmico / limpieza CIP hasta 85 °C",
+      "heissdampf-100": "Vapor caliente > 100 °C",
+      "handhubwagen": "Transpaleta manual",
+      "gabelstapler-3-5t": "Carretilla elevadora 3–5 t",
+      "schwerlast-vulkollan": "Carretillas pesadas con ruedas Vulkollan (> 30 N/mm²)",
+      "wochenende-48h": "Parada de fin de semana (< 48 h)",
+      "revision-7-14d": "Parada de revisión (7–14 días)",
+      "neubau": "Obra nueva",
+    };
+
     resultContainer.querySelectorAll<HTMLElement>("[data-system]").forEach((card) => {
       const active = card.dataset.system === result.system.id;
       card.classList.toggle("hidden", !active);
@@ -246,7 +380,7 @@ const systems = Object.values(STRESS_SYSTEMS);
             marker.className = "mt-2.5 size-1.5 shrink-0 rounded-full bg-hsb-red";
             marker.setAttribute("aria-hidden", "true");
             const reasonLabel = document.createElement("span");
-            reasonLabel.textContent = reason;
+            reasonLabel.textContent = isEs ? (ES_REASONS[reason] ?? reason) : reason;
             item.appendChild(marker);
             item.appendChild(reasonLabel);
             return item;
@@ -256,15 +390,24 @@ const systems = Object.values(STRESS_SYSTEMS);
 
       const note = card.querySelector<HTMLElement>("[data-window-note]");
       if (note) {
-        note.textContent = result.windowNote ?? "";
+        const rawNote = result.windowNote ?? "";
+        note.textContent = isEs ? (ES_NOTES[rawNote] ?? rawNote) : rawNote;
         note.classList.toggle("hidden", !result.windowNote);
       }
 
       // Zusammenfassungstexte für 1-Seiten-Druck / PDF
-      const mediumLabel = STRESS_MEDIA.find((m) => m.id === input.medium)?.label ?? input.medium;
-      const tempLabel = STRESS_TEMPERATURES.find((t) => t.id === input.tempRange)?.label ?? input.tempRange;
-      const mechLabel = STRESS_MECHANICAL.find((m) => m.id === input.mechanicalLoad)?.label ?? input.mechanicalLoad;
-      const timeLabel = STRESS_TIME_WINDOWS.find((w) => w.id === input.timeWindow)?.label ?? input.timeWindow;
+      const mediumLabel = isEs
+        ? (ES_LABELS[input.medium] ?? input.medium)
+        : (STRESS_MEDIA.find((m) => m.id === input.medium)?.label ?? input.medium);
+      const tempLabel = isEs
+        ? (ES_LABELS[input.tempRange] ?? input.tempRange)
+        : (STRESS_TEMPERATURES.find((t) => t.id === input.tempRange)?.label ?? input.tempRange);
+      const mechLabel = isEs
+        ? (ES_LABELS[input.mechanicalLoad] ?? input.mechanicalLoad)
+        : (STRESS_MECHANICAL.find((m) => m.id === input.mechanicalLoad)?.label ?? input.mechanicalLoad);
+      const timeLabel = isEs
+        ? (ES_LABELS[input.timeWindow] ?? input.timeWindow)
+        : (STRESS_TIME_WINDOWS.find((w) => w.id === input.timeWindow)?.label ?? input.timeWindow);
 
       const valMed = card.querySelector<HTMLElement>("[data-val-medium]");
       if (valMed) valMed.textContent = mediumLabel;

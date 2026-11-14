@@ -20,6 +20,8 @@
 
 html {
   scroll-behavior: smooth;
+  scroll-padding-top: 88px;
+  scroll-padding-bottom: 96px;
 }
 
 body {

@@ -1,0 +1,84 @@
+---
+import BaseLayout from "../../../../../layouts/BaseLayout.astro";
+import PageHero from "../../../../../components/sections/PageHero.astro";
+import SpanishContactSection from "../../../../../components/forms/SpanishContactSection.astro";
+import { buildArticleJsonLd, buildBreadcrumbJsonLd } from "../../../../../lib/schema";
+
+import { spanishStaticAlternates } from "../../../../../lib/spanishStaticPaths";
+import { toSpanishPath } from "../../../../../lib/spanishPaths";
+
+export const prerender = true;
+
+const path = "/es/conocimiento/analisis-juntas/fisuras-borde-canaleta/";
+const title = "Reparar fisuras en bordes de canaletas y encuentros | HSB";
+const description = "Fisuras junto a canaletas: diferencias entre acero inoxidable y hormigón, juntas híbridas elásticas y ejecución de encuentros duraderos.";
+---
+
+<BaseLayout
+  lang="es"
+  alternates={spanishStaticAlternates("/wissen/fugen-forensik/rinnenkante-gerissen/")}
+  title={title}
+  description={description}
+  path={path}
+  jsonLd={[
+    buildArticleJsonLd({ headline: "Bordes de canaleta agrietados: el encuentro crítico entre acero y solera", description, path, language: "es" }),
+    buildBreadcrumbJsonLd([
+      { name: "Inicio", path: toSpanishPath("/") },
+      { name: "Conocimiento", path: toSpanishPath("/wissen/") },
+      { name: "Análisis de juntas", path: toSpanishPath("/wissen/fugen-forensik/") },
+      { name: "Borde de canaleta agrietado", path },
+    ]),
+  ]}
+>
+  <PageHero
+    ctaLabel="Solicitar asesoramiento"
+    ctaHref="#contact"
+    hideReferencesLink
+    eyebrow="Análisis de juntas · Caso 03"
+    title="Bordes de canaleta agrietados: el encuentro crítico entre acero y solera"
+    text="Las canaletas de drenaje son un elemento central de cualquier zona húmeda y, al mismo tiempo, una de las partes más expuestas a cargas mecánicas y térmicas. Si aparecen fisuras paralelas a la canaleta, el agua puede erosionar el apoyo del pavimento. Así resolvemos el encuentro de forma duradera."
+  />
+
+  <section class="section border-b border-hsb-line bg-white">
+    <div class="container max-w-4xl">
+      <div class="prose max-w-none text-hsb-steel">
+        <h2 class="text-2xl font-black text-hsb-black">El daño: separación junto al cuerpo de la canaleta</h2>
+        <p>
+          A lo largo de canaletas ranuradas o de caja de acero inoxidable V2A/V4A pueden aparecer fisuras longitudinales continuas poco después de entrar en servicio. Los impactos del tráfico transversal —por ejemplo, carretillas con ruedas de acero— desprenden los bordes de las baldosas adyacentes. El agua de limpieza deja de entrar en la canaleta y se infiltra por la separación.
+        </p>
+
+        <div class="my-8 rounded border-l-4 border-hsb-red bg-hsb-mist p-6 text-hsb-black">
+          <h3 class="text-lg font-bold">La causa técnica: dilatación térmica desigual y vibraciones</h3>
+          <p class="mt-2 text-sm leading-6 text-hsb-steel">
+            Cuando aumenta la temperatura —por ejemplo, por agua de lavado a 80 °C—, el acero inoxidable se dilata aproximadamente entre 1,3 y 1,6 veces más que el hormigón o el revestimiento cerámico que lo rodea (&alpha; ≈ 16×10⁻⁶ K⁻¹ frente a &alpha; ≈ 10–12×10⁻⁶ K⁻¹). Si la canaleta está unida rígidamente o se ha recibido con un mortero sencillo sin elementos de anclaje, las tensiones abren la junta de forma irreversible.
+          </p>
+        </div>
+
+        <h2 class="text-2xl font-black text-hsb-black">Riesgos para la construcción y la actividad de la planta</h2>
+        <ul class="space-y-3">
+          <li><strong>Erosión del apoyo de la canaleta:</strong> el agua arrastra la arena del hormigón de apoyo; la canaleta pierde asiento y desciende bajo carga.</li>
+          <li><strong>Corrosión de la armadura:</strong> los cloruros de los productos de limpieza o de las sales de deshielo atacan la armadura de acero del hormigón y provocan corrosión por picaduras y daños constructivos.</li>
+          <li><strong>Emisiones intensas de olores:</strong> las aguas residuales se descomponen de forma incontrolada en el hueco bajo la canaleta.</li>
+        </ul>
+
+        <h2 class="mt-10 text-2xl font-black text-hsb-black">El detalle de HSB para encuentros duraderos con canaletas</h2>
+        <p>
+          HSB planifica y ejecuta las canaletas como parte integral del sistema, no como elementos aislados:
+        </p>
+        <ol class="space-y-4">
+          <li><strong>1. Canaletas robustas con marco perimetral:</strong> canaletas V4A con patillas de anclaje soldadas, fijadas al hormigón de apoyo mediante anclajes dimensionados y espaciados según el proyecto y las instrucciones del fabricante.</li>
+          <li><strong>2. Relleno resistente con resina de reacción:</strong> apoyo completo de la brida de la canaleta con mortero epoxi de relleno sin retracción para absorber los impactos dinámicos de las ruedas.</li>
+          <li><strong>3. Junta híbrida de dilatación permanentemente elástica:</strong> junta de poliuretano o polímero MS, resistente a sustancias químicas y microorganismos y dimensionada para el proyecto, con fondo de junta de PE de célula cerrada y adherencia a dos flancos.</li>
+          <li><strong>4. Transición a la misma cota:</strong> el borde superior de la canaleta se sitúa respecto al revestimiento adyacente según el detalle de encuentro aprobado, para evitar resaltes frente a las ruedas de las carretillas.</li>
+        </ol>
+
+        <div class="mt-10 flex flex-wrap items-center gap-4 border-t border-hsb-line pt-8">
+          <a class="button-primary" href={toSpanishPath("/leistungen/entwaesserung-industrieboden/")}>Más información sobre sistemas de drenaje</a>
+          <a class="button-secondary-dark" href={toSpanishPath("/wissen/fugen-forensik/")}>Volver al resumen del análisis de juntas</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <SpanishContactSection />
+</BaseLayout>

@@ -1,0 +1,70 @@
+/** Spanish labels for shared chrome; technical links keep their existing German destinations. */
+export const spanishUi = {
+  home: "HSB Hexagon Säurebau: página de inicio",
+  navigation: "Navegación principal",
+  mobileNavigation: "Navegación móvil",
+  chooseLanguage: "Elegir idioma",
+  languages: "Idiomas",
+  openMenu: "Abrir menú",
+  closeMenu: "Cerrar menú",
+  call: "Llamar",
+  project: "Consultar proyecto",
+  rights: "Todos los derechos reservados.",
+  description: "Pavimentos industriales, protección contra ácidos, cerámica, PU-cemento, drenaje y rehabilitación para la industria alimentaria, de bebidas, farmacéutica y química.",
+  location: "Gronau, Alemania. Pavimentos y protección anticorrosiva para áreas de producción.",
+  team: "Ejecución con personal propio y un equipo especializado y multilingüe, desde la reparación puntual hasta la solución de pavimentación completa.",
+};
+
+export const spanishFooterGroups: Record<string, string> = {
+  "Leistungen": "Servicios",
+  "Branchen": "Sectores",
+  "Wissen & Forensik": "Información técnica",
+  "Einsatzgebiete": "Zonas de trabajo",
+  "Unternehmen & Team": "Empresa y equipo",
+};
+
+const labels: Record<string, string> = {
+  "/leistungen/": "Servicios",
+  "/branchen/": "Sectores",
+  "/referenzen/": "Referencias",
+  "/beanspruchungs-check/": "Análisis de cargas",
+  "/wissen/": "Información técnica",
+  "/projektablauf/": "Proceso de trabajo",
+  "/karriere/": "Empleo",
+  "/kontakt/": "Contacto",
+  "/#ueber-uns": "Nuestra empresa",
+  "/impressum/": "Aviso legal",
+  "/datenschutz/": "Privacidad",
+  "/leistungen/industrieboden-saeureschutz/": "Protección contra ácidos",
+  "/leistungen/keramische-industrieboeden/": "Pavimentos cerámicos",
+  "/leistungen/pu-beton-industrieboden/": "PU-cemento",
+  "/leistungen/epoxidharz-bodenbeschichtung/": "Revestimientos epoxi",
+  "/leistungen/entwaesserung-industrieboden/": "Drenaje",
+  "/leistungen/whg-abdichtung-industrieboden/": "Impermeabilización WHG",
+  "/leistungen/bodensanierung-laufender-betrieb/": "Rehabilitación por fases",
+  "/leistungen/boden-reparatur-instandsetzung/": "Reparación",
+  "/rechner/sanierungsfenster/": "Planificación de paradas",
+  "/wissen/fugen-forensik/": "Análisis de juntas",
+  "/wissen/ruettelkeramik-agi-s-40/": "Capas y sistema AGI S 40",
+  "/wissen/muster-abnahmeprotokoll/": "Protocolo de recepción",
+  "/wissen/haccp-audit-industrieboden-pruefpunkte/": "Puntos de control HACCP",
+  "/branchen/lebensmittelindustrie/": "Industria alimentaria",
+  "/branchen/molkerei/": "Industria láctea",
+  "/branchen/brauerei-getraenkeindustrie/": "Cervecerías y bebidas",
+  "/branchen/chemieindustrie/": "Industria química",
+  "/branchen/pharmaindustrie/": "Industria farmacéutica",
+  "/branchen/backwarenproduktion-grosskueche/": "Panaderías y cocinas",
+  "/standorte/baden-wuerttemberg/": "Baden-Wurtemberg",
+  "/standorte/bayern/": "Baviera",
+  "/standorte/hamburg/": "Hamburgo y Norte",
+  "/standorte/hessen/": "Hesse",
+  "/standorte/niedersachsen/": "Baja Sajonia",
+  "/standorte/nrw/": "Renania del Norte-Westfalia",
+  "/standorte/rheinland-pfalz/": "Renania-Palatinado",
+  "/standorte/sachsen-anhalt/": "Sajonia-Anhalt",
+  "/standorte/thueringen/": "Turingia",
+};
+
+export function spanishLinkLabel(href: string, fallback: string): string {
+  return labels[href] ?? fallback;
+}

@@ -5,36 +5,65 @@
 interface Props {
   /** Auf der Leistungsseite steht der Schnitt im hellen Seitenfluss ohne eigene Handlungsaufforderung. */
   showServiceLinks?: boolean;
+  lang?: "de" | "es";
 }
 
-const { showServiceLinks = true } = Astro.props;
+const { showServiceLinks = true, lang = Astro.url.pathname.startsWith("/es/") ? "es" : "de" } = Astro.props;
+const isSpanish = lang === "es";
 
-const layers = [
-  {
-    title: "Betonuntergrund",
-    text: "Kugelgestrahlt oder gefräst, damit der Aufbau im Verbund trägt.",
-  },
-  {
-    title: "Haftbrücke",
-    text: "Polymervergütet. Sie verbindet Untergrund und Bettung.",
-  },
-  {
-    title: "Rüttelbett",
-    text: "Erdfeuchter, kunstharzmodifizierter Mörtel. Die Dicke richtet sich nach Untergrund und Last.",
-  },
-  {
-    title: "Sechskantkeramik",
-    text: "Maschinell eingerüttelt, für eine möglichst hohlstellenarme Bettung nach AGI S 40.",
-    href: "/leistungen/keramische-industrieboeden/",
-    linkLabel: "Keramische Industrieböden",
-  },
-  {
-    title: "Reaktionsharzfuge",
-    text: "Epoxidharz oder Vinylester, ausgewählt nach Medienliste und Produktdatenblatt.",
-    href: "/leistungen/industrieboden-saeureschutz/",
-    linkLabel: "Industrieboden-Säureschutz",
-  },
-];
+const layers = isSpanish
+  ? [
+      {
+        title: "Soporte de hormigón",
+        text: "Granallado o fresado para que el sistema trabaje de forma adherida.",
+      },
+      {
+        title: "Puente de adherencia",
+        text: "Mejorado con polímeros. Conecta el soporte y el lecho de colocación.",
+      },
+      {
+        title: "Lecho para vibrado",
+        text: "Mortero semiseco modificado con resina sintética. El espesor se adapta al soporte y a la carga.",
+      },
+      {
+        title: "Cerámica hexagonal",
+        text: "Colocada mecánicamente por vibración para favorecer un lecho con pocos huecos según AGI S 40.",
+        href: "/es/servicios/pavimentos-ceramicos-industriales/",
+        linkLabel: "Pavimentos cerámicos industriales",
+      },
+      {
+        title: "Junta de resina reactiva",
+        text: "Resina epoxi o viniléster, seleccionada según la lista de medios químicos y la ficha del producto.",
+        href: "/es/servicios/proteccion-antiacida-pavimentos-industriales/",
+        linkLabel: "Protección antiácida industrial",
+      },
+    ]
+  : [
+      {
+        title: "Betonuntergrund",
+        text: "Kugelgestrahlt oder gefräst, damit der Aufbau im Verbund trägt.",
+      },
+      {
+        title: "Haftbrücke",
+        text: "Polymervergütet. Sie verbindet Untergrund und Bettung.",
+      },
+      {
+        title: "Rüttelbett",
+        text: "Erdfeuchter, kunstharzmodifizierter Mörtel. Die Dicke richtet sich nach Untergrund und Last.",
+      },
+      {
+        title: "Sechskantkeramik",
+        text: "Maschinell eingerüttelt, für eine möglichst hohlstellenarme Bettung nach AGI S 40.",
+        href: "/leistungen/keramische-industrieboeden/",
+        linkLabel: "Keramische Industrieböden",
+      },
+      {
+        title: "Reaktionsharzfuge",
+        text: "Epoxidharz oder Vinylester, ausgewählt nach Medienliste und Produktdatenblatt.",
+        href: "/leistungen/industrieboden-saeureschutz/",
+        linkLabel: "Industrieboden-Säureschutz",
+      },
+    ];
 
 // --- Geometrie ---------------------------------------------------------------
 const SIZE = 200;
@@ -100,10 +129,10 @@ const topMatrix = `matrix(${COS.toFixed(4)} ${SIN} ${(-COS).toFixed(4)} ${SIN} $
     </div>
 
     <div class="order-1 lg:order-none lg:self-end">
-      <p class="eyebrow-light">Systemaufbau Rüttelkeramik</p>
-      <h2 class="h2 mt-3 text-white">Fünf Schichten, ein Bauteil</h2>
+      <p class="eyebrow-light">{isSpanish ? "Estructura del pavimento cerámico vibrado" : "Systemaufbau Rüttelkeramik"}</p>
+      <h2 class="h2 mt-3 text-white">{isSpanish ? "Cinco capas, un solo elemento constructivo" : "Fünf Schichten, ein Bauteil"}</h2>
       <p class="mt-4 max-w-[54ch] text-base leading-7 text-white/70">
-        Ein Rüttelboden hält, wenn jede Schicht zur nächsten passt. So ist er aufgebaut, von unten nach oben.
+        {isSpanish ? "Un pavimento vibrado funciona cuando cada capa está coordinada con la siguiente. Así se estructura de abajo hacia arriba." : "Ein Rüttelboden hält, wenn jede Schicht zur nächsten passt. So ist er aufgebaut, von unten nach oben."}
       </p>
     </div>
 
@@ -124,7 +153,7 @@ const topMatrix = `matrix(${COS.toFixed(4)} ${SIN} ${(-COS).toFixed(4)} ${SIN} $
           </li>
         ))}
       </ol>
-      <p class="mt-4 text-xs leading-5 text-white/60">Schematische Darstellung. Schichtdicken und Produkte werden je Projekt festgelegt.</p>
+      <p class="mt-4 text-xs leading-5 text-white/60">{isSpanish ? "Representación esquemática. Los espesores y los productos se definen para cada proyecto." : "Schematische Darstellung. Schichtdicken und Produkte werden je Projekt festgelegt."}</p>
     </div>
   </div>
 </section>

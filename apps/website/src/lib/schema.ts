@@ -265,6 +265,7 @@ export function buildArticleJsonLd(article: {
   headline: string;
   description: string;
   path: string;
+  language?: string;
 }) {
   return {
     "@context": "https://schema.org",
@@ -272,6 +273,7 @@ export function buildArticleJsonLd(article: {
     headline: article.headline,
     description: article.description,
     mainEntityOfPage: absoluteUrl(article.path),
+    ...(article.language ? { inLanguage: article.language } : {}),
     author: {
       "@type": "Organization",
       name: "HSB Hexagon Säurebau GmbH",

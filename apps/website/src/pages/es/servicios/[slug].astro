@@ -1,0 +1,181 @@
+---
+import ReferenceCard from "../../../components/references/ReferenceCard.astro";
+import SpanishContactSection from "../../../components/forms/SpanishContactSection.astro";
+import FAQAccordion from "../../../components/sections/FAQAccordion.astro";
+import ManufacturerProof from "../../../components/sections/ManufacturerProof.astro";
+import SystemAufbau from "../../../components/sections/SystemAufbau.astro";
+import PageHero from "../../../components/sections/PageHero.astro";
+import TechnicalDecisionGuide from "../../../components/sections/TechnicalDecisionGuide.astro";
+import BaseLayout from "../../../layouts/BaseLayout.astro";
+import { getReferencesForSlugs } from "../../../lib/content";
+import { spanishArticles } from "../../../data/es/articles";
+import { spanishIndustries } from "../../../data/es/industries";
+import { spanishServices } from "../../../data/es/services";
+import { spanishAlternates, toSpanishPath } from "../../../lib/spanishPaths";
+import { buildBreadcrumbJsonLd, buildFaqJsonLd, buildServiceJsonLd } from "../../../lib/schema";
+import { getStandardsForService } from "../../../data/standards";
+
+export const prerender = true;
+
+export function getStaticPaths() {
+  return spanishServices.map((service) => ({
+    params: { slug: service.localizedSlug },
+    props: { service },
+  }));
+}
+
+const { service } = Astro.props;
+const relatedReferences = getReferencesForSlugs(service.relatedReferences);
+const relatedIndustries = spanishIndustries.filter((industry) =>
+  service.relatedIndustries.includes(industry.slug),
+);
+const relatedArticles = spanishArticles.filter((article) =>
+  service.relatedArticles.includes(article.slug),
+);
+const path = `/es/servicios/${service.localizedSlug}/`;
+
+const serviceImages: Record<string, { src: string; alt: string }> = {
+  "industrieboden-saeureschutz": {
+    src: "/media/hsb/projekte/saeulen-anschluss-keramik.webp",
+    alt: "Encuentro estanco de pilar y zócalo en cerámica hexagonal en una planta de producción",
+  },
+  "entwaesserung-industrieboden": {
+    src: "/media/hsb/projekte/entwaesserungsrinne-detail.webp",
+    alt: "Canaleta de drenaje integrada en pavimento industrial cerámico, detalle de encuentro",
+  },
+  "epoxidharz-bodenbeschichtung": {
+    src: "/media/hsb/projekte/beschichtete-halle.webp",
+    alt: "Pavimento industrial recién revestido con resina en una nave industrial",
+  },
+  "keramische-industrieboeden": {
+    src: "/media/hsb/projekte/verlegung-keramik.webp",
+    alt: "Colocación de pavimento industrial cerámico hexagonal durante la ejecución",
+  },
+};
+
+const serviceImage = serviceImages[service.slug];
+---
+
+<BaseLayout
+  lang="es"
+  alternates={spanishAlternates(path)}
+  title={service.seoTitle}
+  description={service.description}
+  path={path}
+  jsonLd={[
+    buildServiceJsonLd({
+      name: service.title,
+      description: service.description,
+      path,
+      standards: getStandardsForService(service.slug),
+    }),
+    buildFaqJsonLd(service.faqs),
+    buildBreadcrumbJsonLd([
+      { name: "Inicio", path: toSpanishPath("/") },
+      { name: "Servicios", path: toSpanishPath("/leistungen/") },
+      { name: service.title, path },
+    ]),
+  ]}
+>
+  <PageHero
+    lang="es"
+    eyebrow="Servicio"
+    title={service.h1}
+    text={service.description}
+    ctaLabel={service.ctaLabel}
+    ctaHref="#contact"
+    image={serviceImage}
+  />
+  <section class="section">
+    <div class="container grid gap-8 lg:grid-cols-[0.9fr_1.1fr]">
+      <div>
+        <p class="eyebrow">Problema</p>
+        <h2 class="h2 mt-3">Por qué este servicio es decisivo</h2>
+        <p class="lead mt-4">{service.problem}</p>
+      </div>
+      <div class="grid gap-4">
+        <article class="surface p-6">
+          <h3 class="h3">Solución del sistema</h3>
+          <p class="mt-3 text-sm leading-7 text-hsb-steel">{service.systemSolution}</p>
+        </article>
+        <article class="surface p-6">
+          <h3 class="h3">Requisitos técnicos</h3>
+          <div class="mt-4 flex flex-wrap gap-2">
+            {service.technicalRequirements.map((item) => (
+              <span class="rounded bg-hsb-mist px-3 py-2 text-sm font-bold text-hsb-steel">{item}</span>
+            ))}
+          </div>
+        </article>
+      </div>
+    </div>
+  </section>
+  <section class="section-tight bg-hsb-mist">
+    <div class="container grid gap-6 lg:grid-cols-2">
+      <div class="surface p-6">
+        <h2 class="h3">Ventajas</h2>
+        <ul class="mt-4 space-y-2 text-sm leading-6 text-hsb-steel">
+          {service.benefits.map((item) => <li>• {item}</li>)}
+        </ul>
+      </div>
+      <div class="surface p-6">
+        <h2 class="h3">Criterios de decisión</h2>
+        <ul class="mt-4 space-y-2 text-sm leading-6 text-hsb-steel">
+          {service.decisionCriteria.map((item) => <li>• {item}</li>)}
+        </ul>
+      </div>
+    </div>
+  </section>
+  <TechnicalDecisionGuide slug={service.slug} lang="es" />
+  {relatedIndustries.length > 0 && (
+    <section class="section-tight">
+      <div class="container">
+        <p class="eyebrow">Ámbitos de aplicación</p>
+        <h2 class="h2 mt-3">Sectores para los que resulta relevante</h2>
+        <div class="mt-8 grid-auto">
+          {relatedIndustries.map((industry) => (
+            <a class="surface p-6 no-underline" href={`/es/sectores/${industry.localizedSlug}/`}>
+              <h3 class="h3">{industry.title}</h3>
+              <p class="mt-3 text-sm leading-7 text-hsb-steel">{industry.searchIntent}</p>
+            </a>
+          ))}
+        </div>
+      </div>
+    </section>
+  )}
+  {service.slug === "keramische-industrieboeden" && <SystemAufbau showServiceLinks={false} lang="es" />}
+  {service.slug.includes("keramische") || service.slug.includes("saeureschutz") ? (
+    <ManufacturerProof lang="es" />
+  ) : null}
+  {relatedReferences.length > 0 && (
+    <section class="section">
+      <div class="container">
+        <p class="eyebrow">Referencias relacionadas</p>
+        <h2 class="h2 mt-3">Proyectos ejecutados en este ámbito</h2>
+        <div class="mt-8 grid-auto">
+          {relatedReferences.map((reference) => (
+            <ReferenceCard reference={reference} lang="es" />
+          ))}
+        </div>
+      </div>
+    </section>
+  )}
+  {relatedArticles.length > 0 && (
+    <section class="section-tight bg-hsb-mist">
+      <div class="container">
+        <p class="eyebrow">Conocimiento</p>
+        <h2 class="h2 mt-3">Artículos técnicos de profundización</h2>
+        <div class="mt-8 grid-auto">
+          {relatedArticles.map((article) => (
+            <a class="surface p-6 no-underline" href={`/es/conocimiento/${article.localizedSlug}/`}>
+              <p class="eyebrow">{article.category}</p>
+              <h3 class="h3 mt-2">{article.title}</h3>
+              <p class="mt-3 text-sm leading-7 text-hsb-steel">{article.intro}</p>
+            </a>
+          ))}
+        </div>
+      </div>
+    </section>
+  )}
+  <FAQAccordion faqs={service.faqs} lang="es" />
+  <SpanishContactSection />
+</BaseLayout>

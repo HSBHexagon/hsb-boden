@@ -1,5 +1,5 @@
 /** Procurement prompts for real engineers: no generic certification or lifetime guarantees. */
-interface TechnicalDecisionGuide {
+export interface TechnicalDecisionGuide {
   heading: string;
   intro: string;
   requiredInputs: readonly [string, string, string];

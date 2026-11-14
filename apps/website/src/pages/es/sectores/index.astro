@@ -1,0 +1,42 @@
+---
+import PageHero from "../../../components/sections/PageHero.astro";
+import IndustryGrid from "../../../components/sections/IndustryGrid.astro";
+import SpanishContactSection from "../../../components/forms/SpanishContactSection.astro";
+import BaseLayout from "../../../layouts/BaseLayout.astro";
+import { spanishAlternates, toSpanishPath } from "../../../lib/spanishPaths";
+import { buildBreadcrumbJsonLd } from "../../../lib/schema";
+
+const path = "/es/sectores/";
+const title = "Pavimentos industriales por sector | HSB Hexagon";
+const description =
+  "Pavimentos industriales para industria alimentaria, lácteas, cerveceras, industria química, farmacéutica, panaderías industriales y cocinas centrales.";
+---
+
+<BaseLayout
+  lang="es"
+  alternates={spanishAlternates(path)}
+  title={title}
+  description={description}
+  path={path}
+  jsonLd={[
+    buildBreadcrumbJsonLd([
+      { name: "Inicio", path: toSpanishPath("/") },
+      { name: "Sectores", path },
+    ]),
+  ]}
+>
+  <PageHero
+    lang="es"
+    eyebrow="Sectores"
+    title="Cada planta de producción presenta un perfil de cargas distinto"
+    text="Lácteas, cerveceras, alimentación, química o farmacia trabajan con distintos medios, productos de limpieza y normas de higiene. HSB proyecta los pavimentos según el proceso real de la planta, no por catálogo."
+    ctaLabel="Solicitar evaluación"
+    ctaHref="#contact"
+    image={{
+      src: "/media/hsb/projekte/produktionsanlage-keramik.webp",
+      alt: "Instalación de producción alimentaria sobre pavimento cerámico hexagonal con canaleta de drenaje",
+    }}
+  />
+  <IndustryGrid lang="es" />
+  <SpanishContactSection />
+</BaseLayout>

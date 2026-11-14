@@ -53,50 +53,20 @@ const deliveryConfigured = site.hasLeadEndpoint;
       <input required minlength={5} type="tel" name="phone" autocomplete="tel" class="rounded border border-hsb-line px-3 py-3 font-normal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-hsb-red" />
     </label>
   </div>
-  <div class="grid gap-4 sm:grid-cols-2">
-    <label class="grid gap-2 text-sm font-bold">
-      <span>Branche <span class="text-hsb-red" aria-hidden="true">*</span></span>
-      <select required name="industry" class="rounded border border-hsb-line px-3 py-3 font-normal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-hsb-red">
-        <option value="">Bitte wählen</option>
-        <option value="lebensmittelindustrie">Lebensmittelindustrie</option>
-        <option value="molkerei">Molkerei</option>
-        <option value="brauerei-getraenkeindustrie">Brauerei/Getränke</option>
-        <option value="chemieindustrie">Chemie</option>
-        <option value="pharmaindustrie">Pharma</option>
-        <option value="backwarenproduktion-grosskueche">Backwaren/Großküche</option>
-        <option value="sonstige">Sonstige</option>
-      </select>
-    </label>
-    <label class="grid gap-2 text-sm font-bold">
-      <span>Projektart <span class="text-hsb-red" aria-hidden="true">*</span></span>
-      <select required name="projectType" class="rounded border border-hsb-line px-3 py-3 font-normal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-hsb-red">
-        <option value="">Bitte wählen</option>
-        <option value="neubau">Neubau</option>
-        <option value="sanierung" selected={repairRequest}>{repairRequest ? "Reparatur oder Sanierung" : "Sanierung"}</option>
-        <option value="bewertung">Technische Bewertung</option>
-      </select>
-    </label>
-  </div>
-  <div class="grid gap-4 sm:grid-cols-2">
-    <label class="grid gap-2 text-sm font-bold">
-      Fläche in m²
-      <input name="areaSize" class="rounded border border-hsb-line px-3 py-3 font-normal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-hsb-red" />
-    </label>
-    <label class="grid gap-2 text-sm font-bold">
-      <span>Laufender Betrieb <span class="text-hsb-red" aria-hidden="true">*</span></span>
-      <select required name="liveOperation" class="rounded border border-hsb-line px-3 py-3 font-normal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-hsb-red">
-        <option value="">Bitte wählen</option>
-        <option value="ja">Ja</option>
-        <option value="nein">Nein</option>
-        <option value="unklar" selected={repairRequest}>Unklar</option>
-      </select>
-    </label>
-  </div>
+  <label class="grid gap-2 text-sm font-bold">
+    <span>Worum geht es? <span class="text-hsb-red" aria-hidden="true">*</span></span>
+    <select required name="projectType" class="rounded border border-hsb-line px-3 py-3 font-normal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-hsb-red">
+      <option value="">Bitte wählen</option>
+      <option value="neubau">Neubau</option>
+      <option value="sanierung" selected={repairRequest}>{repairRequest ? "Reparatur oder Sanierung" : "Sanierung"}</option>
+      <option value="bewertung">Technische Bewertung</option>
+    </select>
+  </label>
   <fieldset id="loads-fieldset" class="grid gap-3">
-    <legend class="text-sm font-black">Belastungen <span class="font-normal text-hsb-steel">(mindestens eine auswählen)</span></legend>
+    <legend class="text-sm font-black">Was belastet den Boden? <span class="text-hsb-red" aria-hidden="true">*</span> <span class="font-normal text-hsb-steel">(mindestens eine Angabe)</span></legend>
     <div class="grid gap-2 sm:grid-cols-2">
       {loadOptions.map((option) => (
-        <label class="flex items-center gap-2 text-sm text-hsb-steel">
+        <label class="flex min-h-11 cursor-pointer items-center gap-3 rounded border border-hsb-line bg-white px-3 text-sm text-hsb-ink has-[:checked]:border-hsb-red has-[:checked]:bg-hsb-red/5">
           <input type="checkbox" name="loads" value={option} class="size-5 shrink-0 accent-hsb-red" />
           {option}
         </label>
@@ -107,6 +77,39 @@ const deliveryConfigured = site.hasLeadEndpoint;
     <span>Nachricht <span class="text-hsb-red" aria-hidden="true">*</span></span>
     <textarea required minlength={10} maxlength={2000} name="message" rows={5} placeholder={repairRequest ? "Beispiel: Fuge an einer Rinne ausgebrochen, Halle 2, Stillstandsfenster am Wochenende." : undefined} class="rounded border border-hsb-line px-3 py-3 font-normal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-hsb-red" />
   </label>
+  <details id="lead-details" class="rounded border border-hsb-line bg-hsb-mist/60 open:bg-white">
+    <summary class="flex min-h-12 cursor-pointer items-center justify-between gap-3 px-4 py-3 text-sm font-black text-hsb-black">
+      <span>Weitere Angaben zu Branche, Fläche und Betrieb <span class="font-normal text-hsb-steel">(optional)</span></span>
+      <svg class="size-4 shrink-0 text-hsb-red transition-transform [details[open]_&]:rotate-180" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9" /></svg>
+    </summary>
+    <div class="grid gap-4 border-t border-hsb-line p-4 sm:grid-cols-3">
+      <label class="grid gap-2 text-sm font-bold">
+        Branche
+        <select name="industry" class="rounded border border-hsb-line px-3 py-3 font-normal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-hsb-red">
+          <option value="">Keine Angabe</option>
+          <option value="lebensmittelindustrie">Lebensmittelindustrie</option>
+          <option value="molkerei">Molkerei</option>
+          <option value="brauerei-getraenkeindustrie">Brauerei/Getränke</option>
+          <option value="chemieindustrie">Chemie</option>
+          <option value="pharmaindustrie">Pharma</option>
+          <option value="backwarenproduktion-grosskueche">Backwaren/Großküche</option>
+          <option value="sonstige">Sonstige</option>
+        </select>
+      </label>
+      <label class="grid gap-2 text-sm font-bold">
+        Fläche in m²
+        <input name="areaSize" inputmode="numeric" class="rounded border border-hsb-line px-3 py-3 font-normal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-hsb-red" />
+      </label>
+      <label class="grid gap-2 text-sm font-bold">
+        Laufender Betrieb
+        <select name="liveOperation" class="rounded border border-hsb-line px-3 py-3 font-normal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-hsb-red">
+          <option value="unklar" selected>Noch unklar</option>
+          <option value="ja">Ja</option>
+          <option value="nein">Nein</option>
+        </select>
+      </label>
+    </div>
+  </details>
   <label class="flex items-start gap-3 text-sm leading-6 text-hsb-steel">
     <input required type="checkbox" name="privacyConsent" class="mt-0.5 size-5 shrink-0 accent-hsb-red focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-hsb-red" />
     Ich stimme zu, dass meine Angaben zur Bearbeitung der Anfrage verarbeitet werden.
@@ -181,7 +184,7 @@ const deliveryConfigured = site.hasLeadEndpoint;
         `Firma: ${company}`,
         `E-Mail: ${fd.get("email")}`,
         `Telefon: ${fd.get("phone") || "k. A."}`,
-        `Branche: ${fd.get("industry")}`,
+        `Branche: ${fd.get("industry") || "k. A."}`,
         `Projektart: ${fd.get("projectType")}`,
         `Fläche: ${fd.get("areaSize") || "k. A."} m²`,
         `Laufender Betrieb: ${fd.get("liveOperation")}`,
@@ -220,10 +223,11 @@ const deliveryConfigured = site.hasLeadEndpoint;
       company: fd.get("company"),
       email: fd.get("email"),
       phone: fd.get("phone"),
-      industry: fd.get("industry"),
+      // Branche und Betrieb sind optional; der Endpunkt erwartet weiterhin beide Felder.
+      industry: fd.get("industry") || "sonstige",
       projectType: fd.get("projectType"),
       areaSize: fd.get("areaSize") ?? "",
-      liveOperation: fd.get("liveOperation"),
+      liveOperation: fd.get("liveOperation") || "unklar",
       loads: fd.getAll("loads"),
       message: fd.get("message"),
       privacyConsent: fd.get("privacyConsent") === "on",
@@ -276,6 +280,9 @@ const deliveryConfigured = site.hasLeadEndpoint;
     }
     lastPrefillMessage = prefill.message;
     form.dataset.stressCheckSystem = prefill.recommendedSystem;
+    // Vorbelegte Angaben sichtbar machen, statt sie im eingeklappten Bereich zu verstecken.
+    const details = document.getElementById("lead-details");
+    if (details instanceof HTMLDetailsElement) details.open = true;
   }
 
   function applyCalculatorQueryPrefill() {
@@ -293,6 +300,8 @@ const deliveryConfigured = site.hasLeadEndpoint;
       const areaControl = form.elements.namedItem("areaSize");
       if (areaControl instanceof HTMLInputElement && Number.isFinite(areaNum) && areaNum >= 1 && areaNum <= 50000) {
         areaControl.value = `${areaNum} m²`;
+        const details = document.getElementById("lead-details");
+        if (details instanceof HTMLDetailsElement) details.open = true;
       }
 
       const projectTypeControl = form.elements.namedItem("projectType");

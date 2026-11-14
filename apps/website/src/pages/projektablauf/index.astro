@@ -46,8 +46,7 @@ const phases = [
     eyebrow="Planung & Realisierung"
     title="Ein klarer Projektablauf für produktionskritische Bodenflächen"
     text="Industriebodenprojekte beginnen mit dem tatsächlichen Bestand. HSB strukturiert Analyse, technische Auslegung, Vorbereitung, Ausführung und Dokumentation als nachvollziehbare Schritte."
-    ctaLabel="Projekt besprechen"
-  />
+    ctaLabel="Projekt besprechen" image={{ src: "/media/hsb/projekte/halle-in-ausfuehrung.webp", alt: "Industriehalle während der Verlegung des Sechskant-Keramikbodens" }} />
 
   <section class="section border-b border-hsb-line bg-white" aria-labelledby="projektphasen-heading">
     <div class="container">
@@ -63,7 +62,7 @@ const phases = [
         {phases.map((phase) => (
           <li class="grid gap-8 border-t border-hsb-line py-10 lg:grid-cols-[96px_0.9fr_1.1fr] lg:items-start">
             <div class="flex items-center gap-3">
-              <span class="font-mono text-[0.6875rem] font-black uppercase tracking-[0.2em] text-hsb-red">Phase</span>
+              <span class="font-mono text-xs font-black uppercase tracking-[0.2em] text-hsb-red">Phase</span>
               <span class="text-4xl font-black tabular-nums text-hsb-black">{phase.number}</span>
             </div>
             <div>
@@ -109,6 +108,6 @@ const phases = [
   <CTASection
     title="Projektablauf für Ihre Fläche abstimmen"
     text="Schildern Sie Bestand, Belastungen und betriebliche Rahmenbedingungen. HSB ordnet ein, welche Informationen für den nächsten technischen Schritt benötigt werden."
-    label="Ersteinschätzung anfragen"
+    label="Projekt besprechen"
   />
 </BaseLayout>
